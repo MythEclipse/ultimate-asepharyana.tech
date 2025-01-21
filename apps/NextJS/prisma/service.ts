@@ -1,7 +1,5 @@
 // lib/prisma/service.ts
-import { PrismaClient, User } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma, User } from '@asepharyana/database';
 
 interface GoogleUserData {
   emailVerified: Date | null;
