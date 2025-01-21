@@ -7,7 +7,9 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "db:migrate:deploy": {},
-    "db:push": {},
+    "db:push": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -18,7 +20,8 @@
     "lint": {},
     "test": {},
     "start": {
-      "cache": false
+      "cache": false,
+      "persistent": true
     }
   }
 }
