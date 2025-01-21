@@ -54,6 +54,15 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Fetches all posts from the database, including associated user, comments, and likes.
+ * The posts are ordered by creation date in descending order.
+ * Each post's comments are enriched with user information.
+ * 
+ * @returns {Promise<NextResponse>} A JSON response containing the sanitized posts or an error message.
+ * 
+ * @throws {Error} If there is an error fetching the posts from the database.
+ */
 export async function GET() {
   try {
     // Fetch all posts from the database
@@ -76,7 +85,7 @@ export async function GET() {
 
     // Sanitize the response
     const sanitizedPosts = await Promise.all(
-      posts.map(async (post) => {
+      posts.map(async (post: { id: string; content: string; user: { id: string; name: string | null; image: string | null }; comments: { id: string; content: string; userId: string }[]; likes: { userId: string; postId: string }[] }) => {
         const commentsWithUser = await Promise.all(
           post.comments.map(async (comment) => {
             const user = await prisma.user.findUnique({
