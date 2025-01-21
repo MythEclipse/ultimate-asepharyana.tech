@@ -12,9 +12,12 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "generate": "turbo run generate",
     "lint": "turbo run lint",
-    "start": "turbo run start --filter=@asepharyana/web"
+    "nextjs": "turbo run start --filter=@asepharyana/web",
+    "express": "turbo run start --filter=@asepharyana/express",
+    "start": "concurrently \"pnpm run express\" \"pnpm run nextjs\""
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "prettier": "^3.4.2",
     "prisma": "6.2.1",
     "tsx": "4.19.2",
