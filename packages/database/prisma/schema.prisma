@@ -55,6 +55,7 @@ model User {
   sessions         Session[]
 
   @@map("users")
+  ChatMessage ChatMessage[]
 }
 
 model Comments {
@@ -117,4 +118,14 @@ model Replies {
 
   @@index([commentId], map: "commentId_Replies")
   @@index([userId], map: "userId_Replies")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid()) @db.VarChar(255)
+  userId    String   @map("user_id") @db.VarChar(255)
+  text      String   @db.Text
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "userId_ChatMessage")
 }

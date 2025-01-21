@@ -1,5 +1,10 @@
 import WebSocket from 'ws';
-import { ChatMessage } from '@/models/chatModel';
+import { ChatMessage as PrismaChatMessage } from '@prisma/client';
+
+interface ChatMessage extends PrismaChatMessage {
+  user: string;
+  userId: string; // Add userId
+}
 import { ChatService } from '@/services/chatService';
 import logger from '@/utils/logger';
 
@@ -9,10 +14,6 @@ const chatService = new ChatService();
 export default function handleConnection(ws: WebSocket) {
   clients.add(ws);
   logger.info('New client connected');
-
-  // Set unique user ID for this connection
-  const userId = `User-${Math.floor(Math.random() * 1000)}`;
-  (ws as any).userId = userId;
 
   // Load recent messages and send to the new client
   chatService
@@ -27,9 +28,13 @@ export default function handleConnection(ws: WebSocket) {
     });
 
   ws.on('message', async (data) => {
+    const parsedData = JSON.parse(data.toString());
     const message: ChatMessage = {
-      user: (ws as any).userId, // Use the stored user ID
-      text: data.toString(),
+      id: '', // Prisma will auto-generate the ID
+      user: parsedData.userId, // Use the user ID from the parsed data
+      text: parsedData.text,
+      timestamp: new Date(),
+      userId: parsedData.userId, // Include userId
     };
 
     logger.info(`Message received: ${JSON.stringify(message)}`);
@@ -52,6 +57,6 @@ export default function handleConnection(ws: WebSocket) {
 
   ws.on('close', () => {
     clients.delete(ws);
-    logger.info(`Client disconnected: ${userId}`);
+    logger.info('Client disconnected');
   });
 }

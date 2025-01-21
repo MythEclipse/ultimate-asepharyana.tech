@@ -1,16 +1,23 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function ChatClient() {
+  const { data: session } = useSession();
   const [messages, setMessages] = useState<
     Array<{ user: string; text: string }>
   >([]);
   const [inputValue, setInputValue] = useState('');
+  const [userId, setUserId] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    if (session?.user?.id) {
+      setUserId(session.user.id);
+    }
+
     // Create WebSocket connection
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -44,12 +51,16 @@ export default function ChatClient() {
         wsRef.current.close();
       }
     };
-  }, []);
+  }, [session]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
+    if (e.key === 'Enter' && inputValue.trim() && userId.trim()) {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(inputValue);
+        const message = {
+          text: inputValue,
+          userId: userId,
+        };
+        wsRef.current.send(JSON.stringify(message));
         setInputValue('');
       }
     }
@@ -60,7 +71,7 @@ export default function ChatClient() {
       <div className='mb-2'>
         Connection Status:{' '}
         {isConnected ? (
-          <span className='text-green-500'>Connected</span>
+          <span className='text-green-500'>Connected as {userId}</span>
         ) : (
           <span className='text-red-500'>Disconnected</span>
         )}
