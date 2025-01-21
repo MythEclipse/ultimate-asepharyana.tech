@@ -11,6 +11,7 @@ git pull origin main
 pnpm install
 
 # Run database migrations if needed (based on your turbo.json tasks)
+pnpm run db:push
 pnpm run db:migrate:deploy
 
 # Build the Next.js project for production using turbo
