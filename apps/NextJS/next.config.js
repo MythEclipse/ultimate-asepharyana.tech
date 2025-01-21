@@ -100,4 +100,7 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = {
+  ...nextConfig,
+  cacheHandler: require.resolve('./cache-handler.js'),
+};

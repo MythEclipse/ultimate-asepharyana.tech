@@ -21,6 +21,7 @@ const eslintConfig = [
       '**/node_modules/**',
       '**/.git/**',
       '**/public/**',
+      "**/*.js",
       '**/dist/**',
       '**/build/**',
       '**/.next/**',
