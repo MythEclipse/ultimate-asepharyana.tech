@@ -82,3 +82,5 @@ app.log
 # turbo
 .turbo
 /.turbo
+apps/NextJS/public/sitemap*.xml
+**/sitemap*.xml
