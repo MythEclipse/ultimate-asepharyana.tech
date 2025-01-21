@@ -35,6 +35,7 @@ const eslintConfig = [
       '**/.git/**',
       '**/build/**',
       '**/dist/**',
+      '**/types/**',
       '**/coverage/**',
     ],
   },

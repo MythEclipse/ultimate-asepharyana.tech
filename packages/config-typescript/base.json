@@ -1,23 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "composite": false,
+    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
     "isolatedModules": true,
+    "noEmit": false,
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "preserveWatchOutput": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "outDir": "./dist",
+    "declarationDir": "./types"
   },
-  "exclude": ["node_modules","**/*.ts",
-    "**/*.js",
-    "**/*.tsx",
-    "**/*.config.js",]
+  "include": [],
+  "exclude": ["node_modules", "**/*.js", "**/*.config.js"]
 }

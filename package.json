@@ -37,6 +37,10 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
+    "@babel/cli": "^7.26.0",
+    "@babel/core": "^7.26.0",
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
     "@prisma/client": "6.2.1"
   },
   "packageManager": "pnpm@9.15.4"
