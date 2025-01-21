@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@asepharyana/database';
 import { auth } from '@/lib/auth';
 
 // Initialize Prisma Client
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
