@@ -1,4 +1,4 @@
-import { User, UserDTO } from '../types/userTypes';
+import { User, UserDTO } from '@/types/userTypes';
 
 export function formatUserData(user: User): string {
   return `${user.name} (${user.email})`;

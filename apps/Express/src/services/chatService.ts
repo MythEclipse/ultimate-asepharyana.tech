@@ -1,6 +1,6 @@
 import sqlite3 from 'sqlite3';
-import { ChatMessage } from '../models/chatModel';
-import logger from '../utils/logger';
+import { ChatMessage } from '@/models/chatModel';
+import logger from '@/utils/logger';
 
 export class ChatService {
   private static db: sqlite3.Database | null;

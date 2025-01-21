@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { UserService } from '../services/userService';
-import { UserDTO } from '../types/userTypes';
+import { UserService } from '@/services/userService';
+import { UserDTO } from '@/types/userTypes';
 
 class UserController {
   private userService = new UserService();

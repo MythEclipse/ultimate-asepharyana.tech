@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import dotenv from 'dotenv';
-import logger from '../utils/logger';
-import { User } from '../types/userTypes';
+import logger from '@/utils/logger';
+import { User } from '@/types/userTypes';
 
 dotenv.config();
 

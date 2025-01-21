@@ -1,5 +1,9 @@
 import { resolve } from "node:path";
+import { FlatCompat } from "@eslint/eslintrc";
 
+const compat = new FlatCompat({
+  baseDirectory: process.cwd(),
+});
 
 const project = resolve(process.cwd(), "tsconfig.json");
 
@@ -22,7 +26,6 @@ const baseConfig = {
     ".*.js",
     "node_modules/",
     "dist/",
-    "**/**.md",
   ],
   overrides: [
     {

@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
-import { ChatMessage } from '../models/chatModel';
-import { ChatService } from '../services/chatService';
-import logger from '../utils/logger';
+import { ChatMessage } from '@/models/chatModel';
+import { ChatService } from '@/services/chatService';
+import logger from '@/utils/logger';
 
 const clients: Set<WebSocket> = new Set();
 const chatService = new ChatService();

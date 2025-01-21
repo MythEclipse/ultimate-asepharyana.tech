@@ -1,27 +1,35 @@
 {
+  "extends": "@asepharyana/config-eslint/tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "node",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*"]
-    },
-    "typeRoots": ["./src/types", "./node_modules/@types"],
-    "resolveJsonModule": true,
     "outDir": "./dist",
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "rootDir": "./src",
     "strict": true,
+    "target": "ESNext",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "skipLibCheck": true,
-    "lib": ["ESNext", "DOM"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "skipLibCheck": true,
+    "noEmit": false,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node", "jest"],
+    "allowSyntheticDefaultImports": true,
+    "useDefineForClassFields": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "build", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
