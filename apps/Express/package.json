@@ -2,6 +2,7 @@
   "name": "@asepharyana/express",
   "version": "1.0.0",
   "description": "Express application for Asepharyana",
+  "type" : "module",
   "main": "dist/index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=development jest",
