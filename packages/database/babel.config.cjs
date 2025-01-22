@@ -6,7 +6,7 @@ module.exports = {
         targets: {
           node: 'current',
         },
-        modules: false, // Menjaga sintaks modul ES6
+        modules: 'commonjs', // Transpile to CommonJS modules
       },
     ],
     '@babel/preset-typescript',
