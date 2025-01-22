@@ -1066,6 +1066,62 @@ paths:
                 properties:
                   error:
                     type: string
+  /api/compress:
+    get:
+      summary: Compress an image or video
+      tags:
+        - tools
+      parameters:
+        - in: query
+          name: url
+          required: true
+          schema:
+            type: string
+          description: URL of the media file to compress
+        - in: query
+          name: size
+          required: true
+          schema:
+            type: string
+          description: Size or quality for compression (e.g., '50%' or '1' for 1MB)
+      responses:
+        '200':
+          description: Compressed media file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link:
+                    type: string
+                    description: URL to the compressed media file
+        '400':
+          description: Invalid query parameters or unsupported file type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '429':
+          description: Server is busy, try again later
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Failed to process the request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 info:
   title: Freefire
   version: '0.0.1'

@@ -1,4 +1,3 @@
-// app/api/compress/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import axios from 'axios';
@@ -8,12 +7,15 @@ import fs from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import crypto from 'crypto';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
+import { fileTypeFromBuffer } from 'file-type';
 
 // Queue configuration
 let isProcessing = false;
 const queue: Array<{ task: () => Promise<Response>; resolve: (value: Response) => void }> = [];
 const MAX_QUEUE_SIZE = 10;
-const CACHE_DURATION = 600;
+// const CACHE_DURATION = 600;
 
 // Cache configuration
 const CACHE_DIR = join(tmpdir(), 'compress-cache');
@@ -159,7 +161,7 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
             `-crf ${crf}`,
             '-y'
           ])
-          .on('error', (err, stdout, stderr) => {
+          .on('error', (err, _stdout, stderr) => {
             console.error('FFmpeg error:', stderr);
             reject(err);
           })
@@ -193,6 +195,55 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
   }
 }
 
+const ryzenCDN = async (inp: Buffer | { buffer: Buffer; originalname?: string } | Array<Buffer | { buffer: Buffer; originalname?: string }>) => {
+  try {
+    const form = new FormData();
+    const files = Array.isArray(inp) ? inp : [inp];
+
+    for (const file of files) {
+      const buffer = Buffer.isBuffer(file) ? file : file.buffer;
+      if (!Buffer.isBuffer(buffer)) throw new Error('Invalid buffer format');
+
+      const type = await fileTypeFromBuffer(buffer);
+      if (!type) throw new Error('Unsupported file type');
+
+      const originalName = 'originalname' in file ? (file.originalname || 'file').split('.').shift() : 'file';
+      
+      form.append('file', buffer, {
+        filename: `${originalName}.${type.ext}`,
+        contentType: type.mime
+      });
+    }
+
+    const res = await fetch('https://api.ryzendesu.vip/api/uploader/ryzencdn', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+        'Connection': 'keep-alive',
+        'Accept-Encoding': 'gzip, deflate, br',
+        ...form.getHeaders(),
+      },
+      body: form,
+    });
+
+    type RyzenCDNResponse = { success: boolean; message?: string; url?: string; [key: string]: string | boolean | number | object | null | undefined };
+    const json = await res.json() as RyzenCDNResponse;
+    if (!json.success) throw new Error(json.message || 'Upload failed');
+
+    return Array.isArray(inp) ? (json as unknown as RyzenCDNResponse[]).map((f: RyzenCDNResponse) => f.url) : json.url;
+    
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`RyzenCDN Error: ${error.message}`);
+    } else {
+      throw new Error('RyzenCDN Error: Unknown error');
+    }
+  }
+};
+
+export { ryzenCDN };
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
@@ -218,28 +269,28 @@ export async function GET(req: NextRequest) {
         try {
           const cacheKey = generateCacheKey(url, sizeParam);
           const cachePath = join(CACHE_DIR, cacheKey);
-          
-          // Cek cache sebelum download
+          let resultBuffer: Buffer;
+
+          // Cek cache
           if (fs.existsSync(cachePath)) {
             const stats = fs.statSync(cachePath);
             if (Date.now() - stats.mtimeMs < CACHE_EXPIRY) {
-              const buffer = fs.readFileSync(cachePath);
-              const ext = path.extname(url).toLowerCase().split('?')[0];
-              const contentType = ['mp4','mov','avi'].some(e => ext.includes(e)) 
-                ? 'video/mp4' 
-                : 'image/jpeg';
-              
-              return new Response(buffer, {
-                headers: {
-                  'Content-Type': contentType,
-                  'Cache-Control': `public, max-age=${CACHE_DURATION}`,
-                  'Content-Length': buffer.length.toString(),
-                  'X-Cache-Status': 'HIT'
-                }
-              });
+              resultBuffer = fs.readFileSync(cachePath);
+              const fileLink = await ryzenCDN(resultBuffer);
+              return NextResponse.json(
+                { 
+                  status: 'success',
+                  data: {
+                    link: fileLink,
+                    cached: true
+                  }
+                },
+                { status: 200 }
+              );
             }
           }
 
+          // Proses download dan kompresi
           const response = await axios.get(url, {
             responseType: 'arraybuffer',
             headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -252,49 +303,60 @@ export async function GET(req: NextRequest) {
           const isPercentage = sizeParam.includes('%');
           const sizeValue = parseFloat(sizeParam.replace('%', ''));
 
+          // Validasi
           if (isNaN(sizeValue) || 
               (isPercentage && (sizeValue < 5 || sizeValue > 100)) || 
               (!isPercentage && sizeValue < 1)) {
             return NextResponse.json(
-              { error: 'Parameter size tidak valid' },
+              { 
+                status: 'error',
+                message: 'Parameter size tidak valid'
+              },
               { status: 400 }
             );
           }
 
-          let result: Buffer;
-          let contentType: string;
-
+          // Proses kompresi
           if (['.jpg', '.jpeg', '.png'].includes(ext)) {
             const originalKB = buffer.length / 1024;
             const targetKB = isPercentage ? 
               (originalKB * sizeValue) / 100 : 
               sizeValue * 1024;
             
-            result = await compressImage(buffer, targetKB, cacheKey);
-            contentType = 'image/jpeg';
+            resultBuffer = await compressImage(buffer, targetKB, cacheKey);
           } else if (['.mp4', '.mov', '.avi'].includes(ext)) {
             const originalMB = buffer.length / (1024 ** 2);
-            result = await compressVideo(buffer, sizeValue, isPercentage, originalMB, cacheKey);
-            contentType = 'video/mp4';
+            resultBuffer = await compressVideo(buffer, sizeValue, isPercentage, originalMB, cacheKey);
           } else {
             return NextResponse.json(
-              { error: 'Format tidak didukung' },
+              { 
+                status: 'error',
+                message: 'Format tidak didukung'
+              },
               { status: 400 }
             );
           }
 
-          return new Response(result, {
-            headers: {
-              'Content-Type': contentType,
-              'Cache-Control': `public, max-age=${CACHE_DURATION}`,
-              'Content-Length': result.length.toString(),
-              'X-Cache-Status': 'MISS'
-            }
-          });
+          // Upload ke RyzenCDN
+          const fileLink = await ryzenCDN(resultBuffer);
+
+          return NextResponse.json(
+            { 
+              status: 'success',
+              data: {
+                link: fileLink,
+                cached: false
+              }
+            },
+            { status: 200 }
+          );
         } catch (error) {
           console.error('Error processing:', error);
           return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Kompresi gagal' },
+            { 
+              status: 'error',
+              message: error instanceof Error ? error.message : 'Kompresi gagal'
+            },
             { status: 500 }
           );
         }

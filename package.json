@@ -17,12 +17,7 @@
     "start": "concurrently \"pnpm run express\" \"pnpm run nextjs\""
   },
   "devDependencies": {
-    "@babel/preset-typescript": "^7.26.0",
-    "concurrently": "^9.1.2",
-    "prettier": "^3.4.2",
-    "prisma": "6.2.1",
-    "tsx": "4.19.2",
-    "turbo": "^2.3.3"
+    "@babel/preset-typescript": "^7.26.0"
   },
   "engines": {
     "node": ">=18"
@@ -41,7 +36,12 @@
     "@babel/cli": "^7.26.0",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
-    "@prisma/client": "6.2.1"
+    "@prisma/client": "6.2.1",
+    "concurrently": "^9.1.2",
+    "prettier": "^3.4.2",
+    "prisma": "6.2.1",
+    "tsx": "4.19.2",
+    "turbo": "^2.3.3"
   },
   "packageManager": "pnpm@9.15.4"
 }
