@@ -44,6 +44,14 @@ export default function Page() {
             linkUrl='/sosmed'
           />
         </div>
+        <div>
+          <TildCard
+            title='Chat'
+            description='Chat dengan websocket'
+            imageUrl={isLightTheme ? '/webChatL.png' : '/webChat.png'}
+            linkUrl='/chat'
+          />
+        </div>
       </div>
     </div>
   );

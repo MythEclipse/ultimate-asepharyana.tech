@@ -42,6 +42,7 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
               width='1000'
               className='h-60 w-full object-cover rounded-xl'
               alt='thumbnail'
+              priority
             />
           </CardItem>
         </CardBody>

@@ -1,4 +1,4 @@
-# Turborepo starter
+# Ultimate-Asepharyana.cloud
 
 This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
 
@@ -16,8 +16,8 @@ This turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `@asepharyana/web`: a [asepharyana.cloud(nextjs)](https://github.com/MythEclipse/asepharyana.cloud) app
-- `@asepharyana/web`: a [express](https://github.com/MythEclipse/API) app
+- `@asepharyana/web`: a [Next.js](https://github.com/MythEclipse/asepharyana.cloud) app
+- `@asepharyana/api`: an [Express](https://github.com/MythEclipse/API) app
 - `@asepharyana/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
 - `@asepharyana/database`: [Prisma](https://prisma.io/) ORM wrapper to manage & access your database
 - `@asepharyana/typescript-config`: `tsconfig.json`s used throughout the monorepo
@@ -26,7 +26,7 @@ Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
 ### Utilities
 
-This turborepo has some additional tools already setup for you:
+This turborepo has some additional tools already set up for you:
 
 - [TypeScript](https://www.typescriptlang.org/) for static type checking
 - [ESLint](https://eslint.org/) for code linting
@@ -36,22 +36,22 @@ This turborepo has some additional tools already setup for you:
 
 ### Database
 
-We use [Prisma](https://prisma.io/) to manage & access our database. As such you will need a database for this project, either locally or hosted in the cloud.
+We use [Prisma](https://prisma.io/) to manage & access our database. As such, you will need a database for this project, either locally or hosted in the cloud.
 
-To make this process easier, we offer a [`docker-compose.yml`](https://docs.docker.com/compose/) file to deploy a MySQL server locally with a new database named `turborepo` (To change this update the `MYSQL_DATABASE` environment variable in the `docker-compose.yml` file):
+To make this process easier, we offer a [`docker-compose.yml`](https://docs.docker.com/compose/) file to deploy a MySQL server locally with a new database named `turborepo` (To change this, update the `MYSQL_DATABASE` environment variable in the `docker-compose.yml` file):
 
 ```bash
 cd my-turborepo
 docker-compose up -d
 ```
 
-Once deployed you will need to copy the `.env.example` file to `.env` in order for Prisma to have a `DATABASE_URL` environment variable to access.
+Once deployed, you will need to copy the `.env.example` file to `.env` in order for Prisma to have a `DATABASE_URL` environment variable to access.
 
 ```bash
 cp .env.example .env
 ```
 
-If you added a custom database name, or use a cloud based database, you will need to update the `DATABASE_URL` in your `.env` accordingly.
+If you added a custom database name or use a cloud-based database, you will need to update the `DATABASE_URL` in your `.env` accordingly.
 
 Once deployed & up & running, you will need to create & deploy migrations to your database to add the necessary tables. This can be done using [Prisma Migrate](https://www.prisma.io/migrate):
 
@@ -62,33 +62,33 @@ npx prisma migrate dev
 If you need to push any existing migrations to the database, you can use either the Prisma db push or the Prisma migrate deploy command(s):
 
 ```bash
-yarn run db:push
+pnpm run db:push
 
 # OR
 
-yarn run db:migrate:deploy
+pnpm run db:migrate:deploy
 ```
 
-There is slight difference between the two commands & [Prisma offers a breakdown on which command is best to use](https://www.prisma.io/docs/concepts/components/prisma-migrate/db-push#choosing-db-push-or-prisma-migrate).
+There is a slight difference between the two commands & [Prisma offers a breakdown on which command is best to use](https://www.prisma.io/docs/concepts/components/prisma-migrate/db-push#choosing-db-push-or-prisma-migrate).
 
 An optional additional step is to seed some initial or fake data to your database using [Prisma's seeding functionality](https://www.prisma.io/docs/guides/database/seed-database).
 
-To do this update check the seed script located in `packages/database/src/seed.ts` & add or update any users you wish to seed to the database.
+To do this, check the seed script located in `packages/database/src/seed.ts` & add or update any users you wish to seed to the database.
 
-Once edited run the following command to run tell Prisma to run the seed script defined in the Prisma configuration:
+Once edited, run the following command to tell Prisma to run the seed script defined in the Prisma configuration:
 
 ```bash
-yarn run db:seed
+pnpm run db:seed
 ```
 
-For further more information on migrations, seeding & more, we recommend reading through the [Prisma Documentation](https://www.prisma.io/docs/).
+For further information on migrations, seeding & more, we recommend reading through the [Prisma Documentation](https://www.prisma.io/docs/).
 
 ### Build
 
 To build all apps and packages, run the following command:
 
 ```bash
-yarn run build
+pnpm run build
 ```
 
 ### Develop
@@ -96,7 +96,7 @@ yarn run build
 To develop all apps and packages, run the following command:
 
 ```bash
-yarn run dev
+pnpm run dev
 ```
 
 ## Useful Links
