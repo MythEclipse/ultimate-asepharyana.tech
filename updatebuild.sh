@@ -19,8 +19,9 @@ pnpm run build
 
 # Check if the build was successful
 if [ $? -eq 0 ]; then
-    # Restart the PM2 process named "asepharyana.cloud" and update the environment variables
-    pm2 restart ultimate-asepharyana.cloud --update-env
+    # Restart the PM2 processes named "express" and "nextjs" and update the environment variables
+    pm2 restart express --update-env
+    pm2 restart nextjs --update-env
 
     # Execute commit.sh script
     bash commit.sh
