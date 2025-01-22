@@ -9,10 +9,12 @@ import { join } from 'path';
 import crypto from 'crypto';
 import { ryzenCDN } from '@/lib/ryzencdn';
 
-
 // Queue configuration
 let isProcessing = false;
-const queue: Array<{ task: () => Promise<Response>; resolve: (value: Response) => void }> = [];
+const queue: Array<{
+  task: () => Promise<Response>;
+  resolve: (value: Response) => void;
+}> = [];
 const MAX_QUEUE_SIZE = 10;
 // const CACHE_DURATION = 600;
 
@@ -34,10 +36,10 @@ function generateCacheKey(url: string, sizeParam: string): string {
 
 async function processNext() {
   if (isProcessing || queue.length === 0) return;
-  
+
   isProcessing = true;
   const nextJob = queue.shift();
-  
+
   try {
     if (nextJob) {
       const result = await nextJob.task();
@@ -50,22 +52,30 @@ async function processNext() {
 }
 
 async function getVideoMetadata(inputPath: string) {
-  return new Promise<{ duration: number; width: number; height: number }>((resolve, reject) => {
-    ffmpeg.ffprobe(inputPath, (err, metadata) => {
-      if (err) return reject(err);
-      const videoStream = metadata.streams.find(s => s.codec_type === 'video');
-      resolve({
-        duration: metadata.format.duration || 1,
-        width: videoStream?.width || 1280,
-        height: videoStream?.height || 720
+  return new Promise<{ duration: number; width: number; height: number }>(
+    (resolve, reject) => {
+      ffmpeg.ffprobe(inputPath, (err, metadata) => {
+        if (err) return reject(err);
+        const videoStream = metadata.streams.find(
+          (s) => s.codec_type === 'video'
+        );
+        resolve({
+          duration: metadata.format.duration || 1,
+          width: videoStream?.width || 1280,
+          height: videoStream?.height || 720,
+        });
       });
-    });
-  });
+    }
+  );
 }
 
-async function compressImage(buffer: Buffer, targetKB: number, cacheKey: string): Promise<Buffer> {
+async function compressImage(
+  buffer: Buffer,
+  targetKB: number,
+  cacheKey: string
+): Promise<Buffer> {
   const cachePath = join(CACHE_DIR, cacheKey);
-  
+
   // Cek cache
   if (fs.existsSync(cachePath)) {
     const stats = fs.statSync(cachePath);
@@ -83,9 +93,9 @@ async function compressImage(buffer: Buffer, targetKB: number, cacheKey: string)
     const compressed = await sharp(buffer)
       .jpeg({ quality, mozjpeg: true, progressive: true })
       .toBuffer();
-    
+
     const currentSizeKB = compressed.length / 1024;
-    
+
     if (currentSizeKB > targetKB * 1.05) {
       high = quality - 1;
     } else if (currentSizeKB < targetKB * 0.95) {
@@ -95,17 +105,23 @@ async function compressImage(buffer: Buffer, targetKB: number, cacheKey: string)
       fs.writeFileSync(cachePath, compressed);
       return compressed;
     }
-    
+
     quality = Math.round((low + high) / 2);
   }
-  
+
   fs.writeFileSync(cachePath, bestBuffer);
   return bestBuffer;
 }
 
-async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boolean, originalMB: number, cacheKey: string): Promise<Buffer> {
+async function compressVideo(
+  buffer: Buffer,
+  targetMB: number,
+  isPercentage: boolean,
+  originalMB: number,
+  cacheKey: string
+): Promise<Buffer> {
   const cachePath = join(CACHE_DIR, cacheKey);
-  
+
   // Cek cache
   if (fs.existsSync(cachePath)) {
     const stats = fs.statSync(cachePath);
@@ -117,7 +133,7 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
   const tempDir = tmpdir();
   const inputPath = join(tempDir, `vid_in_${Date.now()}.mp4`);
   const outputPath = join(tempDir, `vid_out_${Date.now()}.mp4`);
-  
+
   fs.writeFileSync(inputPath, buffer);
 
   try {
@@ -125,26 +141,37 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
     let finalTargetMB = isPercentage ? (originalMB * targetMB) / 100 : targetMB;
     let resultBuffer: Buffer;
     let attempts = 0;
-    
+
     const minSizeMB = finalTargetMB - 0.5;
     const maxSizeMB = finalTargetMB + 0.5;
 
     do {
       const duration = Math.max(metadata.duration, 1);
       const ratio = Math.max(0.6, finalTargetMB / originalMB);
-      
-      let targetHeight = Math.max(360, Math.min(metadata.height, 
-        Math.round(metadata.height * Math.pow(ratio, 0.8))));
+
+      let targetHeight = Math.max(
+        360,
+        Math.min(
+          metadata.height,
+          Math.round(metadata.height * Math.pow(ratio, 0.8))
+        )
+      );
       targetHeight = targetHeight % 2 === 0 ? targetHeight : targetHeight - 1;
-      
-      let targetWidth = Math.round(targetHeight * (metadata.width / metadata.height));
+
+      let targetWidth = Math.round(
+        targetHeight * (metadata.width / metadata.height)
+      );
       targetWidth = targetWidth % 2 === 0 ? targetWidth : targetWidth - 1;
 
       const audioBitrate = 64;
-      const targetBits = (finalTargetMB * 8 * 1024 * 1.1) - (audioBitrate * duration);
+      const targetBits =
+        finalTargetMB * 8 * 1024 * 1.1 - audioBitrate * duration;
       const videoBitrate = Math.max(1200, targetBits / duration);
 
-      const crf = Math.min(32, Math.max(18, 24 - ((originalMB - finalTargetMB) * 0.5)));
+      const crf = Math.min(
+        32,
+        Math.max(18, 24 - (originalMB - finalTargetMB) * 0.5)
+      );
 
       await new Promise<void>((resolve, reject) => {
         ffmpeg(inputPath)
@@ -158,7 +185,7 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
             '-movflags +faststart',
             '-pix_fmt yuv420p',
             `-crf ${crf}`,
-            '-y'
+            '-y',
           ])
           .on('error', (err, _stdout, stderr) => {
             console.error('FFmpeg error:', stderr);
@@ -169,8 +196,8 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
       });
 
       resultBuffer = fs.readFileSync(outputPath);
-      const actualMB = resultBuffer.length / (1024 ** 2);
-      
+      const actualMB = resultBuffer.length / 1024 ** 2;
+
       if (actualMB < minSizeMB) {
         finalTargetMB *= 1.2;
       } else if (actualMB > maxSizeMB) {
@@ -178,11 +205,11 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
       } else {
         break;
       }
-      
+
       attempts++;
     } while (attempts < 5);
 
-    const actualMB = resultBuffer.length / (1024 ** 2);
+    const actualMB = resultBuffer.length / 1024 ** 2;
     if (actualMB < minSizeMB || actualMB > maxSizeMB) {
       throw new Error(`Gagal mencapai toleransi setelah ${attempts} percobaan`);
     }
@@ -190,7 +217,9 @@ async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boo
     fs.writeFileSync(cachePath, resultBuffer);
     return resultBuffer;
   } finally {
-    [inputPath, outputPath].forEach(p => fs.existsSync(p) && fs.unlinkSync(p));
+    [inputPath, outputPath].forEach(
+      (p) => fs.existsSync(p) && fs.unlinkSync(p)
+    );
   }
 }
 
@@ -213,7 +242,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return new Promise<Response>(resolve => {
+  return new Promise<Response>((resolve) => {
     queue.push({
       task: async () => {
         try {
@@ -228,12 +257,12 @@ export async function GET(req: NextRequest) {
               resultBuffer = fs.readFileSync(cachePath);
               const fileLink = await ryzenCDN(resultBuffer);
               return NextResponse.json(
-                { 
+                {
                   status: 'success',
                   data: {
                     link: fileLink,
-                    cached: true
-                  }
+                    cached: true,
+                  },
                 },
                 { status: 200 }
               );
@@ -254,13 +283,15 @@ export async function GET(req: NextRequest) {
           const sizeValue = parseFloat(sizeParam.replace('%', ''));
 
           // Validasi
-          if (isNaN(sizeValue) || 
-              (isPercentage && (sizeValue < 5 || sizeValue > 100)) || 
-              (!isPercentage && sizeValue < 1)) {
+          if (
+            isNaN(sizeValue) ||
+            (isPercentage && (sizeValue < 5 || sizeValue > 100)) ||
+            (!isPercentage && sizeValue < 1)
+          ) {
             return NextResponse.json(
-              { 
+              {
                 status: 'error',
-                message: 'Parameter size tidak valid'
+                message: 'Parameter size tidak valid',
               },
               { status: 400 }
             );
@@ -269,19 +300,25 @@ export async function GET(req: NextRequest) {
           // Proses kompresi
           if (['.jpg', '.jpeg', '.png'].includes(ext)) {
             const originalKB = buffer.length / 1024;
-            const targetKB = isPercentage ? 
-              (originalKB * sizeValue) / 100 : 
-              sizeValue * 1024;
-            
+            const targetKB = isPercentage
+              ? (originalKB * sizeValue) / 100
+              : sizeValue * 1024;
+
             resultBuffer = await compressImage(buffer, targetKB, cacheKey);
           } else if (['.mp4', '.mov', '.avi'].includes(ext)) {
-            const originalMB = buffer.length / (1024 ** 2);
-            resultBuffer = await compressVideo(buffer, sizeValue, isPercentage, originalMB, cacheKey);
+            const originalMB = buffer.length / 1024 ** 2;
+            resultBuffer = await compressVideo(
+              buffer,
+              sizeValue,
+              isPercentage,
+              originalMB,
+              cacheKey
+            );
           } else {
             return NextResponse.json(
-              { 
+              {
                 status: 'error',
-                message: 'Format tidak didukung'
+                message: 'Format tidak didukung',
               },
               { status: 400 }
             );
@@ -291,27 +328,28 @@ export async function GET(req: NextRequest) {
           const fileLink = await ryzenCDN(resultBuffer);
 
           return NextResponse.json(
-            { 
+            {
               status: 'success',
               data: {
                 link: fileLink,
-                cached: false
-              }
+                cached: false,
+              },
             },
             { status: 200 }
           );
         } catch (error) {
           console.error('Error processing:', error);
           return NextResponse.json(
-            { 
+            {
               status: 'error',
-              message: error instanceof Error ? error.message : 'Kompresi gagal'
+              message:
+                error instanceof Error ? error.message : 'Kompresi gagal',
             },
             { status: 500 }
           );
         }
       },
-      resolve
+      resolve,
     });
 
     if (!isProcessing) processNext();
