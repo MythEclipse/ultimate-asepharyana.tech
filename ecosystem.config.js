@@ -2,7 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'express',
-      script: 'turbo',
+      script: 'npm',
+      interpreter: 'node',
+      exec_mode: 'fork',
       args: 'run express',
       env: {
         NODE_ENV: 'production',
@@ -17,11 +19,10 @@ module.exports = {
     },
     {
       name: 'nextjs',
-      script: 'turbo',
+      script: 'npm',
       args: 'run nextjs',
-      env: {
-        NODE_ENV: 'production',
-      },
+      interpreter: 'node',
+      exec_mode: 'fork',
       instances: 1,
       autorestart: true,
       watch: false,
