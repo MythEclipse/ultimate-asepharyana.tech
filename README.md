@@ -1,13 +1,13 @@
 # Ultimate-Asepharyana.cloud
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+Welcome to the Ultimate-Asepharyana.cloud project! This repository is a personal portfolio showcasing a monorepo setup using Turborepo. If you encounter any issues or have suggestions for improvements, please feel free to submit a pull request. Note that GitHub Issues will be closed, so contributions via pull requests are highly encouraged.
 
-## Using this example
+## Using this project
 
 Run the following command:
 
-```sh
-npx create-turbo@latest -e with-prisma
+```bash
+git clone https://github.com/MythEclipse/ultimate-asepharyana.cloud.git
 ```
 
 ## What's inside?
@@ -16,7 +16,7 @@ This turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `@asepharyana/web`: a [Next.js](https://github.com/MythEclipse/asepharyana.cloud) app
+- `@asepharyana/web`: an [Next.js](https://github.com/MythEclipse/asepharyana.cloud) app
 - `@asepharyana/api`: an [Express](https://github.com/MythEclipse/API) app
 - `@asepharyana/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
 - `@asepharyana/database`: [Prisma](https://prisma.io/) ORM wrapper to manage & access your database
