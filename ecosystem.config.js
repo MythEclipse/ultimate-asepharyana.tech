@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'express',
-      script: 'pnpm',
+      script: 'npm',
       args: 'run express',
       env: {
         NODE_ENV: 'production',
@@ -17,7 +17,7 @@ module.exports = {
     },
     {
       name: 'nextjs',
-      script: 'pnpm',
+      script: 'npm',
       args: 'run nextjs',
       env: {
         NODE_ENV: 'production',
