@@ -1,34 +1,18 @@
 module.exports = {
   apps: [
     {
-      name: 'express',
-      script: 'npm',
-      args: 'run express',
+      name: 'turbo',
+      script: 'node_modules/.bin/turbo', // Path ke Turbo CLI
+      args: 'run start --parallel', // Jalankan perintah Turbo untuk production
       env: {
         NODE_ENV: 'production',
       },
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '2G',
       env_production: {
-        DOTENV_CONFIG_PATH: './.env',
-      },
-    },
-    {
-      name: 'nextjs',
-      script: 'npm',
-      args: 'run nextjs',
-      env: {
         NODE_ENV: 'production',
       },
-      instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '2G',
-      env_production: {
-        DOTENV_CONFIG_PATH: './.env',
-      },
     },
   ],
 };
