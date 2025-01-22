@@ -7,12 +7,29 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import crypto from 'crypto';
 
 // Queue configuration
 let isProcessing = false;
 const queue: Array<{ task: () => Promise<Response>; resolve: (value: Response) => void }> = [];
 const MAX_QUEUE_SIZE = 10;
-const CACHE_DURATION = 600; // 10 menit dalam detik
+const CACHE_DURATION = 600;
+
+// Cache configuration
+const CACHE_DIR = join(tmpdir(), 'compress-cache');
+const CACHE_EXPIRY = 3600 * 1000; // 1 jam
+
+// Inisialisasi cache directory
+if (!fs.existsSync(CACHE_DIR)) {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+// Helper functions
+function generateCacheKey(url: string, sizeParam: string): string {
+  const hash = crypto.createHash('sha1');
+  hash.update(url + sizeParam);
+  return hash.digest('hex') + '.cache';
+}
 
 async function processNext() {
   if (isProcessing || queue.length === 0) return;
@@ -31,12 +48,157 @@ async function processNext() {
   }
 }
 
+async function getVideoMetadata(inputPath: string) {
+  return new Promise<{ duration: number; width: number; height: number }>((resolve, reject) => {
+    ffmpeg.ffprobe(inputPath, (err, metadata) => {
+      if (err) return reject(err);
+      const videoStream = metadata.streams.find(s => s.codec_type === 'video');
+      resolve({
+        duration: metadata.format.duration || 1,
+        width: videoStream?.width || 1280,
+        height: videoStream?.height || 720
+      });
+    });
+  });
+}
+
+async function compressImage(buffer: Buffer, targetKB: number, cacheKey: string): Promise<Buffer> {
+  const cachePath = join(CACHE_DIR, cacheKey);
+  
+  // Cek cache
+  if (fs.existsSync(cachePath)) {
+    const stats = fs.statSync(cachePath);
+    if (Date.now() - stats.mtimeMs < CACHE_EXPIRY) {
+      return fs.readFileSync(cachePath);
+    }
+  }
+
+  let low = 1;
+  let high = 100;
+  let quality = 85;
+  let bestBuffer = buffer;
+
+  for (let i = 0; i < 8; i++) {
+    const compressed = await sharp(buffer)
+      .jpeg({ quality, mozjpeg: true, progressive: true })
+      .toBuffer();
+    
+    const currentSizeKB = compressed.length / 1024;
+    
+    if (currentSizeKB > targetKB * 1.05) {
+      high = quality - 1;
+    } else if (currentSizeKB < targetKB * 0.95) {
+      low = quality + 1;
+      bestBuffer = compressed;
+    } else {
+      fs.writeFileSync(cachePath, compressed);
+      return compressed;
+    }
+    
+    quality = Math.round((low + high) / 2);
+  }
+  
+  fs.writeFileSync(cachePath, bestBuffer);
+  return bestBuffer;
+}
+
+async function compressVideo(buffer: Buffer, targetMB: number, isPercentage: boolean, originalMB: number, cacheKey: string): Promise<Buffer> {
+  const cachePath = join(CACHE_DIR, cacheKey);
+  
+  // Cek cache
+  if (fs.existsSync(cachePath)) {
+    const stats = fs.statSync(cachePath);
+    if (Date.now() - stats.mtimeMs < CACHE_EXPIRY) {
+      return fs.readFileSync(cachePath);
+    }
+  }
+
+  const tempDir = tmpdir();
+  const inputPath = join(tempDir, `vid_in_${Date.now()}.mp4`);
+  const outputPath = join(tempDir, `vid_out_${Date.now()}.mp4`);
+  
+  fs.writeFileSync(inputPath, buffer);
+
+  try {
+    const metadata = await getVideoMetadata(inputPath);
+    let finalTargetMB = isPercentage ? (originalMB * targetMB) / 100 : targetMB;
+    let resultBuffer: Buffer;
+    let attempts = 0;
+    
+    const minSizeMB = finalTargetMB - 0.5;
+    const maxSizeMB = finalTargetMB + 0.5;
+
+    do {
+      const duration = Math.max(metadata.duration, 1);
+      const ratio = Math.max(0.6, finalTargetMB / originalMB);
+      
+      let targetHeight = Math.max(360, Math.min(metadata.height, 
+        Math.round(metadata.height * Math.pow(ratio, 0.8))));
+      targetHeight = targetHeight % 2 === 0 ? targetHeight : targetHeight - 1;
+      
+      let targetWidth = Math.round(targetHeight * (metadata.width / metadata.height));
+      targetWidth = targetWidth % 2 === 0 ? targetWidth : targetWidth - 1;
+
+      const audioBitrate = 64;
+      const targetBits = (finalTargetMB * 8 * 1024 * 1.1) - (audioBitrate * duration);
+      const videoBitrate = Math.max(1200, targetBits / duration);
+
+      const crf = Math.min(32, Math.max(18, 24 - ((originalMB - finalTargetMB) * 0.5)));
+
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg(inputPath)
+          .videoCodec('libx264')
+          .audioCodec('aac')
+          .outputOptions([
+            `-vf scale=${targetWidth}:${targetHeight}`,
+            `-b:v ${videoBitrate.toFixed(0)}k`,
+            `-b:a ${audioBitrate}k`,
+            '-preset medium',
+            '-movflags +faststart',
+            '-pix_fmt yuv420p',
+            `-crf ${crf}`,
+            '-y'
+          ])
+          .on('error', (err, stdout, stderr) => {
+            console.error('FFmpeg error:', stderr);
+            reject(err);
+          })
+          .on('end', () => resolve())
+          .save(outputPath);
+      });
+
+      resultBuffer = fs.readFileSync(outputPath);
+      const actualMB = resultBuffer.length / (1024 ** 2);
+      
+      if (actualMB < minSizeMB) {
+        finalTargetMB *= 1.2;
+      } else if (actualMB > maxSizeMB) {
+        finalTargetMB *= 0.8;
+      } else {
+        break;
+      }
+      
+      attempts++;
+    } while (attempts < 5);
+
+    const actualMB = resultBuffer.length / (1024 ** 2);
+    if (actualMB < minSizeMB || actualMB > maxSizeMB) {
+      throw new Error(`Gagal mencapai toleransi setelah ${attempts} percobaan`);
+    }
+
+    fs.writeFileSync(cachePath, resultBuffer);
+    return resultBuffer;
+  } finally {
+    [inputPath, outputPath].forEach(p => fs.existsSync(p) && fs.unlinkSync(p));
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
-  const size = searchParams.get('size');
+  const sizeParam = searchParams.get('size');
 
-  if (!url || !size) {
+  if (!url || !sizeParam) {
     return NextResponse.json(
       { error: 'Parameter url dan size diperlukan' },
       { status: 400 }
@@ -54,86 +216,85 @@ export async function GET(req: NextRequest) {
     queue.push({
       task: async () => {
         try {
+          const cacheKey = generateCacheKey(url, sizeParam);
+          const cachePath = join(CACHE_DIR, cacheKey);
+          
+          // Cek cache sebelum download
+          if (fs.existsSync(cachePath)) {
+            const stats = fs.statSync(cachePath);
+            if (Date.now() - stats.mtimeMs < CACHE_EXPIRY) {
+              const buffer = fs.readFileSync(cachePath);
+              const ext = path.extname(url).toLowerCase().split('?')[0];
+              const contentType = ['mp4','mov','avi'].some(e => ext.includes(e)) 
+                ? 'video/mp4' 
+                : 'image/jpeg';
+              
+              return new Response(buffer, {
+                headers: {
+                  'Content-Type': contentType,
+                  'Cache-Control': `public, max-age=${CACHE_DURATION}`,
+                  'Content-Length': buffer.length.toString(),
+                  'X-Cache-Status': 'HIT'
+                }
+              });
+            }
+          }
+
           const response = await axios.get(url, {
             responseType: 'arraybuffer',
             headers: { 'User-Agent': 'Mozilla/5.0' },
-            timeout: 30000,
-            maxContentLength: 100 * 1024 * 1024,
+            timeout: 45000,
+            maxContentLength: 500 * 1024 * 1024,
           });
 
           const buffer = Buffer.from(response.data);
-          const ext = path.extname(url).toLowerCase();
-          const sizeValue = parseFloat(size);
-          const isPercentage = size.endsWith('%');
+          const ext = path.extname(url).toLowerCase().split('?')[0];
+          const isPercentage = sizeParam.includes('%');
+          const sizeValue = parseFloat(sizeParam.replace('%', ''));
 
-          // Dynamic compression based on size parameter
-          const compressionProfile = {
-            crf: isPercentage ? 28 + (100 - sizeValue)/2 : 28,
-            videoBitrate: isPercentage ? `${1000 + (100 - sizeValue)*10}k` : '1500k',
-            audioBitrate: '64k',
-            scaleHeight: isPercentage ? 720 - (100 - sizeValue)*5 : 720
-          };
+          if (isNaN(sizeValue) || 
+              (isPercentage && (sizeValue < 5 || sizeValue > 100)) || 
+              (!isPercentage && sizeValue < 1)) {
+            return NextResponse.json(
+              { error: 'Parameter size tidak valid' },
+              { status: 400 }
+            );
+          }
 
           let result: Buffer;
           let contentType: string;
 
           if (['.jpg', '.jpeg', '.png'].includes(ext)) {
-            // Image processing
-            result = await sharp(buffer, { sequentialRead: true })
-              .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-              .jpeg({ 
-                quality: Math.min(isPercentage ? sizeValue : 80, 100),
-                mozjpeg: true,
-                progressive: true 
-              })
-              .toBuffer();
+            const originalKB = buffer.length / 1024;
+            const targetKB = isPercentage ? 
+              (originalKB * sizeValue) / 100 : 
+              sizeValue * 1024;
+            
+            result = await compressImage(buffer, targetKB, cacheKey);
             contentType = 'image/jpeg';
           } else if (['.mp4', '.mov', '.avi'].includes(ext)) {
-            // Video processing with dynamic compression
-            result = await new Promise<Buffer>((resolve, reject) => {
-              const inputPath = join(tmpdir(), `vid_in_${Date.now()}${ext}`);
-              const outputPath = join(tmpdir(), `vid_out_${Date.now()}.mp4`);
-
-              fs.writeFileSync(inputPath, buffer);
-
-              ffmpeg(inputPath)
-                .videoCodec('libx264')
-                .audioCodec('aac')
-                .outputOptions([
-                  `-crf ${compressionProfile.crf}`,
-                  `-b:v ${compressionProfile.videoBitrate}`,
-                  `-b:a ${compressionProfile.audioBitrate}`,
-                  `-vf scale=-2:${compressionProfile.scaleHeight}`,
-                  '-preset medium',
-                  '-threads 1',
-                  '-movflags +faststart',
-                  '-pix_fmt yuv420p'
-                ])
-                .on('end', () => {
-                  const outputBuffer = fs.readFileSync(outputPath);
-                  fs.unlinkSync(inputPath);
-                  fs.unlinkSync(outputPath);
-                  resolve(outputBuffer);
-                })
-                .on('error', reject)
-                .save(outputPath);
-            });
+            const originalMB = buffer.length / (1024 ** 2);
+            result = await compressVideo(buffer, sizeValue, isPercentage, originalMB, cacheKey);
             contentType = 'video/mp4';
           } else {
-            throw new Error('Format tidak didukung');
+            return NextResponse.json(
+              { error: 'Format tidak didukung' },
+              { status: 400 }
+            );
           }
 
           return new Response(result, {
             headers: {
               'Content-Type': contentType,
               'Cache-Control': `public, max-age=${CACHE_DURATION}`,
-              'Content-Length': result.length.toString()
+              'Content-Length': result.length.toString(),
+              'X-Cache-Status': 'MISS'
             }
           });
         } catch (error) {
           console.error('Error processing:', error);
           return NextResponse.json(
-            { error: 'Gagal memproses konten' },
+            { error: error instanceof Error ? error.message : 'Kompresi gagal' },
             { status: 500 }
           );
         }
