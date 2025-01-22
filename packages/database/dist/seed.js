@@ -1,6 +1,4 @@
-"use strict";
-
-var _client = require("./client");
+import { prisma } from "./client";
 const DEFAULT_USERS = [{
   name: "Asep Haryana",
   email: "asep.haryana@gmail.com"
@@ -10,7 +8,7 @@ const DEFAULT_USERS = [{
 }];
 (async () => {
   try {
-    await Promise.all(DEFAULT_USERS.map(user => _client.prisma.user.upsert({
+    await Promise.all(DEFAULT_USERS.map(user => prisma.user.upsert({
       where: {
         email: user.email
       },
@@ -26,6 +24,6 @@ const DEFAULT_USERS = [{
     console.error(error);
     process.exit(1);
   } finally {
-    await _client.prisma.$disconnect();
+    await prisma.$disconnect();
   }
 })();

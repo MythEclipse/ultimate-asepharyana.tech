@@ -19,7 +19,7 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
   linkUrl,
 }) => {
   return (
-    <Link href={linkUrl} passHref>
+    <Link href={linkUrl} scroll={true} passHref>
       <CardContainer className='inter-var cursor-pointer'>
         <CardBody className='bg-gray-50 relative group/card dark:hover:shadow-2xl shadow-blue-500/50 dark:bg-black border-blue-500 w-auto sm:w-[30rem] h-auto rounded-xl p-6 border hover:ring-4 hover:ring-gradient-to-r hover:from-blue-500 hover:to-purple-500'>
           <CardItem

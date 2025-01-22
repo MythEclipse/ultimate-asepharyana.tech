@@ -14,14 +14,20 @@ export default function ChatClient() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    const generateRandomId = () => {
+      return 'user_' + Math.random().toString(36).substr(2, 9);
+    };
+
     if (session?.user?.id) {
       setUserId(session.user.id);
+    } else {
+      setUserId(generateRandomId());
     }
 
     // Create WebSocket connection
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsRef.current = new WebSocket(`${protocol}//localhost:4091`);
+      wsRef.current = new WebSocket(`${protocol}//217.15.165.147:4091`);
 
       wsRef.current.onopen = () => {
         setIsConnected(true);
