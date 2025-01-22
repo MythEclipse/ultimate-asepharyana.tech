@@ -19,7 +19,17 @@ class CacheHandler {
     const filePath = path.join(cacheDir, key);
     try {
       const stats = await stat(filePath);
-      return { value: fs.readFileSync(filePath), lastModified: stats.mtimeMs };
+      const data = fs.readFileSync(filePath);
+
+      // Check if the data is JSON and parse it if necessary
+      let parsedData;
+      try {
+        parsedData = JSON.parse(data.toString());
+      } catch (err) {
+        parsedData = data; // If not JSON, return the raw data
+      }
+
+      return { value: parsedData, lastModified: stats.mtimeMs };
     } catch (err) {
       return null;
     }
@@ -27,10 +37,23 @@ class CacheHandler {
 
   async set(key, data, ctx) {
     const filePath = path.join(cacheDir, key);
-    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.promises.writeFile(filePath, data);
+    
+    // Ensure that 'data' is a Buffer or a string before writing to the file system
+    let serializedData;
+    if (typeof data === 'object') {
+      serializedData = Buffer.from(JSON.stringify(data)); // Convert object to JSON string and then to Buffer
+    } else if (typeof data === 'string') {
+      serializedData = Buffer.from(data); // Handle string data
+    } else if (Buffer.isBuffer(data)) {
+      serializedData = data; // Handle already serialized data (Buffer)
+    } else {
+      throw new Error('Data must be a string, Buffer, or an object that can be serialized.');
+    }
 
-    // Memeriksa ukuran total cache dan menghapus file jika melebihi batas
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.promises.writeFile(filePath, serializedData);
+
+    // Check total cache size and delete files if it exceeds the max limit
     const files = await readdir(cacheDir);
     let totalSize = 0;
     for (const file of files) {
@@ -39,7 +62,7 @@ class CacheHandler {
     }
 
     if (totalSize > maxCacheSize) {
-      // Mengurutkan file berdasarkan waktu modifikasi dan menghapus yang paling lama
+      // Sort files by modification time and delete the oldest files first
       const fileStats = await Promise.all(
         files.map(async (file) => {
           const stats = await stat(path.join(cacheDir, file));
@@ -62,11 +85,11 @@ class CacheHandler {
   }
 
   async revalidateTag(tags) {
-    // Implementasi revalidasi tag jika diperlukan
+    // Implement tag revalidation logic if needed
   }
 
   resetRequestCache() {
-    // Implementasi reset cache per permintaan jika diperlukan
+    // Implement reset cache logic per request if needed
   }
 }
 
