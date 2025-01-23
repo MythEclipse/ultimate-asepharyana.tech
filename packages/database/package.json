@@ -6,12 +6,12 @@
     ".": {
       "require": "./dist/cjs/client.js",
       "import": "./dist/esm/client.js",
-      "types": "./dist/types/client.d.ts"
+      "types": "./types/client.d.ts"
     }
   },
   "main": "./dist/cjs/client.js",
   "module": "./dist/esm/client.js",
-  "types": "./dist/types/client.d.ts",
+  "types": "./types/client.d.ts",
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
@@ -27,7 +27,8 @@
     "prebuild": "npm run generate && rimraf dist",
     "predev": "npm run generate",
     "studio": "prisma studio",
-    "update": "npm update"
+    "update": "npm update",
+    "build:tsc": "tsc --project ./tsconfig.json"
   },
   "dependencies": {
     "@prisma/client": "6.x",

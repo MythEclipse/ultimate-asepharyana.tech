@@ -1,10 +1,18 @@
 {
   "extends": "@asepharyana/config-typescript/base.json",
   "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "declarationDir": "dist/types"
+    "declarationDir": "./types",
+    "strict": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
-  "include": ["next-env.d.ts", "src/**/*"],
-  "exclude": ["node_modules", "types", "**/*.mjs"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.mjs"]
 }
