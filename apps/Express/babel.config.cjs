@@ -1,6 +1,6 @@
 module.exports = {
   env: {
-    // Konfigurasi untuk CommonJS
+    // Konfigurasi untuk CommonJS (tidak berubah)
     cjs: {
       presets: [
         [
@@ -23,14 +23,15 @@ module.exports = {
         ]
       ]
     },
-    // Konfigurasi untuk ES Modules
+    
+    // Konfigurasi untuk ES Modules (diupdate)
     esm: {
       presets: [
         [
           '@babel/preset-env',
           {
             targets: { node: 'current' },
-            modules: false // Pertahankan sintaks ESM
+            modules: false
           }
         ],
         '@babel/preset-typescript'
@@ -42,18 +43,19 @@ module.exports = {
             alias: {
               '@': './src'
             },
-            extensions: ['.js', '.jsx', '.ts', '.tsx'] // Tambahkan ekstensi untuk ESM
+            extensions: ['.js', '.jsx', '.ts', '.tsx']
           }
-        ]
+        ],
+        // Tambahkan plugin untuk otomatis menambahkan .js
+        ['add-import-extension', { 
+          extension: 'js' 
+        }]
       ]
     }
   },
-  // Konfigurasi umum untuk kedua environment
-  plugins: [
-    // Tambahkan plugin yang diperlukan oleh kedua environment di sini
-  ],
-  // Generate source maps untuk kedua environment
+  
+  // Konfigurasi umum
+  plugins: [],
   sourceMaps: true,
-  // Retain line numbers untuk debugging yang lebih baik
   retainLines: true
 };

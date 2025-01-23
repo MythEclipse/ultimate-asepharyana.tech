@@ -2,6 +2,7 @@
   "extends": "@asepharyana/config-typescript/base.json",
   "compilerOptions": {
     "outDir": "./dist",
+    "esModuleInterop": true,
     "rootDir": "./src",
     "declarationDir": "./dist/types",
     "paths": {

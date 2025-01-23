@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@babel/preset-typescript": "7.x",
+    "babel-plugin-add-import-extension": "^1.6.0",
     "rimraf": "6.x"
   },
   "engines": {
