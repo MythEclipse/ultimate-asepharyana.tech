@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@express/*": ["./apps/express/src/*"],
+      "@next-app/*": ["./apps/nextjs/src/*"],
+      "@shared/*": ["./packages/shared/*"],
+      "@ui/*": ["./packages/ui/*"]
+    }
+  }
+}

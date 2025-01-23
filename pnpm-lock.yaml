@@ -40,8 +40,14 @@ importers:
         specifier: ^7.26.0
         version: 7.26.0(@babel/core@7.26.0)
 
-  apps/Express:
+  apps/express:
     dependencies:
+      '@asepharyana/config-eslint':
+        specifier: workspace:*
+        version: link:../../packages/config-eslint
+      '@asepharyana/config-typescript':
+        specifier: workspace:*
+        version: link:../../packages/config-typescript
       '@asepharyana/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -176,7 +182,7 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
 
-  apps/NextJS:
+  apps/nextjs:
     dependencies:
       '@asepharyana/config-eslint':
         specifier: workspace:*
@@ -13200,7 +13206,7 @@ snapshots:
 
   send@1.1.0:
     dependencies:
-      debug: 4.3.6
+      debug: 4.4.0
       destroy: 1.2.0
       encodeurl: 2.0.0
       escape-html: 1.0.3

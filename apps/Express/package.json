@@ -2,25 +2,41 @@
   "name": "@asepharyana/express",
   "version": "1.0.0",
   "description": "Express application for Asepharyana",
-  "type" : "module",
-  "main": "dist/index.js",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
   "scripts": {
-    "test": "cross-env NODE_ENV=development jest",
-    "start": "node dist/index.js",
-    "build": "babel src --out-dir dist --extensions \".ts,.tsx\"",
+    "test": "cross-env NODE_ENV=test jest",
+    "start": "node dist/cjs/index.js",
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
+    "build:esm": "BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
     "dev": "cross-env NODE_ENV=development tsx src/index.ts",
     "format": "prettier --write .",
     "lint": "concurrently \"eslint .\" \"tsc --noEmit\"",
     "check-types": "tsc --noEmit",
     "check-format": "prettier --check .",
-    "check-lint": "eslint . --ext ts --ext tsx --ext js --ext jsx"
+    "check-lint": "eslint . --ext ts --ext tsx --ext js --ext jsx",
+    "prebuild": "rimraf dist && npm run generate-types",
+    "generate-types": "tsc --emitDeclarationOnly --outDir dist/types"
   },
   "author": "Asepharyana",
   "license": "ISC",
   "devDependencies": {
+    "@asepharyana/config-typescript": "workspace:*",
+    "@asepharyana/config-eslint": "workspace:*",
     "@babel/cli": "^7.26.0",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
     "@eslint/eslintrc": "^3.2.0",
     "@jest/globals": "^29.7.0",
     "@types/cors": "^2.8.17",
@@ -44,6 +60,7 @@
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
     "pretty-quick": "^4.0.0",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
@@ -51,7 +68,6 @@
   },
   "dependencies": {
     "@asepharyana/database": "workspace:*",
-    "@babel/preset-typescript": "^7.26.0",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -64,16 +80,5 @@
     "supertest": "^7.0.0",
     "uuid": "^11.0.5",
     "ws": "^8.18.0"
-  },
-  "dependenciesDev": {
-    "@types/body-parser": "^1.20.3",
-    "@types/joi": "^17.13.3",
-    "@types/moment": "^2.13.0",
-    "@types/pino": "^8.0.1",
-    "@types/pino-pretty": "^4.0.0",
-    "@types/sqlite3": "^3.1.4",
-    "@types/supertest": "^2.0.0",
-    "@types/uuid": "^9.0.0",
-    "@types/ws": "^8.5.4"
   }
 }

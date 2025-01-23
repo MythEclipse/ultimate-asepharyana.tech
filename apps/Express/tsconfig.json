@@ -6,7 +6,10 @@
     "declaration": true,
     "noEmit": false,
     "declarationDir": "./types",
-    "composite": true
+    "composite": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
   },
   "include": ["next-env.d.ts", "src/**/*"],
   "exclude": ["node_modules", "types","**/*.mjs",]

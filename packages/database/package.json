@@ -1,9 +1,17 @@
 {
   "name": "@asepharyana/database",
   "version": "0.1.0",
+  "type": "module",
   "exports": {
-    ".": "./dist/client.js"
+    ".": {
+      "require": "./dist/cjs/client.js",
+      "import": "./dist/esm/client.js",
+      "types": "./dist/types/client.d.ts"
+    }
   },
+  "main": "./dist/cjs/client.js",
+  "module": "./dist/esm/client.js",
+  "types": "./dist/types/client.d.ts",
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
@@ -11,19 +19,26 @@
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "babel src --out-dir dist --extensions \".ts,.tsx\"",
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
+    "build:esm": "BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
     "lint": "eslint . --max-warnings 0",
-    "prebuild": "npm run generate",
+    "prebuild": "npm run generate && rimraf dist",
     "predev": "npm run generate",
     "studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1"
+    "@prisma/client": "^6.2.1",
+    "@asepharyana/config-typescript": "workspace:*",
+    "@asepharyana/config-eslint": "workspace:*"
   },
   "devDependencies": {
-    "@asepharyana/config-typescript": "workspace:*",
-    "@asepharyana/config-eslint" : "workspace:*",
+    "@babel/cli": "^7.23.5",
+    "@babel/core": "^7.23.5",
+    "@babel/preset-env": "^7.23.5",
+    "@babel/preset-typescript": "^7.23.3",
     "@types/node": "^22.10.7",
+    "babel-plugin-module-resolver": "^5.0.0",
     "eslint": "^9.18.0",
     "prisma": "^6.2.1",
     "rimraf": "^6.0.1",
