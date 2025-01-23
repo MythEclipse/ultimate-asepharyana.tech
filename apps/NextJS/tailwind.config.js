@@ -1,8 +1,7 @@
-import type { Config } from 'tailwindcss';
-import flowbite from 'flowbite/plugin';
-import tailwindcssAnimate from 'tailwindcss-animate';
+const flowbite = require('flowbite/plugin');
+const tailwindcssAnimate = require('tailwindcss-animate');
 
-const config: Config = {
+module.exports = {
   darkMode: ['class'],
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -169,5 +168,3 @@ const config: Config = {
     // Tambahkan plugin aceternity-ui jika mereka menyediakan plugin Tailwind
   ],
 };
-
-export default config;
