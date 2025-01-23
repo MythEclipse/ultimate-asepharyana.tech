@@ -1,6 +1,7 @@
 {
   "name": "@asepharyana/express",
   "version": "1.0.0",
+  "type": "module",
   "description": "Express application for Asepharyana",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -14,7 +15,7 @@
   },
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
-    "start": "node dist/cjs/index.js",
+    "start": "node dist/esm/index.js",
     "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
     "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
