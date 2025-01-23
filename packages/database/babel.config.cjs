@@ -51,5 +51,9 @@ module.exports = {
   // Konfigurasi umum untuk kedua environment
   plugins: [
     // Tambahkan plugin yang diperlukan oleh kedua environment di sini
-  ]
+  ],
+  // Generate source maps untuk kedua environment
+  sourceMaps: true,
+  // Retain line numbers untuk debugging yang lebih baik
+  retainLines: true
 };

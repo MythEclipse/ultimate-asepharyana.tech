@@ -4,6 +4,7 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
@@ -16,8 +17,6 @@
     "preserveWatchOutput": true,
     "skipLibCheck": true,
     "strict": true,
-    "outDir": "./dist",
-    "declarationDir": "./types"
   },
   "include": [],
   "exclude": ["node_modules", "**/*.js", "**/*.config.js"]

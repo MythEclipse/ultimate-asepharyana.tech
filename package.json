@@ -14,13 +14,15 @@
     "lint": "turbo run lint",
     "nextjs": "turbo run start --filter=@asepharyana/web",
     "express": "turbo run start --filter=@asepharyana/express",
-    "start": "concurrently \"pnpm run express\" \"pnpm run nextjs\""
+    "start": "concurrently \"pnpm run express\" \"pnpm run nextjs\"",
+    "update": "npm update"
   },
   "devDependencies": {
-    "@babel/preset-typescript": "^7.26.0"
+    "@babel/preset-typescript": "7.x",
+    "rimraf": "6.x"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.0.0"
   },
   "name": "@asepharyana/asepharyana.cloud",
   "version": "0.1.0",
@@ -33,15 +35,19 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "@babel/cli": "^7.26.0",
-    "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0",
-    "@prisma/client": "6.2.1",
-    "concurrently": "^9.1.2",
-    "prettier": "^3.4.2",
-    "prisma": "6.2.1",
-    "tsx": "4.19.2",
-    "turbo": "^2.3.3"
+    "@babel/cli": "7.x",
+    "@babel/core": "7.x",
+    "@babel/preset-env": "7.x",
+    "@prisma/client": "6.x",
+    "concurrently": "9.x",
+    "cross-env": "7.x",
+    "prettier": "3.x",
+    "prisma": "6.x",
+    "tsx": "4.x",
+    "turbo": "2.x"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@9.15.4",
+  "overrides": {
+    "typescript": "5.x"
+  }
 }

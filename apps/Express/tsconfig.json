@@ -3,10 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "declaration": true,
-    "noEmit": false,
-    "declarationDir": "./types",
-    "composite": true,
+    "declarationDir": "./dist/types",
     "paths": {
       "@/*": ["./src/*"]
     },

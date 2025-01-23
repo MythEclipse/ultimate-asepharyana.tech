@@ -2,6 +2,15 @@
 
 Selamat datang di proyek Ultimate-Asepharyana.cloud! Repositori ini adalah portofolio pribadi yang menampilkan pengaturan monorepo menggunakan Turborepo. Jika Anda mengalami masalah atau memiliki saran untuk perbaikan, silakan kirim pull request.
 
+## Persyaratan
+
+Proyek ini membutuhkan Node.js versi 22 atau lebih baru. Anda dapat mengunduh versi terbaru dari [situs resmi Node.js](https://nodejs.org/).
+
+```bash
+node -v
+# Pastikan outputnya adalah v22.x.x atau lebih baru
+```
+
 ## Menggunakan proyek ini
 
 Jalankan perintah berikut:

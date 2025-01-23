@@ -9,17 +9,23 @@
   ],
   "devDependencies": {
     "@asepharyana/config-typescript": "workspace:*",
-    "@types/node": "22.10.7",
-    "@typescript-eslint/eslint-plugin": "^8.20.0",
-    "@typescript-eslint/parser": "^8.20.0",
-    "eslint": "^9.18.0",
-    "eslint-config-next": "^15.1.5",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-config-turbo": "^2.3.3",
-    "eslint-plugin-only-warn": "^1.1.0",
-    "eslint-plugin-prettier": "^5.2.3",
-    "prettier": "^3.4.2",
-    "turbo": "^2.3.3",
-    "typescript": "^5.7.3"
+    "@types/node": "22.x",
+    "@typescript-eslint/eslint-plugin": "8.x",
+    "@typescript-eslint/parser": "8.x",
+    "eslint": "9.x",
+    "eslint-config-next": "15.x",
+    "eslint-config-prettier": "10.x",
+    "eslint-config-turbo": "2.x",
+    "eslint-plugin-only-warn": "1.x",
+    "eslint-plugin-prettier": "5.x",
+    "prettier": "3.x",
+    "turbo": "2.x",
+    "typescript": "5.x"
+  },
+  "overrides": {
+    "typescript": "5.x"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

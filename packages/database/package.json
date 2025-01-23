@@ -19,31 +19,36 @@
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "npm run build:cjs && npm run build:esm",
-    "build:cjs": "BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
-    "build:esm": "BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
+    "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
+    "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
+    "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
+    "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "npm run generate && rimraf dist",
     "predev": "npm run generate",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "update": "npm update"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1",
+    "@prisma/client": "6.x",
     "@asepharyana/config-typescript": "workspace:*",
     "@asepharyana/config-eslint": "workspace:*"
   },
   "devDependencies": {
-    "@babel/cli": "^7.23.5",
-    "@babel/core": "^7.23.5",
-    "@babel/preset-env": "^7.23.5",
-    "@babel/preset-typescript": "^7.23.3",
-    "@types/node": "^22.10.7",
-    "babel-plugin-module-resolver": "^5.0.0",
-    "eslint": "^9.18.0",
-    "prisma": "^6.2.1",
-    "rimraf": "^6.0.1",
-    "tsup": "^8.3.5",
-    "tsx": "4.19.2",
-    "typescript": "5.7.3"
+    "@babel/cli": "7.x",
+    "@babel/core": "7.x",
+    "@babel/preset-env": "7.x",
+    "@babel/preset-typescript": "7.x",
+    "@types/node": "22.x",
+    "babel-plugin-module-resolver": "5.x",
+    "eslint": "9.x",
+    "prisma": "6.x",
+    "rimraf": "6.x",
+    "tsup": "8.x",
+    "tsx": "4.x",
+    "typescript": "5.x"
+  },
+  "overrides": {
+    "typescript": "5.x"
   }
 }
