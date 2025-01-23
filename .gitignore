@@ -50,7 +50,7 @@ yarn-error.log*
 .env
 /.env
 !packages/database/.env
-!apps/web/.env
+!apps/**/.env
 
 # vercel
 .vercel
