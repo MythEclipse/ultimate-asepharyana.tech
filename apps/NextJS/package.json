@@ -43,6 +43,7 @@
     "class-variance-authority": "0.x",
     "classnames": "2.x",
     "clsx": "2.x",
+    "critters": "^0.0.25",
     "date-fns": "4.x",
     "dompurify": "3.x",
     "dotenv": "16.x",
