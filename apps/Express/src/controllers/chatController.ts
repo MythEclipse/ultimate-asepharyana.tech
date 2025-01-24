@@ -31,7 +31,7 @@ export default function handleConnection(ws: WebSocket) {
     const parsedData = JSON.parse(data.toString());
     const message: ChatMessage = {
       id: '', // Prisma will auto-generate the ID
-      user: parsedData.userId, // Use the user ID from the parsed data
+      user: parsedData.user, // Use the user field from the parsed data
       text: parsedData.text,
       timestamp: new Date(),
       userId: parsedData.userId, // Include userId

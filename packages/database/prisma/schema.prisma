@@ -55,7 +55,6 @@ model User {
   sessions         Session[]
 
   @@map("users")
-  ChatMessage ChatMessage[]
 }
 
 model Comments {
@@ -122,10 +121,9 @@ model Replies {
 
 model ChatMessage {
   id        String   @id @default(cuid()) @db.VarChar(255)
-  userId    String   @map("user_id") @db.VarChar(255)
+  userId    String   @db.VarChar(255)
   text      String   @db.Text
   timestamp DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      String   @db.VarChar(255) // Use user as a string field
 
-  @@index([userId], map: "userId_ChatMessage")
 }

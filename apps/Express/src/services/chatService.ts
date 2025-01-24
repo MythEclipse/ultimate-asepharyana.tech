@@ -13,7 +13,8 @@ export class ChatService {
       await this.prisma.chatMessage.create({
         data: {
           text: message.text,
-          userId: message.userId, // Include userId
+          userId: message.userId,
+          user: message.user, // Include user
         },
       });
     } catch (error) {
