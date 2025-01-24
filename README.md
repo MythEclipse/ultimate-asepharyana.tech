@@ -76,12 +76,6 @@ pnpm run db:push
 pnpm run db:migrate:deploy
 ```
 
-Ada sedikit perbedaan antara kedua perintah & [Prisma menawarkan penjelasan tentang perintah mana yang terbaik untuk digunakan](https://www.prisma.io/docs/concepts/components/prisma-migrate/db-push#choosing-db-push-or-prisma-migrate).
-
-Langkah tambahan opsional adalah menambahkan beberapa data awal atau data palsu ke database Anda menggunakan [fungsi seeding Prisma](https://www.prisma.io/docs/guides/database/seed-database).
-
-Untuk melakukan ini, periksa skrip seed yang terletak di `packages/database/src/seed.ts` & tambahkan atau perbarui pengguna yang ingin Anda tambahkan ke database.
-
 Setelah diedit, jalankan perintah berikut untuk memberi tahu Prisma untuk menjalankan skrip seed yang ditentukan dalam konfigurasi Prisma:
 
 ```bash
