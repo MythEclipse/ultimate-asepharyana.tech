@@ -4,9 +4,9 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./types/client.d.ts",
       "require": "./dist/cjs/client.js",
-      "import": "./dist/esm/client.js",
-      "types": "./types/client.d.ts"
+      "import": "./dist/esm/client.js"
     }
   },
   "main": "./dist/cjs/client.js",
