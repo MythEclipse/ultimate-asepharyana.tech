@@ -76,7 +76,7 @@ const nextConfig = {
 
   // Konfigurasi optimasi
   reactStrictMode: true,
-  output: 'standalone',
+  // output: 'standalone',
   compress: true,
   productionBrowserSourceMaps: true,
 
