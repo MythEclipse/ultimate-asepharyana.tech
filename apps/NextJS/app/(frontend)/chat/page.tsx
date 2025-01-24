@@ -29,7 +29,7 @@ export default function ChatClient() {
     // Create WebSocket connection
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsRef.current = new WebSocket(`${protocol}//217.15.165.147:4091`);
+      wsRef.current = new WebSocket(`${protocol}//ws.asepharyana.cloud`);
 
       wsRef.current.onopen = () => {
         setIsConnected(true);
