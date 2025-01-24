@@ -99,6 +99,7 @@
     "@asepharyana/config-eslint": "workspace:*",
     "@asepharyana/config-typescript": "workspace:*",
     "@asepharyana/database": "workspace:*",
+    "@builder.io/partytown": "^0.10.3",
     "@eslint/eslintrc": "3.x",
     "@eslint/js": "9.x",
     "@next/eslint-plugin-next": "15.x",
