@@ -31,8 +31,6 @@ Turborepo ini mencakup paket/aplikasi berikut:
 - `@asepharyana/database`: pembungkus ORM [Prisma](https://prisma.io/) untuk mengelola & mengakses database Anda
 - `@asepharyana/typescript-config`: `tsconfig.json` yang digunakan di seluruh monorepo
 
-Setiap paket/aplikasi 100% menggunakan [TypeScript](https://www.typescriptlang.org/).
-
 ### Utilitas
 
 Turborepo ini memiliki beberapa alat tambahan yang sudah diatur untuk Anda:
