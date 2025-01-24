@@ -2,10 +2,12 @@
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
+const stream = require('stream');
 
 const cacheDir = path.resolve(__dirname, '.next/cache');
 const maxCacheSize = 5 * 1024 * 1024 * 1024; // 5GB
 
+const pipeline = util.promisify(stream.pipeline);
 const stat = util.promisify(fs.stat);
 const readdir = util.promisify(fs.readdir);
 const unlink = util.promisify(fs.unlink);
@@ -18,18 +20,12 @@ class CacheHandler {
   async get(key) {
     const filePath = path.join(cacheDir, key);
     try {
-      const stats = await stat(filePath);
-      const data = fs.readFileSync(filePath);
-
-      // Check if the data is JSON and parse it if necessary
-      let parsedData;
-      try {
-        parsedData = JSON.parse(data.toString());
-      } catch (err) {
-        parsedData = data; // If not JSON, return the raw data
-      }
-
-      return { value: parsedData, lastModified: stats.mtimeMs };
+      // Return a readable stream instead of loading entire file
+      const readable = fs.createReadStream(filePath);
+      return {
+        value: readable,
+        lastModified: (await stat(filePath)).mtimeMs
+      };
     } catch (err) {
       return null;
     }
@@ -37,59 +33,50 @@ class CacheHandler {
 
   async set(key, data, ctx) {
     const filePath = path.join(cacheDir, key);
-    
-    // Ensure that 'data' is a Buffer or a string before writing to the file system
-    let serializedData;
-    if (typeof data === 'object') {
-      serializedData = Buffer.from(JSON.stringify(data)); // Convert object to JSON string and then to Buffer
-    } else if (typeof data === 'string') {
-      serializedData = Buffer.from(data); // Handle string data
-    } else if (Buffer.isBuffer(data)) {
-      serializedData = data; // Handle already serialized data (Buffer)
-    } else {
-      throw new Error('Data must be a string, Buffer, or an object that can be serialized.');
-    }
-
     await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.promises.writeFile(filePath, serializedData);
 
-    // Check total cache size and delete files if it exceeds the max limit
-    const files = await readdir(cacheDir);
-    let totalSize = 0;
-    for (const file of files) {
-      const stats = await stat(path.join(cacheDir, file));
-      totalSize += stats.size;
+    // Handle different data types properly
+    if (data instanceof stream.Readable) {
+      // Pipe stream directly to file
+      const writable = fs.createWriteStream(filePath);
+      await pipeline(data, writable);
+    } else {
+      // Handle buffers and JSON
+      const content = typeof data === 'object' 
+        ? JSON.stringify(data)
+        : data;
+      await fs.promises.writeFile(filePath, content);
     }
 
-    if (totalSize > maxCacheSize) {
-      // Sort files by modification time and delete the oldest files first
-      const fileStats = await Promise.all(
-        files.map(async (file) => {
-          const stats = await stat(path.join(cacheDir, file));
-          return { file, mtime: stats.mtimeMs };
-        })
-      );
-      fileStats.sort((a, b) => a.mtime - b.mtime);
-      let sizeToFree = totalSize - maxCacheSize;
-      for (const { file } of fileStats) {
-        const filePath = path.join(cacheDir, file);
-        const stats = await stat(filePath);
-        if (stats.size <= sizeToFree) {
-          await unlink(filePath);
-          sizeToFree -= stats.size;
-        } else {
-          break;
-        }
-      }
+    // Improved cache cleanup with LRU strategy
+    const files = await readdir(cacheDir);
+    const fileStats = await Promise.all(
+      files.map(async (file) => ({
+        file,
+        stats: await stat(path.join(cacheDir, file))
+      }))
+    );
+
+    // Sort by last modified time
+    fileStats.sort((a, b) => a.stats.mtimeMs - b.stats.mtimeMs);
+
+    // Calculate total size
+    let totalSize = fileStats.reduce((acc, { stats }) => acc + stats.size, 0);
+
+    // Delete oldest files until under limit
+    while (totalSize > maxCacheSize && fileStats.length > 0) {
+      const oldest = fileStats.shift();
+      await unlink(path.join(cacheDir, oldest.file));
+      totalSize -= oldest.stats.size;
     }
   }
 
   async revalidateTag(tags) {
-    // Implement tag revalidation logic if needed
+    // Implementation if needed
   }
 
   resetRequestCache() {
-    // Implement reset cache logic per request if needed
+    // Implementation if needed
   }
 }
 
