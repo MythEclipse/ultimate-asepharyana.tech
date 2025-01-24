@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Konfigurasi gambar generik
   images: {
     remotePatterns: [
       {
@@ -7,100 +8,96 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    minimumCacheTTL: 86400, // 1 hari
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
   },
+
+  // Environment variables dasar
   env: {
-    SECRET: process.env.SECRET,
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
-      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID:
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
-      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:
-      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID:
-      process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-    AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
-    AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
-    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
-    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
-    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    SUPABASE_URL: process.env.SUPABASE_URL,
-    GEMINI_API: process.env.GEMINI_API,
     NEXT_PUBLIC_KOMIK: process.env.NEXT_PUBLIC_KOMIK,
     NEXT_PUBLIC_ANIME: process.env.NEXT_PUBLIC_ANIME,
     DATABASE_URL: process.env.DATABASE_URL,
+    SECRET_KEY: process.env.SECRET_KEY,
   },
+
+  // Security headers
   async headers() {
     return [
       {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          {
-            key: 'Content-Security-Policy',
-            value: `default-src 'self'; style-src 'self' 'unsafe-inline'; img-src *; media-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *`,
-          },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization, X-Requested-With',
-          },
-        ],
+      source: '/(.*)',
+      headers: [
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        {
+        key: 'Content-Security-Policy',
+        value: [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src * data:",
+          "font-src 'self'",
+          "connect-src '*'",
+          "media-src *",
+          "object-src 'none'"
+        ].join('; ')
+        },
+        { 
+        key: 'Permissions-Policy', 
+        value: 'camera=(), microphone=(), geolocation=()' 
+        }
+      ],
       },
+      {
+      source: '/_next/image(.*)',
+      headers: [
+        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }
+      ]
+      }
     ];
   },
+
+  // Routing
   async redirects() {
     return [
       {
         source: '/komik/:slug',
         destination: '/komik/:slug/1',
-        permanent: true,
+        permanent: false,
       },
       {
         source: '/anime/:slug',
         destination: '/anime/:slug/1',
-        permanent: true,
+        permanent: false,
       },
     ];
   },
-  async rewrites() {
-    return [
-      {
-        source: '/komik/:slug',
-        destination: '/komik/:slug/1',
-      },
-      {
-        source: '/anime/:slug',
-        destination: '/anime/:slug/1',
-      },
-    ];
-  },
-  reactStrictMode: true, // Mengaktifkan mode ketat React
-  // output: 'standalone', // Optimalisasi untuk deployment container
+
+  // Konfigurasi optimasi
+  reactStrictMode: true,
+  output: 'standalone',
+  compress: true,
+  swcMinify: true,
+  productionBrowserSourceMaps: false,
+
+  // Konfigurasi eksperimental
   experimental: {
-    cacheLife: {
-      default: {
-        stale: 60 * 60, // 1 hour stale time
-        revalidate: 15 * 60, // 15 minutes revalidation
-        expire: 1 * 60 * 60, // 1 hour expiration
-      },
-    },
+    optimizeCss: true,
+    nextScriptWorkers: true,
+    isrMemoryCacheSize: 50,
   },
+
+  // Webpack optimasi
+  webpack: (config) => {
+    config.optimization.splitChunks = {
+      chunks: 'all',
+      maxSize: 256000,
+      minSize: 20000,
+    };
+    
+    return config;
+  }
 };
 
-module.exports = {
-  ...nextConfig,
-  cacheHandler: require.resolve('./cache-handler.js'),
-};
+module.exports = nextConfig;
