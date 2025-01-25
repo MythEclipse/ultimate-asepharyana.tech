@@ -2,7 +2,6 @@ import express from 'express';
 import http from 'http';
 import dotenv from 'dotenv';
 import { initWebSocketServer } from './services/websocketService';
-import { setUserRoutes } from './routes/userRoutes';
 import { setChatRoutes } from './routes/chatRoutes';
 import logger from './utils/logger';
 
