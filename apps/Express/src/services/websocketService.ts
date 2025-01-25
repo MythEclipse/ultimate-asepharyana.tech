@@ -6,9 +6,9 @@ import logger from '@/utils/logger';
 export const initWebSocketServer = (httpServer: HTTPServer): SocketIOServer => {
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: "https://asepharyana.cloud",
-      methods: ["GET", "POST"]
-    }
+      origin: 'https://asepharyana.cloud',
+      methods: ['GET', 'POST'],
+    },
   });
 
   io.on('connection', (socket: Socket) => {

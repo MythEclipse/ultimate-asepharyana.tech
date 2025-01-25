@@ -1,6 +1,10 @@
 // services/chatService.ts
 import { PrismaClient } from '@prisma/client';
-import { MessageCreateInput, ChatMessage, PaginatedMessages } from '@/type/chat';
+import {
+  MessageCreateInput,
+  ChatMessage,
+  PaginatedMessages,
+} from '@/type/chat';
 import logger from '@/utils/logger';
 
 const MAX_MESSAGES_PER_PAGE = 50;
@@ -18,8 +22,8 @@ export class ChatService {
         data: {
           text: data.text,
           userId: data.userId,
-          user: data.user
-        }
+          user: data.user,
+        },
       });
 
       return {
@@ -27,7 +31,7 @@ export class ChatService {
         text: message.text,
         userId: message.userId,
         user: message.user,
-        timestamp: message.timestamp
+        timestamp: message.timestamp,
       };
     } catch (error) {
       logger.error('Failed to create message:', error);
@@ -41,20 +45,20 @@ export class ChatService {
       const messages = await this.prisma.chatMessage.findMany({
         skip: (page - 1) * MAX_MESSAGES_PER_PAGE,
         take: MAX_MESSAGES_PER_PAGE,
-        orderBy: { timestamp: 'desc' }
+        orderBy: { timestamp: 'desc' },
       });
 
       return {
-        messages: messages.map(m => ({
+        messages: messages.map((m) => ({
           id: m.id,
           text: m.text,
           userId: m.userId,
           user: m.user,
-          timestamp: m.timestamp
+          timestamp: m.timestamp,
         })),
         currentPage: page,
         totalPages: Math.ceil(totalMessages / MAX_MESSAGES_PER_PAGE),
-        totalMessages
+        totalMessages,
       };
     } catch (error) {
       logger.error('Failed to get messages:', error);

@@ -22,19 +22,22 @@ export default function handleConnection(socket: Socket) {
   };
 
   // Event handler untuk pesan baru
-  const handleMessage = async (data: MessageCreateInput, callback: (res: MessageResponse) => void) => {
+  const handleMessage = async (
+    data: MessageCreateInput,
+    callback: (res: MessageResponse) => void
+  ) => {
     try {
       const validatedData = {
         text: data.text.trim(),
         user: data.user.trim(),
-        userId: data.userId.trim()
+        userId: data.userId.trim(),
       };
 
       const message = await chatService.createMessage(validatedData);
-      
+
       // Broadcast ke semua client kecuali pengirim
       socket.broadcast.emit('new_message', message);
-      
+
       // Kirim ACK ke client pengirim
       callback({
         status: 'success',
@@ -43,32 +46,35 @@ export default function handleConnection(socket: Socket) {
           text: message.text,
           user: message.user,
           timestamp: message.timestamp,
-          userId: ''
-        }
+          userId: '',
+        },
       });
     } catch (error) {
       const errorMessage = handleError(error, 'Failed to send message');
       callback({
         status: 'error',
-        error: errorMessage
+        error: errorMessage,
       });
     }
   };
 
   // Event handler untuk request history
-  const handleHistoryRequest = async (page: number, callback: (res: MessageResponse) => void) => {
+  const handleHistoryRequest = async (
+    page: number,
+    callback: (res: MessageResponse) => void
+  ) => {
     try {
       const history = await chatService.getMessagesPaginated(page);
       callback({
         status: 'success',
-        data: history
+        data: history,
       });
     } catch (error) {
       const errorMessage = handleError(error, 'Failed to load history');
       callback({
         status: 'error',
         error: errorMessage,
-        data: []
+        data: [],
       });
     }
   };
@@ -85,7 +91,9 @@ export default function handleConnection(socket: Socket) {
 
   // Daftarkan event handlers
   socket.on('message', handleMessage);
-  socket.on('request_history', ({ page }, callback) => handleHistoryRequest(page, callback));
+  socket.on('request_history', ({ page }, callback) =>
+    handleHistoryRequest(page, callback)
+  );
   socket.on('disconnect', handleDisconnect);
 
   // Inisialisasi koneksi
