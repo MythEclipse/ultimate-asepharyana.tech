@@ -10,6 +10,7 @@ type Message = {
   id: string;
   text: string;
   userId: string;
+  user: string;
   timestamp: number;
   isSent: boolean;
 };
@@ -25,7 +26,7 @@ export default function ChatClient() {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
-  // Generate atau ambil user ID
+  // Generate or retrieve user ID
   useEffect(() => {
     const storedUserId = localStorage.getItem('chatUserId');
     if (session?.user?.id) {
@@ -84,7 +85,7 @@ export default function ChatClient() {
     };
   }, [userId]);
 
-  // Handle pengiriman pesan
+  // Handle sending messages
   const handleSendMessage = useCallback(() => {
     if (!inputValue.trim() || !socketRef.current) return;
 
@@ -92,6 +93,7 @@ export default function ChatClient() {
       id: generateId(),
       text: inputValue,
       userId,
+      user: session?.user?.name || 'Anonymous',
       timestamp: Date.now(),
       isSent: true,
     };
@@ -99,21 +101,17 @@ export default function ChatClient() {
     // Optimistic update
     setMessages((prev) => [...prev, newMessage]);
 
-    // Kirim pesan ke server
-    socketRef.current.emit(
-      'chat_message',
-      newMessage,
-      (ack: { success: boolean }) => {
-        if (!ack.success) {
-          console.error('Failed to send message');
-          // Rollback jika gagal
-          setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
-        }
+    // Send message to server
+    socketRef.current.emit('chat_message', newMessage, (ack: { success: boolean }) => {
+      if (!ack.success) {
+        console.error('Failed to send message');
+        // Rollback if failed
+        setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
       }
-    );
+    });
 
     setInputValue('');
-  }, [inputValue, userId]);
+  }, [inputValue, userId, session]);
 
   // Handle keyboard events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -153,9 +151,7 @@ export default function ChatClient() {
                 }`}
               >
                 <div className='text-xs opacity-75 mb-1'>
-                  {message.isSent
-                    ? 'You'
-                    : `User ${message.userId.slice(0, 6)}`}
+                  {message.isSent ? 'You' : message.user}
                 </div>
                 <div className='whitespace-pre-wrap break-words'>
                   {message.text}

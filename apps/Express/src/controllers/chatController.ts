@@ -1,100 +1,62 @@
-// controllers/chatController.ts
-import { Socket } from 'socket.io';
+import WebSocket from 'ws';
+import { ChatMessage as PrismaChatMessage } from '@prisma/client';
+
+interface ChatMessage extends PrismaChatMessage {
+  user: string;
+  userId: string; // Add userId
+}
 import { ChatService } from '@/services/chatService';
-import { MessageCreateInput, ChatMessage } from '@/type/chat';
 import logger from '@/utils/logger';
 
-interface MessageResponse {
-  status: 'success' | 'error';
-  message?: ChatMessage;
-  error?: string;
-  data?: any;
-}
+const clients: Set<WebSocket> = new Set();
+const chatService = new ChatService();
 
-export default function handleConnection(socket: Socket) {
-  const chatService = new ChatService();
-  logger.info(`Client connected: ${socket.id}`);
+export default function handleConnection(ws: WebSocket) {
+  clients.add(ws);
+  logger.info('New client connected');
 
-  const handleDatabaseError = (error: unknown, context: string) => {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    logger.error(`Database error in ${context}:`, {
-      error: errorMessage,
-      socketId: socket.id,
-      stack: new Error().stack,
+  // Load recent messages and send to the new client
+  chatService
+    .loadMessages()
+    .then((messages) => {
+      messages.reverse().forEach((message) => {
+        ws.send(JSON.stringify(message));
+      });
+    })
+    .catch((error) => {
+      logger.error('Failed to load messages', error);
     });
-    return errorMessage;
-  };
 
-  const validateMessageInput = (data: MessageCreateInput) => {
-    const trimmedData = {
-      text: data.text?.trim() || '',
-      user: data.user?.trim() || '',
-      userId: data.userId?.trim() || '',
+  ws.on('message', async (data) => {
+    const parsedData = JSON.parse(data.toString());
+    const message: ChatMessage = {
+      id: '', // Prisma will auto-generate the ID
+      user: parsedData.user, // Use the user field from the parsed data
+      text: parsedData.text,
+      timestamp: new Date(),
+      userId: parsedData.userId, // Include userId
     };
 
-    if (!trimmedData.userId) throw new Error('User ID is required');
-    if (!trimmedData.text) throw new Error('Message text is required');
-    if (!trimmedData.user) throw new Error('Username is required');
+    logger.info(`Message received: ${JSON.stringify(message)}`);
 
-    return trimmedData;
-  };
-
-  const handleMessage = async (
-    data: MessageCreateInput,
-    callback: (res: MessageResponse) => void
-  ) => {
+    // Save message to database
     try {
-      const validatedData = validateMessageInput(data);
-      const message = await chatService.createMessage(validatedData);
-
-      socket.broadcast.emit('new_message', message);
-
-      callback({
-        status: 'success',
-        message,
-      });
+      await chatService.saveMessage(message);
+      logger.info('Message saved to database');
     } catch (error) {
-      const errorMessage = handleDatabaseError(error, 'message handler');
-      callback({
-        status: 'error',
-        error: errorMessage,
-      });
+      logger.error('Failed to save message to database', error);
     }
-  };
 
-  const handleHistoryRequest = async (
-    page: number,
-    callback: (res: MessageResponse) => void
-  ) => {
-    try {
-      const history = await chatService.getMessagesPaginated(page);
-      callback({
-        status: 'success',
-        data: history,
-      });
-    } catch (error) {
-      const errorMessage = handleDatabaseError(error, 'history request');
-      callback({
-        status: 'error',
-        error: errorMessage,
-        data: [],
-      });
-    }
-  };
+    // Broadcast message to all clients
+    clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(message));
+      }
+    });
+  });
 
-  const handleDisconnect = async () => {
-    try {
-      await chatService.close();
-      logger.info(`Client disconnected: ${socket.id}`);
-    } catch (error) {
-      handleDatabaseError(error, 'disconnect handler');
-    }
-  };
-
-  socket.on('message', handleMessage);
-  socket.on('request_history', ({ page }, callback) =>
-    handleHistoryRequest(page, callback)
-  );
-  socket.on('disconnect', handleDisconnect);
+  ws.on('close', () => {
+    clients.delete(ws);
+    logger.info('Client disconnected');
+  });
 }

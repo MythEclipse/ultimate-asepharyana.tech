@@ -1,93 +1,47 @@
-// services/chatService.ts
-import { PrismaClient } from '@prisma/client';
-import {
-  MessageCreateInput,
-  ChatMessage,
-  PaginatedMessages,
-} from '@/type/chat';
+import { PrismaClient, ChatMessage } from '@asepharyana/database';
 import logger from '@/utils/logger';
-
-const MAX_MESSAGES_PER_PAGE = 50;
 
 export class ChatService {
   private prisma: PrismaClient;
 
   constructor() {
-    this.prisma = new PrismaClient({
-      log: ['query', 'info', 'warn', 'error'], // Aktifkan logging query
-    });
+    this.prisma = new PrismaClient();
   }
 
-  async createMessage(data: MessageCreateInput): Promise<ChatMessage> {
+  async saveMessage(message: ChatMessage): Promise<void> {
     try {
-      logger.info('Attempting to save message:', { data });
-
-      const message = await this.prisma.chatMessage.create({
+      await this.prisma.chatMessage.create({
         data: {
-          text: data.text,
-          userId: data.userId,
-          user: data.user, // user as a string field
+          text: message.text,
+          userId: message.userId,
+          user: message.user, // Include user
         },
       });
-
-      logger.info('Message successfully saved:', { messageId: message.id });
-      return {
-        id: message.id,
-        text: message.text,
-        userId: message.userId,
-        user: message.user,
-        timestamp: message.timestamp,
-      };
     } catch (error) {
-      logger.error('Failed to create message:', {
-        error,
-        inputData: data,
-        stack: new Error().stack,
-      });
-      throw new Error('Failed to save message to database');
+      logger.error('Failed to save message to database', error);
+      throw error;
     }
   }
 
-  async getMessagesPaginated(page: number = 1): Promise<PaginatedMessages> {
+  async loadMessages(limit: number = 50): Promise<ChatMessage[]> {
     try {
-      const [totalMessages, messages] = await Promise.all([
-        this.prisma.chatMessage.count(),
-        this.prisma.chatMessage.findMany({
-          skip: (page - 1) * MAX_MESSAGES_PER_PAGE,
-          take: MAX_MESSAGES_PER_PAGE,
-          orderBy: { timestamp: 'desc' },
-          select: {
-            id: true,
-            text: true,
-            userId: true,
-            user: true, // user as a string field
-            timestamp: true,
-          },
-        }),
-      ]);
-
-      return {
-        messages,
-        currentPage: page,
-        totalPages: Math.ceil(totalMessages / MAX_MESSAGES_PER_PAGE),
-        totalMessages,
-      };
-    } catch (error) {
-      logger.error('Failed to get messages:', {
-        error,
-        page,
-        stack: new Error().stack,
+      return await this.prisma.chatMessage.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: limit,
       });
-      throw new Error('Failed to load chat history');
+    } catch (error) {
+      logger.error('Failed to load messages from database', error);
+      throw error;
     }
   }
 
-  async close() {
+  async closeDatabase(): Promise<void> {
     try {
       await this.prisma.$disconnect();
-      logger.info('Database connection closed');
+      logger.info('Prisma database connection closed');
     } catch (error) {
-      logger.error('Error closing database connection:', error);
+      logger.error('Failed to close Prisma database connection', error);
+      throw error;
     }
   }
 }
