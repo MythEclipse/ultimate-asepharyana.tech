@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Remove the .next directory to clean up old build files
-sudo rm -rf ./.next/
+# sudo rm -rf ./.next/
 
 # Pull the latest changes from the Git repository
 git fetch origin
