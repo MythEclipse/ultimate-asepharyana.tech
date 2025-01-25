@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { io, Socket } from 'socket.io-client';
 import Card from '@/components/card/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
 
@@ -24,7 +23,7 @@ export default function ChatClient() {
   const [inputValue, setInputValue] = useState('');
   const [userId, setUserId] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
 
   // Generate or retrieve user ID
   useEffect(() => {
@@ -40,31 +39,26 @@ export default function ChatClient() {
     }
   }, [session]);
 
-  // Setup Socket.IO connection
+  // Setup WebSocket connection
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = io(`${protocol}//ws.asepharyana.cloud`, {
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 3000,
-      reconnectionDelayMax: 10000,
-      autoConnect: true,
-    });
+    const socket = new WebSocket(`${protocol}//ws.asepharyana.cloud`);
 
     socketRef.current = socket;
 
     // Event listeners
-    socket.on('connect', () => {
+    socket.onopen = () => {
       setIsConnected(true);
-      console.log('Socket.IO Connected');
-    });
+      console.log('WebSocket Connected');
+    };
 
-    socket.on('disconnect', () => {
+    socket.onclose = () => {
       setIsConnected(false);
-      console.log('Socket.IO Disconnected');
-    });
+      console.log('WebSocket Disconnected');
+    };
 
-    socket.on('chat_message', (message: Message) => {
+    socket.onmessage = (event) => {
+      const message: Message = JSON.parse(event.data);
       setMessages((prev) => [
         ...prev,
         {
@@ -72,15 +66,15 @@ export default function ChatClient() {
           isSent: message.userId === userId,
         },
       ]);
-    });
+    };
 
-    socket.on('connect_error', (error) => {
-      console.error('Socket.IO Connection Error:', error);
-    });
+    socket.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
 
     // Cleanup on unmount
     return () => {
-      socket.disconnect();
+      socket.close();
       socketRef.current = null;
     };
   }, [userId]);
@@ -102,13 +96,7 @@ export default function ChatClient() {
     setMessages((prev) => [...prev, newMessage]);
 
     // Send message to server
-    socketRef.current.emit('chat_message', newMessage, (ack: { success: boolean }) => {
-      if (!ack.success) {
-        console.error('Failed to send message');
-        // Rollback if failed
-        setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
-      }
-    });
+    socketRef.current.send(JSON.stringify(newMessage));
 
     setInputValue('');
   }, [inputValue, userId, session]);
