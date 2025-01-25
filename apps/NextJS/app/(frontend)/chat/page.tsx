@@ -224,7 +224,7 @@ export default function ChatClient() {
             <Button
               onClick={handleSend}
               disabled={!isConnected || isSending || isUploading}
-              className='absolute right-3 bottom-3 gap-1.5'
+              className='absolute gap-1.5'
             >
               {isSending || isUploading ? (
                 <Loader2 className='w-4 h-4 animate-spin' />
