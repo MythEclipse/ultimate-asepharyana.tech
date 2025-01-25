@@ -4,7 +4,13 @@ import handleConnection from '@/controllers/chatController';
 import logger from '@/utils/logger';
 
 export const initWebSocketServer = (server: HTTPServer) => {
-  const io = new SocketIOServer(server);
+  const io = new SocketIOServer(server, {
+    cors: {
+      origin: "https://ws.asepharyana.cloud",
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
 
   io.on('connection', (socket) => {
     handleConnection(socket);
