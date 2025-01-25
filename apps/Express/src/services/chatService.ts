@@ -69,7 +69,7 @@ export class ChatService {
         return;
       }
       const query =
-        'SELECT user, text, email, image, role FROM messages ORDER BY timestamp DESC LIMIT ?';
+        'SELECT user, text, email, imageProfile, imageMessage, role FROM messages ORDER BY timestamp DESC LIMIT ?';
       ChatService.db.all(query, [limit], (err, rows) => {
         if (err) {
           reject(err);
