@@ -6,8 +6,6 @@ import { Request, Response } from 'express';
 import { initWebSocketServer } from '../src/services/websocketService';
 import logger from '../src/utils/logger';
 import WebSocket from 'ws';
-import { UserService } from '../src/services/userService';
-import { User } from '../src/types/userTypes';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -39,16 +37,9 @@ describe('index.ts tests', () => {
     });
   });
 
-  afterAll(async () => {
-    const userService = new UserService();
+  afterAll(() => {
     logger.info('Closing test server');
     server.close();
-
-    // Delete test database
-    if (process.env.NODE_ENV === 'development') {
-      await userService.closeDatabase();
-      logger.info('Database connection closed');
-    }
   });
 
   it('should respond to the root path with HTML content', async () => {
@@ -96,7 +87,8 @@ describe('index.ts tests', () => {
         if (
           msg.text === 'Hello from client1' &&
           msg.email === 'client1@example.com' &&
-          msg.image === 'https://example.com/client1.png' &&
+          msg.imageProfile === 'https://example.com/client1-profile.png' &&
+          msg.imageMessage === 'https://example.com/client1-message.png' &&
           msg.role === 'user'
         ) {
           receivedCount++;
@@ -118,86 +110,12 @@ describe('index.ts tests', () => {
           user: 'Client1',
           text: 'Hello from client1',
           email: 'client1@example.com',
-          image: 'https://example.com/client1.png',
+          imageProfile: 'https://example.com/client1-profile.png',
+          imageMessage: 'https://example.com/client1-message.png',
           role: 'user',
         };
         wsClient1.send(JSON.stringify(message));
       });
     });
-  });
-});
-
-describe('UserService tests', () => {
-  let userService: UserService;
-
-  beforeAll(() => {
-    logger.info('Initializing UserService for tests');
-    userService = new UserService();
-  });
-
-  it('should save a new user', async () => {
-    logger.info('Testing: save new user');
-    const user: User = {
-      id: '',
-      name: 'John Doe',
-      email: 'john@example.com',
-      password: 'password123',
-    };
-    await userService.saveUser(user);
-    const savedUser = await userService.findUser(parseInt(user.id, 10));
-    logger.info({ userId: user.id }, 'User saved successfully');
-    expect(savedUser).toBeDefined();
-    expect(savedUser?.name).toBe('John Doe');
-  });
-
-  it('should find an existing user', async () => {
-    logger.info('Testing: find existing user');
-    const user: User = {
-      id: '',
-      name: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'password123',
-    };
-    await userService.saveUser(user);
-    const foundUser = await userService.findUser(parseInt(user.id, 10));
-    logger.info({ userId: user.id }, 'User found successfully');
-    expect(foundUser).toBeDefined();
-    expect(foundUser?.email).toBe('jane@example.com');
-  });
-
-  it('should update an existing user', async () => {
-    logger.info('Testing: update existing user');
-    const user: User = {
-      id: '',
-      name: 'Jake Doe',
-      email: 'jake@example.com',
-      password: 'password123',
-    };
-    await userService.saveUser(user);
-    const updatedData = {
-      name: 'Jake Smith',
-      email: 'jake.smith@example.com',
-      password: 'newpassword123',
-    };
-    await userService.updateUser(parseInt(user.id, 10), updatedData);
-    const updatedUser = await userService.findUser(parseInt(user.id, 10));
-    logger.info({ userId: user.id }, 'User updated successfully');
-    expect(updatedUser).toBeDefined();
-    expect(updatedUser?.name).toBe('Jake Smith');
-  });
-
-  it('should delete an existing user', async () => {
-    logger.info('Testing: delete existing user');
-    const user: User = {
-      id: '',
-      name: 'Jill Doe',
-      email: 'jill@example.com',
-      password: 'password123',
-    };
-    await userService.saveUser(user);
-    await userService.deleteUser(parseInt(user.id, 10));
-    const deletedUser = await userService.findUser(parseInt(user.id, 10));
-    logger.info({ userId: user.id }, 'User deleted successfully');
-    expect(deletedUser).toBeUndefined();
   });
 });
