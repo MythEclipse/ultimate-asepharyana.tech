@@ -203,42 +203,43 @@ export default function ChatClient() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 border-t border-blue-500 dark:border-blue-500">
-          <div className="flex items-start gap-2">
+        <div className='p-4 border-t border-blue-500 dark:border-blue-500'>
+          <div className='flex items-start gap-2'>
             <Textarea
               ref={textAreaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="flex-1 resize-none min-h-[40px]"
+              placeholder='Type a message...'
+              className='flex-1 resize-none min-h-[40px]'
               rows={1}
               disabled={!isConnected}
             />
-            <div className="flex items-center gap-2 h-full">
+            <div className='flex items-center gap-2 h-full'>
               <input
-                type="file"
+                type='file'
                 onChange={handleFileChange}
-                className="hidden"
-                id="file-input"
+                className='hidden'
+                id='file-input'
                 disabled={!isConnected || isUploading}
               />
               <label
-                htmlFor="file-input"
-                className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${isUploading
+                htmlFor='file-input'
+                className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${
+                  isUploading
                     ? 'text-gray-400 border-gray-400'
                     : 'text-blue-500 border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                  } cursor-pointer transition-colors`}
+                } cursor-pointer transition-colors`}
               >
                 {isUploading ? 'Uploading...' : '📎'}
               </label>
               <Button
                 onClick={handleSend}
                 disabled={!isConnected || isSending || isUploading}
-                className="h-10 gap-1.5"
+                className='h-10 gap-1.5'
               >
                 {isSending || isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className='w-4 h-4 animate-spin' />
                 ) : (
                   'Send'
                 )}
@@ -246,7 +247,7 @@ export default function ChatClient() {
             </div>
           </div>
           {error && (
-            <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
+            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
           )}
         </div>
       </Card>
