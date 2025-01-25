@@ -30,7 +30,6 @@ export default function ChatClient() {
     connected: false,
     sending: false,
     uploading: false,
-    loading: true,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -38,44 +37,42 @@ export default function ChatClient() {
   const endRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initial messages load and WebSocket connection
+  // WebSocket connection setup
   useEffect(() => {
-    // Load initial messages
-    const loadMessages = async () => {
-      try {
-        const response = await fetch('/api/messages');
-        const data = await response.json();
-        setMessages(data);
-      } catch (err) {
-        setError('Failed to load messages');
-      } finally {
-        setStatus((p) => ({ ...p, loading: false }));
-      }
-    };
-
-    // WebSocket setup
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     ws.current = new ReconnectingWebSocket(`${protocol}//ws.asepharyana.cloud`);
 
     ws.current.onmessage = (e) => {
       const message = JSON.parse(e.data);
-      setMessages((prev) =>
-        prev.some((m) => m.id === message.id) ? prev : [...prev, message]
-      );
+
+      // Handle history messages
+      if (message.type === 'history') {
+        setMessages(message.data);
+        return;
+      }
+
+      // Handle new messages
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        return exists ? prev : [...prev, message];
+      });
     };
 
-    ws.current.onopen = () => setStatus((p) => ({ ...p, connected: true }));
+    ws.current.onopen = () => {
+      setStatus((p) => ({ ...p, connected: true }));
+      // Request history messages setelah koneksi terbuka
+      ws.current?.send(JSON.stringify({ type: 'requestHistory' }));
+    };
+
     ws.current.onclose = () => setStatus((p) => ({ ...p, connected: false }));
     ws.current.onerror = () => setError('Connection error');
-
-    loadMessages();
 
     return () => {
       ws.current?.close();
     };
   }, []);
 
-  // Auto-scroll and textarea resize
+  // Auto-scroll dan textarea resize
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
     if (textAreaRef.current) {
@@ -118,7 +115,7 @@ export default function ChatClient() {
       // Optimistic update
       setMessages((prev) => [...prev, newMessage]);
 
-      // Upload image if exists
+      // Upload image jika ada
       if (file) {
         setStatus((p) => ({ ...p, uploading: true }));
         const { url } = await uploadImage(file);
@@ -126,8 +123,11 @@ export default function ChatClient() {
         setFile(null);
       }
 
-      // Send via WebSocket
-      ws.current?.send(JSON.stringify(newMessage));
+      // Kirim via WebSocket
+      ws.current?.send(JSON.stringify({
+        ...newMessage,
+        isOptimistic: true, // Flag untuk pesan sementara
+      }));
       setInput('');
     } catch (err) {
       setError('Failed to send message');
@@ -159,22 +159,14 @@ export default function ChatClient() {
         </div>
 
         <div className='h-96 overflow-y-auto p-4 space-y-3'>
-          {status.loading ? (
-            <div className='flex justify-center items-center h-full'>
-              <Loader2 className='w-8 h-8 animate-spin text-blue-500' />
-            </div>
-          ) : (
-            <>
-              {messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isOwn={message.email === session?.user?.email}
-                />
-              ))}
-              <div ref={endRef} />
-            </>
-          )}
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isOwn={message.email === session?.user?.email}
+            />
+          ))}
+          <div ref={endRef} />
         </div>
 
         <div className='p-4 border-t border-blue-500'>
@@ -255,13 +247,13 @@ function MessageBubble({
           className='rounded-full object-cover'
         />
         <div
-          className={`p-3 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+          className={`p-3 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
         >
           <div className='flex items-center gap-2 mb-1'>
             <span className='text-xs font-medium'>
               {isOwn ? 'You' : message.user}
             </span>
-            <span className='text-xs px-2 text-gray-500'>
+            <span className='text-xs px-2 text-gray-500 dark:text-gray-400'>
               {format(message.timestamp, 'HH:mm')}
             </span>
           </div>
