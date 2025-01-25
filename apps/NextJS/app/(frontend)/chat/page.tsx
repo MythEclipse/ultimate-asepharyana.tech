@@ -124,10 +124,12 @@ export default function ChatClient() {
       }
 
       // Kirim via WebSocket
-      ws.current?.send(JSON.stringify({
-        ...newMessage,
-        isOptimistic: true, // Flag untuk pesan sementara
-      }));
+      ws.current?.send(
+        JSON.stringify({
+          ...newMessage,
+          isOptimistic: true, // Flag untuk pesan sementara
+        })
+      );
       setInput('');
     } catch (err) {
       setError('Failed to send message');
