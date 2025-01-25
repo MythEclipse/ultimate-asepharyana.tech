@@ -8,21 +8,27 @@ export class ChatService {
     message: Omit<ChatMessage, 'id' | 'timestamp'>
   ): Promise<ChatMessage> {
     try {
-      return await prisma.chatMessage.create({ data: message });
+      return await prisma.chatMessage.create({
+        data: {
+          text: message.text,
+          userId: message.userId,
+          user: message.user,
+        },
+      });
     } catch (error) {
-      logger.error('Save message error:', error);
+      logger.error('Failed to save message:', error);
       throw error;
     }
   }
 
-  async loadMessages(limit = 50): Promise<ChatMessage[]> {
+  async loadMessages(limit = 100): Promise<ChatMessage[]> {
     return prisma.chatMessage.findMany({
       orderBy: { timestamp: 'asc' },
       take: limit,
     });
   }
 
-  async close(): Promise<void> {
+  async close() {
     await prisma.$disconnect();
   }
 }

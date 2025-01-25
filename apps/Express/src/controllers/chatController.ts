@@ -2,52 +2,87 @@ import WebSocket from 'ws';
 import { ChatService } from '@/services/chatService';
 import logger from '@/utils/logger';
 
+const HEARTBEAT_INTERVAL = 30000;
 const clients = new Set<WebSocket>();
 const chatService = new ChatService();
 
-export default function handleConnection(ws: WebSocket) {
-  clients.add(ws);
-  logger.info('New client connected');
+class ConnectionManager {
+  private activeConnections = 0;
 
-  chatService
-    .loadMessages()
-    .then((messages) => {
-      messages.reverse().forEach((msg) => {
-        ws.send(JSON.stringify(msg));
-      });
-    })
-    .catch((error) => {
-      logger.error('Failed to load messages', error);
+  add(client: WebSocket) {
+    clients.add(client);
+    this.activeConnections++;
+    this.logStats();
+  }
+
+  remove(client: WebSocket) {
+    if (clients.delete(client)) {
+      this.activeConnections--;
+      this.logStats();
+    }
+  }
+
+  private logStats() {
+    logger.info(`Active connections: ${this.activeConnections}`);
+  }
+
+  broadcast(message: object) {
+    const data = JSON.stringify(message);
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
+      }
     });
+  }
+}
+
+const manager = new ConnectionManager();
+
+export default function handleConnection(ws: WebSocket) {
+  let heartbeat: NodeJS.Timeout;
+
+  const cleanup = () => {
+    clearInterval(heartbeat);
+    manager.remove(ws);
+    logger.info('Client disconnected');
+  };
+
+  const sendHeartbeat = () => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.ping();
+    }
+  };
+
+  ws.on('open', () => {
+    manager.add(ws);
+    logger.info('New client connected');
+    heartbeat = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+  });
+
+  ws.on('pong', () => {
+    // Reset timeout jika diperlukan
+  });
+
+  ws.on('close', cleanup);
+  ws.on('error', cleanup);
 
   ws.on('message', async (data) => {
     try {
       const parsedData = JSON.parse(data.toString());
-      const messageData = {
-        id: parsedData.id || '', // or generate a unique id
-        user: parsedData.user,
-        userId: parsedData.userId,
+      const message = {
         text: parsedData.text,
-        timestamp: '', // or use current date
+        userId: parsedData.userId,
+        user: parsedData.user,
+        timestamp: new Date(),
       };
 
-      logger.info(`Received: ${JSON.stringify(messageData)}`);
-
-      const savedMessage = await chatService.saveMessage(messageData);
-      logger.info('Saved message:', savedMessage);
-
-      clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(savedMessage));
-        }
+      const savedMessage = await chatService.saveMessage(message);
+      manager.broadcast({
+        ...savedMessage,
+        timestamp: savedMessage.timestamp.getTime(),
       });
     } catch (error) {
-      logger.error('Message processing failed:', error);
+      logger.error('Message handling error:', error);
     }
-  });
-
-  ws.on('close', () => {
-    clients.delete(ws);
-    logger.info('Client disconnected');
   });
 }
