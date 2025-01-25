@@ -7,9 +7,9 @@ export type MessageCreateInput = z.infer<typeof MessageValidator>;
 export type ChatMessage = {
   id: string;
   text: string;
-  userId: string;
-  user: string;
-  timestamp: Date;
+  userId?: string;
+  user?: string;
+  timestamp?: Date;
 };
 
 export type PaginatedMessages = {

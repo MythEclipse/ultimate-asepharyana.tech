@@ -26,7 +26,7 @@ export class ChatService {
         data: {
           text: data.text,
           userId: data.userId,
-          user: data.user,
+          user: data.user, // user as a string field
         },
       });
 
@@ -60,7 +60,7 @@ export class ChatService {
             id: true,
             text: true,
             userId: true,
-            user: true,
+            user: true, // user as a string field
             timestamp: true,
           },
         }),
