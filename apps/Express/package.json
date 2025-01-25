@@ -32,8 +32,8 @@
   "author": "Asepharyana",
   "license": "ISC",
   "devDependencies": {
-    "@asepharyana/config-typescript": "workspace:*",
     "@asepharyana/config-eslint": "workspace:*",
+    "@asepharyana/config-typescript": "workspace:*",
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
     "@babel/preset-env": "7.x",
@@ -77,6 +77,7 @@
     "moment": "2.x",
     "pino": "9.x",
     "pino-pretty": "13.x",
+    "socket.io": "^4.8.1",
     "sqlite3": "5.x",
     "supertest": "7.x",
     "uuid": "11.x",

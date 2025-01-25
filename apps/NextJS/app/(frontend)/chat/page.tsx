@@ -1,201 +1,181 @@
 'use client';
 
-import useSWR from 'swr';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { io, Socket } from 'socket.io-client';
 import Card from '@/components/card/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
-import { useSession } from 'next-auth/react';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 type Message = {
   id: string;
   text: string;
   userId: string;
   timestamp: number;
+  isSent: boolean;
 };
 
-const generateId = () =>
-  Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 
 export default function ChatClient() {
   const { data: session } = useSession();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [userId, setUserId] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const isMounted = useRef(false);
-
-  // SWR untuk manajemen pesan
-  const { data: messages = [], mutate } = useSWR<Message[]>(
-    'chat-messages',
-    null,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
-  // Inisialisasi user ID
+  // Generate atau ambil user ID
   useEffect(() => {
     const storedUserId = localStorage.getItem('chatUserId');
-    const newUserId = session?.user?.id || storedUserId || generateId();
-
-    if (!storedUserId && !session?.user?.id) {
+    if (session?.user?.id) {
+      setUserId(session.user.id);
+    } else if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      const newUserId = generateId();
       localStorage.setItem('chatUserId', newUserId);
+      setUserId(newUserId);
     }
-    setUserId(newUserId);
   }, [session]);
 
-  // WebSocket setup dengan SWR integration
+  // Setup Socket.IO connection
   useEffect(() => {
-    isMounted.current = true;
-
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    wsRef.current = new WebSocket(`${protocol}//ws.asepharyana.cloud`);
+    const socket = io(`${protocol}//ws.asepharyana.cloud`, {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 3000,
+      reconnectionDelayMax: 10000,
+      autoConnect: true,
+    });
 
-    wsRef.current.onopen = () => {
-      if (isMounted.current) setIsConnected(true);
+    socketRef.current = socket;
 
-      // Fetch initial messages
-      wsRef.current?.send(
-        JSON.stringify({
-          type: 'GET_HISTORY',
-          userId,
-        })
-      );
-    };
+    // Event listeners
+    socket.on('connect', () => {
+      setIsConnected(true);
+      console.log('Socket.IO Connected');
+    });
 
-    wsRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+      console.log('Socket.IO Disconnected');
+    });
 
-        if (data.type === 'HISTORY') {
-          // Update cache dengan histori pesan
-          mutate(data.messages, false);
-        } else if (data.type === 'NEW_MESSAGE') {
-          // Optimistic update dengan SWR
-          mutate((prev = []) => [...prev, data.message], false);
-        }
-      } catch (error) {
-        console.error('Message parsing error:', error);
-      }
-    };
+    socket.on('chat_message', (message: Message) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...message,
+          isSent: message.userId === userId,
+        },
+      ]);
+    });
 
+    socket.on('connect_error', (error) => {
+      console.error('Socket.IO Connection Error:', error);
+    });
+
+    // Cleanup on unmount
     return () => {
-      isMounted.current = false;
-      wsRef.current?.close();
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, [userId, mutate]);
+  }, [userId]);
 
-  // Pengiriman pesan dengan optimistic update
-  const sendMessage = useCallback(async () => {
-    if (!inputValue.trim() || !wsRef.current) return;
+  // Handle pengiriman pesan
+  const handleSendMessage = useCallback(() => {
+    if (!inputValue.trim() || !socketRef.current) return;
 
     const newMessage: Message = {
       id: generateId(),
       text: inputValue,
       userId,
       timestamp: Date.now(),
+      isSent: true,
     };
 
     // Optimistic update
-    mutate((prev = []) => [...prev, newMessage], false);
+    setMessages((prev) => [...prev, newMessage]);
 
-    try {
-      await new Promise((resolve, reject) => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: 'NEW_MESSAGE',
-              message: newMessage,
-            })
-          );
-          resolve(true);
-        } else {
-          reject('Connection not ready');
-        }
-      });
+    // Kirim pesan ke server
+    socketRef.current.emit('chat_message', newMessage, (ack: { success: boolean }) => {
+      if (!ack.success) {
+        console.error('Failed to send message');
+        // Rollback jika gagal
+        setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+      }
+    });
 
-      setInputValue('');
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      // Rollback jika gagal
-      mutate(
-        (prev = []) => prev.filter((msg) => msg.id !== newMessage.id),
-        false
-      );
-    }
-  }, [inputValue, userId, mutate]);
+    setInputValue('');
+  }, [inputValue, userId]);
 
+  // Handle keyboard events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
   return (
-    <div className='container mx-auto py-8 px-4 max-w-2xl'>
-      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
+    <div className="container mx-auto py-8 px-4 max-w-2xl">
+      <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center">
         Chat Room
       </h1>
 
       <Card>
-        <div className='p-4 border-b'>
-          <div className='flex items-center justify-between'>
-            <span className='font-medium'>Status:</span>
-            <span
-              className={`badge ${isConnected ? 'badge-success' : 'badge-error'}`}
-            >
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-          <div className='text-sm opacity-75 mt-1'>
-            User ID: {userId.slice(0, 8)}
-          </div>
+        <div className="flex items-center justify-between text-sm p-4 border-b">
+          <span>Status:</span>
+          <span className={isConnected ? 'text-green-500' : 'text-red-500'}>
+            {isConnected ? `Connected as ${userId}` : 'Disconnected'}
+          </span>
         </div>
 
-        <div className='h-96 overflow-y-auto p-4 space-y-3'>
+        <div className="h-96 overflow-y-auto p-4 space-y-3">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`chat ${message.userId === userId ? 'chat-end' : 'chat-start'}`}
+              className={`flex flex-col ${
+                message.isSent ? 'items-end' : 'items-start'
+              }`}
             >
-              <div className='chat-header'>
-                {message.userId === userId
-                  ? 'You'
-                  : `User ${message.userId.slice(0, 6)}`}
-                <time className='text-xs opacity-50 ml-2'>
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </time>
-              </div>
               <div
-                className={`chat-bubble ${
-                  message.userId === userId
-                    ? 'chat-bubble-primary'
-                    : 'chat-bubble-secondary'
+                className={`p-3 rounded-lg max-w-[85%] ${
+                  message.isSent
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700'
                 }`}
               >
-                {message.text}
+                <div className="text-xs opacity-75 mb-1">
+                  {message.isSent ? 'You' : `User ${message.userId.slice(0, 6)}`}
+                </div>
+                <div className="whitespace-pre-wrap break-words">
+                  {message.text}
+                </div>
+                <div className="text-xs mt-1 opacity-50">
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        <div className='p-4 border-t'>
-          <div className='relative'>
+        <div className="p-4 border-t">
+          <div className="relative">
             <Textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder='Type a message...'
-              className='pr-20 resize-none'
+              placeholder="Type a message..."
+              className="pr-20 resize-none"
               rows={3}
+              disabled={!isConnected}
             />
             <button
-              onClick={sendMessage}
-              className='absolute right-3 bottom-3 btn btn-primary btn-sm'
+              onClick={handleSendMessage}
               disabled={!isConnected}
+              className="absolute right-3 bottom-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Send
             </button>

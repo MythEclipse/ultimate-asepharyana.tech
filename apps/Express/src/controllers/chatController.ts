@@ -1,4 +1,4 @@
-import WebSocket from 'ws';
+import { Socket } from 'socket.io';
 import { ChatMessage as PrismaChatMessage } from '@prisma/client';
 
 interface ChatMessage extends PrismaChatMessage {
@@ -8,11 +8,11 @@ interface ChatMessage extends PrismaChatMessage {
 import { ChatService } from '@/services/chatService';
 import logger from '@/utils/logger';
 
-const clients: Set<WebSocket> = new Set();
+const clients: Set<Socket> = new Set();
 const chatService = new ChatService();
 
-export default function handleConnection(ws: WebSocket) {
-  clients.add(ws);
+export default function handleConnection(socket: Socket) {
+  clients.add(socket);
   logger.info('New client connected');
 
   // Load recent messages and send to the new client
@@ -20,21 +20,20 @@ export default function handleConnection(ws: WebSocket) {
     .loadMessages()
     .then((messages) => {
       messages.reverse().forEach((message) => {
-        ws.send(JSON.stringify(message));
+        socket.emit('message', message);
       });
     })
     .catch((error) => {
       logger.error('Failed to load messages', error);
     });
 
-  ws.on('message', async (data) => {
-    const parsedData = JSON.parse(data.toString());
+  socket.on('message', async (data) => {
     const message: ChatMessage = {
       id: '', // Prisma will auto-generate the ID
-      user: parsedData.user, // Use the user field from the parsed data
-      text: parsedData.text,
+      user: data.user, // Use the user field from the parsed data
+      text: data.text,
       timestamp: new Date(),
-      userId: parsedData.userId, // Include userId
+      userId: data.userId, // Include userId
     };
 
     logger.info(`Message received: ${JSON.stringify(message)}`);
@@ -49,14 +48,12 @@ export default function handleConnection(ws: WebSocket) {
 
     // Broadcast message to all clients
     clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(message));
-      }
+      client.emit('message', message);
     });
   });
 
-  ws.on('close', () => {
-    clients.delete(ws);
+  socket.on('disconnect', () => {
+    clients.delete(socket);
     logger.info('Client disconnected');
   });
 }
