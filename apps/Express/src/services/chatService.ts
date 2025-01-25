@@ -23,7 +23,8 @@ export class ChatService {
                 user TEXT NOT NULL,
                 text TEXT NOT NULL,
                 email TEXT,
-                image TEXT,
+                imageProfile TEXT,
+                imageMessage TEXT,
                 role TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )`);
