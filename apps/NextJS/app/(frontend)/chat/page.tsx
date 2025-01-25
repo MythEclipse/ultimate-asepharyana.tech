@@ -34,8 +34,8 @@ export default function ChatClient() {
   const wsRef = useRef<ReconnectingWebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const messageIds = useRef<Set<string>>(new Set()); // Simpan ID pesan yang sudah diterima
 
-  // WebSocket Management
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new ReconnectingWebSocket(`${protocol}//ws.asepharyana.cloud`);
@@ -46,7 +46,7 @@ export default function ChatClient() {
       setIsConnected(true);
       setError(null);
 
-      // Request only new messages from the server
+      // Sinkronisasi pesan hanya jika diperlukan
       if (messages.length > 0) {
         const lastTimestamp = messages[messages.length - 1].timestamp;
         ws.send(JSON.stringify({ type: 'sync', since: lastTimestamp }));
@@ -68,10 +68,11 @@ export default function ChatClient() {
         timestamp: parsedData.timestamp || Date.now(),
       };
 
-      setMessages((prev) => {
-        const exists = prev.some((msg) => msg.id === message.id);
-        return exists ? prev : [...prev, message];
-      });
+      // Cek apakah pesan sudah ada berdasarkan ID
+      if (!messageIds.current.has(message.id)) {
+        messageIds.current.add(message.id);
+        setMessages((prev) => [...prev, message]);
+      }
     };
 
     const handleError = () => setError('Connection error. Reconnecting...');
@@ -91,7 +92,6 @@ export default function ChatClient() {
     };
   }, [messages]);
 
-  // Auto-scroll and textarea resize
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -104,7 +104,6 @@ export default function ChatClient() {
     }
   }, [messages, inputValue, scrollToBottom]);
 
-  // Handle file change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -112,7 +111,6 @@ export default function ChatClient() {
     }
   };
 
-  // Upload image and get URL
   const uploadImage = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -133,7 +131,6 @@ export default function ChatClient() {
     }
   };
 
-  // Message sending handler
   const handleSend = useCallback(async () => {
     if ((!inputValue.trim() && !imageFile) || isSending) return;
 
@@ -165,7 +162,6 @@ export default function ChatClient() {
     }
   }, [inputValue, session, isSending, imageFile]);
 
-  // Keyboard handling
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -195,7 +191,7 @@ export default function ChatClient() {
         <div className='h-96 overflow-y-auto p-4 space-y-3'>
           {messages.map((message) => (
             <MessageBubble
-              key={`${message.id}-${message.timestamp}`}
+              key={message.id}
               message={message}
               isOwn={message.email === session?.user?.email}
             />
@@ -203,38 +199,50 @@ export default function ChatClient() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className='p-4 border-t border-blue-500 dark:border-blue-500'>
-          <div className='relative'>
+        <div className="p-4 border-t border-blue-500 dark:border-blue-500">
+          <div className="flex items-start gap-2">
             <Textarea
               ref={textAreaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder='Type a message...'
-              className='pr-20 resize-none'
+              placeholder="Type a message..."
+              className="flex-1 resize-none min-h-[40px]"
               rows={1}
               disabled={!isConnected}
             />
-            <input
-              type='file'
-              onChange={handleFileChange}
-              className='mt-2'
-              disabled={!isConnected || isUploading}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!isConnected || isSending || isUploading}
-              className='absolute gap-1.5'
-            >
-              {isSending || isUploading ? (
-                <Loader2 className='w-4 h-4 animate-spin' />
-              ) : (
-                'Send'
-              )}
-            </Button>
+            <div className="flex items-center gap-2 h-full">
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-input"
+                disabled={!isConnected || isUploading}
+              />
+              <label
+                htmlFor="file-input"
+                className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${isUploading
+                    ? 'text-gray-400 border-gray-400'
+                    : 'text-blue-500 border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                  } cursor-pointer transition-colors`}
+              >
+                {isUploading ? 'Uploading...' : '📎'}
+              </label>
+              <Button
+                onClick={handleSend}
+                disabled={!isConnected || isSending || isUploading}
+                className="h-10 gap-1.5"
+              >
+                {isSending || isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Send'
+                )}
+              </Button>
+            </div>
           </div>
           {error && (
-            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
+            <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
           )}
         </div>
       </Card>
