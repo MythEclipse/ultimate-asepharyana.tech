@@ -102,13 +102,17 @@ export default function ChatClient() {
     setMessages((prev) => [...prev, newMessage]);
 
     // Send message to server
-    socketRef.current.emit('chat_message', newMessage, (ack: { success: boolean }) => {
-      if (!ack.success) {
-        console.error('Failed to send message');
-        // Rollback if failed
-        setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+    socketRef.current.emit(
+      'chat_message',
+      newMessage,
+      (ack: { success: boolean }) => {
+        if (!ack.success) {
+          console.error('Failed to send message');
+          // Rollback if failed
+          setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+        }
       }
-    });
+    );
 
     setInputValue('');
   }, [inputValue, userId, session]);
