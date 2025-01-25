@@ -1,5 +1,5 @@
 export const config = {
-  server: {
-    port: 3000,
-  },
+    database: {
+        connectionString: 'sqlite:./database.sqlite',
+    },
 };

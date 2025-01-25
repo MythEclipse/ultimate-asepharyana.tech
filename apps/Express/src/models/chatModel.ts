@@ -1,7 +1,8 @@
 export interface ChatMessage {
-  id: string;
-  userId?: string;
+  user: string;
   text: string;
-  timestamp?: Date;
-  user?: string;
+  email?: string;
+  imageProfile?: string;
+  imageMessage?: string;
+  role?: string;
 }

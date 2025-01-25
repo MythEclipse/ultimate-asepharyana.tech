@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from '@/utils/logger';
+import logger from './logger';
 
 // Middleware function to log IP and request details
 export const requestLogger = (
