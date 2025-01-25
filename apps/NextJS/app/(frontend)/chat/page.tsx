@@ -14,7 +14,8 @@ type Message = {
   isSent: boolean;
 };
 
-const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+const generateId = () =>
+  Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 
 export default function ChatClient() {
   const { data: session } = useSession();
@@ -99,13 +100,17 @@ export default function ChatClient() {
     setMessages((prev) => [...prev, newMessage]);
 
     // Kirim pesan ke server
-    socketRef.current.emit('chat_message', newMessage, (ack: { success: boolean }) => {
-      if (!ack.success) {
-        console.error('Failed to send message');
-        // Rollback jika gagal
-        setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+    socketRef.current.emit(
+      'chat_message',
+      newMessage,
+      (ack: { success: boolean }) => {
+        if (!ack.success) {
+          console.error('Failed to send message');
+          // Rollback jika gagal
+          setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+        }
       }
-    });
+    );
 
     setInputValue('');
   }, [inputValue, userId]);
@@ -119,20 +124,20 @@ export default function ChatClient() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center">
+    <div className='container mx-auto py-8 px-4 max-w-2xl'>
+      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
         Chat Room
       </h1>
 
       <Card>
-        <div className="flex items-center justify-between text-sm p-4 border-b">
+        <div className='flex items-center justify-between text-sm p-4 border-b'>
           <span>Status:</span>
           <span className={isConnected ? 'text-green-500' : 'text-red-500'}>
             {isConnected ? `Connected as ${userId}` : 'Disconnected'}
           </span>
         </div>
 
-        <div className="h-96 overflow-y-auto p-4 space-y-3">
+        <div className='h-96 overflow-y-auto p-4 space-y-3'>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -147,13 +152,15 @@ export default function ChatClient() {
                     : 'bg-gray-100 dark:bg-gray-700'
                 }`}
               >
-                <div className="text-xs opacity-75 mb-1">
-                  {message.isSent ? 'You' : `User ${message.userId.slice(0, 6)}`}
+                <div className='text-xs opacity-75 mb-1'>
+                  {message.isSent
+                    ? 'You'
+                    : `User ${message.userId.slice(0, 6)}`}
                 </div>
-                <div className="whitespace-pre-wrap break-words">
+                <div className='whitespace-pre-wrap break-words'>
                   {message.text}
                 </div>
-                <div className="text-xs mt-1 opacity-50">
+                <div className='text-xs mt-1 opacity-50'>
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </div>
               </div>
@@ -161,21 +168,21 @@ export default function ChatClient() {
           ))}
         </div>
 
-        <div className="p-4 border-t">
-          <div className="relative">
+        <div className='p-4 border-t'>
+          <div className='relative'>
             <Textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="pr-20 resize-none"
+              placeholder='Type a message...'
+              className='pr-20 resize-none'
               rows={3}
               disabled={!isConnected}
             />
             <button
               onClick={handleSendMessage}
               disabled={!isConnected}
-              className="absolute right-3 bottom-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className='absolute right-3 bottom-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
             >
               Send
             </button>
