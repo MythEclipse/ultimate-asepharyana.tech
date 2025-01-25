@@ -1,47 +1,28 @@
-import { PrismaClient, ChatMessage } from '@asepharyana/database';
+import { PrismaClient, ChatMessage } from '@prisma/client';
 import logger from '@/utils/logger';
 
+const prisma = new PrismaClient();
+
 export class ChatService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
-
-  async saveMessage(message: ChatMessage): Promise<void> {
+  async saveMessage(
+    message: Omit<ChatMessage, 'id' | 'timestamp'>
+  ): Promise<ChatMessage> {
     try {
-      await this.prisma.chatMessage.create({
-        data: {
-          text: message.text,
-          userId: message.userId,
-          user: message.user, // Include user
-        },
-      });
+      return await prisma.chatMessage.create({ data: message });
     } catch (error) {
-      logger.error('Failed to save message to database', error);
+      logger.error('Save message error:', error);
       throw error;
     }
   }
 
-  async loadMessages(limit: number = 50): Promise<ChatMessage[]> {
-    try {
-      return await this.prisma.chatMessage.findMany({
-        orderBy: { timestamp: 'desc' },
-        take: limit,
-      });
-    } catch (error) {
-      logger.error('Failed to load messages from database', error);
-      throw error;
-    }
+  async loadMessages(limit = 50): Promise<ChatMessage[]> {
+    return prisma.chatMessage.findMany({
+      orderBy: { timestamp: 'asc' },
+      take: limit,
+    });
   }
 
-  async closeDatabase(): Promise<void> {
-    try {
-      await this.prisma.$disconnect();
-      logger.info('Prisma database connection closed');
-    } catch (error) {
-      logger.error('Failed to close Prisma database connection', error);
-      throw error;
-    }
+  async close(): Promise<void> {
+    await prisma.$disconnect();
   }
 }
