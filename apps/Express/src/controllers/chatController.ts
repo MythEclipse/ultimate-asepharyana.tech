@@ -1,10 +1,9 @@
 // controllers/chatController.ts
 import { Socket } from 'socket.io';
 import { ChatService } from '@/services/chatService';
-import { MessageCreateInput, ChatMessage } from '@/type/chat'; // Pastikan path benar
+import { MessageCreateInput, ChatMessage } from '@/type/chat';
 import logger from '@/utils/logger';
 
-// Type untuk response callback
 interface MessageResponse {
   status: 'success' | 'error';
   message?: ChatMessage;
@@ -14,88 +13,79 @@ interface MessageResponse {
 
 export default function handleConnection(socket: Socket) {
   const chatService = new ChatService();
+  logger.info(`Client connected: ${socket.id}`);
 
-  const handleError = (error: unknown, defaultMessage: string) => {
-    const message = error instanceof Error ? error.message : defaultMessage;
-    logger.error(message);
-    return message;
+  const handleDatabaseError = (error: unknown, context: string) => {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Database error in ${context}:`, {
+      error: errorMessage,
+      socketId: socket.id,
+      stack: new Error().stack
+    });
+    return errorMessage;
   };
 
-  // Event handler untuk pesan baru
-  const handleMessage = async (
-    data: MessageCreateInput,
-    callback: (res: MessageResponse) => void
-  ) => {
+  const validateMessageInput = (data: MessageCreateInput) => {
+    const trimmedData = {
+      text: data.text?.trim() || '',
+      user: data.user?.trim() || '',
+      userId: data.userId?.trim() || ''
+    };
+
+    if (!trimmedData.userId) throw new Error('User ID is required');
+    if (!trimmedData.text) throw new Error('Message text is required');
+    if (!trimmedData.user) throw new Error('Username is required');
+
+    return trimmedData;
+  };
+
+  const handleMessage = async (data: MessageCreateInput, callback: (res: MessageResponse) => void) => {
     try {
-      const validatedData = {
-        text: data.text.trim(),
-        user: data.user.trim(),
-        userId: data.userId.trim(),
-      };
-
+      const validatedData = validateMessageInput(data);
       const message = await chatService.createMessage(validatedData);
-
-      // Broadcast ke semua client kecuali pengirim
+      
       socket.broadcast.emit('new_message', message);
-
-      // Kirim ACK ke client pengirim
+      
       callback({
         status: 'success',
-        message: {
-          id: message.id,
-          text: message.text,
-          user: message.user,
-          timestamp: message.timestamp,
-          userId: '',
-        },
+        message
       });
     } catch (error) {
-      const errorMessage = handleError(error, 'Failed to send message');
+      const errorMessage = handleDatabaseError(error, 'message handler');
       callback({
         status: 'error',
-        error: errorMessage,
+        error: errorMessage
       });
     }
   };
 
-  // Event handler untuk request history
-  const handleHistoryRequest = async (
-    page: number,
-    callback: (res: MessageResponse) => void
-  ) => {
+  const handleHistoryRequest = async (page: number, callback: (res: MessageResponse) => void) => {
     try {
       const history = await chatService.getMessagesPaginated(page);
       callback({
         status: 'success',
-        data: history,
+        data: history
       });
     } catch (error) {
-      const errorMessage = handleError(error, 'Failed to load history');
+      const errorMessage = handleDatabaseError(error, 'history request');
       callback({
         status: 'error',
         error: errorMessage,
-        data: [],
+        data: []
       });
     }
   };
 
-  // Event handler untuk disconnect
   const handleDisconnect = async () => {
     try {
       await chatService.close();
-      logger.info(`Client ${socket.id} disconnected`);
+      logger.info(`Client disconnected: ${socket.id}`);
     } catch (error) {
-      handleError(error, 'Failed to clean up connection');
+      handleDatabaseError(error, 'disconnect handler');
     }
   };
 
-  // Daftarkan event handlers
   socket.on('message', handleMessage);
-  socket.on('request_history', ({ page }, callback) =>
-    handleHistoryRequest(page, callback)
-  );
+  socket.on('request_history', ({ page }, callback) => handleHistoryRequest(page, callback));
   socket.on('disconnect', handleDisconnect);
-
-  // Inisialisasi koneksi
-  logger.info(`Client ${socket.id} connected`);
 }
