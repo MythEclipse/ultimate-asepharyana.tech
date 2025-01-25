@@ -28,7 +28,7 @@ class ConnectionManager {
 
   broadcast(message: object) {
     const data = JSON.stringify(message);
-    clients.forEach(client => {
+    clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(data);
       }
