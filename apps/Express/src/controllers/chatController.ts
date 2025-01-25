@@ -11,13 +11,16 @@ export default function handleConnection(ws: WebSocket) {
   logger.info('New client connected');
 
   // Load recent messages and send to the new client
-  chatService.loadMessages().then((messages) => {
-    messages.reverse().forEach((message) => {
-      ws.send(JSON.stringify(message));
+  chatService
+    .loadMessages()
+    .then((messages) => {
+      messages.reverse().forEach((message) => {
+        ws.send(JSON.stringify(message));
+      });
+    })
+    .catch((error) => {
+      logger.error('Failed to load messages', error);
     });
-  }).catch((error) => {
-    logger.error('Failed to load messages', error);
-  });
 
   ws.on('message', async (data) => {
     let parsedData;

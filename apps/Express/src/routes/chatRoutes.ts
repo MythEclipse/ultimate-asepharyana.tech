@@ -1,8 +1,8 @@
 import { Application } from 'express';
 
 export function setChatRoutes(app: Application) {
-    app.get('/', (_, res) => {
-        res.send(`
+  app.get('/', (_, res) => {
+    res.send(`
             <html>
             <body>
                 <script>
@@ -37,5 +37,5 @@ export function setChatRoutes(app: Application) {
             </body>
             </html>
         `);
-    });
+  });
 }
