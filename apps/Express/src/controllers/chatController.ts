@@ -16,11 +16,12 @@ export default function handleConnection(socket: Socket) {
   logger.info(`Client connected: ${socket.id}`);
 
   const handleDatabaseError = (error: unknown, context: string) => {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Database error in ${context}:`, {
       error: errorMessage,
       socketId: socket.id,
-      stack: new Error().stack
+      stack: new Error().stack,
     });
     return errorMessage;
   };
@@ -29,7 +30,7 @@ export default function handleConnection(socket: Socket) {
     const trimmedData = {
       text: data.text?.trim() || '',
       user: data.user?.trim() || '',
-      userId: data.userId?.trim() || ''
+      userId: data.userId?.trim() || '',
     };
 
     if (!trimmedData.userId) throw new Error('User ID is required');
@@ -39,39 +40,45 @@ export default function handleConnection(socket: Socket) {
     return trimmedData;
   };
 
-  const handleMessage = async (data: MessageCreateInput, callback: (res: MessageResponse) => void) => {
+  const handleMessage = async (
+    data: MessageCreateInput,
+    callback: (res: MessageResponse) => void
+  ) => {
     try {
       const validatedData = validateMessageInput(data);
       const message = await chatService.createMessage(validatedData);
-      
+
       socket.broadcast.emit('new_message', message);
-      
+
       callback({
         status: 'success',
-        message
+        message,
       });
     } catch (error) {
       const errorMessage = handleDatabaseError(error, 'message handler');
       callback({
         status: 'error',
-        error: errorMessage
+        error: errorMessage,
       });
     }
   };
 
-  const handleHistoryRequest = async (page: number, callback: (res: MessageResponse) => void) => {
+  const handleHistoryRequest = async (
+    page: number,
+    callback: (res: MessageResponse) => void
+  ) => {
     try {
       const history = await chatService.getMessagesPaginated(page);
       callback({
         status: 'success',
-        data: history
+        data: history,
       });
     } catch (error) {
       const errorMessage = handleDatabaseError(error, 'history request');
       callback({
         status: 'error',
         error: errorMessage,
-        data: []
+        data: [],
       });
     }
   };
@@ -86,6 +93,8 @@ export default function handleConnection(socket: Socket) {
   };
 
   socket.on('message', handleMessage);
-  socket.on('request_history', ({ page }, callback) => handleHistoryRequest(page, callback));
+  socket.on('request_history', ({ page }, callback) =>
+    handleHistoryRequest(page, callback)
+  );
   socket.on('disconnect', handleDisconnect);
 }

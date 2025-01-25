@@ -1,6 +1,10 @@
 // services/chatService.ts
 import { PrismaClient } from '@prisma/client';
-import { MessageCreateInput, ChatMessage, PaginatedMessages } from '@/type/chat';
+import {
+  MessageCreateInput,
+  ChatMessage,
+  PaginatedMessages,
+} from '@/type/chat';
 import logger from '@/utils/logger';
 
 const MAX_MESSAGES_PER_PAGE = 50;
@@ -10,20 +14,20 @@ export class ChatService {
 
   constructor() {
     this.prisma = new PrismaClient({
-      log: ['query', 'info', 'warn', 'error'] // Aktifkan logging query
+      log: ['query', 'info', 'warn', 'error'], // Aktifkan logging query
     });
   }
 
   async createMessage(data: MessageCreateInput): Promise<ChatMessage> {
     try {
       logger.info('Attempting to save message:', { data });
-      
+
       const message = await this.prisma.chatMessage.create({
         data: {
           text: data.text,
           userId: data.userId,
-          user: data.user
-        }
+          user: data.user,
+        },
       });
 
       logger.info('Message successfully saved:', { messageId: message.id });
@@ -32,13 +36,13 @@ export class ChatService {
         text: message.text,
         userId: message.userId,
         user: message.user,
-        timestamp: message.timestamp
+        timestamp: message.timestamp,
       };
     } catch (error) {
       logger.error('Failed to create message:', {
         error,
         inputData: data,
-        stack: new Error().stack
+        stack: new Error().stack,
       });
       throw new Error('Failed to save message to database');
     }
@@ -57,22 +61,22 @@ export class ChatService {
             text: true,
             userId: true,
             user: true,
-            timestamp: true
-          }
-        })
+            timestamp: true,
+          },
+        }),
       ]);
 
       return {
         messages,
         currentPage: page,
         totalPages: Math.ceil(totalMessages / MAX_MESSAGES_PER_PAGE),
-        totalMessages
+        totalMessages,
       };
     } catch (error) {
       logger.error('Failed to get messages:', {
         error,
         page,
-        stack: new Error().stack
+        stack: new Error().stack,
       });
       throw new Error('Failed to load chat history');
     }
