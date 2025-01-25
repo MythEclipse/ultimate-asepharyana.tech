@@ -51,7 +51,7 @@ yarn-error.log*
 /.env
 !packages/database/.env
 !apps/**/.env
-
+!apps\**\src\**\chat.ts
 # vercel
 .vercel
 /.vercel
