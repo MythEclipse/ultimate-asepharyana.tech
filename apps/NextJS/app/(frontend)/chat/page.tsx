@@ -26,10 +26,14 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ChatClient() {
   const { data: session } = useSession();
-  const { data: messages = [], mutate } = useSWR<ChatMessage[]>('/api/messages', fetcher, {
-    refreshInterval: 30000,
-    revalidateOnFocus: false,
-  });
+  const { data: messages = [], mutate } = useSWR<ChatMessage[]>(
+    '/api/messages',
+    fetcher,
+    {
+      refreshInterval: 30000,
+      revalidateOnFocus: false,
+    }
+  );
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -156,16 +160,18 @@ export default function ChatClient() {
       mutate((prev = []) => [...prev, optimisticMessage], false);
 
       // Send via WebSocket
-      wsRef.current?.send(JSON.stringify({
-        ...optimisticMessage,
-        id: undefined,
-      }));
+      wsRef.current?.send(
+        JSON.stringify({
+          ...optimisticMessage,
+          id: undefined,
+        })
+      );
 
       setInputValue('');
     } catch (err) {
       setError('Failed to send message');
       const tempId = Date.now().toString();
-      mutate((prev = []) => prev.filter(msg => msg.id !== tempId), false);
+      mutate((prev = []) => prev.filter((msg) => msg.id !== tempId), false);
     } finally {
       setIsSending(false);
     }
@@ -209,28 +215,28 @@ export default function ChatClient() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 border-t border-blue-500 dark:border-blue-500">
-          <div className="flex items-start gap-2">
+        <div className='p-4 border-t border-blue-500 dark:border-blue-500'>
+          <div className='flex items-start gap-2'>
             <Textarea
               ref={textAreaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="flex-1 resize-none min-h-[40px]"
+              placeholder='Type a message...'
+              className='flex-1 resize-none min-h-[40px]'
               rows={1}
               disabled={!isConnected}
             />
-            <div className="flex items-center gap-2 h-full">
+            <div className='flex items-center gap-2 h-full'>
               <input
-                type="file"
+                type='file'
                 onChange={handleFileChange}
-                className="hidden"
-                id="file-input"
+                className='hidden'
+                id='file-input'
                 disabled={!isConnected || isUploading}
               />
               <label
-                htmlFor="file-input"
+                htmlFor='file-input'
                 className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${
                   isUploading
                     ? 'text-gray-400 border-gray-400'
@@ -242,10 +248,10 @@ export default function ChatClient() {
               <Button
                 onClick={handleSend}
                 disabled={!isConnected || isSending || isUploading}
-                className="h-10 gap-1.5"
+                className='h-10 gap-1.5'
               >
                 {isSending || isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className='w-4 h-4 animate-spin' />
                 ) : (
                   'Send'
                 )}
@@ -253,7 +259,7 @@ export default function ChatClient() {
             </div>
           </div>
           {error && (
-            <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
+            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
           )}
         </div>
       </Card>
@@ -280,18 +286,18 @@ function MessageBubble({
           alt={message.user}
           width={32}
           height={32}
-          className="rounded-full object-cover"
+          className='rounded-full object-cover'
         />
         <div
           className={`p-3 rounded-lg ${
             isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium">
+          <div className='flex items-center gap-2 mb-1'>
+            <span className='text-xs font-medium'>
               {isOwn ? 'You' : message.user}
             </span>
-            <span className="text-xs px-2 text-gray-500 dark:text-gray-400">
+            <span className='text-xs px-2 text-gray-500 dark:text-gray-400'>
               {format(message.timestamp, 'HH:mm')}
             </span>
           </div>
@@ -299,10 +305,10 @@ function MessageBubble({
           {message.imageMessage && (
             <Image
               src={message.imageMessage}
-              alt="Attachment"
+              alt='Attachment'
               width={160}
               height={90}
-              className="rounded-lg mt-2"
+              className='rounded-lg mt-2'
             />
           )}
         </div>
