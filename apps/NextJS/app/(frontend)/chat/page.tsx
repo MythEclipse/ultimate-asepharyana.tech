@@ -125,15 +125,15 @@ export default function ChatClient() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center">
+    <div className='container mx-auto py-8 px-4 max-w-2xl'>
+      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
         Chat Room
       </h1>
 
       <Card>
-        <div className="flex items-center justify-between text-sm p-4 border-b">
+        <div className='flex items-center justify-between text-sm p-4 border-b'>
           <span>Status:</span>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <div
               className={`w-2 h-2 rounded-full ${
                 isConnected ? 'bg-green-500' : 'bg-red-500'
@@ -145,7 +145,7 @@ export default function ChatClient() {
           </div>
         </div>
 
-        <div className="h-96 overflow-y-auto p-4 space-y-3">
+        <div className='h-96 overflow-y-auto p-4 space-y-3'>
           {messages.map((message) => {
             const isSent = message.userId === userId;
             return (
@@ -158,7 +158,7 @@ export default function ChatClient() {
                     isSent ? 'flex-row-reverse' : 'flex-row'
                   }`}
                 >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                  <div className='flex-shrink-0 w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center'>
                     {message.user[0].toUpperCase()}
                   </div>
                   <div
@@ -168,13 +168,13 @@ export default function ChatClient() {
                         : 'bg-gray-100 dark:bg-gray-700'
                     }`}
                   >
-                    <div className="text-xs font-medium mb-1">
+                    <div className='text-xs font-medium mb-1'>
                       {isSent ? 'You' : message.user}
                     </div>
-                    <div className="whitespace-pre-wrap break-words">
+                    <div className='whitespace-pre-wrap break-words'>
                       {message.text}
                     </div>
-                    <div className="text-xs mt-1 opacity-70">
+                    <div className='text-xs mt-1 opacity-70'>
                       {format(new Date(message.timestamp), 'HH:mm')}
                     </div>
                   </div>
@@ -185,32 +185,32 @@ export default function ChatClient() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 border-t">
-          <div className="relative">
+        <div className='p-4 border-t'>
+          <div className='relative'>
             <Textarea
               ref={textAreaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="pr-20 resize-none"
+              placeholder='Type a message...'
+              className='pr-20 resize-none'
               rows={1}
               disabled={!isConnected}
             />
             <Button
               onClick={handleSendMessage}
               disabled={!isConnected || isSending}
-              className="absolute right-3 bottom-3 gap-1.5"
+              className='absolute right-3 bottom-3 gap-1.5'
             >
               {isSending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className='w-4 h-4 animate-spin' />
               ) : (
                 'Send'
               )}
             </Button>
           </div>
           {error && (
-            <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
+            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
           )}
         </div>
       </Card>
