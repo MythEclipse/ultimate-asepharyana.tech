@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Set up routes
-setUserRoutes(app);
+// setUserRoutes(app);
 setChatRoutes(app);
 
 // Initialize WebSocket server
