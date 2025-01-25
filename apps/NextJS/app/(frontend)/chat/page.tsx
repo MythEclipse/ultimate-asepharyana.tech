@@ -45,6 +45,12 @@ export default function ChatClient() {
     const handleOpen = () => {
       setIsConnected(true);
       setError(null);
+
+      // Request only new messages from the server
+      if (messages.length > 0) {
+        const lastTimestamp = messages[messages.length - 1].timestamp;
+        ws.send(JSON.stringify({ type: 'sync', since: lastTimestamp }));
+      }
     };
 
     const handleMessage = (event: MessageEvent) => {
@@ -62,7 +68,10 @@ export default function ChatClient() {
         timestamp: parsedData.timestamp || Date.now(),
       };
 
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        const exists = prev.some((msg) => msg.id === message.id);
+        return exists ? prev : [...prev, message];
+      });
     };
 
     const handleError = () => setError('Connection error. Reconnecting...');
@@ -80,7 +89,7 @@ export default function ChatClient() {
       ws.removeEventListener('close', handleClose);
       ws.close();
     };
-  }, []);
+  }, [messages]);
 
   // Auto-scroll and textarea resize
   const scrollToBottom = useCallback(() => {
@@ -171,8 +180,8 @@ export default function ChatClient() {
       </h1>
 
       <Card>
-        <div className='flex items-center justify-between text-sm p-4 border-b'>
-          <span>Status:</span>
+        <div className='flex items-center justify-between text-sm p-4 border-b border-blue-500 dark:border-blue-500'>
+          <span className='text-blue-500'>Status:</span>
           <div className='flex items-center gap-2'>
             <div
               className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
@@ -194,7 +203,7 @@ export default function ChatClient() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className='p-4 border-t'>
+        <div className='p-4 border-t border-blue-500 dark:border-blue-500'>
           <div className='relative'>
             <Textarea
               ref={textAreaRef}
@@ -259,33 +268,20 @@ function MessageBubble({
             <span className='text-xs font-medium'>
               {isOwn ? 'You' : message.user}
             </span>
-            <span className='text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded-full'>
-              {message.role}
+            <span className='text-xs px-2 text-gray-500 dark:text-gray-400'>
+              {format(message.timestamp, 'HH:mm')}
             </span>
           </div>
-
-          {message.text && (
-            <div className='whitespace-pre-wrap break-words'>
-              {message.text}
-            </div>
-          )}
-
+          <p>{message.text}</p>
           {message.imageMessage && (
-            <div className='mt-2'>
-              <Image
-                src={message.imageMessage}
-                alt='Sent content'
-                width={300}
-                height={200}
-                className='rounded-lg max-w-full h-auto object-cover'
-                quality={80}
-              />
-            </div>
+            <Image
+              src={message.imageMessage}
+              alt='Attachment'
+              width={160}
+              height={90}
+              className='rounded-lg mt-2'
+            />
           )}
-
-          <div className='text-xs mt-1 opacity-70'>
-            {format(new Date(message.timestamp), 'HH:mm')}
-          </div>
         </div>
       </div>
     </div>
