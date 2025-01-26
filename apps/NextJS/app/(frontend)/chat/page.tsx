@@ -70,20 +70,17 @@ export default function ChatClient() {
 
     const handleMessage = (raw: string) => {
       try {
-        const message = JSON.parse(raw);
+        const wsMessage = JSON.parse(raw);
 
-        if (message.type === 'history') {
-          handleHistory(message);
-        } else if (message.type === 'error') {
-          // Hanya tampilkan error jika user sesuai dengan session
-          if (message.user === sessionRef.current?.user?.name) {
-            if (message.message === 'Failed to save message') {
-              setError('Message failed to save. Please try again.');
-            } else {
-              setError(message.message || 'An error occurred');
-            }
+        if (wsMessage.type === 'history') {
+          handleHistory(wsMessage);
+        } else if (wsMessage.type === 'error') {
+          if (wsMessage.user === sessionRef.current?.user?.name) {
+            setError(wsMessage.message || 'An error occurred');
           }
-        } else {
+        } else if (wsMessage.type === 'new_message') {
+          const message = wsMessage.message;
+          
           const normalizedMessage: ChatMessage = {
             id: message.id,
             user: message.user,
@@ -144,6 +141,7 @@ export default function ChatClient() {
       setError(null);
 
       if (file) {
+        setStatus((p) => ({ ...p, uploading: true }));
         const formData = new FormData();
         formData.append('file', file);
         const response = await fetch('/api/uploader', {
@@ -153,6 +151,7 @@ export default function ChatClient() {
         const { url } = await response.json();
         newMessage.imageMessage = url;
         setFile(null);
+        setStatus((p) => ({ ...p, uploading: false }));
       }
 
       ws.current?.send(JSON.stringify(newMessage));
@@ -261,8 +260,6 @@ function MessageBubble({
   message: ChatMessage;
   isOwn: boolean;
 }) {
-  if (!message.id || !message.user) return null;
-
   const safeTimestamp = validateTimestamp(message.timestamp);
 
   return (
