@@ -39,6 +39,11 @@ export default function ChatClient() {
 
   const ws = useRef<ReconnectingWebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const sessionRef = useRef(session);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -70,11 +75,13 @@ export default function ChatClient() {
         if (message.type === 'history') {
           handleHistory(message);
         } else if (message.type === 'error') {
-          // Custom error message handling
-          if (message.message === 'Failed to save message') {
-            setError('Message failed to save. Please try again.');
-          } else {
-            setError(message.message || 'An error occurred');
+          // Hanya tampilkan error jika user sesuai dengan session
+          if (message.user === sessionRef.current?.user?.name) {
+            if (message.message === 'Failed to save message') {
+              setError('Message failed to save. Please try again.');
+            } else {
+              setError(message.message || 'An error occurred');
+            }
           }
         } else {
           const normalizedMessage: ChatMessage = {
@@ -105,7 +112,11 @@ export default function ChatClient() {
       ws.current?.send(JSON.stringify({ type: 'requestHistory' }));
     };
     ws.current.onclose = () => setStatus((p) => ({ ...p, connected: false }));
-    ws.current.onerror = () => setError('Connection error');
+    ws.current.onerror = () => {
+      if (sessionRef.current?.user?.name) {
+        setError('Connection error');
+      }
+    };
 
     return () => {
       ws.current?.close();
@@ -147,7 +158,9 @@ export default function ChatClient() {
       ws.current?.send(JSON.stringify(newMessage));
       setInput('');
     } catch (err) {
-      setError('Failed to send message');
+      if (sessionRef.current?.user?.name) {
+        setError('Failed to send message');
+      }
     } finally {
       setStatus((p) => ({ ...p, sending: false }));
     }
