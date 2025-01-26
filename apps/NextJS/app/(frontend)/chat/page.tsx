@@ -10,19 +10,20 @@ import Button from '@/components/button/NormalButton';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
+// Sinkronisasi tipe data ChatMessage
 type ChatMessage = {
-  id: string;
+  id?: number; // ID dari database, opsional
   user: string;
-  text?: string;
-  email: string;
-  imageProfile: string;
-  role: string;
-  timestamp: number;
+  text: string;
+  email?: string;
+  imageProfile?: string;
   imageMessage?: string;
+  role: string;
+  timestamp?: number; // Timestamp yang ditambahkan saat menyimpan pesan
 };
 
-const validateTimestamp = (ts: number) => {
-  return typeof ts === 'number' && !isNaN(ts) && ts > 0 ? ts : Date.now();
+const validateTimestamp = (ts?: number) => {
+  return ts && typeof ts === 'number' && !isNaN(ts) && ts > 0 ? ts : Date.now();
 };
 
 export default function ChatClient() {
@@ -39,64 +40,62 @@ export default function ChatClient() {
 
   const ws = useRef<ReconnectingWebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const buffer = useRef<string>('');
 
-  // WebSocket connection setup
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     ws.current = new ReconnectingWebSocket(`${protocol}//ws.asepharyana.cloud`);
 
-    const processMessage = (raw: string) => {
+    const handleHistory = (data: { messages: ChatMessage[] }) => {
+      if (Array.isArray(data.messages)) {
+        const normalizedMessages = data.messages.map(
+          (message: ChatMessage) => ({
+            id: message.id,
+            user: message.user,
+            text: message.text,
+            email: message.email || '',
+            imageProfile:
+              message.imageProfile || '/profile-circle-svgrepo-com.svg',
+            role: message.role,
+            timestamp: validateTimestamp(message.timestamp),
+            imageMessage: message.imageMessage || '',
+          })
+        );
+        setMessages(normalizedMessages);
+      }
+    };
+
+    const handleMessage = (raw: string) => {
       try {
         const message = JSON.parse(raw);
 
-        const normalizedMessage: ChatMessage = {
-          id: message.id || Date.now().toString(),
-          user: message.user || 'Anonymous',
-          text: message.text,
-          email: message.email || '',
-          imageProfile:
-            message.imageProfile || '/profile-circle-svgrepo-com.svg',
-          role: message.role || 'user',
-          timestamp: validateTimestamp(message.timestamp),
-          imageMessage: message.imageMessage,
-        };
+        if (message.type === 'history') {
+          handleHistory(message);
+        } else if (message.type === 'error') {
+          setError(message.message || 'An error occurred');
+        } else {
+          const normalizedMessage: ChatMessage = {
+            id: message.id,
+            user: message.user,
+            text: message.text,
+            email: message.email || '',
+            imageProfile:
+              message.imageProfile || '/profile-circle-svgrepo-com.svg',
+            role: message.role,
+            timestamp: validateTimestamp(message.timestamp),
+            imageMessage: message.imageMessage,
+          };
 
-        if (!normalizedMessage.id || !normalizedMessage.user) {
-          console.warn('Invalid message structure:', normalizedMessage);
-          return;
+          setMessages((prev) => {
+            const exists = prev.some((m) => m.id === normalizedMessage.id);
+            return exists ? prev : [...prev, normalizedMessage];
+          });
         }
-
-        setMessages((prev) => {
-          const exists = prev.some((m) => m.id === normalizedMessage.id);
-          return exists ? prev : [...prev, normalizedMessage];
-        });
       } catch (err) {
         console.error('Failed to parse message:', raw);
       }
     };
 
-    const handleMessage = (e: MessageEvent) => {
-      try {
-        buffer.current += e.data;
-
-        // Split messages yang tergabung
-        const parts = buffer.current.split(/}(?={)/);
-
-        parts.slice(0, -1).forEach((part) => {
-          const fullMessage = part.startsWith('{') ? part : `{${part}`;
-          processMessage(fullMessage + '}');
-        });
-
-        buffer.current = parts[parts.length - 1];
-      } catch (err) {
-        console.error('Error processing message:', err);
-        buffer.current = '';
-      }
-    };
-
-    ws.current.onmessage = handleMessage;
+    ws.current.onmessage = (e) => handleMessage(e.data);
     ws.current.onopen = () => {
       setStatus((p) => ({ ...p, connected: true }));
       ws.current?.send(JSON.stringify({ type: 'requestHistory' }));
@@ -109,76 +108,44 @@ export default function ChatClient() {
     };
   }, []);
 
-  // Auto-scroll dengan debounce
   useEffect(() => {
-    const timer = setTimeout(() => {
-      endRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-
-    return () => clearTimeout(timer);
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  useEffect(() => {
-    if (textAreaRef.current) {
-      textAreaRef.current.style.height = 'auto';
-      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
-    }
-  }, [input]);
-
-  const uploadImage = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const response = await fetch('/api/uploader', {
-        method: 'POST',
-        body: formData,
-      });
-      return await response.json();
-    } catch (err) {
-      throw new Error('Failed to upload image');
-    }
-  };
 
   const sendMessage = useCallback(async () => {
     if ((!input.trim() && !file) || status.sending) return;
 
-    const tempId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const newMessage: ChatMessage = {
-      id: tempId,
       user: session?.user?.name || 'Anonymous',
       text: input,
       email: session?.user?.email || '',
       imageProfile: session?.user?.image || '/profile-circle-svgrepo-com.svg',
       role: 'user',
       timestamp: Date.now(),
-      imageMessage: '',
     };
 
     try {
       setStatus((p) => ({ ...p, sending: true }));
       setError(null);
 
-      setMessages((prev) => [...prev, newMessage]);
-
       if (file) {
-        setStatus((p) => ({ ...p, uploading: true }));
-        const { url } = await uploadImage(file);
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch('/api/uploader', {
+          method: 'POST',
+          body: formData,
+        });
+        const { url } = await response.json();
         newMessage.imageMessage = url;
         setFile(null);
       }
 
-      ws.current?.send(
-        JSON.stringify({
-          ...newMessage,
-          isOptimistic: true,
-        })
-      );
+      ws.current?.send(JSON.stringify(newMessage));
       setInput('');
     } catch (err) {
       setError('Failed to send message');
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
-      setStatus((p) => ({ ...p, sending: false, uploading: false }));
+      setStatus((p) => ({ ...p, sending: false }));
     }
   }, [input, file, status.sending, session]);
 
@@ -217,7 +184,6 @@ export default function ChatClient() {
         <div className='p-4 border-t border-blue-500'>
           <div className='flex items-start gap-2'>
             <Textarea
-              ref={textAreaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) =>
@@ -253,7 +219,6 @@ export default function ChatClient() {
                 disabled={
                   !status.connected || status.sending || status.uploading
                 }
-                className='h-10 gap-1.5'
               >
                 {status.sending ? (
                   <Loader2 className='w-4 h-4 animate-spin' />
@@ -289,12 +254,13 @@ function MessageBubble({
         className={`flex items-start gap-3 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
       >
         <Image
-          src={message.imageProfile}
+          src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
           alt={message.user}
           width={32}
           height={32}
           className='rounded-full object-cover'
         />
+
         <div
           className={`p-3 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
         >
