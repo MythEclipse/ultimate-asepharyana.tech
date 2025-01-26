@@ -80,7 +80,7 @@ export default function ChatClient() {
           }
         } else if (wsMessage.type === 'new_message') {
           const message = wsMessage.message;
-          
+
           const normalizedMessage: ChatMessage = {
             id: message.id,
             user: message.user,
