@@ -16,21 +16,27 @@ export default function PostPage() {
     data: postsData,
     error: postsError,
     isValidating,
-  } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher);
+  } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
+    refreshInterval: 1000, // Auto-revalidate setiap 1 detik
+    dedupingInterval: 1000, // Memastikan tidak ada deduping yang mencegah pembaruan
+    revalidateOnFocus: true, // Tidak revalidasi saat window/tab focus
+    revalidateOnReconnect: true, // Tetap revalidasi saat koneksi pulih
+  });
+
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [isUploading, setIsUploading] = useState(false); // State untuk melacak status pengunggahan gambar
+  const [isUploading, setIsUploading] = useState(false);
   const [newComments, setNewComments] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
 
-  if (postsError) {
-    console.error('Error fetching posts:', postsError);
-  }
-
+  // Handle perubahan konten post
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
 
+  // Handle submit post baru
   const handlePostSubmit = async () => {
+    if (!content.trim() && !imageUrl) return;
+
     try {
       await fetch(`${BaseUrl}/api/sosmed/posts`, {
         method: 'POST',
@@ -49,10 +55,11 @@ export default function PostPage() {
     }
   };
 
+  // Handle upload gambar
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setIsUploading(true); // Set status uploading ke true saat mulai mengupload
+      setIsUploading(true);
       const formData = new FormData();
       formData.append('file', file);
 
@@ -63,18 +70,16 @@ export default function PostPage() {
         .then((res) => res.json())
         .then((data) => {
           setImageUrl(data.url);
-          setIsUploading(false); // Set status uploading ke false setelah selesai upload
+          setIsUploading(false);
         })
         .catch((err) => {
           console.error('Error uploading file:', err);
-          setIsUploading(false); // Reset status uploading jika terjadi error
+          setIsUploading(false);
         });
     }
   };
 
-  const toggleComments = (postId: string) =>
-    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
-
+  // Handle like post
   const handleLike = async (postId: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/likes`, {
@@ -90,6 +95,23 @@ export default function PostPage() {
     }
   };
 
+  // Handle unlike post
+  const handleUnlike = async (postId: string) => {
+    try {
+      await fetch(`${BaseUrl}/api/sosmed/likes`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId }),
+      });
+      mutate(`${BaseUrl}/api/sosmed/posts`);
+    } catch (error) {
+      console.error('Error unliking post:', error);
+    }
+  };
+
+  // Handle tambah komentar
   const handleAddComment = async (postId: string) => {
     if (!newComments[postId]?.trim()) return;
 
@@ -108,61 +130,39 @@ export default function PostPage() {
     }
   };
 
+  // Handle edit post
   const handleEditPost = async (postId: string, content: string) => {
     try {
-      const response = await fetch(`${BaseUrl}/api/sosmed/posts`, {
+      await fetch(`${BaseUrl}/api/sosmed/posts`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ id: postId, content }),
       });
-
-      if (response.ok) {
-        mutate(`${BaseUrl}/api/sosmed/posts`);
-      } else {
-        console.error('Failed to edit post:', response.statusText);
-      }
+      mutate(`${BaseUrl}/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing post:', error);
     }
   };
 
+  // Handle hapus post
   const handleDeletePost = async (postId: string) => {
     try {
-      const response = await fetch(`${BaseUrl}/api/sosmed/posts`, {
+      await fetch(`${BaseUrl}/api/sosmed/posts`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ id: postId }),
       });
-
-      if (response.ok) {
-        mutate(`${BaseUrl}/api/sosmed/posts`);
-      } else {
-        console.error('Failed to delete post:', response.statusText);
-      }
+      mutate(`${BaseUrl}/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting post:', error);
     }
   };
 
-  const handleUnlike = async (postId: string) => {
-    try {
-      await fetch(`${BaseUrl}/api/sosmed/likes`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ postId }),
-      });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error unliking post:', error);
-    }
-  };
-
+  // Handle edit komentar
   const handleEditComment = async (commentId: string, content: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/comments`, {
@@ -178,6 +178,7 @@ export default function PostPage() {
     }
   };
 
+  // Handle hapus komentar
   const handleDeleteComment = async (commentId: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/comments`, {
@@ -193,11 +194,16 @@ export default function PostPage() {
     }
   };
 
+  // Toggle tampilan komentar
+  const toggleComments = (postId: string) =>
+    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
+
   return (
     <div className='container mx-auto py-8 px-4'>
       <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
         Social Feed
       </h1>
+
       {session ? (
         <div className='mb-8'>
           <Card>
@@ -214,8 +220,12 @@ export default function PostPage() {
             />
             <button
               onClick={handlePostSubmit}
-              disabled={isUploading} // Disable tombol saat sedang mengunggah gambar
-              className={`w-full py-2 ${isUploading ? 'bg-red-600' : 'bg-blue-600'} text-white dark:text-black rounded-lg ${isUploading ? '' : 'hover:bg-blue-700'} transition duration-300`}
+              disabled={isUploading || !content.trim()}
+              className={`w-full py-2 ${
+                isUploading ? 'bg-red-600' : 'bg-blue-600'
+              } text-white dark:text-black rounded-lg ${
+                isUploading ? '' : 'hover:bg-blue-700'
+              } transition duration-300`}
             >
               {isUploading ? 'Uploading...' : 'Post'}
             </button>
@@ -228,13 +238,6 @@ export default function PostPage() {
               You must be logged in to create a post.
             </p>
           </Card>
-        </div>
-      )}
-
-      {/* Loading Indicator */}
-      {isValidating && (
-        <div className='fixed top-[70px] left-1/2 transform -translate-x-1/2 bg-blue-600 p-2 rounded-full shadow-lg z-50'>
-          <div className='w-6 h-6 border-4 border-t-transparent border-white rounded-full animate-spin'></div>
         </div>
       )}
 
