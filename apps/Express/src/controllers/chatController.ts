@@ -71,6 +71,7 @@ export default function handleConnection(ws: WebSocket) {
           JSON.stringify({
             type: 'error',
             message: 'Failed to save message',
+            user: message.user,
           })
         );
       }
