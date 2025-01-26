@@ -51,14 +51,14 @@ export default function handleConnection(ws: WebSocket) {
     // Validate required fields
     if (!parsedData.text) {
       logger.error('Message missing required field: text');
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: 'error',
-            message: 'Message text is required',
-          })
-        );
-      }
+      // if (ws.readyState === WebSocket.OPEN) {
+      //   ws.send(
+      //     JSON.stringify({
+      //       type: 'error',
+      //       message: 'Message text is required',
+      //     })
+      //   );
+      // }
       return;
     }
 
