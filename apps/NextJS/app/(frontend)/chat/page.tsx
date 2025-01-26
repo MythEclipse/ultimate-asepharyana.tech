@@ -10,16 +10,15 @@ import Button from '@/components/button/NormalButton';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
-// Sinkronisasi tipe data ChatMessage
 type ChatMessage = {
-  id?: number; // ID dari database, opsional
+  id?: number;
   user: string;
   text: string;
   email?: string;
   imageProfile?: string;
   imageMessage?: string;
   role: string;
-  timestamp?: number; // Timestamp yang ditambahkan saat menyimpan pesan
+  timestamp?: number;
 };
 
 const validateTimestamp = (ts?: number) => {
@@ -71,7 +70,12 @@ export default function ChatClient() {
         if (message.type === 'history') {
           handleHistory(message);
         } else if (message.type === 'error') {
-          setError(message.message || 'An error occurred');
+          // Custom error message handling
+          if (message.message === 'Failed to save message') {
+            setError('Message failed to save. Please try again.');
+          } else {
+            setError(message.message || 'An error occurred');
+          }
         } else {
           const normalizedMessage: ChatMessage = {
             id: message.id,
@@ -120,8 +124,8 @@ export default function ChatClient() {
       text: input,
       email: session?.user?.email || '',
       imageProfile: session?.user?.image || '/profile-circle-svgrepo-com.svg',
+      imageMessage: '',
       role: 'user',
-      timestamp: Date.now(),
     };
 
     try {
