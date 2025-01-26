@@ -13,10 +13,9 @@ homebrew
 .yarn/install-state.gz
 /yarn/install-state.gz
 public/sitemap.xml
-
-# testing
-coverage
-/coverage
+.pnpm-*
+/.pnpm-*
+pnpm-lock.yaml
 
 # next.js
 .next/
