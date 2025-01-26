@@ -40,31 +40,31 @@ export default function ChatClient() {
   const ws = useRef<ReconnectingWebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const buffer = useRef<string>('');
 
   // WebSocket connection setup
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     ws.current = new ReconnectingWebSocket(`${protocol}//ws.asepharyana.cloud`);
 
-    const handleMessage = (e: MessageEvent) => {
+    const processMessage = (raw: string) => {
       try {
-        const rawData = JSON.parse(e.data);
+        const message = JSON.parse(raw);
 
-        // Normalisasi data
-        const normalizedMessage = {
-          ...rawData,
-          timestamp: validateTimestamp(rawData.timestamp),
-          id: rawData.id || Date.now().toString(),
+        const normalizedMessage: ChatMessage = {
+          id: message.id || Date.now().toString(),
+          user: message.user || 'Anonymous',
+          text: message.text,
+          email: message.email || '',
+          imageProfile:
+            message.imageProfile || '/profile-circle-svgrepo-com.svg',
+          role: message.role || 'user',
+          timestamp: validateTimestamp(message.timestamp),
+          imageMessage: message.imageMessage,
         };
 
-        if (normalizedMessage.type === 'history') {
-          const historyMessages = (normalizedMessage.data || []).map(
-            (msg: ChatMessage) => ({
-              ...msg,
-              timestamp: validateTimestamp(msg.timestamp),
-            })
-          );
-          setMessages(historyMessages);
+        if (!normalizedMessage.id || !normalizedMessage.user) {
+          console.warn('Invalid message structure:', normalizedMessage);
           return;
         }
 
@@ -73,7 +73,26 @@ export default function ChatClient() {
           return exists ? prev : [...prev, normalizedMessage];
         });
       } catch (err) {
+        console.error('Failed to parse message:', raw);
+      }
+    };
+
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        buffer.current += e.data;
+
+        // Split messages yang tergabung
+        const parts = buffer.current.split(/}(?={)/);
+
+        parts.slice(0, -1).forEach((part) => {
+          const fullMessage = part.startsWith('{') ? part : `{${part}`;
+          processMessage(fullMessage + '}');
+        });
+
+        buffer.current = parts[parts.length - 1];
+      } catch (err) {
         console.error('Error processing message:', err);
+        buffer.current = '';
       }
     };
 
@@ -90,16 +109,22 @@ export default function ChatClient() {
     };
   }, []);
 
-  // Auto-scroll dan textarea resize
+  // Auto-scroll dengan debounce
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const timer = setTimeout(() => {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  useEffect(() => {
     if (textAreaRef.current) {
       textAreaRef.current.style.height = 'auto';
       textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
     }
-  }, [messages, input]);
+  }, [input]);
 
-  // Handle file upload
   const uploadImage = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -114,11 +139,10 @@ export default function ChatClient() {
     }
   };
 
-  // Handle message send
   const sendMessage = useCallback(async () => {
     if ((!input.trim() && !file) || status.sending) return;
 
-    const tempId = Date.now().toString();
+    const tempId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const newMessage: ChatMessage = {
       id: tempId,
       user: session?.user?.name || 'Anonymous',
@@ -134,7 +158,6 @@ export default function ChatClient() {
       setStatus((p) => ({ ...p, sending: true }));
       setError(null);
 
-      // Optimistic update
       setMessages((prev) => [...prev, newMessage]);
 
       if (file) {
@@ -166,7 +189,6 @@ export default function ChatClient() {
       </h1>
 
       <Card>
-        {/* Status Connection */}
         <div className='flex items-center justify-between text-sm p-4 border-b border-blue-500'>
           <span className='text-blue-500'>Status:</span>
           <div className='flex items-center gap-2'>
@@ -181,7 +203,6 @@ export default function ChatClient() {
           </div>
         </div>
 
-        {/* Messages List */}
         <div className='h-96 overflow-y-auto p-4 space-y-3'>
           {messages.map((message) => (
             <MessageBubble
@@ -193,7 +214,6 @@ export default function ChatClient() {
           <div ref={endRef} />
         </div>
 
-        {/* Input Area */}
         <div className='p-4 border-t border-blue-500'>
           <div className='flex items-start gap-2'>
             <Textarea
@@ -259,10 +279,9 @@ function MessageBubble({
   message: ChatMessage;
   isOwn: boolean;
 }) {
-  const safeTimestamp =
-    message.timestamp && !isNaN(message.timestamp)
-      ? message.timestamp
-      : Date.now();
+  if (!message.id || !message.user) return null;
+
+  const safeTimestamp = validateTimestamp(message.timestamp);
 
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
