@@ -40,7 +40,7 @@ export class ChatService {
         return;
       }
       const query = `INSERT INTO messages (user, text, email, imageProfile, imageMessage, role) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`;
+                     VALUES (?, ?, ?, ?, ?, ?)`;
       const values = [
         message.user,
         message.text,

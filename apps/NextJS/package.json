@@ -112,6 +112,7 @@
     "@types/jest": "29.x",
     "@types/js-beautify": "1.x",
     "@types/js-yaml": "4.x",
+    "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/react": "19.x",
     "@types/react-dom": "19.x",

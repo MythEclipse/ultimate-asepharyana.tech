@@ -43,6 +43,7 @@
     "@types/cors": "2.x",
     "@types/express": "5.x",
     "@types/jest": "~29.5.14",
+    "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/supertest": "6.x",
     "@types/uuid": "10.x",

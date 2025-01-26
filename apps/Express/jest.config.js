@@ -1,6 +1,8 @@
-export const preset = 'ts-jest';
-export const testEnvironment = 'node';
-export const moduleNameMapper = {
+export default {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  moduleNameMapper: {
   '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  setupFiles: ['dotenv/config'],
 };
-export const setupFiles = ['dotenv/config'];

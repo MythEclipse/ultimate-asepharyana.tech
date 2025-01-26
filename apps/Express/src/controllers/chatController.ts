@@ -18,7 +18,7 @@ export default function handleConnection(ws: WebSocket) {
         ws.send(
           JSON.stringify({
             type: 'history',
-            messages: messages.reverse(), // Kirim sebagai satu payload untuk mengurangi pengulangan
+            messages: messages.reverse(), // Send as a single payload to reduce repetition
           })
         );
       }
@@ -28,32 +28,59 @@ export default function handleConnection(ws: WebSocket) {
     });
 
   ws.on('message', async (data) => {
+    // Log raw message for debugging
+    logger.debug('Raw message received:', data.toString());
+
     let parsedData;
     try {
       parsedData = JSON.parse(data.toString());
     } catch (error) {
       logger.error('Failed to parse message data', error);
+      // Send error response to client
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            message: 'Invalid message format',
+          })
+        );
+      }
       return;
     }
 
+    // Validate required fields
+    if (!parsedData.text) {
+      logger.error('Message missing required field: text');
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            message: 'Message text is required',
+          })
+        );
+      }
+      return;
+    }
+
+    // Construct message object with validation
     const message: ChatMessage = {
       user: parsedData.user || `User${Math.floor(Math.random() * 1000)}`,
-      text: parsedData.text,
+      text: parsedData.text, // Guaranteed to exist due to validation
       email: parsedData.email || '',
       imageProfile: parsedData.imageProfile || '',
       imageMessage: parsedData.imageMessage || '',
       role: parsedData.role || 'guest',
       timestamp: Date.now(),
-      id: undefined, // ID akan diisi oleh database
+      id: undefined,
     };
 
     logger.info(`Message received: ${JSON.stringify(message)}`);
 
     try {
-      // Simpan pesan ke database
+      // Save message to database
       const savedMessage = await chatService.saveMessage(message);
 
-      // Broadcast pesan ke semua client
+      // Broadcast message to all clients
       clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(
