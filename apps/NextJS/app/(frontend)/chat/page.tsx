@@ -208,7 +208,7 @@ export default function ChatClient() {
                 (e.preventDefault(), sendMessage())
               }
               placeholder='Type a message...'
-              className='flex-1 resize-none min-h-[40px]'
+              className='flex-1 resize-none min-h-[40px] border-blue-500 top-2'
               rows={1}
               disabled={!status.connected}
             />
@@ -231,6 +231,7 @@ export default function ChatClient() {
                 {status.uploading ? 'Uploading...' : '📎'}
               </label>
               <Button
+                className='!px-3 !py-1'
                 onClick={sendMessage}
                 disabled={
                   !status.connected || status.sending || status.uploading
