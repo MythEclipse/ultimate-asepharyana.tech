@@ -33,32 +33,30 @@ export class ChatService {
     return db;
   }
 
-  saveMessage(message: ChatMessage): Promise<void> {
+  saveMessage(message: ChatMessage): Promise<ChatMessage> {
     return new Promise((resolve, reject) => {
       if (!ChatService.db) {
         reject(new Error('Database not initialized'));
         return;
       }
-      const query =
-        'INSERT INTO messages (user, text, email, imageProfile, imageMessage, role) VALUES (?, ?, ?, ?, ?, ?)';
-      ChatService.db.run(
-        query,
-        [
-          message.user,
-          message.text,
-          message.email,
-          message.imageProfile,
-          message.imageMessage,
-          message.role,
-        ],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
+      const query = `INSERT INTO messages (user, text, email, imageProfile, imageMessage, role) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        message.user,
+        message.text,
+        message.email,
+        message.imageProfile,
+        message.imageMessage,
+        message.role,
+      ];
+
+      ChatService.db.run(query, values, function (err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ ...message, id: this.lastID });
         }
-      );
+      });
     });
   }
 
@@ -68,8 +66,8 @@ export class ChatService {
         reject(new Error('Database not initialized'));
         return;
       }
-      const query =
-        'SELECT user, text, email, imageProfile, imageMessage, role FROM messages ORDER BY timestamp DESC LIMIT ?';
+      const query = `SELECT id, user, text, email, imageProfile, imageMessage, role, timestamp 
+                     FROM messages ORDER BY timestamp DESC LIMIT ?`;
       ChatService.db.all(query, [limit], (err, rows) => {
         if (err) {
           reject(err);
