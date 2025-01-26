@@ -49,7 +49,7 @@ export default function ChatClient() {
     const handleMessage = (e: MessageEvent) => {
       try {
         const rawData = JSON.parse(e.data);
-        
+
         // Normalisasi data
         const normalizedMessage = {
           ...rawData,
@@ -58,16 +58,18 @@ export default function ChatClient() {
         };
 
         if (normalizedMessage.type === 'history') {
-          const historyMessages = (normalizedMessage.data || []).map((msg: ChatMessage) => ({
-            ...msg,
-            timestamp: validateTimestamp(msg.timestamp)
-          }));
+          const historyMessages = (normalizedMessage.data || []).map(
+            (msg: ChatMessage) => ({
+              ...msg,
+              timestamp: validateTimestamp(msg.timestamp),
+            })
+          );
           setMessages(historyMessages);
           return;
         }
 
-        setMessages(prev => {
-          const exists = prev.some(m => m.id === normalizedMessage.id);
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === normalizedMessage.id);
           return exists ? prev : [...prev, normalizedMessage];
         });
       } catch (err) {
@@ -77,10 +79,10 @@ export default function ChatClient() {
 
     ws.current.onmessage = handleMessage;
     ws.current.onopen = () => {
-      setStatus(p => ({ ...p, connected: true }));
+      setStatus((p) => ({ ...p, connected: true }));
       ws.current?.send(JSON.stringify({ type: 'requestHistory' }));
     };
-    ws.current.onclose = () => setStatus(p => ({ ...p, connected: false }));
+    ws.current.onclose = () => setStatus((p) => ({ ...p, connected: false }));
     ws.current.onerror = () => setError('Connection error');
 
     return () => {
@@ -102,7 +104,10 @@ export default function ChatClient() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await fetch('/api/uploader', { method: 'POST', body: formData });
+      const response = await fetch('/api/uploader', {
+        method: 'POST',
+        body: formData,
+      });
       return await response.json();
     } catch (err) {
       throw new Error('Failed to upload image');
@@ -126,29 +131,31 @@ export default function ChatClient() {
     };
 
     try {
-      setStatus(p => ({ ...p, sending: true }));
+      setStatus((p) => ({ ...p, sending: true }));
       setError(null);
 
       // Optimistic update
-      setMessages(prev => [...prev, newMessage]);
+      setMessages((prev) => [...prev, newMessage]);
 
       if (file) {
-        setStatus(p => ({ ...p, uploading: true }));
+        setStatus((p) => ({ ...p, uploading: true }));
         const { url } = await uploadImage(file);
         newMessage.imageMessage = url;
         setFile(null);
       }
 
-      ws.current?.send(JSON.stringify({
-        ...newMessage,
-        isOptimistic: true
-      }));
+      ws.current?.send(
+        JSON.stringify({
+          ...newMessage,
+          isOptimistic: true,
+        })
+      );
       setInput('');
     } catch (err) {
       setError('Failed to send message');
-      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
-      setStatus(p => ({ ...p, sending: false, uploading: false }));
+      setStatus((p) => ({ ...p, sending: false, uploading: false }));
     }
   }, [input, file, status.sending, session]);
 
@@ -163,8 +170,12 @@ export default function ChatClient() {
         <div className='flex items-center justify-between text-sm p-4 border-b border-blue-500'>
           <span className='text-blue-500'>Status:</span>
           <div className='flex items-center gap-2'>
-            <div className={`w-2 h-2 rounded-full ${status.connected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className={status.connected ? 'text-green-500' : 'text-red-500'}>
+            <div
+              className={`w-2 h-2 rounded-full ${status.connected ? 'bg-green-500' : 'bg-red-500'}`}
+            />
+            <span
+              className={status.connected ? 'text-green-500' : 'text-red-500'}
+            >
               {status.connected ? 'Connected' : 'Connecting...'}
             </span>
           </div>
@@ -189,7 +200,11 @@ export default function ChatClient() {
               ref={textAreaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+              onKeyDown={(e) =>
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                (e.preventDefault(), sendMessage())
+              }
               placeholder='Type a message...'
               className='flex-1 resize-none min-h-[40px]'
               rows={1}
@@ -215,28 +230,45 @@ export default function ChatClient() {
               </label>
               <Button
                 onClick={sendMessage}
-                disabled={!status.connected || status.sending || status.uploading}
+                disabled={
+                  !status.connected || status.sending || status.uploading
+                }
                 className='h-10 gap-1.5'
               >
-                {status.sending ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Send'}
+                {status.sending ? (
+                  <Loader2 className='w-4 h-4 animate-spin' />
+                ) : (
+                  'Send'
+                )}
               </Button>
             </div>
           </div>
-          {error && <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>}
+          {error && (
+            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
+          )}
         </div>
       </Card>
     </div>
   );
 }
 
-function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
-  const safeTimestamp = message.timestamp && !isNaN(message.timestamp) 
-    ? message.timestamp 
-    : Date.now();
+function MessageBubble({
+  message,
+  isOwn,
+}: {
+  message: ChatMessage;
+  isOwn: boolean;
+}) {
+  const safeTimestamp =
+    message.timestamp && !isNaN(message.timestamp)
+      ? message.timestamp
+      : Date.now();
 
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex items-start gap-3 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div
+        className={`flex items-start gap-3 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+      >
         <Image
           src={message.imageProfile}
           alt={message.user}
@@ -244,9 +276,13 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
           height={32}
           className='rounded-full object-cover'
         />
-        <div className={`p-3 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}>
+        <div
+          className={`p-3 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+        >
           <div className='flex items-center gap-2 mb-1'>
-            <span className='text-xs font-medium'>{isOwn ? 'You' : message.user}</span>
+            <span className='text-xs font-medium'>
+              {isOwn ? 'You' : message.user}
+            </span>
             <span className='text-xs px-2 text-gray-500 dark:text-gray-400'>
               {format(new Date(safeTimestamp), 'HH:mm')}
             </span>
