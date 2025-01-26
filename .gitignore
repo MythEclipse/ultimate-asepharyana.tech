@@ -16,6 +16,7 @@ public/sitemap.xml
 .pnpm-*
 /.pnpm-*
 pnpm-lock.yaml
+**/database.sqlite
 
 # next.js
 .next/
