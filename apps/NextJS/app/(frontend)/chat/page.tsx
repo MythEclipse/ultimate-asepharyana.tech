@@ -35,7 +35,6 @@ const validateTimestamp = (ts?: number | string) => {
   return typeof ts === 'number' && !isNaN(ts) && ts > 0 ? ts : Date.now();
 };
 
-
 export default function ChatClient() {
   const { data: session } = useSession();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -233,10 +232,11 @@ export default function ChatClient() {
               />
               <label
                 htmlFor='file-input'
-                className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${status.uploading
+                className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${
+                  status.uploading
                     ? 'text-gray-400 border-gray-400'
                     : 'text-blue-500 border-blue-500 hover:bg-blue-50'
-                  } cursor-pointer`}
+                } cursor-pointer`}
               >
                 {status.uploading ? 'Uploading...' : '📎'}
               </label>
