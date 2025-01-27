@@ -36,7 +36,7 @@ const FloatingDockMobile = ({
     <div className={cn('fixed bottom-4 right-4 md:hidden z-50', className)}>
       <div
         className={`absolute bottom-full mb-2 inset-x-0 flex flex-col gap-4 z-50 transition-all duration-300 ${
-          open ? 'opacity-100' : 'opacity-0'
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
         {items.map((item, idx) => (
