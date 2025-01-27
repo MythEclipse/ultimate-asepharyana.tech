@@ -4,14 +4,14 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./types/client.d.ts",
+      "types": "./dist/types/client.d.ts",
       "require": "./dist/cjs/client.js",
       "import": "./dist/esm/client.js"
     }
   },
   "main": "./dist/cjs/client.js",
   "module": "./dist/esm/client.js",
-  "types": "./types/client.d.ts",
+  "types": "./dist/types/client.d.ts",
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",

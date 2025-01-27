@@ -1,1 +1,1 @@
- pnpm install && npm run migrate && pnpm run dev
+ pnpm install && pnpm run db:push && pnpm run generate && pnpm run dev
