@@ -4,7 +4,7 @@ import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 
 const baseUrl = {
-  komik: 'https://komikindo.pw',
+  komik: 'https://komikindo1.com',
 };
 const baseURL = baseUrl.komik;
 
