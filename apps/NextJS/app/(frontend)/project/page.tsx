@@ -56,7 +56,9 @@ export default function Page() {
           <TildCard
             title='Compressor'
             description='Compressor image dan video'
-            imageUrl={isLightTheme ? '/WebCompressorL.png' : '/WebCompressor.png'}
+            imageUrl={
+              isLightTheme ? '/WebCompressorL.png' : '/WebCompressor.png'
+            }
             linkUrl='/compressor'
           />
         </div>
