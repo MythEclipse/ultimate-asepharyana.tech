@@ -52,6 +52,14 @@ export default function Page() {
             linkUrl='/chat'
           />
         </div>
+        <div>
+          <TildCard
+            title='Compressor'
+            description='Compressor image dan video'
+            imageUrl={isLightTheme ? '/WebCompressorL.png' : '/WebCompressor.png'}
+            linkUrl='/compressor'
+          />
+        </div>
       </div>
     </div>
   );
