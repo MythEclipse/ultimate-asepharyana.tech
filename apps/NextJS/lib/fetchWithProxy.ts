@@ -2,7 +2,8 @@ import axios from 'axios';
 import { DEFAULT_HEADERS } from '@/lib/DHead';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
-const PROXY_LIST_URL = 'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
+const PROXY_LIST_URL =
+  'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
 const getProxies = async (): Promise<string[]> => {
   try {
     const response = await fetch(PROXY_LIST_URL);
@@ -15,7 +16,9 @@ const getProxies = async (): Promise<string[]> => {
       .filter((line) => line.trim() !== '' && !line.startsWith('#'))
       .map((line) => line.split(' ')[0].trim());
   } catch (error) {
-    throw new Error(`Failed to retrieve proxy list: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to retrieve proxy list: ${(error as Error).message}`
+    );
   }
 };
 const proxies = await getProxies();

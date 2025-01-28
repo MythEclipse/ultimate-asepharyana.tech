@@ -1,3 +1,2 @@
-import { fetchWithProxy } from './fetchWithProxy';
-const fetcher = (url: string) => fetchWithProxy(url).then((res) => res.data);
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default fetcher;

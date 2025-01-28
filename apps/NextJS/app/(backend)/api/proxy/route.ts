@@ -3,7 +3,8 @@ import { DEFAULT_HEADERS } from '@/lib/DHead';
 import { NextResponse } from 'next/server';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
-const PROXY_LIST_URL = 'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
+const PROXY_LIST_URL =
+  'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
 
 const fetchWithProxy = async (
   url: string,
@@ -15,11 +16,11 @@ const fetchWithProxy = async (
     }
     const proxyUrl = `http://${proxy.host}:${proxy.port}`;
     const agent = new HttpsProxyAgent(proxyUrl);
-            const response = await axios.get(url, {
-                headers: DEFAULT_HEADERS,
-                httpsAgent: agent,
-                timeout: 12000,
-              });
+    const response = await axios.get(url, {
+      headers: DEFAULT_HEADERS,
+      httpsAgent: agent,
+      timeout: 12000,
+    });
 
     return {
       data: response.data,
@@ -44,7 +45,9 @@ const getProxies = async (): Promise<string[]> => {
       .filter((line) => line.trim() !== '' && !line.startsWith('#'))
       .map((line) => line.split(' ')[0].trim());
   } catch (error) {
-    throw new Error(`Failed to retrieve proxy list: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to retrieve proxy list: ${(error as Error).message}`
+    );
   }
 };
 
