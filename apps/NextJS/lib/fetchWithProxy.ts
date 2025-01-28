@@ -77,7 +77,7 @@ async function fetchFromProxies(
       }
     } catch (error) {
       lastError = error as Error;
-      console.error(`Error proxying request through ${host}:${port}`, error);
+      console.error(`Error proxying request through ${host}:${port}`);
     }
   }
 
