@@ -70,9 +70,10 @@ async function fetchFromProxies(
         const contentType = response.headers['content-type'];
 
         if (contentType && contentType.includes('application/json')) {
+          console.info(`Fetched from ${host}:${port}`);
           return { data: response.data, contentType };
         }
-
+        console.info(`Fetched from ${host}:${port}`);
         return { data: response.data, contentType };
       }
     } catch (error) {
