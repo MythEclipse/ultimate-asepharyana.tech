@@ -1,11 +1,29 @@
-// lib/fetchWithFallback.ts
+import axios from 'axios';
 import { DEFAULT_HEADERS } from '@/lib/DHead';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
+const PROXY_LIST_URL = 'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
+const getProxies = async (): Promise<string[]> => {
+  try {
+    const response = await fetch(PROXY_LIST_URL);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch proxy list: ${response.statusText}`);
+    }
+    const data = await response.text();
+    return data
+      .split('\n')
+      .filter((line) => line.trim() !== '' && !line.startsWith('#'))
+      .map((line) => line.split(' ')[0].trim());
+  } catch (error) {
+    throw new Error(`Failed to retrieve proxy list: ${(error as Error).message}`);
+  }
+};
+const proxies = await getProxies();
 export async function fetchWithProxy(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
   try {
-    // Coba fetch langsung terlebih dahulu
+    // Try direct fetch first
     const response = await fetch(slug, {
       headers: DEFAULT_HEADERS,
     });
@@ -15,12 +33,10 @@ export async function fetchWithProxy(
 
       if (contentType && contentType.includes('application/json')) {
         const jsonData = await response.json();
-        // console.log('Fetched directly json');
         return { data: jsonData, contentType };
       }
 
       const textData = await response.text();
-      // console.log('Fetched directly text');
       return { data: textData, contentType };
     }
 
@@ -34,38 +50,31 @@ export async function fetchWithProxy(
 async function fetchFromProxies(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
-  const baseUrls = [
-    'meitang.xyz',
-    'btch.us.kg',
-    'api.tioo.eu.org',
-    'api.tioprm.eu.org',
-  ];
   let lastError: Error | null = null;
 
-  for (const apiUrl of baseUrls) {
+  for (const proxy of proxies) {
+    const [host, port] = proxy.split(':');
     try {
-      const proxyUrl = `https://${apiUrl}/proxy?url=${encodeURIComponent(slug)}`;
-      const response = await fetch(proxyUrl, {
+      const proxyUrl = `http://${host}:${port}`;
+      const agent = new HttpsProxyAgent(proxyUrl);
+      const response = await axios.get(slug, {
         headers: DEFAULT_HEADERS,
+        httpsAgent: agent,
+        timeout: 12000,
       });
 
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
+      if (response.status === 200) {
+        const contentType = response.headers['content-type'];
 
         if (contentType && contentType.includes('application/json')) {
-          const jsonData = await response.json();
-          // console.log('Fetched from proxy json:', proxyUrl);
-          return { data: JSON.stringify(jsonData), contentType };
+          return { data: response.data, contentType };
         }
 
-        const textData = await response.text();
-        // console.log('Fetched from proxy text:', proxyUrl);
-        const cleanedTextData = textData.replace(/\/proxy/g, ''); // Menghapus semua "/proxy" dari teks
-        return { data: cleanedTextData, contentType };
+        return { data: response.data, contentType };
       }
     } catch (error) {
       lastError = error as Error;
-      console.error(`Error proxying request to ${apiUrl}:`, error);
+      console.error(`Error proxying request through ${host}:${port}`, error);
     }
   }
 
