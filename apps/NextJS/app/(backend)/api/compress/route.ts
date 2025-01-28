@@ -142,7 +142,7 @@ async function compressVideo(
     let resultBuffer: Buffer;
     let attempts = 0;
 
-    const minSizeMB = finalTargetMB - 0.5;
+    const minSizeMB = finalTargetMB - 3.5;
     const maxSizeMB = finalTargetMB + 0.5;
 
     do {
