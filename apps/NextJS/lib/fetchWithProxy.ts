@@ -63,7 +63,7 @@ async function fetchFromProxies(
       const response = await axios.get(slug, {
         headers: DEFAULT_HEADERS,
         httpsAgent: agent,
-        timeout: 12000,
+        timeout: 6000,
       });
 
       if (response.status === 200) {
