@@ -17,7 +17,9 @@
     "generate": {
       "dependsOn": ["^generate"]
     },
-    "lint": {},
+    "lint": {
+      "cache": false
+    },
     "test": {},
     "start": {
       "cache": false,
