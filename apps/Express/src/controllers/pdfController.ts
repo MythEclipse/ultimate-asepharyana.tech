@@ -6,7 +6,9 @@ export const mergePdfController = async (req: Request, res: Response) => {
     const files = req.files as Express.Multer.File[];
 
     if (files.length < 2) {
-      return res.status(400).json({ error: 'Please upload at least 2 PDF files' });
+      return res
+        .status(400)
+        .json({ error: 'Please upload at least 2 PDF files' });
     }
 
     const mergedPdf = await mergePdfs(files);
@@ -16,7 +18,10 @@ export const mergePdfController = async (req: Request, res: Response) => {
     return res.send(mergedPdf);
   } catch (error) {
     console.error('Merge error:', error);
-    const errorMessage = (error instanceof Error) ? error.message : 'Unknown error';
-    return res.status(500).json({ error: `Failed to merge PDFs: ${errorMessage}` });
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    return res
+      .status(500)
+      .json({ error: `Failed to merge PDFs: ${errorMessage}` });
   }
 };

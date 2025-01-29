@@ -6,14 +6,19 @@ import { PDFDocument } from 'pdf-lib';
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Function to merge PDFs
-export const mergePdfs = async (files: Express.Multer.File[]): Promise<Buffer> => {
+export const mergePdfs = async (
+  files: Express.Multer.File[]
+): Promise<Buffer> => {
   const mergedPdfDoc = await PDFDocument.create();
 
   for (const file of files) {
     const fileBuffer = file.buffer;
     const existingPdfDoc = await PDFDocument.load(fileBuffer);
-    const copiedPages = await mergedPdfDoc.copyPages(existingPdfDoc, existingPdfDoc.getPageIndices());
-    copiedPages.forEach(page => mergedPdfDoc.addPage(page));
+    const copiedPages = await mergedPdfDoc.copyPages(
+      existingPdfDoc,
+      existingPdfDoc.getPageIndices()
+    );
+    copiedPages.forEach((page) => mergedPdfDoc.addPage(page));
   }
 
   const pdfBytes = await mergedPdfDoc.save();
@@ -28,11 +33,15 @@ export const mergePdfRoute = (req: Request, res: Response) => {
     }
 
     if (!req.files || (req.files as Express.Multer.File[]).length < 2) {
-      return res.status(400).json({ error: 'Please upload at least 2 PDF files' });
+      return res
+        .status(400)
+        .json({ error: 'Please upload at least 2 PDF files' });
     }
 
     try {
-      const mergedPdfBuffer = await mergePdfs(req.files as Express.Multer.File[]);
+      const mergedPdfBuffer = await mergePdfs(
+        req.files as Express.Multer.File[]
+      );
       res.contentType('application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="merged.pdf"');
       res.send(mergedPdfBuffer);

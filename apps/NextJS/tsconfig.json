@@ -42,6 +42,6 @@
     "tailwind.config.js",
     "prettier.config.js",
     "next-sitemap.config.js"
-  ],
+, "app/(backend)/api/pdf/compress/route.ts.dev", "app/(backend)/api/pdf/split/route.ts.dev", "app/(backend)/api/pdf/convert-from-pdf/route.ts.dev"  ],
   "exclude": ["node_modules", "!node_modules/.prisma"]
 }
