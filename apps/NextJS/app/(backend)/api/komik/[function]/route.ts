@@ -45,6 +45,7 @@ interface MangaChapter {
   next_chapter_id: string;
   prev_chapter_id: string;
   images: string[];
+  list_chapter: string;
 }
 
 // Utility function to parse manga data
@@ -193,6 +194,7 @@ const getChapter = async (chapter_url: string): Promise<MangaChapter> => {
     const title = $('.entry-title').text().trim() || '';
 
     // Handling previous chapter ID
+    const list_chapter = $('icol daftarch').text();
     const prev_chapter_element = $('.nextprev a[rel="prev"]');
     const prev_chapter_id = prev_chapter_element.length
       ? prev_chapter_element.attr('href')?.split('/')[3] || ''
@@ -211,7 +213,7 @@ const getChapter = async (chapter_url: string): Promise<MangaChapter> => {
       images.push(image);
     });
 
-    return { title, next_chapter_id, prev_chapter_id, images };
+    return { title, next_chapter_id, prev_chapter_id, images, list_chapter };
   } catch (error) {
     logError(error as { message: string });
     throw new Error('Failed to fetch manga chapter');

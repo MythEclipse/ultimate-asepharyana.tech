@@ -10,6 +10,7 @@ interface ChapterDetail {
   komik_id: string;
   prev_chapter_id: string;
   next_chapter_id: string;
+  list_chapter: string;
   downloadUrl: string;
   images: string[];
 }
@@ -32,7 +33,11 @@ export default async function ChapterPage(props: {
   return (
     <main className='p-6 pb-6'>
       <div className='text-center mb-4'>
-        <h1 className='text-2xl font-bold dark:text-white'>{chapter.title}</h1>
+        <Link href={chapter.list_chapter}>
+          <h1 className='text-2xl font-bold dark:text-white'>
+            {chapter.title}
+          </h1>
+        </Link>
         <div className='mt-4 flex justify-between gap-4'>
           {chapter.prev_chapter_id && (
             <Link scroll href={`/komik/chapter/${chapter.prev_chapter_id}`}>

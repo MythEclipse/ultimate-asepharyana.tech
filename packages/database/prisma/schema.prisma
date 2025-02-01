@@ -61,10 +61,10 @@ model Comments {
   id         String    @id @default(cuid()) @db.VarChar(255)
   userId     String    @map("user_id") @db.VarChar(255)
   postId     String    @map("post_id") @db.VarChar(255)
+  authorId   String    @db.VarChar(255)
   content    String    @db.Text
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now()) @updatedAt
-  authorId   String    @db.VarChar(255)
   author     User      @relation("AuthoredComments", fields: [authorId], references: [id])
   posts      Posts     @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
   user       User      @relation("UserComments", fields: [userId], references: [id])
