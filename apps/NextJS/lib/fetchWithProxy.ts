@@ -5,46 +5,50 @@ import logger from '@/lib/logger';
 
 const PROXY_LIST_URL =
   'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
-const getProxies = async (): Promise<string[]> => {
-  try {
-    const response = await fetch(PROXY_LIST_URL);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch proxy list: ${response.statusText}`);
-    }
-    const data = await response.text();
-    return data
-      .split('\n')
-      .filter((line) => line.trim() !== '' && !line.startsWith('#'))
-      .map((line) => line.split(' ')[0].trim());
-  } catch (error) {
-    throw new Error(
-      `Failed to retrieve proxy list: ${(error as Error).message}`
-    );
+
+async function getProxies(): Promise<string[]> {
+  const res = await fetch(PROXY_LIST_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch proxy list: ${res.statusText}`);
   }
-};
-const proxies = await getProxies();
+  const data = await res.text();
+  return data
+    .split('\n')
+    .filter((line) => line.trim() !== '' && !line.startsWith('#'))
+    .map((line) => line.split(' ')[0].trim());
+}
+
+let cachedProxies: string[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 6 * 60 * 1000;
+
+async function getCachedProxies(): Promise<string[]> {
+  const now = Date.now();
+  if (!cachedProxies || now - cacheTimestamp > CACHE_DURATION) {
+    cachedProxies = await getProxies();
+    cacheTimestamp = now;
+  }
+  return cachedProxies;
+}
+
 export async function fetchWithProxy(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
   try {
-    // Try direct fetch first
-    const response = await fetch(slug, {
+    const res = await fetch(slug, {
       headers: DEFAULT_HEADERS,
+      next: { revalidate: 360 },
     });
-
-    if (response.ok) {
-      const contentType = response.headers.get('content-type');
-
+    if (res.ok) {
+      const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        const jsonData = await response.json();
+        const jsonData = await res.json();
         return { data: jsonData, contentType };
       }
-
-      const textData = await response.text();
+      const textData = await res.text();
       return { data: textData, contentType };
     }
-
-    throw new Error(`Direct fetch failed`);
+    throw new Error(`Direct fetch failed with status ${res.status}`);
   } catch {
     logger.error('Direct fetch failed, trying proxies');
     return await fetchFromProxies(slug);
@@ -55,7 +59,7 @@ async function fetchFromProxies(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
   let lastError: Error | null = null;
-
+  const proxies = await getCachedProxies();
   for (const proxy of proxies) {
     const [host, port] = proxy.split(':');
     try {
@@ -66,22 +70,14 @@ async function fetchFromProxies(
         httpsAgent: agent,
         timeout: 6000,
       });
-
       if (response.status === 200) {
-        const contentType = response.headers['content-type'];
-
-        if (contentType && contentType.includes('application/json')) {
-          logger.info(`Fetched from ${host}:${port}`);
-          return { data: response.data, contentType };
-        }
+        const contentType = response.headers['content-type'] || null;
         logger.info(`Fetched from ${host}:${port}`);
         return { data: response.data, contentType };
       }
     } catch (error) {
       lastError = error as Error;
-      // logger.error(`Error proxying request through ${host}:${port}`);
     }
   }
-
   throw new Error(lastError?.message || 'Failed to fetch from all proxies');
 }

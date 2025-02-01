@@ -1,11 +1,8 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
 import { ComicCard } from '@/components/card/ComicCard';
-import useSWR from 'swr';
 import Loading from '@/components/misc/loading';
 
 export interface Comic {
@@ -18,9 +15,10 @@ export interface Comic {
   date: string;
 }
 
-// Fetch comics data using SWR
 const fetchComics = async (type: string): Promise<Comic[]> => {
-  const res = await fetch(`${BaseUrl}/api/komik/${type}?page=1&order=update`);
+  const res = await fetch(`${BaseUrl}/api/komik/${type}?page=1&order=update`, {
+    cache: 'no-store',
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch ${type}`);
   }
@@ -28,36 +26,35 @@ const fetchComics = async (type: string): Promise<Comic[]> => {
   return data.data || [];
 };
 
-const HomePage = () => {
-  const { data: manga, error: mangaError } = useSWR<Comic[]>(
-    '/api/komik/manga?page=1&order=update',
-    () => fetchComics('manga')
-  );
-  const { data: manhua, error: manhuaError } = useSWR<Comic[]>(
-    '/api/komik/manhua?page=1&order=update',
-    () => fetchComics('manhua')
-  );
-  const { data: manhwa, error: manhwaError } = useSWR<Comic[]>(
-    '/api/komik/manhwa?page=1&order=update',
-    () => fetchComics('manhwa')
-  );
+export default async function HomePage() {
+  let manga: Comic[] = [];
+  let manhua: Comic[] = [];
+  let manhwa: Comic[] = [];
+  let error = false;
 
-  if (mangaError || manhuaError || manhwaError) {
-    console.error('Error fetching comics data');
+  try {
+    const [mangaData, manhuaData, manhwaData] = await Promise.all([
+      fetchComics('manga'),
+      fetchComics('manhua'),
+      fetchComics('manhwa'),
+    ]);
+    manga = mangaData;
+    manhua = manhuaData;
+    manhwa = manhwaData;
+  } catch (err) {
+    error = true;
+    console.error('Error fetching comics data:', err);
   }
-
-  const isLoading = !manga || !manhua || !manhwa;
 
   return (
     <div className='p-3'>
       <h1 className='text-3xl font-bold mb-6 dark:text-white'>
         Komik Manga, Manhua, dan Manhwa
       </h1>
-
       <div className='space-y-8'>
         {['Manga', 'Manhua', 'Manhwa'].map((type) => (
           <section key={type} className='mb-8'>
-            {!isLoading && (
+            {!error && (
               <Link scroll href={`/komik/${type.toLowerCase()}/page/1`}>
                 <ButtonA className='w-full max-w-[800rem] text-center py-4 px-8'>
                   {type}
@@ -66,39 +63,27 @@ const HomePage = () => {
             )}
             <div className='flex flex-col items-center p-4'>
               <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
-                {isLoading ? (
-                  <Loading />
-                ) : type === 'Manga' && manga ? (
-                  manga.length > 0 ? (
-                    manga.map((comic) => (
-                      <ComicCard key={comic.komik_id} comic={comic} />
-                    ))
-                  ) : (
-                    <p className='text-gray-600 dark:text-white'>
-                      No manga available
-                    </p>
-                  )
-                ) : type === 'Manhua' && manhua ? (
-                  manhua.length > 0 ? (
-                    manhua.map((comic) => (
-                      <ComicCard key={comic.komik_id} comic={comic} />
-                    ))
-                  ) : (
-                    <p className='text-gray-600 dark:text-white'>
-                      No manhua available
-                    </p>
-                  )
-                ) : type === 'Manhwa' && manhwa ? (
-                  manhwa.length > 0 ? (
-                    manhwa.map((comic) => (
-                      <ComicCard key={comic.komik_id} comic={comic} />
-                    ))
-                  ) : (
-                    <p className='text-gray-600 dark:text-white'>
-                      No manhwa available
-                    </p>
-                  )
-                ) : null}
+                {error ? (
+                  <p className='text-gray-600 dark:text-white'>
+                    Error fetching data
+                  </p>
+                ) : type === 'Manga' && manga.length > 0 ? (
+                  manga.map((comic) => (
+                    <ComicCard key={comic.komik_id} comic={comic} />
+                  ))
+                ) : type === 'Manhua' && manhua.length > 0 ? (
+                  manhua.map((comic) => (
+                    <ComicCard key={comic.komik_id} comic={comic} />
+                  ))
+                ) : type === 'Manhwa' && manhwa.length > 0 ? (
+                  manhwa.map((comic) => (
+                    <ComicCard key={comic.komik_id} comic={comic} />
+                  ))
+                ) : (
+                  <p className='text-gray-600 dark:text-white'>
+                    No {type.toLowerCase()} available
+                  </p>
+                )}
               </div>
             </div>
           </section>
@@ -106,6 +91,4 @@ const HomePage = () => {
       </div>
     </div>
   );
-};
-
-export default HomePage;
+}
