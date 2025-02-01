@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { DEFAULT_HEADERS } from '@/lib/DHead';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import logger from '@/lib/logger';
 
 const PROXY_LIST_URL =
   'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
@@ -45,7 +46,7 @@ export async function fetchWithProxy(
 
     throw new Error(`Direct fetch failed`);
   } catch {
-    console.error('Direct fetch failed, trying proxies');
+    logger.error('Direct fetch failed, trying proxies');
     return await fetchFromProxies(slug);
   }
 }
@@ -70,15 +71,15 @@ async function fetchFromProxies(
         const contentType = response.headers['content-type'];
 
         if (contentType && contentType.includes('application/json')) {
-          console.info(`Fetched from ${host}:${port}`);
+          logger.info(`Fetched from ${host}:${port}`);
           return { data: response.data, contentType };
         }
-        console.info(`Fetched from ${host}:${port}`);
+        logger.info(`Fetched from ${host}:${port}`);
         return { data: response.data, contentType };
       }
     } catch (error) {
       lastError = error as Error;
-      console.error(`Error proxying request through ${host}:${port}`);
+      // logger.error(`Error proxying request through ${host}:${port}`);
     }
   }
 
