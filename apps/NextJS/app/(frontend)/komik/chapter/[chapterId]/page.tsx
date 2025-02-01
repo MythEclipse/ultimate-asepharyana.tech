@@ -33,7 +33,7 @@ export default async function ChapterPage(props: {
   return (
     <main className='p-6 pb-6'>
       <div className='text-center mb-4'>
-        <Link href={chapter.list_chapter}>
+        <Link href={`/komik/detail/${chapter.list_chapter}`}>
           <h1 className='text-2xl font-bold dark:text-white'>
             {chapter.title}
           </h1>

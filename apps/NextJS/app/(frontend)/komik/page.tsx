@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
 import { ComicCard } from '@/components/card/ComicCard';
-import Loading from '@/components/misc/loading';
 
 export interface Comic {
   komik_id: string;

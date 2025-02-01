@@ -194,13 +194,16 @@ const getChapter = async (chapter_url: string): Promise<MangaChapter> => {
     const title = $('.entry-title').text().trim() || '';
 
     // Handling previous chapter ID
-    const list_chapter = $('icol daftarch').text();
     const prev_chapter_element = $('.nextprev a[rel="prev"]');
     const prev_chapter_id = prev_chapter_element.length
       ? prev_chapter_element.attr('href')?.split('/')[3] || ''
       : '';
 
-    // Handling next chapter ID
+    const list_chapter_element = $('.nextprev a:has(.icol.daftarch)');
+    const list_chapter = list_chapter_element.length
+      ? list_chapter_element.attr('href')?.split('/')[3] || ''
+      : '';
+
     const next_chapter_element = $('.nextprev a[rel="next"]');
     const next_chapter_id = next_chapter_element.length
       ? next_chapter_element.attr('href')?.split('/')[3] || ''
