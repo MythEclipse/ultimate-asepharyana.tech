@@ -20,6 +20,7 @@
   "devDependencies": {
     "@babel/preset-typescript": "7.x",
     "babel-plugin-add-import-extension": "^1.6.0",
+    "copyfiles": "^2.4.1",
     "rimraf": "6.x"
   },
   "engines": {
@@ -45,7 +46,7 @@
     "prettier": "3.x",
     "prisma": "6.x",
     "tsx": "4.x",
-    "turbo": "2.x"
+    "turbo": "~2.4.0"
   },
   "packageManager": "pnpm@9.15.4",
   "overrides": {
