@@ -63,6 +63,8 @@ export default async function RootLayout({
             <link rel='canonical' href={`${PRODUCTION}`} />
             <link rel='manifest' href='/manifest.json' />
             <link rel='icon' href='/favicon.ico' />
+            <link rel='apple-touch-icon' href='/logo.png' />
+            <meta name='theme-color' content='#000000' />
           </head>
           <body className='h-screen bg-white dark:bg-black'>
             <ThemeProvider

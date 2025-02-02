@@ -33,23 +33,21 @@ export default async function ChapterPage(props: {
   return (
     <main className='p-6 pb-20'>
       <div className='text-center mb-4'>
-        <h1 className='text-2xl font-bold dark:text-white'>
-          {chapter.title}
-        </h1>
-        <div className="mt-4 grid grid-cols-3 gap-4">
-          <div className="flex justify-start">
+        <h1 className='text-2xl font-bold dark:text-white'>{chapter.title}</h1>
+        <div className='mt-4 grid grid-cols-3 gap-4'>
+          <div className='flex justify-start'>
             {chapter.prev_chapter_id && (
               <Link scroll href={`/komik/chapter/${chapter.prev_chapter_id}`}>
                 <ButtonA>Previous Chapter</ButtonA>
               </Link>
             )}
           </div>
-          <div className="flex justify-center">
+          <div className='flex justify-center'>
             <Link href={`/komik/detail/${chapter.list_chapter}`}>
               <ButtonA>Back to List Chapter</ButtonA>
             </Link>
           </div>
-          <div className="flex justify-end">
+          <div className='flex justify-end'>
             {chapter.next_chapter_id && (
               <Link scroll href={`/komik/chapter/${chapter.next_chapter_id}`}>
                 <ButtonA>Next Chapter</ButtonA>
@@ -57,7 +55,6 @@ export default async function ChapterPage(props: {
             )}
           </div>
         </div>
-
       </div>
 
       <div className='flex flex-col md:w-1/2 md:mx-auto'>
@@ -83,20 +80,20 @@ export default async function ChapterPage(props: {
         ))}
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-4">
-        <div className="flex justify-start">
+      <div className='mt-4 grid grid-cols-3 gap-4'>
+        <div className='flex justify-start'>
           {chapter.prev_chapter_id && (
             <Link scroll href={`/komik/chapter/${chapter.prev_chapter_id}`}>
               <ButtonA>Previous Chapter</ButtonA>
             </Link>
           )}
         </div>
-        <div className="flex justify-center">
+        <div className='flex justify-center'>
           <Link href={`/komik/detail/${chapter.list_chapter}`}>
             <ButtonA>Back to List Chapter</ButtonA>
           </Link>
         </div>
-        <div className="flex justify-end">
+        <div className='flex justify-end'>
           {chapter.next_chapter_id && (
             <Link scroll href={`/komik/chapter/${chapter.next_chapter_id}`}>
               <ButtonA>Next Chapter</ButtonA>
