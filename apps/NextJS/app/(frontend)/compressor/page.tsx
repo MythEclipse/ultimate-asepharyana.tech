@@ -1,83 +1,83 @@
-'use client'
-import { useState } from 'react'
+'use client';
+import { useState } from 'react';
 
 export default function Compressor() {
-  const [url, setUrl] = useState('')
-  const [size, setSize] = useState('')
-  const [uploadMethod, setUploadMethod] = useState('url')
+  const [url, setUrl] = useState('');
+  const [size, setSize] = useState('');
+  const [uploadMethod, setUploadMethod] = useState('url');
 
   interface Result {
-    link: string
-    cached: boolean
+    link: string;
+    cached: boolean;
   }
 
-  const [result, setResult] = useState<Result | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [uploadLoading, setUploadLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [result, setResult] = useState<Result | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleFileUpload = async (file: File) => {
     try {
-      setUploadLoading(true)
-      setError('')
+      setUploadLoading(true);
+      setError('');
 
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append('file', file);
 
       const uploadRes = await fetch(
         'https://api.ryzendesu.vip/api/uploader/ryzencdn',
         {
           method: 'POST',
           headers: {
-            accept: 'application/json'
+            accept: 'application/json',
           },
-          body: formData
+          body: formData,
         }
-      )
+      );
 
-      const data = await uploadRes.json()
+      const data = await uploadRes.json();
 
       if (!data.success || !data.url) {
-        throw new Error(data.message || 'Upload failed')
+        throw new Error(data.message || 'Upload failed');
       }
 
-      setUrl(data.url)
+      setUrl(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'File upload failed')
-      setUrl('')
+      setError(err instanceof Error ? err.message : 'File upload failed');
+      setUrl('');
     } finally {
-      setUploadLoading(false)
+      setUploadLoading(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setResult(null)
+    e.preventDefault();
+    setError('');
+    setResult(null);
 
     if (!url || !size) {
-      setError('Please fill all fields')
-      return
+      setError('Please fill all fields');
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
       const res = await fetch(
         `/api/compress?url=${encodeURIComponent(url)}&size=${size}`
-      )
-      const data = await res.json()
+      );
+      const data = await res.json();
 
       if (data.status === 'success') {
-        setResult(data.data)
+        setResult(data.data);
       } else {
-        setError('Compression failed')
+        setError('Compression failed');
       }
     } catch (err) {
-      setError('Error connecting to server')
+      setError('Error connecting to server');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className='container mx-auto py-8 px-4'>
@@ -196,5 +196,5 @@ export default function Compressor() {
         </div>
       </div>
     </div>
-  )
+  );
 }
