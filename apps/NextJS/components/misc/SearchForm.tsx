@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ButtonA from '@/components/button/ScrollButton';
+import ButtonA from '@/components/button/ScrollButton2';
 
 interface SearchFormProps {
   initialQuery: string;

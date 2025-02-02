@@ -201,7 +201,7 @@ const getChapter = async (chapter_url: string): Promise<MangaChapter> => {
 
     const list_chapter_element = $('.nextprev a:has(.icol.daftarch)');
     const list_chapter = list_chapter_element.length
-      ? list_chapter_element.attr('href')?.split('/')[3] || ''
+      ? list_chapter_element.attr('href')?.split('/')[4] || ''
       : '';
 
     const next_chapter_element = $('.nextprev a[rel="next"]');

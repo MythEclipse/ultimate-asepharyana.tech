@@ -65,6 +65,7 @@
     "next": "15.x",
     "next-auth": "5.0.0-beta.25",
     "next-intl": "3.x",
+    "next-pwa": "^5.6.0",
     "next-sitemap": "4.x",
     "next-themes": "0.x",
     "node-fetch": "3.x",
