@@ -16,7 +16,9 @@ export interface Comic {
 
 const fetchComics = async (type: string): Promise<Comic[]> => {
   const res = await fetch(`${BaseUrl}/api/komik/${type}?page=1&order=update`, {
-    cache: 'no-store',
+    next: {
+      revalidate: 60,
+    },
   });
   if (!res.ok) {
     throw new Error(`Failed to fetch ${type}`);
