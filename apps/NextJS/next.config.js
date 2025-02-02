@@ -4,7 +4,24 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  maximumFileSizeToCacheInBytes: 2500000
+  maximumFileSizeToCacheInBytes: 2500000,
+  runtimeCaching: [
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'images-cache',
+        expiration: {
+          // Misalnya, jika ukuran rata-rata gambar 500KB, 2048 entri kira‑kira mencapai 1GB
+          maxEntries: 2048,
+          maxAgeSeconds: 30 * 24 * 60 * 60
+        },
+        cacheableResponse: {
+          statuses: [0, 200]
+        }
+      }
+    }
+  ]
 })
 
 const nextConfig = {
@@ -49,8 +66,8 @@ const nextConfig = {
   webpack: (config) => {
     config.optimization.splitChunks = {
       chunks: 'all',
-      maxSize: 256000,
-      minSize: 20000
+      minSize: 20000,
+      maxSize: 256000
     }
     return config
   }

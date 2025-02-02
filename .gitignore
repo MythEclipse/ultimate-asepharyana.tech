@@ -17,7 +17,13 @@ public/sitemap.xml
 /.pnpm-*
 pnpm-lock.yaml
 **/database.sqlite
-
+# sw
+**/sw.js
+**/sw.js.map
+**/swe-worker-*.js
+**/swe-worker-*.js.map
+**/workbox-*.js
+**/workbox-*.js.map
 # next.js
 .next/
 /.next/
