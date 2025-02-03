@@ -25,6 +25,8 @@ pnpm-lock.yaml
 **/workbox-*.js
 **/workbox-*.js.map
 # next.js
+**/logs/** 
+/**/logs/** 
 .next/
 /.next/
 out/
