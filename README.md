@@ -27,6 +27,7 @@ Turborepo ini mencakup paket/aplikasi berikut:
 
 - `@asepharyana/web`: aplikasi [Next.js](https://github.com/MythEclipse/asepharyana.cloud)
 - `@asepharyana/api`: aplikasi [Express](https://github.com/MythEclipse/API)
+- `@asepharyana/ui`: komponen react yang dapat digunakan di aplikasi lain
 - `@asepharyana/eslint-config`: konfigurasi `eslint` (termasuk `eslint-config-next` dan `eslint-config-prettier`)
 - `@asepharyana/database`: pembungkus ORM [Prisma](https://prisma.io/) untuk mengelola & mengakses database Anda
 - `@asepharyana/typescript-config`: `tsconfig.json` yang digunakan di seluruh monorepo
