@@ -74,8 +74,8 @@ export default function BookmarkPage() {
   if (bookmarks.length === 0) {
     return (
       <main className='p-6'>
-        <h1 className='text-2xl font-bold mt-8 mb-4'>No Bookmarked Anime</h1>
-        <p>You have not bookmarked any anime yet.</p>
+        <h1 className='text-2xl font-bold mt-8 mb-4'>No Bookmarked Comic</h1>
+        <p>You have not bookmarked any Comic yet.</p>
       </main>
     );
   }
@@ -83,7 +83,7 @@ export default function BookmarkPage() {
   return (
     <main className='p-6'>
       <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
-        Bookmarked Anime ({bookmarks.length})
+        Bookmarked Comic ({bookmarks.length})
       </h1>
       <KomikGrid komiks={getPaginatedBookmarks()} />
       <PaginationComponent
