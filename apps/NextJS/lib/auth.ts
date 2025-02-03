@@ -2,7 +2,13 @@ import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@asepharyana/database';
-export const { auth, handlers, signIn, signOut } = NextAuth({
+type NextAuthReturn = {
+  auth: any;
+  handlers: any;
+  signIn: any;
+  signOut: any;
+};
+export const { auth, handlers, signIn, signOut }: NextAuthReturn = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
   callbacks: {

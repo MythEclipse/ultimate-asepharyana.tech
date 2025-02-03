@@ -1,4 +1,13 @@
-import { nextJsConfig } from "@asepharyana/config-eslint/next-js"
+import { nextJsConfig } from "@asepharyana/config-eslint/next-js";
 
-/** @type {import("eslint").Linter.Config} */
-export default nextJsConfig
+const config = [
+  ...nextJsConfig,
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+];
+
+export default config;

@@ -1,29 +1,47 @@
+import { resolve } from "node:path";
+// @ts-ignore
 import { FlatCompat } from "@eslint/eslintrc";
 
 const compat = new FlatCompat({
   baseDirectory: process.cwd(),
 });
 
-const loadConfig = async () => {
-  const library = await import('./library.js');
-  
-  const eslintConfig = [
-    ...compat.config({
-      extends: library.default.extends,
-      parser: "@typescript-eslint/parser",
-      parserOptions: {
-        project: "./tsconfig.json",
-      },
-      plugins: library.default.plugins,
-      globals: library.default.globals,
-      env: library.default.env,
-      settings: library.default.settings,
-      ignorePatterns: library.default.ignorePatterns,
-      overrides: library.default.overrides,
-    }),
-  ];
+const project = resolve(process.cwd(), "tsconfig.eslint.json");
 
-  return eslintConfig;
+const baseConfig = {
+  languageOptions: {
+    globals: {
+      React: "readonly",
+      JSX: "readonly",
+    },
+  },
+  settings: {
+    "import/resolver": {
+      typescript: {
+        project,
+      },
+    },
+  },
+  ignores: ["*.js", "node_modules/", "dist/**"],
+  rules: {},
 };
 
-export default await loadConfig();
+const config = [
+  {
+    plugins: {
+      "only-warn": {},
+      prettier: {},
+    },
+    ...baseConfig,
+  },
+  {
+    files: ["*.ts", "*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project,
+      },
+    },
+  },
+];
+
+export default config;

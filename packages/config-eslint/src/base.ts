@@ -25,4 +25,22 @@ export const config: any[] = [
   {
     ignores: ["dist/**"],
   },
+  {
+    overrides: [
+      {
+        // Terapkan parserOptions.project hanya untuk file TypeScript
+        files: ['**/*.ts', '**/*.tsx'],
+        parserOptions: {
+          project: './tsconfig.json'
+        }
+      },
+      {
+        // Untuk file JavaScript, nonaktifkan parserOptions.project agar tidak terjadi error
+        files: ['**/*.js', '**/*.jsx'],
+        parserOptions: {
+          project: null
+        }
+      }
+    ],
+  },
 ];

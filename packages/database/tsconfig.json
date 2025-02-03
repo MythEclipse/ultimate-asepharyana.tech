@@ -13,6 +13,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.mjs"]
+  "include": [
+    "./src/**/*",
+    "./eslint.config.mjs"
+  ],
+  "exclude": [
+    "node_modules",
+    "!node_modules/.prisma"
+  ]
 }

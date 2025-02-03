@@ -1,5 +1,5 @@
 {
-  "extends": "@asepharyana/config-eslint/tsconfig.json",
+  "extends": "@asepharyana/config-typescript/nextjs.json",
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "lib": ["dom", "dom.iterable", "esnext"],

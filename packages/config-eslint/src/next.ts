@@ -11,50 +11,50 @@ import tseslint from "typescript-eslint";
 import { config as baseConfig } from "./base";
 
 export const nextJsConfig: any[] = [
-    ...baseConfig,
-    js.configs.recommended,
-    eslintConfigPrettier,
-    ...tseslint.configs.recommended,
-    {
-        ...pluginReact.configs.flat.recommended,
-        languageOptions: {
-            ...pluginReact.configs.flat.recommended.languageOptions,
-            globals: {
-                ...globals.serviceworker,
-            },
-        },
+  ...baseConfig,
+  js.configs.recommended,
+  eslintConfigPrettier,
+  ...tseslint.configs.recommended,
+  {
+    ...pluginReact.configs.flat.recommended,
+    languageOptions: {
+      ...pluginReact.configs.flat.recommended.languageOptions,
+      globals: {
+        ...globals.serviceworker,
+      },
     },
-    {
-        plugins: {
-            "@next/next": pluginNext,
-        },
-        rules: {
-            ...pluginNext.configs.recommended.rules,
-            ...pluginNext.configs["core-web-vitals"].rules,
-        },
+  },
+  {
+    plugins: {
+      "@next/next": pluginNext,
     },
-    {
-        plugins: {
-            "react-hooks": pluginReactHooks,
-        },
-        settings: { react: { version: "detect" } },
-        rules: {
-            ...pluginReactHooks.configs.recommended.rules,
-            "react/react-in-jsx-scope": "off",
-            "react/prop-types": "off",
-        },
+    rules: {
+      ...pluginNext.configs.recommended.rules,
+      ...pluginNext.configs["core-web-vitals"].rules,
     },
-    {
-        ignores: [
-            '**/node_modules/**',
-            '**/.git/**',
-            '**/public/**',
-            "**/*.js",
-            '**/dist/**',
-            '**/build/**',
-            '**/.next/**',
-            '**/out/**',
-            '**/coverage/**',
-        ],
+  },
+  {
+    plugins: {
+      "react-hooks": pluginReactHooks,
     },
+    settings: { react: { version: "detect" } },
+    rules: {
+      ...pluginReactHooks.configs.recommended.rules,
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
+    },
+  },
+  {
+    ignores: [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/public/**",
+      "**/*.js",
+      "**/dist/**",
+      "**/build/**",
+      "**/.next/**",
+      "**/out/**",
+      "**/coverage/**",
+    ],
+  },
 ];
