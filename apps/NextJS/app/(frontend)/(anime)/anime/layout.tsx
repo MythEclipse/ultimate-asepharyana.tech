@@ -1,6 +1,6 @@
 import DockKomik from '@/components/modal/DockKomik';
 import React from 'react';
-import { HiHome, HiOutlineSearch } from 'react-icons/hi';
+import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { MdUpdate } from 'react-icons/md';
 import { FaCheckCircle } from 'react-icons/fa'; // Ganti FaDragon dengan FaCheckCircle
 
@@ -43,6 +43,13 @@ const anime = [
     ),
     href: `/anime/search/${encodeURIComponent('a')}`,
   },
+  {
+    title: 'Bookmark',
+    icon: (
+      <HiBookmark className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+    ),
+    href: '/anime/bookmark/1',
+  }
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

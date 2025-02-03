@@ -92,7 +92,7 @@
     "tailwindcss-animate": "1.x",
     "uuid": "11.x",
     "winston": "3.x",
-    "winston-daily-rotate-file": "5.x",
+    "winston-daily-rotate-file": "~5.0.0",
     "ws": "8.x",
     "yup": "1.x",
     "zod": "3.x"

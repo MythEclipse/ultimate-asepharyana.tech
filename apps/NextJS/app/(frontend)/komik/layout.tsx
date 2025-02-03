@@ -1,6 +1,6 @@
 import DockKomik from '@/components/modal/DockKomik';
 import React from 'react';
-import { HiHome, HiOutlineSearch } from 'react-icons/hi';
+import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { FaPencilAlt, FaDragon, FaBook } from 'react-icons/fa';
 
 const komik = [
@@ -39,6 +39,13 @@ const komik = [
     ),
     href: `/komik/search/${encodeURIComponent('a')}/1`, // Placeholder link for the menu item
   },
+  {
+    title: 'Bookmark',
+    icon: (
+      <HiBookmark className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+    ),
+    href: '/komik/bookmark/1',
+  }
 ];
 export const metadata = {
   title: {

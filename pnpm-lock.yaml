@@ -413,7 +413,7 @@ importers:
         specifier: 3.x
         version: 3.17.0
       winston-daily-rotate-file:
-        specifier: 5.x
+        specifier: ~5.0.0
         version: 5.0.0(winston@3.17.0)
       ws:
         specifier: 8.x

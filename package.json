@@ -15,7 +15,8 @@
     "nextjs": "turbo run start --filter=@asepharyana/web",
     "express": "turbo run start --filter=@asepharyana/express",
     "start": "concurrently \"pnpm run express\" \"pnpm run nextjs\"",
-    "update": "npm update"
+    "update": "npm update",
+    "ceklog": "tail -n 3000 apps/NextJS/app.log"
   },
   "devDependencies": {
     "@babel/preset-typescript": "7.x",
