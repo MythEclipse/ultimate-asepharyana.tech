@@ -4,7 +4,7 @@ import CardA from './MediaCard';
 
 interface Komik {
   title: string;
-  image: string;
+  poster: string;
   chapter: string;
   score: string;
   date: string;
@@ -25,8 +25,8 @@ const KomikGrid: React.FC<KomikGridProps> = ({ komiks }) => {
           <CardA
             key={komik.slug}
             title={komik.title}
-            description={`Chapter: ${komik.chapter} | Date: ${komik.date}`}
-            imageUrl={komik.image}
+            description={``}
+            imageUrl={komik.poster}
             linkUrl={`/komik/detail/${komik.slug}`}
           />
         ))}

@@ -6,7 +6,7 @@ import Loading from './loading';
 
 interface Bookmark {
   title: string;
-  image: string;
+  poster: string;
   chapter: string;
   score: string;
   slug: string;
