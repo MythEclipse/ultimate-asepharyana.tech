@@ -4,6 +4,9 @@ import eslintConfigPrettier from "eslint-config-prettier";
 import onlyWarn from "eslint-plugin-only-warn";
 import turboPlugin from "eslint-plugin-turbo";
 import tseslint from "typescript-eslint";
+import { resolve } from "node:path";
+
+const project = resolve(process.cwd(), "tsconfig.json");
 
 export const config: any[] = [
   js.configs.recommended,
@@ -25,22 +28,24 @@ export const config: any[] = [
   {
     ignores: ["dist/**"],
   },
+  // Konfigurasi untuk file TypeScript
   {
-    overrides: [
-      {
-        // Terapkan parserOptions.project hanya untuk file TypeScript
-        files: ['**/*.ts', '**/*.tsx'],
-        parserOptions: {
-          project: './tsconfig.json'
-        }
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project,
       },
-      {
-        // Untuk file JavaScript, nonaktifkan parserOptions.project agar tidak terjadi error
-        files: ['**/*.js', '**/*.jsx'],
-        parserOptions: {
-          project: null
-        }
-      }
-    ],
+    },
+  },
+  // Konfigurasi untuk file JavaScript (tanpa project parserOptions)
+  {
+    files: ["**/*.js", "**/*.jsx"],
+    languageOptions: {
+      parserOptions: {
+        project: null,
+      },
+    },
   },
 ];
+
+export default config;
