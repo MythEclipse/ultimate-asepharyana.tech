@@ -9,6 +9,7 @@ interface Bookmark {
   image: string;
   chapter: string;
   score: string;
+  slug: string;
   date: string;
   type: string;
   komik_id: string;

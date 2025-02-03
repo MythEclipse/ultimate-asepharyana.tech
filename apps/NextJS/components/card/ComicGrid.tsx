@@ -10,6 +10,7 @@ interface Komik {
   date: string;
   type: string;
   komik_id: string;
+  slug: string;
 }
 
 interface KomikGridProps {
@@ -22,11 +23,11 @@ const KomikGrid: React.FC<KomikGridProps> = ({ komiks }) => {
       <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
         {komiks.map((komik) => (
           <CardA
-            key={komik.komik_id}
+            key={komik.slug}
             title={komik.title}
             description={`Chapter: ${komik.chapter} | Date: ${komik.date}`}
             imageUrl={komik.image}
-            linkUrl={`/komik/detail/${komik.komik_id}`}
+            linkUrl={`/komik/detail/${komik.slug}`}
           />
         ))}
       </div>
