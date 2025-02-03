@@ -22,7 +22,7 @@ const logger = winston.createLogger({
       ),
       handleExceptions: true,
     }),
-    
+
     // Transport untuk File dengan rotasi harian (production)
     new DailyRotateFile({
       filename: 'logs/application-%DATE%.log',

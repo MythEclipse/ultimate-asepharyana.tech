@@ -45,7 +45,7 @@ const komik = [
       <HiBookmark className='h-full w-full text-neutral-500 dark:text-neutral-300' />
     ),
     href: '/komik/bookmark/1',
-  }
+  },
 ];
 export const metadata = {
   title: {

@@ -1,13 +1,14 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import useSWR from "swr";
-import { BaseUrl } from "@/lib/url";
-import Image from "next/image";
-import Link from "next/link";
-import { BackgroundGradient } from "@/components/background/background-gradient";
-import ButtonA from "@/components/button/ScrollButton";
-import Loading from "./loading";
+import React, { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { BaseUrl } from '@/lib/url';
+import Image from 'next/image';
+import Link from 'next/link';
+import { BackgroundGradient } from '@/components/background/background-gradient';
+import CardA from '@/components/card/MediaCard';
+import ButtonA from '@/components/button/ScrollButton';
+import Loading from './loading';
 
 interface Genre {
   name: string;
@@ -16,7 +17,6 @@ interface Genre {
 
 interface Chapter {
   chapter: string;
-  date: string;
   chapter_id: string;
 }
 
@@ -30,17 +30,12 @@ interface MangaData {
   title: string;
   alternativeTitle: string;
   image: string;
-  score: string;
-  description: string;
-  status: string;
   type: string;
+  status: string;
   releaseDate: string;
   author: string;
-  artist: string;
   serialization: string;
-  postedBy: string;
-  postedOn: string;
-  updatedOn: string;
+  description: string;
   genres: Genre[];
   chapters: Chapter[];
   recommendations: Recommendation[];
@@ -48,42 +43,67 @@ interface MangaData {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function DetailMangaPage({ params }: { params: { komikId: string } }) {
+export default function DetailMangaPage({
+  params,
+}: {
+  params: Promise<{ komikId: string }>;
+}) {
+  const [resolvedParams, setResolvedParams] = useState<{
+    komikId: string;
+  } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
   const { data: manga, error } = useSWR<MangaData>(
-    `${BaseUrl}/api/komik/detail?komik_id=${params.komikId}`,
+    resolvedParams
+      ? `${BaseUrl}/api/komik/detail?komik_id=${resolvedParams.komikId}`
+      : null,
     fetcher
   );
 
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && manga) {
-      const bookmarks = JSON.parse(localStorage.getItem("bookmarks-komik") || "[]");
-      setBookmarked(bookmarks.some((item: { slug: string }) => item.slug === params.komikId));
+    if (resolvedParams && typeof window !== 'undefined') {
+      const bookmarks = JSON.parse(
+        localStorage.getItem('bookmarks-komik') || '[]'
+      );
+      setBookmarked(
+        bookmarks.some(
+          (item: { slug: string }) => item.slug === resolvedParams.komikId
+        )
+      );
     }
-  }, [manga, params.komikId]);
+  }, [resolvedParams]);
 
   const handleBookmark = () => {
-    if (!manga) return;
+    if (!resolvedParams) return;
 
-    let bookmarks = JSON.parse(localStorage.getItem("bookmarks-komik") || "[]");
+    let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
 
     if (bookmarked) {
-      bookmarks = bookmarks.filter((item: { slug: string }) => item.slug !== params.komikId);
+      bookmarks = bookmarks.filter(
+        (item: { slug: string }) => item.slug !== resolvedParams.komikId
+      );
     } else {
       bookmarks.push({
-        slug: params.komikId,
-        title: manga.title,
-        poster: manga.image,
+        slug: resolvedParams.komikId,
+        title: manga?.title,
+        poster: manga?.image,
       });
     }
 
-    localStorage.setItem("bookmarks-komik", JSON.stringify(bookmarks));
+    localStorage.setItem('bookmarks-komik', JSON.stringify(bookmarks));
     setBookmarked(!bookmarked);
   };
 
-  if (error) return <p className="text-red-500 text-center">Failed to load manga data</p>;
-  if (!manga) return <Loading />;
+  if (error)
+    return (
+      <p className='text-red-500 text-center'>Failed to load manga data</p>
+    );
+  if (!manga || !resolvedParams) return <Loading />;
 
   return (
     <main className='p-6 bg-background dark:bg-dark min-h-screen'>
@@ -106,37 +126,31 @@ export default function DetailMangaPage({ params }: { params: { komikId: string 
               </h1>
               <button
                 onClick={handleBookmark}
-                className={`px-4 py-2 rounded text-white ${
-                  bookmarked ? "bg-red-500" : "bg-blue-500"
-                } mb-4`}
+                className={`px-4 py-2 rounded text-white ${bookmarked ? 'bg-red-500' : 'bg-blue-500'}`}
               >
-                {bookmarked ? "Unbookmark" : "Bookmark"}
+                {bookmarked ? 'Unbookmark' : 'Bookmark'}
               </button>
-              <div className='text-gray-800 dark:text-gray-200 mb-4'>
-                <p className='mb-2'>
-                  <strong>Alternative Title:</strong> {manga.alternativeTitle}
-                </p>
-                <p className='mb-2'>
-                  <strong>Score:</strong> {manga.score}
-                </p>
-                <p className='mb-2'>
-                  <strong>Status:</strong> {manga.status}
-                </p>
-                <p className='mb-2'>
-                  <strong>Author:</strong> {manga.author}
-                </p>
-                <p className='mb-2'>
-                  <strong>Type:</strong> {manga.type}
-                </p>
-                <p className='mb-2'>
-                  <strong>Release Date:</strong> {manga.releaseDate}
+              <div className='text-gray-800 dark:text-gray-200 mb-4 mt-4'>
+                {[
+                  { label: 'Type', value: manga.type },
+                  { label: 'Status', value: manga.status },
+                  { label: 'Release Date', value: manga.releaseDate },
+                  { label: 'Author', value: manga.author },
+                  { label: 'Serialization', value: manga.serialization },
+                ].map((detail) => (
+                  <p className='mb-2' key={detail.label}>
+                    <strong>{detail.label}:</strong> {detail.value || 'N/A'}
+                  </p>
+                ))}
+
+                <p className='mb-4'>
+                  <strong>Genres:</strong>{' '}
+                  {manga.genres
+                    ? manga.genres.map((genre) => genre.name).join(', ')
+                    : 'N/A'}
                 </p>
                 <p className='mb-4'>
-                  <strong>Genres:</strong>{" "}
-                  {manga.genres.map((genre) => genre.name).join(", ")}
-                </p>
-                <p className='mb-4'>
-                  <strong>Description:</strong> {manga.description}
+                  <strong>Description:</strong> {manga.description || 'N/A'}
                 </p>
               </div>
 
@@ -151,14 +165,10 @@ export default function DetailMangaPage({ params }: { params: { komikId: string 
                         scroll
                         key={chapter.chapter_id}
                         href={`/komik/chapter/${chapter.chapter_id}`}
-                        className=''
                       >
-                        <ButtonA className='w-full text-center flex flex-col items-center justify-center'>
+                        <ButtonA className='w-full'>
                           <span className='text-lg font-bold mb-1 text-center truncate text-primary-dark dark:text-primary'>
                             {chapter.chapter}
-                          </span>
-                          <span className='text-sm text-center truncate text-gray-500 dark:text-gray-400'>
-                            {chapter.date}
                           </span>
                         </ButtonA>
                       </Link>
@@ -177,25 +187,19 @@ export default function DetailMangaPage({ params }: { params: { komikId: string 
                 </h2>
                 <div className='overflow-x-auto'>
                   <div className='flex space-x-4'>
-                    {manga.recommendations?.length > 0 ? (
+                    {manga.recommendations &&
+                    manga.recommendations.length > 0 ? (
                       manga.recommendations.map((recommendation) => (
-                        <Link
+                        <div
                           key={recommendation.slug}
-                          href={`/komik/detail/${recommendation.slug}`}
                           className='flex-shrink-0 w-64'
                         >
-                          <div className='relative h-80 rounded-lg overflow-hidden'>
-                            <Image
-                              src={recommendation.image}
-                              alt={recommendation.title}
-                              fill
-                              className='object-cover'
-                            />
-                          </div>
-                          <h3 className='mt-2 text-center font-medium text-primary-dark dark:text-primary'>
-                            {recommendation.title}
-                          </h3>
-                        </Link>
+                          <CardA
+                            title={recommendation.title}
+                            imageUrl={recommendation.image}
+                            linkUrl={`/komik/detail/${recommendation.slug}`}
+                          />
+                        </div>
                       ))
                     ) : (
                       <p className='col-span-full text-center text-primary-dark dark:text-primary'>

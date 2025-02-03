@@ -49,7 +49,7 @@ const anime = [
       <HiBookmark className='h-full w-full text-neutral-500 dark:text-neutral-300' />
     ),
     href: '/anime/bookmark/1',
-  }
+  },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
