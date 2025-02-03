@@ -82,6 +82,7 @@ const nextConfig = {
     };
     return config;
   },
+  transpilePackages: ["@asepharyana/ui"],
 };
 
 module.exports = withPWA(nextConfig);

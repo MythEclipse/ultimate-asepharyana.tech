@@ -3,24 +3,61 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./base": "./dist/esm/base.js",
+    "./next-js": "./dist/esm/next.js",
+    "./react-internal": "./dist/esm/react-internal.js",
+    ".": {
+      "types": "./dist/types/**.d.ts",
+      "require": "./dist/cjs/**.js",
+      "import": "./dist/esm/**.js"
+    }
+  },
+  "main": "./dist/cjs/**.js",
+  "module": "./dist/esm/**.js",
+  "types": "./dist/types/**.d.ts",
   "files": [
     "library.js",
     "next.js"
   ],
+  "scripts": {
+    "dev": "tsup src/* --watch",
+    "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
+    "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
+    "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
+    "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json && npm run copy-dts",
+    "copy-dts": "mkdir -p dist/types dist/esm dist/cjs && cp ./types/* dist/esm && cp ./types/* dist/cjs && cp ./types/* dist/types",
+    "lint": "eslint . --max-warnings 0",
+    "prebuild": "rimraf dist",
+    "update": "npm update",
+    "build:tsc": "tsc --project ./tsconfig.json"
+  },
+  "dependencies": {
+    "@asepharyana/config-typescript": "workspace:*"
+  },
   "devDependencies": {
-    "@asepharyana/config-typescript": "workspace:*",
+    "@babel/cli": "7.x",
+    "@babel/core": "7.x",
+    "@babel/preset-env": "7.x",
+    "@babel/preset-typescript": "7.x",
+    "@eslint/js": "9.x",
+    "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "22.x",
-    "@typescript-eslint/eslint-plugin": "8.x",
-    "@typescript-eslint/parser": "8.x",
-    "eslint": "9.x",
+    "babel-plugin-module-resolver": "5.x",
+    "eslint": "~9.18.0",
     "eslint-config-next": "15.x",
     "eslint-config-prettier": "10.x",
     "eslint-config-turbo": "2.x",
     "eslint-plugin-only-warn": "1.x",
     "eslint-plugin-prettier": "5.x",
+    "globals": "15.x",
     "prettier": "3.x",
+    "rimraf": "6.x",
+    "tsup": "8.x",
+    "tsx": "4.x",
     "turbo": "2.x",
-    "typescript": "5.x"
+    "typescript": "~5.7.3",
+    "typescript-eslint": "~8.21.0"
   },
   "overrides": {
     "typescript": "5.x"

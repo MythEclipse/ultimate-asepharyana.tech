@@ -1,0 +1,31 @@
+{
+  "name": "@asepharyana/config-eslint",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "library.js",
+    "next.js"
+  ],
+  "devDependencies": {
+    "@asepharyana/config-typescript": "workspace:*",
+    "@types/node": "22.x",
+    "@typescript-eslint/eslint-plugin": "8.x",
+    "@typescript-eslint/parser": "8.x",
+    "eslint": "9.x",
+    "eslint-config-next": "15.x",
+    "eslint-config-prettier": "10.x",
+    "eslint-config-turbo": "2.x",
+    "eslint-plugin-only-warn": "1.x",
+    "eslint-plugin-prettier": "5.x",
+    "prettier": "3.x",
+    "turbo": "2.x",
+    "typescript": "5.x"
+  },
+  "overrides": {
+    "typescript": "5.x"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

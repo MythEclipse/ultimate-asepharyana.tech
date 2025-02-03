@@ -6,17 +6,13 @@
     "emitDeclarationOnly": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "declarationDir": "./types",
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"]
-    },
+    "declarationDir": "./dist/types",
     "strict": true,
     "module": "CommonJS",
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["./src/**/*", "./eslint.config.mjs"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.mjs"]
 }

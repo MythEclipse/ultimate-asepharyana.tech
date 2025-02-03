@@ -27,6 +27,7 @@
     "update": "npm update"
   },
   "dependencies": {
+    "@asepharyana/ui": "workspace:*",
     "@asepharyana/config-eslint": "workspace:*",
     "@asepharyana/config-typescript": "workspace:*",
     "@asepharyana/database": "workspace:*",
