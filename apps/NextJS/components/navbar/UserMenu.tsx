@@ -47,10 +47,13 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
           >
             <Image
               src={session.user?.image || '/profile-circle-svgrepo-com.svg'}
-              alt='Profile'
               width={40}
               height={40}
-              className='rounded-full object-cover'
+              className='w-10 h-10 rounded-full object-cover'
+              alt='User Avatar'
+              priority
+              placeholder='empty'
+              sizes='40px'
             />
           </button>
           {isOpen && (

@@ -4,9 +4,22 @@ import TildCard from '@/components/card/TildCard';
 import React from 'react';
 import { useTheme } from 'next-themes';
 
+// Import gambar lokal
+import webAnimeL from '@/public/webAnimeL.png';
+import webAnime from '@/public/webAnime.png';
+import webKomikL from '@/public/webKomikL.png';
+import webKomik from '@/public/webKomik.png';
+import webSosmedL from '@/public/websosmedL.png';
+import webSosmed from '@/public/websosmed.png';
+import webChatL from '@/public/webChatL.png';
+import webChat from '@/public/webChat.png';
+import webCompressorL from '@/public/WebCompressorL.png';
+import webCompressor from '@/public/WebCompressor.png';
+
 export default function Page() {
   const { theme, resolvedTheme } = useTheme();
   const isLightTheme = theme === 'light' || resolvedTheme === 'light';
+
   return (
     <div className='container mx-auto p-4'>
       <div className='w-full'>
@@ -24,7 +37,7 @@ export default function Page() {
           <TildCard
             title='Anime'
             description='Anime scrapping dari otakudesu.cloud'
-            imageUrl={isLightTheme ? '/webAnimeL.png' : '/webAnime.png'}
+            imageUrl={isLightTheme ? webAnimeL : webAnime}
             linkUrl='/anime'
           />
         </div>
@@ -32,7 +45,7 @@ export default function Page() {
           <TildCard
             title='Komik'
             description='Komik scraping dari komikindo.pw'
-            imageUrl={isLightTheme ? '/webKomikL.png' : '/webKomik.png'}
+            imageUrl={isLightTheme ? webKomikL : webKomik}
             linkUrl='/komik'
           />
         </div>
@@ -40,7 +53,7 @@ export default function Page() {
           <TildCard
             title='Sosmed'
             description='Autentikasi & crud dasar'
-            imageUrl={isLightTheme ? '/websosmedL.png' : '/websosmed.png'}
+            imageUrl={isLightTheme ? webSosmedL : webSosmed}
             linkUrl='/sosmed'
           />
         </div>
@@ -48,7 +61,7 @@ export default function Page() {
           <TildCard
             title='Chat'
             description='Chat dengan websocket'
-            imageUrl={isLightTheme ? '/webChatL.png' : '/webChat.png'}
+            imageUrl={isLightTheme ? webChatL : webChat}
             linkUrl='/chat'
           />
         </div>
@@ -56,9 +69,7 @@ export default function Page() {
           <TildCard
             title='Compressor'
             description='Compressor image dan video'
-            imageUrl={
-              isLightTheme ? '/WebCompressorL.png' : '/WebCompressor.png'
-            }
+            imageUrl={isLightTheme ? webCompressorL : webCompressor}
             linkUrl='/compressor'
           />
         </div>

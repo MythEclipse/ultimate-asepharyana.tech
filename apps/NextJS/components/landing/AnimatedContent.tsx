@@ -5,6 +5,7 @@ import Instagram from '@/components/logo/Instagram';
 import Facebook from '@/components/logo/Facebook';
 import Linkedln from '@/components/logo/LinkedIn';
 import Discord from '@/components/logo/Discord';
+import profile from '@/public/profil.avif';
 import Link from 'next/link';
 import { AnimatedHeader } from '@/components/text/TextWrite';
 import { motion } from 'framer-motion';
@@ -65,12 +66,13 @@ export default function AnimatedContent() {
             >
               <div className='relative w-64 h-64 lg:w-96 lg:h-96'>
                 <Image
-                  src='/profil.avif'
+                  src={profile}
                   alt='Profil'
                   fill
-                  sizes='100vw'
+                  sizes='(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw'
                   className='rounded-full object-cover'
                   priority
+                  placeholder='blur'
                 />
               </div>
             </motion.div>

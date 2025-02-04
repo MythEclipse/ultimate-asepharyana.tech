@@ -2,14 +2,13 @@
 
 import Image from 'next/image';
 import React from 'react';
-import { StaticImageData } from 'next/image';
 import { CardBody, CardContainer, CardItem } from '@/components/card/3d-card';
 import Link from 'next/link';
 
 interface ThreeDCardProps {
   title: string;
   description: string;
-  imageUrl: string | StaticImageData;
+  imageUrl: string;
   linkUrl: string;
 }
 
@@ -44,7 +43,7 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
               className='w-full h-60 object-cover rounded-xl'
               alt='Card Thumbnail'
               priority
-              placeholder={typeof imageUrl === 'object' ? 'blur' : 'empty'}
+              placeholder='blur'
               sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px'
             />
           </CardItem>
