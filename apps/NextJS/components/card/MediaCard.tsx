@@ -32,7 +32,13 @@ const TypeLabel = ({ type }: { type?: string }) => {
   );
 };
 
-export default function CardA({ title, description, imageUrl, linkUrl, type }: CardProps) {
+export default function CardA({
+  title,
+  description,
+  imageUrl,
+  linkUrl,
+  type,
+}: CardProps) {
   const [blurHash, setBlurHash] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,10 +56,12 @@ export default function CardA({ title, description, imageUrl, linkUrl, type }: C
               src={imageUrl}
               alt={title}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
               className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
               placeholder={blurHash ? 'blur' : 'empty'}
-              blurDataURL={blurHash ? `data:image/png;base64,${blurHash}` : undefined}
+              blurDataURL={
+                blurHash ? `data:image/png;base64,${blurHash}` : undefined
+              }
             />
             <TypeLabel type={type} />
           </div>
