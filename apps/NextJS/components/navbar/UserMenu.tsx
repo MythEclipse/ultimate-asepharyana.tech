@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Session } from 'next-auth';
+import { FcGoogle } from 'react-icons/fc';
+import { signOut } from 'next-auth/react';
 
 interface UserMenuProps {
   session: Session | null;
@@ -68,12 +70,13 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
               >
                 Settings
               </Link>
-              <Link
-                href='/api/auth/signout'
-                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+              <button
+                onClick={() => signOut({ redirectTo: '/' })}
+                className='flex items-center gap-3 px-6 py-3 text-xl text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
               >
-                Sign Out
-              </Link>
+                <FcGoogle className='text-2xl' />
+                Sign in with Google
+              </button>
             </div>
           )}
         </>
