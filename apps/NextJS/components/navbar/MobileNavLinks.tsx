@@ -43,7 +43,7 @@ export default function MobileNavLinks({
       >
         <ul className='flex flex-col p-4'>
           {links.map((link, index) => (
-            <li key={index}>
+            <li key={index} className='text-center'>
               <Link href={link.href}>
                 <span
                   className={`block px-4 py-2 ${
@@ -56,9 +56,10 @@ export default function MobileNavLinks({
                   {link.label}
                 </span>
               </Link>
+              <div className='border-b-2 border-blue-600 mt-2' />
             </li>
           ))}
-          <li className='mt-4'>
+          <li className='mt-4 text-center'>
             <UserMenu session={session} loginUrl={loginUrl} />
           </li>
         </ul>
