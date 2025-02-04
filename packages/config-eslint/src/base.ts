@@ -28,7 +28,6 @@ export const config: any[] = [
   {
     ignores: ["dist/**"],
   },
-  // Konfigurasi untuk file TypeScript
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
@@ -37,7 +36,6 @@ export const config: any[] = [
       },
     },
   },
-  // Konfigurasi untuk file JavaScript (tanpa project parserOptions)
   {
     files: ["**/*.js", "**/*.jsx"],
     languageOptions: {

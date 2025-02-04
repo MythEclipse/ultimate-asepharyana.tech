@@ -9,7 +9,8 @@
     "declarationDir": "./types",
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@base/*": ["./*"]
     },
     "strict": true,
     "module": "CommonJS",

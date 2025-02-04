@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./cbase": "./dist/cjs/base.js",
+    "./cnext-js": "./dist/cjs/next.js",
+    "./creact-internal": "./dist/cjs/react-internal.js",
     "./base": "./dist/esm/base.js",
     "./next-js": "./dist/esm/next.js",
     "./react-internal": "./dist/esm/react-internal.js",

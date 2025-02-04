@@ -8,7 +8,7 @@ const compat = new FlatCompat({
   baseDirectory: process.cwd(),
 });
 
-const project: string = resolve(process.cwd(), "tsconfig.eslint.json");
+const project: string = resolve(process.cwd(), "tsconfig.json");
 
 const baseConfig: FlatConfig = {
   languageOptions: {
