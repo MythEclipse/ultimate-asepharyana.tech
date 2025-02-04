@@ -39,6 +39,7 @@
     "@tabler/icons-react": "3.x",
     "axios": "1.x",
     "bcrypt": "5.x",
+    "blurhash": "^2.0.5",
     "bullmq": "5.x",
     "cheerio": "1.x",
     "class-variance-authority": "~0.7.1",

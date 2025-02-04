@@ -1,6 +1,6 @@
 // components/AnimeGrid.tsx
 import React from 'react';
-import CardA from './MediaCard';
+import MediaCard from './MediaCard';
 
 interface Anime {
   title: string;
@@ -19,13 +19,13 @@ interface AnimeGridProps {
 
 const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
   return (
-    <div className='flex flex-col items-center p-4'>
-      <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
+    <div className="flex flex-col items-center p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {animes.map((anime) => (
-          <CardA
+          <MediaCard
             key={anime.slug}
             title={anime.title}
-            description={`${anime.rating || ''}`}
+            description={anime.rating || 'N/A'}
             imageUrl={anime.poster || ''}
             linkUrl={`/anime/detail/${anime.slug}`}
           />

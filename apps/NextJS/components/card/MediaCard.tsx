@@ -1,8 +1,10 @@
 'use client';
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Link from 'next/link';
 import Image from 'next/image';
+import { encodeImageToBlurhash } from '@/lib/blurhash';
 
 interface CardProps {
   title: string;
@@ -12,7 +14,7 @@ interface CardProps {
   type?: string;
 }
 
-const TypeLabel = ({ type }: { type: string | undefined }) => {
+const TypeLabel = ({ type }: { type?: string }) => {
   if (!type) return null;
 
   const typeColors = {
@@ -30,13 +32,15 @@ const TypeLabel = ({ type }: { type: string | undefined }) => {
   );
 };
 
-export default function CardA({
-  title,
-  description,
-  imageUrl,
-  linkUrl,
-  type,
-}: CardProps) {
+export default function CardA({ title, description, imageUrl, linkUrl, type }: CardProps) {
+  const [blurHash, setBlurHash] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (imageUrl) {
+      encodeImageToBlurhash(imageUrl).then(setBlurHash).catch(console.error);
+    }
+  }, [imageUrl]);
+
   return (
     <Link href={linkUrl}>
       <div className='cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:rotate-1 active:scale-95'>
@@ -46,7 +50,10 @@ export default function CardA({
               src={imageUrl}
               alt={title}
               fill
-              className='object-cover transition-opacity duration-500 ease-in-out'
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
+              placeholder={blurHash ? 'blur' : 'empty'}
+              blurDataURL={blurHash ? `data:image/png;base64,${blurHash}` : undefined}
             />
             <TypeLabel type={type} />
           </div>
