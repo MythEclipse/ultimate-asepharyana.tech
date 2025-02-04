@@ -72,10 +72,10 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
               </Link>
               <button
                 onClick={() => signOut({ redirectTo: '/' })}
-                className='flex items-center gap-3 px-6 py-3 text-xl text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
+                className='flex items-center gap-3 px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
               >
                 <FcGoogle className='text-2xl' />
-                Sign in with Google
+                Sign out
               </button>
             </div>
           )}
