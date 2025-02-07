@@ -19,7 +19,7 @@ export $(grep -v '^#' .env | xargs)
 # fi
 
 # Remove any carriage return characters from /etc/environment
-sudo sed -i 's/\r$//' /etc/environment
+# sudo sed -i 's/\r$//' /etc/environment
 # Install any new or updated dependencies using pnpm
 pnpm install
 
