@@ -8,7 +8,7 @@ bash cleanmodule.sh
 git fetch origin
 git pull origin main
 # Load environment variables from .env file
-export $(grep -v '^#' .env | xargs)
+# export $(grep -v '^#' .env | xargs)
 
 # # Check if DATABASE_URL is present in /etc/environment, if not, add it
 # if ! grep -q "DATABASE_URL=\"$DATABASE_URL\"" /etc/environment; then

@@ -6,7 +6,7 @@
     "emitDeclarationOnly": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "declarationDir": "./dist/types",
+    "declarationDir": "./types",
     "strict": true,
     "module": "CommonJS",
     "moduleResolution": "Node",
