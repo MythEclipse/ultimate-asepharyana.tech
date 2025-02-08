@@ -59,9 +59,9 @@ export default function MobileNavLinks({
               <div className='border-b-2 border-blue-600 mt-2' />
             </li>
           ))}
-          <li className='mt-4 text-center'>
+          {/* <li className='mt-4 text-center'>
             <UserMenu session={session} loginUrl={loginUrl} />
-          </li>
+          </li> */}
         </ul>
       </div>
     </>

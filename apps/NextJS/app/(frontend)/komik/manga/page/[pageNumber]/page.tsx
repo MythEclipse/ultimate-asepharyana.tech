@@ -46,7 +46,7 @@ export default async function Page(props: {
         </ButtonA>
       </Link>
       <div className='flex flex-col items-center p-4'>
-        <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
           {komikData.data.map((manga) => (
             <ComicCard key={manga.komik_id} comic={manga} />
           ))}

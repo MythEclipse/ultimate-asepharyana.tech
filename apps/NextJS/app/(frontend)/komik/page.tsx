@@ -63,7 +63,7 @@ export default async function HomePage() {
               </Link>
             )}
             <div className='flex flex-col items-center p-4'>
-              <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
+              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
                 {error ? (
                   <p className='text-gray-600 dark:text-white'>
                     Error fetching data

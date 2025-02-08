@@ -54,7 +54,7 @@ const SearchPage = async (props: {
         {searchResults.data.length > 0 ? (
           <>
             <div className='flex flex-col items-center p-4'>
-              <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
+              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
                 {searchResults.data.map((comic) => (
                   <ComicCard key={comic.komik_id} comic={comic} />
                 ))}

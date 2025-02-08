@@ -12,6 +12,15 @@ interface UserMenuProps {
   loginUrl: string;
 }
 
+const mockSession: Session = {
+  user: {
+    name: 'Dev User',
+    email: 'devuser@example.com',
+    image: '/profile-circle-svgrepo-com.svg',
+  },
+  expires: '9999-12-31T23:59:59.999Z',
+};
+
 export default function UserMenu({ session, loginUrl }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -36,9 +45,12 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
     };
   }, []);
 
+  const isDev = process.env.NODE_ENV === 'development';
+  const currentSession = isDev ? mockSession : session;
+
   return (
     <div className='relative'>
-      {session ? (
+      {currentSession ? (
         <>
           <button
             ref={buttonRef}
@@ -46,7 +58,7 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
             onClick={() => setIsOpen(!isOpen)}
           >
             <Image
-              src={session.user?.image || '/profile-circle-svgrepo-com.svg'}
+              src={currentSession.user?.image || '/profile-circle-svgrepo-com.svg'}
               width={40}
               height={40}
               className='w-10 h-10 rounded-full object-cover'
@@ -59,25 +71,25 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
           {isOpen && (
             <div
               ref={menuRef}
-              className='absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg'
+              className='absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg'
             >
               <Link
                 href='/dashboard'
-                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-center'
               >
                 Dashboard
               </Link>
               <Link
                 href='/settings'
-                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-center'
               >
                 Settings
               </Link>
               <button
                 onClick={() => signOut({ redirectTo: '/' })}
-                className='flex items-center gap-3 px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
+                className='flex items-center md:hidden gap-1 px-8 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
               >
-                <FcGoogle className='text-2xl' />
+                <FcGoogle className='text-xl' />
                 Sign out
               </button>
             </div>
