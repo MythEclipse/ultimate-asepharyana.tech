@@ -26,7 +26,8 @@ pnpm-lock.yaml
 **/workbox-*.js.map
 # next.js
 apps/NextJS/logs/
-
+**/core
+/**/core
 **/logs/** 
 /**/logs/** 
 .next/
