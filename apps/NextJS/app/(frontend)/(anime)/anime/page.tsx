@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Loading from '@/components/misc/loading';
 import ButtonA from '@/components/button/ScrollButton';
 import AnimeGrid from '@/components/card/AnimeGrid';
+import { BaseUrl } from '@/lib/url';
 
 interface HomeData {
   status: string;
@@ -33,7 +34,7 @@ export default async function AnimePage() {
   let episodeData: HomeData | null = null;
 
   try {
-    const response = await fetch('/api/anime/', {
+    const response = await fetch(`${BaseUrl}/api/anime/`, {
       next: { revalidate: 600 },
     });
     episodeData = await response.json();
