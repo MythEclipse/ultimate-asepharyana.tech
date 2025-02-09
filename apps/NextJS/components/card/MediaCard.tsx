@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Link from 'next/link';
 import Image from 'next/image';
-import { encodeImageToBlurhash } from '@/lib/blurhash';
 
 interface CardProps {
   title: string;
@@ -32,6 +31,10 @@ const TypeLabel = ({ type }: { type?: string }) => {
   );
 };
 
+const SkeletonLoader = () => (
+  <div className='absolute inset-0 bg-gray-300 animate-pulse rounded-t-xl'></div>
+);
+
 export default function CardA({
   title,
   description,
@@ -39,29 +42,21 @@ export default function CardA({
   linkUrl,
   type,
 }: CardProps) {
-  const [blurHash, setBlurHash] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (imageUrl) {
-      encodeImageToBlurhash(imageUrl).then(setBlurHash).catch(console.error);
-    }
-  }, [imageUrl]);
+  const [isLoading, setIsLoading] = useState(true);
 
   return (
     <Link href={linkUrl}>
       <div className='cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:rotate-1 active:scale-95'>
         <ShadcnCard className='w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl bg-white dark:bg-black overflow-hidden transform transition-transform duration-300 hover:shadow-2xl text-blue-500 bg-transparent border border-blue-500 rounded-xl shadow-lg shadow-blue-500/50 hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 hover:ring-4 hover:ring-gradient-to-r hover:from-blue-400 hover:via-purple-500 hover:to-pink-500'>
           <div className='relative h-48 sm:h-56 md:h-64 lg:h-72'>
+            {isLoading && <SkeletonLoader />}
             <Image
               src={imageUrl}
               alt={title}
               fill
               sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
               className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
-              placeholder={blurHash ? 'blur' : 'empty'}
-              blurDataURL={
-                blurHash ? `data:image/png;base64,${blurHash}` : undefined
-              }
+              onLoadingComplete={() => setIsLoading(false)}
             />
             <TypeLabel type={type} />
           </div>

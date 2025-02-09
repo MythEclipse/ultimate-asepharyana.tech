@@ -58,7 +58,9 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
             onClick={() => setIsOpen(!isOpen)}
           >
             <Image
-              src={currentSession.user?.image || '/profile-circle-svgrepo-com.svg'}
+              src={
+                currentSession.user?.image || '/profile-circle-svgrepo-com.svg'
+              }
               width={40}
               height={40}
               className='w-10 h-10 rounded-full object-cover'

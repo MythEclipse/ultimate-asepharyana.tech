@@ -3,6 +3,7 @@ import React from 'react';
 import { BaseUrl } from '@/lib/url';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import ButtonA from '@/components/button/ScrollButton';
+import ClientPlayer from '@/components/misc/ClientPlayer';
 
 interface AnimeResponse {
   status: string;
@@ -59,7 +60,7 @@ export default async function DetailAnimePage(props: DetailAnimePageProps) {
       <hr className='my-4 border-white-300' />
 
       <div className='flex flex-col gap-2 mt-4'>
-        {/* {Anime.data.stream_url && <ClientPlayer url={Anime.data.stream_url} />} */}
+        {Anime.data.stream_url && <ClientPlayer url={Anime.data.stream_url} />}
         <div className='flex justify-between mt-8'>
           {Anime.data.previous_episode && (
             <p className='text-lg text-white-700'>
