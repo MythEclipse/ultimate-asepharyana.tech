@@ -28,7 +28,7 @@ importers:
         version: 7.0.3
       prettier:
         specifier: 3.x
-        version: 3.4.2
+        version: 3.5.0
       prisma:
         specifier: 6.x
         version: 6.3.1(typescript@5.7.3)
@@ -195,10 +195,10 @@ importers:
         version: 29.7.0(@types/node@22.13.1)(ts-node@10.9.2(@types/node@22.13.1)(typescript@5.7.3))
       prettier:
         specifier: 3.x
-        version: 3.4.2
+        version: 3.5.0
       pretty-quick:
         specifier: 4.x
-        version: 4.0.0(prettier@3.4.2)
+        version: 4.0.0(prettier@3.5.0)
       rimraf:
         specifier: 6.x
         version: 6.0.1
@@ -312,7 +312,7 @@ importers:
         version: 2.4.6(react@19.0.0)
       framer-motion:
         specifier: ^12.0.11
-        version: 12.4.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 12.4.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       https-proxy-agent:
         specifier: 7.x
         version: 7.0.6
@@ -523,7 +523,7 @@ importers:
         version: 17.15.1(eslint@9.18.0(jiti@1.21.7))
       eslint-plugin-prettier:
         specifier: 5.x
-        version: 5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)))(eslint@9.18.0(jiti@1.21.7))(prettier@3.4.2)
+        version: 5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)))(eslint@9.18.0(jiti@1.21.7))(prettier@3.5.0)
       eslint-plugin-promise:
         specifier: 7.x
         version: 7.2.1(eslint@9.18.0(jiti@1.21.7))
@@ -547,13 +547,13 @@ importers:
         version: 8.5.1
       prettier:
         specifier: 3.x
-        version: 3.4.2
+        version: 3.5.0
       prettier-plugin-tailwindcss:
         specifier: 0.x
-        version: 0.6.11(prettier@3.4.2)
+        version: 0.6.11(prettier@3.5.0)
       pretty-quick:
         specifier: 4.x
-        version: 4.0.0(prettier@3.4.2)
+        version: 4.0.0(prettier@3.5.0)
       tailwindcss:
         specifier: 3.x
         version: 3.4.17(ts-node@10.9.2(@types/node@22.13.1)(typescript@5.7.3))
@@ -614,13 +614,13 @@ importers:
         version: 1.1.0
       eslint-plugin-prettier:
         specifier: 5.x
-        version: 5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)))(eslint@9.18.0(jiti@1.21.7))(prettier@3.4.2)
+        version: 5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)))(eslint@9.18.0(jiti@1.21.7))(prettier@3.5.0)
       globals:
         specifier: 15.x
         version: 15.14.0
       prettier:
         specifier: 3.x
-        version: 3.4.2
+        version: 3.5.0
       rimraf:
         specifier: 6.x
         version: 6.0.1
@@ -5531,8 +5531,8 @@ packages:
   fraction.js@4.3.7:
     resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
 
-  framer-motion@12.4.1:
-    resolution: {integrity: sha512-5Ijbea3topSZjadQ0hgc/TcWj2ldMZmNREM7RvAhvsThYOA1HHOA8TT1yKvMu1YXP3jWaFwoZ6Vo9Nw+DUZrzA==}
+  framer-motion@12.4.2:
+    resolution: {integrity: sha512-pW307cQKjDqEuO1flEoIFf6TkuJRfKr+c7qsHAJhDo4368N/5U8/7WU8J+xhd9+gjmOgJfgp+46evxRRFM39dA==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -6543,8 +6543,8 @@ packages:
   makeerror@1.0.12:
     resolution: {integrity: sha512-JmqCvUhmt43madlpFzG4BQzG2Z3m6tvQDNKdClZnO3VbIudJYmxsT0FNJMeiB2+JTSlTQTSbU8QdesVmwJcmLg==}
 
-  marked@15.0.6:
-    resolution: {integrity: sha512-Y07CUOE+HQXbVDCGl3LXggqJDbXDP2pArc2C1N1RRMN0ONiShoSsIInMd5Gsxupe7fKLpgimTV+HOJ9r7bA+pg==}
+  marked@15.0.7:
+    resolution: {integrity: sha512-dgLIeKGLx5FwziAnsk4ONoGwHwGPJzselimvlVskE9XLN4Orv9u2VA3GWw/lYUqjfA0rUT/6fqKwfZJapP9BEg==}
     engines: {node: '>= 18'}
     hasBin: true
 
@@ -7365,8 +7365,8 @@ packages:
       prettier-plugin-svelte:
         optional: true
 
-  prettier@3.4.2:
-    resolution: {integrity: sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ==}
+  prettier@3.5.0:
+    resolution: {integrity: sha512-quyMrVt6svPS7CjQ9gKb3GLEX/rl3BCL2oa/QkNcXv4YNVBC9olt3s+H7ukto06q7B1Qz46PbrKLO34PR6vXcA==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -8103,8 +8103,8 @@ packages:
     resolution: {integrity: sha512-HehCEsotFqbPW9sJ8WVYB6UbmIMv7kUUORIF2Nncq4VQvBfNBLibW9YZR5dlYCSUhwcD628pRllm7n+E+YTzJw==}
     engines: {node: '>= 14'}
 
-  socks@2.8.3:
-    resolution: {integrity: sha512-l5x7VUUWbjVFbafGLxPWkYsHIhEvmF85tbIeFZWc8ZPtoMyybuEhL7Jye/ooC4/d48FgOjSJXgsF/AJPYCW8Zw==}
+  socks@2.8.4:
+    resolution: {integrity: sha512-D3YaD0aRxR3mEcqnidIs7ReYJFVzWdd6fXJYUM8ixcQcJRGTka/b3saV0KflYhyVJXKhb947GndU35SxYNResQ==}
     engines: {node: '>= 10.0.0', npm: '>= 3.0.0'}
 
   sonic-boom@4.2.0:
@@ -14219,10 +14219,10 @@ snapshots:
 
   eslint-plugin-only-warn@1.1.0: {}
 
-  eslint-plugin-prettier@5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)))(eslint@9.18.0(jiti@1.21.7))(prettier@3.4.2):
+  eslint-plugin-prettier@5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)))(eslint@9.18.0(jiti@1.21.7))(prettier@3.5.0):
     dependencies:
       eslint: 9.18.0(jiti@1.21.7)
-      prettier: 3.4.2
+      prettier: 3.5.0
       prettier-linter-helpers: 1.0.0
       synckit: 0.9.2
     optionalDependencies:
@@ -14673,7 +14673,7 @@ snapshots:
 
   fraction.js@4.3.7: {}
 
-  framer-motion@12.4.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  framer-motion@12.4.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       motion-dom: 12.0.0
       motion-utils: 12.0.0
@@ -15955,7 +15955,7 @@ snapshots:
     dependencies:
       tmpl: 1.0.5
 
-  marked@15.0.6: {}
+  marked@15.0.7: {}
 
   marked@4.3.0: {}
 
@@ -16746,11 +16746,11 @@ snapshots:
     dependencies:
       fast-diff: 1.3.0
 
-  prettier-plugin-tailwindcss@0.6.11(prettier@3.4.2):
+  prettier-plugin-tailwindcss@0.6.11(prettier@3.5.0):
     dependencies:
-      prettier: 3.4.2
+      prettier: 3.5.0
 
-  prettier@3.4.2: {}
+  prettier@3.5.0: {}
 
   pretty-bytes@5.6.0: {}
 
@@ -16762,7 +16762,7 @@ snapshots:
 
   pretty-format@3.8.0: {}
 
-  pretty-quick@4.0.0(prettier@3.4.2):
+  pretty-quick@4.0.0(prettier@3.5.0):
     dependencies:
       execa: 5.1.1
       find-up: 5.0.0
@@ -16770,7 +16770,7 @@ snapshots:
       mri: 1.2.0
       picocolors: 1.1.1
       picomatch: 3.0.1
-      prettier: 3.4.2
+      prettier: 3.5.0
       tslib: 2.8.1
 
   prisma@6.3.1(typescript@5.7.3):
@@ -17578,7 +17578,7 @@ snapshots:
     dependencies:
       codemirror: 6.0.1
       codemirror-spell-checker: 1.1.2
-      marked: 15.0.6
+      marked: 15.0.7
 
   sisteransi@1.0.5: {}
 
@@ -17596,7 +17596,7 @@ snapshots:
     dependencies:
       agent-base: 6.0.2
       debug: 4.4.0
-      socks: 2.8.3
+      socks: 2.8.4
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -17605,11 +17605,11 @@ snapshots:
     dependencies:
       agent-base: 7.1.3
       debug: 4.4.0
-      socks: 2.8.3
+      socks: 2.8.4
     transitivePeerDependencies:
       - supports-color
 
-  socks@2.8.3:
+  socks@2.8.4:
     dependencies:
       ip-address: 9.0.5
       smart-buffer: 4.2.0

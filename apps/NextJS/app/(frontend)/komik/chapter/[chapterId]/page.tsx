@@ -70,7 +70,7 @@ export default async function ChapterPage(props: {
             className=''
           >
             <Image
-              src={`/api/imageproxy?url=${encodeURIComponent(image)}`}
+              src={image}
               alt={`Chapter ${chapter.title} - page ${index + 1}`}
               className='object-cover transition-opacity duration-300'
               width='725'
