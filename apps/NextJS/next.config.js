@@ -12,7 +12,7 @@ const withPWA = require("next-pwa")({
       options: {
         cacheName: "images-cache",
         expiration: {
-          maxEntries: 2048,
+          maxEntries: 512,
           maxAgeSeconds: 30 * 24 * 60 * 60,
         },
         cacheableResponse: {

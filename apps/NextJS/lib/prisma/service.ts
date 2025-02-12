@@ -1,5 +1,5 @@
 // // lib/prisma/service.ts
-// import { prisma, User } from '@asepharyana/database';
+import { prisma } from '@asepharyana/database';
 
 // interface GoogleUserData {
 //   emailVerified: Date | null;
@@ -94,3 +94,15 @@
 // export async function getUserById(id: string) {
 //   return await prisma.user.findUnique({ where: { id } });
 // }
+export async function updateUserImage(userId: string, imageUrl: string) {
+    try {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { image: imageUrl },
+        });
+        return { status: true, data: user };
+    } catch (error) {
+        console.error('Error updating user image:', error);
+        return { status: false, data: (error as Error).message };
+    }
+}

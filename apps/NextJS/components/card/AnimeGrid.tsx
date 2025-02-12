@@ -7,10 +7,12 @@ interface Anime {
   slug: string;
   rating?: string;
   poster?: string;
-  current_episode?: string;
   release_day?: string;
   newest_release_date?: string;
   anime_url?: string;
+  current_episode?: string;
+  episode?: string;
+  episode_count?: string
 }
 
 interface AnimeGridProps {
@@ -25,7 +27,7 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
           <MediaCard
             key={anime.slug}
             title={anime.title}
-            description={anime.rating || 'N/A'}
+            description={anime.current_episode || anime.episode || anime.episode_count || ''}
             imageUrl={anime.poster || ''}
             linkUrl={`/anime/detail/${anime.slug}`}
           />

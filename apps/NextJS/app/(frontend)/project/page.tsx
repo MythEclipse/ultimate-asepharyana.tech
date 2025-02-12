@@ -44,7 +44,7 @@ export default function Page() {
         <div>
           <TildCard
             title='Komik'
-            description='Komik scraping dari komikindo.pw'
+            description='Komik scraping dari komikindo1.com'
             imageUrl={isLightTheme ? webKomikL : webKomik}
             linkUrl='/komik'
           />
