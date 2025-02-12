@@ -95,14 +95,14 @@ import { prisma } from '@asepharyana/database';
 //   return await prisma.user.findUnique({ where: { id } });
 // }
 export async function updateUserImage(userId: string, imageUrl: string) {
-    try {
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { image: imageUrl },
-        });
-        return { status: true, data: user };
-    } catch (error) {
-        console.error('Error updating user image:', error);
-        return { status: false, data: (error as Error).message };
-    }
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { image: imageUrl },
+    });
+    return { status: true, data: user };
+  } catch (error) {
+    console.error('Error updating user image:', error);
+    return { status: false, data: (error as Error).message };
+  }
 }

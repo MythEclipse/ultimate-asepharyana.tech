@@ -10,7 +10,10 @@ import { Loader2 } from 'lucide-react';
 export default function Settings() {
   const { data: session } = useSession();
   const [image, setImage] = useState<File | null>(null);
-  const [status, setStatus] = useState<{ saving: boolean; error: string | null }>({ saving: false, error: null });
+  const [status, setStatus] = useState<{
+    saving: boolean;
+    error: string | null;
+  }>({ saving: false, error: null });
 
   const handleSave = async () => {
     setStatus({ saving: true, error: null });
@@ -38,38 +41,38 @@ export default function Settings() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center">
+    <div className='container mx-auto py-8 px-4 max-w-2xl'>
+      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
         Edit Profile
       </h1>
 
       <Card>
-        <div className="p-4 space-y-4">
+        <div className='p-4 space-y-4'>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
               Profile Image
             </label>
             <input
-              type="file"
+              type='file'
               onChange={(e) => setImage(e.target.files?.[0] || null)}
-              className="mt-1 block w-full"
+              className='mt-1 block w-full'
             />
           </div>
 
           <Button
             onClick={handleSave}
             disabled={status.saving}
-            className="w-full"
+            className='w-full'
           >
             {status.saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className='w-4 h-4 animate-spin' />
             ) : (
               'Save Changes'
             )}
           </Button>
 
           {status.error && (
-            <div className="text-red-500 text-sm mt-2 text-center">
+            <div className='text-red-500 text-sm mt-2 text-center'>
               {status.error}
             </div>
           )}
