@@ -8,12 +8,12 @@ sudo apt install -y wget software-properties-common
 sudo apt update
 
 # Install FFmpeg
-sudo apt install -y ffmpeg
+sudo apt install -y ffmpeg curl git build-essential imagemagick libvips
 
 # Verify FFmpeg installation
 ffmpeg -version
 
 # Install other necessary tools for compression
-sudo apt install -y zip unzip
+sudo apt install -y zip unzip 
 
 echo "FFmpeg and necessary compression tools have been installed successfully."

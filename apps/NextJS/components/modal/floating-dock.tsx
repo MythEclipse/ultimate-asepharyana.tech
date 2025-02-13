@@ -1,9 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { IconLayoutNavbarCollapse } from '@tabler/icons-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import AnimatedButton from './AnimatedButton'; // Import your custom AnimatedButton
 
 export const FloatingDock = ({
   items,
@@ -31,6 +31,17 @@ const FloatingDockMobile = ({
 }) => {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleScrollUp = () => {
+    window.scrollTo(0, 0); // Scroll to the top of the page
+  };
+
+  const handleNavigation = (href: string) => {
+    router.push(href); // Programmatically navigate to the href
+    handleScrollUp(); // Scroll to the top when clicked
+  };
 
   return (
     <div className={cn('fixed bottom-4 right-4 md:hidden z-50', className)}>
@@ -41,36 +52,41 @@ const FloatingDockMobile = ({
             : 'opacity-0 pointer-events-none'
         }`}
       >
-        {items.map((item, idx) => (
-          <div
-            key={item.title}
-            className={`transition-transform duration-300 ease-in-out transform ${
-              open ? 'translate-y-0' : 'translate-y-4'
-            }`}
-            style={{ transitionDelay: `${idx * 0.02}s` }}
-          >
-            <Link
-              href={item.href}
-              className={cn(
-                'flex flex-col items-center justify-center text-center px-3 py-2 rounded-full shadow-md transition-all duration-300 ease-in-out',
-                {
-                  'bg-blue-500 text-white': pathname === item.href,
-                  'bg-white dark:bg-black text-blue-500 border border-blue-500 hover:bg-blue-500 hover:text-white focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50':
-                    pathname !== item.href,
-                }
-              )}
+        <div ref={scrollContainerRef} className='max-h-96 overflow-y-auto'>
+          {items.map((item, idx) => (
+            <div
+              key={item.title}
+              className={`transition-transform duration-300 ease-in-out transform ${
+                open ? 'translate-y-0' : 'translate-y-4'
+              }`}
+              style={{ transitionDelay: `${idx * 0.02}s` }}
             >
-              <div className='h-8 w-8'>{item.icon}</div>
-            </Link>
-          </div>
-        ))}
+              <AnimatedButton
+                onClick={() => handleNavigation(item.href)}
+                className={cn(
+                  'text-center px-3 py-2 rounded-full shadow-md transition-all duration-300 ease-in-out',
+                  {
+                    'bg-blue-500 text-white': pathname === item.href,
+                    'bg-white dark:bg-black text-blue-500 border border-blue-500 hover:bg-blue-500 hover:text-white focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50':
+                      pathname !== item.href,
+                  }
+                )}
+              >
+                <div className='h-8 w-8'>{item.icon}</div>
+              </AnimatedButton>
+            </div>
+          ))}
+        </div>
       </div>
-      <button
-        onClick={() => setOpen(!open)}
-        className='flex flex-col items-center justify-center text-center px-3 py-2 text-blue-500 bg-transparent border-2 border-blue-500 rounded-full shadow-lg hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50'
+      <AnimatedButton
+        onClick={() => {
+          setOpen(!open);
+          handleScrollUp(); // Scroll to the top when clicked
+        }}
+        className='text-blue-500 bg-transparent border-2 border-blue-500 rounded-full shadow-lg hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50'
       >
         <IconLayoutNavbarCollapse className='h-8 w-8 text-neutral-500 dark:text-neutral-400' />
-      </button>
+      </AnimatedButton>
     </div>
   );
 };
@@ -107,6 +123,7 @@ function IconContainer({
 }) {
   const [hovered, setHovered] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const [scale, setScale] = useState(1);
 
   const handleMouseEnter = () => {
@@ -119,29 +136,32 @@ function IconContainer({
     setScale(1);
   };
 
+  const handleNavigation = () => {
+    router.push(href); // Programmatically navigate to the href
+  };
+
   return (
-    <Link href={href}>
-      <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className={cn(
-          'aspect-square rounded-full flex items-center justify-center relative border transition-all duration-200',
-          {
-            'bg-blue-500': pathname === href,
-            'bg-gray-200 dark:bg-neutral-800': pathname !== href,
-          }
-        )}
-        style={{ transform: `scale(${scale})` }}
-      >
-        {hovered && (
-          <div className='absolute left-1/2 -translate-x-1/2 -top-10 px-4 py-2 whitespace-pre rounded-md bg-white dark:bg-black dark:border-neutral-900 dark:text-white border border-gray-200 text-sm'>
-            {title}
-          </div>
-        )}
-        <div className='h-14 w-14 text-blue-500 border border-blue-500 rounded-full shadow-md hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center'>
-          <div className='h-7 w-7'>{icon}</div>
+    <button
+      onClick={handleNavigation}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={cn(
+        'aspect-square rounded-full flex items-center justify-center relative border transition-all duration-200',
+        {
+          'bg-blue-500': pathname === href,
+          'bg-gray-200 dark:bg-neutral-800': pathname !== href,
+        }
+      )}
+      style={{ transform: `scale(${scale})` }}
+    >
+      {hovered && (
+        <div className='absolute left-1/2 -translate-x-1/2 -top-10 px-4 py-2 whitespace-pre rounded-md bg-white dark:bg-black dark:border-neutral-900 dark:text-white border border-gray-200 text-sm'>
+          {title}
         </div>
+      )}
+      <div className='h-14 w-14 text-blue-500 border border-blue-500 rounded-full shadow-md hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center'>
+        <div className='h-7 w-7'>{icon}</div>
       </div>
-    </Link>
+    </button>
   );
 }
