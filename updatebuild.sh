@@ -3,12 +3,13 @@
 # Remove the .next directory to clean up old build files
 # sudo rm -rf ./.next/
 # Check if nvm is installed
-if command -v nvm > /dev/null 2>&1; then
-    # Use Node.js version 22 with nvm
-    nvm use 22
-else
-    echo "nvm is not installed."
-fi
+# if command -v nvm > /dev/null 2>&1; then
+#     # Use Node.js version 22 with nvm
+#     nvm use 22
+# else
+#     echo "nvm is not installed."
+# fi
+nvm use 22
 bash sqlitereset.sh
 bash cleanmodule.sh
 # Pull the latest changes from the Git repository
@@ -49,10 +50,10 @@ if [ $? -eq 0 ]; then
 else
     echo "Build failed. Skipping commit."
 fi
-
-if command -v nvm > /dev/null 2>&1; then
-    # Use Node.js version 22 with nvm
-    nvm use default
-else
-    echo "nvm is not installed."
-fi
+nvm use default
+# if command -v nvm > /dev/null 2>&1; then
+#     # Use Node.js version 22 with nvm
+#     nvm use default
+# else
+#     echo "nvm is not installed."
+# fi
