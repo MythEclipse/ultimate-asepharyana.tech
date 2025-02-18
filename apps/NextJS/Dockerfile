@@ -1,53 +1,29 @@
-# Stage 1: Base image
-FROM node:18-alpine AS base
+# Base image
+FROM node:22-alpine AS base
 WORKDIR /app
+RUN addgroup -S -g 1001 nodejs
+RUN adduser -S -u 1001 -G nodejs nextjs
 
-# Create a 'nextjs' user explicitly in the base image
-RUN adduser -D nextjs
-
-# Stage 2: Builder
+# Builder stage
 FROM base AS builder
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# Tentukan direktori cache untuk pnpm
+ENV PNPM_STORE_PATH=/pnpm-store
 RUN apk update && apk add --no-cache libc6-compat
-RUN npm install -g pnpm
-COPY . .
-RUN pnpm turbo prune web --docker
-
-# Stage 3: Installer
-FROM base AS installer
-RUN apk update && apk add --no-cache libc6-compat
+RUN npm install -g pnpm turbo
 WORKDIR /app
-
-# First install the dependencies (as they change less often)
-COPY --from=builder /app/out/json/ . 
-RUN pnpm install
-
-# Build the project
-COPY --from=builder /app/out/full/ .
-
-# Uncomment and use build args to enable remote caching
-# ARG TURBO_TEAM
-# ENV TURBO_TEAM=$TURBO_TEAM
-
-# ARG TURBO_TOKEN
-# ENV TURBO_TOKEN=$TURBO_TOKEN
-
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN turbo prune @asepharyana/web --docker
 RUN pnpm turbo build
 
-# Stage 4: Runner
+# Production Runner
 FROM base AS runner
 WORKDIR /app
-
-# Don't run production as root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
 USER nextjs
+COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/.next/static ./apps/NextJS/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/public ./apps/NextJS/public
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=installer --chown=nextjs:nodejs /app/apps/NextJS/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/NextJS/.next/static ./apps/NextJS/.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/NextJS/public ./apps/NextJS/public
-
-EXPOSE 3090
-CMD ["node", "apps/NextJS/server.js"]
+EXPOSE 3000
+CMD ["node", "server.js"]

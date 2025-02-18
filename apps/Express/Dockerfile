@@ -1,41 +1,26 @@
-# Gunakan image Node.js versi yang sesuai dan berbasis Alpine untuk ukuran yang lebih kecil
-FROM node:22-alpine AS builder
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Set working directory di dalam container
+# Base image
+FROM node:22-alpine AS base
 WORKDIR /app
 
-# Salin hanya file yang diperlukan untuk installasi dependencies
-COPY package.json ./
-
-# Install dependencies
-RUN pnpm install 
-
-# Salin semua file setelah dependencies terinstall
+# Builder stage
+FROM base AS builder
+# Tentukan direktori cache untuk pnpm
+ENV PNPM_STORE_PATH=/pnpm-store
+RUN apk update && apk add --no-cache libc6-compat
+RUN npm install -g pnpm turbo
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
+RUN turbo prune @asepharyana/express --docker
+RUN pnpm run build
 
-# Build aplikasi (jika ada, misalnya TypeScript)
-# RUN pnpm run build  # Jika Anda menggunakan TypeScript atau build step lain
-
-# Gunakan image Node.js yang lebih ringan untuk production
-FROM node:22-alpine AS production
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Set working directory di dalam container
+# Production Runner
+FROM base AS runner
 WORKDIR /app
+COPY --from=builder /app/dist /app/dist
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/package.json /app/
 
-# Salin file build dari tahap builder
-COPY --from=builder /app /app
-
-# Install dependencies untuk production saja
-RUN pnpm install --prod 
-
-# Tentukan port yang akan digunakan aplikasi
-EXPOSE 4090
-
-# Jalankan aplikasi Express.js
-CMD ["node", "index.js"]
+EXPOSE 4091
+CMD ["node", "dist/index.js"]
