@@ -32,7 +32,8 @@ async function getCachedProxies(): Promise<string[]> {
 }
 
 export async function fetchWithProxy(
-  slug: string
+  slug: string,
+  useProxies: boolean = false
 ): Promise<{ data: string | object; contentType: string | null }> {
   try {
     const res = await fetch(slug, {
@@ -50,8 +51,12 @@ export async function fetchWithProxy(
     }
     throw new Error(`Direct fetch failed with status ${res.status}`);
   } catch {
-    logger.error('Direct fetch failed, trying proxies');
-    return await fetchFromProxies(slug);
+    if (useProxies) {
+      logger.error('Direct fetch failed, trying proxies');
+      return await fetchFromProxies(slug);
+    } else {
+      throw new Error('Direct fetch failed and proxy usage is disabled');
+    }
   }
 }
 
