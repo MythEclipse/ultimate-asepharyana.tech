@@ -68,8 +68,12 @@ const parseAnimePage = (html: string, slug: string): AnimeData => {
     }
   });
 
-  const nextEpisodeElement = $('#navigation-episode .nvs a[title*="Episode"][href*="episode-"]');
-  const prevEpisodeElement = $('#navigation-episode .nvs a[title*="Episode"][href*="episode-"]');
+  const nextEpisodeElement = $(
+    '#navigation-episode .nvs a[title*="Episode"][href*="episode-"]'
+  );
+  const prevEpisodeElement = $(
+    '#navigation-episode .nvs a[title*="Episode"][href*="episode-"]'
+  );
 
   const next_episode_url = nextEpisodeElement.last().attr('href') || null;
   const previous_episode_url = prevEpisodeElement.first().attr('href') || null;

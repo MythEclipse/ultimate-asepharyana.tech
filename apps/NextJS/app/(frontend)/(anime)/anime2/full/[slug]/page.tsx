@@ -74,7 +74,10 @@ export default async function DetailAnimePage(props: DetailAnimePageProps) {
           )}
           {Anime.data.next_episode && (
             <p className='text-lg text-white-700'>
-              <Link scroll href={`/anime2/full/${Anime.data.next_episode.slug}`}>
+              <Link
+                scroll
+                href={`/anime2/full/${Anime.data.next_episode.slug}`}
+              >
                 <ButtonA>Next Episode</ButtonA>
               </Link>
             </p>

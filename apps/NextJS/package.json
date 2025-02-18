@@ -100,7 +100,6 @@
     "zod": "3.x"
   },
   "devDependencies": {
-    
     "@asepharyana/config-eslint": "*",
     "@asepharyana/config-typescript": "*",
     "@asepharyana/database": "*",

@@ -21,13 +21,25 @@ const parseAnimeData = (html: string, slug: string) => {
   const extractText = (selector: string) => $(selector).text().trim();
 
   const title = extractText('.entry-title');
-  const alternative_title = $('.bottomtitle .infoseries:contains("English:")').text().replace('English:', '').trim() || '';
+  const alternative_title =
+    $('.bottomtitle .infoseries:contains("English:")')
+      .text()
+      .replace('English:', '')
+      .trim() || '';
   const poster = $('.kotakseries .poster img').attr('src') || '';
   const type = $('.scoreseries .typeseries').text().trim() || '';
-  const release_date = $('.bottomtitle .infoseries:contains("Aired:")').text().replace('Aired:', '').trim() || '';
+  const release_date =
+    $('.bottomtitle .infoseries:contains("Aired:")')
+      .text()
+      .replace('Aired:', '')
+      .trim() || '';
   const status = $('.extra .statusseries').text().trim() || '';
   const synopsis = $('div.entry-content.seriesdesc > p').text().trim();
-  const studio = $('.bottomtitle .infoseries:contains("Studios:")').text().replace('Studios:', '').trim() || '';
+  const studio =
+    $('.bottomtitle .infoseries:contains("Studios:")')
+      .text()
+      .replace('Studios:', '')
+      .trim() || '';
 
   const genres: { name: string; slug: string; anime_url: string }[] = [];
   $('.tagline a').each((_, element) => {
@@ -55,14 +67,16 @@ const parseAnimeData = (html: string, slug: string) => {
     }
   });
   // Add missing episodes up to episode 1
-  const episodeNumbers = episode_lists.map(ep => parseInt(ep.slug.match(/\d+/)?.[0] || '0', 10));
+  const episodeNumbers = episode_lists.map((ep) =>
+    parseInt(ep.slug.match(/\d+/)?.[0] || '0', 10)
+  );
   const maxEpisode = Math.max(...episodeNumbers);
 
   for (let i = maxEpisode; i >= 1; i--) {
     if (!episodeNumbers.includes(i)) {
       episode_lists.push({
         episode: `${title} Episode ${i} Sub Indo`,
-        slug: `${slug}-episode-${i}`
+        slug: `${slug}-episode-${i}`,
       });
     }
   }
