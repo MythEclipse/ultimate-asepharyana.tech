@@ -43,6 +43,14 @@ export default function Page() {
         </div>
         <div>
           <TildCard
+            title='Anime2'
+            description='Anime scrapping dari s4.nontonanimeid.boats'
+            imageUrl={isLightTheme ? webAnimeL : webAnime}
+            linkUrl='/anime2'
+          />
+        </div>
+        <div>
+          <TildCard
             title='Komik'
             description='Komik scraping dari komikindo1.com'
             imageUrl={isLightTheme ? webKomikL : webKomik}

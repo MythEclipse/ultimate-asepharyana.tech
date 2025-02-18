@@ -977,6 +977,400 @@ paths:
                     type: string
                 required:
                   - message 
+  /api/anime2:
+    get:
+      summary: 'Mendapatkan anime yang sedang berlangsung dan selesai'
+      tags:
+        - anime2
+      description: 'Mengambil daftar anime yang sedang berlangsung dan yang sudah selesai.'
+      responses:
+        '200':
+          description: 'Respon sukses'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      ongoing_anime:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                            slug:
+                              type: string
+                            poster:
+                              type: string
+                            current_episode:
+                              type: string
+                            anime_url:
+                              type: string
+                      complete_anime:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                            slug:
+                              type: string
+                            poster:
+                              type: string
+                            episode_count:
+                              type: string
+                            anime_url:
+                              type: string
+  /api/anime2/complete-anime/{slug}:
+    get:
+      summary: 'Mendapatkan daftar anime yang sudah selesai'
+      tags:
+        - anime2
+      description: 'Mengambil daftar anime yang sudah selesai berdasarkan slug.'
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: 'Slug untuk halaman anime.'
+          schema:
+            type: string
+          example: '1'
+      responses:
+        '200':
+          description: 'Daftar anime yang sudah selesai berhasil didapatkan'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        slug:
+                          type: string
+                        poster:
+                          type: string
+                          format: uri
+                        episode:
+                          type: string
+                        anime_url:
+                          type: string
+                          format: uri
+                  pagination:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_visible_page:
+                        type: integer
+                      has_next_page:
+                        type: boolean
+                      next_page:
+                        type: integer
+                        nullable: true
+                      has_previous_page:
+                        type: boolean
+                      previous_page:
+                        type: integer
+                        nullable: true
+        '400':
+          description: '400'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        '500':
+          description: '500'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+  
+  /api/anime2/detail/{slug}:
+    get:
+      summary: 'Dapatkan Detail anime'
+      description: 'Mendapatkan detail dari anime.'
+      tags:
+        - anime2
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: 'Slug untuk halaman anime.'
+          schema:
+            type: string
+          example: 'log-horiz-subtitle-indonesia'
+      responses:
+        '200':
+          description: 'Detail anime berhasil diambil.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      alternative_title:
+                        type: string
+                      poster:
+                        type: string
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      release_date:
+                        type: string
+                      studio:
+                        type: string
+                      genres:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            slug:
+                              type: string
+                            anime_url:
+                              type: string
+                      synopsis:
+                        type: string
+                      episode_lists:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            episode:
+                              type: string
+                            slug:
+                              type: string
+                      batch:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            episode:
+                              type: string
+                            slug:
+                              type: string
+                      producers:
+                        type: array
+                        items:
+                          type: string
+                      recommendations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                            slug:
+                              type: string
+                            poster:
+                              type: string
+
+  /api/anime2/full/{slug}:
+    get:
+      summary: 'Dapatkan episode anime berdasarkan slug'
+      description: 'Mengambil episode anime berdasarkan slug.'
+      tags:
+        - anime2
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: 'Slug untuk halaman episode anime.'
+          schema:
+            type: string
+          example: 'lgrhzon-episode-1-sub-indo'
+      responses:
+        '200':
+          description: 'Episode anime berhasil diambil.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      episode:
+                        type: string
+                      episode_number:
+                        type: string
+                      anime:
+                        type: object
+                        properties:
+                          slug:
+                            type: string
+                      has_next_episode:
+                        type: boolean
+                      next_episode:
+                        type: object
+                        nullable: true
+                        properties:
+                          slug:
+                            type: string
+                      has_previous_episode:
+                        type: boolean
+                      previous_episode:
+                        type: object
+                        nullable: true
+                        properties:
+                          slug:
+                            type: string
+                      stream_url:
+                        type: string
+                      download_urls:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              server:
+                                type: string
+                              url:
+                                type: string
+                      image_url:
+                        type: string
+        '400':
+          description: '400'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        '500':
+          description: '500'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+
+
+  /api/anime2/search:
+    get:
+      summary: 'Cari anime berdasarkan kueri'
+      tags:
+        - anime2
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          example: 'log horizon'
+          description: 'Kueri pencarian untuk anime'
+      responses:
+        '200':
+          description: 'Respon sukses'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        slug:
+                          type: string
+                        poster:
+                          type: string
+                        episode:
+                          type: string
+                        anime_url:
+                          type: string
+                        genres:
+                          type: array
+                          items:
+                            type: string
+                        status:
+                          type: string
+                        rating:
+                          type: string
+                  pagination:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_visible_page:
+                        type: integer
+                      has_next_page:
+                        type: boolean
+                      next_page:
+                        type: integer
+                        nullable: true
+                      has_previous_page:
+                        type: boolean
+                      previous_page:
+                        type: integer
+                        nullable: true
+        '400':
+          description: '400'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        '500':
+          description: '500'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message 
   /api/proxy:
     get:
       summary: 'Proxy'
