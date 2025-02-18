@@ -8,12 +8,14 @@ RUN adduser -S -u 1001 -G nodejs nextjs
 FROM base AS builder
 RUN apk update && apk add --no-cache libc6-compat
 RUN npm install -g turbo
+RUN corepack enable
+RUN yarn set version stable
 WORKDIR /app
 COPY package.json yarn.lock ./
 COPY . .
-RUN turbo prune @asepharyana/web --docker
-RUN yarn install --frozen-lockfile
+RUN yarn install
 RUN yarn turbo build
+# RUN turbo prune @asepharyana/web --docker
 
 # Production Runner
 FROM base AS runner
@@ -24,4 +26,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/.next/static ./apps/N
 COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/public ./apps/NextJS/public
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "/app/apps/NextJS/server.js"]
+
