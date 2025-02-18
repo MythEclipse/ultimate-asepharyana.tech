@@ -4,23 +4,46 @@ WORKDIR /app
 
 # Builder stage
 FROM base AS builder
-# Tentukan direktori cache untuk pnpm
-ENV PNPM_STORE_PATH=/pnpm-store
 RUN apk update && apk add --no-cache libc6-compat
-RUN npm install -g pnpm turbo
+RUN npm install -g turbo
+RUN corepack enable
+RUN yarn set version stable
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-COPY . .
+
+# Copy package files first to install dependencies
+COPY package.json yarn.lock ./ 
+
+# Copy the rest of the application files
+COPY . . 
+
+# Run the turbo prune command to prune only Express dependencies
 RUN turbo prune @asepharyana/express --docker
-RUN pnpm run build
+
+# Install dependencies focused on Express
+RUN yarn workspaces focus @asepharyana/express
+
+# Build the application
+RUN yarn build:express
 
 # Production Runner
 FROM base AS runner
 WORKDIR /app
-COPY --from=builder /app/dist /app/dist
-COPY --from=builder /app/node_modules /app/node_modules
-COPY --from=builder /app/package.json /app/
 
+# Copy built dist and node_modules from the builder stage
+COPY --from=builder /app/apps/Express/dist /app/dist
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/Express/package.json /app/
+
+# List files in /app to verify the files have been copied
+RUN ls -la .
+RUN ls -la /app
+
+# List files in /app/dist to verify the built files exist
+RUN ls -la /app/dist
+
+# List files in /app/node_modules to verify node_modules exist
+RUN ls -la /app/node_modules
+
+# Expose the port and define the entrypoint
 EXPOSE 4091
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "start"]

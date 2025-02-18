@@ -6,16 +6,14 @@ RUN adduser -S -u 1001 -G nodejs nextjs
 
 # Builder stage
 FROM base AS builder
-# Tentukan direktori cache untuk pnpm
-ENV PNPM_STORE_PATH=/pnpm-store
 RUN apk update && apk add --no-cache libc6-compat
-RUN npm install -g pnpm turbo
+RUN npm install -g turbo
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY package.json yarn.lock ./
 COPY . .
 RUN turbo prune @asepharyana/web --docker
-RUN pnpm turbo build
+RUN yarn install --frozen-lockfile
+RUN yarn turbo build
 
 # Production Runner
 FROM base AS runner

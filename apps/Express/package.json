@@ -1,7 +1,6 @@
 {
   "name": "@asepharyana/express",
   "version": "1.0.0",
-  "type": "module",
   "description": "Express application for Asepharyana",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -15,7 +14,7 @@
   },
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
-    "start": "node dist/esm/index.js",
+    "start": "node dist/cjs/index.js",
     "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
     "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
@@ -32,13 +31,16 @@
   "author": "Asepharyana",
   "license": "ISC",
   "devDependencies": {
-    "@asepharyana/config-eslint": "workspace:*",
-    "@asepharyana/config-typescript": "workspace:*",
+    "@asepharyana/config-eslint": "*",
+    "@asepharyana/config-typescript": "*",
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
     "@babel/preset-env": "7.x",
-    "@babel/preset-typescript": "7.x",
+    "@babel/preset-typescript": "~7.26.0",
+    "babel-plugin-add-import-extension": "^1.6.0",
+    "copyfiles": "^2.4.1",
     "@eslint/eslintrc": "3.x",
+    "ncp": "^2.0.0",
     "@jest/globals": "29.x",
     "@types/cors": "2.x",
     "@types/express": "5.x",
@@ -69,7 +71,7 @@
     "typescript": "5.x"
   },
   "dependencies": {
-    "@asepharyana/database": "workspace:*",
+    "@asepharyana/database": "*",
     "@types/multer": "^1.4.12",
     "body-parser": "1.x",
     "cors": "2.x",

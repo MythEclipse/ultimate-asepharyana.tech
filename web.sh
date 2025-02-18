@@ -1,1 +1,1 @@
-pnpm run start
+yarn run start

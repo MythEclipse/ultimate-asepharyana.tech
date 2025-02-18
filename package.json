@@ -1,11 +1,17 @@
 {
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "prisma": {
     "schema": "packages/database/prisma/schema.prisma",
     "seed": "tsx packages/database/src/seed.ts"
   },
   "scripts": {
     "build": "turbo run build",
+    "build:express": "turbo run build --filter=@asepharyana/express",
+    "build:nextjs": "turbo run build --filter=@asepharyana/web",
     "db:migrate:deploy": "turbo run db:migrate:deploy",
     "db:push": "turbo run db:push",
     "dev": "turbo run dev",
@@ -14,7 +20,7 @@
     "lint": "turbo run lint",
     "nextjs": "turbo run start --filter=@asepharyana/web",
     "express": "turbo run start --filter=@asepharyana/express",
-    "start": "concurrently \"pnpm run express\" \"pnpm run nextjs\"",
+    "start": "concurrently \"npm run express\" \"npm run nextjs\"",
     "update": "npm update",
     "ceklog": "tail -n 3000 apps/NextJS/app.log"
   },
@@ -50,8 +56,5 @@
     "tsx": "~4.19.2",
     "turbo": "~2.4.2"
   },
-  "packageManager": "pnpm@9.15.4",
-  "overrides": {
-    "typescript": "5.x"
-  }
+  "packageManager": "yarn@4.6.0"
 }

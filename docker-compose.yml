@@ -12,18 +12,19 @@ services:
     networks:
       - app_network
 
-  api:
-    container_name: api
-    build:
-      context: .
-      dockerfile: ./apps/Express/Dockerfile
-    restart: always
-    volumes:
-      - ./pnpm-store:/pnpm-store  # Mount cache lokal ke dalam container
-    ports:
-      - "4091:4091"
-    networks:
-      - app_network
+  # api:
+  #   container_name: api
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/Express/Dockerfile
+  #   restart: always
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules  # Keep node_modules persistent across builds
+  #   ports:
+  #     - "4091:4091"
+  #   networks:
+  #     - app_network
 
 networks:
   app_network:

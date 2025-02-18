@@ -27,10 +27,10 @@
     "update": "npm update"
   },
   "dependencies": {
-    "@asepharyana/config-eslint": "workspace:*",
-    "@asepharyana/config-typescript": "workspace:*",
-    "@asepharyana/database": "workspace:*",
-    "@asepharyana/ui": "workspace:*",
+    "@asepharyana/config-eslint": "*",
+    "@asepharyana/config-typescript": "*",
+    "@asepharyana/database": "*",
+    "@asepharyana/ui": "*",
     "@auth/prisma-adapter": "^2.x",
     "@formatjs/intl": "3.x",
     "@formatjs/intl-localematcher": "0.x",
@@ -73,7 +73,6 @@
     "next-themes": "0.x",
     "node-fetch": "3.x",
     "prisma": "6.x",
-    "puppeteer": "24.x",
     "react": "19.x",
     "react-day-picker": "9.x",
     "react-dom": "19.x",
@@ -101,9 +100,10 @@
     "zod": "3.x"
   },
   "devDependencies": {
-    "@asepharyana/config-eslint": "workspace:*",
-    "@asepharyana/config-typescript": "workspace:*",
-    "@asepharyana/database": "workspace:*",
+    
+    "@asepharyana/config-eslint": "*",
+    "@asepharyana/config-typescript": "*",
+    "@asepharyana/database": "*",
     "@builder.io/partytown": "^0.10.3",
     "@eslint/eslintrc": "3.x",
     "@eslint/js": "9.x",
@@ -148,6 +148,5 @@
     "ts-node": "10.x",
     "typescript": "5.x",
     "typescript-eslint": "8.x"
-  },
-  "packageManager": "pnpm@9.15.4"
+  }
 }
