@@ -1,43 +1,53 @@
 # Stage 1: Base image
-FROM node:20-alpine AS base
+FROM node:18-alpine AS base
 WORKDIR /app
 
 # Create a 'nextjs' user explicitly in the base image
 RUN adduser -D nextjs
 
-# Stage 2: Install dependencies
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./ 
-RUN \
-    if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then npm install --legacy-peer-deps; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm install --frozen-lockfile; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
-
-# Stage 3: Build application
+# Stage 2: Builder
 FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . . 
-RUN npx prisma generate && mkdir -p /app/node_modules/.prisma && \
-    if [ -f yarn.lock ]; then yarn run build; \
-    elif [ -f package-lock.json ]; then npm run build; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-    else echo "Build script not found." && exit 1; \
-    fi
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk update && apk add --no-cache libc6-compat
+RUN npm install -g pnpm
+COPY . .
+RUN pnpm turbo prune web --docker
+
+# Stage 3: Installer
+FROM base AS installer
+RUN apk update && apk add --no-cache libc6-compat
+WORKDIR /app
+
+# First install the dependencies (as they change less often)
+COPY --from=builder /app/out/json/ . 
+RUN pnpm install
+
+# Build the project
+COPY --from=builder /app/out/full/ .
+
+# Uncomment and use build args to enable remote caching
+# ARG TURBO_TEAM
+# ENV TURBO_TEAM=$TURBO_TEAM
+
+# ARG TURBO_TOKEN
+# ENV TURBO_TOKEN=$TURBO_TOKEN
+
+RUN pnpm turbo build
 
 # Stage 4: Runner
 FROM base AS runner
-# Copy over necessary files from the builder stage
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./ 
-COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nextjs /app/prisma ./prisma
-RUN mkdir -p ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nextjs /app/node_modules/.prisma/ ./node_modules/.prisma/
+WORKDIR /app
 
-# Switch to the 'nextjs' user
+# Don't run production as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 USER nextjs
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=installer --chown=nextjs:nodejs /app/apps/NextJS/.next/standalone ./
+COPY --from=installer --chown=nextjs:nodejs /app/apps/NextJS/.next/static ./apps/NextJS/.next/static
+COPY --from=installer --chown=nextjs:nodejs /app/apps/NextJS/public ./apps/NextJS/public
+
 EXPOSE 3090
-CMD ["node", "server.js"]
+CMD ["node", "apps/NextJS/server.js"]

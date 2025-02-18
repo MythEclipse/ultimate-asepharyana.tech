@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "next dev --port 4090",
     "dev:https": "next dev --experimental-https",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next build",
     "postbuild": "next-sitemap",
     "start": "NODE_ENV=production next start --port 4090",
     "lint": "concurrently \"eslint .\" \"tsc --noEmit\"",

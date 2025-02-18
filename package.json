@@ -44,6 +44,7 @@
     "@prisma/client": "6.x",
     "concurrently": "9.x",
     "cross-env": "7.x",
+    "ncp": "^2.0.0",
     "prettier": "3.x",
     "prisma": "6.x",
     "tsx": "4.x",

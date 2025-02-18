@@ -1,28 +1,29 @@
-# Remove the .next directory to clean up old build files
-Remove-Item -Recurse -Force .\.next\ -ErrorAction SilentlyContinue
+# Jalankan script reset SQLite
+powershell -ExecutionPolicy Bypass -File sqlitereset.ps1
 
-# Pull the latest changes from the Git repository
+# Ambil perubahan terbaru dari repository Git
 git fetch origin
 git pull origin main
 
-# Install any new or updated dependencies using pnpm
+# Instal dependensi menggunakan pnpm
 pnpm install
 
-# Run database migrations if needed (based on your turbo.json tasks)
-pnpm run db:push
-pnpm run db:migrate:deploy
+# Jalankan migrasi database jika diperlukan
+pnpm run generate
+# pnpm run db:push
+# pnpm run db:migrate:deploy
 
-# Build the Next.js project for production using turbo
+# Build proyek Next.js untuk produksi
 pnpm run build
 
-# Check if the build was successful
-if ($LASTEXITCODE -eq 0) {
-    # Restart the PM2 processes named "express" and "nextjs" and update the environment variables
+# Cek apakah build berhasil
+if ($?) {
+    # Restart proses PM2 untuk "express" dan "nextjs" dengan environment yang diperbarui
     pm2 restart express --update-env
     pm2 restart nextjs --update-env
 
-    # Execute commit.ps1 script
-    .\commit.ps1
+    # Jalankan script commit
+    powershell -ExecutionPolicy Bypass -File commit.ps1
 } else {
-    Write-Host "Build failed. Skipping commit." -ForegroundColor Red
+    Write-Host "Build failed. Skipping commit."
 }

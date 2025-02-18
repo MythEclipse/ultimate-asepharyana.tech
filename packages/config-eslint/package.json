@@ -29,7 +29,7 @@
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
     "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
     "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json && npm run copy-dts",
-    "copy-dts": "mkdir -p dist/types dist/esm dist/cjs && cp ./types/* dist/esm && cp ./types/* dist/cjs && cp ./types/* dist/types",
+    "copy-dts": "ncp ./types dist/types && ncp ./types dist/esm && ncp ./types dist/cjs",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "rimraf dist",
     "update": "npm update",

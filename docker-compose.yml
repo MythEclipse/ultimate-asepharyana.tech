@@ -1,10 +1,29 @@
+version: "3"
+
 services:
   web:
+    container_name: web
     build:
       context: .
-      dockerfile: .DOCKERFILE
+      dockerfile: ./apps/web/Dockerfile
+    restart: always
     ports:
-      - "4090:4090"
-      - "4091:4091"
-    env_file:
-      - .env
+      - 4090:3000
+    networks:
+      - app_network
+  api:
+    container_name: api
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    restart: always
+    ports:
+      - 4091:4091
+    networks:
+      - app_network
+
+# Define a network, which allows containers to communicate
+# with each other, by using their container name as a hostname
+networks:
+  app_network:
+    driver: "bridge"
