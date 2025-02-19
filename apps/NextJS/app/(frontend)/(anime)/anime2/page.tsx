@@ -54,7 +54,7 @@ export default function AnimePage() {
             Latest Anime List
           </ButtonA>
         </Link>
-        {episodeData && (
+        {episodeData?.data?.anime_list && (
           <AnimeGrid
             animes={episodeData.data.anime_list.map((anime) => ({
               ...anime,
