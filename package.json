@@ -6,6 +6,7 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "buildnc": "turbo run build --force",
     "build:express": "turbo run build --filter=@asepharyana/express",
     "build:nextjs": "turbo run build --filter=@asepharyana/web",
     "db:migrate:deploy": "turbo run db:migrate:deploy",

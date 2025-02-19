@@ -37,7 +37,7 @@ pnpm run generate
 # pnpm run db:migrate:deploy
 
 # Build the Next.js project for production using turbo
-pnpm run build
+pnpm run buildnc
 
 # Check if the build was successful
 if [ $? -eq 0 ]; then

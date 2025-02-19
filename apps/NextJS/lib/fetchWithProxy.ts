@@ -35,29 +35,38 @@ export async function fetchWithProxy(
   slug: string,
   useProxies: boolean = false
 ): Promise<{ data: string | object; contentType: string | null }> {
-  try {
-    const res = await fetch(slug, {
-      headers: DEFAULT_HEADERS,
-      next: { revalidate: 360 },
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const jsonData = await res.json();
-        return { data: jsonData, contentType };
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  while (attempts < maxAttempts) {
+    try {
+      const res = await fetch(slug, {
+        headers: DEFAULT_HEADERS,
+        next: { revalidate: 360 },
+      });
+      if (res.ok) {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const jsonData = await res.json();
+          return { data: jsonData, contentType };
+        }
+        const textData = await res.text();
+        return { data: textData, contentType };
       }
-      const textData = await res.text();
-      return { data: textData, contentType };
-    }
-    throw new Error(`Direct fetch failed with status ${res.status}`);
-  } catch {
-    if (useProxies) {
-      logger.error('Direct fetch failed, trying proxies');
-      return await fetchFromProxies(slug);
-    } else {
-      throw new Error('Direct fetch failed and proxy usage is disabled');
+      throw new Error(`Direct fetch failed with status ${res.status}`);
+    } catch (error) {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        if (useProxies) {
+          logger.error('Direct fetch failed, trying proxies');
+          return await fetchFromProxies(slug);
+        } else {
+          throw new Error('Direct fetch failed and proxy usage is disabled');
+        }
+      }
     }
   }
+  throw new Error('Failed to fetch after maximum attempts');
 }
 
 async function fetchFromProxies(
