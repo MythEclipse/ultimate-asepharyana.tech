@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import Loading from '@/components/misc/loading';
 import ButtonA from '@/components/button/ScrollButton';
@@ -20,16 +23,21 @@ interface Anime {
   anime_url: string;
 }
 
-export default async function AnimePage() {
-  let episodeData: HomeData | null = null;
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  try {
-    const response = await fetch(`${BaseUrl}/api/anime2/`, {
-      next: { revalidate: 600 },
-    });
-    episodeData = await response.json();
-  } catch (error) {
+export default function AnimePage() {
+  const { data: episodeData, error } = useSWR<HomeData>(
+    `${BaseUrl}/api/anime2/`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 600000, // 10 minutes
+    }
+  );
+
+  if (error) {
     console.error('Failed to fetch episodes:', error);
+    return <div>Failed to load</div>;
   }
 
   if (!episodeData) {
@@ -46,14 +54,16 @@ export default async function AnimePage() {
             Latest Anime List
           </ButtonA>
         </Link>
-        <AnimeGrid
-          animes={episodeData.data.anime_list.map((anime) => ({
-            ...anime,
-            rating: '',
-            release_day: '',
-            newest_release_date: '',
-          }))}
-        />
+        {episodeData && (
+          <AnimeGrid
+            animes={episodeData.data.anime_list.map((anime) => ({
+              ...anime,
+              rating: '',
+              release_day: '',
+              newest_release_date: '',
+            }))}
+          />
+        )}
       </>
     </main>
   );
