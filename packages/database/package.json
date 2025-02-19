@@ -35,6 +35,8 @@
   "dependencies": {
     "@asepharyana/config-eslint": "workspace:*",
     "@asepharyana/config-typescript": "workspace:*",
+    "@eslint/eslintrc": "3.x",
+    "@eslint/js": "9.x",
     "@prisma/client": "~6.3.1"
   },
   "devDependencies": {

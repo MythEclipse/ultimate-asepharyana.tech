@@ -73,6 +73,7 @@
   },
   "dependencies": {
     "@asepharyana/database": "workspace:*",
+    "@eslint/js": "9.x",
     "@types/multer": "^1.4.12",
     "body-parser": "1.x",
     "cors": "2.x",

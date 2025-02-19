@@ -1,3 +1,4 @@
+// @ts-expect-error gk tau hehehehehehe
 import { FlatCompat } from '@eslint/eslintrc';
 import pkg from '@eslint/js';
 const { configs } = pkg;
