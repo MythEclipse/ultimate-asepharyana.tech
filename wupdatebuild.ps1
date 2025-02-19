@@ -5,16 +5,16 @@ powershell -ExecutionPolicy Bypass -File sqlitereset.ps1
 git fetch origin
 git pull origin main
 
-# Instal dependensi menggunakan yarn
-yarn install
+# Instal dependensi menggunakan pnpm
+pnpm install
 
 # Jalankan migrasi database jika diperlukan
-yarn run generate
-# yarn run db:push
-# yarn run db:migrate:deploy
+pnpm run generate
+# pnpm run db:push
+# pnpm run db:migrate:deploy
 
 # Build proyek Next.js untuk produksi
-yarn run build
+pnpm run build
 
 # Cek apakah build berhasil
 if ($?) {

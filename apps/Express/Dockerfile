@@ -7,11 +7,12 @@ FROM base AS builder
 RUN apk update && apk add --no-cache libc6-compat
 RUN npm install -g turbo
 RUN corepack enable
-RUN yarn set version stable
+RUN pnpm setup
+ENV PATH="/root/.local/share/pnpm:$PATH"
 WORKDIR /app
 
 # Copy package files first to install dependencies
-COPY package.json yarn.lock ./ 
+COPY package.json pnpm-lock.yaml ./ 
 
 # Copy the rest of the application files
 COPY . . 
@@ -20,10 +21,10 @@ COPY . .
 RUN turbo prune @asepharyana/express --docker
 
 # Install dependencies focused on Express
-RUN yarn workspaces focus @asepharyana/express
+RUN pnpm install --filter @asepharyana/express...
 
 # Build the application
-RUN yarn build:express
+RUN pnpm build:express
 
 # Production Runner
 FROM base AS runner
@@ -35,8 +36,8 @@ COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/apps/Express/package.json /app/
 
 # List files in /app to verify the files have been copied
-RUN ls -la .
-RUN ls -la /app
+RUN ls -la . 
+RUN ls -la /app 
 
 # List files in /app/dist to verify the built files exist
 RUN ls -la /app/dist
@@ -46,4 +47,4 @@ RUN ls -la /app/node_modules
 
 # Expose the port and define the entrypoint
 EXPOSE 4091
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "start"]

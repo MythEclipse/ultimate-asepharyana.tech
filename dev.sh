@@ -1,1 +1,1 @@
- yarn install && yarn run db:push && yarn run generate && yarn run dev
+ pnpm install && pnpm run db:push && pnpm run generate && pnpm run dev

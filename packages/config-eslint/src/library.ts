@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
-// @ts-ignore
 import { FlatCompat } from "@eslint/eslintrc";
+// @ts-ignore
 
 type FlatConfig = any;
 

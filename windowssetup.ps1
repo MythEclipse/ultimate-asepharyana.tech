@@ -7,8 +7,8 @@ fnm install 22
 # Verify the Node.js version:
 node -v # Should print "v22.13.1".
 
-# Download and install yarn:
-corepack enable yarn
+# Download and install pnpm:
+corepack enable pnpm
 
-# Verify yarn version:
-yarn -v
+# Verify pnpm version:
+pnpm -v

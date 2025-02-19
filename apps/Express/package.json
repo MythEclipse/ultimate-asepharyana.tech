@@ -2,6 +2,7 @@
   "name": "@asepharyana/express",
   "version": "1.0.0",
   "description": "Express application for Asepharyana",
+  "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./types/index.d.ts",
@@ -14,7 +15,7 @@
   },
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
-    "start": "node dist/cjs/index.js",
+    "start": "node dist/esm/index.js",
     "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
     "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
@@ -31,8 +32,8 @@
   "author": "Asepharyana",
   "license": "ISC",
   "devDependencies": {
-    "@asepharyana/config-eslint": "*",
-    "@asepharyana/config-typescript": "*",
+    "@asepharyana/config-eslint": "workspace:*",
+    "@asepharyana/config-typescript": "workspace:*",
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
     "@babel/preset-env": "7.x",
@@ -71,7 +72,7 @@
     "typescript": "5.x"
   },
   "dependencies": {
-    "@asepharyana/database": "*",
+    "@asepharyana/database": "workspace:*",
     "@types/multer": "^1.4.12",
     "body-parser": "1.x",
     "cors": "2.x",
@@ -84,7 +85,7 @@
     "pino": "9.x",
     "pino-pretty": "13.x",
     "rate-limiter-flexible": "^5.0.5",
-    "sqlite3": "5.x",
+    "sqlite3": "~5.1.7",
     "supertest": "7.x",
     "uuid": "11.x",
     "ws": "8.x",

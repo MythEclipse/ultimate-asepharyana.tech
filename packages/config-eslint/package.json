@@ -36,15 +36,14 @@
     "build:tsc": "tsc --project ./tsconfig.json"
   },
   "dependencies": {
-    "@asepharyana/config-typescript": "*",
-    "rimraf": "6.x"
-  },
-  "devDependencies": {
+    "@asepharyana/config-typescript": "workspace:*",
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
     "@babel/preset-env": "7.x",
     "@babel/preset-typescript": "7.x",
+    "@eslint/eslintrc": "3.x",
     "@eslint/js": "9.x",
+    "@next/eslint-plugin-next": "15.x",
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/node": "22.x",
     "babel-plugin-module-resolver": "5.x",
@@ -54,6 +53,9 @@
     "eslint-config-turbo": "2.x",
     "eslint-plugin-only-warn": "1.x",
     "eslint-plugin-prettier": "5.x",
+    "eslint-plugin-react": "7.x",
+    "eslint-plugin-react-hooks": "5.x",
+    "eslint-plugin-turbo": "^2.4.2",
     "globals": "15.x",
     "prettier": "3.x",
     "rimraf": "6.x",

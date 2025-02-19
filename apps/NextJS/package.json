@@ -27,10 +27,10 @@
     "update": "npm update"
   },
   "dependencies": {
-    "@asepharyana/config-eslint": "*",
-    "@asepharyana/config-typescript": "*",
-    "@asepharyana/database": "*",
-    "@asepharyana/ui": "*",
+    "@asepharyana/config-eslint": "workspace:*",
+    "@asepharyana/config-typescript": "workspace:*",
+    "@asepharyana/database": "workspace:*",
+    "@asepharyana/ui": "workspace:*",
     "@auth/prisma-adapter": "^2.x",
     "@formatjs/intl": "3.x",
     "@formatjs/intl-localematcher": "0.x",

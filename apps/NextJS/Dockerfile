@@ -9,22 +9,21 @@ FROM base AS builder
 RUN apk update && apk add --no-cache libc6-compat
 RUN npm install -g turbo
 RUN corepack enable
-RUN yarn set version stable
+RUN pnpm set version latest
 WORKDIR /app
-COPY package.json yarn.lock ./
-COPY . .
-RUN yarn install
-RUN yarn turbo build
+COPY package.json pnpm-lock.yaml ./ 
+COPY . . 
+RUN pnpm install --frozen-lockfile
+RUN pnpm turbo build
 # RUN turbo prune @asepharyana/web --docker
 
 # Production Runner
 FROM base AS runner
 WORKDIR /app
 USER nextjs
-COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/.next/standalone ./ 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/.next/static ./apps/NextJS/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/NextJS/public ./apps/NextJS/public
 
 EXPOSE 3000
 CMD ["node", "/app/apps/NextJS/server.js"]
-
