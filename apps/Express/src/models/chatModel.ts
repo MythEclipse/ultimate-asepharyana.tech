@@ -1,11 +1,11 @@
 // models/chatModel.ts
 export interface ChatMessage {
-  id?: number; // ID yang akan dihasilkan oleh database
-  user: string;
+  id?: string; // ID yang akan dihasilkan oleh database
+  userId: string;
   text: string;
   email?: string;
   imageProfile?: string;
   imageMessage?: string;
-  role: string;
-  timestamp?: number; // Timestamp yang akan ditambahkan saat menyimpan pesan
+  role?: string;
+  timestamp?: Date; // Timestamp yang akan ditambahkan saat menyimpan pesan
 }

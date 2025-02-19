@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
-import { ChatMessage } from '../models/chatModel';
 import { ChatService } from '../services/chatService';
+import { ChatMessage } from '@asepharyana/database';
 import logger from '../utils/logger';
 
 const clients: Set<WebSocket> = new Set();
@@ -64,14 +64,14 @@ export default function handleConnection(ws: WebSocket) {
 
     // Construct message object with validation
     const message: ChatMessage = {
-      user: parsedData.user || `User${Math.floor(Math.random() * 1000)}`,
+      userId: parsedData.userId || `User${Math.floor(Math.random() * 1000)}`,
       text: parsedData.text, // Guaranteed to exist due to validation
       email: parsedData.email || '',
       imageProfile: parsedData.imageProfile || '',
       imageMessage: parsedData.imageMessage || '',
       role: parsedData.role || 'guest',
-      timestamp: Date.now(),
-      id: undefined,
+      timestamp: new Date(),
+      id: '',
     };
 
     logger.info(`Message received: ${JSON.stringify(message)}`);
@@ -98,7 +98,7 @@ export default function handleConnection(ws: WebSocket) {
           JSON.stringify({
             type: 'error',
             message: 'Failed to save message',
-            user: message.user,
+            userId: message.userId,
           })
         );
       }

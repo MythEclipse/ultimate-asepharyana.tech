@@ -33,6 +33,7 @@
   "devDependencies": {
     "@asepharyana/config-eslint": "workspace:*",
     "@asepharyana/config-typescript": "workspace:*",
+    "@asepharyana/database": "workspace:*",
     "@babel/cli": "7.x",
     "@babel/core": "7.x",
     "@babel/preset-env": "7.x",

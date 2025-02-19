@@ -39,20 +39,21 @@ model Session {
 }
 
 model User {
-  id               String         @id @default(cuid()) @db.VarChar(255)
+  id               String        @id @default(cuid()) @db.VarChar(255)
   name             String?
-  email            String?        @unique
-  emailVerified    DateTime?      @map("email_verified")
-  role             String         @default("user")
+  email            String?       @unique
+  emailVerified    DateTime?     @map("email_verified")
+  role             String        @default("user")
   image            String?
-  authoredComments Comments[]     @relation("AuthoredComments")
-  comments         Comments[]     @relation("UserComments")
+  authoredComments Comments[]    @relation("AuthoredComments")
+  comments         Comments[]    @relation("UserComments")
   likes            Likes[]
-  authoredPosts    Posts[]        @relation("AuthoredPosts")
-  posts            Posts[]        @relation("UserPosts")
+  authoredPosts    Posts[]       @relation("AuthoredPosts")
+  posts            Posts[]       @relation("UserPosts")
   replies          Replies[]
   accounts         Account[]
   sessions         Session[]
+  ChatMessage      ChatMessage[]
 
   @@map("users")
 }
@@ -75,7 +76,6 @@ model Comments {
   @@index([authorId], map: "Comments_authorId_fkey")
 }
 
-
 model Likes {
   userId String @map("user_id") @db.VarChar(255)
   postId String @map("post_id") @db.VarChar(255)
@@ -85,7 +85,6 @@ model Likes {
   @@id([userId, postId])
   @@index([postId], map: "Likes_post_id_fkey")
 }
-
 
 model Posts {
   id         String     @id @default(cuid()) @db.VarChar(255)
@@ -104,8 +103,6 @@ model Posts {
   @@index([authorId], map: "Posts_authorId_fkey")
 }
 
-
-
 model Replies {
   id         String   @id @default(cuid()) @db.VarChar(255)
   userId     String   @map("user_id") @db.VarChar(255)
@@ -120,10 +117,13 @@ model Replies {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid()) @db.VarChar(255)
-  userId    String   @db.VarChar(255)
-  text      String   @db.Text
-  timestamp DateTime @default(now())
-  user      String   @db.VarChar(255) // Use user as a string field
-
+  id           String   @id @default(cuid()) @db.VarChar(255)
+  userId       String   @db.VarChar(255)
+  text         String   @db.Text
+  email        String?
+  imageProfile String?
+  imageMessage String?
+  role         String?
+  timestamp    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
 }

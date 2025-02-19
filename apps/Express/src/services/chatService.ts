@@ -1,98 +1,51 @@
-import sqlite3 from 'sqlite3';
-import { ChatMessage } from '../models/chatModel';
+import { prisma } from '@asepharyana/database';
+import { ChatMessage } from '@prisma/client';
 import logger from '../utils/logger';
 
 export class ChatService {
-  private static db: sqlite3.Database | null;
-
-  constructor() {
-    if (!ChatService.db) {
-      ChatService.db = this.initializeDatabase();
+  async saveMessage(
+    message: Omit<ChatMessage, 'id' | 'timestamp'>
+  ): Promise<ChatMessage> {
+    try {
+      const savedMessage = await prisma.chatMessage.create({
+        data: message,
+      });
+      return savedMessage;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to save message: ${error.message}`);
+      } else {
+        throw new Error('Failed to save message: Unknown error');
+      }
     }
   }
 
-  private initializeDatabase(): sqlite3.Database {
-    const db =
-      process.env.NODE_ENV === 'development'
-        ? new sqlite3.Database(':memory:')
-        : new sqlite3.Database('./database.sqlite');
-
-    db.serialize(() => {
-      db.run(`CREATE TABLE IF NOT EXISTS messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user TEXT NOT NULL,
-                text TEXT NOT NULL,
-                email TEXT,
-                imageProfile TEXT,
-                imageMessage TEXT,
-                role TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`);
-    });
-
-    return db;
-  }
-
-  saveMessage(message: ChatMessage): Promise<ChatMessage> {
-    return new Promise((resolve, reject) => {
-      if (!ChatService.db) {
-        reject(new Error('Database not initialized'));
-        return;
-      }
-      const query = `INSERT INTO messages (user, text, email, imageProfile, imageMessage, role) 
-                     VALUES (?, ?, ?, ?, ?, ?)`;
-      const values = [
-        message.user,
-        message.text,
-        message.email,
-        message.imageProfile,
-        message.imageMessage,
-        message.role,
-      ];
-
-      ChatService.db.run(query, values, function (err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ ...message, id: this.lastID });
-        }
+  async loadMessages(limit: number = 50): Promise<ChatMessage[]> {
+    try {
+      const messages = await prisma.chatMessage.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: limit,
       });
-    });
-  }
-
-  loadMessages(limit: number = 50): Promise<ChatMessage[]> {
-    return new Promise((resolve, reject) => {
-      if (!ChatService.db) {
-        reject(new Error('Database not initialized'));
-        return;
-      }
-      const query = `SELECT id, user, text, email, imageProfile, imageMessage, role, timestamp 
-                     FROM messages ORDER BY timestamp DESC LIMIT ?`;
-      ChatService.db.all(query, [limit], (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows as ChatMessage[]);
-        }
-      });
-    });
-  }
-
-  closeDatabase(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (ChatService.db) {
-        ChatService.db.close((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            ChatService.db = null;
-            logger.info('Chat database connection closed');
-            resolve();
-          }
-        });
+      return messages;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to load messages: ${error.message}`);
       } else {
-        resolve();
+        throw new Error('Failed to load messages: Unknown error');
       }
-    });
+    }
+  }
+
+  async closeDatabase(): Promise<void> {
+    try {
+      await prisma.$disconnect();
+      logger.info('Chat database connection closed');
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to close database: ${error.message}`);
+      } else {
+        throw new Error('Failed to close database: Unknown error');
+      }
+    }
   }
 }
