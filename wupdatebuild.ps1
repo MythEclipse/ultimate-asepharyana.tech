@@ -14,7 +14,7 @@ pnpm run generate
 # pnpm run db:migrate:deploy
 
 # Build proyek Next.js untuk produksi
-pnpm run build
+pnpm run buildnc
 
 # Cek apakah build berhasil
 if ($?) {
