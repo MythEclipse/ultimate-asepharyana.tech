@@ -20,7 +20,7 @@ export default async function ChapterPage(props: {
 }) {
   const params = await props.params;
   const { chapterId } = params;
-
+  const BaseUrl2 = 'https://jadwiodahwduodh-vee9.vercel.app';
   const response = await fetch(
     `${BaseUrl}/api/komik/chapter?chapter_url=${chapterId}`
   );
@@ -70,7 +70,7 @@ export default async function ChapterPage(props: {
             className=''
           >
             <Image
-              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(image)}`}
+              src={`${BaseUrl2}/api/imageproxy?url=${encodeURIComponent(image)}`}
               alt={`Chapter ${chapter.title} - page ${index + 1}`}
               className='object-cover transition-opacity duration-300'
               width='725'
