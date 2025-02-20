@@ -8,12 +8,14 @@ RUN adduser -S -u 1001 -G nodejs nextjs
 FROM base AS builder
 RUN apk update && apk add --no-cache libc6-compat
 RUN npm install -g turbo
-RUN corepack enable
-RUN pnpm set version latest
+RUN corepack enable pnpm
+RUN corepack prepare pnpm@latest --activate
+ENV PATH="/root/.local/share/pnpm:$PATH"
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./ 
 COPY . . 
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set store-dir /pnpm-store
+RUN pnpm install --filter @asepharyana/web
 RUN pnpm turbo build
 # RUN turbo prune @asepharyana/web --docker
 

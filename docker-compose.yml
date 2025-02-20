@@ -19,8 +19,7 @@ services:
       dockerfile: ./apps/Express/Dockerfile
     restart: always
     volumes:
-      - .:/app
-      - /app/node_modules  # Keep node_modules persistent across builds
+      - ./pnpm-store:/pnpm-store  # Mount cache lokal ke dalam container
     ports:
       - "4091:4091"
     networks:

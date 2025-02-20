@@ -6,9 +6,10 @@ WORKDIR /app
 FROM base AS builder
 RUN apk update && apk add --no-cache libc6-compat
 RUN npm install -g turbo
-RUN corepack enable
-RUN pnpm setup
+RUN corepack enable pnpm
+RUN corepack prepare pnpm@latest --activate
 ENV PATH="/root/.local/share/pnpm:$PATH"
+RUN pnpm config set store-dir /pnpm-store
 WORKDIR /app
 
 # Copy package files first to install dependencies
@@ -21,7 +22,7 @@ COPY . .
 RUN turbo prune @asepharyana/express --docker
 
 # Install dependencies focused on Express
-RUN pnpm install --filter @asepharyana/express...
+RUN pnpm install --filter @asepharyana/express
 
 # Build the application
 RUN pnpm build:express
@@ -32,7 +33,7 @@ WORKDIR /app
 
 # Copy built dist and node_modules from the builder stage
 COPY --from=builder /app/apps/Express/dist /app/dist
-COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/Express/node_modules /app/node_modules
 COPY --from=builder /app/apps/Express/package.json /app/
 
 # List files in /app to verify the files have been copied
