@@ -51,7 +51,7 @@ export default function CardA({
           <div className='relative h-48 sm:h-56 md:h-64 lg:h-72'>
             {isLoading && <SkeletonLoader />}
             <Image
-              src={imageUrl}
+              src={`https://vercel1.asepharyana.cloud/api/imageproxy?url=${imageUrl}`}
               alt={title}
               fill
               sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'

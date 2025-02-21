@@ -17,7 +17,11 @@ export const ComicCard = ({ comic }: { comic: MangaData }) => (
     <CardA
       title={comic.title}
       description={`Chapter ${comic.chapter} | ${comic.date}`}
-      imageUrl={comic.image}
+      imageUrl={
+        comic.image
+          ? `https://vercel1.asepharyana.cloud/api/imageproxy?url=${comic.image}`
+          : ''
+      }
       linkUrl={`/komik/detail/${comic.komik_id}`}
       type={comic.type}
     />

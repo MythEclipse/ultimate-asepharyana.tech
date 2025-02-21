@@ -33,7 +33,11 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
               anime.episode_count ||
               ''
             }
-            imageUrl={anime.poster || ''}
+            imageUrl={
+              anime.poster
+                ? `https://vercel1.asepharyana.cloud/api/imageproxy?url=${anime.poster}`
+                : ''
+            }
             linkUrl={`/anime2/full/${anime.slug}`}
           />
         ))}

@@ -26,7 +26,11 @@ const KomikGrid: React.FC<KomikGridProps> = ({ komiks }) => {
             key={komik.slug}
             title={komik.title}
             description={``}
-            imageUrl={komik.poster}
+            imageUrl={
+              komik.poster
+                ? `https://vercel1.asepharyana.cloud/api/imageproxy?url=${komik.poster}`
+                : ''
+            }
             linkUrl={`/komik/detail/${komik.slug}`}
           />
         ))}
