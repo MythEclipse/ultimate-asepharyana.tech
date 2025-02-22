@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_KOMIK: process.env.NEXT_PUBLIC_KOMIK,
     NEXT_PUBLIC_ANIME: process.env.NEXT_PUBLIC_ANIME,
     DATABASE_URL: process.env.DATABASE_URL,
-    SECRET_KEY: process.env.SECRET_KEY,
+    SECRET: process.env.SECRET,
   },
   async redirects() {
     return [
