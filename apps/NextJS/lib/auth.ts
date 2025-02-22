@@ -6,6 +6,7 @@ import { prisma } from '@asepharyana/database';
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
+  trustHost: true,
   callbacks: {
     authorized: async ({ auth, request }) => {
       if (process.env.NODE_ENV === 'development') {
