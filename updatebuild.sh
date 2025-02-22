@@ -47,6 +47,7 @@ if [ $? -eq 0 ]; then
 
     # Execute commit.sh script
     bash commit.sh
+    bash rsync.sh
 else
     echo "Build failed. Skipping commit."
 fi
