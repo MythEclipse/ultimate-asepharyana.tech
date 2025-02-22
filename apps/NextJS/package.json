@@ -72,6 +72,7 @@
     "@eslint/eslintrc": "^3",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/js-yaml": "^4.0.9",
+    "@types/next": "^9.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

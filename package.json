@@ -45,6 +45,7 @@
     "@babel/core": "~7.26.9",
     "@babel/preset-env": "~7.26.9",
     "@prisma/client": "6.x",
+    "@types/node": "^22.13.5",
     "concurrently": "~9.1.2",
     "cross-env": "~7.0.3",
     "ncp": "^2.0.0",
