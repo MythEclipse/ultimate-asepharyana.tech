@@ -2,7 +2,6 @@ import DockKomik from '@/components/modal/DockKomik';
 import React from 'react';
 import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { MdUpdate } from 'react-icons/md';
-import { FaCheckCircle } from 'react-icons/fa'; // Ganti FaDragon dengan FaCheckCircle
 
 export const metadata = {
   title: {

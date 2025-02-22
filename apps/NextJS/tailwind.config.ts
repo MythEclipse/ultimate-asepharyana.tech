@@ -1,7 +1,7 @@
-const flowbite = require('flowbite/plugin');
-const tailwindcssAnimate = require('tailwindcss-animate');
-
-module.exports = {
+import type { Config } from "tailwindcss";
+import flowbite from "flowbite-react/tailwind";
+import tailwindcssAnimate from 'tailwindcss-animate';
+export default {
   darkMode: ['class'],
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -208,7 +208,6 @@ module.exports = {
   },
   plugins: [
     tailwindcssAnimate,
-    flowbite,
-      require("tailwindcss-animate")
+    flowbite.plugin(),
 ],
-};
+} satisfies Config;

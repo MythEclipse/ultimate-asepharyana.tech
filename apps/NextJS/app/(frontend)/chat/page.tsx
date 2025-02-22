@@ -108,7 +108,7 @@ export default function ChatClient() {
             return exists ? prev : [...prev, normalizedMessage];
           });
         }
-      } catch (err) {
+      } catch {
         console.error('Failed to parse message:', raw);
       }
     };
@@ -166,7 +166,7 @@ export default function ChatClient() {
 
       ws.current?.send(JSON.stringify(newMessage));
       setInput('');
-    } catch (err) {
+    } catch {
       if (sessionRef.current?.user?.name) {
         setError('Failed to send message');
       }

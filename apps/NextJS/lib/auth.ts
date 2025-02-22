@@ -1,36 +1,29 @@
+// lib/auth.ts
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@asepharyana/database';
-type NextAuthReturn = {
-  auth: any;
-  handlers: any;
-  signIn: any;
-  signOut: any;
-};
-export const { auth, handlers, signIn, signOut }: NextAuthReturn = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  providers: [Google],
-  callbacks: {
-    authorized: async ({ auth, request }) => {
-      if (process.env.NODE_ENV === 'development') {
-        return true;
-      }
+import type { DefaultSession } from 'next-auth';
 
-      if (auth) {
-        return true;
-      } else {
-        const pathname = request.nextUrl.pathname;
-        const callbackUrl =
-          request.nextUrl.searchParams.get('callbackUrl') ||
-          encodeURIComponent(pathname);
-        request.nextUrl.pathname = `/login`;
-        request.nextUrl.searchParams.set('callbackUrl', callbackUrl);
-        return false;
-      }
-    },
-    session: async ({ session, user }) => {
-      if (session?.user) {
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+    } & DefaultSession['user'];
+  }
+}
+
+export const { auth, handlers, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+  ],
+  callbacks: {
+    session: ({ session, user }) => {
+      if (session.user) {
         session.user.id = user.id;
       }
       return session;

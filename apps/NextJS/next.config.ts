@@ -1,33 +1,10 @@
-/** @type {import('next').NextConfig} */
-const path = require("path");
-const withPWA = require("next-pwa")({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
-  maximumFileSizeToCacheInBytes: 2500000,
-  runtimeCaching: [
-    {
-      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "images-cache",
-        expiration: {
-          maxEntries: 512,
-          maxAgeSeconds: 30 * 24 * 60 * 60,
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-  ],
-});
+import { NextConfig } from "next";
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   output: "standalone",
   experimental: {
-    outputFileTracingRoot: path.join(__dirname, "../../"),
+    optimizeCss: true,
+    nextScriptWorkers: true,
   },
   images: {
     remotePatterns: [
@@ -75,10 +52,6 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   productionBrowserSourceMaps: true,
-  experimental: {
-    optimizeCss: true,
-    nextScriptWorkers: true,
-  },
   webpack: (config) => {
     config.optimization.splitChunks = {
       chunks: "all",
@@ -90,4 +63,4 @@ const nextConfig = {
   transpilePackages: ["@asepharyana/ui"],
 };
 
-module.exports = withPWA(nextConfig);
+export default nextConfig;

@@ -14,8 +14,6 @@ export default function PostPage() {
   const { data: session } = useSession();
   const {
     data: postsData,
-    error: postsError,
-    isValidating,
   } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
     refreshInterval: 1000, // Auto-revalidate setiap 1 detik
     dedupingInterval: 1000, // Memastikan tidak ada deduping yang mencegah pembaruan
@@ -264,7 +262,7 @@ export default function PostPage() {
                 },
                 likes: post.likes || [],
                 comments:
-                  post.comments?.map((comment) => ({
+                  post.comments?.map((comment: Comments & { user?: User }) => ({
                     ...comment,
                     user: comment.user || {
                       name: null,

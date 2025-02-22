@@ -54,7 +54,7 @@ export async function fetchWithProxy(
         return { data: textData, contentType };
       }
       throw new Error(`Direct fetch failed with status ${res.status}`);
-    } catch (error) {
+    } catch {
       attempts++;
       if (attempts >= maxAttempts) {
         if (useProxies) {

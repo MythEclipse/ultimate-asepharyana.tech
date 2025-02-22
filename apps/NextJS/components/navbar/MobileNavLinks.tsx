@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import UserMenu from './UserMenu';
 import { Session } from 'next-auth';
 
 interface MobileNavLinksProps {
@@ -17,8 +16,6 @@ export default function MobileNavLinks({
   isNavOpen,
   setIsNavOpen,
   pathname,
-  loginUrl,
-  session,
 }: MobileNavLinksProps) {
   const links = [
     { href: '/', label: 'Home' },

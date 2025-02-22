@@ -20,7 +20,6 @@ export default async function ChapterPage(props: {
 }) {
   const params = await props.params;
   const { chapterId } = params;
-  const BaseUrl2 = 'https://jadwiodahwduodh-vee9.vercel.app';
   const response = await fetch(
     `${BaseUrl}/api/komik/chapter?chapter_url=${chapterId}`
   );

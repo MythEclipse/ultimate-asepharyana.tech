@@ -72,7 +72,7 @@ export default function Compressor() {
       } else {
         setError('Compression failed');
       }
-    } catch (err) {
+    } catch {
       setError('Error connecting to server');
     } finally {
       setLoading(false);

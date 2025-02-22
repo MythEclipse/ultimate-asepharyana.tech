@@ -37,7 +37,7 @@
     "@asepharyana/config-typescript": "workspace:*",
     "@eslint/eslintrc": "3.x",
     "@eslint/js": "9.x",
-    "@prisma/client": "~6.3.1"
+    "@prisma/client": "*"
   },
   "devDependencies": {
     "@babel/cli": "7.x",
@@ -47,7 +47,7 @@
     "@types/node": "22.x",
     "babel-plugin-module-resolver": "5.x",
     "eslint": "9.x",
-    "prisma": "6.x",
+    "prisma": "*",
     "rimraf": "6.x",
     "tsup": "8.x",
     "tsx": "4.x",

@@ -44,14 +44,25 @@
     "@babel/cli": "~7.26.4",
     "@babel/core": "~7.26.9",
     "@babel/preset-env": "~7.26.9",
-    "@prisma/client": "~6.3.1",
+    "@prisma/client": "6.x",
     "concurrently": "~9.1.2",
     "cross-env": "~7.0.3",
     "ncp": "^2.0.0",
     "prettier": "~3.5.1",
-    "prisma": "~6.3.1",
+    "prisma": "6.x",
     "tsx": "~4.19.2",
     "turbo": "~2.4.2"
   },
-  "packageManager": "pnpm@10.2.1+sha512.398035c7bd696d0ba0b10a688ed558285329d27ea994804a52bad9167d8e3a72bcb993f9699585d3ca25779ac64949ef422757a6c31102c12ab932e5cbe5cc92"
+  "packageManager": "pnpm@10.2.1+sha512.398035c7bd696d0ba0b10a688ed558285329d27ea994804a52bad9167d8e3a72bcb993f9699585d3ca25779ac64949ef422757a6c31102c12ab932e5cbe5cc92",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "core-js-pure",
+      "esbuild",
+      "prisma",
+      "sharp",
+      "sqlite3"
+    ]
+  }
 }

@@ -35,7 +35,7 @@ export default function Settings() {
       }
 
       setStatus({ saving: false, error: null });
-    } catch (error) {
+    } catch {
       setStatus({ saving: false, error: 'Failed to update profile' });
     }
   };

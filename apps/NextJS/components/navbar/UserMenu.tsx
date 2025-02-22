@@ -14,6 +14,7 @@ interface UserMenuProps {
 
 const mockSession: Session = {
   user: {
+    id: '1',
     name: 'Dev User',
     email: 'devuser@example.com',
     image: '/profile-circle-svgrepo-com.svg',
@@ -88,7 +89,7 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
                 Settings
               </Link>
               <button
-                onClick={() => signOut({ redirectTo: '/' })}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className='flex items-center md:hidden gap-1 px-8 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
               >
                 <FcGoogle className='text-xl' />
