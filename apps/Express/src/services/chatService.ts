@@ -1,4 +1,4 @@
-import { prisma,ChatMessage } from '@asepharyana/database';
+import { prisma, ChatMessage } from '@asepharyana/database';
 import logger from '../utils/logger';
 
 export class ChatService {

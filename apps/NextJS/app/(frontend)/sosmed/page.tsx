@@ -12,9 +12,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PostPage() {
   const { data: session } = useSession();
-  const {
-    data: postsData,
-  } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
+  const { data: postsData } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
     refreshInterval: 1000, // Auto-revalidate setiap 1 detik
     dedupingInterval: 1000, // Memastikan tidak ada deduping yang mencegah pembaruan
     revalidateOnFocus: true, // Tidak revalidasi saat window/tab focus
