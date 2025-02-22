@@ -1,7 +1,7 @@
 import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // output: 'standalone',
+  output: 'standalone',
   experimental: {
     optimizeCss: true,
     nextScriptWorkers: true,
