@@ -69,7 +69,7 @@ export default async function ChapterPage(props: {
             className=''
           >
             <Image
-              src={`https://jadwiodahwduodh-vee9.vercel.app/_next/image?url=${encodeURI(image)}&w=1080&q=75`}
+              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(image)}`}
               alt={`Chapter ${chapter.title} - page ${index + 1}`}
               className='object-cover transition-opacity duration-300'
               width='725'

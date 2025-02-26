@@ -10,33 +10,25 @@ const baseFormat = winston.format.combine(
   })
 );
 
-const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: baseFormat,
-  transports: [
-    // Transport untuk Console (development)
+const transports = [];
+
+if (process.env.NODE_ENV !== 'production') {
+  // Transport untuk Console (development)
+  transports.push(
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(), // Warna hanya untuk console
         baseFormat
       ),
       handleExceptions: true,
-    }),
+    })
+  );
+}
 
-    // Transport untuk File dengan rotasi harian (production)
-    new DailyRotateFile({
-      filename: 'logs/application-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '30d',
-      format: baseFormat,
-      auditFile: 'logs/rotate-audit.json',
-      createSymlink: true,
-      symlinkName: 'current.log',
-      handleExceptions: true,
-    }),
-  ],
+const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  format: baseFormat,
+  transports,
   exceptionHandlers: [
     new DailyRotateFile({
       filename: 'logs/exceptions-%DATE%.log',

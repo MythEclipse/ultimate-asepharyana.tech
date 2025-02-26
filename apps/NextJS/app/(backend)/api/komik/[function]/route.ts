@@ -120,7 +120,12 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
     image = image.split('?')[0]; // Remove query parameters from image URL
 
     // Description
-    const description = $('.shortcsc').text().trim() || '';
+    const description =
+      $(
+        '#sinopsis > section > div > div.entry-content.entry-content-single > p'
+      )
+        .text()
+        .trim() || '';
 
     // Status
     const status =

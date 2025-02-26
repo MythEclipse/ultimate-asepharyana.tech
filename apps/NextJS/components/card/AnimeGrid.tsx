@@ -1,6 +1,7 @@
 // components/AnimeGrid.tsx
 import React from 'react';
 import MediaCard from './MediaCard';
+import { BaseUrl } from '@/lib/url';
 
 interface Anime {
   title: string;
@@ -35,7 +36,7 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
             }
             imageUrl={
               anime.poster
-                ? `https://vercel1.asepharyana.cloud/api/imageproxy?url=${anime.poster}`
+                ? `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.poster)}`
                 : ''
             }
             linkUrl={`/anime/detail/${anime.slug}`}

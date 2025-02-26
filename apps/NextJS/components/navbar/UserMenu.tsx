@@ -90,7 +90,7 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className='flex items-center md:hidden gap-1 px-8 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
+                className='flex items-center gap-1 px-8 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
               >
                 <FcGoogle className='text-xl' />
                 Sign out

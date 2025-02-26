@@ -1,5 +1,6 @@
 import React from 'react';
 import CardA from './MediaCard';
+import { BaseUrl } from '@/lib/url';
 
 interface MangaData {
   title: string;
@@ -19,7 +20,7 @@ export const ComicCard = ({ comic }: { comic: MangaData }) => (
       description={`Chapter ${comic.chapter} | ${comic.date}`}
       imageUrl={
         comic.image
-          ? `https://vercel1.asepharyana.cloud/api/imageproxy?url=${comic.image}`
+          ? `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(comic.image)}`
           : ''
       }
       linkUrl={`/komik/detail/${comic.komik_id}`}

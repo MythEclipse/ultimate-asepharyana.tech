@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BaseUrl } from '@/lib/url';
 
 interface CardProps {
   title: string;
@@ -51,7 +52,7 @@ export default function CardA({
           <div className='relative h-48 sm:h-56 md:h-64 lg:h-72'>
             {isLoading && <SkeletonLoader />}
             <Image
-              src={`https://vercel1.asepharyana.cloud/api/imageproxy?url=${imageUrl}`}
+              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`}
               alt={title}
               fill
               sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'

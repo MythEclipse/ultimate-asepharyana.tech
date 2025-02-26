@@ -11,7 +11,7 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "dev": "next dev --port 4090",
+    "dev": "cross-env NODE_ENV=development next dev --port 4090",
     "dev:https": "next dev --experimental-https",
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next build",
     "postbuild": "next-sitemap",

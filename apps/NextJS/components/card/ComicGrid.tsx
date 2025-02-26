@@ -1,6 +1,7 @@
 // components/AnimeGrid.tsx
 import React from 'react';
 import CardA from './MediaCard';
+import { BaseUrl } from '@/lib/url';
 
 interface Komik {
   title: string;
@@ -28,7 +29,7 @@ const KomikGrid: React.FC<KomikGridProps> = ({ komiks }) => {
             description={``}
             imageUrl={
               komik.poster
-                ? `https://vercel1.asepharyana.cloud/api/imageproxy?url=${komik.poster}`
+                ? `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(komik.poster)}`
                 : ''
             }
             linkUrl={`/komik/detail/${komik.slug}`}
