@@ -41,7 +41,7 @@
     "date-fns": "4.x",
     "eslint-plugin-react-hooks": "^5.1.x",
     "file-type": "^20.1.x",
-    "flowbite-react": "^0.10.x",
+    "flowbite-react": "^0.10.2",
     "fluent-ffmpeg": "^2.1.x",
     "form-data": "^4.0.x",
     "framer-motion": "^12.4.x",
