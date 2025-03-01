@@ -1,7 +1,6 @@
 // components/AnimeGrid.tsx
 import React from 'react';
 import MediaCard from './MediaCard';
-import { BaseUrl } from '@/lib/url';
 
 interface Anime {
   title: string;
@@ -34,11 +33,7 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
               anime.episode_count ||
               ''
             }
-            imageUrl={
-              anime.poster
-                ? `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.poster)}`
-                : ''
-            }
+            imageUrl={anime.poster || ''}
             linkUrl={`/anime2/detail/${anime.slug}`}
           />
         ))}

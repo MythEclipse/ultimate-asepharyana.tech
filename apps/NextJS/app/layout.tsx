@@ -71,7 +71,7 @@ export default async function RootLayout({
               attribute='class'
               defaultTheme='system'
               enableSystem
-              disableTransitionOnChange
+              // disableTransitionOnChange
             >
               <NavbarWrapper />
               <div className='mt-28 max-w-full px-0.5 pb-10 pt-38 sm:px-6 lg:px-8'>

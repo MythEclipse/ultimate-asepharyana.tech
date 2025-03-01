@@ -44,6 +44,7 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
               className='w-full h-60 object-cover rounded-xl'
               alt='Card Thumbnail'
               priority
+              unoptimized
               placeholder={typeof imageUrl === 'object' ? 'blur' : 'empty'}
               sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px'
             />
