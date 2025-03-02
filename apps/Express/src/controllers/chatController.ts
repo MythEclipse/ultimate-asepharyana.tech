@@ -70,7 +70,7 @@ export default function handleConnection(ws: WebSocket) {
       imageProfile: parsedData.imageProfile || '',
       imageMessage: parsedData.imageMessage || '',
       role: parsedData.role || 'guest',
-      timestamp: new Date(),
+      timestamp: new Date(parsedData.timestamp || Date.now()),
       id: '',
     };
 

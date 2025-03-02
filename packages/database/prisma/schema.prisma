@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -54,6 +53,7 @@ model User {
   replies          Replies[]
   accounts         Account[]
   sessions         Session[]
+  ChatMessage      ChatMessage[]
 
   @@map("users")
 }
@@ -118,13 +118,12 @@ model Replies {
 
 model ChatMessage {
   id           String   @id @default(cuid()) @db.VarChar(255)
-  userId       String?  @db.VarChar(255)
-  text         String
+  userId       String   @db.VarChar(255)
+  text         String   @db.Text
   email        String?
   imageProfile String?
   imageMessage String?
-  role         String
+  role         String?
   timestamp    DateTime @default(now())
-
-  @@map("chat_messages")
+  user         User     @relation(fields: [userId], references: [id])
 }

@@ -1,4 +1,5 @@
-import { prisma, ChatMessage } from '@asepharyana/database';
+import { prisma } from '@asepharyana/database';
+import { ChatMessage } from '@prisma/client';
 import logger from '../utils/logger';
 
 export class ChatService {
@@ -9,7 +10,6 @@ export class ChatService {
       const savedMessage = await prisma.chatMessage.create({
         data: message,
       });
-      logger.info(`Message saved: ${JSON.stringify(savedMessage)}`);
       return savedMessage;
     } catch (error) {
       if (error instanceof Error) {
