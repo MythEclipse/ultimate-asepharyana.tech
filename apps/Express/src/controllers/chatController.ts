@@ -63,14 +63,14 @@ export default function handleConnection(ws: WebSocket) {
 
     // Construct message object with validation
     const message = {
+      id: '', // Will be set by the database
       userId: parsedData.userId || `User${Math.floor(Math.random() * 1000)}`,
       text: parsedData.text, // Guaranteed to exist due to validation
       email: parsedData.email || '',
       imageProfile: parsedData.imageProfile || '',
       imageMessage: parsedData.imageMessage || '',
       role: parsedData.role || 'guest',
-      // timestamp : new Date().toISOString(), // Will be set by the database
-      // id: '', // Will be set by the database
+      timestamp: new Date(), // Will be set by the database
     };
 
     logger.info(`Message received: ${JSON.stringify(message)}`);
