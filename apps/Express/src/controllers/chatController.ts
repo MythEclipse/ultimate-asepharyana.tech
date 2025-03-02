@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import { ChatService } from '../services/chatService';
 import logger from '../utils/logger';
+import { v4 as uuidv4 } from 'uuid';
 
 const clients: Set<WebSocket> = new Set();
 const chatService = new ChatService();
@@ -63,7 +64,7 @@ export default function handleConnection(ws: WebSocket) {
 
     // Construct message object with validation
     const message = {
-      id: '', // Will be set by the database
+      id: uuidv4(), // Generate a unique ID using uuid
       userId: parsedData.userId || `User${Math.floor(Math.random() * 1000)}`,
       text: parsedData.text, // Guaranteed to exist due to validation
       email: parsedData.email || '',
