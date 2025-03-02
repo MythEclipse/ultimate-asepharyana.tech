@@ -3,13 +3,12 @@ import { ChatMessage } from '@prisma/client';
 import logger from '../utils/logger';
 
 export class ChatService {
-  async saveMessage(message: Omit<ChatMessage, 'id'>): Promise<ChatMessage> {
+  async saveMessage(
+    message: Omit<ChatMessage, 'id' | 'timestamp'>
+  ): Promise<ChatMessage> {
     try {
       const savedMessage = await prisma.chatMessage.create({
-        data: {
-          ...message,
-          timestamp: new Date(message.timestamp), // Ensure timestamp is a Date object
-        },
+        data: message,
       });
       return savedMessage;
     } catch (error) {
