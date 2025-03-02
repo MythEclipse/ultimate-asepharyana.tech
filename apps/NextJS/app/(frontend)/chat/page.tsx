@@ -57,7 +57,11 @@ export default function ChatClient() {
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws.current = new ReconnectingWebSocket(`${protocol}//ws.asepharyana.cloud`);
+    const host =
+      process.env.NODE_ENV === 'development'
+        ? 'localhost:4091'
+        : 'ws.asepharyana.cloud';
+    ws.current = new ReconnectingWebSocket(`${protocol}//${host}`);
 
     const handleHistory = (data: { messages: ChatMessage[] }) => {
       if (Array.isArray(data.messages)) {

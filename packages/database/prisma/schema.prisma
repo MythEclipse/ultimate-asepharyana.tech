@@ -54,7 +54,6 @@ model User {
   replies          Replies[]
   accounts         Account[]
   sessions         Session[]
-  ChatMessage      ChatMessage[]
 
   @@map("users")
 }
@@ -119,12 +118,13 @@ model Replies {
 
 model ChatMessage {
   id           String   @id @default(cuid()) @db.VarChar(255)
-  userId       String   @db.VarChar(255)
-  text         String   @db.Text
+  userId       String?  @db.VarChar(255)
+  text         String
   email        String?
   imageProfile String?
   imageMessage String?
-  role         String?
+  role         String
   timestamp    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id])
+
+  @@map("chat_messages")
 }

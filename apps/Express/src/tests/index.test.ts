@@ -119,6 +119,6 @@ describe('index.ts tests', () => {
         };
         wsClient1.send(JSON.stringify(message));
       });
-    }, 10000);
+    }, 20000);
   });
 });

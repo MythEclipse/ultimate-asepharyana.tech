@@ -9,6 +9,7 @@ export class ChatService {
       const savedMessage = await prisma.chatMessage.create({
         data: message,
       });
+      logger.info(`Message saved: ${JSON.stringify(savedMessage)}`);
       return savedMessage;
     } catch (error) {
       if (error instanceof Error) {
