@@ -17,12 +17,12 @@ function LoginButton() {
 
 export default function SignIn() {
   return (
-    <div className='min-h-screen flex flex-col justify-center items-center bg-gray-100'>
-      <div className='p-10 bg-white rounded-lg shadow-lg'>
-        <h1 className='mb-6 text-3xl font-bold text-center text-gray-800'>
+    <div className='min-h-screen flex flex-col justify-center items-center'>
+      <div className='p-10 rounded-lg shadow-lg'>
+        <h1 className='mb-6 text-3xl font-bold text-center text-blue-600'>
           Welcome
         </h1>
-        <Suspense fallback={<div className='text-gray-600'>Loading...</div>}>
+        <Suspense fallback={<div className='text-blue-500'>Loading...</div>}>
           <LoginButton />
         </Suspense>
       </div>
