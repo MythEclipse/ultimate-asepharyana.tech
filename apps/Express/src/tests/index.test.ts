@@ -108,14 +108,12 @@ describe('index.ts tests', () => {
       wsClient1.on('open', () => {
         logger.info('Client 1 sending message');
         const message = {
-          user: 'Client1',
+          userId: 'Client1',
           text: 'Hello from client1',
           email: 'client1@example.com',
           imageProfile: 'https://example.com/client1-profile.png',
           imageMessage: 'https://example.com/client1-message.png',
           role: 'user',
-          timestamp: Date.now(),
-          id: undefined,
         };
         wsClient1.send(JSON.stringify(message));
       });
