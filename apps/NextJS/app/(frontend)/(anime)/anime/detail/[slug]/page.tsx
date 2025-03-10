@@ -169,7 +169,9 @@ export default function DetailAnimePage({
                     anime.data.episode_lists.map((episode) => {
                       const episodeNumber =
                         episode.episode.match(/Episode (\d+)/)?.[1] ||
-                        episode.episode;
+                        (episode.episode.includes('(End)')
+                          ? 'Batch'
+                          : episode.episode);
                       return (
                         <Link
                           scroll
