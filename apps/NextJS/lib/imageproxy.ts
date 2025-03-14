@@ -5,12 +5,12 @@ import { NextResponse } from 'next/server';
 export async function imageProxy(url: string) {
   const cdnResponse = await cdnImage(url);
   if (cdnResponse.status !== 200) {
-    const fetchRespone = await fetchManual(url);
+    const fetchRespone = await uploadImage(url);
     if (fetchRespone.status !== 200) {
       logger.error(`Failed to fetch image from URL: ${url}`);
-      return await uploadImage(url);
+      return await fetchManual(url);
     }
-    logger.info(`Successfully fetched image from URL: ${url}`);
+    logger.info(`Successfully fetched image from Upload: ${url}`);
     return fetchRespone;
   }
   logger.info(`Successfully fetched image from CDN: ${url}`);
@@ -113,10 +113,6 @@ async function uploadImage(url: string) {
         'Content-Type': contentType,
       },
     });
-    logger.info(
-      `Successfully uploaded image to uploader service: ${uploadResult.url}`
-    );
-    return NextResponse.json({ url: uploadResult.url }, { status: 200 });
   } catch (error) {
     logger.error(`Internal server error: ${(error as Error).message}`);
     return NextResponse.json(

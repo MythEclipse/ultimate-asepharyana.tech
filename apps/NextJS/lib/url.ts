@@ -5,4 +5,4 @@ export const PRODUCTION: string =
 export const BaseUrl: string =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:4090'
-    : process.env.NEXT_PUBLIC_BASE_URL || 'https://asepharyana.cloud';
+    : 'https://asepharyana.cloud';

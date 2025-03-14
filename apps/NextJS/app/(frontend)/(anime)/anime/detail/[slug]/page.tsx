@@ -41,7 +41,6 @@ interface AnimeData {
     genres: Genre[];
     producers: string[];
     episode_lists: Episode[];
-    batch: Episode[];
     recommendations: Recommendation[];
   };
 }
@@ -56,7 +55,6 @@ export default function DetailAnimePage({
   const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
     null
   );
-
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
@@ -69,7 +67,6 @@ export default function DetailAnimePage({
   );
 
   const [bookmarked, setBookmarked] = useState(false);
-
   useEffect(() => {
     if (resolvedParams && typeof window !== 'undefined') {
       const bookmarks = JSON.parse(
@@ -85,9 +82,7 @@ export default function DetailAnimePage({
 
   const handleBookmark = () => {
     if (!resolvedParams) return;
-
     let bookmarks = JSON.parse(localStorage.getItem('bookmarks-anime') || '[]');
-
     if (bookmarked) {
       bookmarks = bookmarks.filter(
         (item: { slug: string }) => item.slug !== resolvedParams.slug
@@ -99,7 +94,6 @@ export default function DetailAnimePage({
         poster: anime?.data.poster,
       });
     }
-
     localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
     setBookmarked(!bookmarked);
   };
@@ -110,6 +104,16 @@ export default function DetailAnimePage({
     );
   if (!anime || !resolvedParams) return <Loading />;
 
+  const episodes =
+    anime.data.episode_lists?.filter((ep) => {
+      return ep.episode.match(/Episode\s+\d+\sSubtitle/i);
+    }) || [];
+
+  const batchEpisodes =
+    anime.data.episode_lists?.filter((ep) => {
+      return ep.episode.match(/Sub Indo\s*:\s*Episode\s*\d+\s*–\s*\d+/i);
+    }) || [];
+
   return (
     <main className='p-6 bg-background dark:bg-dark min-h-screen'>
       <div className='max-w-4xl mx-auto bg-white dark:bg-dark rounded-lg shadow-lg'>
@@ -117,7 +121,7 @@ export default function DetailAnimePage({
           <div className='flex flex-col md:flex-row items-center md:items-start'>
             <div className='w-full md:w-1/3 mb-6 md:mb-0 flex justify-center md:justify-start'>
               <Image
-                src={anime.data.poster}
+                src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.data.poster)}`}
                 alt={anime.data.title}
                 width={330}
                 height={450}
@@ -131,9 +135,7 @@ export default function DetailAnimePage({
               </h1>
               <button
                 onClick={handleBookmark}
-                className={`px-4 py-2 rounded text-white ${
-                  bookmarked ? 'bg-red-500' : 'bg-blue-500'
-                }`}
+                className={`px-4 py-2 rounded text-white ${bookmarked ? 'bg-red-500' : 'bg-blue-500'}`}
               >
                 {bookmarked ? 'Unbookmark' : 'Bookmark'}
               </button>
@@ -148,7 +150,6 @@ export default function DetailAnimePage({
                     <strong>{detail.label}:</strong> {detail.value || 'N/A'}
                   </p>
                 ))}
-
                 <p className='mb-4'>
                   <strong>Genres:</strong>{' '}
                   {anime.data.genres
@@ -159,25 +160,21 @@ export default function DetailAnimePage({
                   <strong>Synopsis:</strong> {anime.data.synopsis || 'N/A'}
                 </p>
               </div>
-
               <div className='mt-6'>
                 <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
                   Episodes
                 </h2>
                 <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {anime.data.episode_lists?.length > 0 ? (
-                    anime.data.episode_lists.map((episode) => {
+                  {episodes.length > 0 ? (
+                    episodes.map((episode) => {
                       const episodeNumber =
-                        episode.episode.match(/Episode (\d+)/)?.[1] ||
-                        (episode.episode.includes('(End)')
-                          ? 'Batch'
-                          : episode.episode);
+                        episode.episode.match(/Episode\s+(\d+)/)?.[1] ||
+                        episode.episode;
                       return (
                         <Link
                           scroll
                           key={episode.slug}
                           href={`/anime/full/${episode.slug}`}
-                          className=''
                         >
                           <ButtonA className='w-full'>
                             <span className='text-lg font-bold mb-1 text-center truncate text-primary-dark dark:text-primary'>
@@ -194,7 +191,25 @@ export default function DetailAnimePage({
                   )}
                 </div>
               </div>
-
+              {batchEpisodes.length > 0 && (
+                <div className='mt-6'>
+                  <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
+                    Batch
+                  </h2>
+                  {batchEpisodes.map((batchItem) => (
+                    <Link
+                      key={batchItem.slug}
+                      href={`/anime/full/${batchItem.slug}`}
+                    >
+                      <ButtonA className='w-full truncate'>
+                        <span className='text-lg font-bold mb-1 text-center truncate text-primary-dark dark:text-primary'>
+                          {batchItem.episode}
+                        </span>
+                      </ButtonA>
+                    </Link>
+                  ))}
+                </div>
+              )}
               <div className='mt-6'>
                 <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
                   Recommendations

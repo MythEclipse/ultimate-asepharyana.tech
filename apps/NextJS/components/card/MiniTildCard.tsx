@@ -4,6 +4,7 @@ import Image from 'next/image';
 import React from 'react';
 import { CardBody, CardContainer, CardItem } from '@/components/card/3d-card';
 import Link from 'next/link';
+import { BaseUrl } from '@/lib/url';
 
 interface ThreeDCardProps {
   title: string;
@@ -37,11 +38,12 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
           </CardItem>
           <CardItem translateZ='100' className='w-full h-[60%] mt-2'>
             <Image
-              src={imageUrl}
+              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`}
               height='400'
               width='300'
               className='h-full w-full object-cover rounded-xl group-hover/card:shadow-xl'
               alt='thumbnail'
+              unoptimized
             />
           </CardItem>
         </CardBody>

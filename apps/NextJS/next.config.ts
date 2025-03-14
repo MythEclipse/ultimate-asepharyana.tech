@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4090',
+        pathname: '/api/imageproxy',
+      },
     ],
     minimumCacheTTL: 86400,
     formats: ['image/webp', 'image/avif'],
