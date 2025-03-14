@@ -2,6 +2,8 @@ import logger from '@/lib/logger';
 import { BaseUrl } from '@/lib/url';
 import { NextResponse } from 'next/server';
 
+export const revalidate = 0; 
+
 export async function imageProxy(url: string) {
   const cdnResponse = await cdnImage(url);
   if (cdnResponse.status !== 200) {
@@ -47,6 +49,7 @@ async function cdnImage(url: string) {
     return new NextResponse(blob, {
       headers: {
         'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
       },
     });
   } catch (error) {
@@ -111,6 +114,7 @@ async function uploadImage(url: string) {
     return new NextResponse(imageBlob, {
       headers: {
         'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
       },
     });
   } catch (error) {
@@ -146,8 +150,12 @@ async function fetchManual(url: string) {
 
     const imageBuffer = await response.arrayBuffer();
     logger.info(`Successfully fetched image from URL: ${url}`);
+    
     return new NextResponse(imageBuffer, {
-      headers: { 'Content-Type': contentType },
+      headers: { 
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
+      },
     });
   } catch (error) {
     logger.error(`Internal server error: ${(error as Error).message}`);
