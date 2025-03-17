@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 
@@ -18,57 +18,94 @@ async function fetchHtml(url: string): Promise<string> {
   return response.data;
 }
 
-function parseAnime(html: string) {
+function parseOngoingAnime(html: string) {
   const $ = cheerio.load(html);
-  const animeList: {
+  const ongoingAnime: {
     title: string;
     slug: string;
     poster: string;
-    episode: string;
+    current_episode: string;
     anime_url: string;
   }[] = [];
 
-  $('.misha_posts_wrap article').each((index, element) => {
-    const title = $(element).find('h3.title span').text().trim() || '';
+  $('.listupd .bs').each((index, element) => {
+    const title = $(element).find('.ntitle').text().trim() || '';
     const slug = $(element).find('a').attr('href')?.split('/')[3] || '';
-    const poster = $(element).find('img').attr('src') || '';
-    const episode = $(element).find('.types.episodes').text().trim() || 'N/A';
+    const poster = $(element).find('img').attr('data-src') || '';
+    const current_episode = $(element).find('.epx').text().trim() || 'N/A';
     const anime_url = $(element).find('a').attr('href') || '';
 
-    animeList.push({
+    ongoingAnime.push({
       title,
       slug,
       poster,
-      episode,
+      current_episode,
       anime_url,
     });
   });
 
-  return animeList;
+  return ongoingAnime;
 }
 
-export async function GET(request: Request) {
+function parseCompleteAnime(html: string) {
+  const $ = cheerio.load(html);
+  const completeAnime: {
+    title: string;
+    slug: string;
+    poster: string;
+    episode_count: string;
+    anime_url: string;
+  }[] = [];
+
+  $('.listupd .bs').each((index, element) => {
+    const title = $(element).find('.ntitle').text().trim() || '';
+    const slug = $(element).find('a').attr('href')?.split('/')[3] || '';
+    const poster = $(element).find('img').attr('data-src') || '';
+    const episode_count = $(element).find('.epx').text().trim() || 'N/A';
+    const anime_url = $(element).find('a').attr('href') || '';
+
+    completeAnime.push({
+      title,
+      slug,
+      poster,
+      episode_count,
+      anime_url,
+    });
+  });
+
+  return completeAnime;
+}
+
+export async function GET(req: NextRequest) {
   const ip =
-    request.headers.get('x-forwarded-for') ||
-    request.headers.get('remote-addr') ||
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('remote-addr') ||
     'unknown';
-  const url = request.url;
+  const url = req.url;
 
   try {
-    const html = await fetchHtml('https://s4.nontonanimeid.boats/');
+    const ongoingHtml = await fetchHtml(
+      'https://alqanime.net/advanced-search/?status=ongoing&order=update'
+    );
+    const completeHtml = await fetchHtml(
+      'https://alqanime.net/advanced-search/?status=completed&order=update'
+    );
 
-    const animeList = parseAnime(html);
+    const ongoingAnime = parseOngoingAnime(ongoingHtml);
+    const completeAnime = parseCompleteAnime(completeHtml);
 
     logger.info('Request processed', {
       ip,
       url,
-      animeCount: animeList.length,
+      ongoingAnimeCount: ongoingAnime.length,
+      completeAnimeCount: completeAnime.length,
     });
 
     return NextResponse.json({
       status: 'Ok',
       data: {
-        anime_list: animeList,
+        ongoing_anime: ongoingAnime,
+        complete_anime: completeAnime,
       },
     });
   } catch (error) {

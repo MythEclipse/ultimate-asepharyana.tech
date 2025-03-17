@@ -1,5 +1,6 @@
 import DockKomik from '@/components/modal/DockKomik';
 import React from 'react';
+import { FaCheckCircle } from 'react-icons/fa';
 import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { MdUpdate } from 'react-icons/md';
 
@@ -28,6 +29,13 @@ const anime = [
     ),
     href: '/anime2/ongoing-anime/1',
   },
+   {
+      title: 'Complete Anime',
+      icon: (
+        <FaCheckCircle className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+      ), // Ganti dengan ikon ceklis
+      href: '/anime2/complete-anime/1',
+    },
   {
     title: 'Search',
     icon: (

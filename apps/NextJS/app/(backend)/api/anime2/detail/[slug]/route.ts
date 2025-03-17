@@ -5,7 +5,7 @@ import logger from '@/lib/logger'; // Make sure to import your logger
 
 const fetchAnimePage = async (slug: string) => {
   const { data, contentType } = await fetchWithProxy(
-    `https://s4.nontonanimeid.boats/anime/${slug}/`
+    `https://alqanime.net/${slug}/`
   );
 
   if (!contentType || !contentType.includes('text/html')) {
@@ -15,34 +15,22 @@ const fetchAnimePage = async (slug: string) => {
   return data;
 };
 
-const parseAnimeData = (html: string, slug: string) => {
+const parseAnimeData = (html: string) => {
   const $ = cheerio.load(html);
 
   const extractText = (selector: string) => $(selector).text().trim();
 
   const title = extractText('.entry-title');
-  const alternative_title =
-    $('.bottomtitle .infoseries:contains("English:")')
-      .text()
-      .replace('English:', '')
-      .trim() || '';
-  const poster = $('.kotakseries .poster img').attr('src') || '';
-  const type = $('.scoreseries .typeseries').text().trim() || '';
-  const release_date =
-    $('.bottomtitle .infoseries:contains("Aired:")')
-      .text()
-      .replace('Aired:', '')
-      .trim() || '';
-  const status = $('.extra .statusseries').text().trim() || '';
-  const synopsis = $('div.entry-content.seriesdesc > p').text().trim();
-  const studio =
-    $('.bottomtitle .infoseries:contains("Studios:")')
-      .text()
-      .replace('Studios:', '')
-      .trim() || '';
+  const alternative_title = extractText('.alter');
+  const poster = $('.thumb img').attr('src') || '';
+  const type = extractText('.info-content .spe span:contains("Tipe:") a');
+  const release_date = extractText('.info-content .spe span:contains("Dirilis:")');
+  const status = extractText('.info-content .spe span:contains("Status:")');
+  const synopsis = $('.entry-content p').text().trim();
+  const studio = extractText('.info-content .spe span:contains("Studio:") a');
 
   const genres: { name: string; slug: string; anime_url: string }[] = [];
-  $('.tagline a').each((_, element) => {
+  $('.genxed a').each((_, element) => {
     const name = $(element).text().trim();
     const anime_url = $(element).attr('href') || '';
     const slug = anime_url.split('/').filter(Boolean).pop() || '';
@@ -51,9 +39,9 @@ const parseAnimeData = (html: string, slug: string) => {
 
   const episode_lists: { episode: string; slug: string }[] = [];
   const batch: { episode: string; slug: string }[] = [];
-  $('.misha_posts_wrap2 li').each((_, element) => {
-    const episode = $(element).find('.t1 a').text().trim();
-    const href = $(element).find('.t1 a').attr('href'); // Ambil atribut href
+  $('.soraddl.dlone .soraurl').each((_, element) => {
+    const episode = $(element).find('.res').text().trim();
+    const href = $(element).find('.slink a').attr('href'); // Ambil atribut href
     let episodeSlug = '';
     if (href) {
       const segments = href.split('/');
@@ -66,27 +54,6 @@ const parseAnimeData = (html: string, slug: string) => {
       episode_lists.push({ episode, slug: episodeSlug });
     }
   });
-  // Add missing episodes up to episode 1
-  const episodeNumbers = episode_lists.map((ep) =>
-    parseInt(ep.slug.match(/\d+/)?.[0] || '0', 10)
-  );
-  const maxEpisode = Math.max(...episodeNumbers);
-
-  for (let i = maxEpisode; i >= 1; i--) {
-    if (!episodeNumbers.includes(i)) {
-      episode_lists.push({
-        episode: `${title} Episode ${i} Sub Indo`,
-        slug: `${slug}-episode-${i}`,
-      });
-    }
-  }
-
-  // Sort episodes in descending order
-  episode_lists.sort((a, b) => {
-    const episodeA = parseInt(a.slug.match(/\d+/)?.[0] || '0', 10);
-    const episodeB = parseInt(b.slug.match(/\d+/)?.[0] || '0', 10);
-    return episodeB - episodeA;
-  });
 
   const producers: string[] = []; // Update if producers are available in the new structure
 
@@ -97,7 +64,15 @@ const parseAnimeData = (html: string, slug: string) => {
     status: string;
     type: string;
   }[] = [];
-  // Update this part if there are recommendations in the new HTML structure
+  $('.listupd .bs').each((_, element) => {
+    const title = $(element).find('.ntitle').text().trim();
+    const anime_url = $(element).find('a').attr('href') || '';
+    const slug = anime_url.split('/').filter(Boolean).pop() || '';
+    const poster = $(element).find('img').attr('src') || '';
+    const status = $(element).find('.status').text().trim();
+    const type = $(element).find('.typez').text().trim();
+    recommendations.push({ title, slug, poster, status, type });
+  });
 
   return {
     title,
@@ -129,7 +104,7 @@ export async function GET(
   try {
     const { slug } = await props.params;
     const html = (await fetchAnimePage(slug)) as string;
-    const animeData = parseAnimeData(html, slug);
+    const animeData = parseAnimeData(html);
 
     logger.info('Request processed', {
       ip,

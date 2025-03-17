@@ -1,43 +1,45 @@
-'use client';
-
 import React from 'react';
-import useSWR from 'swr';
 import Link from 'next/link';
 import Loading from '@/components/misc/loading';
 import ButtonA from '@/components/button/ScrollButton';
-import AnimeGrid from '@/components/card/AnimeGrid2';
+import AnimeGrid from '@/components/card/AnimeGrid';
 import { BaseUrl } from '@/lib/url';
 
 interface HomeData {
   status: string;
   data: {
-    anime_list: Anime[];
+    ongoing_anime: OngoingAnime[];
+    complete_anime: CompleteAnime[];
   };
 }
 
-interface Anime {
+interface OngoingAnime {
   title: string;
   slug: string;
   poster: string;
-  episode: string;
+  current_episode: string;
   anime_url: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+interface CompleteAnime {
+  title: string;
+  slug: string;
+  poster: string;
+  episode_count: string;
+  anime_url: string;
+  current_episode: string;
+}
 
-export default function AnimePage() {
-  const { data: episodeData, error } = useSWR<HomeData>(
-    `${BaseUrl}/api/anime2/`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 600000, // 10 minutes
-    }
-  );
+export default async function AnimePage() {
+  let episodeData: HomeData | null = null;
 
-  if (error) {
+  try {
+    const response = await fetch(`${BaseUrl}/api/anime2/`, {
+      next: { revalidate: 600 },
+    });
+    episodeData = await response.json();
+  } catch (error) {
     console.error('Failed to fetch episodes:', error);
-    return <div>Failed to load</div>;
   }
 
   if (!episodeData) {
@@ -48,22 +50,36 @@ export default function AnimePage() {
     <main className='p-3'>
       <h1 className='text-3xl font-bold mb-6 dark:text-white'>Anime</h1>
       <>
-        {/* Anime List Section */}
-        <Link href={'/anime2/anime-list/1'}>
+        {/* Ongoing Anime Section */}
+        <Link href={'/anime2/ongoing-anime/1'}>
           <ButtonA className='w-full max-w-[800rem] text-center py-4 px-8'>
-            Latest Anime List
+            Latest Ongoing Anime
           </ButtonA>
         </Link>
-        {episodeData?.data?.anime_list && (
-          <AnimeGrid
-            animes={episodeData.data.anime_list.map((anime) => ({
-              ...anime,
-              rating: '',
-              release_day: '',
-              newest_release_date: '',
-            }))}
-          />
-        )}
+        <AnimeGrid
+          animes={episodeData.data.ongoing_anime.map((anime) => ({
+            ...anime,
+            rating: '',
+            release_day: '',
+            newest_release_date: '',
+          }))}
+        />
+
+        {/* Complete Anime Section */}
+        <Link scroll href={'/anime2/complete-anime/1'}>
+          <ButtonA className='w-full max-w-[800rem] text-center py-4 px-8'>
+            Latest Complete Anime
+          </ButtonA>
+        </Link>
+        <AnimeGrid
+          animes={episodeData.data.complete_anime.map((anime) => ({
+            ...anime,
+            rating: '',
+            release_day: '',
+            newest_release_date: '',
+            current_episode: '',
+          }))}
+        />
       </>
     </main>
   );
