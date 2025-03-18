@@ -22,7 +22,7 @@ const parseAnimeData = (html: string) => {
 
   const title = extractText('.entry-title');
   const alternative_title = extractText('.alter');
-  const poster = $('.thumb img').attr('src') || '';
+  const poster = $('.bixbox.animefull .bigcover .ime img.lazyload').attr('data-src') || '';
   const type = extractText('.info-content .spe span:contains("Tipe:") a');
   const release_date = extractText('.info-content .spe span:contains("Dirilis:")');
   const status = extractText('.info-content .spe span:contains("Status:")');
@@ -39,6 +39,8 @@ const parseAnimeData = (html: string) => {
 
   const episode_lists: { episode: string; slug: string }[] = [];
   const batch: { episode: string; slug: string }[] = [];
+  const downloads: { resolution: string; links: { name: string; url: string }[] }[] = [];
+
   $('.soraddl.dlone .soraurl').each((_, element) => {
     const episode = $(element).find('.res').text().trim();
     const href = $(element).find('.slink a').attr('href'); // Ambil atribut href
@@ -53,6 +55,15 @@ const parseAnimeData = (html: string) => {
     } else {
       episode_lists.push({ episode, slug: episodeSlug });
     }
+
+    const links: { name: string; url: string }[] = [];
+    $(element).find('.slink a').each((_, linkElement) => {
+      const name = $(linkElement).text().trim();
+      const url = $(linkElement).attr('href') || '';
+      links.push({ name, url });
+    });
+
+    downloads.push({ resolution: episode, links });
   });
 
   const producers: string[] = []; // Update if producers are available in the new structure
@@ -88,8 +99,10 @@ const parseAnimeData = (html: string) => {
     recommendations,
     batch, // Batch data terpisah
     episode_lists, // Episode reguler
+    downloads, // Download links
   };
 };
+
 
 export async function GET(
   req: NextRequest,

@@ -1201,7 +1201,7 @@ paths:
           description: 'Slug untuk halaman anime.'
           schema:
             type: string
-          example: 'log-horiz-subtitle-indonesia'
+          example: 'log-horizon'
       responses:
         '200':
           description: 'Detail anime berhasil diambil.'

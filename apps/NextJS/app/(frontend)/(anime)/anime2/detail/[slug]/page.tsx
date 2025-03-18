@@ -21,10 +21,22 @@ interface Episode {
   slug: string;
 }
 
+interface DownloadLink {
+  name: string;
+  url: string;
+}
+
+interface DownloadResolution {
+  resolution: string;
+  links: DownloadLink[];
+}
+
 interface Recommendation {
   slug: string;
   title: string;
   poster: string;
+  status: string;
+  type: string;
 }
 
 interface AnimeData {
@@ -43,6 +55,7 @@ interface AnimeData {
     episode_lists: Episode[];
     batch: Episode[];
     recommendations: Recommendation[];
+    downloads: DownloadResolution[];
   };
 }
 
@@ -129,6 +142,11 @@ export default function DetailAnimePage({
               <h1 className='text-3xl font-bold mb-4 text-primary-dark dark:text-primary'>
                 {anime.data.title}
               </h1>
+              {anime.data.alternative_title && (
+                <p className='text-xl text-gray-600 dark:text-gray-300 mb-4'>
+                  {anime.data.alternative_title}
+                </p>
+              )}
               <button
                 onClick={handleBookmark}
                 className={`px-4 py-2 rounded text-white ${
@@ -160,36 +178,64 @@ export default function DetailAnimePage({
                 </p>
               </div>
 
+              {/* Batch Downloads Section */}
               <div className='mt-6'>
                 <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
-                  Episodes
+                  Batch Downloads
                 </h2>
                 <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {anime.data.episode_lists?.length > 0 ? (
-                    anime.data.episode_lists.map((episode) => {
-                      const episodeNumber =
-                        episode.episode.match(/Episode (\d+)/)?.[1] ||
-                        episode.episode;
+                  {Array.from(new Set(anime.data.episode_lists?.map(e => e.episode))) // Filter unique resolutions
+                    .map((resolution, index) => {
+                      const firstMatch = anime.data.episode_lists.find(e => e.episode === resolution);
                       return (
                         <Link
                           scroll
-                          key={episode.slug}
-                          href={`/anime2/full/${episode.slug}`}
+                          key={`${resolution}-${index}`}
+                          href={`/anime2/full/${firstMatch?.slug}`}
                           className=''
                         >
                           <ButtonA className='w-full'>
                             <span className='text-lg font-bold mb-1 text-center truncate text-primary-dark dark:text-primary'>
-                              Episode {episodeNumber}
+                              Batch {resolution}
                             </span>
                           </ButtonA>
                         </Link>
                       );
-                    })
-                  ) : (
-                    <p className='col-span-full text-center text-primary-dark dark:text-primary'>
-                      No episodes available
-                    </p>
-                  )}
+                    })}
+                </div>
+              </div>
+
+              {/* Download Links Section */}
+              <div className='mt-6'>
+                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
+                  Download Links
+                </h2>
+                <div className='space-y-6'>
+                  {Object.entries(anime.data.downloads.reduce((groups: Record<string, DownloadLink[]>, item) => {
+                    const key = item.resolution;
+                    if (!groups[key]) {
+                      groups[key] = [];
+                    }
+                    groups[key].push(...item.links);
+                    return groups;
+                  }, {})).map(([resolution, links]) => (
+                    <div key={resolution} className='mb-4'>
+                      <h3 className='text-lg font-semibold mb-2'>{resolution}</h3>
+                      <div className='flex flex-wrap gap-2'>
+                        {links.map((link) => (
+                          <a
+                            key={`${resolution}-${link.name}`}
+                            href={link.url}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+                          >
+                            {link.name}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
