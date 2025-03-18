@@ -12,22 +12,30 @@ interface CardProps {
   imageUrl: string;
   linkUrl: string;
   type?: string;
+  badge?: string; // Tambahkan prop badge
 }
 
-const TypeLabel = ({ type }: { type?: string }) => {
-  if (!type) return null;
+const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
+  const label = badge || type; // Prioritaskan badge jika ada
+  if (!label) return null;
 
   const typeColors = {
     Manga: 'bg-red-500',
     Manhua: 'bg-green-500',
     Manhwa: 'bg-blue-500',
+    BD: 'bg-purple-500',
+    TV: 'bg-yellow-500',
+    OVA: 'bg-pink-500',
+    ONA: 'bg-indigo-500'
   };
 
   return (
     <span
-      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${typeColors[type as keyof typeof typeColors] || 'bg-gray-500'}`}
+      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${
+        typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
+      }`}
     >
-      {type}
+      {label}
     </span>
   );
 };
@@ -42,6 +50,7 @@ export default function CardA({
   imageUrl,
   linkUrl,
   type,
+  badge // Tambahkan prop badge
 }: CardProps) {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,7 +69,7 @@ export default function CardA({
               onLoad={() => setIsLoading(false)}
               unoptimized
             />
-            <TypeLabel type={type} />
+            <TypeLabel type={type} badge={badge} />
           </div>
           <div className='p-4'>
             <h3 className='text-xs sm:text-sm md:text-lg font-bold text-black dark:text-gray-200 truncate'>

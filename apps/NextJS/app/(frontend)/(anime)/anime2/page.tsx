@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Loading from '@/components/misc/loading';
 import ButtonA from '@/components/button/ScrollButton';
-import AnimeGrid from '@/components/card/AnimeGrid';
+import AnimeGrid from '@/components/card/AnimeGrid3';
 import { BaseUrl } from '@/lib/url';
 
 interface HomeData {

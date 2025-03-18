@@ -37,7 +37,7 @@ const parseAnimeData = (html: string) => {
     genres.push({ name, slug, anime_url });
   });
 
-  const episode_lists: { episode: string; slug: string }[] = [];
+  const episode_lists: { episode: string; slug: string; href: string }[] = [];
   const batch: { episode: string; slug: string }[] = [];
   const downloads: { resolution: string; links: { name: string; url: string }[] }[] = [];
 
@@ -53,7 +53,7 @@ const parseAnimeData = (html: string) => {
     if (episode.toLowerCase().includes('batch')) {
       batch.push({ episode, slug: episodeSlug });
     } else {
-      episode_lists.push({ episode, slug: episodeSlug });
+      episode_lists.push({ episode, slug: episodeSlug, href: href || '' });
     }
 
     const links: { name: string; url: string }[] = [];
