@@ -3,6 +3,7 @@ import SearchForm from '@/components/misc/SearchForm';
 import CardA from '@/components/card/MediaCard';
 import { BaseUrl } from '@/lib/url';
 import React from 'react';
+
 interface Genre {
   name: string;
   slug: string;
@@ -13,17 +14,25 @@ interface Anime {
   title: string;
   slug: string;
   poster: string;
-  genres?: Genre[];
-  status?: string;
-  rating?: string;
-  episode_count?: number;
-  last_release_date?: string;
-  url?: string;
+  description: string;
+  anime_url: string;
+  genres: Genre[];
+  rating: string;
+  type: string;
+  season: string;
 }
 
 interface SearchDetailData {
   status: string;
   data: Anime[];
+  pagination: {
+    current_page: number;
+    last_visible_page: number;
+    has_next_page: boolean;
+    next_page: string | null;
+    has_previous_page: boolean;
+    previous_page: string | null;
+  };
 }
 
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
@@ -38,14 +47,13 @@ const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
     return result;
   } catch (error) {
     console.error('Error fetching search results:', error);
-    return { status: 'error', data: [] };
+    return { status: 'error', data: [], pagination: { current_page: 1, last_visible_page: 1, has_next_page: false, next_page: null, has_previous_page: false, previous_page: null } };
   }
 };
 
 const SearchPage = async (props: { params: Promise<{ slug: string }> }) => {
-  // Await params to resolve the Promise
   const params = await props.params;
-  const { slug } = await params; // Destructure the slug property from the params object
+  const { slug } = await params;
   const query = decodeURIComponent(slug);
   const searchResults = await fetchSearchResults(query);
 
@@ -65,9 +73,9 @@ const SearchPage = async (props: { params: Promise<{ slug: string }> }) => {
                 <CardA
                   key={anime.slug}
                   title={anime.title}
-                  description={`Status: ${anime.status ?? 'Unknown'} | Rating: ${anime.rating ?? 'N/A'}`}
+                  description={anime.description}
                   imageUrl={anime.poster}
-                  linkUrl={`/anime2/detail/${anime.slug}`}
+                  linkUrl={anime.anime_url}
                 />
               ))}
             </div>

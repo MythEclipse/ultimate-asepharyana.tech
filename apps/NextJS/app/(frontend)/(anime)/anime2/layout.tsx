@@ -1,7 +1,7 @@
 import DockKomik from '@/components/modal/DockKomik';
 import React from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
-import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
+import { HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { MdUpdate } from 'react-icons/md';
 
 export const metadata = {
@@ -43,13 +43,13 @@ const anime = [
     ),
     href: `/anime2/search/${encodeURIComponent('a')}`,
   },
-  {
-    title: 'Bookmark',
-    icon: (
-      <HiBookmark className='h-full w-full text-neutral-500 dark:text-neutral-300' />
-    ),
-    href: '/anime2/bookmark/1',
-  },
+  // {
+  //   title: 'Bookmark',
+  //   icon: (
+  //     <HiBookmark className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+  //   ),
+  //   href: '/anime2/bookmark/1',
+  // },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

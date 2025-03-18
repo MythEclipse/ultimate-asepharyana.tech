@@ -22,7 +22,8 @@ const parseAnimeData = (html: string) => {
 
   const title = extractText('.entry-title');
   const alternative_title = extractText('.alter');
-  const poster = $('.bixbox.animefull .bigcover .ime img.lazyload').attr('data-src') || '';
+  const poster = $('.thumb[itemprop="image"] img.lazyload').attr('data-src') || '';
+  const poster2 = $('.bixbox.animefull .bigcover .ime img.lazyload').attr('data-src') || '';
   const type = extractText('.info-content .spe span:contains("Tipe:") a');
   const release_date = extractText('.info-content .spe span:contains("Dirilis:")');
   const status = extractText('.info-content .spe span:contains("Status:")');
@@ -82,6 +83,7 @@ const parseAnimeData = (html: string) => {
     title,
     alternative_title,
     poster,
+    poster2,
     type,
     release_date,
     status,

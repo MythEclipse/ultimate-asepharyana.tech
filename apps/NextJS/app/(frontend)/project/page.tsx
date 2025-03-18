@@ -44,7 +44,7 @@ export default function Page() {
         <div>
           <TildCard
             title='Anime2'
-            description='Anime scrapping dari s4.nontonanimeid.boats'
+            description='Anime scrapping dari alqanime.net'
             imageUrl={isLightTheme ? webAnimeL : webAnime}
             linkUrl='/anime2'
           />

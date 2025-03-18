@@ -5,7 +5,7 @@ import logger from '@/lib/logger'; // Import your logger
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(
-    `https://s4.nontonanimeid.boats/?s=${slug}`
+    `https://alqanime.net/?s=${slug}`
   );
 
   if (!response.data) {
@@ -30,19 +30,16 @@ function parseAnimeData(html: string) {
     season: string;
   }[] = [];
 
-  $('.result ul li').each((_, element) => {
-    const title = $(element).find('h2').text().trim() || '';
-    const slug = $(element).find('a').attr('href')?.split('/')[4] || '';
-    const poster = $(element).find('img').attr('src') || '';
-    const description = $(element).find('.descs').text().trim() || '';
+  $('.listupd article.bs').each((_, element) => {
+    const title = $(element).find('.ntitle').text().trim() || '';
+    const slug = $(element).find('a').attr('href')?.split('/')[3] || '';
+    const poster = $(element).find('img').attr('data-src') || '';
+    const description = $(element).find('h2').text().trim() || '';
     const anime_url = $(element).find('a').attr('href') || '';
-    const genres = $(element)
-      .find('.genrebatas .genre')
-      .map((_, el) => $(el).text())
-      .get();
-    const rating = $(element).find('.nilaiseries').text().trim() || '';
-    const type = $(element).find('.typeseries').text().trim() || '';
-    const season = $(element).find('.rsrated').text().trim() || '';
+    const genres: string[] = []; // Genres are not available in the provided HTML
+    const rating = $(element).find('.numscore').text().trim() || '';
+    const type = $(element).find('.typez').text().trim() || '';
+    const season = ''; // Season is not available in the provided HTML
 
     animeList.push({
       title,
@@ -57,13 +54,20 @@ function parseAnimeData(html: string) {
     });
   });
 
+  const currentPage = parseInt($('.pagination .current').text()) || 1;
+  const lastVisiblePage = parseInt($('.pagination .page-numbers').last().prev().text()) || 1;
+  const hasNextPage = $('.pagination .next').length > 0;
+  const nextPage = $('.pagination .next').attr('href') || null;
+  const hasPreviousPage = currentPage > 1;
+  const previousPage = hasPreviousPage ? $('.pagination .prev').attr('href') || null : null;
+
   const pagination = {
-    current_page: 1,
-    last_visible_page: 1,
-    has_next_page: false,
-    next_page: null,
-    has_previous_page: false,
-    previous_page: null,
+    current_page: currentPage,
+    last_visible_page: lastVisiblePage,
+    has_next_page: hasNextPage,
+    next_page: nextPage,
+    has_previous_page: hasPreviousPage,
+    previous_page: previousPage,
   };
 
   return { animeList, pagination };
@@ -75,7 +79,7 @@ export async function GET(req: NextRequest) {
     req.headers.get('remote-addr') ||
     'unknown';
   const url = req.url;
-  const slug = new URL(req.url).searchParams.get('q') || 'log+horizon';
+  const slug = new URL(req.url).searchParams.get('q') || 'log';
 
   try {
     const html = await fetchAnimeData(slug);
