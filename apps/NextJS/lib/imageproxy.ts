@@ -5,15 +5,20 @@ import { NextResponse } from 'next/server';
 export const revalidate = 0;
 
 export async function imageProxy(url: string) {
-  const cdnResponse = await cdnImage(url);
+  let cdnResponse = await cdnImage(url);
   if (cdnResponse.status !== 200) {
-    const fetchRespone = await uploadImage(url);
-    if (fetchRespone.status !== 200) {
-      logger.error(`Failed to fetch image from URL: ${url}`);
-      return await fetchManual(url);
+    cdnResponse = await cdnImage2(url);
+    if (cdnResponse.status !== 200) {
+      const fetchRespone = await uploadImage(url);
+      if (fetchRespone.status !== 200) {
+        logger.error(`Failed to fetch image from URL: ${url}`);
+        return await fetchManual(url);
+      }
+      logger.info(`Successfully fetched image from Upload: ${url}`);
+      return fetchRespone;
     }
-    logger.info(`Successfully fetched image from Upload: ${url}`);
-    return fetchRespone;
+    logger.info(`Successfully fetched image from CDN v2: ${url}`);
+    return cdnResponse;
   }
   logger.info(`Successfully fetched image from CDN: ${url}`);
   return cdnResponse;
@@ -23,6 +28,48 @@ async function cdnImage(url: string) {
   try {
     const response = await fetch(
       `https://imagecdn.app/v1/images/${encodeURIComponent(url)}`
+    );
+    if (!response.ok) {
+      logger.error(
+        `Failed to fetch image from CDN: ${url}, Status: ${response.status}`
+      );
+      return NextResponse.json(
+        { error: 'Failed to fetch image from CDN' },
+        { status: response.status }
+      );
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      logger.error(`CDN URL does not point to an image: ${url}`);
+      return NextResponse.json(
+        { error: 'CDN URL does not point to an image' },
+        { status: 400 }
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: contentType });
+
+    return new NextResponse(blob, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control':
+          'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
+      },
+    });
+  } catch (error) {
+    logger.error(`Internal server error: ${(error as Error).message}`);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+async function cdnImage2(url: string) {
+  try {
+    const response = await fetch(
+      `https://imagecdn.app/v2/images/${encodeURIComponent(url)}`
     );
     if (!response.ok) {
       logger.error(
