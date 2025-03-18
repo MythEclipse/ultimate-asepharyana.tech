@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger'; // Make sure to import your logger
+import logger from '@/lib/logger';
 
 const fetchAnimePage = async (slug: string) => {
   const { data, contentType } = await fetchWithProxy(
@@ -37,25 +37,12 @@ const parseAnimeData = (html: string) => {
     genres.push({ name, slug, anime_url });
   });
 
-  const episode_lists: { episode: string; slug: string; href: string }[] = [];
-  const batch: { episode: string; slug: string }[] = [];
+  const batch: { resolution: string; links: { name: string; url: string }[] }[] = [];
+  const ova: { resolution: string; links: { name: string; url: string }[] }[] = [];
   const downloads: { resolution: string; links: { name: string; url: string }[] }[] = [];
 
   $('.soraddl.dlone .soraurl').each((_, element) => {
-    const episode = $(element).find('.res').text().trim();
-    const href = $(element).find('.slink a').attr('href'); // Ambil atribut href
-    let episodeSlug = '';
-    if (href) {
-      const segments = href.split('/');
-      episodeSlug = segments.pop() || segments[segments.length - 1] || ''; // Ambil slug dari URL
-    }
-
-    if (episode.toLowerCase().includes('batch')) {
-      batch.push({ episode, slug: episodeSlug });
-    } else {
-      episode_lists.push({ episode, slug: episodeSlug, href: href || '' });
-    }
-
+    const resolution = $(element).find('.res').text().trim();
     const links: { name: string; url: string }[] = [];
     $(element).find('.slink a').each((_, linkElement) => {
       const name = $(linkElement).text().trim();
@@ -63,10 +50,16 @@ const parseAnimeData = (html: string) => {
       links.push({ name, url });
     });
 
-    downloads.push({ resolution: episode, links });
+    if ($(element).closest('.soraddl').find('.sorattl h3').text().toLowerCase().includes('batch')) {
+      batch.push({ resolution, links });
+    } else if ($(element).closest('.soraddl').find('.sorattl h3').text().toLowerCase().includes('ova')) {
+      ova.push({ resolution, links });
+    } else {
+      downloads.push({ resolution, links });
+    }
   });
 
-  const producers: string[] = []; // Update if producers are available in the new structure
+  const producers: string[] = [];
 
   const recommendations: {
     title: string;
@@ -79,7 +72,7 @@ const parseAnimeData = (html: string) => {
     const title = $(element).find('.ntitle').text().trim();
     const anime_url = $(element).find('a').attr('href') || '';
     const slug = anime_url.split('/').filter(Boolean).pop() || '';
-    const poster = $(element).find('img').attr('src') || '';
+    const poster = $(element).find('img').attr('data-src') || $(element).find('img').attr('src') || '';
     const status = $(element).find('.status').text().trim();
     const type = $(element).find('.typez').text().trim();
     recommendations.push({ title, slug, poster, status, type });
@@ -97,12 +90,11 @@ const parseAnimeData = (html: string) => {
     genres,
     producers,
     recommendations,
-    batch, // Batch data terpisah
-    episode_lists, // Episode reguler
-    downloads, // Download links
+    batch,
+    ova,
+    downloads,
   };
 };
-
 
 export async function GET(
   req: NextRequest,
