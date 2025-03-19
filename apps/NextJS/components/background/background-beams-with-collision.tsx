@@ -1,32 +1,31 @@
-'use client';
-import { cn } from '@/lib/utils';
-import React, { useRef, useState, useEffect } from 'react';
+'use client'
+import { cn } from '@/lib/utils'
+import React, { useRef, useState, useEffect } from 'react'
 
 export const BackgroundBeamsWithCollision = ({
   children,
   className,
 }: {
-  children: React.ReactNode;
-  className?: string;
+  children: React.ReactNode
+  className?: string
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const parentRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null)
+  const parentRef = useRef<HTMLDivElement>(null)
   const [beams, setBeams] = useState<
     { initialX: number; duration: number; delay: number; height: number }[]
-  >([]);
+  >([])
 
   useEffect(() => {
-    if (!parentRef.current) return;
-    
-    const parentRect = parentRef.current.getBoundingClientRect();
+    if (!parentRef.current) return
+    const parentRect = parentRef.current.getBoundingClientRect()
     const newBeams = Array.from({ length: 10 }, () => ({
       initialX: Math.random() * parentRect.width,
       duration: Math.random() * 8 + 4,
       delay: Math.random() * 4,
-      height: Math.floor(Math.random() * 40 + 20), // Height between 20-60px
-    }));
-    setBeams(newBeams);
-  }, []);
+      height: Math.floor(Math.random() * 40 + 20),
+    }))
+    setBeams(newBeams)
+  }, [])
 
   return (
     <div ref={parentRef} className={cn('relative overflow-hidden', className)}>
@@ -42,7 +41,7 @@ export const BackgroundBeamsWithCollision = ({
           }
         }
       `}</style>
-      <div className='absolute inset-0 pointer-events-none z-20'>
+      <div className="absolute inset-0 pointer-events-none z-20">
         {beams.map((beam, index) => (
           <CollisionMechanism
             key={index}
@@ -56,46 +55,44 @@ export const BackgroundBeamsWithCollision = ({
         {children}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const CollisionMechanism = React.forwardRef<
   HTMLDivElement,
   {
-    containerRef: React.RefObject<HTMLDivElement | null>;
-    parentRef: React.RefObject<HTMLDivElement | null>;
+    containerRef: React.RefObject<HTMLDivElement | null>
+    parentRef: React.RefObject<HTMLDivElement | null>
     beamOptions?: {
-      initialX?: number;
-      duration?: number;
-      delay?: number;
-      height?: number;
-    };
+      initialX?: number
+      duration?: number
+      delay?: number
+      height?: number
+    }
   }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 >(({ beamOptions = {}, containerRef, parentRef }, ref) => {
-  const beamRef = useRef<HTMLDivElement>(null);
+  const beamRef = useRef<HTMLDivElement>(null)
   const [collision, setCollision] = useState<{
-    detected: boolean;
-    coordinates: { x: number; y: number } | null;
-  }>({ detected: false, coordinates: null });
+    detected: boolean
+    coordinates: { x: number; y: number } | null
+  }>({ detected: false, coordinates: null })
 
   const handleAnimationEnd = () => {
-    const beam = beamRef.current;
-    const parent = parentRef.current;
-    if (!beam || !parent) return;
-
-    const beamRect = beam.getBoundingClientRect();
-    const parentRect = parent.getBoundingClientRect();
-    
+    const beam = beamRef.current
+    const parent = parentRef.current
+    if (!beam || !parent) return
+    const beamRect = beam.getBoundingClientRect()
+    const parentRect = parent.getBoundingClientRect()
     setCollision({
       detected: true,
       coordinates: {
-        x: beamRect.left - parentRect.left + beamRect.width/2,
-        y: beamRect.top - parentRect.top + beamRect.height
-      }
-    });
-    
-    setTimeout(() => setCollision({ detected: false, coordinates: null }), 1500);
-  };
+        x: beamRect.left - parentRect.left + beamRect.width / 2,
+        y: beamRect.top - parentRect.top + beamRect.height,
+      },
+    })
+    setTimeout(() => setCollision({ detected: false, coordinates: null }), 1500)
+  }
 
   return (
     <>
@@ -121,10 +118,10 @@ const CollisionMechanism = React.forwardRef<
         />
       )}
     </>
-  );
-});
+  )
+})
 
-CollisionMechanism.displayName = 'CollisionMechanism';
+CollisionMechanism.displayName = 'CollisionMechanism'
 
 const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
   const spans = Array.from({ length: 20 }, (_, index) => ({
@@ -132,7 +129,7 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
     directionX: Math.random() * 2 - 1,
     directionY: Math.random() * 2 - 1,
     distance: Math.random() * 80 + 40,
-  }));
+  }))
 
   return (
     <div {...props} className={cn('absolute z-50', props.className)}>
@@ -152,5 +149,7 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
         />
       ))}
     </div>
-  );
-};
+  )
+}
+
+export default BackgroundBeamsWithCollision
