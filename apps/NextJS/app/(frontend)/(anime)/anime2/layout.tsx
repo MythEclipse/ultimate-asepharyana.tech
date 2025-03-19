@@ -29,13 +29,13 @@ const anime = [
     ),
     href: '/anime2/ongoing-anime/1',
   },
-   {
-      title: 'Complete Anime',
-      icon: (
-        <FaCheckCircle className='h-full w-full text-neutral-500 dark:text-neutral-300' />
-      ), // Ganti dengan ikon ceklis
-      href: '/anime2/complete-anime/1',
-    },
+  {
+    title: 'Complete Anime',
+    icon: (
+      <FaCheckCircle className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+    ), // Ganti dengan ikon ceklis
+    href: '/anime2/complete-anime/1',
+  },
   {
     title: 'Search',
     icon: (

@@ -42,7 +42,12 @@ export default async function AnimePage() {
     console.error('Failed to fetch episodes:', error);
   }
 
-  if (!episodeData) {
+  if (
+    !episodeData ||
+    !episodeData.data ||
+    !episodeData.data.ongoing_anime ||
+    !episodeData.data.complete_anime
+  ) {
     return <Loading />;
   }
 

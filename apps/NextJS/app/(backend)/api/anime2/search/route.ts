@@ -4,9 +4,7 @@ import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger'; // Import your logger
 
 async function fetchAnimeData(slug: string) {
-  const response = await fetchWithProxy(
-    `https://alqanime.net/?s=${slug}`
-  );
+  const response = await fetchWithProxy(`https://alqanime.net/?s=${slug}`);
 
   if (!response.data) {
     throw new Error('Failed to fetch data');
@@ -55,11 +53,14 @@ function parseAnimeData(html: string) {
   });
 
   const currentPage = parseInt($('.pagination .current').text()) || 1;
-  const lastVisiblePage = parseInt($('.pagination .page-numbers').last().prev().text()) || 1;
+  const lastVisiblePage =
+    parseInt($('.pagination .page-numbers').last().prev().text()) || 1;
   const hasNextPage = $('.pagination .next').length > 0;
   const nextPage = $('.pagination .next').attr('href') || null;
   const hasPreviousPage = currentPage > 1;
-  const previousPage = hasPreviousPage ? $('.pagination .prev').attr('href') || null : null;
+  const previousPage = hasPreviousPage
+    ? $('.pagination .prev').attr('href') || null
+    : null;
 
   const pagination = {
     current_page: currentPage,

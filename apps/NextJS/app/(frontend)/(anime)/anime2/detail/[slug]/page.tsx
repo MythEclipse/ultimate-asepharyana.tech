@@ -58,14 +58,18 @@ export default function DetailAnimePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+    null
+  );
 
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
 
   const { data: anime, error } = useSWR<AnimeData>(
-    resolvedParams ? `${BaseUrl}/api/anime2/detail/${resolvedParams.slug}` : null,
+    resolvedParams
+      ? `${BaseUrl}/api/anime2/detail/${resolvedParams.slug}`
+      : null,
     fetcher
   );
 
@@ -97,7 +101,8 @@ export default function DetailAnimePage({
     return episodes;
   };
 
-  if (error) return <p className='text-red-500 text-center'>Gagal memuat data anime</p>;
+  if (error)
+    return <p className='text-red-500 text-center'>Gagal memuat data anime</p>;
   if (!anime || !resolvedParams) return <Loading />;
 
   const groupedDownloads = processDownloads(anime.data.downloads);
@@ -136,7 +141,10 @@ export default function DetailAnimePage({
                     { label: 'Release Date', value: anime.data.release_date },
                     { label: 'Studio', value: anime.data.studio },
                   ].map((detail) => (
-                    <div key={detail.label} className='bg-gray-100 dark:bg-gray-800 p-3 rounded-lg'>
+                    <div
+                      key={detail.label}
+                      className='bg-gray-100 dark:bg-gray-800 p-3 rounded-lg'
+                    >
                       <strong className='block text-sm text-gray-500 dark:text-gray-400'>
                         {detail.label}
                       </strong>
@@ -176,8 +184,13 @@ export default function DetailAnimePage({
                   </h2>
                   <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
                     {anime.data.batch.map((batchRes, index) => (
-                      <div key={index} className='bg-gray-100 dark:bg-gray-800 p-4 rounded-lg'>
-                        <h3 className='text-lg font-semibold mb-2'>{batchRes.resolution}</h3>
+                      <div
+                        key={index}
+                        className='bg-gray-100 dark:bg-gray-800 p-4 rounded-lg'
+                      >
+                        <h3 className='text-lg font-semibold mb-2'>
+                          {batchRes.resolution}
+                        </h3>
                         <div className='space-y-2'>
                           {batchRes.links.map((link, linkIndex) => (
                             <a
@@ -197,53 +210,59 @@ export default function DetailAnimePage({
                 </div>
               )}
 
-                {Object.entries(groupedDownloads).length > 0 && (
+              {Object.entries(groupedDownloads).length > 0 && (
                 <div className='mt-6'>
                   <h2 className='text-2xl font-semibold mb-4 text-primary-dark dark:text-primary'>
-                  Daftar Episode
+                    Daftar Episode
                   </h2>
                   <div className='space-y-4'>
-                  {Object.entries(groupedDownloads)
-                    .sort(([epA], [epB]) => {
-                    if (epA === 'unknown' && epB === 'unknown') return 0;
-                    if (epA === 'unknown') return 1;
-                    if (epB === 'unknown') return -1;
-                    return parseInt(epA) - parseInt(epB);
-                    })
-                    .map(([episodeNumber, resolutions]) => (
-                    episodeNumber !== 'unknown' && (
-                      <div key={episodeNumber} className='bg-gray-100 dark:bg-gray-800 p-4 rounded-lg'>
-                      <h3 className='text-lg font-semibold mb-2'>
-                        {`Episode ${episodeNumber}`}
-                      </h3>
-                      <div className='grid grid-cols-2 md:grid-cols-3 gap-2'>
-                        {resolutions.map((resolution, resIndex) => (
-                        <div key={resIndex} className='space-y-1'>
-                          <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                          {resolution.resolution}
-                          </h4>
-                          <div className='space-y-1'>
-                          {resolution.links.map((link, linkIndex) => (
-                            <a
-                            key={linkIndex}
-                            href={link.url}
-                            className='px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-center block truncate'
-                            target='_blank'
-                            rel='noopener noreferrer'
+                    {Object.entries(groupedDownloads)
+                      .sort(([epA], [epB]) => {
+                        if (epA === 'unknown' && epB === 'unknown') return 0;
+                        if (epA === 'unknown') return 1;
+                        if (epB === 'unknown') return -1;
+                        return parseInt(epA) - parseInt(epB);
+                      })
+                      .map(
+                        ([episodeNumber, resolutions]) =>
+                          episodeNumber !== 'unknown' && (
+                            <div
+                              key={episodeNumber}
+                              className='bg-gray-100 dark:bg-gray-800 p-4 rounded-lg'
                             >
-                            {link.name}
-                            </a>
-                          ))}
-                          </div>
-                        </div>
-                        ))}
-                      </div>
-                      </div>
-                    )
-                    ))}
+                              <h3 className='text-lg font-semibold mb-2'>
+                                {`Episode ${episodeNumber}`}
+                              </h3>
+                              <div className='grid grid-cols-2 md:grid-cols-3 gap-2'>
+                                {resolutions.map((resolution, resIndex) => (
+                                  <div key={resIndex} className='space-y-1'>
+                                    <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                                      {resolution.resolution}
+                                    </h4>
+                                    <div className='space-y-1'>
+                                      {resolution.links.map(
+                                        (link, linkIndex) => (
+                                          <a
+                                            key={linkIndex}
+                                            href={link.url}
+                                            className='px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-center block truncate'
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                          >
+                                            {link.name}
+                                          </a>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                      )}
                   </div>
                 </div>
-                )}
+              )}
 
               {anime.data.recommendations?.length > 0 && (
                 <div className='mt-6'>

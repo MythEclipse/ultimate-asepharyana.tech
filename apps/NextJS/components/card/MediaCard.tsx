@@ -26,7 +26,7 @@ const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
     BD: 'bg-purple-500',
     TV: 'bg-yellow-500',
     OVA: 'bg-pink-500',
-    ONA: 'bg-indigo-500'
+    ONA: 'bg-indigo-500',
   };
 
   return (
@@ -50,7 +50,7 @@ export default function CardA({
   imageUrl,
   linkUrl,
   type,
-  badge // Tambahkan prop badge
+  badge, // Tambahkan prop badge
 }: CardProps) {
   const [isLoading, setIsLoading] = useState(true);
 

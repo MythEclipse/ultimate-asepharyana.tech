@@ -47,7 +47,18 @@ const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
     return result;
   } catch (error) {
     console.error('Error fetching search results:', error);
-    return { status: 'error', data: [], pagination: { current_page: 1, last_visible_page: 1, has_next_page: false, next_page: null, has_previous_page: false, previous_page: null } };
+    return {
+      status: 'error',
+      data: [],
+      pagination: {
+        current_page: 1,
+        last_visible_page: 1,
+        has_next_page: false,
+        next_page: null,
+        has_previous_page: false,
+        previous_page: null,
+      },
+    };
   }
 };
 

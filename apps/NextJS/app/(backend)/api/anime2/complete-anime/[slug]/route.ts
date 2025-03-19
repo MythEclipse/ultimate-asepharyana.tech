@@ -5,7 +5,7 @@ import logger from '@/lib/logger'; // Make sure to import your logger
 
 async function fetchAnimePage(slug: string): Promise<string> {
   const { data, contentType } = await fetchWithProxy(
-  `https://alqanime.net/advanced-search/page/${slug}/?status=completed&order=update`
+    `https://alqanime.net/advanced-search/page/${slug}/?status=completed&order=update`
   );
 
   if (!data) {
