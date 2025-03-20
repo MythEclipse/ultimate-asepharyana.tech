@@ -60,11 +60,15 @@
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
+      "@scarf/scarf",
+      "@tree-sitter-grammars/tree-sitter-yaml",
       "core-js-pure",
       "esbuild",
       "prisma",
       "sharp",
-      "sqlite3"
+      "sqlite3",
+      "tree-sitter",
+      "tree-sitter-json"
     ]
   }
 }

@@ -10,9 +10,11 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main>
-      <Bg>
-        <AnimatedContent />
-      </Bg>
+      <div style={{ height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Bg>
+          <AnimatedContent />
+        </Bg>
+      </div>
     </main>
   );
 }
