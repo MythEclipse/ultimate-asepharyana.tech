@@ -1,8 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Session } from 'next-auth';
 import { FcGoogle } from 'react-icons/fc';
 import { signOut } from 'next-auth/react';
@@ -53,24 +53,22 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
     <div className='relative'>
       {currentSession ? (
         <>
-          <button
+            <button
             ref={buttonRef}
             className='w-10 h-10 rounded-full border border-blue-500 overflow-hidden'
             onClick={() => setIsOpen(!isOpen)}
-          >
-            <Image
+            >
+            <img
               src={
-                currentSession.user?.image || '/profile-circle-svgrepo-com.svg'
+              currentSession.user?.image || '/profile-circle-svgrepo-com.svg'
               }
               width={40}
               height={40}
               className='w-10 h-10 rounded-full object-cover'
+              style={{ width: 'auto', height: 'auto' }}
               alt='User Avatar'
-              priority
-              placeholder='empty'
-              sizes='40px'
             />
-          </button>
+            </button>
           {isOpen && (
             <div
               ref={menuRef}

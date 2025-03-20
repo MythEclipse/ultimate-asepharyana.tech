@@ -9,12 +9,12 @@ export async function imageProxy(url: string) {
   if (cdnResponse.status !== 200) {
     cdnResponse = await cdnImage2(url);
     if (cdnResponse.status !== 200) {
-      const fetchRespone = await uploadImage(url);
+      const fetchRespone = await fetchManual(url);
       if (fetchRespone.status !== 200) {
-        logger.error(`Failed to fetch image from URL: ${url}`);
-        return await fetchManual(url);
+        logger.info(`Successfully fetched image from Upload: ${url}`);
+        return await uploadImage(url);
       }
-      logger.info(`Successfully fetched image from Upload: ${url}`);
+      logger.error(`Failed to fetch image from URL: ${url}`);
       return fetchRespone;
     }
     logger.info(`Successfully fetched image from CDN v2: ${url}`);

@@ -1,7 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger'; // Make sure to import your logger
+import logger from '@/lib/logger';
+import { corsHeaders } from '@/lib/corsHeaders';
 
 async function fetchAnimePage(slug: string): Promise<string> {
   const { data, contentType } = await fetchWithProxy(
@@ -66,6 +67,11 @@ function parseAnimePage(html: string, slug: string) {
   return { animeList, pagination };
 }
 
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET(
   req: NextRequest,
   props: { params: Promise<{ slug: string }> }
@@ -90,16 +96,19 @@ export async function GET(
       pagination,
     });
 
-    return NextResponse.json({
-      status: 'Ok',
-      data: animeList,
-      pagination,
-    });
+    return NextResponse.json(
+      {
+        status: 'Ok',
+        data: animeList,
+        pagination,
+      },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { message: 'Failed to scrape data' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

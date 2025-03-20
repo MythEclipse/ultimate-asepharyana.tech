@@ -1,6 +1,6 @@
 'use client';
-import * as React from 'react';
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Button from '@/components/button/NormalButton';
 import { Card } from '@/components/card/ComponentCard';
@@ -10,32 +10,39 @@ import { Loader2 } from 'lucide-react';
 export default function Settings() {
   const { data: session } = useSession();
   const [image, setImage] = useState<File | null>(null);
-  const [status, setStatus] = useState<{
-    saving: boolean;
-    error: string | null;
-  }>({ saving: false, error: null });
+  const [status, setStatus] = useState<{ saving: boolean; error: string | null }>(
+    { saving: false, error: null }
+  );
 
   const handleSave = async () => {
-    setStatus({ saving: true, error: null });
+    if (!image) {
+      setStatus({ saving: false, error: 'Please select an image' });
+      return;
+    }
 
+    setStatus({ saving: true, error: null });
     try {
-      if (image) {
-        const formData = new FormData();
-        formData.append('file', image);
-        const response = await fetch('/api/uploader', {
-          method: 'POST',
-          body: formData,
-        });
-        const { url } = await response.json();
-        if (session?.user?.id) {
-          await updateUserImage(session.user.id, url);
-        } else {
-          throw new Error('User ID is undefined');
-        }
+      const formData = new FormData();
+      formData.append('file', image);
+
+      const response = await fetch('/api/uploader', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
       }
 
+      const { url } = await response.json();
+
+      if (!session?.user?.id) {
+        throw new Error('User ID is undefined');
+      }
+
+      await updateUserImage(session.user.id, url);
       setStatus({ saving: false, error: null });
-    } catch {
+    } catch  {
       setStatus({ saving: false, error: 'Failed to update profile' });
     }
   };
@@ -54,27 +61,18 @@ export default function Settings() {
             </label>
             <input
               type='file'
+              accept='image/*'
               onChange={(e) => setImage(e.target.files?.[0] || null)}
               className='mt-1 block w-full'
             />
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={status.saving}
-            className='w-full'
-          >
-            {status.saving ? (
-              <Loader2 className='w-4 h-4 animate-spin' />
-            ) : (
-              'Save Changes'
-            )}
+          <Button onClick={handleSave} disabled={status.saving} className='w-full'>
+            {status.saving ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Save Changes'}
           </Button>
 
           {status.error && (
-            <div className='text-red-500 text-sm mt-2 text-center'>
-              {status.error}
-            </div>
+            <div className='text-red-500 text-sm mt-2 text-center'>{status.error}</div>
           )}
         </div>
       </Card>

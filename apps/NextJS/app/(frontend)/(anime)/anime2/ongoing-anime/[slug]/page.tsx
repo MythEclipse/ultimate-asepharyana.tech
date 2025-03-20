@@ -1,9 +1,10 @@
-// app/(anime)/ongoing-anime/[page]/page.tsx
-import React from 'react';
+'use client'
+import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import AnimeGrid from '@/components/card/AnimeGrid2a';
 import Link from 'next/link';
-import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
+import Loading from '@/components/misc/loading';
 
 interface OngoingAnimeData {
   status: string;
@@ -33,24 +34,24 @@ interface Pagination {
 }
 
 interface DetailAnimePageProps {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }
 
-export default async function AnimePage(props: DetailAnimePageProps) {
-  const params = await props.params;
-  let OngoingAnimeData: OngoingAnimeData;
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  try {
-    const response = await fetch(
-      `${BaseUrl}/api/anime2/ongoing-anime/${params.slug}`
-    );
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    OngoingAnimeData = await response.json();
-  } catch (error) {
+export default function AnimePage({ params }: DetailAnimePageProps) {
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
+  const { data, error } = useSWR<OngoingAnimeData>(
+    resolvedParams ? `/api/anime2/ongoing-anime/${resolvedParams.slug}` : null,
+    fetcher
+  );
+
+  if (error) {
     console.error('Failed to fetch data:', error);
     return (
       <main className='p-6'>
@@ -60,7 +61,11 @@ export default async function AnimePage(props: DetailAnimePageProps) {
     );
   }
 
-  if (!Array.isArray(OngoingAnimeData.data)) {
+  if (!data) {
+    return <Loading />;
+  }
+
+  if (!Array.isArray(data.data)) {
     console.error('Expected OngoingAnimeData.data to be an array');
     return (
       <main className='p-6'>
@@ -74,8 +79,8 @@ export default async function AnimePage(props: DetailAnimePageProps) {
       <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
         Ongoing Anime
       </h1>
-      <AnimeGrid animes={OngoingAnimeData.data} />
-      <PaginationComponent pagination={OngoingAnimeData.pagination} />
+      <AnimeGrid animes={data.data} />
+      <PaginationComponent pagination={data.pagination} />
     </main>
   );
 }

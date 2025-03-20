@@ -6,7 +6,6 @@ import useSWR from 'swr';
 import Loading from '@/components/misc/loading';
 import ButtonA from '@/components/button/ScrollButton';
 import AnimeGrid from '@/components/card/AnimeGrid3';
-import { BaseUrl } from '@/lib/url';
 
 interface HomeData {
   status: string;
@@ -37,7 +36,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function AnimePage() {
   const { data, error, isLoading } = useSWR<HomeData>(
-    `${BaseUrl}/api/anime2/`,
+    `/api/anime2/`,
     fetcher,
     {
       revalidateOnFocus: false,

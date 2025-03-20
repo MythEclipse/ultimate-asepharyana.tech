@@ -6,6 +6,7 @@ export const metadata = {
   description: 'Dokumentasi API untuk digunakan secara gratis',
   keywords: 'nextjs, api, free',
 };
+
 import React from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
@@ -14,12 +15,14 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 
-const filePath = path.join(process.cwd(), 'public', 'OpenApi.yaml');
-const OpenApiYaml = fs.readFileSync(filePath, 'utf8');
-const OpenApiJson = yaml.load(OpenApiYaml);
+async function getOpenApiSpec() {
+  const filePath = path.join(process.cwd(), 'public', 'OpenApi.yaml');
+  const OpenApiYaml = fs.readFileSync(filePath, 'utf8');
+  return yaml.load(OpenApiYaml) as Record<string, unknown>;
+}
 
-const openApiSpec = OpenApiJson as Record<string, unknown>;
+export default async function OpenApiDocsPage() {
+  const openApiSpec = await getOpenApiSpec();
 
-export default function OpenApiDocsPage() {
   return <SwaggerUI spec={openApiSpec} displayOperationId={true} />;
 }

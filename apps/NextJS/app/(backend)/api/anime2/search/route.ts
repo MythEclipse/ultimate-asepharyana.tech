@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger'; // Import your logger
+import { corsHeaders } from '@/lib/corsHeaders'; // Import CORS headers
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(`https://alqanime.net/?s=${slug}`);
@@ -92,16 +93,28 @@ export async function GET(req: NextRequest) {
       animeCount: animeList.length,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       status: 'Ok',
       data: animeList,
       pagination,
     });
+
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { message: 'Failed to scrape data' },
       { status: 500 }
     );
+
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   }
 }

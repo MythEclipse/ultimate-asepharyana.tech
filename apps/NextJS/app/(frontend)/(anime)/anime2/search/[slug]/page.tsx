@@ -1,8 +1,10 @@
+'use client'
 // app/search/[slug]/page.tsx
 import SearchForm from '@/components/misc/SearchForm';
 import CardA from '@/components/card/MediaCard';
-import { BaseUrl } from '@/lib/url';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
+import Loading from '@/components/misc/loading';
 
 interface Genre {
   name: string;
@@ -35,38 +37,23 @@ interface SearchDetailData {
   };
 }
 
-const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
-  try {
-    const response = await fetch(
-      `${BaseUrl}/api/anime2/search?q=${encodeURIComponent(query)}`
-    );
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const result: SearchDetailData = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error fetching search results:', error);
-    return {
-      status: 'error',
-      data: [],
-      pagination: {
-        current_page: 1,
-        last_visible_page: 1,
-        has_next_page: false,
-        next_page: null,
-        has_previous_page: false,
-        previous_page: null,
-      },
-    };
-  }
-};
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-const SearchPage = async (props: { params: Promise<{ slug: string }> }) => {
-  const params = await props.params;
-  const { slug } = await params;
-  const query = decodeURIComponent(slug);
-  const searchResults = await fetchSearchResults(query);
+const SearchPage = ({ params }: { params: Promise<{ slug: string }> }) => {
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
+  const query = resolvedParams ? decodeURIComponent(resolvedParams.slug) : '';
+  const { data: searchResults, error } = useSWR<SearchDetailData>(
+    resolvedParams ? `/api/anime2/search?q=${encodeURIComponent(query)}` : null,
+    fetcher
+  );
+
+  if (error) return <div>Error loading search results</div>;
+  if (!searchResults) return <Loading/>;
 
   return (
     <div className='p-6'>

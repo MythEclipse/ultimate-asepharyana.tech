@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
+import { corsHeaders } from '@/lib/corsHeaders';
 
 const baseUrl = {
   komik: 'https://komikindo1.com',
@@ -275,7 +276,10 @@ export const GET = async (req: Request) => {
       page,
     });
 
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json(data, {
+      status: 200,
+      headers: corsHeaders,
+    });
   } catch (error) {
     logError(error as { message: string });
     return NextResponse.json(
@@ -283,7 +287,10 @@ export const GET = async (req: Request) => {
         status: false,
         message: (error as { message: string }).message,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
   }
 };

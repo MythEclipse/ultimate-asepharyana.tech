@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import { NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
+import { corsHeaders } from '@/lib/corsHeaders';
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetchWithProxy(url);
@@ -101,18 +102,30 @@ export async function GET(request: Request) {
       completeAnimeCount: completeAnime.length,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       status: 'Ok',
       data: {
         ongoing_anime: ongoingAnime,
         complete_anime: completeAnime,
       },
     });
+
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   } catch (error) {
     logger.error('Failed to scrape data', { error, url });
-    return NextResponse.json(
+    const response = NextResponse.json(
       { message: 'Failed to scrape data' },
       { status: 500 }
     );
+
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   }
 }

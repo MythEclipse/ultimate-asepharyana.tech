@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
+import { corsHeaders } from '@/lib/corsHeaders';
 
 interface AnimeResponse {
   status: string;
@@ -125,7 +126,10 @@ export async function GET(
       slug,
     });
 
-    return NextResponse.json(animeResponse, { status: 200 });
+    return NextResponse.json(animeResponse, {
+      status: 200,
+      headers: corsHeaders,
+    });
   } catch (error: unknown) {
     const err = error as { message: string };
     logger.error('Error processing request', {
@@ -139,7 +143,10 @@ export async function GET(
         status: 'Error',
         message: (error as { message: string }).message,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
   }
 }

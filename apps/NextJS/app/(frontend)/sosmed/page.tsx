@@ -1,4 +1,6 @@
 'use client';
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react';
 import PostCard from '@/components/sosmed/PostCard';
 import Card from '@/components/card/ThemedCard';
@@ -12,12 +14,16 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PostPage() {
   const { data: session } = useSession();
-  const { data: postsData } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
-    refreshInterval: 1000, // Auto-revalidate setiap 1 detik
-    dedupingInterval: 1000, // Memastikan tidak ada deduping yang mencegah pembaruan
-    revalidateOnFocus: true, // Tidak revalidasi saat window/tab focus
-    revalidateOnReconnect: true, // Tetap revalidasi saat koneksi pulih
-  });
+  const { data: postsData } = useSWR(
+    `${BaseUrl}/api/sosmed/posts`,
+    fetcher,
+    {
+      refreshInterval: 1000,
+      dedupingInterval: 1000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    }
+  );
 
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -25,20 +31,16 @@ export default function PostPage() {
   const [newComments, setNewComments] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
 
-  // Handle perubahan konten post
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
 
-  // Handle submit post baru
   const handlePostSubmit = async () => {
     if (!content.trim() && !imageUrl) return;
 
     try {
       await fetch(`${BaseUrl}/api/sosmed/posts`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content, imageUrl }),
       });
       setContent('');
@@ -51,7 +53,6 @@ export default function PostPage() {
     }
   };
 
-  // Handle upload gambar
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -75,14 +76,11 @@ export default function PostPage() {
     }
   };
 
-  // Handle like post
   const handleLike = async (postId: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/likes`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -91,14 +89,11 @@ export default function PostPage() {
     }
   };
 
-  // Handle unlike post
   const handleUnlike = async (postId: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/likes`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -107,16 +102,13 @@ export default function PostPage() {
     }
   };
 
-  // Handle tambah komentar
   const handleAddComment = async (postId: string) => {
     if (!newComments[postId]?.trim()) return;
 
     try {
       await fetch(`${BaseUrl}/api/sosmed/comments`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: newComments[postId], postId }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -126,14 +118,11 @@ export default function PostPage() {
     }
   };
 
-  // Handle edit post
   const handleEditPost = async (postId: string, content: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/posts`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: postId, content }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -142,14 +131,11 @@ export default function PostPage() {
     }
   };
 
-  // Handle hapus post
   const handleDeletePost = async (postId: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/posts`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: postId }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -158,14 +144,11 @@ export default function PostPage() {
     }
   };
 
-  // Handle edit komentar
   const handleEditComment = async (commentId: string, content: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/comments`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: commentId, content }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -174,14 +157,11 @@ export default function PostPage() {
     }
   };
 
-  // Handle hapus komentar
   const handleDeleteComment = async (commentId: string) => {
     try {
       await fetch(`${BaseUrl}/api/sosmed/comments`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: commentId }),
       });
       mutate(`${BaseUrl}/api/sosmed/posts`);
@@ -190,7 +170,6 @@ export default function PostPage() {
     }
   };
 
-  // Toggle tampilan komentar
   const toggleComments = (postId: string) =>
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
 
@@ -239,13 +218,11 @@ export default function PostPage() {
 
       <div className='grid gap-8'>
         {postsData?.posts?.map(
-          (
-            post: Posts & {
-              user?: User;
-              likes?: Likes[];
-              comments?: (Comments & { user?: User })[];
-            }
-          ) => (
+          (post: Posts & {
+            user?: User;
+            likes?: Likes[];
+            comments?: (Comments & { user?: User })[];
+          }) => (
             <PostCard
               key={post.id}
               post={{

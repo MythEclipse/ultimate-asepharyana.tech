@@ -1,9 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import DesktopNavLinks from './DesktopNavLinks';
 import MobileNavLinks from './MobileNavLinks';
@@ -36,13 +36,18 @@ export default function Navbar() {
     <nav className='fixed top-0 z-30 w-full border-b border-blue-500 bg-white dark:bg-black shadow-md transition-all duration-300'>
       <div className='container mx-auto flex items-center justify-between px-4 py-3 relative'>
         <Link href='/' className='flex items-center space-x-2'>
-          <Image src='/Logo.svg' alt='Logo' width={50} height={40} priority />
+          <img
+            src='/Logo.svg'
+            alt='Logo'
+            width={25}
+            height={20}
+            className='w-6 h-auto'
+          />
           <span
-            className={`text-lg ${
-              pathname === '/'
+            className={`text-lg ${pathname === '/'
                 ? 'font-semibold text-blue-600'
                 : 'text-gray-900 dark:text-gray-300'
-            }`}
+              }`}
           >
             Asep Haryana
           </span>

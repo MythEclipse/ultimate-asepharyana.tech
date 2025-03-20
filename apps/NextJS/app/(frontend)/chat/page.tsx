@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
@@ -23,15 +24,10 @@ type ChatMessage = {
 
 const validateTimestamp = (ts?: number | string) => {
   if (!ts) return Date.now();
-
   if (typeof ts === 'string') {
-    try {
-      return new Date(ts).getTime();
-    } catch {
-      return Date.now();
-    }
+    const parsed = Date.parse(ts);
+    return isNaN(parsed) ? Date.now() : parsed;
   }
-
   return typeof ts === 'number' && !isNaN(ts) && ts > 0 ? ts : Date.now();
 };
 
@@ -65,19 +61,16 @@ export default function ChatClient() {
 
     const handleHistory = (data: { messages: ChatMessage[] }) => {
       if (Array.isArray(data.messages)) {
-        const normalizedMessages = data.messages.map(
-          (message: ChatMessage) => ({
-            id: message.id,
-            user: message.user,
-            text: message.text,
-            email: message.email || '',
-            imageProfile:
-              message.imageProfile || '/profile-circle-svgrepo-com.svg',
-            role: message.role,
-            timestamp: validateTimestamp(message.timestamp),
-            imageMessage: message.imageMessage || '',
-          })
-        );
+        const normalizedMessages = data.messages.map((message) => ({
+          id: message.id,
+          user: message.user,
+          text: message.text,
+          email: message.email || '',
+          imageProfile: message.imageProfile || '/profile-circle-svgrepo-com.svg',
+          role: message.role,
+          timestamp: validateTimestamp(message.timestamp),
+          imageMessage: message.imageMessage || '',
+        }));
         setMessages(normalizedMessages);
       }
     };
@@ -85,7 +78,6 @@ export default function ChatClient() {
     const handleMessage = (raw: string) => {
       try {
         const wsMessage = JSON.parse(raw);
-
         if (wsMessage.type === 'history') {
           handleHistory(wsMessage);
         } else if (wsMessage.type === 'error') {
@@ -94,39 +86,34 @@ export default function ChatClient() {
           }
         } else if (wsMessage.type === 'new_message') {
           const message = wsMessage.message;
-
           const normalizedMessage: ChatMessage = {
             id: message.id,
             user: message.user,
             text: message.text,
             email: message.email || '',
-            imageProfile:
-              message.imageProfile || '/profile-circle-svgrepo-com.svg',
+            imageProfile: message.imageProfile || '/profile-circle-svgrepo-com.svg',
             role: message.role,
             timestamp: validateTimestamp(message.timestamp),
-            imageMessage: message.imageMessage,
+            imageMessage: message.imageMessage || '',
           };
-
           setMessages((prev) => {
             const exists = prev.some((m) => m.id === normalizedMessage.id);
             return exists ? prev : [...prev, normalizedMessage];
           });
         }
-      } catch {
+      } catch  {
         console.error('Failed to parse message:', raw);
       }
     };
 
     ws.current.onmessage = (e) => handleMessage(e.data);
     ws.current.onopen = () => {
-      setStatus((p) => ({ ...p, connected: true }));
+      setStatus((prev) => ({ ...prev, connected: true }));
       ws.current?.send(JSON.stringify({ type: 'requestHistory' }));
     };
-    ws.current.onclose = () => setStatus((p) => ({ ...p, connected: false }));
+    ws.current.onclose = () => setStatus((prev) => ({ ...prev, connected: false }));
     ws.current.onerror = () => {
-      if (sessionRef.current?.user?.name) {
-        setError('Connection error');
-      }
+      if (sessionRef.current?.user?.name) setError('Connection error');
     };
 
     return () => {
@@ -151,11 +138,11 @@ export default function ChatClient() {
     };
 
     try {
-      setStatus((p) => ({ ...p, sending: true }));
+      setStatus((prev) => ({ ...prev, sending: true }));
       setError(null);
 
       if (file) {
-        setStatus((p) => ({ ...p, uploading: true }));
+        setStatus((prev) => ({ ...prev, uploading: true }));
         const formData = new FormData();
         formData.append('file', file);
         const response = await fetch('/api/uploader', {
@@ -165,42 +152,40 @@ export default function ChatClient() {
         const { url } = await response.json();
         newMessage.imageMessage = url;
         setFile(null);
-        setStatus((p) => ({ ...p, uploading: false }));
+        setStatus((prev) => ({ ...prev, uploading: false }));
       }
 
       ws.current?.send(JSON.stringify(newMessage));
       setInput('');
-    } catch {
-      if (sessionRef.current?.user?.name) {
-        setError('Failed to send message');
-      }
+    } catch  {
+      if (sessionRef.current?.user?.name) setError('Failed to send message');
     } finally {
-      setStatus((p) => ({ ...p, sending: false }));
+      setStatus((prev) => ({ ...prev, sending: false }));
     }
   }, [input, file, status.sending, session]);
 
   return (
-    <div className='container mx-auto py-8 px-4 max-w-2xl'>
-      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
+    <div className="container mx-auto py-8 px-4 max-w-2xl">
+      <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center">
         Chat Room
       </h1>
 
       <Card>
-        <div className='flex items-center justify-between text-sm p-4 border-b border-blue-500'>
-          <span className='text-blue-500'>Status:</span>
-          <div className='flex items-center gap-2'>
+        <div className="flex items-center justify-between text-sm p-4 border-b border-blue-500">
+          <span className="text-blue-500">Status:</span>
+          <div className="flex items-center gap-2">
             <div
-              className={`w-2 h-2 rounded-full ${status.connected ? 'bg-green-500' : 'bg-red-500'}`}
+              className={`w-2 h-2 rounded-full ${
+                status.connected ? 'bg-green-500' : 'bg-red-500'
+              }`}
             />
-            <span
-              className={status.connected ? 'text-green-500' : 'text-red-500'}
-            >
+            <span className={status.connected ? 'text-green-500' : 'text-red-500'}>
               {status.connected ? 'Connected' : 'Connecting...'}
             </span>
           </div>
         </div>
 
-        <div className='h-96 overflow-y-auto p-4 space-y-3'>
+        <div className="h-96 overflow-y-auto p-4 space-y-3">
           {messages.map((message) => (
             <MessageBubble
               key={message.id}
@@ -211,31 +196,32 @@ export default function ChatClient() {
           <div ref={endRef} />
         </div>
 
-        <div className='p-4 border-t border-blue-500'>
-          <div className='flex items-start gap-2'>
+        <div className="p-4 border-t border-blue-500">
+          <div className="flex items-start gap-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === 'Enter' &&
-                !e.shiftKey &&
-                (e.preventDefault(), sendMessage())
-              }
-              placeholder='Type a message...'
-              className='flex-1 resize-none min-h-[40px] border-blue-500 top-2'
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder="Type a message..."
+              className="flex-1 resize-none min-h-[40px] border-blue-500 top-2"
               rows={1}
               disabled={!status.connected}
             />
-            <div className='flex items-center gap-2 h-full'>
+            <div className="flex items-center gap-2 h-full">
               <input
-                type='file'
+                type="file"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className='hidden'
-                id='file-input'
+                className="hidden"
+                id="file-input"
                 disabled={!status.connected || status.uploading}
               />
               <label
-                htmlFor='file-input'
+                htmlFor="file-input"
                 className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${
                   status.uploading
                     ? 'text-gray-400 border-gray-400'
@@ -245,14 +231,12 @@ export default function ChatClient() {
                 {status.uploading ? 'Uploading...' : '📎'}
               </label>
               <Button
-                className='!px-3 !py-1'
+                className="!px-3 !py-1"
                 onClick={sendMessage}
-                disabled={
-                  !status.connected || status.sending || status.uploading
-                }
+                disabled={!status.connected || status.sending || status.uploading}
               >
                 {status.sending ? (
-                  <Loader2 className='w-4 h-4 animate-spin' />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   'Send'
                 )}
@@ -260,7 +244,7 @@ export default function ChatClient() {
             </div>
           </div>
           {error && (
-            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
+            <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
           )}
         </div>
       </Card>
@@ -280,24 +264,27 @@ function MessageBubble({
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`flex items-start gap-3 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+        className={`flex items-start gap-3 max-w-[85%] ${
+          isOwn ? 'flex-row-reverse' : 'flex-row'
+        }`}
       >
         <Image
           src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
           alt={message.user}
           width={32}
           height={32}
-          className='rounded-full object-cover'
+          className="rounded-full object-cover"
         />
-
         <div
-          className={`p-3 rounded-lg ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+          className={`p-3 rounded-lg ${
+            isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'
+          }`}
         >
-          <div className='flex items-center gap-2 mb-1'>
-            <span className='text-xs font-medium'>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-medium">
               {isOwn ? 'You' : message.user}
             </span>
-            <span className='text-xs px-2 text-gray-500 dark:text-gray-400'>
+            <span className="text-xs px-2 text-gray-500 dark:text-gray-400">
               {format(new Date(safeTimestamp), 'HH:mm')}
             </span>
           </div>
@@ -305,10 +292,10 @@ function MessageBubble({
           {message.imageMessage && (
             <Image
               src={message.imageMessage}
-              alt='Attachment'
+              alt="Attachment"
               width={160}
               height={90}
-              className='rounded-lg mt-2'
+              className="rounded-lg mt-2"
             />
           )}
         </div>

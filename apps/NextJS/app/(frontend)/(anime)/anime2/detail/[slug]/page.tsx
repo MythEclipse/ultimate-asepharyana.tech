@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { BaseUrl } from '@/lib/url';
 import Image from 'next/image';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
@@ -68,7 +67,7 @@ export default function DetailAnimePage({
 
   const { data: anime, error } = useSWR<AnimeData>(
     resolvedParams
-      ? `${BaseUrl}/api/anime2/detail/${resolvedParams.slug}`
+      ? ` /api/anime2/detail/${resolvedParams.slug}`
       : null,
     fetcher
   );

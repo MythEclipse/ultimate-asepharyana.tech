@@ -1,6 +1,7 @@
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { imageProxy } from '@/lib/imageproxy';
+import { corsHeaders } from '@/lib/corsHeaders';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -9,7 +10,15 @@ export async function GET(req: NextRequest) {
 
   if (!url) {
     logger.error('URL is required');
-    return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+    return NextResponse.json({ error: 'URL is required' }, { status: 400, headers: corsHeaders });
   }
-  return await imageProxy(url);
+
+  const response = await imageProxy(url);
+  return new NextResponse(response.body, {
+    ...response,
+    headers: {
+      ...response.headers,
+      ...corsHeaders
+    }
+  });
 }

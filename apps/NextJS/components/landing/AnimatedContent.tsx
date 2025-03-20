@@ -1,11 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 import React from 'react';
-import Image from 'next/image';
 import Instagram from '@/components/logo/Instagram';
 import Facebook from '@/components/logo/Facebook';
 import Linkedln from '@/components/logo/LinkedIn';
 import Discord from '@/components/logo/Discord';
-import profile from '@/public/profil.avif';
 import Link from 'next/link';
 import { AnimatedHeader } from '@/components/text/TextWrite';
 import { motion } from 'framer-motion';
@@ -64,17 +63,13 @@ export default function AnimatedContent() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5, duration: 1 }}
             >
-              <div className='relative w-64 h-64 lg:w-96 lg:h-96'>
-                <Image
-                  src={profile}
+                <div className='relative w-64 h-64 lg:w-96 lg:h-96'>
+                <img
+                  src='/profil.avif'
                   alt='Profil'
-                  fill
-                  sizes='(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw'
-                  className='rounded-full object-cover'
-                  priority
-                  placeholder='blur'
+                  className='rounded-full object-cover w-full h-full'
                 />
-              </div>
+                </div>
             </motion.div>
           </div>
         </div>
