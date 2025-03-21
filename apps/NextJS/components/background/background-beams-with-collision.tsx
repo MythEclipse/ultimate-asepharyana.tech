@@ -30,7 +30,6 @@ export const BackgroundBeamsWithCollision = ({
     const newBeams = Array.from({ length: beamCount }, () => ({
       initialX: Math.random() * parentRect.width,
       duration: Math.random() * 8 + 4,
-      // Delay diacak hingga 8 detik untuk tampilan staggered yang lebih halus
       delay: Math.random() * 8,
       height: Math.floor(Math.random() * 40 + 20),
     }));
@@ -47,20 +46,12 @@ export const BackgroundBeamsWithCollision = ({
           100% { transform: translateY(calc(100vh + 200px)); opacity: 0; }
         }
         @keyframes particle-explosion {
-          to {
-            transform: translate(var(--distance-x), var(--distance-y));
-            opacity: 0;
-          }
+          to { transform: translate(var(--distance-x), var(--distance-y)); opacity: 0; }
         }
       `}</style>
       <div className="absolute inset-0 pointer-events-none z-20">
         {beams.map((beam, index) => (
-          <CollisionMechanism
-            key={index}
-            beamOptions={beam}
-            containerRef={containerRef}
-            parentRef={parentRef}
-          />
+          <CollisionMechanism key={index} beamOptions={beam} containerRef={containerRef} parentRef={parentRef} />
         ))}
       </div>
       <div ref={containerRef} style={{ position: 'relative', zIndex: 10 }}>
@@ -79,10 +70,7 @@ const CollisionMechanism = React.forwardRef<
   }
 >(({ beamOptions = {}, containerRef, parentRef }, ref) => {
   const beamRef = useRef<HTMLDivElement>(null);
-  const [collision, setCollision] = useState<{
-    detected: boolean;
-    coordinates: { x: number; y: number } | null;
-  }>({ detected: false, coordinates: null });
+  const [collision, setCollision] = useState<{ detected: boolean; coordinates: { x: number; y: number } | null }>({ detected: false, coordinates: null });
 
   const handleAnimationEnd = () => {
     const beam = beamRef.current;
@@ -110,6 +98,7 @@ const CollisionMechanism = React.forwardRef<
           height: `${beamOptions.height ?? 56}px`,
           animationDuration: `${beamOptions.duration ?? 8}s`,
           animationDelay: `${beamOptions.delay ?? 0}s`,
+          animationFillMode: 'backwards',
         }}
         onAnimationEnd={handleAnimationEnd}
       />
