@@ -11,7 +11,7 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "dev": "cross-env NODE_ENV=development NODE_OPTIONS='--trace-warnings --inspect' next dev --port 4090",
+    "dev": "cross-env NODE_ENV=development NODE_OPTIONS='--trace-warnings --inspect' next dev --port 4090 --turbopack",
     "dev:https": "next dev --experimental-https",
     "build": "cross-env next build",
     "postbuild": "next-sitemap",

@@ -31,9 +31,8 @@ const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
 
   return (
     <span
-      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${
-        typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
-      }`}
+      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
+        }`}
     >
       {label}
     </span>
@@ -61,7 +60,13 @@ export default function CardA({
           <div className='relative h-48 sm:h-56 md:h-64 lg:h-72'>
             {isLoading && <SkeletonLoader />}
             <Image
-              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`}
+            src={
+              imageUrl 
+                ? imageUrl 
+                : `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl || "default.png")}` 
+                  || `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl || "default.png")}`
+            }
+            
               alt={title}
               fill
               sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
