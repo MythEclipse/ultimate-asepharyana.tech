@@ -25,7 +25,7 @@ export default function DesktopNavLinks({
       <ul className='flex space-x-4'>
         {links.map((link, index) => (
           <li key={index} id={`nav-link-${index}`}>
-            <Link href={link.href}>
+            <Link prefetch={true} href={link.href}>
               <span
                 className={`px-3 py-2 relative ${
                   pathname === link.href

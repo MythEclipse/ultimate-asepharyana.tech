@@ -41,7 +41,7 @@ export default function MobileNavLinks({
         <ul className='flex flex-col p-4'>
           {links.map((link, index) => (
             <li key={index} className='text-center'>
-              <Link href={link.href}>
+              <Link prefetch={true} href={link.href}>
                 <span
                   className={`block px-4 py-2 ${
                     pathname === link.href

@@ -35,7 +35,7 @@ export default function Navbar() {
   return (
     <nav className='fixed top-0 z-30 w-full border-b border-blue-500 bg-white dark:bg-black shadow-md transition-all duration-300'>
       <div className='container mx-auto flex items-center justify-between px-4 py-3 relative'>
-        <Link href='/' className='flex items-center space-x-2'>
+        <Link prefetch={true} href='/' className='flex items-center space-x-2'>
           <img
             src='/Logo.svg'
             alt='Logo'

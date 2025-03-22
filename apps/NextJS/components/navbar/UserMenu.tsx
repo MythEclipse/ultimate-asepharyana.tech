@@ -53,14 +53,14 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
     <div className='relative'>
       {currentSession ? (
         <>
-            <button
+          <button
             ref={buttonRef}
             className='w-10 h-10 rounded-full border border-blue-500 overflow-hidden'
             onClick={() => setIsOpen(!isOpen)}
-            >
+          >
             <img
               src={
-              currentSession.user?.image || '/profile-circle-svgrepo-com.svg'
+                currentSession.user?.image || '/profile-circle-svgrepo-com.svg'
               }
               width={40}
               height={40}
@@ -68,19 +68,21 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
               style={{ width: 'auto', height: 'auto' }}
               alt='User Avatar'
             />
-            </button>
+          </button>
           {isOpen && (
             <div
               ref={menuRef}
               className='absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg'
             >
               <Link
+                prefetch={true}
                 href='/dashboard'
                 className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-center'
               >
                 Dashboard
               </Link>
               <Link
+                prefetch={true}
                 href='/settings'
                 className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-center'
               >
