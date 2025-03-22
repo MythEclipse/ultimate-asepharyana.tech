@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -43,7 +43,9 @@ interface DetailAnimePageProps {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnimePage({ params }: DetailAnimePageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+    null
+  );
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
   }, [params]);
 
   const { data, error, isLoading } = useSWR<CompleteAnimeData>(
-    mounted && resolvedParams 
+    mounted && resolvedParams
       ? `${BaseUrl}/api/anime/complete-anime/${resolvedParams.slug}`
       : null,
     fetcher,
@@ -64,7 +66,11 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
   );
 
   if (!mounted || !resolvedParams) {
-    return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loading />
+      </div>
+    );
   }
 
   if (error) {
@@ -77,7 +83,11 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
   }
 
   if (isLoading || !data) {
-    return <div className="min-h-screen flex items-center justify-center overflow-hidden"><Loading /></div>;
+    return (
+      <div className='min-h-screen flex items-center justify-center overflow-hidden'>
+        <Loading />
+      </div>
+    );
   }
 
   if (!Array.isArray(data.data)) {

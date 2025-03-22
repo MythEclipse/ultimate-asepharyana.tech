@@ -6,7 +6,7 @@ export default function Compressor() {
   const [url, setUrl] = useState('');
   const [size, setSize] = useState('');
   const [uploadMethod, setUploadMethod] = useState<'url' | 'file'>('url');
-  
+
   interface Result {
     link: string;
     cached: boolean;
@@ -25,11 +25,14 @@ export default function Compressor() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const uploadRes = await fetch('https://api.ryzendesu.vip/api/uploader/ryzencdn', {
-        method: 'POST',
-        headers: { accept: 'application/json' },
-        body: formData,
-      });
+      const uploadRes = await fetch(
+        'https://api.ryzendesu.vip/api/uploader/ryzencdn',
+        {
+          method: 'POST',
+          headers: { accept: 'application/json' },
+          body: formData,
+        }
+      );
 
       const data = await uploadRes.json();
       if (!data.success || !data.url) {
@@ -57,7 +60,9 @@ export default function Compressor() {
 
     try {
       setLoading(true);
-      const res = await fetch(`/api/compress?url=${encodeURIComponent(url)}&size=${size}`);
+      const res = await fetch(
+        `/api/compress?url=${encodeURIComponent(url)}&size=${size}`
+      );
       const data = await res.json();
 
       console.log(stringify(data));
@@ -87,7 +92,9 @@ export default function Compressor() {
             </label>
             <select
               value={uploadMethod}
-              onChange={(e) => setUploadMethod(e.target.value as 'url' | 'file')}
+              onChange={(e) =>
+                setUploadMethod(e.target.value as 'url' | 'file')
+              }
               className='w-full p-3 border-2 border-blue-500/30 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
             >
               <option value='url'>URL</option>
@@ -117,13 +124,23 @@ export default function Compressor() {
                 </label>
                 <input
                   type='file'
-                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                  onChange={(e) =>
+                    e.target.files?.[0] && handleFileUpload(e.target.files[0])
+                  }
                   className='w-full text-sm text-gray-500 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-gray-300 hover:file:bg-blue-100 dark:hover:file:bg-gray-600'
                   accept='video/*,image/*'
                   disabled={uploadLoading}
                 />
-                {uploadLoading && <p className='mt-2 text-sm text-blue-600'>Uploading file...</p>}
-                {url && <p className='mt-2 text-sm text-blue-600 truncate'>Uploaded: {url}</p>}
+                {uploadLoading && (
+                  <p className='mt-2 text-sm text-blue-600'>
+                    Uploading file...
+                  </p>
+                )}
+                {url && (
+                  <p className='mt-2 text-sm text-blue-600 truncate'>
+                    Uploaded: {url}
+                  </p>
+                )}
               </div>
             )}
 
@@ -149,14 +166,29 @@ export default function Compressor() {
               {loading ? 'Processing...' : 'Compress Media'}
             </button>
 
-            {error && <div className='mt-4 p-3 bg-red-100 text-red-700 rounded-lg'>{error}</div>}
+            {error && (
+              <div className='mt-4 p-3 bg-red-100 text-red-700 rounded-lg'>
+                {error}
+              </div>
+            )}
           </form>
 
           {result && (
             <div className='mt-8 p-4 bg-blue-50 dark:bg-gray-700 rounded-lg text-center'>
-              <p className='text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4'>🎉 Compression successful!</p>
-              <a href={result.link} target='_blank' rel='noopener noreferrer' className='inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300'>⬇️ Download Compressed File</a>
-              <p className='mt-3 text-sm text-blue-500 dark:text-blue-300'>{result.cached ? '(Cached version)' : '(Newly processed)'}</p>
+              <p className='text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4'>
+                🎉 Compression successful!
+              </p>
+              <a
+                href={result.link}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300'
+              >
+                ⬇️ Download Compressed File
+              </a>
+              <p className='mt-3 text-sm text-blue-500 dark:text-blue-300'>
+                {result.cached ? '(Cached version)' : '(Newly processed)'}
+              </p>
             </div>
           )}
         </div>

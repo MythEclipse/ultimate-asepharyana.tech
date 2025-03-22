@@ -44,10 +44,11 @@ export default function Navbar() {
             className='w-6 h-auto'
           />
           <span
-            className={`text-lg ${pathname === '/'
+            className={`text-lg ${
+              pathname === '/'
                 ? 'font-semibold text-blue-600'
                 : 'text-gray-900 dark:text-gray-300'
-              }`}
+            }`}
           >
             Asep Haryana
           </span>

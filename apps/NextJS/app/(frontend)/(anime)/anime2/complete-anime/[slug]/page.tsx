@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import AnimeGrid from '@/components/card/AnimeGrid2a';
@@ -41,7 +41,9 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
   const [data, setData] = useState<completeAnimeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+    null
+  );
 
   useEffect(() => {
     params.then(setResolvedParams);
@@ -55,17 +57,17 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
         const response = await fetch(
           `/api/anime2/complete-anime/${resolvedParams.slug}`
         );
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
-        
+
         if (!Array.isArray(result.data)) {
           throw new Error('Invalid data format');
         }
-        
+
         setData(result);
         setError(null);
       } catch (err) {
@@ -85,8 +87,8 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
 
   if (error) {
     return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold mt-8 mb-4">Error Loading Data</h1>
+      <main className='p-6'>
+        <h1 className='text-2xl font-bold mt-8 mb-4'>Error Loading Data</h1>
         <p>{error}</p>
       </main>
     );
@@ -94,15 +96,15 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
 
   if (!data || !Array.isArray(data.data)) {
     return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold mt-8 mb-4">No Data Available</h1>
+      <main className='p-6'>
+        <h1 className='text-2xl font-bold mt-8 mb-4'>No Data Available</h1>
       </main>
     );
   }
 
   return (
-    <main className="p-6">
-      <h1 className="dark:text-lighta text-2xl font-bold mt-8 mb-4">
+    <main className='p-6'>
+      <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
         Complete Anime
       </h1>
       <AnimeGrid animes={data.data} />
@@ -113,23 +115,23 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
 
 const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
   return (
-    <div className="flex justify-between mt-8">
+    <div className='flex justify-between mt-8'>
       {pagination.has_previous_page && pagination.previous_page !== null && (
-        <div className="text-2xl font-bold mt-8 mb-4">
+        <div className='text-2xl font-bold mt-8 mb-4'>
           <Link
             scroll
             href={`/anime2/complete-anime/${pagination.previous_page}`}
-            className="text-blue-600 hover:underline"
+            className='text-blue-600 hover:underline'
           >
             <ButtonA>Previous</ButtonA>
           </Link>
         </div>
       )}
       {pagination.has_next_page && pagination.next_page !== null && (
-        <div className="text-2xl font-bold mt-8 mb-4">
+        <div className='text-2xl font-bold mt-8 mb-4'>
           <Link
             href={`/anime2/complete-anime/${pagination.next_page}`}
-            className="text-blue-600 hover:underline"
+            className='text-blue-600 hover:underline'
           >
             <ButtonA>Next</ButtonA>
           </Link>

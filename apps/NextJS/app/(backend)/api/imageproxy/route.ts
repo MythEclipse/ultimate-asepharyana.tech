@@ -10,7 +10,10 @@ export async function GET(req: NextRequest) {
 
   if (!url) {
     logger.error('URL is required');
-    return NextResponse.json({ error: 'URL is required' }, { status: 400, headers: corsHeaders });
+    return NextResponse.json(
+      { error: 'URL is required' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const response = await imageProxy(url);
@@ -18,7 +21,7 @@ export async function GET(req: NextRequest) {
     ...response,
     headers: {
       ...response.headers,
-      ...corsHeaders
-    }
+      ...corsHeaders,
+    },
   });
 }

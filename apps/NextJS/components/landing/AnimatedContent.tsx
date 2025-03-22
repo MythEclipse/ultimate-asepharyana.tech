@@ -63,13 +63,13 @@ export default function AnimatedContent() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5, duration: 1 }}
             >
-                <div className='relative w-64 h-64 lg:w-96 lg:h-96'>
+              <div className='relative w-64 h-64 lg:w-96 lg:h-96'>
                 <img
                   src='/profil.avif'
                   alt='Profil'
                   className='rounded-full object-cover w-full h-full'
                 />
-                </div>
+              </div>
             </motion.div>
           </div>
         </div>

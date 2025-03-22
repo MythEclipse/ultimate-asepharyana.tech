@@ -150,11 +150,17 @@ export async function GET(
       slug,
     });
 
-    return NextResponse.json({ status: 'Ok', data: animeData }, { headers: corsHeaders });
+    return NextResponse.json(
+      { status: 'Ok', data: animeData },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     console.error('Error fetching anime data:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to scrape data';
-    return NextResponse.json({ message: errorMessage }, { status: 500, headers: corsHeaders });
+    return NextResponse.json(
+      { message: errorMessage },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }

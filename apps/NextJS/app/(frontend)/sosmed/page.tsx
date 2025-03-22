@@ -14,16 +14,12 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PostPage() {
   const { data: session } = useSession();
-  const { data: postsData } = useSWR(
-    `${BaseUrl}/api/sosmed/posts`,
-    fetcher,
-    {
-      refreshInterval: 1000,
-      dedupingInterval: 1000,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-    }
-  );
+  const { data: postsData } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
+    refreshInterval: 1000,
+    dedupingInterval: 1000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
 
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -218,11 +214,13 @@ export default function PostPage() {
 
       <div className='grid gap-8'>
         {postsData?.posts?.map(
-          (post: Posts & {
-            user?: User;
-            likes?: Likes[];
-            comments?: (Comments & { user?: User })[];
-          }) => (
+          (
+            post: Posts & {
+              user?: User;
+              likes?: Likes[];
+              comments?: (Comments & { user?: User })[];
+            }
+          ) => (
             <PostCard
               key={post.id}
               post={{

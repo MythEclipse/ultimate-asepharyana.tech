@@ -63,9 +63,9 @@ export default function DetailAnimePage({
     resolvedParams
       ? `${BaseUrl}/api/anime/detail/${resolvedParams.slug}`
       : null,
-      fetcher
-    );
-    
+    fetcher
+  );
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function DetailAnimePage({
     localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
     setBookmarked(!bookmarked);
   };
-  
+
   if (error)
     return (
       <p className='text-red-500 text-center'>Failed to load anime data</p>
@@ -115,9 +115,11 @@ export default function DetailAnimePage({
       return ep.episode.match(/Sub Indo\s*:\s*Episode\s*\d+\s*–\s*\d+/i);
     }) || [];
 
-  const fallback = "default.png";
+  const fallback = 'default.png';
   const imageSources = [
-    anime.data.poster && anime.data.poster.trim() !== "" ? anime.data.poster : null,
+    anime.data.poster && anime.data.poster.trim() !== ''
+      ? anime.data.poster
+      : null,
     `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster || fallback)}`,
     `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.data.poster || fallback)}`,
   ].filter(Boolean) as string[];

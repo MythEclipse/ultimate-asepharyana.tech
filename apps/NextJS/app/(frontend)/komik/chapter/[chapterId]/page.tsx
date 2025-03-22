@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
-import Image from 'next/image';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
 import Loading from '@/components/misc/loading';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 
 interface ChapterDetail {
   title: string;
@@ -25,7 +25,9 @@ interface PageProps {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ChapterPage({ params }: PageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ chapterId: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{
+    chapterId: string;
+  } | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -33,15 +35,23 @@ export default function ChapterPage({ params }: PageProps) {
     setMounted(true);
   }, [params]);
 
-  const { data: chapter, error, isLoading } = useSWR<ChapterDetail>(
-    mounted && resolvedParams 
+  const {
+    data: chapter,
+    error,
+    isLoading,
+  } = useSWR<ChapterDetail>(
+    mounted && resolvedParams
       ? `${BaseUrl}/api/komik/chapter?chapter_url=${resolvedParams.chapterId}`
       : null,
     fetcher
   );
 
   if (!mounted || !resolvedParams) {
-    return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loading />
+      </div>
+    );
   }
 
   if (error) {
@@ -56,7 +66,11 @@ export default function ChapterPage({ params }: PageProps) {
   }
 
   if (isLoading || !chapter) {
-    return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loading />
+      </div>
+    );
   }
 
   return (
@@ -88,24 +102,11 @@ export default function ChapterPage({ params }: PageProps) {
 
       <div className='flex flex-col md:w-1/2 md:mx-auto'>
         {chapter.images.map((image, index) => (
-          <div
-            key={index}
-            style={{
-              position: 'relative',
-              width: '100%',
-              minHeight: '300px',
-              backgroundColor: '#f0f0f0',
-            }}
-          >
-            <Image
-              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(image)}`}
-              alt={`Chapter ${chapter.title} - page ${index + 1}`}
-              className='object-cover transition-opacity duration-300'
-              width={725}
-              height={1024}
-              unoptimized
-            />
-          </div>
+          <ImageWithFallback
+            key={`${image}-${index}`}
+            imageUrl={image}
+            index={index}
+          />
         ))}
       </div>
 

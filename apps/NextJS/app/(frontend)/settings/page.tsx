@@ -10,9 +10,10 @@ import { Loader2 } from 'lucide-react';
 export default function Settings() {
   const { data: session } = useSession();
   const [image, setImage] = useState<File | null>(null);
-  const [status, setStatus] = useState<{ saving: boolean; error: string | null }>(
-    { saving: false, error: null }
-  );
+  const [status, setStatus] = useState<{
+    saving: boolean;
+    error: string | null;
+  }>({ saving: false, error: null });
 
   const handleSave = async () => {
     if (!image) {
@@ -42,7 +43,7 @@ export default function Settings() {
 
       await updateUserImage(session.user.id, url);
       setStatus({ saving: false, error: null });
-    } catch  {
+    } catch {
       setStatus({ saving: false, error: 'Failed to update profile' });
     }
   };
@@ -67,12 +68,22 @@ export default function Settings() {
             />
           </div>
 
-          <Button onClick={handleSave} disabled={status.saving} className='w-full'>
-            {status.saving ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Save Changes'}
+          <Button
+            onClick={handleSave}
+            disabled={status.saving}
+            className='w-full'
+          >
+            {status.saving ? (
+              <Loader2 className='w-4 h-4 animate-spin' />
+            ) : (
+              'Save Changes'
+            )}
           </Button>
 
           {status.error && (
-            <div className='text-red-500 text-sm mt-2 text-center'>{status.error}</div>
+            <div className='text-red-500 text-sm mt-2 text-center'>
+              {status.error}
+            </div>
           )}
         </div>
       </Card>

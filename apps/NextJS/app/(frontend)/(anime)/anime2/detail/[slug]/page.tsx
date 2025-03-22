@@ -66,9 +66,7 @@ export default function DetailAnimePage({
   }, [params]);
 
   const { data: anime, error } = useSWR<AnimeData>(
-    resolvedParams
-      ? ` /api/anime2/detail/${resolvedParams.slug}`
-      : null,
+    resolvedParams ? ` /api/anime2/detail/${resolvedParams.slug}` : null,
     fetcher
   );
 

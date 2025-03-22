@@ -1,4 +1,4 @@
-'use client'
+'use client';
 // app/search/[slug]/page.tsx
 import SearchForm from '@/components/misc/SearchForm';
 import CardA from '@/components/card/MediaCard';
@@ -40,7 +40,9 @@ interface SearchDetailData {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const SearchPage = ({ params }: { params: Promise<{ slug: string }> }) => {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+    null
+  );
 
   useEffect(() => {
     params.then(setResolvedParams);
@@ -53,7 +55,7 @@ const SearchPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   );
 
   if (error) return <div>Error loading search results</div>;
-  if (!searchResults) return <Loading/>;
+  if (!searchResults) return <Loading />;
 
   return (
     <div className='p-6'>

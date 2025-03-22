@@ -133,7 +133,10 @@ export async function GET(
     console.error('Error fetching anime data:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to scrape data';
-    const response = NextResponse.json({ message: errorMessage }, { status: 500 });
+    const response = NextResponse.json(
+      { message: errorMessage },
+      { status: 500 }
+    );
     Object.entries(corsHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
     });

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -32,17 +32,13 @@ interface CompleteAnime {
   current_episode: string;
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnimePage() {
-  const { data, error, isLoading } = useSWR<HomeData>(
-    `/api/anime2/`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      refreshInterval: 600 * 1000, // Revalidate every 600 seconds
-    }
-  );
+  const { data, error, isLoading } = useSWR<HomeData>(`/api/anime2/`, fetcher, {
+    revalidateOnFocus: false,
+    refreshInterval: 600 * 1000, // Revalidate every 600 seconds
+  });
 
   if (isLoading || error || !data?.data) {
     return <Loading />;

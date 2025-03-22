@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import AnimeGrid from '@/components/card/AnimeGrid2a';
@@ -40,7 +40,9 @@ interface DetailAnimePageProps {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnimePage({ params }: DetailAnimePageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+    null
+  );
 
   useEffect(() => {
     params.then(setResolvedParams);
