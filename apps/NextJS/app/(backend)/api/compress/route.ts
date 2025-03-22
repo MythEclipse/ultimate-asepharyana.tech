@@ -13,6 +13,7 @@ import { corsHeaders } from '@/lib/corsHeaders';
 const CACHE_DIR = join(tmpdir(), 'compress-cache');
 const CACHE_EXPIRY = 3600 * 1000;
 const MAX_QUEUE_SIZE = 10;
+const API_DISABLED = true;
 
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
@@ -166,6 +167,13 @@ const compressVideo = async (
 };
 
 export async function GET(req: NextRequest) {
+  if (API_DISABLED) {
+    return NextResponse.json(
+      { error: 'API is currently disabled' },
+      { status: 503, headers: corsHeaders }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
   const sizeParam = searchParams.get('size');
