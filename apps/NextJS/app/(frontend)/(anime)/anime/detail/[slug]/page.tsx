@@ -63,9 +63,10 @@ export default function DetailAnimePage({
     resolvedParams
       ? `${BaseUrl}/api/anime/detail/${resolvedParams.slug}`
       : null,
-    fetcher
-  );
-
+      fetcher
+    );
+    
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
   useEffect(() => {
     if (resolvedParams && typeof window !== 'undefined') {
@@ -97,7 +98,7 @@ export default function DetailAnimePage({
     localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
     setBookmarked(!bookmarked);
   };
-
+  
   if (error)
     return (
       <p className='text-red-500 text-center'>Failed to load anime data</p>
@@ -114,6 +115,19 @@ export default function DetailAnimePage({
       return ep.episode.match(/Sub Indo\s*:\s*Episode\s*\d+\s*–\s*\d+/i);
     }) || [];
 
+  const fallback = "default.png";
+  const imageSources = [
+    anime.data.poster && anime.data.poster.trim() !== "" ? anime.data.poster : null,
+    `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster || fallback)}`,
+    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.data.poster || fallback)}`,
+  ].filter(Boolean) as string[];
+
+  const handleError = () => {
+    if (currentIndex < imageSources.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
   return (
     <main className='p-6 bg-background dark:bg-dark min-h-screen'>
       <div className='max-w-4xl mx-auto bg-white dark:bg-dark rounded-lg shadow-lg'>
@@ -121,12 +135,13 @@ export default function DetailAnimePage({
           <div className='flex flex-col md:flex-row items-center md:items-start'>
             <div className='w-full md:w-1/3 mb-6 md:mb-0 flex justify-center md:justify-start'>
               <Image
-                src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.data.poster)}`}
+                src={imageSources[currentIndex]}
                 alt={anime.data.title}
                 width={330}
                 height={450}
                 className='object-cover rounded-lg shadow-md'
                 priority
+                onError={handleError}
               />
             </div>
             <div className='w-full md:w-2/3 md:pl-6'>

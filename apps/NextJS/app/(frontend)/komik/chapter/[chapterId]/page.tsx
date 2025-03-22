@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -58,25 +58,11 @@ export default async function ChapterPage(props: {
 
       <div className='flex flex-col md:w-1/2 md:mx-auto'>
         {chapter.images.map((image, index) => (
-          <div
+          <ImageWithFallback
             key={index}
-            style={{
-              position: 'relative',
-              width: '100%',
-              minHeight: '300px', // Placeholder height, adjust as needed
-              backgroundColor: '#f0f0f0', // Placeholder background color
-            }}
-            className=''
-          >
-            <Image
-              src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(image)}`}
-              alt={`Chapter ${chapter.title} - page ${index + 1}`}
-              className='object-cover transition-opacity duration-300'
-              width='725'
-              height='1024'
-              unoptimized
-            />
-          </div>
+            src={image}
+            alt={`Chapter ${chapter.title} - page ${index + 1}`}
+          />
         ))}
       </div>
 
@@ -104,3 +90,41 @@ export default async function ChapterPage(props: {
     </main>
   );
 }
+
+const ImageWithFallback = ({ src, alt }: { src: string; alt: string }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const fallback = "default.png";
+  const imageSources = [
+    src && src.trim() !== "" ? src : null,
+    `https://imagecdn.app/v1/images/${encodeURIComponent(src || fallback)}`,
+    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(src || fallback)}`,
+  ].filter(Boolean) as string[];
+
+  const handleError = () => {
+    if (currentIndex < imageSources.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        minHeight: '300px', // Placeholder height, adjust as needed
+        backgroundColor: '#f0f0f0', // Placeholder background color
+      }}
+    >
+      <Image
+        src={imageSources[currentIndex]}
+        alt={alt}
+        className='object-cover transition-opacity duration-300'
+        width='725'
+        height='1024'
+        onError={handleError}
+        unoptimized
+      />
+    </div>
+  );
+};

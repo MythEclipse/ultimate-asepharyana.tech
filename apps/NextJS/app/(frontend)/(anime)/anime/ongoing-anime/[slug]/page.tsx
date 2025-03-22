@@ -1,9 +1,12 @@
-// app/(anime)/ongoing-anime/[page]/page.tsx
-import React from 'react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
+import Loading from '@/components/misc/loading';
 
 interface OngoingAnimeData {
   status: string;
@@ -33,25 +36,37 @@ interface Pagination {
 }
 
 interface DetailAnimePageProps {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }
 
-export default async function AnimePage(props: DetailAnimePageProps) {
-  const params = await props.params;
-  let OngoingAnimeData: OngoingAnimeData;
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  try {
-    const response = await fetch(
-      `${BaseUrl}/api/anime/ongoing-anime/${params.slug}`
-    );
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
+export default function AnimePage({ params }: DetailAnimePageProps) {
+  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+    setMounted(true);
+  }, [params]);
+
+  const { data, error, isLoading } = useSWR<OngoingAnimeData>(
+    mounted && resolvedParams
+      ? `${BaseUrl}/api/anime/ongoing-anime/${resolvedParams.slug}`
+      : null,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
-    OngoingAnimeData = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch data:', error);
+  );
+
+  if (!mounted || !resolvedParams) {
+    return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+  }
+
+  if (error) {
     return (
       <main className='p-6'>
         <h1 className='text-2xl font-bold mt-8 mb-4'>Error Loading Data</h1>
@@ -60,8 +75,11 @@ export default async function AnimePage(props: DetailAnimePageProps) {
     );
   }
 
-  if (!Array.isArray(OngoingAnimeData.data)) {
-    console.error('Expected OngoingAnimeData.data to be an array');
+  if (isLoading || !data) {
+    return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+  }
+
+  if (!Array.isArray(data.data)) {
     return (
       <main className='p-6'>
         <h1 className='text-2xl font-bold mt-8 mb-4'>No Data Available</h1>
@@ -74,8 +92,8 @@ export default async function AnimePage(props: DetailAnimePageProps) {
       <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
         Ongoing Anime
       </h1>
-      <AnimeGrid animes={OngoingAnimeData.data} />
-      <PaginationComponent pagination={OngoingAnimeData.pagination} />
+      <AnimeGrid animes={data.data} />
+      <PaginationComponent pagination={data.pagination} />
     </main>
   );
 }
@@ -97,6 +115,7 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       {pagination.has_next_page && pagination.next_page !== null && (
         <div className='text-2xl font-bold mt-8 mb-4'>
           <Link
+            scroll
             href={`/anime/ongoing-anime/${pagination.next_page}`}
             className='text-blue-600 hover:underline'
           >

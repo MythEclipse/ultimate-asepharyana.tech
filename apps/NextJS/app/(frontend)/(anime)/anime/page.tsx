@@ -1,5 +1,8 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
+import useSWR from 'swr';
 import Loading from '@/components/misc/loading';
 import ButtonA from '@/components/button/ScrollButton';
 import AnimeGrid from '@/components/card/AnimeGrid';
@@ -30,19 +33,26 @@ interface CompleteAnime {
   current_episode: string;
 }
 
-export default async function AnimePage() {
-  let episodeData: HomeData | null = null;
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  try {
-    const response = await fetch(`${BaseUrl}/api/anime/`, {
-      next: { revalidate: 600 },
-    });
-    episodeData = await response.json();
-  } catch (error) {
+export default function AnimePage() {
+  const { data, error, isLoading } = useSWR<HomeData>(
+    `${BaseUrl}/api/anime/`,
+    fetcher,
+    {
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 600 * 1000, // 10 menit
+    }
+  );
+
+  if (error) {
     console.error('Failed to fetch episodes:', error);
+    return <div>Error loading data</div>;
   }
 
-  if (!episodeData) {
+  if (isLoading || !data) {
     return <Loading />;
   }
 
@@ -57,7 +67,7 @@ export default async function AnimePage() {
           </ButtonA>
         </Link>
         <AnimeGrid
-          animes={episodeData.data.ongoing_anime.map((anime) => ({
+          animes={data.data.ongoing_anime.map((anime) => ({
             ...anime,
             rating: '',
             release_day: '',
@@ -72,7 +82,7 @@ export default async function AnimePage() {
           </ButtonA>
         </Link>
         <AnimeGrid
-          animes={episodeData.data.complete_anime.map((anime) => ({
+          animes={data.data.complete_anime.map((anime) => ({
             ...anime,
             rating: '',
             release_day: '',
