@@ -62,6 +62,8 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
     }
   );
 

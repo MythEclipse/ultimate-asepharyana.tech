@@ -67,7 +67,14 @@ export default function DetailAnimePage({
 
   const { data: anime, error } = useSWR<AnimeData>(
     resolvedParams ? ` /api/anime2/detail/${resolvedParams.slug}` : null,
-    fetcher
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
+    }
   );
 
   const processDownloads = (downloads: DownloadResolution[]) => {

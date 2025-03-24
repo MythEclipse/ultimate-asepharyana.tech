@@ -50,7 +50,14 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
 
   const { data, error } = useSWR<OngoingAnimeData>(
     resolvedParams ? `/api/anime2/ongoing-anime/${resolvedParams.slug}` : null,
-    fetcher
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
+    }
   );
 
   if (error) {

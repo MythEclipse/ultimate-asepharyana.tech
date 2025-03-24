@@ -36,8 +36,11 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnimePage() {
   const { data, error, isLoading } = useSWR<HomeData>(`/api/anime2/`, fetcher, {
+    revalidateIfStale: false,
     revalidateOnFocus: false,
-    refreshInterval: 600 * 1000, // Revalidate every 600 seconds
+    revalidateOnReconnect: false,
+    dedupingInterval: 0,
+    compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
   });
 
   if (isLoading || error || !data?.data) {

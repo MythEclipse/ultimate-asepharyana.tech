@@ -1,5 +1,6 @@
 'use client';
 
+import useSWR from 'swr';
 import React, { useEffect, useState } from 'react';
 import AnimeGrid from '@/components/card/AnimeGrid2a';
 import Link from 'next/link';
@@ -27,7 +28,7 @@ interface Pagination {
   previous_page: number | null;
 }
 
-interface completeAnimeData {
+interface CompleteAnimeData {
   status: string;
   data: Anime[];
   pagination: Pagination;
@@ -37,10 +38,9 @@ interface DetailAnimePageProps {
   params: Promise<{ slug: string }>;
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function AnimePage({ params }: DetailAnimePageProps) {
-  const [data, setData] = useState<completeAnimeData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
     null
   );
@@ -49,39 +49,23 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
     params.then(setResolvedParams);
   }, [params]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!resolvedParams) return;
+  const { data, error, isLoading } = useSWR<CompleteAnimeData>(
+    resolvedParams ? `/api/anime2/complete-anime/${resolvedParams.slug}` : null,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+    }
+  );
 
-      try {
-        const response = await fetch(
-          `/api/anime2/complete-anime/${resolvedParams.slug}`
-        );
+  if (!resolvedParams) {
+    return <Loading />;
+  }
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (!Array.isArray(result.data)) {
-          throw new Error('Invalid data format');
-        }
-
-        setData(result);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch data');
-        console.error('Fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [resolvedParams]);
-
-  if (loading) {
+  if (isLoading) {
     return <Loading />;
   }
 
@@ -89,7 +73,7 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
     return (
       <main className='p-6'>
         <h1 className='text-2xl font-bold mt-8 mb-4'>Error Loading Data</h1>
-        <p>{error}</p>
+        <p>{error.message}</p>
       </main>
     );
   }

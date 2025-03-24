@@ -58,7 +58,14 @@ export default function DetailAnimePage({ params }: DetailAnimePageProps) {
     mounted && resolvedParams
       ? `${BaseUrl}/api/anime/full/${resolvedParams.slug}`
       : null,
-    fetcher
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
+    }
   );
 
   if (!mounted || !resolvedParams) {

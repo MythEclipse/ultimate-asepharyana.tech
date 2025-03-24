@@ -40,10 +40,11 @@ export default function AnimePage() {
     `${BaseUrl}/api/anime/`,
     fetcher,
     {
-      revalidateIfStale: true,
+      revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 600 * 1000, // 10 menit
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
     }
   );
 

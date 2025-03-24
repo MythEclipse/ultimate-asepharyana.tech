@@ -51,7 +51,14 @@ const SearchPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const query = resolvedParams ? decodeURIComponent(resolvedParams.slug) : '';
   const { data: searchResults, error } = useSWR<SearchDetailData>(
     resolvedParams ? `/api/anime2/search?q=${encodeURIComponent(query)}` : null,
-    fetcher
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
+    }
   );
 
   if (error) return <div>Error loading search results</div>;

@@ -63,7 +63,14 @@ export default function DetailAnimePage({
     resolvedParams
       ? `${BaseUrl}/api/anime/detail/${resolvedParams.slug}`
       : null,
-    fetcher
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
+    }
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
