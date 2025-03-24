@@ -1,12 +1,7 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import useSWR from 'swr';
-import AnimeGrid from '@/components/card/AnimeGrid';
 import Link from 'next/link';
+import AnimeGrid from '@/components/card/AnimeGrid';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
-import Loading from '@/components/misc/loading';
 
 interface OngoingAnimeData {
   status: string;
@@ -35,59 +30,34 @@ interface Pagination {
   previous_page: number | null;
 }
 
-interface DetailAnimePageProps {
-  params: Promise<{ slug: string }>;
+async function getOngoingAnime(slug: string): Promise<OngoingAnimeData | null> {
+  try {
+    const res = await fetch(`${BaseUrl}/api/anime/ongoing-anime/${slug}`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+export default async function AnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const data = await getOngoingAnime(slug);
 
-export default function AnimePage({ params }: DetailAnimePageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
-    null
-  );
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    params.then(setResolvedParams);
-    setMounted(true);
-  }, [params]);
-
-  const { data, error, isLoading } = useSWR<OngoingAnimeData>(
-    mounted && resolvedParams
-      ? `${BaseUrl}/api/anime/ongoing-anime/${resolvedParams.slug}`
-      : null,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 0,
-      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
-    }
-  );
-
-  if (!mounted || !resolvedParams) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (!data) {
     return (
       <main className='p-6'>
         <h1 className='text-2xl font-bold mt-8 mb-4'>Error Loading Data</h1>
         <p>Could not fetch data from the API. Please try again later.</p>
       </main>
-    );
-  }
-
-  if (isLoading || !data) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loading />
-      </div>
     );
   }
 

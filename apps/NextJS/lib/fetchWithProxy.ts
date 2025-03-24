@@ -42,7 +42,7 @@ export async function fetchWithProxy(
     try {
       const res = await fetch(slug, {
         headers: DEFAULT_HEADERS,
-        next: { revalidate: 360 },
+        cache: 'no-store',
       });
       if (res.ok) {
         const contentType = res.headers.get('content-type');

@@ -1,12 +1,7 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import useSWR from 'swr';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
-import Loading from '@/components/misc/loading';
 
 interface CompleteAnimeData {
   status: string;
@@ -36,59 +31,33 @@ interface Pagination {
   previous_page: number | null;
 }
 
-interface DetailAnimePageProps {
-  params: Promise<{ slug: string }>;
+async function getAnimeData(slug: string): Promise<CompleteAnimeData | null> {
+  try {
+    const res = await fetch(`${BaseUrl}/api/anime/complete-anime/${slug}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching anime data:', error);
+    return null;
+  }
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+export default async function AnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const data = await getAnimeData(slug);
 
-export default function AnimePage({ params }: DetailAnimePageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
-    null
-  );
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    params.then(setResolvedParams);
-    setMounted(true);
-  }, [params]);
-
-  const { data, error, isLoading } = useSWR<CompleteAnimeData>(
-    mounted && resolvedParams
-      ? `${BaseUrl}/api/anime/complete-anime/${resolvedParams.slug}`
-      : null,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 0,
-      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
-    }
-  );
-
-  if (!mounted || !resolvedParams) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (!data) {
     return (
       <main className='p-6'>
         <h1 className='text-2xl font-bold mt-8 mb-4'>Error Loading Data</h1>
         <p>Could not fetch data from the API. Please try again later.</p>
       </main>
-    );
-  }
-
-  if (isLoading || !data) {
-    return (
-      <div className='min-h-screen flex items-center justify-center overflow-hidden'>
-        <Loading />
-      </div>
     );
   }
 
@@ -117,7 +86,6 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       {pagination.has_previous_page && pagination.previous_page !== null && (
         <div className='text-2xl font-bold mt-8 mb-4'>
           <Link
-            scroll
             href={`/anime/complete-anime/${pagination.previous_page}`}
             className='text-blue-600 hover:underline'
           >
@@ -128,7 +96,6 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       {pagination.has_next_page && pagination.next_page !== null && (
         <div className='text-2xl font-bold mt-8 mb-4'>
           <Link
-            scroll
             href={`/anime/complete-anime/${pagination.next_page}`}
             className='text-blue-600 hover:underline'
           >

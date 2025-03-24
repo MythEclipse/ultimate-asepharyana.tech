@@ -1,16 +1,8 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import useSWR from 'swr';
+import { notFound } from 'next/navigation';
 import AnimeGrid from '@/components/card/AnimeGrid2a';
 import Link from 'next/link';
 import ButtonA from '@/components/button/ScrollButton';
-import Loading from '@/components/misc/loading';
-
-interface OngoingAnimeData {
-  status: string;
-  data: Anime[];
-  pagination: Pagination;
-}
+import { BaseUrl } from '@/lib/url';
 
 interface Anime {
   title: string;
@@ -33,54 +25,36 @@ interface Pagination {
   previous_page: number | null;
 }
 
-interface DetailAnimePageProps {
-  params: Promise<{ slug: string }>;
+interface OngoingAnimeData {
+  status: string;
+  data: Anime[];
+  pagination: Pagination;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+async function getAnimeData(slug: string): Promise<OngoingAnimeData | null> {
+  try {
+    const res = await fetch(`${BaseUrl}/api/anime2/ongoing-anime/${slug}`, {
+      cache: 'no-store',
+    });
 
-export default function AnimePage({ params }: DetailAnimePageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
-    null
-  );
+    if (!res.ok) return null;
 
-  useEffect(() => {
-    params.then(setResolvedParams);
-  }, [params]);
-
-  const { data, error } = useSWR<OngoingAnimeData>(
-    resolvedParams ? `/api/anime2/ongoing-anime/${resolvedParams.slug}` : null,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 0,
-      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
-    }
-  );
-
-  if (error) {
-    console.error('Failed to fetch data:', error);
-    return (
-      <main className='p-6'>
-        <h1 className='text-2xl font-bold mt-8 mb-4'>Error Loading Data</h1>
-        <p>Could not fetch data from the API. Please try again later.</p>
-      </main>
-    );
+    return res.json();
+  } catch {
+    return null;
   }
+}
 
-  if (!data) {
-    return <Loading />;
-  }
+export default async function AnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const data = await getAnimeData(slug);
 
-  if (!Array.isArray(data.data)) {
-    console.error('Expected OngoingAnimeData.data to be an array');
-    return (
-      <main className='p-6'>
-        <h1 className='text-2xl font-bold mt-8 mb-4'>No Data Available</h1>
-      </main>
-    );
+  if (!data || !Array.isArray(data.data)) {
+    notFound();
   }
 
   return (
@@ -94,30 +68,25 @@ export default function AnimePage({ params }: DetailAnimePageProps) {
   );
 }
 
-const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
+function PaginationComponent({ pagination }: { pagination: Pagination }) {
   return (
     <div className='flex justify-between mt-8'>
       {pagination.has_previous_page && pagination.previous_page !== null && (
-        <div className='text-2xl font-bold mt-8 mb-4'>
-          <Link
-            scroll
-            href={`/anime2/ongoing-anime/${pagination.previous_page}`}
-            className='text-blue-600 hover:underline'
-          >
-            <ButtonA>Previous</ButtonA>
-          </Link>
-        </div>
+        <Link
+          href={`/anime2/ongoing-anime/${pagination.previous_page}`}
+          className='text-blue-600 hover:underline'
+        >
+          <ButtonA>Previous</ButtonA>
+        </Link>
       )}
       {pagination.has_next_page && pagination.next_page !== null && (
-        <div className='text-2xl font-bold mt-8 mb-4'>
-          <Link
-            href={`/anime2/ongoing-anime/${pagination.next_page}`}
-            className='text-blue-600 hover:underline'
-          >
-            <ButtonA>Next</ButtonA>
-          </Link>
-        </div>
+        <Link
+          href={`/anime2/ongoing-anime/${pagination.next_page}`}
+          className='text-blue-600 hover:underline'
+        >
+          <ButtonA>Next</ButtonA>
+        </Link>
       )}
     </div>
   );
-};
+}

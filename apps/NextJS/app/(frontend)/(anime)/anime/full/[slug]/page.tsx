@@ -1,13 +1,8 @@
-'use client';
-
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
-import useSWR from 'swr';
 import { BaseUrl } from '@/lib/url';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import ButtonA from '@/components/button/ScrollButton';
 import ClientPlayer from '@/components/misc/ClientPlayer';
-import Loading from '@/components/misc/loading';
 
 interface AnimeResponse {
   status: string;
@@ -35,59 +30,32 @@ interface EpisodeInfo {
   slug: string;
 }
 
-interface DetailAnimePageProps {
-  params: Promise<{ slug: string }>;
+async function getAnimeData(slug: string): Promise<AnimeResponse | null> {
+  try {
+    const res = await fetch(`${BaseUrl}/api/anime/full/${slug}`, {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+export default async function DetailAnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const data = await getAnimeData(slug);
 
-export default function DetailAnimePage({ params }: DetailAnimePageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
-    null
-  );
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    params.then((res) => {
-      setResolvedParams(res);
-      setMounted(true);
-    });
-  }, [params]);
-
-  const { data, error, isLoading } = useSWR<AnimeResponse>(
-    mounted && resolvedParams
-      ? `${BaseUrl}/api/anime/full/${resolvedParams.slug}`
-      : null,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 0,
-      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
-    }
-  );
-
-  if (!mounted || !resolvedParams) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loading />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (!data) {
     return (
       <div className='p-4 max-w-screen-md mx-auto'>
         <p className='text-red-500'>Error loading anime details</p>
-      </div>
-    );
-  }
-
-  if (isLoading || !data) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loading />
       </div>
     );
   }

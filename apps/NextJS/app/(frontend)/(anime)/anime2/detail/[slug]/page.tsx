@@ -1,7 +1,4 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import useSWR from 'swr';
+import React from 'react';
 import Image from 'next/image';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
@@ -50,64 +47,47 @@ interface AnimeData {
   };
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+async function getData(slug: string) {
+  const res = await fetch(`http://localhost:3000/api/anime2/detail/${slug}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('Gagal memuat data anime');
+  return res.json();
+}
 
-export default function DetailAnimePage({
+const processDownloads = (downloads: DownloadResolution[]) => {
+  const episodes: Record<string, DownloadResolution[]> = {};
+
+  downloads.forEach((download) => {
+    let episodeNumber = 'unknown';
+    for (const link of download.links) {
+      const episodeMatch = link.url.match(/(?:BD|EP|_)(\d+)(?:_|\.|$)/i);
+      if (episodeMatch) {
+        episodeNumber = episodeMatch[1];
+        break;
+      }
+    }
+    episodes[episodeNumber] = episodes[episodeNumber] || [];
+    episodes[episodeNumber].push(download);
+  });
+
+  return episodes;
+};
+
+export default async function DetailAnimePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
-    null
-  );
-
-  useEffect(() => {
-    params.then(setResolvedParams);
-  }, [params]);
-
-  const { data: anime, error } = useSWR<AnimeData>(
-    resolvedParams ? ` /api/anime2/detail/${resolvedParams.slug}` : null,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 0,
-      compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Hindari infinite loop
-    }
-  );
-
-  const processDownloads = (downloads: DownloadResolution[]) => {
-    const episodes: Record<string, DownloadResolution[]> = {};
-
-    downloads.forEach((download) => {
-      let episodeNumber = 'unknown';
-
-      // Cari di semua link untuk menemukan nomor episode
-      for (const link of download.links) {
-        const url = link.url;
-
-        // Regex yang diperbaiki untuk menangkap berbagai format episode
-        const episodeMatch = url.match(/(?:BD|EP|_)(\d+)(?:_|\.|$)/i);
-
-        if (episodeMatch) {
-          episodeNumber = episodeMatch[1];
-          break; // Berhenti jika sudah menemukan
-        }
-      }
-
-      if (!episodes[episodeNumber]) {
-        episodes[episodeNumber] = [];
-      }
-      episodes[episodeNumber].push(download);
-    });
-
-    return episodes;
-  };
-
-  if (error)
+  let anime: AnimeData;
+  try {
+    const { slug } = await params;
+    anime = await getData(slug);
+  } catch {
     return <p className='text-red-500 text-center'>Gagal memuat data anime</p>;
-  if (!anime || !resolvedParams) return <Loading />;
+  }
+
+  if (!anime.data) return <Loading />;
 
   const groupedDownloads = processDownloads(anime.data.downloads);
 
