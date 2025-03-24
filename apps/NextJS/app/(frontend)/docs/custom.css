@@ -1,9 +1,39 @@
-
-/* Dark mode styling */
-@media (prefers-color-scheme: dark) {
-  .scheme-container,
-.schemes-server-container,
-.servers {
-  background-color: transparent !important; /* Background transparan */
+/* app/api-docs/custom.css */
+.api-docs-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  background-color: #f8fafc;
+  min-height: 100vh;
 }
+
+.error-container {
+  text-align: center;
+  padding: 4rem;
+  color: #dc3545;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin: 2rem;
+}
+
+.error-container h1 {
+  margin-bottom: 1rem;
+}
+
+.swagger-ui .information-container {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+
+.swagger-ui .opblock {
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.swagger-ui .opblock .opblock-summary {
+  padding: 0.5rem 1rem;
 }

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
 import Loading from './loading';
+import { BaseUrl } from '@/lib/url';
 
 interface Genre {
   name: string;
@@ -48,7 +49,7 @@ interface AnimeData {
 }
 
 async function getData(slug: string) {
-  const res = await fetch(`http://localhost:3000/api/anime2/detail/${slug}`, {
+  const res = await fetch(`${BaseUrl}/api/anime2/detail/${slug}`, {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('Gagal memuat data anime');
