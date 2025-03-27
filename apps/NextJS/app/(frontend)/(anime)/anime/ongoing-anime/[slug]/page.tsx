@@ -28,7 +28,6 @@ interface Pagination {
   next_page: number | null;
   has_previous_page: boolean;
   previous_page: number | null;
-  total_pages: number; // Added property
 }
 
 async function getOngoingAnime(slug: string): Promise<OngoingAnimeData | null> {
@@ -121,7 +120,7 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       )}
 
       <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-        Page {pagination.current_page} of {pagination.total_pages}
+        Page {pagination.current_page} of {pagination.last_visible_page}
       </span>
 
       {pagination.has_next_page && pagination.next_page !== null && (

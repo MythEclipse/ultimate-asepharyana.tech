@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use } from 'react';
 import useSWR from 'swr';
-import { BaseUrl } from '@/lib/url';
+import { PRODUCTION } from '@/lib/url';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BackgroundGradient } from '@/components/background/background-gradient';
@@ -120,10 +120,14 @@ export default function DetailAnimePage({
 
   const fallback = 'default.png';
   const imageSources = [
-    anime.data.poster?.trim() ? anime.data.poster : null,
-    `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster || fallback)}`,
-    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(anime.data.poster || fallback)}`,
-  ].filter(Boolean) as string[];
+    anime.data.poster && anime.data.poster.trim() ? anime.data.poster : fallback,
+    anime.data.poster && anime.data.poster.trim()
+      ? `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster)}`
+      : null,
+    anime.data.poster && anime.data.poster.trim()
+      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(anime.data.poster)}`
+      : null,
+  ].filter((src) => src && src.trim()) as string[];
 
   const handleError = () => {
     if (currentIndex < imageSources.length - 1) {

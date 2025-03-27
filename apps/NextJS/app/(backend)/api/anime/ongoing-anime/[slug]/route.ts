@@ -54,9 +54,6 @@ function parseAnimePage(html: string, slug: string) {
       $('.pagination .next').length > 0 ? parseInt(slug, 10) + 1 : null,
     has_previous_page: parseInt(slug, 10) > 1,
     previous_page: parseInt(slug, 10) > 1 ? parseInt(slug, 10) - 1 : null,
-    total_pages: parseInt(
-      $('.pagenavix .page-numbers:not(.next):last').text().trim()
-    ) || 1,
   };
 
   return { animeList, pagination };

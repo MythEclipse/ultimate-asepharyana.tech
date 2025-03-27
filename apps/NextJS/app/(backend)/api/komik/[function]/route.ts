@@ -23,8 +23,16 @@ interface MangaData {
   score: string;
   type: string;
   komik_id: string;
+  pagination?: Pagination;
 }
-
+interface Pagination {
+  current_page: number;
+  last_visible_page: number;
+  has_next_page: boolean;
+  next_page: number | null;
+  has_previous_page: boolean;
+  previous_page: number | null;
+}
 interface MangaDetail {
   title: string;
   alternativeTitle: string;
@@ -265,10 +273,23 @@ export const GET = async (req: Request) => {
       }
       const body = await fetchWithProxyWrapper(apiUrl);
       const $ = cheerio.load(body);
+      const currentPage = parseInt($('.pagination .current').text().trim()) || 1;
+      const totalPages = parseInt(
+        $('.pagination a:not(.next):last').text().trim()
+      ) || currentPage;
+
+      const pagination: Pagination = {
+        current_page: currentPage,
+        last_visible_page: totalPages,
+        has_next_page: $('.pagination .next').length > 0,
+        next_page: currentPage < totalPages ? currentPage + 1 : null,
+        has_previous_page: $('.pagination .prev').length > 0,
+        previous_page: currentPage > 1 ? currentPage - 1 : null,
+      };
+
       data = {
         data: parseMangaData(body),
-        prevPage: $('.prev').length > 0,
-        nextPage: $('.next').length > 0,
+        pagination,
       };
     }
 

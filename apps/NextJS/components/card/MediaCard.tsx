@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Link from 'next/link';
 import Image from 'next/image';
-import { BaseUrl } from '@/lib/url';
+import { PRODUCTION } from '@/lib/url';
 
 interface CardProps {
   title: string;
@@ -31,9 +31,8 @@ const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
 
   return (
     <span
-      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${
-        typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
-      }`}
+      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
+        }`}
     >
       {label}
     </span>
@@ -55,12 +54,16 @@ export default function CardA({
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const fallback = 'default.png';
+  const fallback = 'https://asepharyana.cloud/default.png';
   const imageSources = [
-    imageUrl && imageUrl.trim() !== '' ? imageUrl : null,
-    `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl || fallback)}`,
-    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl || fallback)}`,
-  ].filter(Boolean) as string[];
+    imageUrl && imageUrl.trim() ? imageUrl : fallback,
+    imageUrl && imageUrl.trim()
+      ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
+      : null,
+    imageUrl && imageUrl.trim()
+      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
+      : null,
+  ].filter((src) => src && src.trim()) as string[];
 
   const handleError = () => {
     if (currentIndex < imageSources.length - 1) {
@@ -71,19 +74,31 @@ export default function CardA({
   return (
     <Link href={linkUrl}>
       <div className='cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:rotate-1 active:scale-95'>
-        <ShadcnCard className='w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl bg-white dark:bg-black overflow-hidden transform transition-transform duration-300 hover:shadow-2xl text-blue-500 bg-transparent border border-blue-500 rounded-xl shadow-lg shadow-blue-500/50 hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 hover:ring-4 hover:ring-gradient-to-r hover:from-blue-400 hover:via-purple-500 hover:to-pink-500'>
+        <ShadcnCard className='w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl bg-white dark:bg-black overflow-hidden transform transition-transform duration-300 hover:shadow-2xl text-blue-500 border border-blue-500 rounded-xl shadow-lg shadow-blue-500/50 hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 hover:ring-4 hover:ring-gradient-to-r hover:from-blue-400 hover:via-purple-500 hover:to-pink-500'>
           <div className='relative h-48 sm:h-56 md:h-64 lg:h-72'>
             {isLoading && <SkeletonLoader />}
-            <Image
-              src={imageSources[currentIndex]}
-              alt={title}
-              fill
-              sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
-              className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
-              onLoad={() => setIsLoading(false)}
-              onError={handleError}
-              unoptimized
-            />
+            {imageSources[currentIndex] ? (
+              <Image
+                src={imageSources[currentIndex]}
+                alt={title}
+                fill
+                sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
+                onLoad={() => setIsLoading(false)}
+                onError={handleError}
+                unoptimized
+              />
+            ) : (
+              <Image
+                src={fallback}
+                alt="Default Image"
+                fill
+                sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
+                onLoad={() => setIsLoading(false)}
+                unoptimized
+              />
+            )}
             <TypeLabel type={type} badge={badge} />
           </div>
           <div className='p-4'>
