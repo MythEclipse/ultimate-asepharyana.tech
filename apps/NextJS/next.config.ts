@@ -1,4 +1,5 @@
 import { NextConfig } from 'next';
+import withFlowbiteReact from "flowbite-react/plugin/nextjs";
 
 const nextConfig: NextConfig = {
   output: process.env.DOCKER === 'enable' ? 'standalone' : undefined,
@@ -70,4 +71,4 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@asepharyana/ui'],
 };
 
-export default nextConfig;
+export default withFlowbiteReact(nextConfig);

@@ -1,11 +1,12 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { Flowbite } from 'flowbite-react';
+// import { Flowbite } from 'flowbite-react';
 import './globals.css';
 import NavbarWrapper from '@/components/navbar/NavbarWrapper';
 import SessionWrapper from '@/components/misc/SessionWrapper';
 // import ContextAppProvider from '@/components/ContextApp';
+// import { ThemeModeScript } from "flowbite-react";
 import { ViewTransitions } from 'next-view-transitions';
 import { PRODUCTION } from '@/lib/url';
 import { ThemeProvider } from '@/components/misc/theme-provider';
@@ -54,8 +55,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Flowbite>
-      {/* <ContextAppProvider> */}
       <SessionWrapper>
         <ViewTransitions>
           <html lang='id' className={inter.className} suppressHydrationWarning>
@@ -65,6 +64,7 @@ export default async function RootLayout({
               <link rel='icon' href='/favicon.ico' />
               <link rel='apple-touch-icon' href='/logo.png' />
               <meta name='theme-color' content='#000000' />
+              {/* <ThemeModeScript /> */}
             </head>
             <body className='h-screen bg-white dark:bg-black'>
               <ThemeProvider
@@ -86,7 +86,5 @@ export default async function RootLayout({
           </html>
         </ViewTransitions>
       </SessionWrapper>
-      {/* </ContextAppProvider> */}
-    </Flowbite>
   );
 }
