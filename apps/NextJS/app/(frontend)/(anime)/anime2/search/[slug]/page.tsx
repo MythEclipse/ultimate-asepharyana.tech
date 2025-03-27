@@ -66,25 +66,21 @@ const SearchPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   if (!searchResults) return <Loading />;
 
   return (
-    <main className="min-h-screen p-6 bg-background dark:bg-dark">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-            <Search className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+    <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+      <div className='max-w-7xl mx-auto space-y-8'>
+        <div className='flex items-center gap-4'>
+          <div className='p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl'>
+            <Search className='w-8 h-8 text-purple-600 dark:text-purple-400' />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className='text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'>
             Search Results
           </h1>
         </div>
 
-        <SearchForm
-          classname="w-full"
-          initialQuery={query}
-          baseUrl="/anime"
-        />
+        <SearchForm classname='w-full' initialQuery={query} baseUrl='/anime' />
 
         {searchResults.data.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'>
             {searchResults.data.map((anime) => (
               <CardA
                 key={anime.slug}
@@ -96,9 +92,9 @@ const SearchPage = ({ params }: { params: Promise<{ slug: string }> }) => {
             ))}
           </div>
         ) : (
-          <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
-            <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-medium text-blue-800 dark:text-blue-200">
+          <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
+            <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+            <h2 className='text-xl font-medium text-blue-800 dark:text-blue-200'>
               No results found for &quot;{query}&quot;
             </h2>
           </div>

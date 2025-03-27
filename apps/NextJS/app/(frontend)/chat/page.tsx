@@ -168,34 +168,36 @@ export default function ChatClient() {
   }, [input, file, status.sending, session]);
 
   return (
-    <div className="mx-auto p-4 max-w-3xl h-screen flex flex-col">
-      <div className="flex flex-col gap-4 flex-1">
+    <div className='mx-auto p-4 max-w-3xl h-screen flex flex-col'>
+      <div className='flex flex-col gap-4 flex-1'>
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className='text-center space-y-2'>
+          <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
             Community Chat
           </h1>
-          
+
           {/* Status Connection */}
-          <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
-            <div className={`p-1.5 rounded-full ${status.connected ? 'bg-green-400' : 'bg-red-400'}`}>
+          <div className='flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800'>
+            <div
+              className={`p-1.5 rounded-full ${status.connected ? 'bg-green-400' : 'bg-red-400'}`}
+            >
               {status.connected ? (
-                <Wifi className="w-4 h-4 text-white" />
+                <Wifi className='w-4 h-4 text-white' />
               ) : (
-                <WifiOff className="w-4 h-4 text-white" />
+                <WifiOff className='w-4 h-4 text-white' />
               )}
             </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+            <span className='text-sm font-medium text-gray-600 dark:text-gray-300'>
               {status.connected ? 'Connected to chat' : 'Connecting...'}
             </span>
           </div>
         </div>
 
         {/* Chat Messages */}
-        <Card 
+        <Card
         // className="flex-1 flex flex-col overflow-hidden"
         >
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className='flex-1 overflow-y-auto p-4 space-y-4'>
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -207,16 +209,16 @@ export default function ChatClient() {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+          <div className='p-4 border-t border-gray-200 dark:border-gray-700 space-y-2'>
             {error && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-                <AlertCircle className="w-5 h-5" />
-                <span className="text-sm">{error}</span>
+              <div className='flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg'>
+                <AlertCircle className='w-5 h-5' />
+                <span className='text-sm'>{error}</span>
               </div>
             )}
 
-            <div className="flex flex-col md:flex-row gap-2 items-stretch">
-              <div className="relative flex-1">
+            <div className='flex flex-col md:flex-row gap-2 items-stretch'>
+              <div className='relative flex-1'>
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -226,21 +228,21 @@ export default function ChatClient() {
                       sendMessage();
                     }
                   }}
-                  placeholder="Type your message..."
-                  className="min-h-[100px] md:min-h-[60px] pr-16 resize-none"
+                  placeholder='Type your message...'
+                  className='min-h-[100px] md:min-h-[60px] pr-16 resize-none'
                   rows={1}
                   disabled={!status.connected}
                 />
-                <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+                <div className='absolute right-2 bottom-2 flex items-center gap-1.5'>
                   <input
-                    type="file"
+                    type='file'
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="file-input"
+                    className='hidden'
+                    id='file-input'
                     disabled={!status.connected || status.uploading}
                   />
                   <label
-                    htmlFor="file-input"
+                    htmlFor='file-input'
                     className={`p-1.5 rounded-md cursor-pointer ${
                       status.uploading
                         ? 'text-gray-400'
@@ -248,9 +250,9 @@ export default function ChatClient() {
                     }`}
                   >
                     {status.uploading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className='w-5 h-5 animate-spin' />
                     ) : (
-                      <Paperclip className="w-5 h-5" />
+                      <Paperclip className='w-5 h-5' />
                     )}
                   </label>
                 </div>
@@ -258,11 +260,13 @@ export default function ChatClient() {
 
               <Button
                 onClick={sendMessage}
-                disabled={!status.connected || status.sending || status.uploading}
-                className="h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+                disabled={
+                  !status.connected || status.sending || status.uploading
+                }
+                className='h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg'
               >
                 {status.sending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className='w-5 h-5 animate-spin' />
                 ) : (
                   'Send'
                 )}
@@ -275,7 +279,13 @@ export default function ChatClient() {
   );
 }
 
-function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
+function MessageBubble({
+  message,
+  isOwn,
+}: {
+  message: ChatMessage;
+  isOwn: boolean;
+}) {
   const safeTimestamp = validateTimestamp(message.timestamp);
 
   return (
@@ -285,18 +295,28 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
           isOwn ? 'flex-row-reverse' : 'flex-row'
         }`}
       >
-        <div className="relative">
+        <div className='relative'>
           <Image
             src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
             alt={message.user}
             width={40}
             height={40}
-            className="rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
+            className='rounded-full border-2 border-white dark:border-gray-800 shadow-sm'
           />
           {message.role === 'admin' && (
-            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div className='absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full'>
+              <svg
+                className='w-4 h-4'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M5 13l4 4L19 7'
+                />
               </svg>
             </div>
           )}
@@ -309,8 +329,8 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
               : 'bg-gray-100 dark:bg-gray-800'
           }`}
         >
-          <div className="flex items-center gap-3 mb-2">
-            <span className="font-medium text-sm">
+          <div className='flex items-center gap-3 mb-2'>
+            <span className='font-medium text-sm'>
               {isOwn ? 'You' : message.user}
             </span>
             <span
@@ -321,19 +341,21 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
               {format(new Date(safeTimestamp), 'HH:mm')}
             </span>
           </div>
-          
+
           {message.text && (
-            <p className="text-sm leading-relaxed break-words">{message.text}</p>
+            <p className='text-sm leading-relaxed break-words'>
+              {message.text}
+            </p>
           )}
-          
+
           {message.imageMessage && (
-            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className='mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700'>
               <Image
                 src={message.imageMessage}
-                alt="Attachment"
+                alt='Attachment'
                 width={240}
                 height={135}
-                className="w-full h-auto object-cover"
+                className='w-full h-auto object-cover'
               />
             </div>
           )}

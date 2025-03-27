@@ -31,8 +31,9 @@ const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
 
   return (
     <span
-      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
-        }`}
+      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${
+        typeColors[label as keyof typeof typeColors] || 'bg-gray-500'
+      }`}
     >
       {label}
     </span>
@@ -91,7 +92,7 @@ export default function CardA({
             ) : (
               <Image
                 src={fallback}
-                alt="Default Image"
+                alt='Default Image'
                 fill
                 sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
                 className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'

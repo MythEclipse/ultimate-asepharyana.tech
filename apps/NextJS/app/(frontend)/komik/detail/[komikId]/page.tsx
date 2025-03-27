@@ -8,10 +8,19 @@ import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
 import Loading from './loading';
 import { useRouter } from 'next/navigation';
-import { ArrowRightIcon, BookmarkIcon, BookOpenIcon, CalendarIcon, CircleDot, FileTextIcon, StarIcon, TypeIcon, UserIcon } from 'lucide-react';
+import {
+  ArrowRightIcon,
+  BookmarkIcon,
+  BookOpenIcon,
+  CalendarIcon,
+  CircleDot,
+  FileTextIcon,
+  StarIcon,
+  TypeIcon,
+  UserIcon,
+} from 'lucide-react';
 import { PRODUCTION } from '@/lib/url';
 export const dynamic = 'force-dynamic';
-
 
 interface Chapter {
   chapter: string;
@@ -145,10 +154,11 @@ export default function DetailMangaPage({
 
               <button
                 onClick={handleBookmark}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${bookmarked
-                  ? 'bg-red-500/90 hover:bg-red-600 text-white'
-                  : 'bg-blue-500/90 hover:bg-blue-600 text-white'
-                  }`}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                  bookmarked
+                    ? 'bg-red-500/90 hover:bg-red-600 text-white'
+                    : 'bg-blue-500/90 hover:bg-blue-600 text-white'
+                }`}
               >
                 <BookmarkIcon className='w-5 h-5' />
                 {bookmarked ? 'Bookmarked' : 'Bookmark'}
@@ -164,11 +174,31 @@ export default function DetailMangaPage({
               {/* Metadata Grid */}
               <div className='grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
                 {[
-                  { label: 'Score', value: manga.score, icon: <StarIcon className="w-5 h-5 text-amber-500" /> },
-                  { label: 'Type', value: manga.type, icon: <TypeIcon className="w-5 h-5 text-blue-500" /> },
-                  { label: 'Status', value: manga.status, icon: <CircleDot className="w-5 h-5 text-green-500" /> },
-                  { label: 'Released', value: manga.releaseDate, icon: <CalendarIcon className="w-5 h-5 text-red-500" /> },
-                  { label: 'Author', value: manga.author, icon: <UserIcon className="w-5 h-5 text-purple-500" /> },
+                  {
+                    label: 'Score',
+                    value: manga.score,
+                    icon: <StarIcon className='w-5 h-5 text-amber-500' />,
+                  },
+                  {
+                    label: 'Type',
+                    value: manga.type,
+                    icon: <TypeIcon className='w-5 h-5 text-blue-500' />,
+                  },
+                  {
+                    label: 'Status',
+                    value: manga.status,
+                    icon: <CircleDot className='w-5 h-5 text-green-500' />,
+                  },
+                  {
+                    label: 'Released',
+                    value: manga.releaseDate,
+                    icon: <CalendarIcon className='w-5 h-5 text-red-500' />,
+                  },
+                  {
+                    label: 'Author',
+                    value: manga.author,
+                    icon: <UserIcon className='w-5 h-5 text-purple-500' />,
+                  },
                 ].map((detail) => (
                   <div key={detail.label} className='flex items-center gap-3'>
                     <span className='p-2 bg-white dark:bg-zinc-700 rounded-lg'>
@@ -216,7 +246,9 @@ export default function DetailMangaPage({
                     manga.chapters.map((chapter) => (
                       <ButtonA
                         key={chapter.chapter_id}
-                        onClick={() => router.push(`/komik/chapter/${chapter.chapter_id}`)}
+                        onClick={() =>
+                          router.push(`/komik/chapter/${chapter.chapter_id}`)
+                        }
                         className='group flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm'
                       >
                         <span className='font-medium text-zinc-700 dark:text-zinc-200'>
@@ -265,6 +297,6 @@ export default function DetailMangaPage({
           </div>
         </BackgroundGradient>
       </div>
-    </main >
+    </main>
   );
 }

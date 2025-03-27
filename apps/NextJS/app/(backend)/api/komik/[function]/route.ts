@@ -273,10 +273,11 @@ export const GET = async (req: Request) => {
       }
       const body = await fetchWithProxyWrapper(apiUrl);
       const $ = cheerio.load(body);
-      const currentPage = parseInt($('.pagination .current').text().trim()) || 1;
-      const totalPages = parseInt(
-        $('.pagination a:not(.next):last').text().trim()
-      ) || currentPage;
+      const currentPage =
+        parseInt($('.pagination .current').text().trim()) || 1;
+      const totalPages =
+        parseInt($('.pagination a:not(.next):last').text().trim()) ||
+        currentPage;
 
       const pagination: Pagination = {
         current_page: currentPage,

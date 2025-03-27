@@ -37,7 +37,8 @@ function parseAnimePage(html: string, slug: string) {
   const pagination = {
     current_page: parseInt(slug, 10) || 1,
     last_visible_page:
-      parseInt($('.pagenavix .page-numbers:not(.next):last').text().trim()) || 1,
+      parseInt($('.pagenavix .page-numbers:not(.next):last').text().trim()) ||
+      1,
     has_next_page: $('.pagenavix .next.page-numbers').length > 0,
     next_page:
       $('.pagenavix .next.page-numbers').length > 0

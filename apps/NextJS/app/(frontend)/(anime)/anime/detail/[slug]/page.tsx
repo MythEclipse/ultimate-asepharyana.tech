@@ -17,7 +17,7 @@ import {
   Video,
   ArrowRight,
   Film,
-  Popcorn
+  Popcorn,
 } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
@@ -120,7 +120,9 @@ export default function DetailAnimePage({
 
   const fallback = 'default.png';
   const imageSources = [
-    anime.data.poster && anime.data.poster.trim() ? anime.data.poster : fallback,
+    anime.data.poster && anime.data.poster.trim()
+      ? anime.data.poster
+      : fallback,
     anime.data.poster && anime.data.poster.trim()
       ? `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster)}`
       : null,
@@ -157,10 +159,11 @@ export default function DetailAnimePage({
 
               <button
                 onClick={handleBookmark}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${bookmarked
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
+                  bookmarked
                     ? 'bg-red-500/90 hover:bg-red-600 text-white shadow-md'
                     : 'bg-green-500/90 hover:bg-green-600 text-white shadow-md'
-                  }`}
+                }`}
               >
                 <Bookmark className='w-5 h-5' />
                 {bookmarked ? 'Bookmarked' : 'Bookmark Now'}
@@ -176,10 +179,26 @@ export default function DetailAnimePage({
               {/* Metadata Grid */}
               <div className='grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
                 {[
-                  { label: 'Type', value: anime.data.type, icon: <Type className="w-5 h-5 text-blue-500" /> },
-                  { label: 'Status', value: anime.data.status, icon: <CircleDot className="w-5 h-5 text-green-500" /> },
-                  { label: 'Released', value: anime.data.release_date, icon: <Calendar className="w-5 h-5 text-red-500" /> },
-                  { label: 'Studio', value: anime.data.studio, icon: <Video className="w-5 h-5 text-purple-500" /> },
+                  {
+                    label: 'Type',
+                    value: anime.data.type,
+                    icon: <Type className='w-5 h-5 text-blue-500' />,
+                  },
+                  {
+                    label: 'Status',
+                    value: anime.data.status,
+                    icon: <CircleDot className='w-5 h-5 text-green-500' />,
+                  },
+                  {
+                    label: 'Released',
+                    value: anime.data.release_date,
+                    icon: <Calendar className='w-5 h-5 text-red-500' />,
+                  },
+                  {
+                    label: 'Studio',
+                    value: anime.data.studio,
+                    icon: <Video className='w-5 h-5 text-purple-500' />,
+                  },
                 ].map((detail) => (
                   <div key={detail.label} className='flex items-center gap-3'>
                     <span className='p-2 bg-white dark:bg-zinc-700 rounded-lg'>
@@ -218,34 +237,37 @@ export default function DetailAnimePage({
               </div>
 
               {/* Episodes Section */}
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <div className='space-y-4'>
+                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
                   Episodes
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1'>
                   {episodes.length > 0 ? (
                     episodes.map((episode) => {
-                      const episodeNumber = episode.episode.match(/\d+/)?.[0] || episode.episode;
+                      const episodeNumber =
+                        episode.episode.match(/\d+/)?.[0] || episode.episode;
                       return (
-                        <Link key={episode.slug} href={`/anime/full/${episode.slug}`}>
-                          <ButtonA className="group flex items-center justify-between p-6 bg-white dark:bg-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm w-full">
-                            <span className="font-medium text-zinc-700 dark:text-zinc-200 truncate text-lg">
+                        <Link
+                          key={episode.slug}
+                          href={`/anime/full/${episode.slug}`}
+                        >
+                          <ButtonA className='group flex items-center justify-between p-6 bg-white dark:bg-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm w-full'>
+                            <span className='font-medium text-zinc-700 dark:text-zinc-200 truncate text-lg'>
                               Episode {episodeNumber}
                             </span>
-                            <ArrowRight className="w-6 h-6 text-zinc-400 group-hover:text-blue-500 transition-colors" />
+                            <ArrowRight className='w-6 h-6 text-zinc-400 group-hover:text-blue-500 transition-colors' />
                           </ButtonA>
                         </Link>
                       );
                     })
                   ) : (
-                    <div className="col-span-full py-6 text-center text-zinc-500 dark:text-zinc-400">
-                      <Film className="mx-auto h-12 w-12 mb-3" />
+                    <div className='col-span-full py-6 text-center text-zinc-500 dark:text-zinc-400'>
+                      <Film className='mx-auto h-12 w-12 mb-3' />
                       No episodes available
                     </div>
                   )}
                 </div>
               </div>
-
 
               {/* Recommendations Section */}
               <div className='space-y-4'>
