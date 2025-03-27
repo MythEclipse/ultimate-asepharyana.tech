@@ -57,7 +57,7 @@ export default function DetailAnimePage({
   const { slug } = use(params);
 
   const { data: anime, error } = useSWR<AnimeData>(
-    slug ? `${BaseUrl}/api/anime/detail/${slug}` : null,
+    slug ? `/api/anime/detail/${slug}` : null,
     fetcher,
     {
       revalidateIfStale: false,
