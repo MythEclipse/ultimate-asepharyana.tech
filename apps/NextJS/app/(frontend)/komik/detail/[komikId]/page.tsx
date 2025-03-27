@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { BaseUrl } from '@/lib/url';
 import Image from 'next/image';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
@@ -55,7 +54,7 @@ export default function DetailMangaPage({
 
   const { data: manga, error } = useSWR<MangaData>(
     resolvedParams
-      ? `${BaseUrl}/api/komik/detail?komik_id=${resolvedParams.komikId}`
+      ? `/api/komik/detail?komik_id=${resolvedParams.komikId}`
       : null,
     fetcher
   );
