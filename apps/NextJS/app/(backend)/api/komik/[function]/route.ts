@@ -140,9 +140,8 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
     });
 
     // Release Date (if available, assuming it's in the same location as before)
-    const releaseDate = $('#chapter_list > ul > li:last-child > span.dt')
-    .text()
-    .trim() || ''; // Not provided in the new HTML, keep empty or fetch from another source
+    const releaseDate =
+      $('#chapter_list > ul > li:last-child > span.dt').text().trim() || ''; // Not provided in the new HTML, keep empty or fetch from another source
 
     // Author
     const author = $(".spe span:contains('Pengarang:')")
@@ -155,17 +154,11 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
 
     // Total Chapter (if available, otherwise remove this field)
     const totalChapter =
-      $(
-      '#chapter_list > ul > li:nth-child(1) > span.lchx'
-      )
-      .text()
-      .trim() || '';
+      $('#chapter_list > ul > li:nth-child(1) > span.lchx').text().trim() || '';
 
     // Updated On (if available, otherwise remove this field)
     const updatedOn =
-      $('#chapter_list > ul > li:nth-child(1) > span.dt')
-      .text()
-      .trim() || '';
+      $('#chapter_list > ul > li:nth-child(1) > span.dt').text().trim() || '';
 
     // Chapters list from the `#chapter_list` element
     const chapters: { chapter: string; date: string; chapter_id: string }[] =

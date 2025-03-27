@@ -1,5 +1,5 @@
 import { NextConfig } from 'next';
-import withFlowbiteReact from "flowbite-react/plugin/nextjs";
+import withFlowbiteReact from 'flowbite-react/plugin/nextjs';
 
 const nextConfig: NextConfig = {
   output: process.env.DOCKER === 'enable' ? 'standalone' : undefined,
@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     nextScriptWorkers: true,
     webpackMemoryOptimizations: true,
-
   },
   images: {
     remotePatterns: [

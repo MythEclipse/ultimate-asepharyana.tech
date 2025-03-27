@@ -45,14 +45,18 @@ export default function DetailMangaPage({
 }: {
   params: Promise<{ komikId: string }>;
 }) {
-  const [resolvedParams, setResolvedParams] = useState<{ komikId: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{
+    komikId: string;
+  } | null>(null);
 
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
 
   const { data: manga, error } = useSWR<MangaData>(
-    resolvedParams ? `${BaseUrl}/api/komik/detail?komik_id=${resolvedParams.komikId}` : null,
+    resolvedParams
+      ? `${BaseUrl}/api/komik/detail?komik_id=${resolvedParams.komikId}`
+      : null,
     fetcher
   );
 
@@ -60,8 +64,14 @@ export default function DetailMangaPage({
 
   useEffect(() => {
     if (resolvedParams && typeof window !== 'undefined') {
-      const bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
-      setBookmarked(bookmarks.some((item: { slug: string }) => item.slug === resolvedParams.komikId));
+      const bookmarks = JSON.parse(
+        localStorage.getItem('bookmarks-komik') || '[]'
+      );
+      setBookmarked(
+        bookmarks.some(
+          (item: { slug: string }) => item.slug === resolvedParams.komikId
+        )
+      );
     }
   }, [resolvedParams]);
 
@@ -71,7 +81,9 @@ export default function DetailMangaPage({
     let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
 
     if (bookmarked) {
-      bookmarks = bookmarks.filter((item: { slug: string }) => item.slug !== resolvedParams.komikId);
+      bookmarks = bookmarks.filter(
+        (item: { slug: string }) => item.slug !== resolvedParams.komikId
+      );
     } else {
       bookmarks.push({
         slug: resolvedParams.komikId,
@@ -84,7 +96,10 @@ export default function DetailMangaPage({
     setBookmarked(!bookmarked);
   };
 
-  if (error) return <p className='text-red-500 text-center'>Failed to load manga data</p>;
+  if (error)
+    return (
+      <p className='text-red-500 text-center'>Failed to load manga data</p>
+    );
   if (!manga || !resolvedParams) return <Loading />;
 
   return (
@@ -103,7 +118,9 @@ export default function DetailMangaPage({
               />
             </div>
             <div className='w-full md:w-2/3 md:pl-6'>
-              <h1 className='text-3xl font-bold mb-4 text-primary-dark dark:text-primary'>{manga.title}</h1>
+              <h1 className='text-3xl font-bold mb-4 text-primary-dark dark:text-primary'>
+                {manga.title}
+              </h1>
               <button
                 onClick={handleBookmark}
                 className={`px-4 py-2 rounded text-white ${bookmarked ? 'bg-red-500' : 'bg-blue-500'}`}
@@ -124,7 +141,8 @@ export default function DetailMangaPage({
                 ))}
 
                 <p className='mb-4'>
-                  <strong>Genres:</strong> {manga.genres?.length ? manga.genres.join(', ') : 'N/A'}
+                  <strong>Genres:</strong>{' '}
+                  {manga.genres?.length ? manga.genres.join(', ') : 'N/A'}
                 </p>
                 <p className='mb-4'>
                   <strong>Description:</strong> {manga.description || 'N/A'}
@@ -132,7 +150,9 @@ export default function DetailMangaPage({
               </div>
 
               <div className='mt-6'>
-                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>Chapters</h2>
+                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
+                  Chapters
+                </h2>
                 <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {manga.chapters?.length > 0 ? (
                     manga.chapters.map((chapter, index) => (
@@ -151,12 +171,18 @@ export default function DetailMangaPage({
               </div>
 
               <div className='mt-6'>
-                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>Recommendations</h2>
+                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
+                  Recommendations
+                </h2>
                 <div className='overflow-x-auto'>
                   <div className='flex space-x-4'>
-                    {manga.recommendations && manga.recommendations.length > 0 ? (
+                    {manga.recommendations &&
+                    manga.recommendations.length > 0 ? (
                       manga.recommendations.map((recommendation) => (
-                        <div key={recommendation.slug} className='flex-shrink-0 w-64'>
+                        <div
+                          key={recommendation.slug}
+                          className='flex-shrink-0 w-64'
+                        >
                           <CardA
                             title={recommendation.title}
                             imageUrl={recommendation.image}
