@@ -74,7 +74,7 @@ export default async function RootLayout({
               // disableTransitionOnChange
             >
               <NavbarWrapper />
-              <div className='mt-28 max-w-full px-0.5 pb-10 pt-38 sm:px-6 lg:px-8'>
+              <div className='mt-8 max-w-full px-0.5 pb-10 pt-12 sm:px-6 lg:px-8'>
                 {children}
                 <DarkThemeToggle
                   className='fixed bottom-0 left-0 z-10 m-4'
