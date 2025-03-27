@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
     nextScriptWorkers: true,
+    webpackMemoryOptimizations: true,
+
   },
   images: {
     remotePatterns: [
@@ -60,6 +62,10 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   compress: true,
+  compiler: {
+    styledComponents: true,
+    removeConsole: true,
+  },
   productionBrowserSourceMaps: true,
   transpilePackages: ['@asepharyana/ui'],
 };
