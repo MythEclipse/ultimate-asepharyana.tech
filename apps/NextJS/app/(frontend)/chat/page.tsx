@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import Card from '@/components/card/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
 import Button from '@/components/button/NormalButton';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 
 type ChatMessage = {
@@ -168,142 +168,174 @@ export default function ChatClient() {
   }, [input, file, status.sending, session]);
 
   return (
-    <div className='container mx-auto py-8 px-4 max-w-2xl'>
-      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
-        Chat Room
-      </h1>
-
-      <Card>
-        <div className='flex items-center justify-between text-sm p-4 border-b border-blue-500'>
-          <span className='text-blue-500'>Status:</span>
-          <div className='flex items-center gap-2'>
-            <div
-              className={`w-2 h-2 rounded-full ${
-                status.connected ? 'bg-green-500' : 'bg-red-500'
-              }`}
-            />
-            <span
-              className={status.connected ? 'text-green-500' : 'text-red-500'}
-            >
-              {status.connected ? 'Connected' : 'Connecting...'}
+    <div className="mx-auto p-4 max-w-3xl h-screen flex flex-col">
+      <div className="flex flex-col gap-4 flex-1">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Community Chat
+          </h1>
+          
+          {/* Status Connection */}
+          <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
+            <div className={`p-1.5 rounded-full ${status.connected ? 'bg-green-400' : 'bg-red-400'}`}>
+              {status.connected ? (
+                <Wifi className="w-4 h-4 text-white" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-white" />
+              )}
+            </div>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {status.connected ? 'Connected to chat' : 'Connecting...'}
             </span>
           </div>
         </div>
 
-        <div className='h-96 overflow-y-auto p-4 space-y-3'>
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isOwn={message.email === session?.user?.email}
-            />
-          ))}
-          <div ref={endRef} />
-        </div>
-
-        <div className='p-4 border-t border-blue-500'>
-          <div className='flex items-start gap-2'>
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder='Type a message...'
-              className='flex-1 resize-none min-h-[40px] border-blue-500 top-2'
-              rows={1}
-              disabled={!status.connected}
-            />
-            <div className='flex items-center gap-2 h-full'>
-              <input
-                type='file'
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className='hidden'
-                id='file-input'
-                disabled={!status.connected || status.uploading}
+        {/* Chat Messages */}
+        <Card 
+        // className="flex-1 flex flex-col overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isOwn={message.email === session?.user?.email}
               />
-              <label
-                htmlFor='file-input'
-                className={`h-10 px-3 py-2 flex items-center justify-center rounded-md text-sm border ${
-                  status.uploading
-                    ? 'text-gray-400 border-gray-400'
-                    : 'text-blue-500 border-blue-500 hover:bg-blue-50'
-                } cursor-pointer`}
-              >
-                {status.uploading ? 'Uploading...' : '📎'}
-              </label>
+            ))}
+            <div ref={endRef} />
+          </div>
+
+          {/* Input Area */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            {error && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col md:flex-row gap-2 items-stretch">
+              <div className="relative flex-1">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Type your message..."
+                  className="min-h-[100px] md:min-h-[60px] pr-16 resize-none"
+                  rows={1}
+                  disabled={!status.connected}
+                />
+                <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+                  <input
+                    type="file"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="file-input"
+                    disabled={!status.connected || status.uploading}
+                  />
+                  <label
+                    htmlFor="file-input"
+                    className={`p-1.5 rounded-md cursor-pointer ${
+                      status.uploading
+                        ? 'text-gray-400'
+                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {status.uploading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Paperclip className="w-5 h-5" />
+                    )}
+                  </label>
+                </div>
+              </div>
+
               <Button
-                className='!px-3 !py-1'
                 onClick={sendMessage}
-                disabled={
-                  !status.connected || status.sending || status.uploading
-                }
+                disabled={!status.connected || status.sending || status.uploading}
+                className="h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
               >
                 {status.sending ? (
-                  <Loader2 className='w-4 h-4 animate-spin' />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   'Send'
                 )}
               </Button>
             </div>
           </div>
-          {error && (
-            <div className='text-red-500 text-sm mt-2 text-center'>{error}</div>
-          )}
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function MessageBubble({
-  message,
-  isOwn,
-}: {
-  message: ChatMessage;
-  isOwn: boolean;
-}) {
+function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
   const safeTimestamp = validateTimestamp(message.timestamp);
 
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`flex items-start gap-3 max-w-[85%] ${
+        className={`flex items-start gap-3 max-w-[90%] ${
           isOwn ? 'flex-row-reverse' : 'flex-row'
         }`}
       >
-        <Image
-          src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
-          alt={message.user}
-          width={32}
-          height={32}
-          className='rounded-full object-cover'
-        />
+        <div className="relative">
+          <Image
+            src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
+            alt={message.user}
+            width={40}
+            height={40}
+            className="rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
+          />
+          {message.role === 'admin' && (
+            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          )}
+        </div>
+
         <div
-          className={`p-3 rounded-lg ${
-            isOwn ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'
+          className={`p-4 rounded-2xl shadow-sm transition-all ${
+            isOwn
+              ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
+              : 'bg-gray-100 dark:bg-gray-800'
           }`}
         >
-          <div className='flex items-center gap-2 mb-1'>
-            <span className='text-xs font-medium'>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="font-medium text-sm">
               {isOwn ? 'You' : message.user}
             </span>
-            <span className='text-xs px-2 text-gray-500 dark:text-gray-400'>
+            <span
+              className={`text-xs ${
+                isOwn ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+              }`}
+            >
               {format(new Date(safeTimestamp), 'HH:mm')}
             </span>
           </div>
-          {message.text && <p>{message.text}</p>}
+          
+          {message.text && (
+            <p className="text-sm leading-relaxed break-words">{message.text}</p>
+          )}
+          
           {message.imageMessage && (
-            <Image
-              src={message.imageMessage}
-              alt='Attachment'
-              width={160}
-              height={90}
-              className='rounded-lg mt-2'
-            />
+            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+              <Image
+                src={message.imageMessage}
+                alt="Attachment"
+                width={240}
+                height={135}
+                className="w-full h-auto object-cover"
+              />
+            </div>
           )}
         </div>
       </div>
