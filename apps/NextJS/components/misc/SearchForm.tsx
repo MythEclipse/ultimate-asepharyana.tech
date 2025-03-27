@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ButtonA from '@/components/button/ScrollButton2';
+import { Search } from 'lucide-react';
 
 interface SearchFormProps {
   initialQuery: string;
@@ -31,21 +31,25 @@ const SearchForm: React.FC<SearchFormProps> = ({
   };
 
   return (
-    <div className={classname || ''}>
-      <form
-        onSubmit={handleSearch}
-        className='flex items-center space-x-4 mb-6'
-      >
-        <input
-          type='text'
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder='Search for anime...'
-          className='w-64 text-center px-6 py-3 text-blue-500 bg-transparent border border-blue-500 shadow-lg shadow-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50'
-        />
-        <ButtonA type='submit' className='rounded-none'>
+    <div className={classname}>
+      <form onSubmit={handleSearch} className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search anime..."
+            className="w-full pl-12 pr-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 text-zinc-800 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-400 transition-all"
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+        </div>
+        <button
+          type="submit"
+          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+        >
           Search
-        </ButtonA>
+          <Search className="w-5 h-5" />
+        </button>
       </form>
     </div>
   );

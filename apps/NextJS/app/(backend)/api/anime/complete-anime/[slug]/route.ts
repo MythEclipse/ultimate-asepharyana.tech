@@ -37,15 +37,17 @@ function parseAnimePage(html: string, slug: string) {
   const pagination = {
     current_page: parseInt(slug, 10) || 1,
     last_visible_page:
-      parseInt($('.pagination .page-numbers:not(.next):last').last().text()) ||
-      1,
-    has_next_page: $('.pagination .pagenavix .next.page-numbers').length > 0,
+      parseInt($('.pagenavix .page-numbers:not(.next):last').text().trim()) || 1,
+    has_next_page: $('.pagenavix .next.page-numbers').length > 0,
     next_page:
-      $('.pagination .pagenavix .next.page-numbers').length > 0
+      $('.pagenavix .next.page-numbers').length > 0
         ? parseInt(slug, 10) + 1
         : null,
     has_previous_page: parseInt(slug, 10) > 1,
     previous_page: parseInt(slug, 10) > 1 ? parseInt(slug, 10) - 1 : null,
+    total_pages: parseInt(
+      $('.pagenavix .page-numbers:not(.next):last').text().trim()
+    ) || 1,
   };
 
   $('.venz ul li').each((index, element) => {
