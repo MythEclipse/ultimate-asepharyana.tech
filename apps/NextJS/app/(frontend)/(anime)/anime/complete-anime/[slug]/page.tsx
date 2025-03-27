@@ -2,7 +2,7 @@ import AnimeGrid from '@/components/card/AnimeGrid';
 import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
-
+export const dynamic = 'force-dynamic';
 interface CompleteAnimeData {
   status: string;
   data: Anime[];

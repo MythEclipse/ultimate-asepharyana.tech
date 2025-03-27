@@ -49,7 +49,11 @@ interface AnimeData {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function DetailAnimePage({ params }: { params: Promise<{ slug: string }> }) {
+export default function DetailAnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = use(params);
 
   const { data: anime, error } = useSWR<AnimeData>(
@@ -69,28 +73,41 @@ export default function DetailAnimePage({ params }: { params: Promise<{ slug: st
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const bookmarks = JSON.parse(localStorage.getItem('bookmarks-anime') || '[]');
-      setBookmarked(bookmarks.some((item: { slug: string }) => item.slug === slug));
+      const bookmarks = JSON.parse(
+        localStorage.getItem('bookmarks-anime') || '[]'
+      );
+      setBookmarked(
+        bookmarks.some((item: { slug: string }) => item.slug === slug)
+      );
     }
   }, [slug]);
 
   const handleBookmark = () => {
     let bookmarks = JSON.parse(localStorage.getItem('bookmarks-anime') || '[]');
     if (bookmarked) {
-      bookmarks = bookmarks.filter((item: { slug: string }) => item.slug !== slug);
+      bookmarks = bookmarks.filter(
+        (item: { slug: string }) => item.slug !== slug
+      );
     } else {
-      bookmarks.push({ slug, title: anime?.data.title, poster: anime?.data.poster });
+      bookmarks.push({
+        slug,
+        title: anime?.data.title,
+        poster: anime?.data.poster,
+      });
     }
     localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
     setBookmarked(!bookmarked);
   };
 
-  if (error) return <p className='text-red-500 text-center'>Failed to load anime data</p>;
+  if (error)
+    return (
+      <p className='text-red-500 text-center'>Failed to load anime data</p>
+    );
   if (!anime) return <Loading />;
 
   const episodes = anime.data.episode_lists || [];
 
-  console.log("Episodes Data:", episodes);
+  console.log('Episodes Data:', episodes);
 
   const fallback = 'default.png';
   const imageSources = [
@@ -125,21 +142,27 @@ export default function DetailAnimePage({ params }: { params: Promise<{ slug: st
               <h1 className='text-3xl font-bold mb-4 text-primary-dark dark:text-primary'>
                 {anime.data.title}
               </h1>
-              <button onClick={handleBookmark} className='px-4 py-2 mb-2 bg-primary text-white rounded-lg'>
+              <button
+                onClick={handleBookmark}
+                className='px-4 py-2 mb-2 bg-primary text-white rounded-lg'
+              >
                 {bookmarked ? 'Remove Bookmark' : 'Add to Bookmark'}
               </button>
               <div className='text-gray-800 dark:text-gray-200 mb-4'>
-                {[{ label: 'Type', value: anime.data.type },
-                { label: 'Status', value: anime.data.status },
-                { label: 'Release Date', value: anime.data.release_date },
-                { label: 'Studio', value: anime.data.studio },
+                {[
+                  { label: 'Type', value: anime.data.type },
+                  { label: 'Status', value: anime.data.status },
+                  { label: 'Release Date', value: anime.data.release_date },
+                  { label: 'Studio', value: anime.data.studio },
                 ].map((detail) => (
                   <p key={detail.label} className='mb-2'>
                     <strong>{detail.label}:</strong> {detail.value || 'N/A'}
                   </p>
                 ))}
                 <p className='mb-4'>
-                  <strong>Genres:</strong> {anime.data.genres?.map((genre) => genre.name).join(', ') || 'N/A'}
+                  <strong>Genres:</strong>{' '}
+                  {anime.data.genres?.map((genre) => genre.name).join(', ') ||
+                    'N/A'}
                 </p>
                 <p className='mb-4'>
                   <strong>Synopsis:</strong> {anime.data.synopsis || 'N/A'}
@@ -152,10 +175,18 @@ export default function DetailAnimePage({ params }: { params: Promise<{ slug: st
                 <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {episodes.length > 0 ? (
                     episodes.map((episode) => {
-                      const episodeNumber = episode.episode.match(/Episode\s+(\d+)(?:\s*\(End\))?/i)?.[1] || 
-                      episode.episode.replace(/Subtitle Indonesia/i, '').trim();
+                      const episodeNumber =
+                        episode.episode.match(
+                          /Episode\s+(\d+)(?:\s*\(End\))?/i
+                        )?.[1] ||
+                        episode.episode
+                          .replace(/Subtitle Indonesia/i, '')
+                          .trim();
                       return (
-                        <Link key={episode.slug} href={`/anime/full/${episode.slug}`}>
+                        <Link
+                          key={episode.slug}
+                          href={`/anime/full/${episode.slug}`}
+                        >
                           <ButtonA className='w-full'>
                             <span className='text-lg font-bold mb-1 text-center truncate text-primary-dark dark:text-primary'>
                               Episode {episodeNumber}
@@ -179,8 +210,15 @@ export default function DetailAnimePage({ params }: { params: Promise<{ slug: st
                   <div className='flex space-x-4'>
                     {anime.data.recommendations?.length > 0 ? (
                       anime.data.recommendations.map((recommendation) => (
-                        <div key={recommendation.slug} className='flex-shrink-0 w-64'>
-                          <CardA title={recommendation.title} imageUrl={recommendation.poster} linkUrl={`/anime/detail/${recommendation.slug}`} />
+                        <div
+                          key={recommendation.slug}
+                          className='flex-shrink-0 w-64'
+                        >
+                          <CardA
+                            title={recommendation.title}
+                            imageUrl={recommendation.poster}
+                            linkUrl={`/anime/detail/${recommendation.slug}`}
+                          />
                         </div>
                       ))
                     ) : (

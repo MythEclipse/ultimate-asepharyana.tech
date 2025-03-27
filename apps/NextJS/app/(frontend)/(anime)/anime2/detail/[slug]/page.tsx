@@ -4,7 +4,7 @@ import { BackgroundGradient } from '@/components/background/background-gradient'
 import CardA from '@/components/card/MediaCard';
 import Loading from './loading';
 import { BaseUrl } from '@/lib/url';
-
+export const dynamic = 'force-dynamic';
 interface Genre {
   name: string;
   slug: string;

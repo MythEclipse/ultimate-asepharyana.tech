@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
 import { ComicCard } from '@/components/card/ComicCard';
-
+export const dynamic = 'force-dynamic';
 export interface Comic {
   komik_id: string;
   title: string;

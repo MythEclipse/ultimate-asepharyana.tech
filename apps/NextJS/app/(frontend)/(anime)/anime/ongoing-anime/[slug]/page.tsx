@@ -2,7 +2,7 @@ import Link from 'next/link';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
-
+export const dynamic = 'force-dynamic';
 interface OngoingAnimeData {
   status: string;
   data: Anime[];

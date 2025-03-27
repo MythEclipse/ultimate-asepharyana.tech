@@ -2,6 +2,7 @@ import AnimeGrid from '@/components/card/AnimeGrid3';
 import { BaseUrl } from '@/lib/url';
 import { notFound } from 'next/navigation';
 import ButtonA from '@/components/button/ScrollButton';
+export const dynamic = 'force-dynamic';
 interface HomeData {
   status: string;
   data: {

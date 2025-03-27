@@ -3,7 +3,7 @@ import AnimeGrid from '@/components/card/AnimeGrid2a';
 import Link from 'next/link';
 import ButtonA from '@/components/button/ScrollButton';
 import { BaseUrl } from '@/lib/url';
-
+export const dynamic = 'force-dynamic';
 interface Anime {
   title: string;
   slug: string;

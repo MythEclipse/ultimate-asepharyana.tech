@@ -8,7 +8,7 @@ import { BackgroundGradient } from '@/components/background/background-gradient'
 import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
 import Loading from './loading';
-
+export const dynamic = 'force-dynamic';
 interface Genre {
   name: string;
 }

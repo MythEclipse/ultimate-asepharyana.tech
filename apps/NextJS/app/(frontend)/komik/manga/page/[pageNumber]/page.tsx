@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { BaseUrl } from '@/lib/url';
 import ButtonA from '@/components/button/ScrollButton';
 import { ComicCard } from '@/components/card/ComicCard';
-
+export const dynamic = 'force-dynamic';
 interface KomikData {
   data: Manga[];
   prevPage: boolean;

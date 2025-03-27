@@ -5,7 +5,7 @@ import CardA from '@/components/card/MediaCard';
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import Loading from '@/components/misc/loading';
-
+export const dynamic = 'force-dynamic';
 interface Genre {
   name: string;
   slug: string;

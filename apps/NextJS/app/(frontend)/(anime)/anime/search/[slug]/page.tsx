@@ -3,6 +3,7 @@ import SearchForm from '@/components/misc/SearchForm';
 import CardA from '@/components/card/MediaCard';
 import { BaseUrl } from '@/lib/url';
 import React from 'react';
+export const dynamic = 'force-dynamic';
 interface Genre {
   name: string;
   slug: string;

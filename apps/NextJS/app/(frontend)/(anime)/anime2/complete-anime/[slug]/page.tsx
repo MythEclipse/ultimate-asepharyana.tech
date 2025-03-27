@@ -3,7 +3,7 @@ import Link from 'next/link';
 import ButtonA from '@/components/button/ScrollButton';
 import { notFound } from 'next/navigation';
 import { BaseUrl } from '@/lib/url';
-
+export const dynamic = 'force-dynamic';
 interface Anime {
   title: string;
   slug: string;
