@@ -144,7 +144,7 @@ export default function DetailAnimePage({
               </h1>
               <button
                 onClick={handleBookmark}
-                className='px-4 py-2 mb-2 bg-primary text-white rounded-lg'
+                className={`px-4 py-2 mb-2 ${bookmarked?'bg-red-500':'bg-green-500'} rounded-lg`}
               >
                 {bookmarked ? 'Remove Bookmark' : 'Add to Bookmark'}
               </button>

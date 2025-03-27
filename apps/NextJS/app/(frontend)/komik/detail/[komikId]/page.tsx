@@ -7,13 +7,15 @@ import { BackgroundGradient } from '@/components/background/background-gradient'
 import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
 import Loading from './loading';
+import { useRouter } from 'next/navigation';
+import { ArrowRightIcon, BookmarkIcon, BookOpenIcon, CalendarIcon, CircleDot, FileTextIcon, StarIcon, TypeIcon, UserIcon } from 'lucide-react';
 export const dynamic = 'force-dynamic';
-interface Genre {
-  name: string;
-}
+
 
 interface Chapter {
   chapter: string;
+  chapter_id: string;
+  date: string;
 }
 
 interface Recommendation {
@@ -32,7 +34,9 @@ interface MangaData {
   releaseDate: string;
   author: string;
   description: string;
-  genres: Genre[];
+  totalChapter: string;
+  updatedOn: string;
+  genres: string[];
   chapters: Chapter[];
   recommendations: Recommendation[];
 }
@@ -47,7 +51,7 @@ export default function DetailMangaPage({
   const [resolvedParams, setResolvedParams] = useState<{
     komikId: string;
   } | null>(null);
-
+  const router = useRouter();
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
@@ -102,99 +106,141 @@ export default function DetailMangaPage({
   if (!manga || !resolvedParams) return <Loading />;
 
   return (
-    <main className='p-6 bg-background dark:bg-dark min-h-screen'>
-      <div className='max-w-4xl mx-auto bg-white dark:bg-dark rounded-lg shadow-lg'>
-        <BackgroundGradient className='rounded-[22px] p-7 bg-white dark:bg-zinc-900'>
-          <div className='flex flex-col md:flex-row items-center md:items-start'>
-            <div className='w-full md:w-1/3 mb-6 md:mb-0 flex justify-center md:justify-start'>
-              <Image
-                src={manga.image}
-                alt={manga.title}
-                width={330}
-                height={450}
-                className='object-cover rounded-lg shadow-md'
-                priority
-              />
-            </div>
-            <div className='w-full md:w-2/3 md:pl-6'>
-              <h1 className='text-3xl font-bold mb-4 text-primary-dark dark:text-primary'>
-                {manga.title}
-              </h1>
+    <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+      <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-xl dark:shadow-lg dark:shadow-zinc-800'>
+        <BackgroundGradient className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
+          <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
+            {/* Manga Cover Section */}
+            <div className='w-full md:w-1/3 flex flex-col gap-4'>
+              <div className='relative group overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300'>
+                <Image
+                  src={manga.image}
+                  alt={manga.title}
+                  width={400}
+                  height={600}
+                  className='object-cover w-full aspect-[2/3] transform transition-transform duration-300 hover:scale-105'
+                  priority
+                />
+                <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity'/>
+              </div>
+              
               <button
                 onClick={handleBookmark}
-                className={`px-4 py-2 rounded text-white ${bookmarked ? 'bg-red-500' : 'bg-blue-500'}`}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                  bookmarked 
+                    ? 'bg-red-500/90 hover:bg-red-600 text-white' 
+                    : 'bg-blue-500/90 hover:bg-blue-600 text-white'
+                }`}
               >
-                {bookmarked ? 'Unbookmark' : 'Bookmark'}
+                <BookmarkIcon className='w-5 h-5' />
+                {bookmarked ? 'Bookmarked' : 'Bookmark'}
               </button>
-              <div className='text-gray-800 dark:text-gray-200 mb-4 mt-4'>
-                {[
-                  { label: 'Score', value: manga.score },
-                  { label: 'Type', value: manga.type },
-                  { label: 'Status', value: manga.status },
-                  { label: 'Release Date', value: manga.releaseDate },
-                  { label: 'Author', value: manga.author },
-                ].map((detail) => (
-                  <p className='mb-2' key={detail.label}>
-                    <strong>{detail.label}:</strong> {detail.value || 'N/A'}
-                  </p>
-                ))}
+            </div>
 
-                <p className='mb-4'>
-                  <strong>Genres:</strong>{' '}
-                  {manga.genres?.length ? manga.genres.join(', ') : 'N/A'}
-                </p>
-                <p className='mb-4'>
-                  <strong>Description:</strong> {manga.description || 'N/A'}
+            {/* Manga Details Section */}
+            <div className='w-full md:w-2/3 space-y-6'>
+              <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
+                {manga.title}
+              </h1>
+
+              {/* Metadata Grid */}
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
+                {[
+                  { label: 'Score', value: manga.score, icon: <StarIcon className="w-5 h-5 text-amber-500"/> },
+                  { label: 'Type', value: manga.type, icon: <TypeIcon className="w-5 h-5 text-blue-500"/> },
+                  { label: 'Status', value: manga.status, icon: <CircleDot className="w-5 h-5 text-green-500"/> },
+                  { label: 'Released', value: manga.releaseDate, icon: <CalendarIcon className="w-5 h-5 text-red-500"/> },
+                  { label: 'Author', value: manga.author, icon: <UserIcon className="w-5 h-5 text-purple-500"/> },
+                ].map((detail) => (
+                  <div key={detail.label} className='flex items-center gap-3'>
+                    <span className='p-2 bg-white dark:bg-zinc-700 rounded-lg'>
+                      {detail.icon}
+                    </span>
+                    <div>
+                      <p className='text-sm text-zinc-500'>{detail.label}</p>
+                      <p className='font-medium dark:text-zinc-200'>
+                        {detail.value || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Genres */}
+                <div className='flex flex-wrap gap-2'>
+                  {manga.genres?.map((genre, index) => (
+                  <span 
+                    key={index}
+                    className='px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full'
+                  >
+                    {genre}
+                  </span>
+                  ))}
+                </div>
+
+              {/* Description */}
+              <div className='prose dark:prose-invert max-w-none'>
+                <h3 className='text-xl font-semibold mb-2 text-zinc-800 dark:text-zinc-100'>
+                  Synopsis
+                </h3>
+                <p className='text-zinc-600 dark:text-zinc-300 leading-relaxed'>
+                  {manga.description || 'No description available.'}
                 </p>
               </div>
 
-              <div className='mt-6'>
-                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
+              {/* Chapters Section */}
+              <div className='space-y-4'>
+                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
                   Chapters
                 </h2>
-                <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
                   {manga.chapters?.length > 0 ? (
-                    manga.chapters.map((chapter, index) => (
-                      <ButtonA key={index} className='w-full'>
-                        <span className='text-lg font-bold mb-1 text-center truncate text-primary-dark dark:text-primary'>
+                    manga.chapters.map((chapter) => (
+                      <ButtonA 
+                        key={chapter.chapter_id}
+                        onClick={() => router.push(`/komik/chapter/${chapter.chapter_id}`)}
+                        className='group flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm'
+                      >
+                        <span className='font-medium text-zinc-700 dark:text-zinc-200'>
                           {chapter.chapter}
                         </span>
+                        <ArrowRightIcon className='w-5 h-5 text-zinc-400 group-hover:text-blue-500 transition-colors'/>
                       </ButtonA>
                     ))
                   ) : (
-                    <p className='col-span-full text-center text-primary-dark dark:text-primary'>
+                    <div className='col-span-full py-6 text-center text-zinc-500 dark:text-zinc-400'>
+                      <FileTextIcon className='mx-auto h-12 w-12 mb-3'/>
                       No chapters available
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className='mt-6'>
-                <h2 className='text-2xl font-semibold mb-2 text-primary-dark dark:text-primary'>
-                  Recommendations
+              {/* Recommendations Section */}
+              <div className='space-y-4'>
+                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+                  You Might Also Like
                 </h2>
-                <div className='overflow-x-auto'>
-                  <div className='flex space-x-4'>
-                    {manga.recommendations &&
-                    manga.recommendations.length > 0 ? (
-                      manga.recommendations.map((recommendation) => (
-                        <div
-                          key={recommendation.slug}
-                          className='flex-shrink-0 w-64'
-                        >
-                          <CardA
-                            title={recommendation.title}
-                            imageUrl={recommendation.image}
-                            linkUrl={`/komik/detail/${recommendation.slug}`}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <p className='col-span-full text-center text-primary-dark dark:text-primary'>
-                        No recommendations available
-                      </p>
-                    )}
-                  </div>
+                <div className='flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent dark:scrollbar-thumb-zinc-600'>
+                  {manga.recommendations?.length > 0 ? (
+                    manga.recommendations.map((recommendation) => (
+                      <div 
+                        key={recommendation.slug}
+                        className='flex-shrink-0 w-48 md:w-56'
+                      >
+                        <CardA
+                          title={recommendation.title}
+                          imageUrl={recommendation.image}
+                          linkUrl={`/komik/detail/${recommendation.slug}`}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className='w-full py-6 text-center text-zinc-500 dark:text-zinc-400'>
+                      <BookOpenIcon className='mx-auto h-12 w-12 mb-3'/>
+                      No recommendations available
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -202,5 +248,5 @@ export default function DetailMangaPage({
         </BackgroundGradient>
       </div>
     </main>
-  );
+);
 }

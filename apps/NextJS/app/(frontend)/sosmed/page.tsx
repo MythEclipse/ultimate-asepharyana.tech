@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 import PostCard from '@/components/sosmed/PostCard';
 import Card from '@/components/card/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
-import { BaseUrl } from '@/lib/url';
 import { Posts, User, Likes, Comments } from '@prisma/client';
 import { useSession } from 'next-auth/react';
 import useSWR, { mutate } from 'swr';
@@ -14,7 +13,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PostPage() {
   const { data: session } = useSession();
-  const { data: postsData } = useSWR(`${BaseUrl}/api/sosmed/posts`, fetcher, {
+  const { data: postsData } = useSWR(`/api/sosmed/posts`, fetcher, {
     refreshInterval: 1000,
     dedupingInterval: 1000,
     revalidateOnFocus: true,
@@ -34,7 +33,7 @@ export default function PostPage() {
     if (!content.trim() && !imageUrl) return;
 
     try {
-      await fetch(`${BaseUrl}/api/sosmed/posts`, {
+      await fetch(`/api/sosmed/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content, imageUrl }),
@@ -43,7 +42,7 @@ export default function PostPage() {
       setImageUrl('');
       (document.querySelector('input[type="file"]') as HTMLInputElement).value =
         '';
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error creating post:', error);
     }
@@ -56,7 +55,7 @@ export default function PostPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      fetch(`${BaseUrl}/api/uploader`, {
+      fetch(`/api/uploader`, {
         method: 'POST',
         body: formData,
       })
@@ -74,12 +73,12 @@ export default function PostPage() {
 
   const handleLike = async (postId: string) => {
     try {
-      await fetch(`${BaseUrl}/api/sosmed/likes`, {
+      await fetch(`/api/sosmed/likes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error liking post:', error);
     }
@@ -87,12 +86,12 @@ export default function PostPage() {
 
   const handleUnlike = async (postId: string) => {
     try {
-      await fetch(`${BaseUrl}/api/sosmed/likes`, {
+      await fetch(`/api/sosmed/likes`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error unliking post:', error);
     }
@@ -102,12 +101,12 @@ export default function PostPage() {
     if (!newComments[postId]?.trim()) return;
 
     try {
-      await fetch(`${BaseUrl}/api/sosmed/comments`, {
+      await fetch(`/api/sosmed/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: newComments[postId], postId }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
       setNewComments((prev) => ({ ...prev, [postId]: '' }));
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -116,12 +115,12 @@ export default function PostPage() {
 
   const handleEditPost = async (postId: string, content: string) => {
     try {
-      await fetch(`${BaseUrl}/api/sosmed/posts`, {
+      await fetch(`/api/sosmed/posts`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: postId, content }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing post:', error);
     }
@@ -129,12 +128,12 @@ export default function PostPage() {
 
   const handleDeletePost = async (postId: string) => {
     try {
-      await fetch(`${BaseUrl}/api/sosmed/posts`, {
+      await fetch(`/api/sosmed/posts`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: postId }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting post:', error);
     }
@@ -142,12 +141,12 @@ export default function PostPage() {
 
   const handleEditComment = async (commentId: string, content: string) => {
     try {
-      await fetch(`${BaseUrl}/api/sosmed/comments`, {
+      await fetch(`/api/sosmed/comments`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: commentId, content }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing comment:', error);
     }
@@ -155,12 +154,12 @@ export default function PostPage() {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      await fetch(`${BaseUrl}/api/sosmed/comments`, {
+      await fetch(`/api/sosmed/comments`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: commentId }),
       });
-      mutate(`${BaseUrl}/api/sosmed/posts`);
+      mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting comment:', error);
     }
