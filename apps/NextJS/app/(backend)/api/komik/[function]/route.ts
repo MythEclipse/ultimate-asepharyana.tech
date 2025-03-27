@@ -5,7 +5,7 @@ import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
 
 const baseUrl = {
-  komik: 'https://komikindo1.com',
+  komik: 'https://komikindo2.com',
 };
 const baseURL = baseUrl.komik;
 
@@ -65,7 +65,7 @@ const parseMangaData = (body: string): MangaData[] => {
         .trim()
         .replace('Ch.', '')
         .match(/\d+(\.\d+)?/g)?.[0] || ''; // Keep only the numeric part
-    const score = ''; // Assuming no score is provided in this structure
+    const score = $(e).find('i').text().trim() || ''; // Extract score from the specified element
     const date = $(e).find('.datech').text().trim() || '';
     const type = $(e).find('.typeflag').attr('class')?.split(' ')[1] || '';
     const komik_id = $(e).find('a').attr('href')?.split('/')[4] || '';
@@ -140,7 +140,9 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
     });
 
     // Release Date (if available, assuming it's in the same location as before)
-    const releaseDate = ''; // Not provided in the new HTML, keep empty or fetch from another source
+    const releaseDate = $('#chapter_list > ul > li:last-child > span.dt')
+    .text()
+    .trim() || ''; // Not provided in the new HTML, keep empty or fetch from another source
 
     // Author
     const author = $(".spe span:contains('Pengarang:')")
@@ -152,10 +154,18 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
     const type = $(".spe span:contains('Jenis Komik:') a").text().trim();
 
     // Total Chapter (if available, otherwise remove this field)
-    const totalChapter = ''; // Not provided in the new HTML, keep empty or fetch from another source
+    const totalChapter =
+      $(
+      '#chapter_list > ul > li:nth-child(1) > span.lchx'
+      )
+      .text()
+      .trim() || '';
 
     // Updated On (if available, otherwise remove this field)
-    const updatedOn = ''; // Not provided in the new HTML, keep empty or fetch from another source
+    const updatedOn =
+      $('#chapter_list > ul > li:nth-child(1) > span.dt')
+      .text()
+      .trim() || '';
 
     // Chapters list from the `#chapter_list` element
     const chapters: { chapter: string; date: string; chapter_id: string }[] =

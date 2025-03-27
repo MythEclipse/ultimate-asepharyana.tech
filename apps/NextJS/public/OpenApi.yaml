@@ -23,44 +23,47 @@ paths:
               - titledesc
       responses:
         '200':
-          description: '200'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
+                description: '200'
+                content:
+                  application/json:
+                    schema:
                       type: object
                       properties:
-                        title:
-                          type: string
-                        image:
-                          type: string
-                        chapter:
-                          type: string
-                        score:
-                          type: string
-                        type:
-                          type: string
-                        komik_id:
-                          type: string
+                        data:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              title:
+                                type: string
+                              image:
+                                type: string
+                              chapter:
+                                type: string
+                              score:
+                                type: string
+                              date:
+                                type: string
+                              type:
+                                type: string
+                              komik_id:
+                                type: string
+                            required:
+                              - title
+                              - image
+                              - chapter
+                              - score
+                              - date
+                              - type
+                              - komik_id
+                        prevPage:
+                          type: boolean
+                        nextPage:
+                          type: boolean
                       required:
-                        - title
-                        - image
-                        - chapter
-                        - score
-                        - type
-                        - komik_id
-                  prevPage:
-                    type: boolean
-                  nextPage:
-                    type: boolean
-                required:
-                  - data
-                  - prevPage
-                  - nextPage
+                        - data
+                        - prevPage
+                        - nextPage      
         '400':
           description: '400'
           content:
@@ -106,44 +109,47 @@ paths:
               - titledesc
       responses:
         '200':
-          description: '200'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
+                description: '200'
+                content:
+                  application/json:
+                    schema:
                       type: object
                       properties:
-                        title:
-                          type: string
-                        image:
-                          type: string
-                        chapter:
-                          type: string
-                        score:
-                          type: string
-                        type:
-                          type: string
-                        komik_id:
-                          type: string
+                        data:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              title:
+                                type: string
+                              image:
+                                type: string
+                              chapter:
+                                type: string
+                              score:
+                                type: string
+                              date:
+                                type: string
+                              type:
+                                type: string
+                              komik_id:
+                                type: string
+                            required:
+                              - title
+                              - image
+                              - chapter
+                              - score
+                              - date
+                              - type
+                              - komik_id
+                        prevPage:
+                          type: boolean
+                        nextPage:
+                          type: boolean
                       required:
-                        - title
-                        - image
-                        - chapter
-                        - score
-                        - type
-                        - komik_id
-                  prevPage:
-                    type: boolean
-                  nextPage:
-                    type: boolean
-                required:
-                  - data
-                  - prevPage
-                  - nextPage
+                        - data
+                        - prevPage
+                        - nextPage      
         '400':
           description: '400'
           content:
@@ -189,44 +195,47 @@ paths:
               - titledesc
       responses:
         '200':
-          description: '200'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
+                description: '200'
+                content:
+                  application/json:
+                    schema:
                       type: object
                       properties:
-                        title:
-                          type: string
-                        image:
-                          type: string
-                        chapter:
-                          type: string
-                        score:
-                          type: string
-                        type:
-                          type: string
-                        komik_id:
-                          type: string
+                        data:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              title:
+                                type: string
+                              image:
+                                type: string
+                              chapter:
+                                type: string
+                              score:
+                                type: string
+                              date:
+                                type: string
+                              type:
+                                type: string
+                              komik_id:
+                                type: string
+                            required:
+                              - title
+                              - image
+                              - chapter
+                              - score
+                              - date
+                              - type
+                              - komik_id
+                        prevPage:
+                          type: boolean
+                        nextPage:
+                          type: boolean
                       required:
-                        - title
-                        - image
-                        - chapter
-                        - score
-                        - type
-                        - komik_id
-                  prevPage:
-                    type: boolean
-                  nextPage:
-                    type: boolean
-                required:
-                  - data
-                  - prevPage
-                  - nextPage
+                        - data
+                        - prevPage
+                        - nextPage      
         '400':
           description: '400'
           content:
@@ -261,43 +270,49 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: '200'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  data:
-                    type: array
-                    items:
+       '200':
+                description: '200'
+                content:
+                  application/json:
+                    schema:
                       type: object
                       properties:
-                        title:
-                          type: string
-                        image:
-                          type: string
-                        chapter:
-                          type: string
-                        score:
-                          type: string
-                        type:
-                          type: string
-                        komik_id:
-                          type: string
+                        data:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              title:
+                                type: string
+                              image:
+                                type: string
+                              chapter:
+                                type: string
+                              score:
+                                type: string
+                              date:
+                                type: string
+                              type:
+                                type: string
+                              komik_id:
+                                type: string
+                            required:
+                              - title
+                              - image
+                              - chapter
+                              - score
+                              - date
+                              - type
+                              - komik_id
+                        prevPage:
+                          type: boolean
+                        nextPage:
+                          type: boolean
                       required:
-                        - title
-                        - image
-                        - chapter
-                        - score
-                        - type
-                        - komik_id
-                required:
-                  - message
-                  - data
-        '400':
+                        - data
+                        - prevPage
+                        - nextPage
+       '400':
           description: '400'
           content:
             application/json:
@@ -308,7 +323,7 @@ paths:
                     type: string
                 required:
                   - message
-        '500':
+       '500':
           description: '500'
           content:
             application/json:
@@ -1275,96 +1290,6 @@ paths:
                               type: string
                             poster:
                               type: string
-
-  /api/anime2/full/{slug}:
-    get:
-      summary: 'Dapatkan episode anime berdasarkan slug'
-      description: 'Mengambil episode anime berdasarkan slug.'
-      tags:
-        - anime2
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          description: 'Slug untuk halaman episode anime.'
-          schema:
-            type: string
-          example: 'lgrhzon-episode-1-sub-indo'
-      responses:
-        '200':
-          description: 'Episode anime berhasil diambil.'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      episode:
-                        type: string
-                      episode_number:
-                        type: string
-                      anime:
-                        type: object
-                        properties:
-                          slug:
-                            type: string
-                      has_next_episode:
-                        type: boolean
-                      next_episode:
-                        type: object
-                        nullable: true
-                        properties:
-                          slug:
-                            type: string
-                      has_previous_episode:
-                        type: boolean
-                      previous_episode:
-                        type: object
-                        nullable: true
-                        properties:
-                          slug:
-                            type: string
-                      stream_url:
-                        type: string
-                      download_urls:
-                        type: object
-                        additionalProperties:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              server:
-                                type: string
-                              url:
-                                type: string
-                      image_url:
-                        type: string
-        '400':
-          description: '400'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                required:
-                  - message
-        '500':
-          description: '500'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                required:
-                  - message
 
 
   /api/anime2/search:
