@@ -56,14 +56,26 @@ paths:
                               - date
                               - type
                               - komik_id
-                        prevPage:
-                          type: boolean
-                        nextPage:
-                          type: boolean
+                        pagination:
+                          type: object
+                          properties:
+                            current_page:
+                              type: integer
+                            last_visible_page:
+                              type: integer
+                            has_next_page:
+                              type: boolean
+                            next_page:
+                              type: integer
+                              nullable: true
+                            has_previous_page:
+                              type: boolean
+                            previous_page:
+                              type: integer
+                              nullable: true
                       required:
                         - data
-                        - prevPage
-                        - nextPage      
+                        - pagination
         '400':
           description: '400'
           content:
@@ -142,14 +154,26 @@ paths:
                               - date
                               - type
                               - komik_id
-                        prevPage:
-                          type: boolean
-                        nextPage:
-                          type: boolean
+                        pagination:
+                          type: object
+                          properties:
+                            current_page:
+                              type: integer
+                            last_visible_page:
+                              type: integer
+                            has_next_page:
+                              type: boolean
+                            next_page:
+                              type: integer
+                              nullable: true
+                            has_previous_page:
+                              type: boolean
+                            previous_page:
+                              type: integer
+                              nullable: true
                       required:
                         - data
-                        - prevPage
-                        - nextPage      
+                        - pagination   
         '400':
           description: '400'
           content:
@@ -228,14 +252,26 @@ paths:
                               - date
                               - type
                               - komik_id
-                        prevPage:
-                          type: boolean
-                        nextPage:
-                          type: boolean
+                        pagination:
+                          type: object
+                          properties:
+                            current_page:
+                              type: integer
+                            last_visible_page:
+                              type: integer
+                            has_next_page:
+                              type: boolean
+                            next_page:
+                              type: integer
+                              nullable: true
+                            has_previous_page:
+                              type: boolean
+                            previous_page:
+                              type: integer
+                              nullable: true
                       required:
                         - data
-                        - prevPage
-                        - nextPage      
+                        - pagination      
         '400':
           description: '400'
           content:
