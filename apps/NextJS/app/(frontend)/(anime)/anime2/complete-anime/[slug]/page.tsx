@@ -1,8 +1,7 @@
 import AnimeGrid from '@/components/card/AnimeGrid2a';
 import Link from 'next/link';
-import ButtonA from '@/components/button/ScrollButton';
-import { notFound } from 'next/navigation';
 import { BaseUrl } from '@/lib/url';
+import { AlertTriangle, Info, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 interface Anime {
   title: string;
@@ -53,43 +52,84 @@ export default async function AnimePage({
   const { slug } = await params;
   const data = await getAnimeData(slug);
 
-  if (!data || !Array.isArray(data.data)) {
-    notFound();
+  if (!data) {
+    return (
+      <main className="min-h-screen p-6 bg-background dark:bg-dark">
+        <div className="max-w-7xl mx-auto mt-12">
+          <div className="p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center gap-4">
+            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+            <div>
+              <h1 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-2">
+                Error Loading Data
+              </h1>
+              <p className="text-red-700 dark:text-red-300">
+                Could not fetch data from the API. Please try again later.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!Array.isArray(data.data)) {
+    return (
+      <main className="min-h-screen p-6 bg-background dark:bg-dark">
+        <div className="max-w-7xl mx-auto mt-12">
+          <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
+            <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+              No Anime Available
+            </h1>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className='p-6'>
-      <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
-        Complete Anime
-      </h1>
-      <AnimeGrid animes={data.data} />
-      <PaginationComponent pagination={data.pagination} />
+    <main className="min-h-screen p-6 bg-background dark:bg-dark">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-xl">
+            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent">
+            Currently Finished Anime
+          </h1>
+        </div>
+
+        <AnimeGrid animes={data.data} />
+
+        <PaginationComponent pagination={data.pagination} />
+      </div>
     </main>
   );
 }
 
 const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
   return (
-    <div className='flex justify-between mt-8'>
+    <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
       {pagination.has_previous_page && pagination.previous_page !== null && (
-        <div className='text-2xl font-bold mt-8 mb-4'>
-          <Link
-            href={`/anime2/complete-anime/${pagination.previous_page}`}
-            className='text-blue-600 hover:underline'
-          >
-            <ButtonA>Previous</ButtonA>
-          </Link>
-        </div>
+        <Link href={`/anime/complete-anime/${pagination.previous_page}`}>
+          <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
+            <ChevronLeft className="w-5 h-5" />
+            Previous
+          </button>
+        </Link>
       )}
+
+      <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
+        Page {pagination.current_page} of {pagination.last_visible_page}
+      </span>
+
       {pagination.has_next_page && pagination.next_page !== null && (
-        <div className='text-2xl font-bold mt-8 mb-4'>
-          <Link
-            href={`/anime2/complete-anime/${pagination.next_page}`}
-            className='text-blue-600 hover:underline'
-          >
-            <ButtonA>Next</ButtonA>
-          </Link>
-        </div>
+        <Link href={`/anime/complete-anime/${pagination.next_page}`}>
+          <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
+            Next
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </Link>
       )}
     </div>
   );
