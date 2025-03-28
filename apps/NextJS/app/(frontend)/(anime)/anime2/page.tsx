@@ -1,4 +1,4 @@
-import AnimeGrid from '@/components/card/AnimeGrid3';
+import AnimeGrid from '@/components/card/AnimeGrid';
 import { BaseUrl } from '@/lib/url';
 import { notFound } from 'next/navigation';
 // import ButtonA from '@/components/button/ScrollButton';
@@ -73,6 +73,7 @@ export default async function AnimePage() {
           </div>
 
           <AnimeGrid
+            anime2={true}
             animes={data.data.ongoing_anime.map((anime) => ({
               ...anime,
               rating: '',
@@ -103,6 +104,7 @@ export default async function AnimePage() {
           </div>
 
           <AnimeGrid
+            anime2={true}
             animes={data.data.complete_anime.map((anime) => ({
               ...anime,
               rating: '',

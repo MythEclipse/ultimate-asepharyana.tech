@@ -18,11 +18,13 @@ interface Anime {
 interface AnimeGridProps {
   animes?: Anime[];
   loading?: boolean;
+  anime2?: boolean;
 }
 
 // components/AnimeGrid.tsx
 // components/AnimeGrid.tsx
-const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
+const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false, anime2 }) => {
+  const link = anime2 ? '/anime2/detail' : '/anime/detail';
   if (loading) {
     return (
       <div className='flex flex-col items-center p-4'>
@@ -49,7 +51,7 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
               ''
             }
             imageUrl={anime.poster || ''}
-            linkUrl={`/anime/detail/${anime.slug}`}
+            linkUrl={`${link}/${anime.slug}`}
           />
         ))}
       </div>
