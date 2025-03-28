@@ -1,3 +1,7 @@
+"use client";
+
+import { useParams } from 'next/navigation';
+import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import { BackgroundGradient } from '@/components/background/background-gradient';
@@ -31,37 +35,61 @@ interface EpisodeInfo {
   slug: string;
 }
 
-async function getAnimeData(slug: string): Promise<AnimeResponse | null> {
-  try {
-    const res = await fetch(`${BaseUrl}/api/anime/full/${slug}`, {
-      cache: 'no-store',
-    });
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-    if (!res.ok) return null;
+export default function DetailAnimePage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const { data, error, isLoading } = useSWR<AnimeResponse | null>(
+    `${BaseUrl}/api/anime/full/${slug}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
 
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-export default async function DetailAnimePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const data = await getAnimeData(slug);
-
-  if (!data) {
+  if (isLoading) {
     return (
-      <div className='p-4 max-w-screen-md mx-auto'>
-        <p className='text-red-500'>Error loading anime details</p>
-      </div>
+      <BackgroundGradient className='rounded-3xl p-6 bg-white dark:bg-zinc-900 shadow-xl'>
+        <div className='space-y-8'>
+          {/* Skeleton Header */}
+          <div className='text-center space-y-4 animate-pulse'>
+            <div className='h-12 bg-zinc-200 dark:bg-zinc-800 rounded-full w-3/4 mx-auto' />
+            <div className='h-1 bg-zinc-200 dark:bg-zinc-800 opacity-50' />
+          </div>
+
+          {/* Skeleton Video Player */}
+          <div className='aspect-video rounded-xl overflow-hidden shadow-2xl bg-zinc-200 dark:bg-zinc-800 animate-pulse' />
+
+          {/* Skeleton Navigation */}
+          <div className='flex justify-between gap-4'>
+            <div className='flex-1 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg' />
+            <div className='flex-1 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg' />
+          </div>
+
+          {/* Skeleton Downloads */}
+          <div className='space-y-6'>
+            <div className='h-8 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/3 mx-auto' />
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5'>
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className='relative rounded-2xl bg-zinc-100 dark:bg-zinc-800 p-6'>
+                  <div className='h-6 bg-zinc-200 dark:bg-zinc-700 w-1/3 mb-4 rounded' />
+                  <div className='space-y-3'>
+                    {[...Array(2)].map((_, j) => (
+                      <div key={j} className='h-16 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </BackgroundGradient>
     );
   }
 
-  if (data.status !== 'Ok') {
+  if (error || !data || data.status !== 'Ok') {
     return (
       <div className='p-4 max-w-screen-md mx-auto'>
         <p className='text-red-500'>Error loading anime details</p>
