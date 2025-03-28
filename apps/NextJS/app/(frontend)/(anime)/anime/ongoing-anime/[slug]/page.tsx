@@ -4,9 +4,9 @@ import { BaseUrl } from '@/lib/url';
 import {
   AlertTriangle,
   Info,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
+  Clapperboard,
 } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 interface OngoingAnimeData {
@@ -98,7 +98,7 @@ export default async function AnimePage({
       <div className='max-w-7xl mx-auto space-y-8'>
         <div className='flex items-center gap-4'>
           <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
-            <CheckCircle className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+            <Clapperboard className='w-8 h-8 text-blue-600 dark:text-blue-400' />
           </div>
           <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
             Currently Airing Anime
