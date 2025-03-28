@@ -155,9 +155,9 @@ export default function DetailAnimePage() {
               ([resolution, links]) => (
                 <div
                   key={resolution}
-                  className='relative rounded-2xl bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-zinc-800 dark:to-zinc-700/50 p-6 shadow-lg'
+                  className='relative bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-zinc-800 dark:to-zinc-700/50 p-6 shadow-lg'
                 >
-                  <div className='absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-purple-500 rounded-t-2xl' />
+                  <div className='absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-purple-500' />
                   <h3 className='text-xl font-bold mb-4 text-blue-600 dark:text-blue-400'>
                     {resolution}
                   </h3>

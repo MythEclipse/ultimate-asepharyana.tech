@@ -249,11 +249,10 @@ export default function DetailAnimePage({
 
               <button
                 onClick={handleBookmark}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
-                  bookmarked
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${bookmarked
                     ? 'bg-red-500/90 hover:bg-red-600 text-white shadow-md'
                     : 'bg-green-500/90 hover:bg-green-600 text-white shadow-md'
-                }`}
+                  }`}
               >
                 <Bookmark className='w-5 h-5' />
                 {bookmarked ? 'Bookmarked' : 'Bookmark Now'}
@@ -334,9 +333,13 @@ export default function DetailAnimePage({
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1'>
                   {episodes.length > 0 ? (
                     episodes.map((episode) => {
-                      const episodeNumber =
-                        episode.episode.match(/Episode (\d+)/i)?.[1] ||
-                        episode.episode;
+                      const episodeNumber = episode.episode.toLowerCase().includes('batch')
+                      ? 'Batch'
+                      : episode.episode.match(/Episode (\d+)\s*(?:[-–]\s*(\d+))?/i)?.slice(1).filter(Boolean).join('-') 
+                      || (episode.episode.toLowerCase().includes('end') 
+                        ? episode.episode.replace('Episode', '').trim() 
+                        : episode.episode);
+                    
                       return (
                         <ButtonA
                           onClick={() =>
@@ -366,12 +369,12 @@ export default function DetailAnimePage({
                 <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
                   Recommendations
                 </h2>
-                <div className='flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent dark:scrollbar-thumb-zinc-600'>
+                <div className='flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent dark:scrollbar-thumb-zinc-600 items-stretch'>
                   {anime.data.recommendations?.length > 0 ? (
                     anime.data.recommendations.map((recommendation) => (
                       <div
                         key={recommendation.slug}
-                        className='flex-shrink-0 w-48 md:w-56'
+                        className='flex-shrink-0 w-36 md:w-56 h-64 flex flex-col' // Added fixed height and flex
                       >
                         <CardA
                           title={recommendation.title}
