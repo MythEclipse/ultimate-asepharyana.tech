@@ -21,8 +21,6 @@ interface ChapterDetail {
   images: string[];
 }
 
-
-
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ChapterPage() {
@@ -125,23 +123,23 @@ export default function ChapterPage() {
       <div className='max-w-4xl mx-auto space-y-4'>
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className='relative group w-full'>
-              <Skeleton className='w-full h-auto aspect-[700/1000] rounded-xl border border-zinc-200 dark:border-zinc-700' />
-              <Skeleton className='absolute bottom-2 right-2 h-6 w-20 rounded-md' />
-            </div>
-          ))
-          : chapter?.images?.map((image, index) => (
-            <div key={`${image}-${index}`} className='relative group'>
-              <ImageWithFallback
-                imageUrl={image}
-                index={index}
-              // className="w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700"
-              />
-              <div className='absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity'>
-                Halaman {index + 1}
+              <div key={i} className='relative group w-full'>
+                <Skeleton className='w-full h-auto aspect-[700/1000] rounded-xl border border-zinc-200 dark:border-zinc-700' />
+                <Skeleton className='absolute bottom-2 right-2 h-6 w-20 rounded-md' />
               </div>
-            </div>
-          ))}
+            ))
+          : chapter?.images?.map((image, index) => (
+              <div key={`${image}-${index}`} className='relative group'>
+                <ImageWithFallback
+                  imageUrl={image}
+                  index={index}
+                  // className="w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700"
+                />
+                <div className='absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity'>
+                  Halaman {index + 1}
+                </div>
+              </div>
+            ))}
       </div>
 
       {/* Navigation Bottom (Fixed) */}

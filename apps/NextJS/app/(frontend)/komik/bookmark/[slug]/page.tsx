@@ -67,19 +67,21 @@ export default function BookmarkPage() {
   };
 
   if (isLoading) {
-    return (<main className='p-6'>
-      <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
-        Bookmarked Comic ({bookmarks.length})
-      </h1>
-      <KomikGrid loading={true} komiks={[]} />
-      <div className='flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse'>
-            <div className='flex gap-4'>
-              <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
-              <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
-            </div>
-            <div className='w-32 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full' />
+    return (
+      <main className='p-6'>
+        <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
+          Bookmarked Comic ({bookmarks.length})
+        </h1>
+        <KomikGrid loading={true} komiks={[]} />
+        <div className='flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse'>
+          <div className='flex gap-4'>
+            <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
+            <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
           </div>
-    </main>);
+          <div className='w-32 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full' />
+        </div>
+      </main>
+    );
   }
 
   if (bookmarks.length === 0) {

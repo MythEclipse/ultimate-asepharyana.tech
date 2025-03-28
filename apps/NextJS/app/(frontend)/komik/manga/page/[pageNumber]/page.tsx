@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect } from 'react';
 import { Link } from 'next-view-transitions';
@@ -44,7 +44,11 @@ export default function Page() {
   const router = useRouter();
   const pageNumber = parseInt(params.pageNumber as string, 10);
 
-  const { data: komikData, error, isLoading } = useSWR<KomikData>(
+  const {
+    data: komikData,
+    error,
+    isLoading,
+  } = useSWR<KomikData>(
     `/api/komik/manga?page=${pageNumber}&order=update`,
     fetcher,
     {
@@ -160,10 +164,11 @@ export default function Page() {
         <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
           <Link
             href={`/komik/manga/page/${komikData.pagination.has_previous_page ? pageNumber - 1 : 1}`}
-            className={`${!komikData.pagination.has_previous_page
-              ? 'opacity-50 pointer-events-none'
-              : ''
-              }`}
+            className={`${
+              !komikData.pagination.has_previous_page
+                ? 'opacity-50 pointer-events-none'
+                : ''
+            }`}
           >
             <button
               disabled={!komikData.pagination.has_previous_page}
@@ -180,10 +185,11 @@ export default function Page() {
 
           <Link
             href={`/komik/manga/page/${komikData.pagination.has_next_page ? pageNumber + 1 : pageNumber}`}
-            className={`${!komikData.pagination.has_next_page
-              ? 'opacity-50 pointer-events-none'
-              : ''
-              }`}
+            className={`${
+              !komikData.pagination.has_next_page
+                ? 'opacity-50 pointer-events-none'
+                : ''
+            }`}
           >
             <button
               disabled={!komikData.pagination.has_next_page}
@@ -195,6 +201,6 @@ export default function Page() {
           </Link>
         </div>
       </div>
-    </main >
+    </main>
   );
 }

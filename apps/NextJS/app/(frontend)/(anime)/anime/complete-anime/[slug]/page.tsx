@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Link } from 'next-view-transitions';
@@ -40,7 +40,8 @@ interface Pagination {
   previous_page: number | null;
 }
 
-const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(res => res.json());
+const fetcher = (url: string) =>
+  fetch(url, { cache: 'no-store' }).then((res) => res.json());
 
 export default function AnimePage() {
   const params = useParams();
@@ -120,7 +121,7 @@ export default function AnimePage() {
           <AnimeGrid animes={[]} loading={true} />
         </section>
       </div>
-    </main>
+    </main>;
   }
 
   if (!data || !Array.isArray(data.data)) {
@@ -181,7 +182,7 @@ export default function AnimePage() {
   return (
     <main className='min-h-screen p-6 bg-background dark:bg-dark'>
       <div className='max-w-7xl mx-auto space-y-8'>
-      <div className='flex items-center justify-between mb-6'>
+        <div className='flex items-center justify-between mb-6'>
           <div className='flex items-center gap-3'>
             <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
               <CheckCircle className='w-6 h-6 text-green-600 dark:text-green-400' />

@@ -55,15 +55,15 @@ export default function AnimePage() {
 
   if (error) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center gap-4">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto mt-12'>
+          <div className='p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center gap-4'>
+            <AlertTriangle className='w-8 h-8 text-red-600 dark:text-red-400' />
             <div>
-              <h1 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-2">
+              <h1 className='text-2xl font-bold text-red-800 dark:text-red-200 mb-2'>
                 Error Memuat Data
               </h1>
-              <p className="text-red-700 dark:text-red-300">
+              <p className='text-red-700 dark:text-red-300'>
                 Gagal mengambil data dari API. Silakan coba lagi nanti.
               </p>
             </div>
@@ -75,8 +75,8 @@ export default function AnimePage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto space-y-8'>
           <div className='flex items-center justify-between mb-6'>
             <div className='flex items-center gap-3'>
               <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
@@ -94,15 +94,22 @@ export default function AnimePage() {
 
           <AnimeGrid anime2 loading animes={[]} />
 
-          {parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) > 1 && (
+          {parseInt(Array.isArray(slug) ? slug[0] : (slug ?? '1'), 10) > 1 && (
             <PaginationComponent
               pagination={{
-                current_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10),
+                current_page: parseInt(
+                  Array.isArray(slug) ? slug[0] : (slug ?? '1'),
+                  10
+                ),
                 last_visible_page: undefined,
                 has_next_page: true,
                 has_previous_page: true,
-                previous_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) - 1,
-                next_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) + 1,
+                previous_page:
+                  parseInt(Array.isArray(slug) ? slug[0] : (slug ?? '1'), 10) -
+                  1,
+                next_page:
+                  parseInt(Array.isArray(slug) ? slug[0] : (slug ?? '1'), 10) +
+                  1,
               }}
             />
           )}
@@ -113,11 +120,11 @@ export default function AnimePage() {
 
   if (!data) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
-            <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto mt-12'>
+          <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
+            <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+            <h1 className='text-2xl font-bold text-blue-800 dark:text-blue-200'>
               Tidak Ada Anime Tersedia
             </h1>
           </div>
@@ -128,11 +135,11 @@ export default function AnimePage() {
 
   if (!Array.isArray(data.data)) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
-            <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto mt-12'>
+          <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
+            <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+            <h1 className='text-2xl font-bold text-blue-800 dark:text-blue-200'>
               Format Data Tidak Valid
             </h1>
           </div>
@@ -142,8 +149,8 @@ export default function AnimePage() {
   }
 
   return (
-    <main className="min-h-screen p-6 bg-background dark:bg-dark">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+      <div className='max-w-7xl mx-auto space-y-8'>
         <div className='flex items-center justify-between mb-6'>
           <div className='flex items-center gap-3'>
             <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
@@ -169,25 +176,25 @@ export default function AnimePage() {
 
 const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
   return (
-    <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
+    <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
       {pagination.has_previous_page && pagination.previous_page !== null && (
         <Link href={`/anime2/complete-anime/${pagination.previous_page}`}>
-          <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
-            <ChevronLeft className="w-5 h-5" />
+          <button className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
+            <ChevronLeft className='w-5 h-5' />
             Sebelumnya
           </button>
         </Link>
       )}
 
-      <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
+      <span className='text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4'>
         Halaman {pagination.current_page} dari {pagination.last_visible_page}
       </span>
 
       {pagination.has_next_page && pagination.next_page !== null && (
         <Link href={`/anime2/complete-anime/${pagination.next_page}`}>
-          <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
+          <button className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
             Selanjutnya
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className='w-5 h-5' />
           </button>
         </Link>
       )}

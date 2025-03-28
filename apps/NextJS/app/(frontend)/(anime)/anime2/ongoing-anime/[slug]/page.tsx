@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import AnimeGrid from '@/components/card/AnimeGrid';
 import {
@@ -39,7 +39,8 @@ interface OngoingAnimeData {
   pagination: Pagination;
 }
 
-const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(res => res.json());
+const fetcher = (url: string) =>
+  fetch(url, { cache: 'no-store' }).then((res) => res.json());
 
 export default function AnimePage() {
   const { slug } = useParams();
@@ -81,21 +82,24 @@ export default function AnimePage() {
             </h2>
           </div>
 
-          <AnimeGrid
-            anime2
-            loading
-            animes={[]}
-          />
+          <AnimeGrid anime2 loading animes={[]} />
 
-          {parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) > 1 && (
+          {parseInt(Array.isArray(slug) ? slug[0] : (slug ?? '1'), 10) > 1 && (
             <PaginationComponent
               pagination={{
-                current_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10),
+                current_page: parseInt(
+                  Array.isArray(slug) ? slug[0] : (slug ?? '1'),
+                  10
+                ),
                 last_visible_page: undefined,
                 has_next_page: true,
                 has_previous_page: true,
-                previous_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) - 1,
-                next_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) + 1,
+                previous_page:
+                  parseInt(Array.isArray(slug) ? slug[0] : (slug ?? '1'), 10) -
+                  1,
+                next_page:
+                  parseInt(Array.isArray(slug) ? slug[0] : (slug ?? '1'), 10) +
+                  1,
               }}
             />
           )}
@@ -160,11 +164,16 @@ export default function AnimePage() {
 }
 
 const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
-  const router = useTransitionRouter()
+  const router = useTransitionRouter();
   return (
     <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
       {pagination.has_previous_page && pagination.previous_page !== null && (
-        <button onClick={() => router.push(`/anime2/ongoing-anime/${pagination.previous_page}`)} className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
+        <button
+          onClick={() =>
+            router.push(`/anime2/ongoing-anime/${pagination.previous_page}`)
+          }
+          className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'
+        >
           <ChevronLeft className='w-5 h-5' />
           Previous
         </button>
@@ -175,7 +184,12 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       </span>
 
       {pagination.has_next_page && pagination.next_page !== null && (
-        <button onClick={() => router.push(`/anime2/ongoing-anime/${pagination.next_page}`)} className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
+        <button
+          onClick={() =>
+            router.push(`/anime2/ongoing-anime/${pagination.next_page}`)
+          }
+          className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'
+        >
           Next
           <ChevronRight className='w-5 h-5' />
         </button>

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
@@ -119,7 +119,8 @@ export default function AnimePage() {
                 Error Loading Data
               </h1>
               <p className='text-red-700 dark:text-red-300'>
-                {error?.message || 'Could not fetch data from the API. Please try again later.'}
+                {error?.message ||
+                  'Could not fetch data from the API. Please try again later.'}
               </p>
             </div>
           </div>
@@ -194,7 +195,6 @@ export default function AnimePage() {
             Ongoing Anime
           </h2>
         </div>
-        
 
         <AnimeGrid animes={data.data} />
 

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
@@ -73,11 +73,17 @@ export default function DetailAnimePage() {
             <div className='h-8 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/3 mx-auto' />
             <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5'>
               {[...Array(3)].map((_, i) => (
-                <div key={i} className='relative rounded-2xl bg-zinc-100 dark:bg-zinc-800 p-6'>
+                <div
+                  key={i}
+                  className='relative rounded-2xl bg-zinc-100 dark:bg-zinc-800 p-6'
+                >
                   <div className='h-6 bg-zinc-200 dark:bg-zinc-700 w-1/3 mb-4 rounded' />
                   <div className='space-y-3'>
                     {[...Array(2)].map((_, j) => (
-                      <div key={j} className='h-16 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
+                      <div
+                        key={j}
+                        className='h-16 bg-zinc-200 dark:bg-zinc-700 rounded-lg'
+                      />
                     ))}
                   </div>
                 </div>

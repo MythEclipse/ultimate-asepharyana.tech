@@ -19,7 +19,12 @@ interface KomikGridProps {
   loading2?: boolean;
 }
 
-const KomikGrid: React.FC<KomikGridProps> = ({ komiks, komik, loading,loading2 = false }) => {
+const KomikGrid: React.FC<KomikGridProps> = ({
+  komiks,
+  komik,
+  loading,
+  loading2 = false,
+}) => {
   if (komik) {
     return (
       <CardA
@@ -30,14 +35,9 @@ const KomikGrid: React.FC<KomikGridProps> = ({ komiks, komik, loading,loading2 =
         linkUrl={`/komik/detail/${komik.slug}`}
       />
     );
-
   }
   if (loading2) {
-    return (
-      <CardA
-        loading={true}
-      />
-    );
+    return <CardA loading={true} />;
   }
   if (loading) {
     return (

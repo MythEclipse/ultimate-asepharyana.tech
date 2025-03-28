@@ -1,11 +1,16 @@
-"use client";
+'use client';
 
 import AnimeGrid from '@/components/card/AnimeGrid';
 import useSWR from 'swr';
-import { ArrowRight, CheckCircle, Clapperboard, TriangleAlert } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle,
+  Clapperboard,
+  TriangleAlert,
+} from 'lucide-react';
 import { Link } from 'next-view-transitions';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface HomeData {
   status: string;
@@ -45,7 +50,7 @@ export default function AnimePage() {
           <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
             Anime
           </h1>
-  
+
           {/* Ongoing Anime Section */}
           <section className='mb-12 space-y-6'>
             <div className='flex items-center justify-between mb-6'>
@@ -65,10 +70,10 @@ export default function AnimePage() {
                 <ArrowRight className='w-4 h-4' />
               </Link>
             </div>
-  
+
             <AnimeGrid anime2 animes={[]} loading={true} />
           </section>
-  
+
           {/* Complete Anime Section */}
           <section className='space-y-6'>
             <div className='flex items-center justify-between mb-6'>
@@ -88,7 +93,7 @@ export default function AnimePage() {
                 <ArrowRight className='w-4 h-4' />
               </Link>
             </div>
-  
+
             <AnimeGrid anime2 animes={[]} loading={true} />
           </section>
         </div>
@@ -98,14 +103,14 @@ export default function AnimePage() {
 
   if (error || !data || data.status !== 'Ok' || !data.data) {
     return (
-      <div className="p-4 md:p-8 bg-background dark:bg-dark min-h-screen flex flex-col items-center justify-center gap-4">
-        <TriangleAlert className="w-16 h-16 text-red-500" />
-        <h2 className="text-2xl font-bold text-center">
-          {error ? "Gagal memuat data anime" : "Data tidak ditemukan"}
+      <div className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen flex flex-col items-center justify-center gap-4'>
+        <TriangleAlert className='w-16 h-16 text-red-500' />
+        <h2 className='text-2xl font-bold text-center'>
+          {error ? 'Gagal memuat data anime' : 'Data tidak ditemukan'}
         </h2>
-        <button 
-          onClick={() => mutate()} 
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+        <button
+          onClick={() => mutate()}
+          className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors'
         >
           Coba Lagi
         </button>

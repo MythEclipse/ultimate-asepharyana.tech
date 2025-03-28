@@ -43,7 +43,9 @@ const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
 const SearchPage = () => {
   const { slug } = useParams();
 
-  const query = decodeURIComponent(Array.isArray(slug) ? slug[0] : slug ?? '');
+  const query = decodeURIComponent(
+    Array.isArray(slug) ? slug[0] : (slug ?? '')
+  );
   const [searchResults, setSearchResults] = useState<SearchDetailData>({
     status: '',
     data: [],

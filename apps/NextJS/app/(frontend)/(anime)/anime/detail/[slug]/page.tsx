@@ -249,10 +249,11 @@ export default function DetailAnimePage({
 
               <button
                 onClick={handleBookmark}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${bookmarked
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
+                  bookmarked
                     ? 'bg-red-500/90 hover:bg-red-600 text-white shadow-md'
                     : 'bg-green-500/90 hover:bg-green-600 text-white shadow-md'
-                  }`}
+                }`}
               >
                 <Bookmark className='w-5 h-5' />
                 {bookmarked ? 'Bookmarked' : 'Bookmark Now'}
@@ -333,13 +334,19 @@ export default function DetailAnimePage({
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1'>
                   {episodes.length > 0 ? (
                     episodes.map((episode) => {
-                      const episodeNumber = episode.episode.toLowerCase().includes('batch')
-                      ? 'Batch'
-                      : episode.episode.match(/Episode (\d+)\s*(?:[-–]\s*(\d+))?/i)?.slice(1).filter(Boolean).join('-') 
-                      || (episode.episode.toLowerCase().includes('end') 
-                        ? episode.episode.replace('Episode', '').trim() 
-                        : episode.episode);
-                    
+                      const episodeNumber = episode.episode
+                        .toLowerCase()
+                        .includes('batch')
+                        ? 'Batch'
+                        : episode.episode
+                            .match(/Episode (\d+)\s*(?:[-–]\s*(\d+))?/i)
+                            ?.slice(1)
+                            .filter(Boolean)
+                            .join('-') ||
+                          (episode.episode.toLowerCase().includes('end')
+                            ? episode.episode.replace('Episode', '').trim()
+                            : episode.episode);
+
                       return (
                         <ButtonA
                           onClick={() =>

@@ -90,109 +90,129 @@ export default function DetailAnimePage() {
     fetcher
   );
 
-  if (isLoading) return (
-    <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
-      <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-2xl dark:shadow-none'>
-        <div className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
-          <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
-            {/* Cover Section */}
-            <div className='w-full md:w-1/3 flex flex-col gap-4'>
-              <div className='relative group overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-shadow'>
-                <div className='w-full aspect-[2/3] bg-gray-300 animate-pulse rounded-2xl' />
-              </div>
-
-              {/* Quick Info */}
-              <div className='p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl space-y-2'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-5 h-5 bg-gray-400 rounded' />
-                  <span className='font-medium'>Tipe:</span>
-                  <span className='text-zinc-700 dark:text-zinc-300'>Placeholder</span>
+  if (isLoading)
+    return (
+      <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+        <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-2xl dark:shadow-none'>
+          <div className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
+            <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
+              {/* Cover Section */}
+              <div className='w-full md:w-1/3 flex flex-col gap-4'>
+                <div className='relative group overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-shadow'>
+                  <div className='w-full aspect-[2/3] bg-gray-300 animate-pulse rounded-2xl' />
                 </div>
-                <div className='flex items-center gap-3'>
-                  <div className='w-5 h-5 bg-gray-400 rounded' />
-                  <span className='font-medium'>Status:</span>
-                  <span className='text-zinc-700 dark:text-zinc-300'>Placeholder</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Content Section */}
-            <div className='w-full md:w-2/3 space-y-6'>
-              <div className='h-12 bg-gray-300 rounded-lg w-2/3 animate-pulse' />
-
-              <div className='h-6 bg-gray-300 rounded-lg w-1/2 animate-pulse' />
-
-              {/* Metadata Grid */}
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className='flex items-center gap-3'>
+                {/* Quick Info */}
+                <div className='p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl space-y-2'>
+                  <div className='flex items-center gap-3'>
                     <div className='w-5 h-5 bg-gray-400 rounded' />
-                    <div>
-                      <div className='h-4 bg-gray-400 rounded w-16 mb-2' />
-                      <div className='h-5 bg-gray-400 rounded w-20' />
-                    </div>
+                    <span className='font-medium'>Tipe:</span>
+                    <span className='text-zinc-700 dark:text-zinc-300'>
+                      Placeholder
+                    </span>
                   </div>
-                ))}
-              </div>
-
-              {/* Genres */}
-              <div className='flex flex-wrap gap-2'>
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className='h-6 bg-gray-300 rounded-full w-20' />
-                ))}
-              </div>
-
-              {/* Synopsis */}
-              <div className='space-y-3'>
-                <div className='h-6 bg-gray-300 rounded-lg w-32' />
-                <div className='h-24 bg-gray-200 rounded-lg animate-pulse' />
-              </div>
-
-              {/* Batch Downloads Skeleton */}
-              <div className='space-y-4'>
-                <div className='h-8 bg-gray-300 rounded-lg w-64' />
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className='h-32 bg-gray-100 dark:bg-zinc-700 rounded-xl p-4'>
-                      <div className='h-6 bg-gray-300 rounded-lg w-3/4 mb-4' />
-                      <div className='h-8 bg-gray-200 rounded-lg mb-2' />
-                    </div>
-                  ))}
+                  <div className='flex items-center gap-3'>
+                    <div className='w-5 h-5 bg-gray-400 rounded' />
+                    <span className='font-medium'>Status:</span>
+                    <span className='text-zinc-700 dark:text-zinc-300'>
+                      Placeholder
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Episode List Skeleton */}
-              <div className='space-y-4'>
-                <div className='h-8 bg-gray-300 rounded-lg w-64' />
-                <div className='space-y-3'>
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className='h-32 bg-gray-100 dark:bg-zinc-700 rounded-xl p-4'>
-                      <div className='h-6 bg-gray-300 rounded-lg w-3/4 mb-4' />
-                      <div className='grid grid-cols-2 gap-2'>
-                        {[...Array(2)].map((_, j) => (
-                          <div key={j} className='h-8 bg-gray-200 rounded-lg' />
-                        ))}
+              {/* Content Section */}
+              <div className='w-full md:w-2/3 space-y-6'>
+                <div className='h-12 bg-gray-300 rounded-lg w-2/3 animate-pulse' />
+
+                <div className='h-6 bg-gray-300 rounded-lg w-1/2 animate-pulse' />
+
+                {/* Metadata Grid */}
+                <div className='grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className='flex items-center gap-3'>
+                      <div className='w-5 h-5 bg-gray-400 rounded' />
+                      <div>
+                        <div className='h-4 bg-gray-400 rounded w-16 mb-2' />
+                        <div className='h-5 bg-gray-400 rounded w-20' />
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Recommendations Skeleton */}
-              <div className='space-y-4'>
-                <div className='h-8 bg-gray-300 rounded-lg w-64' />
-                <div className='flex overflow-x-auto pb-4 gap-4'>
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className='w-48 h-64 bg-gray-200 rounded-xl' />
+                {/* Genres */}
+                <div className='flex flex-wrap gap-2'>
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className='h-6 bg-gray-300 rounded-full w-20'
+                    />
                   ))}
+                </div>
+
+                {/* Synopsis */}
+                <div className='space-y-3'>
+                  <div className='h-6 bg-gray-300 rounded-lg w-32' />
+                  <div className='h-24 bg-gray-200 rounded-lg animate-pulse' />
+                </div>
+
+                {/* Batch Downloads Skeleton */}
+                <div className='space-y-4'>
+                  <div className='h-8 bg-gray-300 rounded-lg w-64' />
+                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className='h-32 bg-gray-100 dark:bg-zinc-700 rounded-xl p-4'
+                      >
+                        <div className='h-6 bg-gray-300 rounded-lg w-3/4 mb-4' />
+                        <div className='h-8 bg-gray-200 rounded-lg mb-2' />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Episode List Skeleton */}
+                <div className='space-y-4'>
+                  <div className='h-8 bg-gray-300 rounded-lg w-64' />
+                  <div className='space-y-3'>
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className='h-32 bg-gray-100 dark:bg-zinc-700 rounded-xl p-4'
+                      >
+                        <div className='h-6 bg-gray-300 rounded-lg w-3/4 mb-4' />
+                        <div className='grid grid-cols-2 gap-2'>
+                          {[...Array(2)].map((_, j) => (
+                            <div
+                              key={j}
+                              className='h-8 bg-gray-200 rounded-lg'
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommendations Skeleton */}
+                <div className='space-y-4'>
+                  <div className='h-8 bg-gray-300 rounded-lg w-64' />
+                  <div className='flex overflow-x-auto pb-4 gap-4'>
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className='w-48 h-64 bg-gray-200 rounded-xl'
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  );
+      </main>
+    );
   if (error || !data?.data)
     return (
       <div className='min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center'>

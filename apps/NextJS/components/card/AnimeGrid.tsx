@@ -23,7 +23,11 @@ interface AnimeGridProps {
 
 // components/AnimeGrid.tsx
 // components/AnimeGrid.tsx
-const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false, anime2 }) => {
+const AnimeGrid: React.FC<AnimeGridProps> = ({
+  animes,
+  loading = false,
+  anime2,
+}) => {
   const link = anime2 ? '/anime2/detail' : '/anime/detail';
   if (loading) {
     return (
@@ -58,7 +62,5 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false, anime2 }
     </div>
   );
 };
-
-
 
 export default AnimeGrid;

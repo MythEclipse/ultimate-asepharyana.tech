@@ -20,9 +20,18 @@ export interface Komik {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function HomePage() {
-  const { data: manga, error: mangaError } = useSWR(`/api/komik/manga?page=1&order=update`, fetcher);
-  const { data: manhua, error: manhuaError } = useSWR(`/api/komik/manhua?page=1&order=update`, fetcher);
-  const { data: manhwa, error: manhwaError } = useSWR(`/api/komik/manhwa?page=1&order=update`, fetcher);
+  const { data: manga, error: mangaError } = useSWR(
+    `/api/komik/manga?page=1&order=update`,
+    fetcher
+  );
+  const { data: manhua, error: manhuaError } = useSWR(
+    `/api/komik/manhua?page=1&order=update`,
+    fetcher
+  );
+  const { data: manhwa, error: manhwaError } = useSWR(
+    `/api/komik/manhwa?page=1&order=update`,
+    fetcher
+  );
 
   const error = mangaError || manhuaError || manhwaError;
 
@@ -100,10 +109,7 @@ export default function HomePage() {
                   </div>
 
                   {isLoading[type as keyof typeof isLoading] ? (
-                    <ComicGrid
-                    loading={true}
-                    komiks={[]}
-                  />
+                    <ComicGrid loading={true} komiks={[]} />
                   ) : komiks ? (
                     komiks.length > 0 ? (
                       <ComicGrid
