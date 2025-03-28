@@ -1,4 +1,4 @@
-import AnimeGrid from '@/components/card/AnimeGrid2a';
+import AnimeGrid from '@/components/card/AnimeGrid';
 import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import {

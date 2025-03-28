@@ -1,12 +1,12 @@
-import AnimeGrid from '@/components/card/AnimeGrid2a';
+import AnimeGrid from '@/components/card/AnimeGrid';
 import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import {
   AlertTriangle,
   Info,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
+  Clapperboard,
 } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 interface Anime {
@@ -96,13 +96,13 @@ export default async function AnimePage({
   return (
     <main className='min-h-screen p-6 bg-background dark:bg-dark'>
       <div className='max-w-7xl mx-auto space-y-8'>
-        <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-3'>
           <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
-            <CheckCircle className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+            <Clapperboard className='w-6 h-6 text-blue-600 dark:text-blue-400' />
           </div>
-          <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-            Currently Airing Anime
-          </h1>
+          <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+            Ongoing Anime
+          </h2>
         </div>
 
         <AnimeGrid animes={data.data} />
