@@ -57,20 +57,27 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
   );
 };
 
+
 const Skeleton = () => {
   return (
-    <div className="h-64 w-full bg-gray-800 dark:bg-gray-700 rounded-lg overflow-hidden animate-pulse">
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="h-48 w-full bg-gray-700 rounded-t-lg animate-pulse">
-          <div className="p-4">
-            <div className="w-full h-4 bg-gray-600 rounded mb-2 animate-pulse"></div>
-            <div className="w-3/4 h-3 bg-gray-600 rounded animate-pulse"></div>
-          </div>
+    <div className="h-full w-full bg-gray-800 dark:bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+      <div className="h-full w-full flex flex-col">
+        {/* Bagian gambar */}
+        <div className="h-64 w-full bg-gray-700 rounded-t-lg animate-pulse" />
+        
+        {/* Bagian konten */}
+        <div className="p-4 flex-1">
+          {/* Judul */}
+          <div className="w-full h-4 bg-gray-600 rounded mb-17 animate-pulse" />
+          
+          {/* Deskripsi */}
+          <div className="w-full h-4 bg-gray-600 rounded mt-15 animate-pulse" />
         </div>
       </div>
     </div>
   );
 };
+
 
 
 export default AnimeGrid;
