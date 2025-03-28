@@ -8,7 +8,9 @@ import { Textarea } from '@/components/text/textarea';
 import { Posts, User, Likes, Comments } from '@prisma/client';
 import { useSession } from 'next-auth/react';
 import useSWR, { mutate } from 'swr';
-
+import ButtonA from '@/components/button/NormalButton';
+import { UploadCloud, Loader2,Lock } from 'lucide-react';
+import { Link } from 'next-view-transitions';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PostPage() {
@@ -169,45 +171,79 @@ export default function PostPage() {
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
 
   return (
-    <div className='container mx-auto py-8 px-4'>
-      <h1 className='text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-8 text-center'>
-        Social Feed
-      </h1>
-
+    <div className="container mx-auto py-8 px-4 max-w-4xl">
+      {/* Header Section */}
+      <div className="mb-12 text-center space-y-2">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
+          Community Hub
+        </h1>
+        <div className="h-1 w-24 mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full" />
+      </div>
+  
+      {/* Create Post Section */}
       {session ? (
-        <div className='mb-8'>
-          <Card>
-            <Textarea
-              placeholder="What's on your mind?"
-              value={content}
-              onChange={handleContentChange}
-              className='mb-4 border border-blue-500 dark:border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 shadow-lg'
-            />
-            <input
-              type='file'
-              onChange={handleFileChange}
-              className='mb-4 block w-full text-sm text-gray-500 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-gray-300 hover:file:bg-blue-100 dark:hover:file:bg-gray-600'
-            />
-            <button
-              onClick={handlePostSubmit}
-              disabled={isUploading || !content.trim()}
-              className={`w-full py-2 ${
-                isUploading ? 'bg-red-600' : 'bg-blue-600'
-              } text-white dark:text-black rounded-lg ${
-                isUploading ? '' : 'hover:bg-blue-700'
-              } transition duration-300`}
+        <div className="mb-10 group">
+          <div className="relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity" />
+            <Card 
+            // className="!bg-transparent !border-none"
             >
-              {isUploading ? 'Uploading...' : 'Post'}
-            </button>
-          </Card>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Share your thoughts..."
+                  value={content}
+                  onChange={handleContentChange}
+                  className="min-h-[120px] text-lg border-2 border-blue-100 dark:border-gray-700 hover:border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all"
+                />
+                
+                <div className="flex flex-col gap-4">
+                  <label className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-blue-100 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                    <UploadCloud className="w-8 h-8 text-blue-500" />
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {File ? File.name : 'Attach image or video'}
+                    </span>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+  
+                  <button
+                    onClick={handlePostSubmit}
+                    disabled={isUploading || !content.trim()}
+                    className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-70 disabled:pointer-events-none"
+                  >
+                    {isUploading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Sharing...</span>
+                      </div>
+                    ) : (
+                      'Publish Post'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       ) : (
-        <div className='mb-8'>
-          <Card>
-            <p className='text-gray-800 dark:text-gray-100'>
-              You must be logged in to create a post.
+        <div className="mb-10 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900/50 rounded-2xl p-6 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <Lock className="w-10 h-10 text-blue-500" />
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+              Join the Conversation
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Sign in to share your thoughts and engage with the community
             </p>
-          </Card>
+            <Link href="/login" className="w-full max-w-[200px]">
+              <ButtonA className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                Get Started
+              </ButtonA>
+            </Link>
+          </div>
         </div>
       )}
 
