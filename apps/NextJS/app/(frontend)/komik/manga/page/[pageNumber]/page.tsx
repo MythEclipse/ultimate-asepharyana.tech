@@ -1,16 +1,17 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect } from 'react';
 import { Link } from 'next-view-transitions';
-import { notFound } from 'next/navigation';
-import { BaseUrl } from '@/lib/url';
-import { ComicCard } from '@/components/card/ComicCard';
+import { useParams, useRouter } from 'next/navigation';
+import useSWR from 'swr';
+import ComicCard from '@/components/card/ComicGrid';
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
-
-export const dynamic = 'force-dynamic';
+import { BaseUrl } from '@/lib/url';
 
 interface Pagination {
   current_page: number;
@@ -22,39 +23,86 @@ interface Pagination {
 }
 
 interface KomikData {
-  data: Manga[];
+  data: Komik[];
   pagination: Pagination;
 }
 
-interface Manga {
+export interface Komik {
   title: string;
-  image: string;
+  poster: string;
   chapter: string;
-  date: string;
   score: string;
+  date: string;
   type: string;
   komik_id: string;
+  slug: string; // Added slug property
 }
 
-export default async function Page(props: {
-  params: Promise<{ pageNumber: string }>;
-}) {
-  const params = await props.params;
-  const pageNumber = parseInt(params.pageNumber, 10);
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  if (isNaN(pageNumber)) {
-    notFound();
+export default function Page() {
+  const params = useParams();
+  const router = useRouter();
+  const pageNumber = parseInt(params.pageNumber as string, 10);
+
+  const { data: komikData, error, isLoading } = useSWR<KomikData>(
+    `${BaseUrl}/api/komik/manga?page=${pageNumber}&order=update`,
+    fetcher,
+    {
+      revalidateIfStale: true,
+      revalidateOnFocus: false,
+      refreshInterval: 60 * 1000,
+    }
+  );
+
+  useEffect(() => {
+    if (isNaN(pageNumber)) {
+      router.replace('/404');
+    }
+  }, [pageNumber, router]);
+
+  if (isNaN(pageNumber)) return null;
+
+  if (isLoading) {
+    return (
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto space-y-8'>
+          <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
+            <div className='flex items-center gap-4'>
+              <div className='p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl'>
+                <BookOpen className='w-8 h-8 text-purple-600 dark:text-purple-400' />
+              </div>
+              <div>
+                <h1 className='text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'>
+                  Latest Manga
+                </h1>
+                <p className='text-zinc-600 dark:text-zinc-400 mt-1'>
+                  Halaman {komikData?.pagination?.current_page ?? '-'} dari{' '}
+                  {komikData?.pagination?.last_visible_page ?? '-'}
+                </p>
+              </div>
+            </div>
+            <Link
+              href='/komik/manga/page/1'
+              className='flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30'
+            >
+              Lihat Semua
+              <ChevronRight className='w-5 h-5' />
+            </Link>
+          </div>
+          <div className='flex flex-col items-center p-4'>
+            <div className='grid grid-cols-5 gap-4 w-full'>
+              {Array.from({ length: 40 }).map((_, index) => (
+                <ComicCard key={index} loading2 />
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  let komikData: KomikData;
-  try {
-    const response = await fetch(
-      `${BaseUrl}/api/komik/manga?page=${pageNumber}&order=update`,
-      { next: { revalidate: 60 } }
-    );
-    if (!response.ok) throw new Error('Failed to fetch');
-    komikData = await response.json();
-  } catch {
+  if (error || !komikData) {
     return (
       <div className='min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center'>
         <div className='max-w-2xl text-center'>
@@ -101,21 +149,22 @@ export default async function Page(props: {
         </div>
 
         {/* Manga Grid */}
-        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'>
-          {komikData.data.map((manga) => (
-            <ComicCard key={manga.komik_id} comic={manga} />
-          ))}
+        <div className='flex flex-col items-center p-4'>
+          <div className='grid grid-cols-5 gap-4 w-full'>
+            {komikData.data.map((komik) => (
+              <ComicCard key={komik.slug} komik={komik} />
+            ))}
+          </div>
         </div>
 
         {/* Pagination */}
         <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
           <Link
             href={`/komik/manga/page/${komikData.pagination.has_previous_page ? pageNumber - 1 : 1}`}
-            className={`${
-              !komikData.pagination.has_previous_page
-                ? 'opacity-50 pointer-events-none'
-                : ''
-            }`}
+            className={`${!komikData.pagination.has_previous_page
+              ? 'opacity-50 pointer-events-none'
+              : ''
+              }`}
           >
             <button
               disabled={!komikData.pagination.has_previous_page}
@@ -132,11 +181,10 @@ export default async function Page(props: {
 
           <Link
             href={`/komik/manga/page/${komikData.pagination.has_next_page ? pageNumber + 1 : pageNumber}`}
-            className={`${
-              !komikData.pagination.has_next_page
-                ? 'opacity-50 pointer-events-none'
-                : ''
-            }`}
+            className={`${!komikData.pagination.has_next_page
+              ? 'opacity-50 pointer-events-none'
+              : ''
+              }`}
           >
             <button
               disabled={!komikData.pagination.has_next_page}
@@ -148,6 +196,6 @@ export default async function Page(props: {
           </Link>
         </div>
       </div>
-    </main>
+    </main >
   );
 }

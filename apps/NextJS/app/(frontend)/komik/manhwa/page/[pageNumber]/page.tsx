@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'next-view-transitions';
 import { notFound } from 'next/navigation';
 import { BaseUrl } from '@/lib/url';
-import { ComicCard } from '@/components/card/ComicCard';
 import {
   BookOpen,
   ChevronLeft,
@@ -102,9 +101,6 @@ export default async function Page(props: {
 
         {/* Comic Grid */}
         <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'>
-          {komikData.data.map((comic) => (
-            <ComicCard key={comic.komik_id} comic={comic} />
-          ))}
         </div>
 
         {/* Pagination */}

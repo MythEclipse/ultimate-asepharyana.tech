@@ -1,6 +1,6 @@
 'use client';
 
-import React, {  } from 'react';
+import React from 'react';
 import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
 import {

@@ -30,14 +30,14 @@ interface Chapter {
 interface Recommendation {
   slug: string;
   title: string;
-  image: string;
+  poster: string;
 }
 
 interface MangaData {
   title: string;
   alternativeTitle: string;
   score: string;
-  image: string;
+  poster: string;
   type: string;
   status: string;
   releaseDate: string;
@@ -57,7 +57,7 @@ export default function DetailMangaPage() {
   const { komikId } = useParams();
 
   const { data: manga, error } = useSWR<MangaData>(
-    `${PRODUCTION}/api/komik/detail?komik_id=${komikId}`,
+    `/api/komik/detail?komik_id=${komikId}`,
     fetcher
   );
 
@@ -77,7 +77,7 @@ export default function DetailMangaPage() {
       bookmarks.push({
         slug: komikId,
         title: manga?.title,
-        poster: manga?.image,
+        poster: manga?.poster,
       });
     }
 
@@ -164,12 +164,12 @@ export default function DetailMangaPage() {
   );
   const fallback = 'https://asepharyana.cloud/default.png';
   const imageSources = [
-    manga.image && manga.image.trim() ? manga.image : fallback,
-    manga.image && manga.image.trim()
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(manga.image)}`
+    manga.poster && manga.poster.trim() ? manga.poster : fallback,
+    manga.poster && manga.poster.trim()
+      ? `https://imagecdn.app/v1/images/${encodeURIComponent(manga.poster)}`
       : null,
-    manga.image && manga.image.trim()
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(manga.image)}`
+    manga.poster && manga.poster.trim()
+      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(manga.poster)}`
       : null,
   ].filter((src) => src && src.trim()) as string[];
 
@@ -326,7 +326,7 @@ export default function DetailMangaPage() {
                       >
                         <CardA
                           title={recommendation.title}
-                          imageUrl={recommendation.image}
+                          imageUrl={recommendation.poster}
                           linkUrl={`/komik/detail/${recommendation.slug}`}
                         />
                       </div>

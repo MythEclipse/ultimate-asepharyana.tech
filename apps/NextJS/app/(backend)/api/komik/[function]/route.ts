@@ -22,9 +22,8 @@ interface MangaData {
   date: string;
   score: string;
   type: string;
-  komik_id: string;
+  slug: string;
   pagination?: Pagination;
-  slug?: string; // Added slug for routing
 }
 interface Pagination {
   current_page: number;
@@ -77,7 +76,7 @@ const parseMangaData = (body: string): MangaData[] => {
     const score = $(e).find('i').text().trim() || ''; // Extract score from the specified element
     const date = $(e).find('.datech').text().trim() || '';
     const type = $(e).find('.typeflag').attr('class')?.split(' ')[1] || '';
-    const komik_id = $(e).find('a').attr('href')?.split('/')[4] || '';
+    const slug = $(e).find('a').attr('href')?.split('/')[4] || '';
 
     data.push({
       title,
@@ -86,7 +85,7 @@ const parseMangaData = (body: string): MangaData[] => {
       score,
       date,
       type,
-      komik_id,
+      slug,
     });
   });
 

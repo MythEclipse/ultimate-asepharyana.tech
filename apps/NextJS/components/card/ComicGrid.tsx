@@ -2,22 +2,43 @@ import React from 'react';
 import CardA from './MediaCard';
 
 interface Komik {
-  title: string;
-  poster: string;
-  chapter: string;
-  score: string;
-  date: string;
-  type: string;
-  komik_id: string;
+  title?: string;
+  poster?: string;
+  chapter?: string;
+  score?: string;
+  date?: string;
+  type?: string;
+  komik_id?: string;
   slug: string;
 }
 
 interface KomikGridProps {
   komiks?: Komik[];
   loading?: boolean;
+  komik?: Komik;
+  loading2?: boolean;
 }
 
-const KomikGrid: React.FC<KomikGridProps> = ({ komiks, loading = false }) => {
+const KomikGrid: React.FC<KomikGridProps> = ({ komiks, komik, loading,loading2 = false }) => {
+  if (komik) {
+    return (
+      <CardA
+        key={komik.slug}
+        title={komik.title}
+        description={''}
+        imageUrl={komik.poster || ''}
+        linkUrl={`/komik/detail/${komik.slug}`}
+      />
+    );
+
+  }
+  if (loading2) {
+    return (
+      <CardA
+        loading={true}
+      />
+    );
+  }
   if (loading) {
     return (
       <div className='flex flex-col items-center p-4'>
