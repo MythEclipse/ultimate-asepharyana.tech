@@ -41,7 +41,7 @@ const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
 };
 
 const SkeletonLoader = () => (
-  <div className='absolute inset-0 bg-gray-300 animate-pulse rounded-t-xl'></div>
+  <div className='absolute inset-0 bg-gray-300 animate-pulse rounded-t-xl border border-gray-700' />
 );
 
 export default function CardA({

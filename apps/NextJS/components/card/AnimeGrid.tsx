@@ -16,14 +16,29 @@ interface Anime {
 }
 
 interface AnimeGridProps {
-  animes: Anime[];
+  animes?: Anime[];
+  loading?: boolean;
 }
 
-const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
+// components/AnimeGrid.tsx
+// components/AnimeGrid.tsx
+const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center p-4">
+        <div className="grid grid-cols-5 gap-4 w-full">
+          {Array(25).fill(0).map((_, index) => (
+            <Skeleton key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className='flex flex-col items-center p-4'>
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
-        {animes.map((anime) => (
+    <div className="flex flex-col items-center p-4">
+      <div className="grid grid-cols-5 gap-4 w-full">
+        {animes?.map((anime) => (
           <MediaCard
             key={anime.slug}
             title={anime.title}
@@ -41,5 +56,21 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes }) => {
     </div>
   );
 };
+
+const Skeleton = () => {
+  return (
+    <div className="h-64 w-full bg-gray-800 dark:bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="h-48 w-full bg-gray-700 rounded-t-lg animate-pulse">
+          <div className="p-4">
+            <div className="w-full h-4 bg-gray-600 rounded mb-2 animate-pulse"></div>
+            <div className="w-3/4 h-3 bg-gray-600 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default AnimeGrid;

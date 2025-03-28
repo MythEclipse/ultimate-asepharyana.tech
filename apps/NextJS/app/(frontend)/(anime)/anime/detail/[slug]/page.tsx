@@ -117,7 +117,92 @@ export default function DetailAnimePage({
     return (
       <p className='text-red-500 text-center'>Failed to load anime data</p>
     );
-  if (!anime) return <p className='text-center'>Loading...</p>;
+    if (!anime) {
+      return (
+        <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+          <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-2xl dark:shadow-none'>
+            <div className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
+              <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
+                {/* Skeleton - Cover Image Section */}
+                <div className='w-full md:w-1/3 flex flex-col gap-4'>
+                  <div className='bg-zinc-200 dark:bg-zinc-700 rounded-2xl w-full aspect-[2/3] animate-pulse' />
+                  <div className='h-12 bg-zinc-200 dark:bg-zinc-700 rounded-full animate-pulse' />
+                </div>
+    
+                {/* Skeleton - Content Section */}
+                <div className='w-full md:w-2/3 space-y-6'>
+                  {/* Title Skeleton */}
+                  <div className='h-10 bg-zinc-200 dark:bg-zinc-700 rounded-full w-3/4 animate-pulse' />
+    
+                  {/* Metadata Grid Skeleton */}
+                  <div className='grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className='flex items-center gap-3'>
+                        <div className='w-10 h-10 bg-zinc-300 dark:bg-zinc-600 rounded-lg animate-pulse' />
+                        <div className='space-y-2'>
+                          <div className='h-4 bg-zinc-300 dark:bg-zinc-600 rounded w-16 animate-pulse' />
+                          <div className='h-4 bg-zinc-300 dark:bg-zinc-600 rounded w-24 animate-pulse' />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+    
+                  {/* Genres Skeleton */}
+                  <div className='flex flex-wrap gap-2'>
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className='h-8 bg-zinc-200 dark:bg-zinc-700 rounded-full w-24 animate-pulse'
+                      />
+                    ))}
+                  </div>
+    
+                  {/* Synopsis Skeleton */}
+                  <div className='space-y-3'>
+                    <div className='h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-32 animate-pulse' />
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className='h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full animate-pulse'
+                      />
+                    ))}
+                  </div>
+    
+                  {/* Episodes Skeleton */}
+                  <div className='space-y-4'>
+                    <div className='h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-48 animate-pulse' />
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1'>
+                      {[...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className='h-16 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse'
+                        />
+                      ))}
+                    </div>
+                  </div>
+    
+                  {/* Recommendations Skeleton */}
+                  <div className='space-y-4'>
+                    <div className='h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-48 animate-pulse' />
+                    <div className='flex overflow-x-auto pb-4 gap-4'>
+                      {[...Array(4)].map((_, i) => (
+                        <div
+                          key={i}
+                          className='flex-shrink-0 w-48 md:w-56 space-y-2'
+                        >
+                          <div className='bg-zinc-200 dark:bg-zinc-700 aspect-[2/3] rounded-xl animate-pulse' />
+                          <div className='h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4 animate-pulse' />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      );
+    }
 
   const episodes = anime.data.episode_lists || [];
 
