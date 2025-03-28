@@ -61,7 +61,7 @@ export default function DetailMangaPage({
   const [resolvedParams, setResolvedParams] = useState<{
     komikId: string;
   } | null>(null);
-  const router = useTransitionRouter()
+  const router = useTransitionRouter();
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);

@@ -25,13 +25,10 @@ interface AnimeGridProps {
 const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
   if (loading) {
     return (
-      <div className="flex flex-col items-center p-4">
-        <div className="grid grid-cols-5 gap-4 w-full">
+      <div className='flex flex-col items-center p-4'>
+        <div className='grid grid-cols-5 gap-4 w-full'>
           {Array.from({ length: 25 }).map((_, index) => (
-            <MediaCard
-              key={index}
-              loading={loading}
-            />
+            <MediaCard key={index} loading={loading} />
           ))}
         </div>
       </div>
@@ -39,8 +36,8 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
   }
 
   return (
-    <div className="flex flex-col items-center p-4">
-      <div className="grid grid-cols-5 gap-4 w-full">
+    <div className='flex flex-col items-center p-4'>
+      <div className='grid grid-cols-5 gap-4 w-full'>
         {animes?.map((anime) => (
           <MediaCard
             key={anime.slug}
@@ -59,7 +56,6 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
     </div>
   );
 };
-
 
 // const Skeleton = () => {
 //   return (
@@ -80,7 +76,5 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
 //     </div>
 //   );
 // };
-
-
 
 export default AnimeGrid;

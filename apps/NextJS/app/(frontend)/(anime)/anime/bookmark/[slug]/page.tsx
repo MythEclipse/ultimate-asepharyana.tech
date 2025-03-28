@@ -73,7 +73,7 @@ export default function BookmarkPage() {
               <div className='h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full w-24' />
             </div>
           </div>
-  
+
           {/* Grid Skeleton - Updated to match AnimeGrid structure */}
           <div className='flex flex-col items-center p-4'>
             <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
@@ -88,7 +88,7 @@ export default function BookmarkPage() {
               ))}
             </div>
           </div>
-  
+
           {/* Pagination Skeleton */}
           <div className='flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse'>
             <div className='flex gap-4'>
