@@ -3,7 +3,6 @@
 import React from 'react';
 import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
-import { BaseUrl } from '@/lib/url';
 import ComicGrid from '@/components/card/ComicGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 
@@ -21,9 +20,9 @@ export interface Komik {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function HomePage() {
-  const { data: manga, error: mangaError } = useSWR(`${BaseUrl}/api/komik/manga?page=1&order=update`, fetcher);
-  const { data: manhua, error: manhuaError } = useSWR(`${BaseUrl}/api/komik/manhua?page=1&order=update`, fetcher);
-  const { data: manhwa, error: manhwaError } = useSWR(`${BaseUrl}/api/komik/manhwa?page=1&order=update`, fetcher);
+  const { data: manga, error: mangaError } = useSWR(`/api/komik/manga?page=1&order=update`, fetcher);
+  const { data: manhua, error: manhuaError } = useSWR(`/api/komik/manhua?page=1&order=update`, fetcher);
+  const { data: manhwa, error: manhwaError } = useSWR(`/api/komik/manhwa?page=1&order=update`, fetcher);
 
   const error = mangaError || manhuaError || manhwaError;
 

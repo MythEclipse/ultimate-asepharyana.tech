@@ -11,7 +11,6 @@ import {
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
-import { BaseUrl } from '@/lib/url';
 
 interface Pagination {
   current_page: number;
@@ -45,7 +44,7 @@ export default function Page() {
   const pageNumber = parseInt(params.pageNumber as string, 10);
 
   const { data: komikData, error, isLoading } = useSWR<KomikData>(
-    `${BaseUrl}/api/komik/manhua?page=${pageNumber}&order=update`,
+    `/api/komik/manhua?page=${pageNumber}&order=update`,
     fetcher,
     {
       revalidateIfStale: true,
