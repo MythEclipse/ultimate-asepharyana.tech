@@ -1,3 +1,5 @@
+"use client";
+
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
@@ -8,7 +10,9 @@ import {
   ChevronRight,
   Clapperboard,
 } from 'lucide-react';
-export const dynamic = 'force-dynamic';
+import useSWR from 'swr';
+import { useParams } from 'next/navigation';
+
 interface Anime {
   title: string;
   slug: string;
@@ -36,29 +40,16 @@ interface OngoingAnimeData {
   pagination: Pagination;
 }
 
-async function getAnimeData(slug: string): Promise<OngoingAnimeData | null> {
-  try {
-    const res = await fetch(`${BaseUrl}/api/anime2/ongoing-anime/${slug}`, {
-      cache: 'no-store',
-    });
+const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(res => res.json());
 
-    if (!res.ok) return null;
+export default function AnimePage() {
+  const { slug } = useParams();
+  const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
+    `${BaseUrl}/api/anime2/ongoing-anime/${slug}`,
+    fetcher
+  );
 
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-export default async function AnimePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const data = await getAnimeData(slug);
-
-  if (!data) {
+  if (error) {
     return (
       <main className='min-h-screen p-6 bg-background dark:bg-dark'>
         <div className='max-w-7xl mx-auto mt-12'>
@@ -70,6 +61,41 @@ export default async function AnimePage({
               </h1>
               <p className='text-red-700 dark:text-red-300'>
                 Could not fetch data from the API. Please try again later.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto mt-12'>
+          <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
+            <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+            <h1 className='text-2xl font-bold text-blue-800 dark:text-blue-200'>
+              Loading...
+            </h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!data) {
+    return (
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto mt-12'>
+          <div className='p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center gap-4'>
+            <AlertTriangle className='w-8 h-8 text-red-600 dark:text-red-400' />
+            <div>
+              <h1 className='text-2xl font-bold text-red-800 dark:text-red-200 mb-2'>
+                Data Not Found
+              </h1>
+              <p className='text-red-700 dark:text-red-300'>
+                The requested data could not be found.
               </p>
             </div>
           </div>
