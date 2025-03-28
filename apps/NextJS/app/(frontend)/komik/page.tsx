@@ -7,7 +7,6 @@ import ComicGrid from '@/components/card/ComicGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 
 export interface Komik {
-  komik_id: string;
   title: string;
   poster: string;
   chapter: string;
@@ -116,7 +115,7 @@ export default function HomePage() {
                         komiks={komiks.map((comic: Komik) => ({
                           ...comic,
                           poster: comic.poster,
-                          slug: comic.komik_id,
+                          slug: comic.slug,
                         }))}
                       />
                     ) : (
