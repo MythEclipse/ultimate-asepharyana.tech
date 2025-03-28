@@ -3,7 +3,7 @@ import { BaseUrl } from '@/lib/url';
 import { notFound } from 'next/navigation';
 // import ButtonA from '@/components/button/ScrollButton';
 import { ArrowRight, CheckCircle, Clapperboard } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 export const dynamic = 'force-dynamic';
 interface HomeData {
   status: string;

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { BaseUrl } from '@/lib/url';
 // import ButtonA from '@/components/button/ScrollButton';

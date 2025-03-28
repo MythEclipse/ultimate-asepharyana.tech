@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import { ComicCard } from '@/components/card/ComicCard';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';

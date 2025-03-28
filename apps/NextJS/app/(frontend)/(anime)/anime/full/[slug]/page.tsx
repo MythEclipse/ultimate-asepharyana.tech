@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import ButtonA from '@/components/button/ScrollButton';

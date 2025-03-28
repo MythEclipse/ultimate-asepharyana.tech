@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import {
   ChevronLeft,

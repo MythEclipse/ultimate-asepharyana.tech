@@ -4,11 +4,9 @@ import React, { useState, useEffect, use } from 'react';
 import useSWR from 'swr';
 import { PRODUCTION } from '@/lib/url';
 import Image from 'next/image';
-import Link from 'next/link';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
-import Loading from './loading';
 import {
   Bookmark,
   Type,
@@ -19,6 +17,7 @@ import {
   Film,
   Popcorn,
 } from 'lucide-react';
+import { useTransitionRouter } from 'next-view-transitions';
 export const dynamic = 'force-dynamic';
 
 interface Genre {
@@ -64,7 +63,7 @@ export default function DetailAnimePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-
+  const router = useTransitionRouter()
   const { data: anime, error } = useSWR<AnimeData>(
     slug ? `/api/anime/detail/${slug}` : null,
     fetcher,
@@ -79,7 +78,13 @@ export default function DetailAnimePage({
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
-
+  useEffect(() => {
+    if (anime?.data.episode_lists) {
+      anime.data.episode_lists.forEach((episode) => {
+        router.prefetch(`/anime/full/${episode.slug}`);
+      });
+    }
+  }, [anime, router]);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const bookmarks = JSON.parse(
@@ -112,7 +117,7 @@ export default function DetailAnimePage({
     return (
       <p className='text-red-500 text-center'>Failed to load anime data</p>
     );
-  if (!anime) return <Loading />;
+  if (!anime) return <p className='text-center'>Loading...</p>;
 
   const episodes = anime.data.episode_lists || [];
 
@@ -248,17 +253,13 @@ export default function DetailAnimePage({
                         episode.episode.match(/Episode (\d+)/i)?.[1] ||
                         episode.episode;
                       return (
-                        <Link
-                          key={episode.slug}
-                          href={`/anime/full/${episode.slug}`}
-                        >
-                          <ButtonA className='group flex items-center justify-between p-6 bg-white dark:bg-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm w-full'>
+                       
+                          <ButtonA onClick={()=> router.push(`/anime/full/${episode.slug}`)} key={episode.slug} className='group flex items-center justify-between p-6 bg-white dark:bg-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm w-full'>
                             <span className='font-medium text-zinc-700 dark:text-zinc-200 truncate text-lg'>
                               Episode {episodeNumber}
                             </span>
                             <ArrowRight className='w-6 h-6 text-zinc-400 group-hover:text-blue-500 transition-colors' />
                           </ButtonA>
-                        </Link>
                       );
                     })
                   ) : (

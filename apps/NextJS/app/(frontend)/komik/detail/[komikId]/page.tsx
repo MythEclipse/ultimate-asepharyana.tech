@@ -7,7 +7,6 @@ import { BackgroundGradient } from '@/components/background/background-gradient'
 import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
 import Loading from './loading';
-import { useRouter } from 'next/navigation';
 import {
   ArrowRightIcon,
   BookmarkIcon,
@@ -20,6 +19,7 @@ import {
   UserIcon,
 } from 'lucide-react';
 import { PRODUCTION } from '@/lib/url';
+import { useTransitionRouter } from 'next-view-transitions';
 export const dynamic = 'force-dynamic';
 
 interface Chapter {
@@ -61,7 +61,7 @@ export default function DetailMangaPage({
   const [resolvedParams, setResolvedParams] = useState<{
     komikId: string;
   } | null>(null);
-  const router = useRouter();
+  const router = useTransitionRouter()
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);

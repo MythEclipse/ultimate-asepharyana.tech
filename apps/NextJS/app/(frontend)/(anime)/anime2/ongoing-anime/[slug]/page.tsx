@@ -1,5 +1,5 @@
 import AnimeGrid from '@/components/card/AnimeGrid2a';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
 import {
   AlertTriangle,

@@ -183,7 +183,6 @@ export default function PostPage() {
       {session ? (
         <div className='mb-10 group'>
           <div className='relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl'>
-            <div className='absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity' />
             <Card
             // className="!bg-transparent !border-none"
             >
