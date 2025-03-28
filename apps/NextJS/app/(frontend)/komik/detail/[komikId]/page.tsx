@@ -68,7 +68,7 @@ export default function DetailMangaPage({
 
   const { data: manga, error } = useSWR<MangaData>(
     resolvedParams
-      ? `/api/komik/detail?komik_id=${resolvedParams.komikId}`
+      ? `${PRODUCTION}/api/komik/detail?komik_id=${resolvedParams.komikId}`
       : null,
     fetcher
   );
