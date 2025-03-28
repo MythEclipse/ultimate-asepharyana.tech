@@ -26,12 +26,12 @@ interface Anime {
 }
 
 interface Pagination {
-  current_page: number;
-  last_visible_page: number;
-  has_next_page: boolean;
-  next_page: number | null;
-  has_previous_page: boolean;
-  previous_page: number | null;
+  current_page?: number;
+  last_visible_page?: number;
+  has_next_page?: boolean;
+  next_page?: number | null;
+  has_previous_page?: boolean;
+  previous_page?: number | null;
 }
 
 interface CompleteAnimeData {
@@ -76,16 +76,30 @@ export default function AnimePage() {
   if (isLoading) {
     return (
       <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12 animate-pulse">
-          <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-64 mb-8" />
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="h-64 bg-zinc-200 dark:bg-zinc-800 rounded-xl"
-              />
-            ))}
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-xl">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent">
+              Anime yang Sudah Selesai
+            </h1>
           </div>
+
+          <AnimeGrid animes={[]} />
+
+          {parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) > 1 && (
+            <PaginationComponent
+              pagination={{
+                current_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10),
+                last_visible_page: undefined,
+                has_next_page: true,
+                has_previous_page: true,
+                previous_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) - 1,
+                next_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) + 1,
+              }}
+            />
+          )}
         </div>
       </main>
     );
