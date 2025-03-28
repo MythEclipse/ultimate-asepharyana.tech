@@ -1,9 +1,10 @@
+'use client';
+
+import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
 import AnimeGrid from '@/components/card/AnimeGrid';
-import { BaseUrl } from '@/lib/url';
-// import ButtonA from '@/components/button/ScrollButton';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
-export const dynamic = 'force-dynamic';
+
 interface HomeData {
   status: string;
   data: {
@@ -29,28 +30,15 @@ interface CompleteAnime {
   current_episode: string;
 }
 
-async function getAnimeData(): Promise<HomeData | null> {
-  try {
-    const res = await fetch(`${BaseUrl}/api/anime/`, {
-      cache: 'no-store',
-    });
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-    if (!res.ok) return null;
+export default function AnimePage() {
+  const { data, error } = useSWR<HomeData>(`/api/anime/`, fetcher, {
+    refreshInterval: 60000,
+  });
 
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-export default async function AnimePage() {
-  const data = await getAnimeData();
-
-  if (!data) {
-    return <div>Error loading data</div>;
-  }
-
-  return (
+  if (error) return <div>Error loading data</div>;
+  if (!data) return (
     <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
       <div className='max-w-7xl mx-auto'>
         <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
@@ -68,23 +56,13 @@ export default async function AnimePage() {
                 Ongoing Anime
               </h2>
             </div>
-            <Link
-              href='/anime/ongoing-anime/1'
-              className='flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors'
-            >
-              View All
+            <div className='flex items-center gap-2 text-blue-600 dark:text-blue-400'>
+              <span className='skeleton w-16 h-4 rounded'></span>
               <ArrowRight className='w-4 h-4' />
-            </Link>
+            </div>
           </div>
 
-          <AnimeGrid
-            animes={data.data.ongoing_anime.map((anime) => ({
-              ...anime,
-              rating: '',
-              release_day: '',
-              newest_release_date: '',
-            }))}
-          />
+          <AnimeGrid animes={[]} loading={true} />
         </section>
 
         {/* Complete Anime Section */}
@@ -98,24 +76,59 @@ export default async function AnimePage() {
                 Complete Anime
               </h2>
             </div>
-            <Link
-              href='/anime/complete-anime/1'
-              className='flex items-center gap-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors'
-            >
+            <div className='flex items-center gap-2 text-green-600 dark:text-green-400'>
+              <span className='skeleton w-16 h-4 rounded'></span>
+              <ArrowRight className='w-4 h-4' />
+            </div>
+          </div>
+
+          <AnimeGrid animes={[]} loading={true} />
+        </section>
+      </div>
+    </main>
+  );
+
+  return (
+    <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+      <div className='max-w-7xl mx-auto'>
+        <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
+          Anime
+        </h1>
+
+        <section className='mb-12 space-y-6'>
+          <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-center gap-3'>
+              <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
+                <Clapperboard className='w-6 h-6 text-blue-600 dark:text-blue-400' />
+              </div>
+              <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+                Ongoing Anime
+              </h2>
+            </div>
+            <Link href='/anime/ongoing-anime/1' className='flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors'>
               View All
               <ArrowRight className='w-4 h-4' />
             </Link>
           </div>
+          <AnimeGrid animes={data.data.ongoing_anime} />
+        </section>
 
-          <AnimeGrid
-            animes={data.data.complete_anime.map((anime) => ({
-              ...anime,
-              rating: '',
-              release_day: '',
-              newest_release_date: '',
-              current_episode: '',
-            }))}
-          />
+        <section className='space-y-6'>
+          <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-center gap-3'>
+              <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
+                <CheckCircle className='w-6 h-6 text-green-600 dark:text-green-400' />
+              </div>
+              <h2 className='text-2xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
+                Complete Anime
+              </h2>
+            </div>
+            <Link href='/anime/complete-anime/1' className='flex items-center gap-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors'>
+              View All
+              <ArrowRight className='w-4 h-4' />
+            </Link>
+          </div>
+          <AnimeGrid animes={data.data.complete_anime} />
         </section>
       </div>
     </main>
