@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
-import { BaseUrl } from '@/lib/url';
+import { PRODUCTION } from '@/lib/url';
 import {
   ChevronLeft,
   ChevronRight,
@@ -45,7 +45,7 @@ export default function ChapterPage({ params }: PageProps) {
     isLoading,
   } = useSWR<ChapterDetail>(
     mounted && resolvedParams
-      ? `${BaseUrl}/api/komik/chapter?chapter_url=${resolvedParams.chapterId}`
+      ? `${PRODUCTION}/api/komik/chapter?chapter_url=${resolvedParams.chapterId}`
       : null,
     fetcher,
     {
