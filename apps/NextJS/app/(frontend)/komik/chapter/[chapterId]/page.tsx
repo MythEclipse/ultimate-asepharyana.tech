@@ -1,18 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, {  } from 'react';
 import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
-import { PRODUCTION } from '@/lib/url';
 import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
   AlertTriangle,
-  Loader,
 } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useParams } from 'next/navigation';
 
 interface ChapterDetail {
   title: string;
@@ -22,45 +21,24 @@ interface ChapterDetail {
   images: string[];
 }
 
-interface PageProps {
-  params: Promise<{ chapterId: string }>;
-}
+
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function ChapterPage({ params }: PageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{
-    chapterId: string;
-  } | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    params.then(setResolvedParams);
-    setMounted(true);
-  }, [params]);
-
+export default function ChapterPage() {
+  const { chapterId } = useParams();
   const {
     data: chapter,
     error,
     isLoading,
   } = useSWR<ChapterDetail>(
-    mounted && resolvedParams
-      ? `${PRODUCTION}/api/komik/chapter?chapter_url=${resolvedParams.chapterId}`
-      : null,
+    `/api/komik/chapter?chapter_url=${chapterId}`,
     fetcher,
     {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
     }
   );
-
-  if (!mounted || !resolvedParams) {
-    return (
-      <div className='min-h-screen flex items-center justify-center bg-background dark:bg-dark'>
-        <Loader className='w-12 h-12 animate-spin text-purple-600' />
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -147,23 +125,23 @@ export default function ChapterPage({ params }: PageProps) {
       <div className='max-w-4xl mx-auto space-y-4'>
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className='relative group w-full'>
-                <Skeleton className='w-full h-auto aspect-[700/1000] rounded-xl border border-zinc-200 dark:border-zinc-700' />
-                <Skeleton className='absolute bottom-2 right-2 h-6 w-20 rounded-md' />
-              </div>
-            ))
+            <div key={i} className='relative group w-full'>
+              <Skeleton className='w-full h-auto aspect-[700/1000] rounded-xl border border-zinc-200 dark:border-zinc-700' />
+              <Skeleton className='absolute bottom-2 right-2 h-6 w-20 rounded-md' />
+            </div>
+          ))
           : chapter?.images?.map((image, index) => (
-              <div key={`${image}-${index}`} className='relative group'>
-                <ImageWithFallback
-                  imageUrl={image}
-                  index={index}
-                  // className="w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700"
-                />
-                <div className='absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity'>
-                  Halaman {index + 1}
-                </div>
+            <div key={`${image}-${index}`} className='relative group'>
+              <ImageWithFallback
+                imageUrl={image}
+                index={index}
+              // className="w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700"
+              />
+              <div className='absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity'>
+                Halaman {index + 1}
               </div>
-            ))}
+            </div>
+          ))}
       </div>
 
       {/* Navigation Bottom (Fixed) */}

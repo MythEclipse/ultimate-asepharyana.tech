@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
 import Image from 'next/image';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
-import Loading from './loading';
 import {
   ArrowRightIcon,
   BookmarkIcon,
@@ -20,7 +19,7 @@ import {
 } from 'lucide-react';
 import { PRODUCTION } from '@/lib/url';
 import { useTransitionRouter } from 'next-view-transitions';
-export const dynamic = 'force-dynamic';
+import { useParams } from 'next/navigation';
 
 interface Chapter {
   chapter: string;
@@ -53,54 +52,30 @@ interface MangaData {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function DetailMangaPage({
-  params,
-}: {
-  params: Promise<{ komikId: string }>;
-}) {
-  const [resolvedParams, setResolvedParams] = useState<{
-    komikId: string;
-  } | null>(null);
+export default function DetailMangaPage() {
   const router = useTransitionRouter();
-  useEffect(() => {
-    params.then(setResolvedParams);
-  }, [params]);
+  const { komikId } = useParams();
 
   const { data: manga, error } = useSWR<MangaData>(
-    resolvedParams
-      ? `${PRODUCTION}/api/komik/detail?komik_id=${resolvedParams.komikId}`
-      : null,
+    `${PRODUCTION}/api/komik/detail?komik_id=${komikId}`,
     fetcher
   );
 
   const [bookmarked, setBookmarked] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    if (resolvedParams && typeof window !== 'undefined') {
-      const bookmarks = JSON.parse(
-        localStorage.getItem('bookmarks-komik') || '[]'
-      );
-      setBookmarked(
-        bookmarks.some(
-          (item: { slug: string }) => item.slug === resolvedParams.komikId
-        )
-      );
-    }
-  }, [resolvedParams]);
 
   const handleBookmark = () => {
-    if (!resolvedParams) return;
 
     let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
 
     if (bookmarked) {
       bookmarks = bookmarks.filter(
-        (item: { slug: string }) => item.slug !== resolvedParams.komikId
+        (item: { slug: string }) => item.slug !== komikId
       );
     } else {
       bookmarks.push({
-        slug: resolvedParams.komikId,
+        slug: komikId,
         title: manga?.title,
         poster: manga?.image,
       });
@@ -114,7 +89,79 @@ export default function DetailMangaPage({
     return (
       <p className='text-red-500 text-center'>Failed to load manga data</p>
     );
-  if (!manga || !resolvedParams) return <Loading />;
+  if (!manga) return (
+    <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+      <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-2xl dark:shadow-none'>
+        <div className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
+          <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
+            {/* Skeleton Cover Section */}
+            <div className='w-full md:w-1/3 flex flex-col gap-4'>
+              <div className='relative overflow-hidden rounded-2xl aspect-[2/3] animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+
+              <div className='h-12 rounded-full animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+            </div>
+
+            {/* Skeleton Details Section */}
+            <div className='w-full md:w-2/3 space-y-6'>
+              {/* Title */}
+              <div className='h-10 w-2/3 rounded-lg animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+
+              {/* Metadata Grid */}
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className='flex items-center gap-3'>
+                    <div className='w-9 h-9 rounded-lg animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                    <div className='space-y-2'>
+                      <div className='h-4 w-16 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                      <div className='h-4 w-24 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Genres */}
+              <div className='flex flex-wrap gap-2'>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className='h-6 w-20 rounded-full animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                ))}
+              </div>
+
+              {/* Description */}
+              <div className='space-y-3'>
+                <div className='h-5 w-32 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                <div className='h-4 w-full rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                <div className='h-4 w-5/6 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                <div className='h-4 w-2/3 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+              </div>
+
+              {/* Chapters */}
+              <div className='space-y-4'>
+                <div className='h-7 w-48 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className='h-16 rounded-xl animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className='space-y-4'>
+                <div className='h-7 w-56 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                <div className='flex overflow-x-auto pb-4 gap-4'>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className='flex-shrink-0 w-48 md:w-56 space-y-2'>
+                      <div className='aspect-[2/3] rounded-xl animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                      <div className='h-4 w-3/4 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
   const fallback = 'https://asepharyana.cloud/default.png';
   const imageSources = [
     manga.image && manga.image.trim() ? manga.image : fallback,
@@ -154,11 +201,10 @@ export default function DetailMangaPage({
 
               <button
                 onClick={handleBookmark}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                  bookmarked
-                    ? 'bg-red-500/90 hover:bg-red-600 text-white'
-                    : 'bg-blue-500/90 hover:bg-blue-600 text-white'
-                }`}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${bookmarked
+                  ? 'bg-red-500/90 hover:bg-red-600 text-white'
+                  : 'bg-blue-500/90 hover:bg-blue-600 text-white'
+                  }`}
               >
                 <BookmarkIcon className='w-5 h-5' />
                 {bookmarked ? 'Bookmarked' : 'Bookmark'}

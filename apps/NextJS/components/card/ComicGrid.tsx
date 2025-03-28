@@ -1,4 +1,3 @@
-// components/AnimeGrid.tsx
 import React from 'react';
 import CardA from './MediaCard';
 
@@ -14,18 +13,31 @@ interface Komik {
 }
 
 interface KomikGridProps {
-  komiks: Komik[];
+  komiks?: Komik[];
+  loading?: boolean;
 }
 
-const KomikGrid: React.FC<KomikGridProps> = ({ komiks }) => {
+const KomikGrid: React.FC<KomikGridProps> = ({ komiks, loading = false }) => {
+  if (loading) {
+    return (
+      <div className='flex flex-col items-center p-4'>
+        <div className='grid grid-cols-5 gap-4 w-full'>
+          {Array.from({ length: 40 }).map((_, index) => (
+            <CardA key={index} loading={loading} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='flex flex-col items-center p-4'>
-      <div className='grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4'>
-        {komiks.map((komik) => (
+      <div className='grid grid-cols-5 gap-4 w-full'>
+        {komiks?.map((komik) => (
           <CardA
             key={komik.slug}
             title={komik.title}
-            description={``}
+            description={''}
             imageUrl={komik.poster || ''}
             linkUrl={`/komik/detail/${komik.slug}`}
           />

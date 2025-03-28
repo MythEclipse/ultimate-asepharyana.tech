@@ -17,13 +17,14 @@ const logError = (error: { message: string }) => {
 // Type Definitions
 interface MangaData {
   title: string;
-  image: string;
+  poster: string;
   chapter: string;
   date: string;
   score: string;
   type: string;
   komik_id: string;
   pagination?: Pagination;
+  slug?: string; // Added slug for routing
 }
 interface Pagination {
   current_page: number;
@@ -37,7 +38,7 @@ interface MangaDetail {
   title: string;
   alternativeTitle: string;
   score: string;
-  image: string;
+  poster: string;
   description: string;
   status: string;
   type: string;
@@ -64,8 +65,8 @@ const parseMangaData = (body: string): MangaData[] => {
 
   $('.animposx').each((_, e) => {
     const title = $(e).find('.tt h4').text().trim() || '';
-    let image = $(e).find('img').attr('src') || '';
-    image = image.split('?')[0]; // Remove query parameters from image URL
+    let poster = $(e).find('img').attr('src') || '';
+    poster = poster.split('?')[0]; // Remove query parameters from poster URL
     const chapter =
       $(e)
         .find('.lsch a')
@@ -80,7 +81,7 @@ const parseMangaData = (body: string): MangaData[] => {
 
     data.push({
       title,
-      image,
+      poster,
       chapter,
       score,
       date,
@@ -125,8 +126,8 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
     const score = $('.rtg > div > i').text().trim() || '';
 
     // Image
-    let image = $('.thumb img').attr('src') || '';
-    image = image.split('?')[0]; // Remove query parameters from image URL
+    let poster = $('.thumb img').attr('src') || '';
+    poster = poster.split('?')[0]; // Remove query parameters from image URL
 
     // Description
     const description =
@@ -183,7 +184,7 @@ const getDetail = async (komik_id: string): Promise<MangaDetail> => {
       title,
       alternativeTitle,
       score,
-      image,
+      poster,
       description,
       status,
       type,

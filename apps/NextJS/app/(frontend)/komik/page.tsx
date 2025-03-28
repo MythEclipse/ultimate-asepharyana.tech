@@ -1,56 +1,55 @@
+'use client';
+
 import React from 'react';
+import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
 import { BaseUrl } from '@/lib/url';
-import { ComicCard } from '@/components/card/ComicCard';
+import ComicGrid from '@/components/card/ComicGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
-export const dynamic = 'force-dynamic';
-export interface Comic {
+
+export interface Komik {
   komik_id: string;
   title: string;
-  image: string;
+  poster: string;
   chapter: string;
   score: string;
   type: string;
   date: string;
+  slug: string;
 }
 
-const fetchComics = async (type: string): Promise<Comic[]> => {
-  const res = await fetch(`${BaseUrl}/api/komik/${type}?page=1&order=update`, {
-    next: {
-      revalidate: 60,
-    },
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ${type}`);
-  }
-  const data = await res.json();
-  return data.data || [];
-};
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default async function HomePage() {
-  let manga: Comic[] = [];
-  let manhua: Comic[] = [];
-  let manhwa: Comic[] = [];
-  let error = false;
+export default function HomePage() {
+  const { data: manga, error: mangaError } = useSWR(`${BaseUrl}/api/komik/manga?page=1&order=update`, fetcher);
+  const { data: manhua, error: manhuaError } = useSWR(`${BaseUrl}/api/komik/manhua?page=1&order=update`, fetcher);
+  const { data: manhwa, error: manhwaError } = useSWR(`${BaseUrl}/api/komik/manhwa?page=1&order=update`, fetcher);
 
-  try {
-    const [mangaData, manhuaData, manhwaData] = await Promise.all([
-      fetchComics('manga'),
-      fetchComics('manhua'),
-      fetchComics('manhwa'),
-    ]);
-    manga = mangaData;
-    manhua = manhuaData;
-    manhwa = manhwaData;
-  } catch (err) {
-    error = true;
-    console.error('Error fetching comics data:', err);
-  }
+  const error = mangaError || manhuaError || manhwaError;
 
+  // Menentukan status loading untuk setiap kategori
+  const isLoading = {
+    Manga: !manga && !mangaError,
+    Manhua: !manhua && !manhuaError,
+    Manhwa: !manhwa && !manhwaError,
+  };
+  // const Skeleton = () => (
+  //   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+  //     {[...Array(40)].map((_, i) => (
+  //       <div key={i} className="animate-pulse space-y-3">
+  //         <div className="aspect-[2/3] w-full rounded-xl bg-gray-200 dark:bg-gray-700" />
+  //         <div className="space-y-2">
+  //           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+  //           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+  //           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
+  //         </div>
+  //       </div>
+  //     ))}
+  //   </div>
+  // );
   return (
     <main className='min-h-screen p-6 bg-background dark:bg-dark'>
       <div className='max-w-7xl mx-auto space-y-12'>
-        {/* Header Utama */}
         <div className='flex items-center gap-4'>
           <div className='p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl'>
             <BookOpen className='w-8 h-8 text-purple-600 dark:text-purple-400' />
@@ -75,10 +74,10 @@ export default async function HomePage() {
         ) : (
           <div className='space-y-12'>
             {['Manga', 'Manhua', 'Manhwa'].map((type) => {
-              const comics = {
-                Manga: manga,
-                Manhua: manhua,
-                Manhwa: manhwa,
+              const komiks = {
+                Manga: manga?.data,
+                Manhua: manhua?.data,
+                Manhwa: manhwa?.data,
               }[type];
 
               return (
@@ -101,20 +100,29 @@ export default async function HomePage() {
                     </Link>
                   </div>
 
-                  {(comics ?? []).length > 0 ? (
-                    <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'>
-                      {(comics ?? []).map((comic) => (
-                        <ComicCard key={comic.komik_id} comic={comic} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
-                      <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
-                      <h3 className='text-lg font-medium text-blue-800 dark:text-blue-200'>
-                        No {type} available at the moment
-                      </h3>
-                    </div>
-                  )}
+                  {isLoading[type as keyof typeof isLoading] ? (
+                    <ComicGrid
+                    loading={true}
+                    komiks={[]}
+                  />
+                  ) : komiks ? (
+                    komiks.length > 0 ? (
+                      <ComicGrid
+                        komiks={komiks.map((comic: Komik) => ({
+                          ...comic,
+                          poster: comic.poster,
+                          slug: comic.komik_id,
+                        }))}
+                      />
+                    ) : (
+                      <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
+                        <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
+                        <h3 className='text-lg font-medium text-blue-800 dark:text-blue-200'>
+                          No {type} available at the moment
+                        </h3>
+                      </div>
+                    )
+                  ) : null}
                 </section>
               );
             })}
