@@ -27,8 +27,11 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
     return (
       <div className="flex flex-col items-center p-4">
         <div className="grid grid-cols-5 gap-4 w-full">
-          {Array(25).fill(0).map((_, index) => (
-            <Skeleton key={index} />
+          {Array.from({ length: 25 }).map((_, index) => (
+            <MediaCard
+              key={index}
+              loading={loading}
+            />
           ))}
         </div>
       </div>
@@ -58,25 +61,25 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({ animes, loading = false }) => {
 };
 
 
-const Skeleton = () => {
-  return (
-    <div className="h-full w-full bg-gray-800 dark:bg-gray-700 rounded-lg overflow-hidden animate-pulse">
-      <div className="h-full w-full flex flex-col">
-        {/* Bagian gambar */}
-        <div className="h-64 w-full bg-gray-700 rounded-t-lg animate-pulse" />
-        
-        {/* Bagian konten */}
-        <div className="p-4 flex-1">
-          {/* Judul */}
-          <div className="w-full h-4 bg-gray-600 rounded mb-17 animate-pulse" />
-          
-          {/* Deskripsi */}
-          <div className="w-full h-4 bg-gray-600 rounded mt-15 animate-pulse" />
-        </div>
-      </div>
-    </div>
-  );
-};
+// const Skeleton = () => {
+//   return (
+//     <div className="h-full w-full bg-gray-800 dark:bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+//       <div className="h-full w-full flex flex-col">
+//         {/* Bagian gambar */}
+//         <div className="h-64 w-full bg-gray-700 rounded-t-lg animate-pulse" />
+
+//         {/* Bagian konten */}
+//         <div className="p-4 flex-1">
+//           {/* Judul */}
+//           <div className="w-full h-4 bg-gray-600 rounded mb-17 animate-pulse" />
+
+//           {/* Deskripsi */}
+//           <div className="w-full h-4 bg-gray-600 rounded mt-15 animate-pulse" />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
 
 
