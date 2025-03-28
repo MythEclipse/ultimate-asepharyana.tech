@@ -66,7 +66,7 @@ export default function AnimePage() {
               </Link>
             </div>
   
-            <AnimeGrid animes={[]} loading={true} />
+            <AnimeGrid anime2 animes={[]} loading={true} />
           </section>
   
           {/* Complete Anime Section */}
@@ -89,7 +89,7 @@ export default function AnimePage() {
               </Link>
             </div>
   
-            <AnimeGrid animes={[]} loading={true} />
+            <AnimeGrid anime2 animes={[]} loading={true} />
           </section>
         </div>
       </main>

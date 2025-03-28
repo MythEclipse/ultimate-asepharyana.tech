@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation';
 import SearchForm from '@/components/misc/SearchForm';
 import CardA from '@/components/card/MediaCard';
 import { Info } from 'lucide-react';
-import { BaseUrl } from '@/lib/url';
 
 interface Genre {
   name: string;
@@ -29,7 +28,7 @@ interface SearchDetailData {
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
   try {
     const response = await fetch(
-      `${BaseUrl}/api/anime2/search?q=${encodeURIComponent(query)}`
+      `/api/anime2/search?q=${encodeURIComponent(query)}`
     );
     if (!response.ok) {
       throw new Error('Network response was not ok');

@@ -151,7 +151,7 @@ export default function AnimePage() {
           </h2>
         </div>
 
-        <AnimeGrid animes={data.data} />
+        <AnimeGrid anime2 animes={data.data} />
 
         <PaginationComponent pagination={data.pagination} />
       </div>

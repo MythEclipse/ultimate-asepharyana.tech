@@ -2,7 +2,6 @@
 
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Link } from 'next-view-transitions';
-import { BaseUrl } from '@/lib/url';
 import {
   AlertTriangle,
   Info,
@@ -46,7 +45,7 @@ export default function AnimePage() {
   const slug = params.slug as string;
 
   const { data, error, isLoading } = useSWR<CompleteAnimeData | null>(
-    `${BaseUrl}/api/anime2/complete-anime/${slug}`,
+    `/api/anime2/complete-anime/${slug}`,
     async (url: string | URL | Request) => {
       const res = await fetch(url);
       if (!res.ok) throw new Error('Gagal memuat data');
@@ -160,7 +159,7 @@ export default function AnimePage() {
           </div>
         </div>
 
-        <AnimeGrid animes={data.data} />
+        <AnimeGrid anime2 animes={data.data} />
 
         <PaginationComponent pagination={data.pagination} />
       </div>
@@ -172,7 +171,7 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
   return (
     <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
       {pagination.has_previous_page && pagination.previous_page !== null && (
-        <Link href={`/anime/complete-anime/${pagination.previous_page}`}>
+        <Link href={`/anime2/complete-anime/${pagination.previous_page}`}>
           <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
             <ChevronLeft className="w-5 h-5" />
             Sebelumnya
@@ -185,7 +184,7 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       </span>
 
       {pagination.has_next_page && pagination.next_page !== null && (
-        <Link href={`/anime/complete-anime/${pagination.next_page}`}>
+        <Link href={`/anime2/complete-anime/${pagination.next_page}`}>
           <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
             Selanjutnya
             <ChevronRight className="w-5 h-5" />
