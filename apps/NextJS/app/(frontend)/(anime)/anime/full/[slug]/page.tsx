@@ -3,7 +3,6 @@
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Link } from 'next-view-transitions';
-import { BaseUrl } from '@/lib/url';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import ButtonA from '@/components/button/ScrollButton';
 import ClientPlayer from '@/components/misc/ClientPlayer';
@@ -41,7 +40,7 @@ export default function DetailAnimePage() {
   const params = useParams();
   const slug = params.slug as string;
   const { data, error, isLoading } = useSWR<AnimeResponse | null>(
-    `${BaseUrl}/api/anime/full/${slug}`,
+    `/api/anime/full/${slug}`,
     fetcher,
     {
       revalidateOnFocus: false,
