@@ -2,7 +2,6 @@
 
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Link } from 'next-view-transitions';
-import { BaseUrl } from '@/lib/url';
 import {
   CheckCircle,
   AlertTriangle,
@@ -47,7 +46,7 @@ export default function AnimePage() {
   const params = useParams();
   const slug = params.slug as string;
   const { data, error, isLoading } = useSWR<CompleteAnimeData | null>(
-    `${BaseUrl}/api/anime/complete-anime/${slug}`,
+    `/api/anime/complete-anime/${slug}`,
     fetcher
   );
 
@@ -104,7 +103,7 @@ export default function AnimePage() {
         {/* Complete Anime Section */}
         <section className='space-y-6'>
           <div className='flex items-center justify-between mb-6'>
-          <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-3'>
               <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
                 <CheckCircle className='w-6 h-6 text-green-600 dark:text-green-400' />
               </div>
@@ -127,13 +126,13 @@ export default function AnimePage() {
   if (!data || !Array.isArray(data.data)) {
     return (
       <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
-      <div className='max-w-7xl mx-auto'>
-        {/* <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
+        <div className='max-w-7xl mx-auto'>
+          {/* <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
                   Anime
               </h1> */}
 
-        {/* Ongoing Anime Section */}
-        {/* <section className='mb-12 space-y-6'>
+          {/* Ongoing Anime Section */}
+          {/* <section className='mb-12 space-y-6'>
                   <div className='flex items-center justify-between mb-6'>
                       <div className='flex items-center gap-3'>
                           <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
@@ -155,40 +154,40 @@ export default function AnimePage() {
                   />
               </section> */}
 
-        {/* Complete Anime Section */}
-        <section className='space-y-6'>
-          <div className='flex items-center justify-between mb-6'>
-            <div className='flex items-center gap-4'>
-              <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
-                <CheckCircle className='w-8 h-8 text-green-600 dark:text-green-400' />
+          {/* Complete Anime Section */}
+          <section className='space-y-6'>
+            <div className='flex items-center justify-between mb-6'>
+              <div className='flex items-center gap-4'>
+                <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
+                  <CheckCircle className='w-8 h-8 text-green-600 dark:text-green-400' />
+                </div>
+                <h1 className='text-3xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
+                  Currently Finished Anime
+                </h1>
               </div>
-              <h1 className='text-3xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
-                Currently Finished Anime
-              </h1>
+              <div className='flex items-center gap-2 text-green-600 dark:text-green-400'>
+                <span className='skeleton w-16 h-4 rounded'></span>
+                <ArrowRight className='w-4 h-4' />
+              </div>
             </div>
-            <div className='flex items-center gap-2 text-green-600 dark:text-green-400'>
-              <span className='skeleton w-16 h-4 rounded'></span>
-              <ArrowRight className='w-4 h-4' />
-            </div>
-          </div>
 
-          <AnimeGrid animes={[]} loading={true} />
-        </section>
-      </div>
-    </main>
+            <AnimeGrid animes={[]} loading={true} />
+          </section>
+        </div>
+      </main>
     );
   }
 
   return (
     <main className='min-h-screen p-6 bg-background dark:bg-dark'>
       <div className='max-w-7xl mx-auto space-y-8'>
-        <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-3'>
           <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
-            <CheckCircle className='w-8 h-8 text-green-600 dark:text-green-400' />
+            <CheckCircle className='w-6 h-6 text-green-600 dark:text-green-400' />
           </div>
-          <h1 className='text-3xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
-            Currently Finished Anime
-          </h1>
+          <h2 className='text-2xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
+            Complete Anime
+          </h2>
         </div>
 
         <AnimeGrid animes={data.data} />

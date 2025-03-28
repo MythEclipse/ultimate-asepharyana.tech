@@ -1,8 +1,6 @@
 "use client";
 
 import AnimeGrid from '@/components/card/AnimeGrid';
-import { Link } from 'next-view-transitions';
-import { BaseUrl } from '@/lib/url';
 import {
   AlertTriangle,
   Info,
@@ -12,6 +10,7 @@ import {
 } from 'lucide-react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
+import { useTransitionRouter } from 'next-view-transitions';
 
 interface Anime {
   title: string;
@@ -26,12 +25,12 @@ interface Anime {
 }
 
 interface Pagination {
-  current_page: number;
-  last_visible_page: number;
-  has_next_page: boolean;
-  next_page: number | null;
-  has_previous_page: boolean;
-  previous_page: number | null;
+  current_page?: number;
+  last_visible_page?: number;
+  has_next_page?: boolean;
+  next_page?: number | null;
+  has_previous_page?: boolean;
+  previous_page?: number | null;
 }
 
 interface OngoingAnimeData {
@@ -45,7 +44,7 @@ const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(res => r
 export default function AnimePage() {
   const { slug } = useParams();
   const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
-    `${BaseUrl}/api/anime2/ongoing-anime/${slug}`,
+    `/api/anime2/ongoing-anime/${slug}`,
     fetcher
   );
 
@@ -72,13 +71,34 @@ export default function AnimePage() {
   if (isLoading) {
     return (
       <main className='min-h-screen p-6 bg-background dark:bg-dark'>
-        <div className='max-w-7xl mx-auto mt-12'>
-          <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
-            <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
-            <h1 className='text-2xl font-bold text-blue-800 dark:text-blue-200'>
-              Loading...
-            </h1>
+        <div className='max-w-7xl mx-auto space-y-8'>
+          <div className='flex items-center gap-3'>
+            <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
+              <Clapperboard className='w-6 h-6 text-blue-600 dark:text-blue-400' />
+            </div>
+            <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+              Ongoing Anime
+            </h2>
           </div>
+
+          <AnimeGrid
+            anime2
+            loading
+            animes={[]}
+          />
+
+          {parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) > 1 && (
+            <PaginationComponent
+              pagination={{
+                current_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10),
+                last_visible_page: undefined,
+                has_next_page: true,
+                has_previous_page: true,
+                previous_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) - 1,
+                next_page: parseInt(Array.isArray(slug) ? slug[0] : slug ?? '1', 10) + 1,
+              }}
+            />
+          )}
         </div>
       </main>
     );
@@ -140,15 +160,14 @@ export default function AnimePage() {
 }
 
 const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
+  const router = useTransitionRouter()
   return (
     <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
       {pagination.has_previous_page && pagination.previous_page !== null && (
-        <Link href={`/anime/ongoing-anime/${pagination.previous_page}`}>
-          <button className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
-            <ChevronLeft className='w-5 h-5' />
-            Previous
-          </button>
-        </Link>
+        <button onClick={() => router.push(`/anime2/ongoing-anime/${pagination.previous_page}`)} className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
+          <ChevronLeft className='w-5 h-5' />
+          Previous
+        </button>
       )}
 
       <span className='text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4'>
@@ -156,12 +175,10 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       </span>
 
       {pagination.has_next_page && pagination.next_page !== null && (
-        <Link href={`/anime/ongoing-anime/${pagination.next_page}`}>
-          <button className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
-            Next
-            <ChevronRight className='w-5 h-5' />
-          </button>
-        </Link>
+        <button onClick={() => router.push(`/anime2/ongoing-anime/${pagination.next_page}`)}  className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'>
+          Next
+          <ChevronRight className='w-5 h-5' />
+        </button>
       )}
     </div>
   );
