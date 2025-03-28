@@ -10,7 +10,6 @@ import { useSession } from 'next-auth/react';
 import useSWR, { mutate } from 'swr';
 import ButtonA from '@/components/button/NormalButton';
 import { UploadCloud, Loader2,Lock } from 'lucide-react';
-import { Link } from 'next-view-transitions';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PostPage() {
@@ -238,11 +237,11 @@ export default function PostPage() {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Sign in to share your thoughts and engage with the community
             </p>
-            <Link href="/login" className="w-full max-w-[200px]">
-              <ButtonA className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <div  className="w-full max-w-[200px]">
+              <ButtonA href="/login" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                 Get Started
               </ButtonA>
-            </Link>
+            </div>
           </div>
         </div>
       )}

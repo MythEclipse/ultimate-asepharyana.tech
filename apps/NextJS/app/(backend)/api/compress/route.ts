@@ -63,13 +63,18 @@ const compressImage = async (
   buffer: Buffer,
   targetKB: number,
   cacheKey: string
-): Promise<Buffer> => {
+): Promise<{ buffer: Buffer; sizeReduction: number }> => {
   const cachePath = join(CACHE_DIR, cacheKey);
   if (
     fs.existsSync(cachePath) &&
     Date.now() - fs.statSync(cachePath).mtimeMs < CACHE_EXPIRY
   ) {
-    return fs.readFileSync(cachePath);
+    const cachedBuffer = fs.readFileSync(cachePath);
+    return {
+      buffer: cachedBuffer,
+      sizeReduction:
+        ((buffer.length - cachedBuffer.length) / buffer.length) * 100,
+    };
   }
   let quality = 85,
     bestBuffer = buffer;
@@ -84,11 +89,18 @@ const compressImage = async (
       bestBuffer = compressed;
     } else {
       fs.writeFileSync(cachePath, compressed);
-      return compressed;
+      return {
+        buffer: compressed,
+        sizeReduction:
+          ((buffer.length - compressed.length) / buffer.length) * 100,
+      };
     }
   }
   fs.writeFileSync(cachePath, bestBuffer);
-  return bestBuffer;
+  return {
+    buffer: bestBuffer,
+    sizeReduction: ((buffer.length - bestBuffer.length) / buffer.length) * 100,
+  };
 };
 
 const compressVideo = async (
@@ -97,13 +109,18 @@ const compressVideo = async (
   isPercentage: boolean,
   originalMB: number,
   cacheKey: string
-): Promise<Buffer> => {
+): Promise<{ buffer: Buffer; sizeReduction: number }> => {
   const cachePath = join(CACHE_DIR, cacheKey);
   if (
     fs.existsSync(cachePath) &&
     Date.now() - fs.statSync(cachePath).mtimeMs < CACHE_EXPIRY
   ) {
-    return fs.readFileSync(cachePath);
+    const cachedBuffer = fs.readFileSync(cachePath);
+    return {
+      buffer: cachedBuffer,
+      sizeReduction:
+        ((buffer.length - cachedBuffer.length) / buffer.length) * 100,
+    };
   }
   const tempDir = tmpdir(),
     inputPath = join(tempDir, `vid_in_${Date.now()}.mp4`),
@@ -158,7 +175,11 @@ const compressVideo = async (
       attempts++;
     } while (attempts < 5);
     fs.writeFileSync(cachePath, resultBuffer);
-    return resultBuffer;
+    return {
+      buffer: resultBuffer,
+      sizeReduction:
+        ((buffer.length - resultBuffer.length) / buffer.length) * 100,
+    };
   } finally {
     [inputPath, outputPath].forEach(
       (p) => fs.existsSync(p) && fs.unlinkSync(p)
