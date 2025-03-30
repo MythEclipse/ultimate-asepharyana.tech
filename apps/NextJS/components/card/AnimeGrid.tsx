@@ -32,7 +32,7 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({
   if (loading) {
     return (
       <div className='flex flex-col items-center p-4'>
-        <div className='grid grid-cols-5 gap-4 w-full'>
+        <div className='grid  grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
           {Array.from({ length: 25 }).map((_, index) => (
             <MediaCard key={index} loading={loading} />
           ))}
@@ -43,7 +43,7 @@ const AnimeGrid: React.FC<AnimeGridProps> = ({
 
   return (
     <div className='flex flex-col items-center p-4'>
-      <div className='grid grid-cols-5 gap-4 w-full'>
+      <div className='grid grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
         {animes?.map((anime) => (
           <MediaCard
             key={anime.slug}

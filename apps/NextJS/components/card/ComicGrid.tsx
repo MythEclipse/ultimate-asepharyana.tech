@@ -42,7 +42,7 @@ const KomikGrid: React.FC<KomikGridProps> = ({
   if (loading) {
     return (
       <div className='flex flex-col items-center p-4'>
-        <div className='grid grid-cols-5 gap-4 w-full'>
+        <div className='grid grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
           {Array.from({ length: 40 }).map((_, index) => (
             <CardA key={index} loading={loading} />
           ))}
@@ -53,7 +53,7 @@ const KomikGrid: React.FC<KomikGridProps> = ({
 
   return (
     <div className='flex flex-col items-center p-4'>
-      <div className='grid grid-cols-5 gap-4 w-full'>
+      <div className='grid grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
         {komiks?.map((komik) => (
           <CardA
             key={komik.slug}

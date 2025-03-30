@@ -1,9 +1,9 @@
 'use client';
 
 import useSWR from 'swr';
-import { Link } from 'next-view-transitions';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
+import { useTransitionRouter } from 'next-view-transitions';
 
 interface HomeData {
   status: string;
@@ -36,7 +36,7 @@ export default function AnimePage() {
   const { data, error } = useSWR<HomeData>(`/api/anime/`, fetcher, {
     refreshInterval: 60000,
   });
-
+  const router = useTransitionRouter();
   if (error) return <div>Error loading data</div>;
   if (!data)
     return (
@@ -106,13 +106,13 @@ export default function AnimePage() {
                 Ongoing Anime
               </h2>
             </div>
-            <Link
-              href='/anime/ongoing-anime/1'
+            <button
+            onClick={()=>router.push('/anime/ongoing-anime/1')}
               className='flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors'
             >
               View All
               <ArrowRight className='w-4 h-4' />
-            </Link>
+            </button>
           </div>
           <AnimeGrid animes={data.data.ongoing_anime} />
         </section>
@@ -127,13 +127,13 @@ export default function AnimePage() {
                 Complete Anime
               </h2>
             </div>
-            <Link
-              href='/anime/complete-anime/1'
+            <button
+            onClick={()=>router.push('/anime/complete-anime/1')}
               className='flex items-center gap-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors'
             >
               View All
               <ArrowRight className='w-4 h-4' />
-            </Link>
+            </button>
           </div>
           <AnimeGrid animes={data.data.complete_anime} />
         </section>
