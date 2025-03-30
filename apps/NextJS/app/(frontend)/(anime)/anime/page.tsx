@@ -107,7 +107,7 @@ export default function AnimePage() {
               </h2>
             </div>
             <button
-            onClick={()=>router.push('/anime/ongoing-anime/1')}
+              onClick={() => router.push('/anime/ongoing-anime/1')}
               className='flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors'
             >
               View All
@@ -128,7 +128,7 @@ export default function AnimePage() {
               </h2>
             </div>
             <button
-            onClick={()=>router.push('/anime/complete-anime/1')}
+              onClick={() => router.push('/anime/complete-anime/1')}
               className='flex items-center gap-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors'
             >
               View All
