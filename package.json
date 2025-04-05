@@ -45,7 +45,7 @@
     "@babel/core": "~7.26.10",
     "@babel/preset-env": "~7.26.9",
     "@prisma/client": "~6.5.0",
-    "@types/node": "^22.13.14",
+    "@types/node": "^22.14.0",
     "concurrently": "~9.1.2",
     "cross-env": "~7.0.3",
     "dotenv": "~16.4.7",
@@ -53,7 +53,7 @@
     "prettier": "~3.5.3",
     "prisma": "~6.5.0",
     "tsx": "~4.19.3",
-    "turbo": "~2.4.4"
+    "turbo": "~2.5.0"
   },
   "packageManager": "pnpm@10.7.0",
   "pnpm": {
