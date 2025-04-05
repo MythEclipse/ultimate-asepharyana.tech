@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
+import { PRODUCTION } from '@/lib/url';
 
 // Temporary type extension for Node.js fetch
 declare global {
@@ -9,36 +10,47 @@ declare global {
 }
 
 export async function POST(request: Request) {
-        try {
-                const apiUrl = 'https://staging.kecilin.id/api/upload_compress';
+    try {
+        const apiUrl = 'https://staging.kecilin.id/api/upload_compress';
 
-                // Clone headers from original request
-                const headers = new Headers(request.headers);
+        // Clone headers from original request
+        const headers = new Headers(request.headers);
 
-                // Add required duplex option with type safety
-                const init: RequestInit = {
-                        method: 'POST',
-                        headers: headers,
-                        body: request.body,
-                        duplex: 'half' 
-                };
+        // Add required duplex option with type safety
+        const init: RequestInit = {
+            method: 'POST',
+            headers: headers,
+            body: request.body,
+            duplex: 'half'
+        };
 
-                const response = await fetch(apiUrl, init);
+        const response = await fetch(apiUrl, init);
 
-                if (!response.ok) {
-                        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-
-                const responseData = await response.json();
-
-                return NextResponse.json(responseData);
-        } catch (error) {
-                logger.error("Proxy error:", error);
-                return NextResponse.json(
-                        { status: 500, message: "Internal Server Error" },
-                        { status: 500 }
-                );
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
+
+        const responseData = await response.json();
+
+        const { status, message } = responseData;
+
+        return NextResponse.json({
+            status,
+            message,
+            data : {
+                size_ori: responseData.data.size_ori,
+                compress_size: responseData.data.compress_size,
+                filename: responseData.data.filename,
+                link: `${PRODUCTION}/api/img-compress?url=${responseData.data.filename}`,
+            },
+        });
+    } catch (error) {
+        logger.error("Proxy error:", error);
+        return NextResponse.json(
+            { status: 500, message: "Internal Server Error" },
+            { status: 500 }
+        );
+    }
 }
 
 export async function GET(request: Request) {

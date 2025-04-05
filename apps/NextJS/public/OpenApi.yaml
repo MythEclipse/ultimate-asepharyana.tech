@@ -1502,9 +1502,10 @@ paths:
                     type: string
                   details:
                     type: string
-  /api/kecilin:
+  /api/img-compress:
     get:
-            summary: 'File kecilin'
+            summary: 'Image Compression'
+            description: 'Compress an image by URL'
             tags:
               - tools
             parameters:
@@ -1529,10 +1530,10 @@ paths:
                                         type: string
                                         format: uri
     post:
-      summary: 'File kecilin'
+      summary: 'Image Compression'
+      description: 'Compress an image by URL'
       tags:
         - tools
-      description: 'Upload files to pomf2 service'
       requestBody:
         required: true
         content:
