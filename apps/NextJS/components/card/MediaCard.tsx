@@ -48,16 +48,21 @@ export default function CardA({
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const router = useTransitionRouter();
-  const fallback = 'https://asepharyana.cloud/default.png';
+  // const fallback = 'https://asepharyana.cloud/default.png';
   const imageSources = [
-    imageUrl && imageUrl.trim() ? imageUrl : fallback,
+    imageUrl && imageUrl.trim() ? imageUrl : null,
     imageUrl && imageUrl.trim()
       ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
       : null,
     imageUrl && imageUrl.trim()
+      ? `${PRODUCTION}//api/img-compress2?url=${encodeURIComponent(imageUrl)}`
+      : null,
+    imageUrl && imageUrl.trim()
+      ? `${PRODUCTION}//api/img-compress3?url=${encodeURIComponent(imageUrl)}`
+      : null,
+    imageUrl && imageUrl.trim()
       ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
       : null,
-      
   ].filter((src) => src && src.trim()) as string[];
 
   const handleError = () => {
