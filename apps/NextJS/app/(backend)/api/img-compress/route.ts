@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import logger from '@/lib/logger';
-import { BaseUrl } from '@/lib/url';
+import { PRODUCTION } from '@/lib/url';
 
 declare global {
   interface RequestInit {
@@ -58,7 +58,7 @@ async function compressImageFromBody(
         compress_size: responseData.data.compress_size,
         filename: responseData.data.filename,
         link: constructUrl(
-          BaseUrl,
+          PRODUCTION,
           `/api/img-compress?url=${encodeURIComponent(responseData.data.filename)}`
         ),
       },

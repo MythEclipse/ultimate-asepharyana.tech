@@ -94,88 +94,108 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-    const kecilin = 'https://staging.kecilin.id';
-    try {
-        const { searchParams } = new URL(request.url);
-        const fileUrl = searchParams.get('url');
+  const kecilin = 'https://backdoor.kecilin.id';
+  try {
+    const { searchParams } = new URL(request.url);
+    const fileUrl = searchParams.get('url');
 
-        if (!fileUrl) {
-            return NextResponse.json(
-                { status: 400, message: 'Missing url parameter' },
-                { status: 400 }
-            );
-        }
-
-        try {
-            new URL(fileUrl);
-        } catch {
-            return NextResponse.json(
-                { status: 400, message: 'Invalid URL format' },
-                { status: 400 }
-            );
-        }
-
-        const fetchImage = await fetch(fileUrl);
-        if (!fetchImage.ok) {
-            throw new Error(`Failed to fetch image from url: ${fetchImage.status}`);
-        }
-
-        const arrayBuffer = await fetchImage.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: fetchImage.headers.get('content-type') || 'application/octet-stream' });
-        const formData = new FormData();
-        formData.append('file', blob, 'image.jpg');
-
-        const apiUrl = 'https://staging.kecilin.id/api/upload_compress';
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            logger.error(`API Error ${response.status}: ${errorBody}`);
-            throw new Error(`API request failed: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-
-        if (!responseData.data?.filename) {
-            throw new Error('Invalid response structure');
-        }
-
-        const downloadLink = constructUrl(
-            kecilin,
-            `/api/upload_compress/${encodeURIComponent(responseData.data.filename)}`
-        );
-        const imagefinal = await fetch(downloadLink);
-        if (imagefinal.status === 200) {
-            const imageBuffer = await imagefinal.arrayBuffer();
-            return new Response(imageBuffer, {
-            headers: {
-                'Content-Type': imagefinal.headers.get('content-type') || 'application/octet-stream',
-                'Content-Disposition': 'inline',
-            },
-            });
-        } else {
-            return NextResponse.json({
-            status: responseData.status,
-            message: responseData.message,
-            data: {
-                size_ori: responseData.data.size_ori,
-                compress_size: responseData.data.compress_size,
-                filename: responseData.data.filename,
-                link: downloadLink,
-            },
-            });
-        }
-    } catch (error) {
-        logger.error('GET Compress Error:', error);
-        return NextResponse.json(
-            { status: 500, message: 'Error processing image URL' },
-            { status: 500 }
-        );
+    if (!fileUrl) {
+      return NextResponse.json(
+        { status: 400, message: 'Missing url parameter' },
+        { status: 400 }
+      );
     }
+
+    try {
+      new URL(fileUrl);
+    } catch {
+      return NextResponse.json(
+        { status: 400, message: 'Invalid URL format' },
+        { status: 400 }
+      );
+    }
+
+    const fetchImage = await fetch(fileUrl);
+    if (!fetchImage.ok) {
+      throw new Error(`Failed to fetch image from url: ${fetchImage.status}`);
+    }
+
+    const arrayBuffer = await fetchImage.arrayBuffer();
+    const blob = new Blob([arrayBuffer], {
+      type:
+        fetchImage.headers.get('content-type') || 'application/octet-stream',
+    });
+    const formData = new FormData();
+    formData.append('file', blob, 'image.jpg');
+
+    const apiUrl = 'https://backdoor.kecilin.id/api/post/compress';
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      logger.error(`API Error ${response.status}: ${errorBody}`);
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      const responseData = await response.json();
+
+      if (!responseData.data?.filename) {
+        throw new Error('Invalid response structure');
+      }
+
+      const downloadLink = constructUrl(
+        kecilin,
+        `/api/upload_compress/${encodeURIComponent(responseData.data.filename)}`
+      );
+      const imagefinal = await fetch(downloadLink);
+      if (imagefinal.status === 200) {
+        const imageBuffer = await imagefinal.arrayBuffer();
+        return new Response(imageBuffer, {
+          headers: {
+            'Content-Type':
+              imagefinal.headers.get('content-type') ||
+              'application/octet-stream',
+            'Content-Disposition': 'inline',
+          },
+        });
+      } else {
+        return NextResponse.json({
+          status: responseData.status,
+          message: responseData.message,
+          data: {
+            size_ori: responseData.data.size_ori,
+            compress_size: responseData.data.compress_size,
+            filename: responseData.data.filename,
+            link: downloadLink,
+          },
+        });
+      }
+    } else if (contentType?.startsWith('image/')) {
+      const imageBuffer = await response.arrayBuffer();
+      return new Response(imageBuffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': 'inline',
+        },
+      });
+    } else {
+      const errorBody = await response.text();
+      logger.error('Unexpected response format:', errorBody);
+      throw new Error('Unexpected response format');
+    }
+  } catch (error) {
+    logger.error('GET Compress Error:', error);
+    return NextResponse.json(
+      { status: 500, message: 'Error processing image URL' },
+      { status: 500 }
+    );
+  }
 }
 
 export const config = {
