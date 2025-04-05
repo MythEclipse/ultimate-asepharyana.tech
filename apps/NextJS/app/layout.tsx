@@ -57,9 +57,11 @@ export default async function RootLayout({
   return (
     <SessionWrapper>
       <ViewTransitions>
-        <html lang='id' 
-        // className={inter.className} 
-        suppressHydrationWarning>
+        <html
+          lang='id'
+          // className={inter.className}
+          suppressHydrationWarning
+        >
           <head>
             <link rel='canonical' href={`${PRODUCTION}`} />
             <link rel='manifest' href='/manifest.json' />

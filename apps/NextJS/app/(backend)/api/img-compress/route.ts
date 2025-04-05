@@ -94,39 +94,42 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const fileName = searchParams.get('url');
+  try {
+    const { searchParams } = new URL(request.url);
+    const fileName = searchParams.get('url');
 
-        if (!fileName) {
-            return NextResponse.json(
-                { status: 400, message: "Bad Request: Missing fileName parameter" },
-                { status: 400 }
-            );
-        }
-
-        const apiUrl = `https://staging.kecilin.id/api/upload_compress/${fileName}`;
-
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-
-        const responseData = await response.blob();
-
-        return new Response(responseData, {
-            headers: {
-                'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
-            },
-        });
-    } catch (error) {
-        logger.error("Proxy error:", error);
-        return NextResponse.json(
-            { status: 500, message: "Internal Server Error" },
-            { status: 500 }
-        );
+    if (!fileName) {
+      return NextResponse.json(
+        { status: 400, message: 'Bad Request: Missing fileName parameter' },
+        { status: 400 }
+      );
     }
+
+    const apiUrl = `https://staging.kecilin.id/api/upload_compress/${fileName}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const responseData = await response.blob();
+
+    return new Response(responseData, {
+      headers: {
+        'Content-Type':
+          response.headers.get('Content-Type') || 'application/octet-stream',
+      },
+    });
+  } catch (error) {
+    logger.error('Proxy error:', error);
+    return NextResponse.json(
+      { status: 500, message: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
 }
 
 export const config = {

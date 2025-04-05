@@ -55,10 +55,10 @@ export default function CardA({
       ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
       : null,
     imageUrl && imageUrl.trim()
-      ? `${PRODUCTION}//api/img-compress2?url=${encodeURIComponent(imageUrl)}`
+      ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}`
       : null,
     imageUrl && imageUrl.trim()
-      ? `${PRODUCTION}//api/img-compress3?url=${encodeURIComponent(imageUrl)}`
+      ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}`
       : null,
     imageUrl && imageUrl.trim()
       ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
