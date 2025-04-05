@@ -57,6 +57,7 @@ export default function CardA({
     imageUrl && imageUrl.trim()
       ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
       : null,
+      
   ].filter((src) => src && src.trim()) as string[];
 
   const handleError = () => {

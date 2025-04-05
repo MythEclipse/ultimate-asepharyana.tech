@@ -1412,7 +1412,55 @@ paths:
                   message:
                     type: string
                 required:
-                  - message 
+                  - message
+  /api/uploader:
+    post:
+      summary: 'File Uploader'
+      tags:
+        - tools
+      description: 'Upload files to pomf2 service'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string 
+                  format: binary
+                  description: The file to upload
+      responses:
+        '200':
+          description: 'File uploaded successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: The URL of the uploaded file
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: 'Upload failed'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
   /api/proxy:
     get:
       summary: 'Proxy'
@@ -1454,9 +1502,9 @@ paths:
                     type: string
                   details:
                     type: string
-  /api/uploader:
+  /api/kecilin:
     post:
-      summary: 'File Uploader'
+      summary: 'File kecilin'
       tags:
         - tools
       description: 'Upload files to pomf2 service'

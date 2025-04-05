@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+// import { Inter } from 'next/font/google';
 // import { Flowbite } from 'flowbite-react';
 import './globals.css';
 import NavbarWrapper from '@/components/navbar/NavbarWrapper';
@@ -12,7 +12,7 @@ import { PRODUCTION } from '@/lib/url';
 import { ThemeProvider } from '@/components/misc/theme-provider';
 import DarkThemeToggle from '@/components/button/DarkThemeToggle';
 // Google font setup
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+// const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 // Metadata configuration for the page
 export const metadata: Metadata = {
   metadataBase: new URL(`${PRODUCTION}`),
@@ -57,7 +57,9 @@ export default async function RootLayout({
   return (
     <SessionWrapper>
       <ViewTransitions>
-        <html lang='id' className={inter.className} suppressHydrationWarning>
+        <html lang='id' 
+        // className={inter.className} 
+        suppressHydrationWarning>
           <head>
             <link rel='canonical' href={`${PRODUCTION}`} />
             <link rel='manifest' href='/manifest.json' />
