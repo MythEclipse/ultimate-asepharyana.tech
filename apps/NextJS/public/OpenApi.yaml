@@ -1502,33 +1502,34 @@ paths:
                     type: string
                   details:
                     type: string
-  /api/img-compress:
+  /api/img-compress2:
     get:
-            summary: 'Image Compression'
-            description: 'Compress an image by URL'
-            tags:
-              - tools
-            parameters:
-                - name: url
-                  in: query
-                  required: true
-                  schema:
-                      type: string
-                      format: uri
-                  description: The URL of the image to compress
-            responses:
-                '200':
-                    description: Compressed image retrieved successfully
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    message:
-                                        type: string
-                                    compressedImageUrl:
-                                        type: string
-                                        format: uri
+              summary: 'Image Compression'
+              description: 'Compress an image by URL'
+              tags:
+                - tools
+              parameters:
+                  - name: url
+                    in: query
+                    required: true
+                    schema:
+                        type: string
+                        format: uri
+                    description: The URL of the image to compress
+              responses:
+                  '200':
+                      description: Compressed image retrieved successfully
+                      content:
+                          application/json:
+                              schema:
+                                  type: object
+                                  properties:
+                                      message:
+                                          type: string
+                                      compressedImageUrl:
+                                          type: string
+                                          format: uri
+  /api/img-compress:
     post:
       summary: 'Image Compression'
       description: 'Compress an image by URL'
