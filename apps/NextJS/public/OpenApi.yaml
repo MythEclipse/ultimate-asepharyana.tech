@@ -1503,6 +1503,31 @@ paths:
                   details:
                     type: string
   /api/kecilin:
+    get:
+            summary: 'File kecilin'
+            tags:
+              - tools
+            parameters:
+                - name: url
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                      format: uri
+                  description: The URL of the image to compress
+            responses:
+                '200':
+                    description: Compressed image retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                                    compressedImageUrl:
+                                        type: string
+                                        format: uri
     post:
       summary: 'File kecilin'
       tags:
