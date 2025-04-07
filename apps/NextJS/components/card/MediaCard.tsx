@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Image from 'next/image';
 import { PRODUCTION } from '@/lib/url';
@@ -68,15 +68,22 @@ export default function CardA({
     fallback,
   ].filter((src) => src && src.trim()) as string[];
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isLoading) {
-        setCurrentIndex(imageSources.length - 1);
-        setIsLoading(false);
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [isLoading, imageSources.length]);
+    if (isLoading) {
+      timeoutRef.current = setTimeout(() => {
+        if (currentIndex < imageSources.length - 1) {
+          setCurrentIndex((prev) => prev + 1);
+        } else {
+          setIsLoading(false);
+        }
+      }, 5000);
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [currentIndex, isLoading, imageSources.length]);
 
   const handleError = () => {
     if (currentIndex < imageSources.length - 1) {
@@ -102,7 +109,10 @@ export default function CardA({
               fill
               sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
               className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
-              onLoad={() => setIsLoading(false)}
+              onLoad={() => {
+                setIsLoading(false);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+              }}
               onError={handleError}
               unoptimized
             />
