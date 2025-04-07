@@ -1,5 +1,6 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Image from 'next/image';
 import { PRODUCTION } from '@/lib/url';
@@ -48,7 +49,8 @@ export default function CardA({
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const router = useTransitionRouter();
-  // const fallback = 'https://asepharyana.cloud/default.png';
+  const fallback = '/default.png';
+
   const imageSources = [
     imageUrl && imageUrl.trim() ? imageUrl : null,
     imageUrl && imageUrl.trim()
@@ -63,13 +65,27 @@ export default function CardA({
     imageUrl && imageUrl.trim()
       ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
       : null,
+    fallback,
   ].filter((src) => src && src.trim()) as string[];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        setCurrentIndex(imageSources.length - 1);
+        setIsLoading(false);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [isLoading, imageSources.length]);
 
   const handleError = () => {
     if (currentIndex < imageSources.length - 1) {
       setCurrentIndex(currentIndex + 1);
+    } else {
+      setIsLoading(false);
     }
   };
+
   return (
     <button
       onClick={() => router.push(linkUrl || '/')}

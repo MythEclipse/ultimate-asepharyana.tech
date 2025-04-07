@@ -94,7 +94,7 @@ export default function Page() {
             </Link>
           </div>
           <div className='flex flex-col items-center p-4'>
-            <div className='grid grid-cols-5 gap-4 w-full'>
+            <div className='grid grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
               {Array.from({ length: 40 }).map((_, index) => (
                 <ComicCard key={index} loading2 />
               ))}
@@ -153,7 +153,7 @@ export default function Page() {
 
         {/* Manga Grid */}
         <div className='flex flex-col items-center p-4'>
-          <div className='grid grid-cols-5 gap-4 w-full'>
+          <div className='grid grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
             {komikData.data.map((komik) => (
               <ComicCard key={komik.slug} komik={komik} />
             ))}

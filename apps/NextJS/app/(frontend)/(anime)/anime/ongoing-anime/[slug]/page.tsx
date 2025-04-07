@@ -4,7 +4,6 @@ import useSWR from 'swr';
 import { useParams } from 'next/navigation';
 import { Link } from 'next-view-transitions';
 import AnimeGrid from '@/components/card/AnimeGrid';
-import { BaseUrl } from '@/lib/url';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -46,7 +45,7 @@ export default function AnimePage() {
   const params = useParams();
   const slug = params.slug as string;
   const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
-    `${BaseUrl}/api/anime/ongoing-anime/${slug}`,
+    `/api/anime/ongoing-anime/${slug}`,
     fetcher,
     {
       revalidateOnFocus: false,
