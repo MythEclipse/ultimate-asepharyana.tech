@@ -18,10 +18,10 @@ import webCompressor from '@/public/WebCompressor.png';
 
 // Komponen Skeleton sederhana untuk TildCard
 const TildCardSkeleton = () => (
-  <div className="bg-gray-200 dark:bg-gray-700 rounded-lg shadow-lg p-4 animate-pulse">
-    <div className="h-40 bg-gray-300 dark:bg-gray-600 rounded mb-4"></div>
-    <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
-    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+  <div className='bg-gray-200 dark:bg-gray-700 rounded-lg shadow-lg p-4 animate-pulse'>
+    <div className='h-40 bg-gray-300 dark:bg-gray-600 rounded mb-4'></div>
+    <div className='h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2'></div>
+    <div className='h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2'></div>
   </div>
 );
 
@@ -55,11 +55,15 @@ export default function Page() {
         {headerContent}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3'>
           {/* Tampilkan skeleton untuk setiap kartu */}
-          {Array(6).fill(0).map((_, index) => (
-            <div key={`skeleton-${index}`}> {/* Pastikan key unik */}
-              <TildCardSkeleton />
-            </div>
-          ))}
+          {Array(6)
+            .fill(0)
+            .map((_, index) => (
+              <div key={`skeleton-${index}`}>
+                {' '}
+                {/* Pastikan key unik */}
+                <TildCardSkeleton />
+              </div>
+            ))}
         </div>
       </div>
     );
