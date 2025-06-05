@@ -22,7 +22,7 @@
     "ceklog": "tail -n 3000 apps/NextJS/app.log"
   },
   "devDependencies": {
-    "@babel/preset-typescript": "~7.27.0",
+    "@babel/preset-typescript": "~7.27.1",
     "babel-plugin-add-import-extension": "^1.6.0",
     "copyfiles": "^2.4.1",
     "rimraf": "~6.0.1"
@@ -41,26 +41,27 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "@babel/cli": "~7.27.0",
-    "@babel/core": "~7.26.10",
-    "@babel/preset-env": "~7.26.9",
-    "@prisma/client": "~6.5.0",
-    "@types/node": "^22.14.0",
+    "@babel/cli": "~7.27.2",
+    "@babel/core": "~7.27.4",
+    "@babel/preset-env": "~7.27.2",
+    "@prisma/client": "~6.9.0",
+    "@types/node": "^22.15.29",
     "concurrently": "~9.1.2",
     "cross-env": "~7.0.3",
-    "dotenv": "~16.4.7",
+    "dotenv": "~16.5.0",
     "ncp": "^2.0.0",
     "prettier": "~3.5.3",
-    "prisma": "~6.5.0",
-    "tsx": "~4.19.3",
-    "turbo": "~2.5.0"
+    "prisma": "~6.9.0",
+    "tsx": "~4.19.4",
+    "turbo": "~2.5.4"
   },
-  "packageManager": "pnpm@10.7.0",
+  "packageManager": "pnpm@10.11.1",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
       "@scarf/scarf",
+      "@tailwindcss/oxide",
       "@tree-sitter-grammars/tree-sitter-yaml",
       "core-js-pure",
       "esbuild",

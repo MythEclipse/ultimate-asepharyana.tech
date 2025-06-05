@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/lib/url';
-import { Posts, User, Likes, Comments } from '@prisma/client';
+import { Posts } from '@asepharyana/database';
 
 export const usePosts = () => {
   const [posts, setPosts] = useState<Posts[]>([]);
