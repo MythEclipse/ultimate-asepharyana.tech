@@ -76,7 +76,6 @@ export default function PostCard({
             alt={post.user.name || 'User'}
             width={56}
             height={56}
-            unoptimized
             className='rounded-full border-2 border-blue-400/80 shadow-md hover:border-blue-500 transition-all cursor-pointer'
           />
           <div className='absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full px-2 py-0.5 text-xs shadow-sm'>
@@ -157,6 +156,7 @@ export default function PostCard({
             src={post.image_url}
             alt='Post image'
             width={800}
+            unoptimized
             height={450}
             className='object-cover w-full hover:scale-105 transition-transform duration-300 cursor-pointer'
           />
@@ -211,6 +211,7 @@ export default function PostCard({
                   alt={comment.user.name || 'User'}
                   width={40}
                   height={40}
+                  unoptimized
                   className='rounded-full border-2 border-blue-200 dark:border-blue-900/50'
                 />
                 <div className='flex-1'>
@@ -284,6 +285,7 @@ export default function PostCard({
                 alt='Your profile'
                 width={48}
                 height={48}
+                unoptimized
                 className='rounded-full border-2 border-blue-200 dark:border-blue-900/50 flex-shrink-0'
               />
               <div className='flex-1 space-y-4'>

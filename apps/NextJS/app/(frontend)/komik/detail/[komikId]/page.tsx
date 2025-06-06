@@ -1,26 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import Image from 'next/image';
-import { BackgroundGradient } from '@/components/background/background-gradient';
-import CardA from '@/components/card/MediaCard';
-import ButtonA from '@/components/button/ScrollButton';
-import {
-  ArrowRightIcon,
-  BookmarkIcon,
-  BookOpenIcon,
-  CalendarIcon,
-  CircleDot,
-  FileTextIcon,
-  StarIcon,
-  TypeIcon,
-  UserIcon,
-} from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import { PRODUCTION } from '@/lib/url';
-import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
 
+import { BackgroundGradient } from '@/components/background/background-gradient';
+import MediaCard from '@/components/card/MediaCard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  Bookmark,
+  BookOpen,
+  Calendar,
+  CircleDot,
+  FileText,
+  Star,
+  Type,
+  User,
+  ArrowRight,
+  AlertTriangle,
+} from 'lucide-react';
+
+// --- INTERFACES ---
 interface Chapter {
   chapter: string;
   chapter_id: string;
@@ -52,307 +69,208 @@ interface MangaData {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+// --- SKELETON COMPONENT ---
+const DetailPageSkeleton = () => (
+  <main className='p-4 md:p-8 min-h-screen'>
+    <div className='max-w-6xl mx-auto'>
+      <div className='rounded-[24px] p-6 md:p-10 bg-card'>
+        <div className='flex flex-col md:flex-row items-start gap-8'>
+          <div className='w-full md:w-1/3 flex flex-col gap-4'>
+            <Skeleton className='aspect-[2/3] w-full rounded-xl' />
+            <Skeleton className='h-12 w-full rounded-full' />
+          </div>
+          <div className='w-full md:w-2/3 space-y-6'>
+            <Skeleton className='h-10 w-3/4 rounded-lg' />
+            <Card><CardContent className='p-4'><Skeleton className='h-20 w-full'/></CardContent></Card>
+            <div className='flex flex-wrap gap-2'>
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className='h-8 w-24 rounded-full' />)}
+            </div>
+            <Skeleton className='h-24 w-full' />
+            <Skeleton className='h-48 w-full' />
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+);
+
 export default function DetailMangaPage() {
   const router = useRouter();
-  const { komikId } = useParams();
+  const params = useParams();
+  const komikId = params.komikId as string;
 
-  const { data: manga, error } = useSWR<MangaData>(
-    `/api/komik/detail?komik_id=${komikId}`,
+  const { data: mangaData, error, isLoading } = useSWR<MangaData>(
+    komikId ? `/api/komik/detail?komik_id=${komikId}` : null,
     fetcher
   );
 
   const [bookmarked, setBookmarked] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleBookmark = () => {
-    let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
-
-    if (bookmarked) {
-      bookmarks = bookmarks.filter(
-        (item: { slug: string }) => item.slug !== komikId
-      );
-    } else {
-      bookmarks.push({
-        slug: komikId,
-        title: manga?.title,
-        poster: manga?.poster,
-      });
+  useEffect(() => {
+    if (typeof window !== 'undefined' && komikId) {
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
+      setBookmarked(bookmarks.some((item: { slug: string }) => item.slug === komikId));
     }
+  }, [komikId]);
 
+  const handleBookmark = () => {
+    if (!mangaData) return;
+    let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
+    const isBookmarked = bookmarks.some((item: { slug: string }) => item.slug === komikId);
+
+    if (isBookmarked) {
+      bookmarks = bookmarks.filter((item: { slug: string }) => item.slug !== komikId);
+    } else {
+      bookmarks.push({ slug: komikId, title: mangaData.title, poster: mangaData.poster });
+    }
     localStorage.setItem('bookmarks-komik', JSON.stringify(bookmarks));
-    setBookmarked(!bookmarked);
+    setBookmarked(!isBookmarked);
   };
 
-  if (error)
-    return (
-      <p className='text-red-500 text-center'>Failed to load manga data</p>
-    );
-  if (!manga)
-    return (
-      <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
-        <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-2xl dark:shadow-none'>
-          <div className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
-            <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
-              {/* Skeleton Cover Section */}
-              <div className='w-full md:w-1/3 flex flex-col gap-4'>
-                <div className='relative overflow-hidden rounded-2xl aspect-[2/3] animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-
-                <div className='h-12 rounded-full animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-              </div>
-
-              {/* Skeleton Details Section */}
-              <div className='w-full md:w-2/3 space-y-6'>
-                {/* Title */}
-                <div className='h-10 w-2/3 rounded-lg animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-
-                {/* Metadata Grid */}
-                <div className='grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className='flex items-center gap-3'>
-                      <div className='w-9 h-9 rounded-lg animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                      <div className='space-y-2'>
-                        <div className='h-4 w-16 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                        <div className='h-4 w-24 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Genres */}
-                <div className='flex flex-wrap gap-2'>
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className='h-6 w-20 rounded-full animate-pulse bg-zinc-200 dark:bg-zinc-700'
-                    />
-                  ))}
-                </div>
-
-                {/* Description */}
-                <div className='space-y-3'>
-                  <div className='h-5 w-32 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                  <div className='h-4 w-full rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                  <div className='h-4 w-5/6 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                  <div className='h-4 w-2/3 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                </div>
-
-                {/* Chapters */}
-                <div className='space-y-4'>
-                  <div className='h-7 w-48 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
-                    {[...Array(3)].map((_, i) => (
-                      <div
-                        key={i}
-                        className='h-16 rounded-xl animate-pulse bg-zinc-200 dark:bg-zinc-700'
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recommendations */}
-                <div className='space-y-4'>
-                  <div className='h-7 w-56 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                  <div className='flex overflow-x-auto pb-4 gap-4'>
-                    {[...Array(4)].map((_, i) => (
-                      <div
-                        key={i}
-                        className='flex-shrink-0 w-48 md:w-56 space-y-2'
-                      >
-                        <div className='aspect-[2/3] rounded-xl animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                        <div className='h-4 w-3/4 rounded animate-pulse bg-zinc-200 dark:bg-zinc-700' />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  const fallback = 'https://asepharyana.cloud/default.png';
+  if (isLoading) return <DetailPageSkeleton />;
+  if (error || !mangaData) return (
+      <div className='min-h-screen p-6 flex items-center justify-center'>
+        <Card className='max-w-md w-full p-8 text-center'>
+          <AlertTriangle className='w-16 h-16 text-destructive mx-auto mb-4' />
+          <CardHeader>
+            <CardTitle className='text-2xl text-destructive'>Gagal Memuat Data</CardTitle>
+            <CardDescription>Terjadi kesalahan saat mengambil data manga.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+  );
+  
+  const manga = mangaData;
+  const fallback = '/default.png';
   const imageSources = [
-    manga.poster && manga.poster.trim() ? manga.poster : fallback,
-    manga.poster && manga.poster.trim()
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(manga.poster)}`
-      : null,
-    manga.poster && manga.poster.trim()
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(manga.poster)}`
-      : null,
-  ].filter((src) => src && src.trim()) as string[];
+    manga.poster?.trim() ? manga.poster : null,
+    manga.poster?.trim() ? `https://imagecdn.app/v1/images/${encodeURIComponent(manga.poster)}` : null,
+    manga.poster?.trim() ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(manga.poster)}` : null,
+    fallback,
+  ].filter(Boolean) as string[];
 
   const handleError = () => {
-    if (currentIndex < imageSources.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
+    if (currentIndex < imageSources.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
+  const metadata = [
+    { label: 'Skor', value: manga.score, icon: <Star className='w-5 h-5 text-amber-500' /> },
+    { label: 'Tipe', value: manga.type, icon: <Type className='w-5 h-5 text-blue-500' /> },
+    { label: 'Status', value: manga.status, icon: <CircleDot className='w-5 h-5 text-green-500' /> },
+    { label: 'Rilis', value: manga.releaseDate, icon: <Calendar className='w-5 h-5 text-red-500' /> },
+    { label: 'Author', value: manga.author, icon: <User className='w-5 h-5 text-purple-500' /> },
+    { label: 'Total Chapter', value: manga.totalChapter, icon: <FileText className='w-5 h-5 text-gray-500' /> },
+  ];
+
   return (
-    <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
-      <div className='max-w-6xl mx-auto bg-white dark:bg-dark-foreground rounded-3xl shadow-2xl dark:shadow-none'>
-        <BackgroundGradient className='rounded-[24px] p-6 md:p-10 bg-white dark:bg-zinc-900'>
-          <div className='flex flex-col md:flex-row items-center md:items-start gap-8'>
-            {/* Manga Cover Section */}
-            <div className='w-full md:w-1/3 flex flex-col gap-4'>
-              <div className='relative group overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300'>
-                <Image
-                  src={imageSources[currentIndex] || fallback}
-                  alt={manga.title}
-                  width={400}
-                  height={600}
-                  className='object-cover w-full aspect-[2/3] transform transition-transform hover:scale-105'
-                  priority
-                  unoptimized
-                  onError={handleError}
-                />
-                <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
-              </div>
+    <TooltipProvider delayDuration={100}>
+      <main className='p-4 md:p-8 bg-background min-h-screen'>
+        <div className='max-w-6xl mx-auto'>
+          <BackgroundGradient className='rounded-[24px] p-0.5'>
+            <div className='bg-card text-card-foreground rounded-[22px] p-6 md:p-10'>
+              <div className='flex flex-col md:flex-row items-start gap-8'>
+                <div className='w-full md:w-1/3 flex flex-col gap-4 md:sticky top-8'>
+                  <Card className='overflow-hidden'>
+                    <Image
+                      src={imageSources[currentIndex]}
+                      alt={manga.title}
+                      width={400}
+                      height={600}
+                      className='object-cover w-full aspect-[2/3]'
+                      priority
+                      unoptimized
+                      onError={handleError}
+                    />
+                  </Card>
+                  <Button onClick={handleBookmark} variant={bookmarked ? 'destructive' : 'default'} size='lg' className='w-full'>
+                    <Bookmark className='w-5 h-5 mr-2' />
+                    {bookmarked ? 'Hapus Bookmark' : 'Bookmark'}
+                  </Button>
+                </div>
 
-              <button
-                onClick={handleBookmark}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                  bookmarked
-                    ? 'bg-red-500/90 hover:bg-red-600 text-white'
-                    : 'bg-blue-500/90 hover:bg-blue-600 text-white'
-                }`}
-              >
-                <BookmarkIcon className='w-5 h-5' />
-                {bookmarked ? 'Bookmarked' : 'Bookmark'}
-              </button>
-            </div>
-
-            {/* Manga Details Section */}
-            <div className='w-full md:w-2/3 space-y-6'>
-              <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
-                {manga.title}
-              </h1>
-
-              {/* Metadata Grid */}
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl'>
-                {[
-                  {
-                    label: 'Score',
-                    value: manga.score,
-                    icon: <StarIcon className='w-5 h-5 text-amber-500' />,
-                  },
-                  {
-                    label: 'Type',
-                    value: manga.type,
-                    icon: <TypeIcon className='w-5 h-5 text-blue-500' />,
-                  },
-                  {
-                    label: 'Status',
-                    value: manga.status,
-                    icon: <CircleDot className='w-5 h-5 text-green-500' />,
-                  },
-                  {
-                    label: 'Released',
-                    value: manga.releaseDate,
-                    icon: <CalendarIcon className='w-5 h-5 text-red-500' />,
-                  },
-                  {
-                    label: 'Author',
-                    value: manga.author,
-                    icon: <UserIcon className='w-5 h-5 text-purple-500' />,
-                  },
-                ].map((detail) => (
-                  <div key={detail.label} className='flex items-center gap-3'>
-                    <span className='p-2 bg-white dark:bg-zinc-700 rounded-lg'>
-                      {detail.icon}
-                    </span>
-                    <div>
-                      <p className='text-sm text-zinc-500'>{detail.label}</p>
-                      <p className='font-medium dark:text-zinc-200'>
-                        {detail.value || 'N/A'}
-                      </p>
-                    </div>
+                <div className='w-full md:w-2/3 space-y-6'>
+                  <div className='space-y-2'>
+                    <h1 className='text-4xl font-bold tracking-tight'>{manga.title}</h1>
+                    {manga.alternativeTitle && <p className='text-xl text-muted-foreground'>{manga.alternativeTitle}</p>}
                   </div>
-                ))}
-              </div>
 
-              {/* Genres */}
-              <div className='flex flex-wrap gap-2'>
-                {manga.genres?.map((genre, index) => (
-                  <span
-                    key={index}
-                    className='px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full'
-                  >
-                    {genre}
-                  </span>
-                ))}
-              </div>
+                  <Card>
+                    <CardContent className='p-4 grid grid-cols-2 md:grid-cols-3 gap-4'>
+                      {metadata.map((item) => (
+                        <div key={item.label} className='flex items-center gap-3'>
+                          <span className='p-2 bg-muted rounded-lg'>{item.icon}</span>
+                          <div>
+                            <p className='text-sm text-muted-foreground'>{item.label}</p>
+                            <p className='font-semibold'>{item.value || 'N/A'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
 
-              {/* Description */}
-              <div className='prose dark:prose-invert max-w-none'>
-                <h3 className='text-xl font-semibold mb-2 text-zinc-800 dark:text-zinc-100'>
-                  Synopsis
-                </h3>
-                <p className='text-zinc-600 dark:text-zinc-300 leading-relaxed'>
-                  {manga.description || 'No description available.'}
-                </p>
-              </div>
+                  <div className='flex flex-wrap gap-2'>
+                    {manga.genres?.map((genre, index) => <Badge variant='secondary' key={index}>{genre}</Badge>)}
+                  </div>
 
-              {/* Chapters Section */}
-              <div className='space-y-4'>
-                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-                  Chapters
-                </h2>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
-                  {manga.chapters?.length > 0 ? (
-                    manga.chapters.map((chapter) => (
-                      <ButtonA
-                        key={chapter.chapter_id}
-                        onClick={() =>
-                          router.push(`/komik/chapter/${chapter.chapter_id}`)
-                        }
-                        className='group flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm'
-                      >
-                        <span className='font-medium text-zinc-700 dark:text-zinc-200'>
-                          {chapter.chapter}
-                        </span>
-                        <ArrowRightIcon className='w-5 h-5 text-zinc-400 group-hover:text-blue-500 transition-colors' />
-                      </ButtonA>
-                    ))
-                  ) : (
-                    <div className='col-span-full py-6 text-center text-zinc-500 dark:text-zinc-400'>
-                      <FileTextIcon className='mx-auto h-12 w-12 mb-3' />
-                      No chapters available
-                    </div>
-                  )}
-                </div>
-              </div>
+                  <Card>
+                    <CardHeader><CardTitle>Sinopsis</CardTitle></CardHeader>
+                    <CardContent>
+                      <p className='text-muted-foreground leading-relaxed'>{manga.description || 'Tidak ada sinopsis.'}</p>
+                    </CardContent>
+                  </Card>
 
-              {/* Recommendations Section */}
-              <div className='space-y-4'>
-                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-                  You Might Also Like
-                </h2>
-                <div className='flex overflow-x-auto pb-4 gap-4 scrollbar-thin scrollbar-thumb-zinc-300 scrollbar-track-transparent dark:scrollbar-thumb-zinc-600'>
-                  {manga.recommendations?.length > 0 ? (
-                    manga.recommendations.map((recommendation) => (
-                      <div
-                        key={recommendation.slug}
-                        className='flex-shrink-0 w-48 md:w-56'
-                      >
-                        <CardA
-                          title={recommendation.title}
-                          imageUrl={recommendation.poster}
-                          linkUrl={`/komik/detail/${recommendation.slug}`}
-                        />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Daftar Chapter</CardTitle>
+                      {manga.updatedOn && <CardDescription>Terakhir update: {manga.updatedOn}</CardDescription>}
+                    </CardHeader>
+                    <CardContent>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
+                        {manga.chapters?.length > 0 ? (
+                          manga.chapters.map((chapter) => (
+                            <Tooltip key={chapter.chapter_id}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  onClick={() => router.push(`/komik/chapter/${chapter.chapter_id}`)}
+                                  className='justify-between w-full h-full p-3 whitespace-normal'
+                                >
+                                  <p className='line-clamp-2 text-left'>{chapter.chapter}</p>
+                                  <ArrowRight className='w-4 h-4 ml-2 flex-shrink-0' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Rilis: {chapter.date}</p></TooltipContent>
+                            </Tooltip>
+                          ))
+                        ) : (
+                          <div className='col-span-full py-6 text-center text-muted-foreground'>
+                            <FileText className='mx-auto h-12 w-12 mb-3' />
+                            Belum ada chapter.
+                          </div>
+                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className='w-full py-6 text-center text-zinc-500 dark:text-zinc-400'>
-                      <BookOpenIcon className='mx-auto h-12 w-12 mb-3' />
-                      No recommendations available
+                    </CardContent>
+                  </Card>
+
+                  {manga.recommendations?.length > 0 && (
+                    <div>
+                      <h2 className='text-2xl font-bold tracking-tight mb-4'>Rekomendasi</h2>
+                      <div className='flex overflow-x-auto pb-4 -mx-1 gap-4'>
+                        {manga.recommendations.map((rec) => (
+                          <div key={rec.slug} className='flex-shrink-0 w-40 md:w-48'>
+                             <MediaCard title={rec.title} imageUrl={rec.poster} linkUrl={`/komik/detail/${rec.slug}`} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-        </BackgroundGradient>
-      </div>
-    </main>
+          </BackgroundGradient>
+        </div>
+      </main>
+    </TooltipProvider>
   );
 }
