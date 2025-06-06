@@ -207,27 +207,78 @@
     color: var(--sw-text-primary);
   }
   
-  #swagger-ui .swagger-ui,
-  #swagger-ui .swagger-ui p,
-  #swagger-ui .swagger-ui span,
-  #swagger-ui .swagger-ui div,
-  #swagger-ui .swagger-ui h1,
-  #swagger-ui .swagger-ui h2,
-  #swagger-ui .swagger-ui h3,
-  #swagger-ui .swagger-ui h4,
-  #swagger-ui .swagger-ui h5,
-  #swagger-ui .swagger-ui h6,
-  #swagger-ui .swagger-ui th,
-  #swagger-ui .swagger-ui td,
-  #swagger-ui .swagger-ui label,
-  #swagger-ui .opblock-description-wrapper,
-  #swagger-ui .parameter__name,
-  #swagger-ui .parameter__in,
-  #swagger-ui .description,
-  #swagger-ui .model-title,
-  #swagger-ui .model .property.primitive {
-    color: var(--sw-text-primary);
-  }
+  /* --- Hierarki Teks --- */
+
+/* h1 - Judul Utama API */
+.swagger-ui .info .title {
+    color: #ffffff !important;
+}
+
+/* h2 - Judul Grup/Tag Endpoint */
+.swagger-ui .opblock-tag {
+    color: #e0e0e0 !important;
+}
+
+/* h3 - Judul di dalam panel (Parameters, Responses) */
+.swagger-ui .opblock-section-header h4 {
+    color: #bdbdbd !important;
+}
+
+/* p - Teks Paragraf & Deskripsi Umum */
+.swagger-ui,
+.swagger-ui .info .description p,
+.swagger-ui .opblock .opblock-summary-description,
+.swagger-ui .response-col_description,
+.swagger-ui .model p {
+    color: #b0b0b0 !important;
+}
+
+/* --- Teks dengan Aksen (Penting & Dapat Diklik) --- */
+
+/* Endpoint Path */
+.swagger-ui .opblock-summary-path {
+    color: #81d4fa !important; /* Biru muda untuk path */
+    font-weight: bold;
+}
+
+/* Nama Parameter */
+.swagger-ui .parameter__name {
+    color: #c5e1a5 !important; /* Hijau muda untuk nama parameter */
+}
+
+/* Link */
+.swagger-ui a {
+    color: #90caf9 !important; /* Biru standar untuk link */
+}
+
+
+/* --- Teks Sekunder (Metadata) --- */
+
+/* Tipe Parameter (string, integer) & Lokasi (query, body) */
+.swagger-ui .parameter__type,
+.swagger-ui .parameter__in {
+    color: #8a8a8a !important;
+    font-family: monospace;
+}
+
+/* Kode Status HTTP (200, 404) */
+.swagger-ui .response-col_status {
+    color: #eeeeee !important;
+}
+
+
+/* --- Warna untuk Metode HTTP --- */
+.swagger-ui .opblock-summary-method {
+    text-shadow: none !important;
+}
+.swagger-ui .opblock.opblock-get .opblock-summary-method { background: #4caf50 !important; }
+.swagger-ui .opblock.opblock-post .opblock-summary-method { background: #2196f3 !important; }
+.swagger-ui .opblock.opblock-put .opblock-summary-method { background: #ff9800 !important; }
+.swagger-ui .opblock.opblock-delete .opblock-summary-method { background: #f44336 !important; }
+.swagger-ui .opblock.opblock-patch .opblock-summary-method { background: #ffc107 !important; }
+.swagger-ui .opblock.opblock-options .opblock-summary-method { background: #607d8b !important; }
+.swagger-ui .opblock.opblock-head .opblock-summary-method { background: #795548 !important; }
+
 
   #swagger-ui .swagger-ui a {
     color: var(--sw-accent);
