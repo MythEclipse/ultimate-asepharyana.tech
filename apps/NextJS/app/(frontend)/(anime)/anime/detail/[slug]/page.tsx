@@ -206,7 +206,7 @@ export default function DetailAnimePage({
           <BackgroundGradient className='rounded-[24px] p-0.5'>
             <div className='bg-card text-card-foreground rounded-[22px] p-6 md:p-10'>
               <div className='flex flex-col md:flex-row items-start gap-8'>
-                <div className='w-full md:w-1/3 flex flex-col gap-4 sticky top-8'>
+                <div className='w-full md:w-1/3 flex flex-col gap-4 md:sticky top-8'>
                   <Card className='overflow-hidden'>
                     <Image
                       src={imageSources[currentImageIndex]}
@@ -278,38 +278,38 @@ export default function DetailAnimePage({
                       </CardDescription>
                     </CardHeader>
                    <CardContent>
-  <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
-    {data.episode_lists?.length > 0 ? (
-      data.episode_lists.map((episode) => (
-        <Tooltip key={episode.slug}>
-          <TooltipTrigger asChild>
-            <Button
-              variant='ghost'
-              onClick={() => router.push(`/anime/full/${episode.slug}`)}
-              className='justify-between w-full h-full p-3 whitespace-normal' // <-- PERBAIKAN FINAL
-            >
-              <div className='flex items-start gap-2 min-w-0'>
-                <Clapperboard className='w-4 h-4 mt-1 flex-shrink-0' />
-                <p className='line-clamp-3 text-left'>
-                  {episode.episode}
-                </p>
-              </div>
-              <ArrowRight className='w-4 h-4 self-center flex-shrink-0' />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{episode.episode}</p>
-          </TooltipContent>
-        </Tooltip>
-      ))
-    ) : (
-      <div className='col-span-full py-6 text-center text-muted-foreground'>
-        <Film className='mx-auto h-12 w-12 mb-3' />
-        No episodes available yet.
-      </div>
-    )}
-  </div>
-</CardContent>
+                     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
+                       {data.episode_lists?.length > 0 ? (
+                         data.episode_lists.map((episode) => (
+                           <Tooltip key={episode.slug}>
+                             <TooltipTrigger asChild>
+                               <Button
+                                 variant='ghost'
+                                 onClick={() => router.push(`/anime/full/${episode.slug}`)}
+                                 className='justify-between w-full h-full p-3 whitespace-normal'
+                               >
+                                 <div className='flex items-start gap-2 min-w-0'>
+                                   <Clapperboard className='w-4 h-4 mt-1 flex-shrink-0' />
+                                   <p className='line-clamp-3 text-left'>
+                                     {episode.episode}
+                                   </p>
+                                 </div>
+                                 <ArrowRight className='w-4 h-4 self-center flex-shrink-0' />
+                               </Button>
+                             </TooltipTrigger>
+                             <TooltipContent>
+                               <p>{episode.episode}</p>
+                             </TooltipContent>
+                           </Tooltip>
+                         ))
+                       ) : (
+                         <div className='col-span-full py-6 text-center text-muted-foreground'>
+                           <Film className='mx-auto h-12 w-12 mb-3' />
+                           No episodes available yet.
+                         </div>
+                       )}
+                     </div>
+                   </CardContent>
                   </Card>
 
                   <div>
