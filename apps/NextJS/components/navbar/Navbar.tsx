@@ -1,78 +1,175 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-// import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import DesktopNavLinks from './DesktopNavLinks';
-import MobileNavLinks from './MobileNavLinks';
-import NavToggleButton from './NavToggleButton';
-import UserMenu from './UserMenu';
+import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import { Session } from 'next-auth';
+
+import { Button } from '@/components/ui/button';
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
+import { Menu, LogIn, LogOut, LayoutDashboard, Settings } from 'lucide-react';
+import Image from 'next/image';
+
+// Data link navigasi
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/project', label: 'Project' },
+];
+
+// Komponen untuk menu pengguna, agar bisa digunakan di desktop dan mobile
+const UserNav = ({ session, loginUrl }: { session: Session | null, loginUrl: string }) => {
+  if (!session) {
+    return (
+      <Button asChild>
+        <Link href={loginUrl}>
+          <LogIn className="mr-2 h-4 w-4" />
+          Login
+        </Link>
+      </Button>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Avatar className="h-10 w-10 border">
+            <AvatarImage src={session.user?.image || ''} alt={session.user?.name || 'User'} />
+            <AvatarFallback>{session.user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{session.user?.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">{session.user?.email}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/settings"><Settings className="mr-2 h-4 w-4" />Pengaturan</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })} className="text-destructive focus:text-destructive">
+          <LogOut className="mr-2 h-4 w-4" />
+          Keluar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export default function Navbar() {
   const { data: session } = useSession();
-  const [isNavOpen, setIsNavOpen] = useState(false);
-  const [indicatorPos, setIndicatorPos] = useState(0);
-  const [indicatorWidth, setIndicatorWidth] = useState(0);
-
   const pathname = usePathname();
   const loginUrl = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
 
-  useEffect(() => {
-    const links = ['/', '/docs', '/project'];
-    const currentIndex = links.indexOf(pathname);
-    if (currentIndex !== -1) {
-      const activeLink = document.getElementById(`nav-link-${currentIndex}`);
-      if (activeLink) {
-        const { offsetLeft, offsetWidth } = activeLink;
-        setIndicatorPos(offsetLeft);
-        setIndicatorWidth(offsetWidth);
-      }
-    }
-  }, [pathname]);
-
   return (
-    <nav className='fixed top-0 z-30 w-full border-b border-blue-500 bg-white dark:bg-[#020618] shadow-md transition-all duration-300'>
-      <div className='container mx-auto flex items-center justify-between px-4 py-3 relative'>
-        <Link prefetch={true} href='/' className='flex items-center space-x-2'>
-          <img
-            src='/Logo.svg'
-            alt='Logo'
-            width={25}
-            height={20}
-            className='w-6 h-auto'
-          />
-          <span
-            className={`text-lg ${
-              pathname === '/'
-                ? 'font-semibold text-blue-600'
-                : 'text-gray-900 dark:text-gray-300'
-            }`}
-          >
-            Asep Haryana
-          </span>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        {/* === Logo & Brand === */}
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/Logo.svg" alt="Logo" width={25} height={25} />
+          <span className="font-semibold hidden sm:inline-block">Asep Haryana</span>
         </Link>
-        <div className='hidden md:flex items-center space-x-6'>
-          <DesktopNavLinks
-            pathname={pathname}
-            indicatorPos={indicatorPos}
-            indicatorWidth={indicatorWidth}
-          />
+
+        {/* === Navigasi Desktop === */}
+        <div className="hidden md:flex">
+          <NavigationMenu>
+            <NavigationMenuList>
+              {navLinks.map((link) => (
+                <NavigationMenuItem key={link.href}>
+                  <Link href={link.href} legacyBehavior passHref>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                      active={pathname === link.href}
+                    >
+                      {link.label}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
-        <div className='flex items-center space-x-4'>
-          <UserMenu session={session} loginUrl={loginUrl} />
-          <NavToggleButton isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
+
+        {/* === Menu Aksi (Kanan) === */}
+        <div className="flex items-center gap-2">
+          <div className="hidden md:block">
+            <UserNav session={session} loginUrl={loginUrl} />
+          </div>
+
+          {/* === Navigasi Mobile (Sheet) === */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Buka Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <SheetHeader>
+                  <SheetTitle>
+                    <Link href="/" className="flex items-center gap-2">
+                      <Image src="/Logo.svg" alt="Logo" width={25} height={25} />
+                      <span className="font-semibold">Asep Haryana</span>
+                    </Link>
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col h-full pt-8">
+                  <nav className="flex flex-col gap-4 text-lg">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`font-medium ${pathname === link.href ? 'text-foreground' : 'text-muted-foreground'}`}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </nav>
+                  <div className="mt-auto pb-4">
+                     <UserNav session={session} loginUrl={loginUrl} />
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
-        <MobileNavLinks
-          isNavOpen={isNavOpen}
-          setIsNavOpen={setIsNavOpen}
-          pathname={pathname}
-          loginUrl={loginUrl}
-          session={session}
-        />
       </div>
-    </nav>
+    </header>
   );
 }
