@@ -11491,3 +11491,129 @@
 }
 
 /*# sourceMappingURL=swagger-ui.css.map*/
+@media (prefers-color-scheme: dark) {
+  /* Variabel warna untuk memudahkan kustomisasi */
+  :root {
+    --color-dark-bg: #1e1e1e;
+    --color-dark-bg-secondary: #252525;
+    --color-dark-bg-tertiary: #333333;
+    --color-text-primary: #e0e0e0;
+    --color-text-secondary: #b0b0b0;
+    --color-border: #444444;
+    --color-accent: #2980b9;
+    --color-get: #61affe;
+    --color-post: #49cc90;
+    --color-put: #fca130;
+    --color-delete: #f93e3e;
+  }
+
+  /* --- Body & Main Container --- */
+  body, .swagger-ui {
+    background-color: var(--color-dark-bg);
+    color: var(--color-text-primary);
+  }
+
+  /* --- Headers --- */
+  .swagger-ui .info h1,
+  .swagger-ui .info h2,
+  .swagger-ui .info h3,
+  .swagger-ui .info .title {
+    color: var(--color-text-primary);
+  }
+
+  .swagger-ui .info .description,
+  .swagger-ui .info .base-url {
+    color: var(--color-text-secondary);
+  }
+  
+  /* --- Operation Blocks (Endpoints) --- */
+  .swagger-ui .opblock, .swagger-ui .opblock-tag-section {
+    background-color: var(--color-dark-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  .swagger-ui .opblock .opblock-summary {
+     border-color: var(--color-border);
+  }
+
+  /* --- HTTP Method Badges --- */
+  .swagger-ui .opblock .opblock-summary-method {
+    border-radius: 5px;
+    text-shadow: none;
+  }
+  .swagger-ui .opblock.opblock-get .opblock-summary-method { background-color: var(--color-get); }
+  .swagger-ui .opblock.opblock-post .opblock-summary-method { background-color: var(--color-post); }
+  .swagger-ui .opblock.opblock-put .opblock-summary-method { background-color: var(--color-put); }
+  .swagger-ui .opblock.opblock-delete .opblock-summary-method { background-color: var(--color-delete); }
+  
+  .swagger-ui .opblock-summary-path a {
+    color: var(--color-text-secondary);
+  }
+  
+  /* --- Parameters & Responses --- */
+  .swagger-ui .parameters-col_description, 
+  .swagger-ui .response-col_description {
+    color: var(--color-text-secondary);
+  }
+
+  .swagger-ui table thead th {
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .swagger-ui .opblock-description-wrapper p, 
+  .swagger-ui .responses-inner p {
+    color: var(--color-text-secondary);
+  }
+  
+  /* --- Inputs & Buttons --- */
+  .swagger-ui .btn {
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .swagger-ui .btn.execute {
+    background-color: var(--color-accent);
+    color: white;
+  }
+  
+  .swagger-ui .try-out .btn {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  
+  .swagger-ui input[type="text"],
+  .swagger-ui select,
+  .swagger-ui textarea {
+    background-color: var(--color-dark-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+  }
+  
+  /* --- Models/Schema section --- */
+  .swagger-ui .model-container,
+  .swagger-ui .model-example {
+    background-color: var(--color-dark-bg-tertiary);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+  }
+  
+  .swagger-ui .model-title,
+  .swagger-ui .model .property.primitive {
+    color: var(--color-text-primary);
+  }
+  
+  .swagger-ui .model-toggle:after {
+    filter: invert(1);
+  }
+  
+  /* --- Code Blocks --- */
+  .swagger-ui .opblock .opblock-body pre.microlight {
+    background-color: var(--color-dark-bg);
+    color: var(--color-text-primary);
+    padding: 12px;
+    border-radius: 6px;
+  }
+}
