@@ -53,6 +53,7 @@
     "https-proxy-agent": "^7.0.6",
     "js-yaml": "^4.1.0",
     "lucide-react": "^0.513.0",
+    "motion": "^12.16.0",
     "next": "^15.3.3",
     "next-auth": "5.0.0-beta.19",
     "next-sitemap": "^4.2.3",
