@@ -1,10 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Image from 'next/image';
-import { PRODUCTION } from '@/lib/url';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { PRODUCTION } from '@/lib/url';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CardProps {
   title?: string;
@@ -16,24 +26,48 @@ interface CardProps {
   loading?: boolean;
 }
 
-const TypeLabel = ({ type, badge }: { type?: string; badge?: string }) => {
+const typeColors: { [key: string]: string } = {
+  Manga: 'bg-red-500 hover:bg-red-600',
+  Manhua: 'bg-green-500 hover:bg-green-600',
+  Manhwa: 'bg-blue-500 hover:bg-blue-600',
+  BD: 'bg-purple-500 hover:bg-purple-600',
+  TV: 'bg-yellow-500 hover:bg-yellow-600',
+  OVA: 'bg-pink-500 hover:bg-pink-600',
+  ONA: 'bg-indigo-500 hover:bg-indigo-600',
+};
+
+const TypeBadge = ({ type, badge }: { type?: string; badge?: string }) => {
   const label = badge || type;
   if (!label) return null;
-  const typeColors = {
-    Manga: 'bg-red-500',
-    Manhua: 'bg-green-500',
-    Manhwa: 'bg-blue-500',
-    BD: 'bg-purple-500',
-    TV: 'bg-yellow-500',
-    OVA: 'bg-pink-500',
-    ONA: 'bg-indigo-500',
-  };
+
+  const colorClass = typeColors[label] || 'bg-gray-500 hover:bg-gray-600';
+
   return (
-    <span
-      className={`absolute top-2 right-2 px-2 py-1 rounded-md text-white text-sm font-bold ${typeColors[label as keyof typeof typeColors] || 'bg-gray-500'}`}
+    <Badge
+      className={cn(
+        'absolute top-2 right-2 text-white border-0',
+        colorClass
+      )}
     >
       {label}
-    </span>
+    </Badge>
+  );
+};
+
+const CardSkeleton = () => {
+  return (
+    <Card className='w-full max-w-sm overflow-hidden'>
+      <div className='relative h-64'>
+        <Skeleton className='h-full w-full rounded-t-md rounded-b-none' />
+      </div>
+      <CardHeader>
+        <Skeleton className='h-5 w-3/4' />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className='h-4 w-full' />
+        <Skeleton className='h-4 w-5/6 mt-2' />
+      </CardContent>
+    </Card>
   );
 };
 
@@ -46,94 +80,87 @@ export default function CardA({
   badge,
   loading,
 }: CardProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
-  const fallback = '/default.png';
+  const fallbackImage = '/default.png';
 
   const imageSources = [
-    imageUrl && imageUrl.trim() ? imageUrl : null,
-    imageUrl && imageUrl.trim()
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
-      : null,
-    imageUrl && imageUrl.trim()
-      ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}`
-      : null,
-    imageUrl && imageUrl.trim()
-      ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}`
-      : null,
-    imageUrl && imageUrl.trim()
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
-      : null,
-    fallback,
-  ].filter((src) => src && src.trim()) as string[];
+    imageUrl,
+    imageUrl ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}` : null,
+    imageUrl ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}` : null,
+    imageUrl ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}` : null,
+    imageUrl ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}` : null,
+    fallbackImage,
+  ].filter(Boolean) as string[];
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isImageLoading) {
       timeoutRef.current = setTimeout(() => {
-        if (currentIndex < imageSources.length - 1) {
-          setCurrentIndex((prev) => prev + 1);
+        if (currentImageIndex < imageSources.length - 1) {
+          setCurrentImageIndex((prev) => prev + 1);
         } else {
-          setIsLoading(false);
+          setIsImageLoading(false);
         }
       }, 5000);
     }
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [currentIndex, isLoading, imageSources.length]);
+  }, [currentImageIndex, isImageLoading, imageSources.length]);
 
-  const handleError = () => {
-    if (currentIndex < imageSources.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+  const handleImageError = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (currentImageIndex < imageSources.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
     } else {
-      setIsLoading(false);
+      setIsImageLoading(false);
     }
   };
 
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  };
+  
+  if (loading) {
+    return <CardSkeleton />;
+  }
+
   return (
-    <button
+    <Card
       onClick={() => router.push(linkUrl || '/')}
-      className='cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:rotate-1 active:scale-95 focus:outline-none'
+      className='w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl'
     >
-      <ShadcnCard className='w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl bg-white dark:bg-black overflow-hidden transform transition-transform duration-300 hover:shadow-2xl text-blue-500 border border-blue-500 rounded-xl shadow-lg shadow-blue-500/50 hover:bg-blue-500 hover:text-white focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 hover:ring-4 hover:ring-gradient-to-r hover:from-blue-400 hover:via-purple-500 hover:to-pink-500'>
-        <div className='relative h-48 sm:h-56 md:h-64 lg:h-72'>
-          {loading ? (
-            <div className='absolute inset-0 bg-gray-300 animate-pulse rounded-t-xl border border-gray-700' />
-          ) : (
-            <Image
-              src={imageSources[currentIndex]}
-              alt={title || 'Image'}
-              fill
-              sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
-              className='object-cover transition-opacity duration-500 ease-in-out rounded-t-xl'
-              onLoad={() => {
-                setIsLoading(false);
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-              }}
-              onError={handleError}
-              unoptimized
-            />
+      <div className='relative h-64'>
+        {isImageLoading && (
+          <Skeleton className='absolute inset-0 h-full w-full rounded-t-md rounded-b-none' />
+        )}
+        <Image
+          src={imageSources[currentImageIndex]}
+          alt={title || 'Card Image'}
+          fill
+          sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+          className={cn(
+            'object-cover transition-opacity duration-300',
+            isImageLoading ? 'opacity-0' : 'opacity-100'
           )}
-          <TypeLabel type={type} badge={badge} />
-        </div>
-        <div className='p-4'>
-          <h3
-            className={`text-xs sm:text-sm md:text-lg font-bold text-black dark:text-gray-200 truncate ${loading ? 'bg-gray-300 animate-pulse h-5 w-3/4 rounded' : ''}`}
-          >
-            {(!loading || !isLoading) && title}
-          </h3>
-          {description && (
-            <p
-              className={`text-sm sm:text-sm md:text-base text-gray-600 dark:text-gray-400 mt-2 ${loading ? 'bg-gray-300 animate-pulse h-4 w-full rounded' : ''}`}
-            >
-              {(!loading || !isLoading) && description}
-            </p>
-          )}
-        </div>
-      </ShadcnCard>
-    </button>
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          unoptimized
+        />
+        <TypeBadge type={type} badge={badge} />
+      </div>
+      <CardHeader>
+        <CardTitle className='truncate'>{title}</CardTitle>
+        {description && (
+          <CardDescription className='line-clamp-2'>
+            {description}
+          </CardDescription>
+        )}
+      </CardHeader>
+    </Card>
   );
 }

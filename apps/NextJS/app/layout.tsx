@@ -70,7 +70,7 @@ export default async function RootLayout({
             <meta name='theme-color' content='#000000' />
             {/* <ThemeModeScript /> */}
           </head>
-          <body className='h-screen bg-white dark:bg-black'>
+          <body className='h-screen'>
             <ThemeProvider
               attribute='class'
               defaultTheme='system'

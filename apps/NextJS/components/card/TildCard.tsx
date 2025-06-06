@@ -22,7 +22,7 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
   return (
     <Link href={linkUrl} prefetch={true} scroll={true} passHref>
       <CardContainer className='inter-var cursor-pointer'>
-        <CardBody className='bg-gray-50 relative group/card dark:hover:shadow-2xl shadow-blue-500/50 dark:bg-black border-blue-500 w-auto sm:w-[30rem] h-auto rounded-xl p-6 border hover:ring-4 hover:ring-gradient-to-r hover:from-blue-500 hover:to-purple-500'>
+        <CardBody className=' relative group/card dark:hover:shadow-2xl shadow-blue-500/50 border-blue-500 w-auto sm:w-[30rem] h-auto rounded-xl p-6 border hover:ring-4 hover:ring-gradient-to-r hover:from-blue-500 hover:to-purple-500'>
           <CardItem
             translateZ='20'
             className='text-xl font-bold text-neutral-600 dark:text-white'
