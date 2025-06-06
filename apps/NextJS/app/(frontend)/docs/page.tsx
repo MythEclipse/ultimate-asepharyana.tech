@@ -1,4 +1,9 @@
-// app/api-docs/page.tsx
+import { readFile } from 'fs/promises';
+import path from 'path';
+import yaml from 'js-yaml';
+import type { OpenAPIV3 } from 'openapi-types';
+import SwaggerUIComponent from './SwaggerUIComponent';
+
 export const metadata = {
   title: {
     default: 'Dokumentasi API Gratis',
@@ -21,12 +26,6 @@ export const metadata = {
     ],
   },
 };
-
-import { readFile } from 'fs/promises';
-import path from 'path';
-import yaml from 'js-yaml';
-import type { OpenAPIV3 } from 'openapi-types';
-import SwaggerLoader from './SwaggerLoader';
 
 async function getOpenApiSpec(): Promise<OpenAPIV3.Document> {
   try {
@@ -69,7 +68,7 @@ export default async function OpenApiDocsPage() {
 
   return (
     <main className='api-docs-container'>
-      <SwaggerLoader spec={openApiSpec} />
+      <SwaggerUIComponent spec={openApiSpec} />
     </main>
   );
 }

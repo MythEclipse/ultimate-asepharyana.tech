@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
     removeConsole: true,
   },
   productionBrowserSourceMaps: true,
-  transpilePackages: ['@asepharyana/ui'],
+  transpilePackages: ['@asepharyana/ui','swagger-ui'],
 };
 
 export default withFlowbiteReact(nextConfig);
