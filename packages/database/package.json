@@ -35,25 +35,25 @@
   "dependencies": {
     "@asepharyana/config-eslint": "workspace:*",
     "@asepharyana/config-typescript": "workspace:*",
-    "@eslint/eslintrc": "3.x",
-    "@eslint/js": "9.x",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.28.0",
     "@prisma/client": "^6.9.0"
   },
   "devDependencies": {
-    "@babel/cli": "7.x",
-    "@babel/core": "7.x",
-    "@babel/preset-env": "7.x",
-    "@babel/preset-typescript": "7.x",
-    "@types/node": "22.x",
-    "babel-plugin-module-resolver": "5.x",
-    "eslint": "9.x",
-    "prisma": "*",
-    "rimraf": "6.x",
-    "tsup": "8.x",
-    "tsx": "4.x",
-    "typescript": "5.x"
+    "@babel/cli": "^7.27.2",
+    "@babel/core": "^7.27.4",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-typescript": "^7.27.1",
+    "@types/node": "^22.15.30",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "eslint": "^9.28.0",
+    "prisma": "^6.9.0",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
   },
   "overrides": {
-    "typescript": "5.x"
+    "typescript": "^5.8.3"
   }
 }

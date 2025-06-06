@@ -1,0 +1,1 @@
+git ls-files | tree --fromfile
