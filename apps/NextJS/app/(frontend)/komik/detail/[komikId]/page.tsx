@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/tooltip';
 import {
   Bookmark,
-  BookOpen,
   Calendar,
   CircleDot,
   FileText,

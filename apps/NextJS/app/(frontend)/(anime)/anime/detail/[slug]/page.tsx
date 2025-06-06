@@ -4,7 +4,6 @@ import React, { useState, useEffect, use } from 'react';
 import useSWR from 'swr';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { PRODUCTION } from '@/lib/url';
 
 import { BackgroundGradient } from '@/components/background/background-gradient';

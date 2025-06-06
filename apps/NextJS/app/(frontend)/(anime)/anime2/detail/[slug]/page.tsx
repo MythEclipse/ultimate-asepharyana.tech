@@ -25,13 +25,11 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import {
-  Type,
   CircleDot,
   Calendar,
   Video,
   Download,
   Film,
-  ArrowUpRight,
   BookOpen,
   AlertTriangle,
   Server,
