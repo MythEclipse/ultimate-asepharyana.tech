@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card as ShadcnCard } from '@/components/card/ComponentCard';
 import Image from 'next/image';
 import { PRODUCTION } from '@/lib/url';
-import { useTransitionRouter } from 'next-view-transitions';
+import { useRouter } from 'next/navigation';
 
 interface CardProps {
   title?: string;
@@ -48,7 +48,7 @@ export default function CardA({
 }: CardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const router = useTransitionRouter();
+  const router = useRouter();
   const fallback = '/default.png';
 
   const imageSources = [

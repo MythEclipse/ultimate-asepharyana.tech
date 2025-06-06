@@ -8,7 +8,7 @@ import {
   Clapperboard,
   TriangleAlert,
 } from 'lucide-react';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 

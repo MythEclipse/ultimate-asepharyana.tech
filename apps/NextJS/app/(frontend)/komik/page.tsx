@@ -2,7 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import ComicGrid from '@/components/card/ComicGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 

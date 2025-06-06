@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import ButtonA from '@/components/button/ScrollButton';
 import ClientPlayer from '@/components/misc/ClientPlayer';

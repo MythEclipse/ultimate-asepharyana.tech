@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
-import { useTransitionRouter } from 'next-view-transitions';
+import { useRouter } from 'next/navigation';
 
 interface HomeData {
   status: string;
@@ -36,7 +36,7 @@ export default function AnimePage() {
   const { data, error } = useSWR<HomeData>(`/api/anime/`, fetcher, {
     refreshInterval: 60000,
   });
-  const router = useTransitionRouter();
+  const router = useRouter();
   if (error) return <div>Error loading data</div>;
   if (!data)
     return (

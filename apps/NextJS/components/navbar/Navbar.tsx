@@ -3,13 +3,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-// import { Link } from 'next-view-transitions';
+// import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import DesktopNavLinks from './DesktopNavLinks';
 import MobileNavLinks from './MobileNavLinks';
 import NavToggleButton from './NavToggleButton';
 import UserMenu from './UserMenu';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 
 export default function Navbar() {
   const { data: session } = useSession();

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 
 interface DesktopNavLinksProps {
   pathname: string;

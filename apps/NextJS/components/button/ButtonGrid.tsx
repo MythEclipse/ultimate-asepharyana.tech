@@ -1,7 +1,7 @@
 // components/ChapterButton.tsx
 'use client';
 import React from 'react';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 
 interface ChapterButtonProps {

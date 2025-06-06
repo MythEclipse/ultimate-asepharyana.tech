@@ -18,8 +18,8 @@ import {
   UserIcon,
 } from 'lucide-react';
 import { PRODUCTION } from '@/lib/url';
-import { useTransitionRouter } from 'next-view-transitions';
 import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface Chapter {
   chapter: string;
@@ -53,7 +53,7 @@ interface MangaData {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function DetailMangaPage() {
-  const router = useTransitionRouter();
+  const router = useRouter();
   const { komikId } = useParams();
 
   const { data: manga, error } = useSWR<MangaData>(

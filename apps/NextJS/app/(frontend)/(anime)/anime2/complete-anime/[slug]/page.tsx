@@ -1,7 +1,7 @@
 'use client';
 
 import AnimeGrid from '@/components/card/AnimeGrid';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import {
   AlertTriangle,
   Info,

@@ -3,8 +3,9 @@ import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { IconLayoutNavbarCollapse } from '@tabler/icons-react';
 import AnimatedButton from './AnimatedButton'; // Import your custom AnimatedButton
-import { useTransitionRouter } from 'next-view-transitions';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
 
 export const FloatingDock = ({
   items,
@@ -32,7 +33,7 @@ const FloatingDockMobile = ({
 }) => {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useTransitionRouter();
+  const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   const handleScrollUp = () => {
@@ -124,7 +125,7 @@ function IconContainer({
 }) {
   const [hovered, setHovered] = useState(false);
   const pathname = usePathname();
-  const router = useTransitionRouter();
+  const router = useRouter();
   const [scale, setScale] = useState(1);
 
   const handleMouseEnter = () => {

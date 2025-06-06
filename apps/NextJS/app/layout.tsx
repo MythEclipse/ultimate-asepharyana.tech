@@ -7,7 +7,7 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper';
 import SessionWrapper from '@/components/misc/SessionWrapper';
 // import ContextAppProvider from '@/components/ContextApp';
 // import { ThemeModeScript } from "flowbite-react";
-import { ViewTransitions } from 'next-view-transitions';
+// import { ViewTransitions } from 'next-view-transitions';
 import { PRODUCTION } from '@/lib/url';
 import { ThemeProvider } from '@/components/misc/theme-provider';
 import DarkThemeToggle from '@/components/button/DarkThemeToggle';
@@ -56,7 +56,7 @@ export default async function RootLayout({
 }) {
   return (
     <SessionWrapper>
-      <ViewTransitions>
+      {/* <ViewTransitions> */}
         <html
           lang='id'
           // className={inter.className}
@@ -88,7 +88,7 @@ export default async function RootLayout({
             </ThemeProvider>
           </body>
         </html>
-      </ViewTransitions>
+      {/* </ViewTransitions> */}
     </SessionWrapper>
   );
 }

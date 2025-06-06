@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import { Session } from 'next-auth';
 import { FcGoogle } from 'react-icons/fc';
 import { signOut } from 'next-auth/react';

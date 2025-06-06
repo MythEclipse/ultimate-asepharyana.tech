@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
-import { useTransitionRouter } from 'next-view-transitions';
-
+import { useRouter } from 'next/navigation';
 interface Anime {
   title: string;
   slug: string;
@@ -164,7 +163,7 @@ export default function AnimePage() {
 }
 
 const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
-  const router = useTransitionRouter();
+  const router = useRouter();
   return (
     <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
       {pagination.has_previous_page && pagination.previous_page !== null && (

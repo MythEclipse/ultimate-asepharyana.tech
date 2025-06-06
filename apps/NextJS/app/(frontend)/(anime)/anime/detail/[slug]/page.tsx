@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import useSWR from 'swr';
 import { PRODUCTION } from '@/lib/url';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { BackgroundGradient } from '@/components/background/background-gradient';
 import CardA from '@/components/card/MediaCard';
 import ButtonA from '@/components/button/ScrollButton';
@@ -17,7 +18,6 @@ import {
   Film,
   Popcorn,
 } from 'lucide-react';
-import { useTransitionRouter } from 'next-view-transitions';
 export const dynamic = 'force-dynamic';
 
 interface Genre {
@@ -63,7 +63,7 @@ export default function DetailAnimePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const router = useTransitionRouter();
+  const router = useRouter();
   const { data: anime, error } = useSWR<AnimeData>(
     slug ? `/api/anime/detail/${slug}` : null,
     fetcher,
