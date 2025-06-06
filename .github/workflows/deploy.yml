@@ -50,6 +50,8 @@ jobs:
                 cd ${{ env.VPS_TARGET_DIR }}
                 git pull origin main
                 pnpm install
+      - name: Debug File Structure
+        run: ls -R
 
       - name: Sync Files to VPS
         uses: appleboy/scp-action@master
