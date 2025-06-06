@@ -76,6 +76,7 @@ export default function PostCard({
             alt={post.user.name || 'User'}
             width={56}
             height={56}
+            unoptimized
             className='rounded-full border-2 border-blue-400/80 shadow-md hover:border-blue-500 transition-all cursor-pointer'
           />
           <div className='absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full px-2 py-0.5 text-xs shadow-sm'>

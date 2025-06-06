@@ -5,7 +5,8 @@ import type { OpenAPIV3 } from 'openapi-types';
 
 // @ts-expect-error: No official types for swagger-ui-dist bundle
 import { SwaggerUIBundle } from 'swagger-ui-dist';
-import 'swagger-ui-dist/swagger-ui.css';
+// import 'swagger-ui-dist/swagger-ui.css';
+import './custom.css'
 
 interface SwaggerUIComponentProps {
   spec: OpenAPIV3.Document;

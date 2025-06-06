@@ -263,6 +263,7 @@ export default function DetailAnimePage() {
                   height={600}
                   className='object-cover w-full aspect-[2/3] transform transition-transform hover:scale-105'
                   priority
+                  unoptimized
                   onError={handleError}
                 />
                 <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
