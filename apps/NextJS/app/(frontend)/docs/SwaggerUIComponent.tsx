@@ -2,10 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import type { OpenAPIV3 } from 'openapi-types';
-
+import { useTheme } from 'next-themes';
+import 'swagger-ui-dist/swagger-ui.css';
+import './swagger-dark.css';
 // @ts-expect-error: No official types for swagger-ui-dist bundle
 import { SwaggerUIBundle } from 'swagger-ui-dist';
-import 'swagger-ui-dist/swagger-ui.css';
 
 interface SwaggerUIComponentProps {
   spec: OpenAPIV3.Document;
@@ -13,21 +14,37 @@ interface SwaggerUIComponentProps {
 
 export default function SwaggerUIComponent({ spec }: SwaggerUIComponentProps) {
   const swaggerUIRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     if (swaggerUIRef.current && spec) {
-      SwaggerUIBundle({
+      const ui = SwaggerUIBundle({
         spec: spec,
-        dom_id: '#swagger-ui',
+        domNode: swaggerUIRef.current,
         deepLinking: true,
         tryItOutEnabled: true,
         persistAuthorization: true,
         requestSnippetsEnabled: true,
         filter: true,
+        syntaxHighlight: {
+          activate: true,
+          theme: resolvedTheme === 'dark' ? 'monokai' : 'agate',
+        },
       });
-    }
-  }, [spec]);
 
-  // ID "swagger-ui" di sini sangat penting karena digunakan oleh CSS di globals.css
-  return <div id="swagger-ui" ref={swaggerUIRef} />;
+      return () => {
+        if (swaggerUIRef.current) {
+          swaggerUIRef.current.innerHTML = '';
+        }
+        ui.getSystem().specActions.updateSpec('{}');
+      };
+    }
+  }, [spec, resolvedTheme]);
+
+  return (
+    <div
+      className={resolvedTheme === 'dark' ? 'dark-theme' : ''}
+      ref={swaggerUIRef}
+    />
+  );
 }

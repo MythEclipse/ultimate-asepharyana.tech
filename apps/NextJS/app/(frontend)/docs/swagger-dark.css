@@ -1,0 +1,142 @@
+/*
+ * =============================================================================
+ * Tema Gelap Kustom untuk Swagger UI - Versi Perbaikan
+ * =============================================================================
+ * Menambahkan `!important` untuk memastikan gaya kustom menimpa gaya bawaan.
+ */
+@layer components {
+  /* --- Variabel Warna & Dasar --- */
+  .dark-theme .swagger-ui {
+    --sw-bg: oklch(0.12 0.02 240);
+    --sw-bg-secondary: oklch(0.18 0.02 240);
+    --sw-text-primary: oklch(0.98 0.01 240);
+    --sw-text-secondary: oklch(0.65 0.015 240);
+    --sw-border: oklch(0.28 0.02 240);
+    --sw-accent: #38bdf8;
+    --sw-accent-foreground: #0f172a;
+    --sw-get: #0ea5e9;
+    --sw-post: #10b981;
+    --sw-put: #f97316;
+    --sw-delete: #ef4444;
+    --sw-danger: #f44336;
+    --sw-radius: 0.5rem;
+    --sw-radius-md: 0.375rem;
+
+    color: var(--sw-text-primary) !important;
+    background-color: var(--sw-bg) !important;
+  }
+
+  /* --- Sembunyikan Topbar Bawaan --- */
+  .dark-theme .swagger-ui .topbar {
+    display: none;
+  }
+
+  /* --- Tipografi & Teks --- */
+  .dark-theme .swagger-ui .info .title,
+  .dark-theme .swagger-ui .opblock-tag,
+  .dark-theme .swagger-ui h1,
+  .dark-theme .swagger-ui h2,
+  .dark-theme .swagger-ui h3,
+  .dark-theme .swagger-ui h4,
+  .dark-theme .swagger-ui .opblock-section-header h4,
+  .dark-theme .swagger-ui h5 {
+    color: var(--sw-text-primary) !important;
+  }
+
+  .dark-theme .swagger-ui .info .description,
+  .dark-theme .swagger-ui .info .base-url,
+  .dark-theme .swagger-ui .opblock-summary-description,
+  .dark-theme .swagger-ui .parameters-col_description,
+  .dark-theme .swagger-ui .response-col_description,
+  .dark-theme .swagger-ui .opblock-description-wrapper p,
+  .dark-theme .swagger-ui .responses-inner p,
+  .dark-theme .swagger-ui .opblock-section-header > .description,
+  .dark-theme .swagger-ui .model p,
+  .dark-theme .swagger-ui .parameter__in,
+  .dark-theme .swagger-ui .parameter__type {
+    color: var(--sw-text-secondary) !important;
+  }
+
+  .dark-theme .swagger-ui a,
+  .dark-theme .swagger-ui .opblock-summary-path a {
+    color: var(--sw-accent) !important;
+  }
+
+  .dark-theme .swagger-ui .parameter__name {
+    color: #c5e1a5 !important;
+  }
+
+  /* --- Latar Belakang & Panel --- */
+  .dark-theme .swagger-ui .opblock,
+  .dark-theme .swagger-ui .opblock-tag-section,
+  .dark-theme .swagger-ui .opblock-body,
+  .dark-theme .swagger-ui .responses-inner,
+  .dark-theme .swagger-ui .models-wrapper .model-container,
+  .dark-theme .swagger-ui .model-example,
+  .dark-theme .swagger-ui .scheme-container,
+  .dark-theme .swagger-ui .execute-wrapper,
+  .dark-theme .swagger-ui .responses-table {
+    background-color: var(--sw-bg-secondary) !important;
+    border: 1px solid var(--sw-border) !important;
+    box-shadow: none !important;
+  }
+
+  .dark-theme .swagger-ui .opblock .opblock-summary {
+    border-color: var(--sw-border) !important;
+  }
+
+  /* --- Operation Blocks (Endpoints) --- */
+  .dark-theme .swagger-ui .opblock .opblock-summary-method {
+    color: #ffffff !important;
+  }
+  .dark-theme .swagger-ui .opblock.opblock-get .opblock-summary { border-color: var(--sw-get); }
+  .dark-theme .swagger-ui .opblock.opblock-post .opblock-summary { border-color: var(--sw-post); }
+  .dark-theme .swagger-ui .opblock.opblock-put .opblock-summary { border-color: var(--sw-put); }
+  .dark-theme .swagger-ui .opblock.opblock-delete .opblock-summary { border-color: var(--sw-delete); }
+
+  .dark-theme .swagger-ui .opblock.opblock-get .opblock-summary-method { background-color: var(--sw-get); }
+  .dark-theme .swagger-ui .opblock.opblock-post .opblock-summary-method { background-color: var(--sw-post); }
+  .dark-theme .swagger-ui .opblock.opblock-put .opblock-summary-method { background-color: var(--sw-put); }
+  .dark-theme .swagger-ui .opblock.opblock-delete .opblock-summary-method { background-color: var(--sw-delete); }
+
+  /* --- Tombol (Buttons) --- */
+  .dark-theme .swagger-ui .btn {
+    color: var(--sw-accent) !important;
+  }
+  .dark-theme .swagger-ui .btn:hover {
+    color: var(--sw-accent-foreground) !important;
+  }
+  .dark-theme .swagger-ui .btn.execute {
+    color: var(--sw-accent-foreground) !important;
+  }
+  .dark-theme .swagger-ui .btn.cancel {
+    color: var(--sw-danger) !important;
+  }
+  .dark-theme .swagger-ui .btn.cancel:hover {
+    color: white !important;
+  }
+
+  /* --- Input & Textarea --- */
+  .dark-theme .swagger-ui input[type='text'],
+  .dark-theme .swagger-ui select,
+  .dark-theme .swagger-ui textarea {
+    background-color: var(--sw-bg) !important;
+    color: var(--sw-text-primary) !important;
+    border: 1px solid var(--sw-border) !important;
+  }
+  .dark-theme .swagger-ui input[type='text']:focus,
+  .dark-theme .swagger-ui select:focus,
+  .dark-theme .swagger-ui textarea:focus {
+    border-color: var(--sw-accent) !important;
+  }
+
+  /* --- Model & Schema --- */
+  .dark-theme .swagger-ui .model-toggle:after {
+    filter: invert(0.8);
+  }
+
+  .dark-theme .swagger-ui .opblock .opblock-body pre.microlight {
+    background-color: var(--sw-bg) !important;
+    color: var(--sw-text-primary) !important;
+  }
+}
