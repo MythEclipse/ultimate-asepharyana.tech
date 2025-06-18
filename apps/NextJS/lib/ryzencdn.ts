@@ -29,7 +29,7 @@ const ryzenCDN = async (
       });
     }
 
-    const res = await fetch('https://api.ryzendesu.vip/api/uploader/ryzencdn', {
+    const res = await fetch('https://api.ryzumi.vip/api/uploader/ryzencdn', {
       method: 'POST',
       headers: {
         accept: 'application/json',
