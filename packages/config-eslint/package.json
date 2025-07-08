@@ -1,40 +1,8 @@
 {
   "name": "@asepharyana/config-eslint",
   "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "./cbase": "./dist/cjs/base.js",
-    "./cnext-js": "./dist/cjs/next.js",
-    "./creact-internal": "./dist/cjs/react-internal.js",
-    "./base": "./dist/esm/base.js",
-    "./next-js": "./dist/esm/next.js",
-    "./react-internal": "./dist/esm/react-internal.js",
-    ".": {
-      "types": "./dist/types/**.d.ts",
-      "require": "./dist/cjs/**.js",
-      "import": "./dist/esm/**.js"
-    }
-  },
   "main": "./dist/cjs/**.js",
   "module": "./dist/esm/**.js",
-  "types": "./dist/types/**.d.ts",
-  "files": [
-    "library.js",
-    "next.js"
-  ],
-  "scripts": {
-    "dev": "tsup src/* --watch",
-    "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
-    "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
-    "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
-    "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json && npm run copy-dts",
-    "copy-dts": "ncp ./types dist/types && ncp ./types dist/esm && ncp ./types dist/cjs",
-    "lint": "eslint . --max-warnings 0",
-    "prebuild": "rimraf dist",
-    "update": "npm update",
-    "build:tsc": "tsc --project ./tsconfig.json"
-  },
   "dependencies": {
     "@asepharyana/config-typescript": "workspace:*",
     "@babel/cli": "^7.27.2",
@@ -65,10 +33,42 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.1"
   },
-  "overrides": {
-    "typescript": "^5.8.3"
+  "exports": {
+    "./cbase": "./dist/cjs/base.js",
+    "./cnext-js": "./dist/cjs/next.js",
+    "./creact-internal": "./dist/cjs/react-internal.js",
+    "./base": "./dist/esm/base.js",
+    "./next-js": "./dist/esm/next.js",
+    "./react-internal": "./dist/esm/react-internal.js",
+    ".": {
+      "types": "./dist/types/**.d.ts",
+      "require": "./dist/cjs/**.js",
+      "import": "./dist/esm/**.js"
+    }
   },
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "files": [
+    "library.js",
+    "next.js"
+  ],
+  "overrides": {
+    "typescript": "^5.8.3"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "tsup src/* --watch",
+    "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
+    "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
+    "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
+    "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json",
+    "copy-dts": "ncp ./types dist/types && ncp ./types dist/esm && ncp ./types dist/cjs",
+    "lint": "eslint . --max-warnings 0",
+    "prebuild": "rimraf dist",
+    "update": "npm update",
+    "build:tsc": "tsc --project ./tsconfig.json"
+  },
+  "type": "module",
+  "types": "./dist/types/**.d.ts"
 }

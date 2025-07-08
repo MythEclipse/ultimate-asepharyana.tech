@@ -1,1 +1,1 @@
- pnpm install && pnpm run db:push && pnpm run generate && pnpm run dev
+ bun install && bun run db:push && bun run generate && bun run dev

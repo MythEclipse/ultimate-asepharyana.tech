@@ -16,7 +16,7 @@
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --schema=./prisma/schema.prisma --accept-data-loss",
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",

@@ -6,6 +6,6 @@ echo "Menghapus semua direktori node_modules dan file lock di $(pwd) dan subdire
 find . -name "node_modules" -type d -prune -exec rm -rf {} +
 find . -name "package-lock.json" -type f -exec rm -f {} +
 find . -name "yarn.lock" -type f -exec rm -f {} +
-find . -name "pnpm-lock.yaml" -type f -exec rm -f {} +
+find . -name "bun.lockb" -type f -exec rm -f {} +
 
 echo "Penghapusan node_modules dan file lock selesai."

@@ -20,16 +20,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Node.js 22 and Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: '22'
+          bun-version: latest
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
-          run_install: true
       - name: Prepare .env file for production
         env:
           ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
@@ -38,7 +33,7 @@ jobs:
             echo "$ENV_FILE_PRODUCTION" > .env
           fi
       - name: Build with Turborepo
-        run: pnpm run build
+        run: bun run build
       - name: SSH into VPS and Deploy
         uses: appleboy/ssh-action@master
         with:
@@ -49,7 +44,7 @@ jobs:
                 # Masuk ke direktori target
                 cd ${{ env.VPS_TARGET_DIR }}
                 git pull origin main
-                pnpm install
+                bun install
       - name: Debug File Structure
         run: ls -R
 
@@ -84,12 +79,10 @@ jobs:
             # Masuk ke direktori target
             cd ${{ env.VPS_TARGET_DIR }}
 
-            # Setup environment untuk pnpm
-            export PATH=$PATH:/root/.local/share/pnpm
-
             # Install dependencies untuk seluruh workspace
-            # pnpm akan secara cerdas menginstal dependensi yang diperlukan untuk
+            # bun akan secara cerdas menginstal dependensi yang diperlukan untuk
             # Next.js dan Express berdasarkan package.json yang diunggah
+            bun install
 
             # Reload aplikasi menggunakan PM2
             pm2 restart express

@@ -1,1 +1,1 @@
-pnpm run start
+bun run start

@@ -6,6 +6,7 @@ import { prisma } from '@asepharyana/database';
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
+  secret: process.env.NEXTAUTH_SECRET,
   trustHost: true,
   callbacks: {
     authorized: async ({ auth, request }) => {
@@ -18,7 +19,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       } else {
         const pathname = request.nextUrl.pathname;
         const callbackUrl =
-          request.nextUrl.searchParams.get('callbackUrl') ||
+          request.nextUrl.searchParams.get('callbackUrl') ??
           encodeURIComponent(pathname);
         request.nextUrl.pathname = `/login`;
         request.nextUrl.searchParams.set('callbackUrl', callbackUrl);

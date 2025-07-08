@@ -1,19 +1,14 @@
 # Base image
-FROM node:22-alpine AS base
+FROM oven/bun:latest AS base
 WORKDIR /app
 
 # Builder stage
 FROM base AS builder
-RUN apk update && apk add --no-cache libc6-compat
-RUN npm install -g turbo
-RUN corepack enable pnpm
-RUN corepack prepare pnpm@latest --activate
-ENV PATH="/root/.local/share/pnpm:$PATH"
-RUN pnpm config set store-dir /pnpm-store
+RUN bun install -g turbo
 WORKDIR /app
 
 # Copy package files first to install dependencies
-COPY package.json pnpm-lock.yaml ./ 
+COPY package.json bun.lockb ./ 
 
 # Copy the rest of the application files
 COPY . . 
@@ -22,10 +17,10 @@ COPY . .
 RUN turbo prune @asepharyana/express --docker
 
 # Install dependencies focused on Express
-RUN pnpm install --filter @asepharyana/express
+RUN bun install --filter @asepharyana/express
 
 # Build the application
-RUN pnpm build:express
+RUN bun run build:express
 
 # Production Runner
 FROM base AS runner
@@ -48,4 +43,4 @@ RUN ls -la /app/node_modules
 
 # Expose the port and define the entrypoint
 EXPOSE 4091
-CMD ["pnpm", "start"]
+CMD ["bun", "start"]

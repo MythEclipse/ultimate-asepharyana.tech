@@ -6,7 +6,7 @@
     "emitDeclarationOnly": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "declarationDir": "./types",
+    "declarationDir": "./dist/types",
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],

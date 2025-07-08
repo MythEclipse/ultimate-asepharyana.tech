@@ -5,8 +5,7 @@ services:
       context: .
       dockerfile: ./apps/NextJS/Dockerfile
     restart: always
-    volumes:
-      - ./pnpm-store:/pnpm-store  # Mount cache lokal ke dalam container
+    
     ports:
       - "4090:3000" # Next.js berjalan di 3000
     networks:
@@ -18,8 +17,7 @@ services:
       context: .
       dockerfile: ./apps/Express/Dockerfile
     restart: always
-    volumes:
-      - ./pnpm-store:/pnpm-store  # Mount cache lokal ke dalam container
+    
     ports:
       - "4091:4091"
     networks:

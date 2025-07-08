@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # Jalankan npm format
-npm run format || {
+bun run format || {
     echo 'Please fix format issues' >&2
     exit 1
 }
 
 # Jalankan lint
-npm run lint || {
+bun run lint || {
     echo 'Linting failed, attempting to fix issues...' >&2
-    npm run lint:fix
+    bun run lint:fix
 
     # Periksa kembali linting setelah menjalankan lint:fix
-    npm run lint || {
+    bun run lint || {
         echo 'Linting still failed after auto-fix. Please fix manually.' >&2
         exit 1
     }

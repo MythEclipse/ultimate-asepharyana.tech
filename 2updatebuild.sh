@@ -29,15 +29,15 @@ git pull origin main
 # Remove any carriage return characters from /etc/environment
 # sudo sed -i 's/\r$//' /etc/environment
 # Install any new or updated dependencies using pnpm
-pnpm install
+bun install
 
 # Run database migrations if needed (based on your turbo.json tasks)
-pnpm run generate
+bun run generate
 # pnpm run db:push
 # pnpm run db:migrate:deploy
 
 # Build the Next.js project for production using turbo
-pnpm run buildnc
+bun run buildnc
 
 # Check if the build was successful
 # if [ $? -eq 0 ]; then

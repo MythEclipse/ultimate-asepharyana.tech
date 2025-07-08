@@ -122,8 +122,8 @@ const MobileNav = ({ session }: { session: Session | null }) => {
 
   const menuVariants = {
     hidden: { y: '-100%', opacity: 0.8 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } },
-    exit: { y: '-100%', opacity: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 300, damping: 25 } },
+    exit: { y: '-100%', opacity: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
   };
 
   const listVariants = {
@@ -133,7 +133,7 @@ const MobileNav = ({ session }: { session: Session | null }) => {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20, filter: 'blur(5px)' },
-    visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 200 } },
+    visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring' as const, stiffness: 200 } },
   };
 
   return (

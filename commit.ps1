@@ -1,20 +1,20 @@
 #!/usr/bin/env pwsh
 
 # Jalankan npm format
-npm run format
+bun run format
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Please fix format issues"
     exit 1
 }
 
 # Jalankan lint
-npm run lint
+bun run lint
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Linting failed, attempting to fix issues..."
-    npm run lint:fix
+    bun run lint:fix
 
     # Periksa kembali linting setelah menjalankan lint:fix
-    npm run lint
+    bun run lint
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Linting still failed after auto-fix. Please fix manually."
         exit 1

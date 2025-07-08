@@ -24,7 +24,7 @@
     "check-types": "tsc --noEmit",
     "check-format": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "check-lint": "next lint",
-    "update": "npm update",
+    "update": "bun update",
     "postinstall": "flowbite-react patch"
   },
   "dependencies": {

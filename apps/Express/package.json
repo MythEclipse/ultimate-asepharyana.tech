@@ -16,7 +16,7 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
     "start": "node dist/esm/index.js",
-    "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
+    "build": "bun run build:cjs && bun run build:esm && bun run generate-types",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
     "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
     "dev": "cross-env NODE_ENV=development tsx src/index.ts",
@@ -25,9 +25,9 @@
     "check-types": "tsc --noEmit",
     "check-format": "prettier --check .",
     "check-lint": "eslint . --ext ts --ext tsx --ext js --ext jsx",
-    "prebuild": "rimraf dist && npm run generate-types",
+    "prebuild": "rimraf dist && bun run generate-types",
     "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json",
-    "update": "npm update"
+    "update": "bun update"
   },
   "author": "Asepharyana",
   "license": "ISC",

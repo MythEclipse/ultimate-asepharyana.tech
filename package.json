@@ -1,5 +1,10 @@
 {
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "bun@1.0.0",
   "prisma": {
     "schema": "packages/database/prisma/schema.prisma",
     "seed": "tsx packages/database/src/seed.ts"
@@ -17,12 +22,13 @@
     "lint": "turbo run lint",
     "nextjs": "turbo run start --filter=@asepharyana/web",
     "express": "turbo run start --filter=@asepharyana/express",
-    "start": "concurrently \"npm run express\" \"npm run nextjs\"",
-    "update": "npm update",
+    "start": "concurrently \"bun run express\" \"bun run nextjs\"",
+    "update": "bun update",
     "ceklog": "tail -n 3000 apps/NextJS/app.log"
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.27.1",
+    "@types/minimatch": "^6.0.0",
     "babel-plugin-add-import-extension": "^1.6.0",
     "copyfiles": "^2.4.1",
     "rimraf": "^6.0.1"
@@ -54,22 +60,5 @@
     "prisma": "^6.9.0",
     "tsx": "^4.19.4",
     "turbo": "^2.5.4"
-  },
-  "packageManager": "pnpm@10.11.1",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "@scarf/scarf",
-      "@tailwindcss/oxide",
-      "@tree-sitter-grammars/tree-sitter-yaml",
-      "core-js-pure",
-      "esbuild",
-      "prisma",
-      "sharp",
-      "sqlite3",
-      "tree-sitter",
-      "tree-sitter-json"
-    ]
   }
 }

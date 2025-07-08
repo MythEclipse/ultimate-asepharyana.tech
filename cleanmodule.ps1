@@ -7,6 +7,6 @@ Get-ChildItem -Recurse -Directory -Filter "node_modules" | Remove-Item -Recurse 
 # Menghapus file package-lock.json, yarn.lock, dan pnpm-lock.yaml
 Get-ChildItem -Recurse -File -Filter "package-lock.json" | Remove-Item -Force
 Get-ChildItem -Recurse -File -Filter "yarn.lock" | Remove-Item -Force
-Get-ChildItem -Recurse -File -Filter "pnpm-lock.yaml" | Remove-Item -Force
+Get-ChildItem -Recurse -File -Filter "bun.lockb" | Remove-Item -Force
 
 Write-Host "Penghapusan node_modules dan file lock selesai."

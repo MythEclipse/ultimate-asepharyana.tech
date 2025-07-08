@@ -6,15 +6,15 @@ git fetch origin
 git pull origin main
 
 # Instal dependensi menggunakan pnpm
-pnpm install
+bun install
 
 # Jalankan migrasi database jika diperlukan
-pnpm run generate
+bun run generate
 # pnpm run db:push
 # pnpm run db:migrate:deploy
 
 # Build proyek Next.js untuk produksi
-pnpm run buildnc
+bun run buildnc
 
 # Cek apakah build berhasil
 if ($?) {

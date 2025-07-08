@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.cloud',
-      script: 'npm',
+      script: 'bun',
       args: 'start',
       env: {
         NODE_ENV: 'production',

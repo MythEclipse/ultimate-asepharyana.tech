@@ -13,17 +13,13 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
   echo "Installing Node.js..."
   nvm install node
 
-  # Instal Yarn secara global
-  echo "Installing Yarn globally..."
-  npm install -g yarn
+  # Install Bun globally
+  echo "Installing Bun globally..."
+  npm install -g bun
 
-  # Instal PNPM secara global
-  echo "Installing PNPM globally..."
-  npm install -g pnpm
-
-  # Instal dependensi menggunakan PNPM
-  echo "Installing dependencies with PNPM..."
-  pnpm install
+  # Install dependencies using Bun
+  echo "Installing dependencies with Bun..."
+  bun install
 else
   echo "nvm.sh not found in $NVM_DIR"
 fi
