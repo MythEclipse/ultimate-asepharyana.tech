@@ -5,7 +5,7 @@
       "dependsOn": ["^build"],
       "env": ["NODE_ENV","PRODUCTION_URL"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "client.js", "client.cjs", "client.d.ts", "client.d.cts", "seed.js", "seed.cjs", "seed.d.ts", "seed.d.cts"]
     },
     "db:migrate:deploy": {},
     "db:push": {
