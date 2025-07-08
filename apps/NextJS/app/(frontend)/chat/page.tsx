@@ -12,39 +12,37 @@ import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 
 type RawChatMessage = {
-  id?: number;
-  user: string;
-  text: string;
-  email?: string;
-  imageProfile?: string;
-  imageMessage?: string;
-  role: string;
-  timestamp?: number | string; // Can be number or string from DB
+  id: string; // Required in RustExpress
+  user_id: string; // Required
+  text: string; // Required
+  email?: string; // Optional
+  image_profile?: string; // Optional
+  image_message?: string; // Optional
+  role: string; // Required
+  timestamp: string; // Required
 };
 
 type NormalizedChatMessage = {
-  id: number; // Assuming ID will always be present after normalization
-  user: string;
+  id: string; // String ID from RustExpress
+  user: string; // Will map from user_id
   text: string;
   email: string;
   imageProfile: string;
   imageMessage: string;
   role: string;
-  timestamp: number;
+  timestamp: number; // Convert from string to number for display
 };
 
 const normalizeChatMessage = (message: RawChatMessage): NormalizedChatMessage => {
-  const timestamp = typeof message.timestamp === 'string'
-    ? Date.parse(message.timestamp)
-    : (message.timestamp || Date.now());
+  const timestamp = message.timestamp ? Date.parse(message.timestamp) : Date.now();
 
   return {
-    id: message.id || Date.now(), // Fallback for ID if not present
-    user: message.user,
+    id: message.id || crypto.randomUUID(), // Use string ID as is
+    user: message.user_id,
     text: message.text,
     email: message.email || '',
-    imageProfile: message.imageProfile || '/profile-circle-svgrepo-com.svg',
-    imageMessage: message.imageMessage || '',
+    imageProfile: message.image_profile || '/profile-circle-svgrepo-com.svg',
+    imageMessage: message.image_message || '',
     role: message.role,
     timestamp: isNaN(timestamp) ? Date.now() : timestamp,
   };
@@ -76,7 +74,7 @@ export default function ChatClient() {
       process.env.NODE_ENV === 'development'
         ? 'localhost:4091'
         : 'ws.asepharyana.cloud';
-    ws.current = new ReconnectingWebSocket(`${protocol}//${host}`);
+    ws.current = new ReconnectingWebSocket(`${protocol}//${host}/ws`);
 
     const handleHistory = (data: { messages: RawChatMessage[] }) => {
       if (Array.isArray(data.messages)) {
@@ -131,12 +129,14 @@ export default function ChatClient() {
     if ((!input.trim() && !file) || status.sending) return;
 
     const newMessage: RawChatMessage = {
-      user: session?.user?.name || 'Anonymous',
+      id: crypto.randomUUID(), // Generate client-side UUID
+      user_id: session?.user?.name || 'Anonymous',
       text: input,
       email: session?.user?.email || '',
-      imageProfile: session?.user?.image || '/profile-circle-svgrepo-com.svg',
-      imageMessage: '',
+      image_profile: session?.user?.image || '/profile-circle-svgrepo-com.svg',
+      image_message: '',
       role: 'user',
+      timestamp: new Date().toISOString(), // ISO 8601 format
     };
 
     try {
@@ -152,7 +152,7 @@ export default function ChatClient() {
           body: formData,
         });
         const { url } = await response.json();
-        newMessage.imageMessage = url;
+        newMessage.image_message = url;
         setFile(null);
         setStatus((prev) => ({ ...prev, uploading: false }));
       }
@@ -201,7 +201,7 @@ export default function ChatClient() {
               <MessageBubble
                 key={message.id}
                 message={message}
-                isOwn={message.email === session?.user?.email}
+                isOwn={message.user === session?.user?.name}
               />
             ))}
             <div ref={endRef} />

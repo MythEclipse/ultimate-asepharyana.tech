@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id VARCHAR(36) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    text TEXT NOT NULL,
+    email VARCHAR(255),
+    image_profile TEXT,
+    image_message TEXT,
+    role VARCHAR(50) NOT NULL,
+    timestamp VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
