@@ -1,5 +1,6 @@
 import { prisma, ChatMessage } from '@asepharyana/database';
 import logger from '../utils/logger';
+import { handleServiceError } from '../utils/errorUtils';
 
 export class ChatService {
   async saveMessage(message: ChatMessage): Promise<ChatMessage> {
@@ -9,11 +10,7 @@ export class ChatService {
       });
       return savedMessage;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to save message: ${error.message}`);
-      } else {
-        throw new Error('Failed to save message: Unknown error');
-      }
+      throw handleServiceError(error, 'ChatService', 'save message');
     }
   }
 
@@ -25,11 +22,7 @@ export class ChatService {
       });
       return messages;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to load messages: ${error.message}`);
-      } else {
-        throw new Error('Failed to load messages: Unknown error');
-      }
+      throw handleServiceError(error, 'ChatService', 'load messages');
     }
   }
 
@@ -38,11 +31,7 @@ export class ChatService {
       await prisma.$disconnect();
       logger.info('Chat database connection closed');
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to close database: ${error.message}`);
-      } else {
-        throw new Error('Failed to close database: Unknown error');
-      }
+      throw handleServiceError(error, 'ChatService', 'close database connection');
     }
   }
 }

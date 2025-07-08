@@ -2,6 +2,8 @@ import WebSocket from 'ws';
 import { ChatService } from '../services/chatService';
 import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { validateChatMessage } from '../utils/messageValidator';
+import { broadcastMessage, sendMessageToClient } from '../utils/websocketUtils';
 
 const clients: Set<WebSocket> = new Set();
 const chatService = new ChatService();
@@ -14,94 +16,83 @@ export default function handleConnection(ws: WebSocket) {
   chatService
     .loadMessages()
     .then((messages) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: 'history',
-            messages: messages.reverse(), // Send as a single payload to reduce repetition
-          })
-        );
-      }
+      sendMessageToClient(
+        ws,
+        {
+          type: 'history',
+          messages: messages.slice().reverse(),
+        }
+      );
     })
     .catch((error) => {
       logger.error('Failed to load messages', error);
     });
 
   ws.on('message', async (data) => {
-    // Log raw message for debugging
-    logger.debug('Raw message received:', data.toString());
+    let rawMessage: string;
+    if (typeof data === 'string') {
+      rawMessage = data;
+    } else if (Buffer.isBuffer(data)) {
+      rawMessage = data.toString('utf8');
+    } else {
+      rawMessage = JSON.stringify(data);
+    }
+    logger.debug('Raw message received:', rawMessage);
 
     let parsedData;
     try {
-      parsedData = JSON.parse(data.toString());
+      let jsonString: string;
+      if (typeof data === 'string') {
+        jsonString = data;
+      } else if (Buffer.isBuffer(data)) {
+        jsonString = data.toString('utf8');
+      } else {
+        jsonString = '';
+      }
+      parsedData = JSON.parse(jsonString);
     } catch (error) {
       logger.error('Failed to parse message data', error);
-      // Send error response to client
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: 'error',
-            message: 'Invalid message format',
-          })
-        );
-      }
+      sendMessageToClient(ws, {
+        type: 'error',
+        message: 'Invalid message format',
+      });
       return;
     }
 
-    // Validate required fields
-    if (!parsedData.text) {
-      logger.error('Message missing required field: text');
-      // if (ws.readyState === WebSocket.OPEN) {
-      //   ws.send(
-      //     JSON.stringify({
-      //       type: 'error',
-      //       message: 'Message text is required',
-      //     })
-      //   );
-      // }
+    const { isValid, errors, validatedMessage } = validateChatMessage(parsedData);
+
+    if (!isValid) {
+      logger.error('Message validation failed:', errors);
+      sendMessageToClient(ws, {
+        type: 'error',
+        message: 'Message validation failed',
+        errors: errors,
+      });
       return;
     }
 
-    // Construct message object with validation
     const message = {
-      id: uuidv4(), // Generate a unique ID using uuid
-      userId: parsedData.userId || `User${Math.floor(Math.random() * 1000)}`,
-      text: parsedData.text, // Guaranteed to exist due to validation
-      email: parsedData.email || '',
-      imageProfile: parsedData.imageProfile || '',
-      imageMessage: parsedData.imageMessage || '',
-      role: parsedData.role || 'guest',
-      timestamp: new Date(), // Will be set by the database
+      ...validatedMessage!,
+      id: uuidv4(),
+      timestamp: new Date(),
     };
 
     logger.info(`Message received: ${JSON.stringify(message)}`);
 
     try {
-      // Save message to database
       const savedMessage = await chatService.saveMessage(message);
 
-      // Broadcast message to all clients
-      clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(
-            JSON.stringify({
-              type: 'new_message',
-              message: { ...savedMessage, id: savedMessage.id },
-            })
-          );
-        }
+      broadcastMessage(clients, {
+        type: 'new_message',
+        message: { ...savedMessage, id: savedMessage.id },
       });
     } catch (error) {
       logger.error('Failed to save message to database', error);
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: 'error',
-            message: 'Failed to save message',
-            userId: message.userId,
-          })
-        );
-      }
+      sendMessageToClient(ws, {
+        type: 'error',
+        message: 'Failed to save message',
+        userId: message.userId,
+      });
     }
   });
 

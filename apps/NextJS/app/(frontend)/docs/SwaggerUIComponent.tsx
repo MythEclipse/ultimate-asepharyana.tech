@@ -32,9 +32,11 @@ export default function SwaggerUIComponent({ spec }: SwaggerUIComponentProps) {
         },
       });
 
+      const currentRef = swaggerUIRef.current; // Capture the current ref value
+
       return () => {
-        if (swaggerUIRef.current) {
-          swaggerUIRef.current.innerHTML = '';
+        if (currentRef) {
+          currentRef.innerHTML = '';
         }
         ui.getSystem().specActions.updateSpec('{}');
       };

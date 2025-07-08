@@ -1,26 +1,27 @@
 import express from 'express';
 import http from 'http';
-import dotenv from 'dotenv';
 import { initWebSocketServer } from './services/websocketService';
-import { setChatRoutes } from './routes/chatRoutes';
 import logger from './utils/logger';
-
-dotenv.config();
+import { errorHandler } from './utils/errorHandler';
+import { config } from './config/config';
+import { setupRoutes } from './routes';
 
 const app = express();
 const server = http.createServer(app);
-const PORT = 4091;
+const PORT = config.port;
 
 // Configure Express middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Set up routes
-// setUserRoutes(app);
-setChatRoutes(app);
+setupRoutes(app);
 
 // Initialize WebSocket server
 initWebSocketServer(server);
+
+// Error handling middleware
+app.use(errorHandler);
 
 // Start HTTP server
 server.listen(PORT, () => {

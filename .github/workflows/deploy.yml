@@ -32,9 +32,12 @@ jobs:
           if [ -n "$ENV_FILE_PRODUCTION" ]; then
             echo "$ENV_FILE_PRODUCTION" > .env
           fi
+      - name: Install Dependencies
+        run: bun install
+
       - name: Build with Turborepo
         run: bun run build
-      - name: SSH into VPS and Deploy
+      - name: SSH into VPS and Prepare Directory
         uses: appleboy/ssh-action@master
         with:
             host: ${{ secrets.VPS_HOST }}
@@ -43,12 +46,12 @@ jobs:
             script: |
                 # Masuk ke direktori target
                 cd ${{ env.VPS_TARGET_DIR }}
-                git pull origin main
-                bun install
-      - name: Debug File Structure
-        run: ls -R
+                # Pastikan direktori apps/NextJS/.next dan apps/Express/dist ada
+                mkdir -p apps/NextJS/.next
+                mkdir -p apps/Express/dist
+      
 
-      - name: Sync Files to VPS
+      - name: Sync Build Artifacts to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -56,15 +59,6 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           source: |
             apps/NextJS/.next
-          target: ${{ env.VPS_TARGET_DIR }}
-          strip_components: 0 # Menjaga struktur direktori
-      - name: Sync Files to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          source: |
             apps/Express/dist
           target: ${{ env.VPS_TARGET_DIR }}
           strip_components: 0 # Menjaga struktur direktori

@@ -1,4 +1,5 @@
 import pino from 'pino';
+import { config } from '../config/config';
 
 const logger = pino({
   transport: {
@@ -7,7 +8,7 @@ const logger = pino({
       colorize: true,
     },
   },
-  level: 'info',
+  level: config.env === 'development' ? 'debug' : 'info',
 });
 
 export default logger;

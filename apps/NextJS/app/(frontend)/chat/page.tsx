@@ -11,7 +11,7 @@ import Button from '@/components/button/NormalButton';
 import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 
-type ChatMessage = {
+type RawChatMessage = {
   id?: number;
   user: string;
   text: string;
@@ -19,21 +19,40 @@ type ChatMessage = {
   imageProfile?: string;
   imageMessage?: string;
   role: string;
-  timestamp?: number;
+  timestamp?: number | string; // Can be number or string from DB
 };
 
-const validateTimestamp = (ts?: number | string) => {
-  if (!ts) return Date.now();
-  if (typeof ts === 'string') {
-    const parsed = Date.parse(ts);
-    return isNaN(parsed) ? Date.now() : parsed;
-  }
-  return typeof ts === 'number' && !isNaN(ts) && ts > 0 ? ts : Date.now();
+type NormalizedChatMessage = {
+  id: number; // Assuming ID will always be present after normalization
+  user: string;
+  text: string;
+  email: string;
+  imageProfile: string;
+  imageMessage: string;
+  role: string;
+  timestamp: number;
+};
+
+const normalizeChatMessage = (message: RawChatMessage): NormalizedChatMessage => {
+  const timestamp = typeof message.timestamp === 'string'
+    ? Date.parse(message.timestamp)
+    : (message.timestamp || Date.now());
+
+  return {
+    id: message.id || Date.now(), // Fallback for ID if not present
+    user: message.user,
+    text: message.text,
+    email: message.email || '',
+    imageProfile: message.imageProfile || '/profile-circle-svgrepo-com.svg',
+    imageMessage: message.imageMessage || '',
+    role: message.role,
+    timestamp: isNaN(timestamp) ? Date.now() : timestamp,
+  };
 };
 
 export default function ChatClient() {
   const { data: session } = useSession();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<NormalizedChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState({
@@ -59,19 +78,9 @@ export default function ChatClient() {
         : 'ws.asepharyana.cloud';
     ws.current = new ReconnectingWebSocket(`${protocol}//${host}`);
 
-    const handleHistory = (data: { messages: ChatMessage[] }) => {
+    const handleHistory = (data: { messages: RawChatMessage[] }) => {
       if (Array.isArray(data.messages)) {
-        const normalizedMessages = data.messages.map((message) => ({
-          id: message.id,
-          user: message.user,
-          text: message.text,
-          email: message.email || '',
-          imageProfile:
-            message.imageProfile || '/profile-circle-svgrepo-com.svg',
-          role: message.role,
-          timestamp: validateTimestamp(message.timestamp),
-          imageMessage: message.imageMessage || '',
-        }));
+        const normalizedMessages = data.messages.map(normalizeChatMessage);
         setMessages(normalizedMessages);
       }
     };
@@ -87,17 +96,7 @@ export default function ChatClient() {
           }
         } else if (wsMessage.type === 'new_message') {
           const message = wsMessage.message;
-          const normalizedMessage: ChatMessage = {
-            id: message.id,
-            user: message.user,
-            text: message.text,
-            email: message.email || '',
-            imageProfile:
-              message.imageProfile || '/profile-circle-svgrepo-com.svg',
-            role: message.role,
-            timestamp: validateTimestamp(message.timestamp),
-            imageMessage: message.imageMessage || '',
-          };
+          const normalizedMessage: NormalizedChatMessage = normalizeChatMessage(message);
           setMessages((prev) => {
             const exists = prev.some((m) => m.id === normalizedMessage.id);
             return exists ? prev : [...prev, normalizedMessage];
@@ -131,7 +130,7 @@ export default function ChatClient() {
   const sendMessage = useCallback(async () => {
     if ((!input.trim() && !file) || status.sending) return;
 
-    const newMessage: ChatMessage = {
+    const newMessage: RawChatMessage = {
       user: session?.user?.name || 'Anonymous',
       text: input,
       email: session?.user?.email || '',
@@ -283,10 +282,10 @@ function MessageBubble({
   message,
   isOwn,
 }: {
-  message: ChatMessage;
+  message: NormalizedChatMessage;
   isOwn: boolean;
 }) {
-  const safeTimestamp = validateTimestamp(message.timestamp);
+  const safeTimestamp = message.timestamp;
 
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
