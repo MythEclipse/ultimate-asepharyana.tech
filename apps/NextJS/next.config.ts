@@ -108,7 +108,7 @@ const nextConfig: NextConfig = {
 
   // Transpilasi paket dari node_modules atau monorepo.
   // '@asepharyana/ui' adalah contoh umum untuk paket UI lokal.
-  transpilePackages: ['@asepharyana/ui', 'swagger-ui'],
+  transpilePackages: ['@asepharyana/ui', 'swagger-ui', '@asepharyana/database'],
 };
 
 export default withFlowbiteReact(nextConfig);

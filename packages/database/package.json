@@ -5,14 +5,14 @@
   "exports": {
     ".": {
       "ts": "./src/client.ts",
-      "types": "./dist/types/client.d.ts",
-      "require": "./dist/cjs/client.js",
-      "import": "./dist/esm/client.js"
+      "types": "./client.d.ts",
+      "require": "./client.cjs",
+      "import": "./client.js"
     }
   },
-  "main": "./dist/cjs/client.js",
-  "module": "./dist/esm/client.js",
-  "types": "./dist/types/client.d.ts",
+  "main": "./client.cjs",
+  "module": "./client.js",
+  "types": "./client.d.ts",
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
@@ -20,11 +20,7 @@
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "npm run build:cjs && npm run build:esm && npm run generate-types",
-    "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir dist/cjs --extensions \".ts,.tsx\"",
-    "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir dist/esm --extensions \".ts,.tsx\"",
-    "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json && npm run copy-dts",
-    "copy-dts": "node -e \"require('fs').mkdirSync('dist/types', { recursive: true }); require('fs').mkdirSync('dist/esm', { recursive: true }); require('fs').mkdirSync('dist/cjs', { recursive: true });\" && copyfiles -u 1 ./types/* dist/esm && copyfiles -u 1 ./types/* dist/cjs && copyfiles -u 1 ./types/* dist/types",
+    "build": "tsup src/client.ts src/seed.ts --outDir . --format cjs,esm --dts",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "npm run generate && rimraf dist",
     "predev": "npm run generate",
@@ -40,12 +36,7 @@
     "@prisma/client": "^6.9.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.27.2",
-    "@babel/core": "^7.27.4",
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-typescript": "^7.27.1",
     "@types/node": "^22.15.30",
-    "babel-plugin-module-resolver": "^5.0.2",
     "eslint": "^9.28.0",
     "prisma": "^6.9.0",
     "rimraf": "^6.0.1",

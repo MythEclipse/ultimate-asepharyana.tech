@@ -1,9 +1,19 @@
 {
-  "extends": "@asepharyana/config-typescript/base.json",
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noEmit": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
     "rootDir": "./src",
     "outDir": "./dist",
     "declarationDir": "./dist/types",
@@ -11,13 +21,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@base/*": ["./*"]
-    },
-    "strict": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    }
   },
-  "include": ["./src/**/*", "./eslint.config.mjs"],
+  "include": ["./src/**/*"],
   "exclude": ["node_modules", "dist", "types"]
 }

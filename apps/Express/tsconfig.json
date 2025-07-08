@@ -1,16 +1,28 @@
 {
-  "extends": "@asepharyana/config-typescript/base.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noEmit": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "./dist",
     "rootDir": "./src",
-    "declarationDir": "./types",
     "baseUrl": ".", 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@asepharyana/database": ["../../packages/database/dist"]
     },
     "types": ["jest", "node"]
   },
-  "include": ["next-env.d.ts", "src/**/*", "src/tests/**/*"],
-  "exclude": ["node_modules", "types", "**/*.mjs"] // Removed trailing comma
+  "include": ["src"],
+  "exclude": ["node_modules", "types", "**/*.mjs"]
 }

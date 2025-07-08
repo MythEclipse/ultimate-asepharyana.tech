@@ -3,13 +3,11 @@
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": true,
     "rootDir": "./src",
-    "outDir": "./dist",
-    "declarationDir": "./types",
+    "outDir": ".",
     "strict": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "skipLibCheck": true
   },
