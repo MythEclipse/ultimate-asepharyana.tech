@@ -147,7 +147,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
         }
     });
 
-    // Wait for either task to finish
+    // Wait for either task to finisha
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort(),
