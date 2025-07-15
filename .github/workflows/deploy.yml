@@ -54,6 +54,7 @@ jobs:
           script: |
             # Masuk ke direktori target
             cd ${{ env.VPS_TARGET_DIR }}
+            source ~/.bashrc
             # Pastikan direktori apps/NextJS/.next dan apps/Express/dist ada
             mkdir -p apps/NextJS/.next
             mkdir -p apps/Express/dist
@@ -64,6 +65,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
           script: |
+            # Masuk ke direktori target
+            source ~/.bashrc
             rsync -avz --delete apps/NextJS/.next/ ${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
             rsync -avz --delete apps/Express/dist/ ${{ env.VPS_TARGET_DIR }}/apps/Express/dist/
 
@@ -75,6 +78,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
           script: |
             # Masuk ke direktori target
+            source ~/.bashrc
             cd ${{ env.VPS_TARGET_DIR }}
 
             # Install dependencies untuk seluruh workspace
