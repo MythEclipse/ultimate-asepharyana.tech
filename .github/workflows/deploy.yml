@@ -58,16 +58,14 @@ jobs:
             mkdir -p apps/NextJS/.next
             mkdir -p apps/Express/dist
       - name: Sync Build Artifacts to VPS
-        uses: appleboy/scp-action@master
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
-          source: |
-            apps/NextJS/.next/**
-            apps/Express/dist/**
-          target: ${{ env.VPS_TARGET_DIR }}
-          strip_components: 2 # Kirim semua file & subfolder, struktur tetap rapi
+          script: |
+            rsync -avz --delete apps/NextJS/.next/ ${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
+            rsync -avz --delete apps/Express/dist/ ${{ env.VPS_TARGET_DIR }}/apps/Express/dist/
 
       - name: SSH into VPS and Deploy
         uses: appleboy/ssh-action@master
