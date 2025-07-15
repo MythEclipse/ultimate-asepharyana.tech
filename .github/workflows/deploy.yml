@@ -42,7 +42,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH keya
           script: |
             # Masuk ke direktori target
             cd ${{ env.VPS_TARGET_DIR }}
