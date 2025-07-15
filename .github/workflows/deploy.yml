@@ -80,11 +80,12 @@ jobs:
             cd ${{ env.VPS_TARGET_DIR }}
 
             # Install dependencies untuk seluruh workspace
-            # bun akan secara cerdas menginstal dependensi yang diperlukan untuk
-            # Next.js dan Express berdasarkan package.json yang diunggah
             bun install
 
-            # Reload aplikasi menggunakan PM2
-            pm2 restart express
-            pm2 restart nextjs
+            # Start/Restart Express dengan ecosystem.config.js
+            pm2 startOrRestart apps/Express/ecosystem.config.js
+
+            # Start/Restart NextJS dengan ecosystem.config.js
+            pm2 startOrRestart apps/NextJS/ecosystem.config.js
+
             echo "Deployment successful!"
