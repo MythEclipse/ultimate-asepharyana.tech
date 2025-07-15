@@ -37,6 +37,14 @@ jobs:
 
       - name: Build with Turborepo
         run: bun run build
+      - name: Check Build Output
+        run: |
+          echo "NextJS build output:" && ls -l apps/NextJS/.next
+          echo "Express build output:" && ls -l apps/Express/dist
+          if [ -z "$(ls -A apps/NextJS/.next)" ] && [ -z "$(ls -A apps/Express/dist)" ]; then
+            echo "ERROR: Build output is empty. Deployment aborted."
+            exit 1
+          fi
       - name: SSH into VPS and Prepare Directory
         uses: appleboy/ssh-action@master
         with:
