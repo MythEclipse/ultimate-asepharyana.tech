@@ -7,7 +7,7 @@ on:
 
 # Hardcoded path, tidak perlu secret
 env:
-  VPS_TARGET_DIR: /root/ultimate-asepharyana.cloud
+  VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
 
 jobs:
   build-and-deploy:
