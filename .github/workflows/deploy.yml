@@ -64,10 +64,10 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
           source: |
-            apps/NextJS/.next/*
-            apps/Express/dist/*
+            apps/NextJS/.next
+            apps/Express/dist
           target: ${{ env.VPS_TARGET_DIR }}
-          strip_components: 2 # Hanya isi hasil build yang dikirim, bukan folder kosong
+          strip_components: 1 # Kirim isi folder build, bukan file per file
 
       - name: SSH into VPS and Deploy
         uses: appleboy/ssh-action@master
