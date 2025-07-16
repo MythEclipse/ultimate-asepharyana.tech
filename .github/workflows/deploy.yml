@@ -84,10 +84,10 @@ jobs:
             # Install dependencies untuk seluruh workspace
             bun install
 
-            # Start/Restart Express dengan ecosystem.config.js
-            pm2 startOrRestart apps/Express/ecosystem.config.js
+            # Start/Restart Express dengan ecosystem.config.cjs
+            pm2 startOrRestart apps/Express/ecosystem.config.cjs
 
-            # Start/Restart NextJS dengan ecosystem.config.js
-            pm2 startOrRestart apps/NextJS/ecosystem.config.js
+            # Start/Restart NextJS dengan ecosystem.config.cjs
+            pm2 startOrRestart apps/NextJS/ecosystem.config.cjs
 
             echo "Deployment successful!"
