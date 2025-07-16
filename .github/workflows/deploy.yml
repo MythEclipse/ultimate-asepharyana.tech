@@ -67,6 +67,7 @@ jobs:
           script: |
             # Masuk ke direktori target
             source ~/.bashrc
+            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             rsync -avz --delete apps/NextJS/.next/ ${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
             rsync -avz --delete apps/Express/dist/ ${{ env.VPS_TARGET_DIR }}/apps/Express/dist/
 
@@ -78,9 +79,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
           script: |
             # Masuk ke direktori target
+            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             source ~/.bashrc
             cd ${{ env.VPS_TARGET_DIR }}
-
+            git pull
             # Install dependencies untuk seluruh workspace
             bun install
 
