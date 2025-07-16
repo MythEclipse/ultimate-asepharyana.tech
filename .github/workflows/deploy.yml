@@ -59,17 +59,14 @@ jobs:
             mkdir -p apps/NextJS/.next
             mkdir -p apps/Express/dist
       - name: Sync Build Artifacts to VPS
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
-          script: |
-            # Masuk ke direktori target
-            source ~/.bashrc
-            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-            rsync -avz --delete apps/NextJS/.next/ ${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
-            rsync -avz --delete apps/Express/dist/ ${{ env.VPS_TARGET_DIR }}/apps/Express/dist/
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/Express/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/Express/dist/
+          rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy
         uses: appleboy/ssh-action@master
