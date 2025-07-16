@@ -4,6 +4,8 @@ module.exports = {
       name: 'asepharyana.cloud',
       script: 'bun',
       args: 'start',
+      interpreter: 'none',
+      cwd: __dirname,
       env: {
         NODE_ENV: 'production',
       },

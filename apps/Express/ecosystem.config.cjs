@@ -2,7 +2,7 @@ module.exports = {
     apps: [
         {
             name: 'express',
-            script: './dist/app.js',
+            script: './dist/index.js',
             instances: 'max',
             exec_mode: 'cluster',
             env: {

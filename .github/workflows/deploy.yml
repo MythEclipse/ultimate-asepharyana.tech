@@ -79,12 +79,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
           script: |
             # Masuk ke direktori target
-            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+            export PATH="$HOME/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             source ~/.bashrc
             cd ${{ env.VPS_TARGET_DIR }}
             git pull
             # Install dependencies untuk seluruh workspace
             bun install
+
+            # Pastikan path script di ecosystem.config.cjs sudah sesuai hasil build:
+            # Express: script: "./apps/Express/dist/index.js"
+            # NextJS:  script: "bun", args: "start", cwd: "./apps/NextJS"
 
             # Start/Restart Express dengan ecosystem.config.cjs
             pm2 startOrRestart apps/Express/ecosystem.config.cjs
