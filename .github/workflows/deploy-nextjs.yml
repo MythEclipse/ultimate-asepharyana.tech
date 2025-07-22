@@ -8,7 +8,7 @@ on:
       - 'apps/NextJS/**'
       - '.github/workflows/deploy-nextjs.yml' # Trigger if this workflow file changes
 
-# Hardcoded path, tidak perlu secret
+# Hardcoded path, tidak perlu secreta
 env:
   VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
 
