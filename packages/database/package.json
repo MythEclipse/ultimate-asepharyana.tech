@@ -5,14 +5,14 @@
   "exports": {
     ".": {
       "ts": "./src/client.ts",
-      "types": "./client.d.ts",
-      "require": "./client.cjs",
-      "import": "./client.js"
+      "types": "./dist/client.d.ts",
+      "require": "./dist/client.cjs",
+      "import": "./dist/client.js"
     }
   },
-  "main": "./client.cjs",
-  "module": "./client.js",
-  "types": "./client.d.ts",
+  "main": "./dist/client.cjs",
+  "module": "./dist/client.js",
+  "types": "./dist/client.d.ts",
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
@@ -20,7 +20,7 @@
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "bun build src/client.ts src/seed.ts --outdir . --target node --splitting --format esm --dts",
+    "build": "bun build src/client.ts src/seed.ts --outdir dist --target node --splitting --format esm && tsc --emitDeclarationOnly --outDir dist",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "npm run generate && rimraf dist",
     "predev": "npm run generate",

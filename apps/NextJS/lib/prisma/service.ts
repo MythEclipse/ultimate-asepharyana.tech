@@ -1,3 +1,4 @@
+'use server';
 // // lib/prisma/service.ts
 import { prisma } from '@asepharyana/database';
 

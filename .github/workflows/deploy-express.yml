@@ -38,7 +38,7 @@ jobs:
         run: bun install
 
       - name: Build Express
-        run: bun run build --filter=Express
+        run: bun run build --filter=@asepharyana/express
 
       - name: Check Build Output
         run: |
@@ -77,6 +77,6 @@ jobs:
             source ~/.bashrc
             cd ${{ env.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
-            bun install --filter=Express # Install dependencies only for Express
+            bun install --filter=@asepharyana/express # Install dependencies only for Express
             pm2 startOrRestart apps/Express/ecosystem.config.cjs
             echo "Express Deployment successful!"

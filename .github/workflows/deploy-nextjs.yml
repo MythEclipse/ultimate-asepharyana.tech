@@ -38,7 +38,7 @@ jobs:
         run: bun install
 
       - name: Build Next.js
-        run: bun run build --filter=NextJS
+        run: bun run build --filter=@asepharyana/web
 
       - name: Check Build Output
         run: |
@@ -77,6 +77,6 @@ jobs:
             source ~/.bashrc
             cd ${{ env.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
-            bun install --filter=NextJS # Install dependencies only for Next.js
+            bun install --filter=@asepharyana/web # Install dependencies only for Next.js
             pm2 startOrRestart apps/NextJS/ecosystem.config.cjs
             echo "Next.js Deployment successful!"
