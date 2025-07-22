@@ -1,6 +1,6 @@
 import logger from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
-import fetch from 'node-fetch';
+
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const videoBuffer = await response.buffer();
+    const videoBuffer = Buffer.from(await response.arrayBuffer());
     logger.info(`Successfully fetched video from URL: ${url}`);
     return new NextResponse(videoBuffer, {
       headers: { 'Content-Type': contentType },

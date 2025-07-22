@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-import FormData from 'form-data';
 import { fileTypeFromBuffer } from 'file-type';
 const ryzenCDN = async (
   inp:
@@ -23,10 +21,8 @@ const ryzenCDN = async (
           ? (file.originalname || 'file').split('.').shift()
           : 'file';
 
-      form.append('file', buffer, {
-        filename: `${originalName}.${type.ext}`,
-        contentType: type.mime,
-      });
+      // Convert Buffer to Uint8Array then to ArrayBuffer for native FormData
+      form.append('file', new Blob([new Uint8Array(buffer)], { type: type.mime }), `${originalName}.${type.ext}`);
     }
 
     const res = await fetch('https://api.ryzumi.vip/api/uploader/ryzencdn', {
@@ -37,7 +33,6 @@ const ryzenCDN = async (
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
         Connection: 'keep-alive',
         'Accept-Encoding': 'gzip, deflate, br',
-        ...form.getHeaders(),
       },
       body: form,
     });

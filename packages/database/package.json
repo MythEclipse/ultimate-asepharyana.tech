@@ -20,7 +20,7 @@
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "bun build src/client.ts src/seed.ts --outdir dist --target node --splitting --format esm && tsc --emitDeclarationOnly --outDir dist",
+    "build": "tsup src/client.ts src/seed.ts --out-dir dist --format esm,cjs --dts ",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "npm run generate && rimraf dist",
     "predev": "npm run generate",
