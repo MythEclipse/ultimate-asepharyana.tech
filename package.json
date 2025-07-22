@@ -50,6 +50,7 @@
     "@babel/cli": "^7.27.2",
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
+    "@builder.io/partytown": "^0.10.3",
     "@prisma/client": "^6.9.0",
     "@types/node": "^22.15.30",
     "concurrently": "^9.1.2",
