@@ -1,4 +1,19 @@
 // src/tests/index.test.ts
+
+// Mocks must be at the top of the file before any imports of the mocked module
+jest.mock('../services/chatService', () => {
+  // Use a factory function to return the mocked module
+  const mockChatService = {
+    // Mock the constructor
+    ChatService: jest.fn().mockImplementation(() => ({
+      loadMessages: jest.fn().mockResolvedValue([]), // Return an empty array for history
+      saveMessage: jest.fn().mockImplementation((msg) => Promise.resolve({ ...msg, id: 'mock-id', timestamp: new Date() })),
+      closeDatabase: jest.fn().mockResolvedValue(undefined),
+    })),
+  };
+  return mockChatService;
+});
+
 import request from 'supertest';
 import http from 'http';
 import { AddressInfo } from 'net';
@@ -8,14 +23,17 @@ import { initWebSocketServer } from '../services/websocketService';
 import logger from '../utils/logger';
 import WebSocket from 'ws';
 import dotenv from 'dotenv';
-import { ChatService } from '../services/chatService';
+import { ChatService } from '../services/chatService'; // This will now import the mocked version
+
+const MockChatService = ChatService as jest.MockedClass<typeof ChatService>;
+
 
 dotenv.config();
 
 describe('index.ts tests', () => {
   let server: http.Server;
   let port: number;
-  let chatService: ChatService;
+  let chatService: ChatService; // Reverted to let
 
   beforeAll(async () => {
     const app = express();
@@ -32,7 +50,9 @@ describe('index.ts tests', () => {
         resolve();
       });
     });
-    chatService = new ChatService();
+    // Now, chatService in this test file refers to the mocked one.
+    // The instance inside chatController.ts will also use the mocked constructor.
+    chatService = new ChatService(); // Instantiate here to get the mocked version for afterAll
   });
 
   afterAll(async () => {

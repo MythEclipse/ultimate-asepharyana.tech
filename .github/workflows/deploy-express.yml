@@ -1,19 +1,21 @@
-name: Build and Deploy Specific Folders
+name: Deploy Express to VPS
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'apps/Express/**'
+      - '.github/workflows/deploy-express.yml' # Trigger if this workflow file changes
 
 # Hardcoded path, tidak perlu secret
 env:
   VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy to VPS
+  build-and-deploy-express:
+    name: Build and Deploy Express
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,62 +37,46 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Build with Turborepo
-        run: bun run build
+      - name: Build Express
+        run: bun run build --filter=Express
+
       - name: Check Build Output
         run: |
-          echo "NextJS build output:" && ls -l apps/NextJS/.next
           echo "Express build output:" && ls -l apps/Express/dist
-          if [ -z "$(ls -A apps/NextJS/.next)" ] && [ -z "$(ls -A apps/Express/dist)" ]; then
-            echo "ERROR: Build output is empty. Deployment aborted."
+          if [ -z "$(ls -A apps/Express/dist)" ]; then
+            echo "ERROR: Express build output is empty. Deployment aborted."
             exit 1
           fi
-      - name: SSH into VPS and Prepare Directory
+
+      - name: SSH into VPS and Prepare Express Directory
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH keya
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Masuk ke direktori target
             cd ${{ env.VPS_TARGET_DIR }}
-            source ~/.bashrc
-            # Pastikan direktori apps/NextJS/.next dan apps/Express/dist ada
-            mkdir -p apps/NextJS/.next
             mkdir -p apps/Express/dist
-      - name: Sync Build Artifacts to VPS
+
+      - name: Sync Express Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/Express/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/Express/dist/
           rm -f /tmp/deploy_key
 
-      - name: SSH into VPS and Deploy
+      - name: SSH into VPS and Deploy Express
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }} # Menggunakan SSH key
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Masuk ke direktori target
             export PATH="$HOME/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             source ~/.bashrc
             cd ${{ env.VPS_TARGET_DIR }}
-            git pull
-            # Install dependencies untuk seluruh workspace
-            bun install
-
-            # Pastikan path script di ecosystem.config.cjs sudah sesuai hasil build:
-            # Express: script: "./apps/Express/dist/index.js"
-            # NextJS:  script: "bun", args: "start", cwd: "./apps/NextJS"
-
-            # Start/Restart Express dengan ecosystem.config.cjs
+            git pull # Need to pull to get the ecosystem.config.cjs
+            bun install --filter=Express # Install dependencies only for Express
             pm2 startOrRestart apps/Express/ecosystem.config.cjs
-
-            # Start/Restart NextJS dengan ecosystem.config.cjs
-            pm2 startOrRestart apps/NextJS/ecosystem.config.cjs
-
-            echo "Deployment successful!"
+            echo "Express Deployment successful!"
