@@ -54,7 +54,7 @@
   "private": true,
   "scripts": {
     "dev": "tsup src/* --watch",
-    "build": "tsup src/* --outDir dist --format cjs,esm --dts",
+    "build": "bun build src/* --outdir dist --target browser --splitting --format esm --dts",
     "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json",
     "copy-dts": "ncp ./types dist/types && ncp ./types dist/esm && ncp ./types dist/cjs",
     "lint": "eslint . --max-warnings 0",

@@ -1,4 +1,5 @@
 import NextAuth from 'next-auth';
+import { NextResponse } from 'next/server';
 import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@asepharyana/database';
@@ -7,30 +8,25 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
   secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true,
+  
   callbacks: {
     authorized: async ({ auth, request }) => {
-      if (process.env.NODE_ENV === 'development') {
-        return true;
-      }
+      
 
       if (auth) {
         return true;
       } else {
-        const pathname = request.nextUrl.pathname;
-        const callbackUrl =
-          request.nextUrl.searchParams.get('callbackUrl') ??
-          encodeURIComponent(pathname);
+        request.nextUrl.searchParams.set('callbackUrl', request.nextUrl.href);
         request.nextUrl.pathname = `/login`;
-        request.nextUrl.searchParams.set('callbackUrl', callbackUrl);
-        return false;
+        return NextResponse.redirect(request.nextUrl);
       }
     },
     session: async ({ session, user }) => {
-      if (session?.user) {
+      if (session?.user && user) {
         session.user.id = user.id;
       }
       return session;
     },
   },
 });
+
