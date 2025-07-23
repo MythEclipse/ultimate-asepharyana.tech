@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import PostCard from '@/components/sosmed/PostCard';
 import Card from '@/components/card/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
-import { type Posts, type User, type Likes, type Comments } from '@asepharyana/database';
+import { Comments, Likes, Posts, User } from '@asepharyana/database';
 import { useSession } from 'next-auth/react';
 import useSWR, { mutate } from 'swr';
 import ButtonA from '@/components/button/NormalButton';
