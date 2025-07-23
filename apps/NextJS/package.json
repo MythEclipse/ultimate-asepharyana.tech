@@ -16,7 +16,7 @@
     "dev:https": "next dev --experimental-https",
     "build": "cross-env next build",
     "postbuild": "next-sitemap --config next-sitemap.config.cjs",
-    "start": "cross-env NODE_ENV=production next start --port 4090",
+    "start": "next start --port 4090",
     "lint": "concurrently \"next lint\" \"tsc --noEmit\"",
     "lint:debug": "next lint  --debug",
     "lint:fix": "next lint --fix",

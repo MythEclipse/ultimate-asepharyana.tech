@@ -6,11 +6,7 @@ on:
       - main
     paths:
       - 'apps/RustExpress/**'
-      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesa
-
-# Hardcoded path, tidak perlu secret
-env:
-  VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
+      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesaaa
 
 jobs:
   build-and-deploy-rust:
@@ -55,7 +51,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ${{ env.VPS_TARGET_DIR }}
+            cd ${{ secrets.VPS_TARGET_DIR }}
             mkdir -p apps/RustExpress/target/release
 
       - name: Sync RustExpress Build Artifacts to VPS
@@ -63,7 +59,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" target/release/RustExpress ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/RustExpress/target/release/RustExpress
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" target/release/RustExpress ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/RustExpress/target/release/RustExpress
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy RustExpress
@@ -73,8 +69,10 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            export PATH="$HOME/.cargo/bin:$PATH" # Add cargo bin to PATH
-            cd ${{ env.VPS_TARGET_DIR }}
+            export PATH=$PATH:/root/.local/share/pnpm
+            export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
+            export PATH="$HOME/.cargo/bin:$PATH"
+            cd ${{ secrets.VPS_TARGET_DIR }}
             # Check if the process is running and stop it
             if pgrep -x "rust_express" > /dev/null; then
               killall rust_express

@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: 'bun',
+      script: 'package.json',
       args: 'start',
-      interpreter: 'none',
+      interpreter: 'bun',
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',

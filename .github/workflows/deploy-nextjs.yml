@@ -6,11 +6,7 @@ on:
       - main
     paths:
       - 'apps/NextJS/**'
-      - '.github/workflows/deploy-nextjs.yml' # Trigger if this workflow file achangesaaaaa
-
-# Hardcoded path, tidak perlu secretaaa
-env:
-  VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
+      - '.github/workflows/deploy-nextjs.yml' # Trigger if this workflow file achangesaaaaaaaa
 
 jobs:
   build-and-deploy-nextjs:
@@ -61,7 +57,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ${{ env.VPS_TARGET_DIR }}
+            cd ${{ secrets.VPS_TARGET_DIR }}
             mkdir -p apps/NextJS/.next
 
       - name: Sync Next.js Build Artifacts to VPS
@@ -69,7 +65,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/NextJS/.next/
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/.next/
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy Next.js
@@ -79,10 +75,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            export PATH="$HOME/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+            export PATH=$PATH:/root/.local/share/pnpm
+            export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
             source ~/.bashrc
-            cd ${{ env.VPS_TARGET_DIR }}
+            cd ${{ secrets.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
             bun install --filter=@asepharyana/web # Install dependencies only for Next.js
-            pm2 startOrRestart apps/NextJS/ecosystem.config.cjs
+            pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/ecosystem.config.cjs
             echo "Next.js Deployment successful!"
