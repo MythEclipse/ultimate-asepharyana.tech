@@ -8,10 +8,6 @@ on:
       - 'apps/NextJS/**'
       - '.github/workflows/deploy-nextjs.yml' # Trigger if this workflow file achangesaaaaaaaa
 
-# Hardcoded path, tidak perlu secretaaa
-env:
-  VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
-
 jobs:
   build-and-deploy-nextjs:
     name: Build and Deploy Next.js
@@ -69,7 +65,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/asephs/ultimate-asepharyana.cloud/apps/NextJS/.next/
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/.next/
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy Next.js
