@@ -8,7 +8,7 @@ on:
       - 'apps/RustExpress/**'
       - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesa
 
-# Hardcoded path, tidak perlu secret
+# Hardcoded path, tidak perlu secreta
 env:
   VPS_TARGET_DIR: /home/azureuser/ultimate-asepharyana.cloud
 
