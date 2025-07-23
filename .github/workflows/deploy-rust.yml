@@ -71,6 +71,7 @@ jobs:
           script: |
             export PATH=$PATH:/root/.local/share/pnpm
             export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
+            export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
             # Check if the process is running and stop it
