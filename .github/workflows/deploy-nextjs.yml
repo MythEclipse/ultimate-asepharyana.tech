@@ -38,7 +38,7 @@ jobs:
         run: bun install
 
       - name: Generate Prisma Client
-        run: bun run prisma generate --workspace packages/database
+        run: cd packages/database && bun run prisma generate && cd ../../
 
       - name: Build Database Package
         run: bun run build --filter=@asepharyana/database
