@@ -33,8 +33,12 @@ type NormalizedChatMessage = {
   timestamp: number; // Convert from string to number for display
 };
 
-const normalizeChatMessage = (message: RawChatMessage): NormalizedChatMessage => {
-  const timestamp = message.timestamp ? Date.parse(message.timestamp) : Date.now();
+const normalizeChatMessage = (
+  message: RawChatMessage
+): NormalizedChatMessage => {
+  const timestamp = message.timestamp
+    ? Date.parse(message.timestamp)
+    : Date.now();
 
   return {
     id: message.id || crypto.randomUUID(), // Use string ID as is
@@ -94,7 +98,8 @@ export default function ChatClient() {
           }
         } else if (wsMessage.type === 'new_message') {
           const message = wsMessage.message;
-          const normalizedMessage: NormalizedChatMessage = normalizeChatMessage(message);
+          const normalizedMessage: NormalizedChatMessage =
+            normalizeChatMessage(message);
           setMessages((prev) => {
             const exists = prev.some((m) => m.id === normalizedMessage.id);
             return exists ? prev : [...prev, normalizedMessage];

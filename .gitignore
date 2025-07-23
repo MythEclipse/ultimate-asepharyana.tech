@@ -100,3 +100,10 @@ apps/NextJS/public/sitemap*.xml
 **/build/*
 **/types/*
 apps/NextJS/public/hihahahahah
+# Rust
+/target
+**/target
+Cargo.lock
+/cargo.lock
+**/*.rs.bk
+**/packages/database/client

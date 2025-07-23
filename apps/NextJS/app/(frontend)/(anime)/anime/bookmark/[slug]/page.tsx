@@ -1,7 +1,11 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import AnimeGrid from '@/components/card/AnimeGrid';
-import { Bookmark, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import BookmarkLoadingSkeleton from '@/components/skeleton/BookmarkLoadingSkeleton';
+import EmptyBookmarkMessage from '@/components/misc/EmptyBookmarkMessage';
+import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 24;
 
 interface BookmarkItem {
   slug: string;
@@ -25,8 +29,6 @@ export default function BookmarkPage() {
     has_previous_page: false,
   });
   const [isLoading, setIsLoading] = useState(true);
-
-  const ITEMS_PER_PAGE = 24;
 
   useEffect(() => {
     const storedBookmarks = JSON.parse(
@@ -62,44 +64,7 @@ export default function BookmarkPage() {
   };
 
   if (isLoading) {
-    return (
-      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
-        <div className='max-w-7xl mx-auto space-y-8'>
-          {/* Header Skeleton */}
-          <div className='flex items-center gap-4 animate-pulse'>
-            <div className='w-14 h-14 bg-zinc-200 dark:bg-zinc-700 rounded-xl' />
-            <div className='space-y-2'>
-              <div className='h-8 bg-zinc-200 dark:bg-zinc-700 rounded-full w-48' />
-              <div className='h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full w-24' />
-            </div>
-          </div>
-
-          {/* Grid Skeleton - Updated to match AnimeGrid structure */}
-          <div className='flex flex-col items-center p-4'>
-            <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full'>
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className='space-y-3'>
-                  <div className='bg-zinc-200 dark:bg-zinc-800 aspect-[2/3] rounded-xl animate-pulse' />
-                  <div className='space-y-2'>
-                    <div className='h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full w-4/5' />
-                    <div className='h-3 bg-zinc-200 dark:bg-zinc-700 rounded-full w-1/2' />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pagination Skeleton */}
-          <div className='flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse'>
-            <div className='flex gap-4'>
-              <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
-              <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
-            </div>
-            <div className='w-32 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full' />
-          </div>
-        </div>
-      </main>
-    );
+    return <BookmarkLoadingSkeleton />;
   }
 
   return (
@@ -115,17 +80,7 @@ export default function BookmarkPage() {
         </div>
 
         {bookmarks.length === 0 ? (
-          <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
-            <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
-            <div>
-              <h2 className='text-xl font-medium text-blue-800 dark:text-blue-200 mb-2'>
-                No Bookmarked Anime
-              </h2>
-              <p className='text-blue-700 dark:text-blue-300'>
-                Start bookmarking your favorite anime to see them here!
-              </p>
-            </div>
-          </div>
+          <EmptyBookmarkMessage />
         ) : (
           <>
             <AnimeGrid animes={getPaginatedBookmarks()} />

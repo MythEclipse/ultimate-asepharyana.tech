@@ -8,11 +8,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
   secret: process.env.NEXTAUTH_SECRET,
-  
+
   callbacks: {
     authorized: async ({ auth, request }) => {
-      
-
       if (auth) {
         return true;
       } else {
@@ -29,4 +27,3 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
   },
 });
-

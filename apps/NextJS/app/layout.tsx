@@ -57,37 +57,37 @@ export default async function RootLayout({
   return (
     <SessionWrapper>
       {/* <ViewTransitions> */}
-        <html
-          lang='id'
-          // className={inter.className}
-          suppressHydrationWarning
-        >
-          <head>
-            <link rel='canonical' href={`${PRODUCTION}`} />
-            <link rel='manifest' href='/manifest.json' />
-            <link rel='icon' href='/favicon.ico' />
-            <link rel='apple-touch-icon' href='/logo.png' />
-            <meta name='theme-color' content='#000000' />
-            {/* <ThemeModeScript /> */}
-          </head>
-          <body className='h-screen'>
-            <ThemeProvider
-              attribute='class'
-              defaultTheme='system'
-              enableSystem
-              // disableTransitionOnChange
-            >
-              <NavbarWrapper />
-              <div className='mt-8 max-w-full px-0.5 pb-24 pt-12 sm:px-6 lg:px-8'>
-                {children}
-                <DarkThemeToggle
-                  className='fixed bottom-0 left-0 z-10 m-4'
-                  aria-label='Toggle Dark Mode'
-                />
-              </div>
-            </ThemeProvider>
-          </body>
-        </html>
+      <html
+        lang='id'
+        // className={inter.className}
+        suppressHydrationWarning
+      >
+        <head>
+          <link rel='canonical' href={`${PRODUCTION}`} />
+          <link rel='manifest' href='/manifest.json' />
+          <link rel='icon' href='/favicon.ico' />
+          <link rel='apple-touch-icon' href='/logo.png' />
+          <meta name='theme-color' content='#000000' />
+          {/* <ThemeModeScript /> */}
+        </head>
+        <body className='h-screen'>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='system'
+            enableSystem
+            // disableTransitionOnChange
+          >
+            <NavbarWrapper />
+            <div className='mt-8 max-w-full px-0.5 pb-24 pt-12 sm:px-6 lg:px-8'>
+              {children}
+              <DarkThemeToggle
+                className='fixed bottom-0 left-0 z-10 m-4'
+                aria-label='Toggle Dark Mode'
+              />
+            </div>
+          </ThemeProvider>
+        </body>
+      </html>
       {/* </ViewTransitions> */}
     </SessionWrapper>
   );

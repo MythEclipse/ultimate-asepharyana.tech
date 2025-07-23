@@ -30,9 +30,9 @@ export const BackgroundBeamsWithCollision = ({
     if (!parentElement) return;
 
     const updateContainerHeight = () => {
-        setContainerHeight(parentElement.scrollHeight);
+      setContainerHeight(parentElement.scrollHeight);
     };
-    
+
     updateContainerHeight(); // Initial height update
 
     const resizeObserver = new ResizeObserver(updateContainerHeight);
@@ -52,12 +52,11 @@ export const BackgroundBeamsWithCollision = ({
     const newBeams = Array.from({ length: beamCount }, () => ({
       initialX: Math.random() * parentRect.width,
       // ADJUSTED: Increased speed factor for an even faster fall.
-      duration: (containerHeight / 180) + (Math.random() * 2),
+      duration: containerHeight / 180 + Math.random() * 2,
       delay: Math.random() * 8,
       height: Math.floor(Math.random() * 40 + 60),
     }));
     setBeams(newBeams);
-
   }, [beamCount, containerHeight]);
 
   return (
@@ -121,7 +120,7 @@ const CollisionMechanism = ({
 
   const handleAnimation = () => {
     if (Math.random() < 0.5) {
-        return;
+      return;
     }
 
     const parent = parentRef.current;
@@ -132,7 +131,8 @@ const CollisionMechanism = ({
     const parentRect = parent.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
-    const explosionY = (containerRect.top - parentRect.top) + containerRect.height;
+    const explosionY =
+      containerRect.top - parentRect.top + containerRect.height;
     const explosionX = (beamOptions.initialX ?? 0) + beam.offsetWidth / 2;
 
     setCollision({
@@ -141,7 +141,10 @@ const CollisionMechanism = ({
     });
 
     // ADJUSTED: Increased timeout for explosion to linger longer.
-    setTimeout(() => setCollision({ detected: false, coordinates: null }), 2000);
+    setTimeout(
+      () => setCollision({ detected: false, coordinates: null }),
+      2000
+    );
   };
 
   return (
@@ -187,14 +190,18 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
   }));
 
   return (
-    <div {...props} className={cn('absolute z-50 pointer-events-none', props.className)}>
+    <div
+      {...props}
+      className={cn('absolute z-50 pointer-events-none', props.className)}
+    >
       {particles.map((particle) => (
         <span
           key={particle.id}
           className='absolute animation-explosion-particle'
           style={
             {
-              backgroundImage: 'radial-gradient(circle, rgba(167, 139, 250, 0.8) 0%, rgba(167, 139, 250, 0) 70%)',
+              backgroundImage:
+                'radial-gradient(circle, rgba(167, 139, 250, 0.8) 0%, rgba(167, 139, 250, 0) 70%)',
               width: '10px',
               height: '10px',
               borderRadius: '50%',

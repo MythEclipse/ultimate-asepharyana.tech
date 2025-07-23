@@ -162,7 +162,9 @@ export default function DetailAnimePage({
     );
 
     if (isBookmarked) {
-      bookmarks = bookmarks.filter((item: { slug: string }) => item.slug !== slug);
+      bookmarks = bookmarks.filter(
+        (item: { slug: string }) => item.slug !== slug
+      );
     } else if (anime?.data) {
       bookmarks.push({
         slug,
@@ -176,8 +178,12 @@ export default function DetailAnimePage({
 
   const imageSources = [
     anime?.data.poster,
-    anime?.data.poster ? `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster)}` : null,
-    anime?.data.poster ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(anime.data.poster)}` : null,
+    anime?.data.poster
+      ? `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster)}`
+      : null,
+    anime?.data.poster
+      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(anime.data.poster)}`
+      : null,
     '/default.png',
   ].filter(Boolean) as string[];
 
@@ -187,15 +193,36 @@ export default function DetailAnimePage({
     }
   };
 
-  if (error) return <p className='text-destructive text-center p-8'>Failed to load anime data.</p>;
+  if (error)
+    return (
+      <p className='text-destructive text-center p-8'>
+        Failed to load anime data.
+      </p>
+    );
   if (!anime) return <DetailPageSkeleton />;
 
   const { data } = anime;
   const metadata = [
-    { label: 'Type', value: data.type, icon: <Type className='w-5 h-5 text-blue-500' /> },
-    { label: 'Status', value: data.status, icon: <CircleDot className='w-5 h-5 text-green-500' /> },
-    { label: 'Released', value: data.release_date, icon: <Calendar className='w-5 h-5 text-red-500' /> },
-    { label: 'Studio', value: data.studio, icon: <Video className='w-5 h-5 text-purple-500' /> },
+    {
+      label: 'Type',
+      value: data.type,
+      icon: <Type className='w-5 h-5 text-blue-500' />,
+    },
+    {
+      label: 'Status',
+      value: data.status,
+      icon: <CircleDot className='w-5 h-5 text-green-500' />,
+    },
+    {
+      label: 'Released',
+      value: data.release_date,
+      icon: <Calendar className='w-5 h-5 text-red-500' />,
+    },
+    {
+      label: 'Studio',
+      value: data.studio,
+      icon: <Video className='w-5 h-5 text-purple-500' />,
+    },
   ];
 
   return (
@@ -237,13 +264,20 @@ export default function DetailAnimePage({
                   <Card>
                     <CardContent className='p-4 grid grid-cols-2 md:grid-cols-4 gap-4'>
                       {metadata.map((item) => (
-                        <div key={item.label} className='flex items-center gap-3'>
+                        <div
+                          key={item.label}
+                          className='flex items-center gap-3'
+                        >
                           <span className='p-2 bg-muted rounded-lg'>
                             {item.icon}
                           </span>
                           <div>
-                            <p className='text-sm text-muted-foreground'>{item.label}</p>
-                            <p className='font-semibold'>{item.value || 'N/A'}</p>
+                            <p className='text-sm text-muted-foreground'>
+                              {item.label}
+                            </p>
+                            <p className='font-semibold'>
+                              {item.value || 'N/A'}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -273,50 +307,58 @@ export default function DetailAnimePage({
                     <CardHeader>
                       <CardTitle>Episodes</CardTitle>
                       <CardDescription>
-                        Total {data.episode_lists?.length || 0} episodes available.
+                        Total {data.episode_lists?.length || 0} episodes
+                        available.
                       </CardDescription>
                     </CardHeader>
-                   <CardContent>
-                     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
-                       {data.episode_lists?.length > 0 ? (
-                         data.episode_lists.map((episode) => (
-                           <Tooltip key={episode.slug}>
-                             <TooltipTrigger asChild>
-                               <Button
-                                 variant='ghost'
-                                 onClick={() => router.push(`/anime/full/${episode.slug}`)}
-                                 className='justify-between w-full h-full p-3 whitespace-normal'
-                               >
-                                 <div className='flex items-start gap-2 min-w-0'>
-                                   <Clapperboard className='w-4 h-4 mt-1 flex-shrink-0' />
-                                   <p className='line-clamp-3 text-left'>
-                                     {episode.episode}
-                                   </p>
-                                 </div>
-                                 <ArrowRight className='w-4 h-4 self-center flex-shrink-0' />
-                               </Button>
-                             </TooltipTrigger>
-                             <TooltipContent>
-                               <p>{episode.episode}</p>
-                             </TooltipContent>
-                           </Tooltip>
-                         ))
-                       ) : (
-                         <div className='col-span-full py-6 text-center text-muted-foreground'>
-                           <Film className='mx-auto h-12 w-12 mb-3' />
-                           No episodes available yet.
-                         </div>
-                       )}
-                     </div>
-                   </CardContent>
+                    <CardContent>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
+                        {data.episode_lists?.length > 0 ? (
+                          data.episode_lists.map((episode) => (
+                            <Tooltip key={episode.slug}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  onClick={() =>
+                                    router.push(`/anime/full/${episode.slug}`)
+                                  }
+                                  className='justify-between w-full h-full p-3 whitespace-normal'
+                                >
+                                  <div className='flex items-start gap-2 min-w-0'>
+                                    <Clapperboard className='w-4 h-4 mt-1 flex-shrink-0' />
+                                    <p className='line-clamp-3 text-left'>
+                                      {episode.episode}
+                                    </p>
+                                  </div>
+                                  <ArrowRight className='w-4 h-4 self-center flex-shrink-0' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{episode.episode}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))
+                        ) : (
+                          <div className='col-span-full py-6 text-center text-muted-foreground'>
+                            <Film className='mx-auto h-12 w-12 mb-3' />
+                            No episodes available yet.
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
                   </Card>
 
                   <div>
-                    <h2 className='text-2xl font-bold tracking-tight mb-4'>Recommendations</h2>
+                    <h2 className='text-2xl font-bold tracking-tight mb-4'>
+                      Recommendations
+                    </h2>
                     <div className='flex overflow-x-auto pb-4 -mx-1 gap-4'>
                       {data.recommendations?.length > 0 ? (
                         data.recommendations.map((rec) => (
-                          <div key={rec.slug} className='flex-shrink-0 w-40 md:w-48'>
+                          <div
+                            key={rec.slug}
+                            className='flex-shrink-0 w-40 md:w-48'
+                          >
                             <MediaCard
                               title={rec.title}
                               imageUrl={rec.poster}

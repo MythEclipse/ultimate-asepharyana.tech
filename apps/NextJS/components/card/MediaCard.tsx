@@ -44,10 +44,7 @@ const TypeBadge = ({ type, badge }: { type?: string; badge?: string }) => {
 
   return (
     <Badge
-      className={cn(
-        'absolute top-2 right-2 text-white border-0',
-        colorClass
-      )}
+      className={cn('absolute top-2 right-2 text-white border-0', colorClass)}
     >
       {label}
     </Badge>
@@ -87,10 +84,18 @@ export default function CardA({
 
   const imageSources = [
     imageUrl,
-    imageUrl ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}` : null,
-    imageUrl ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}` : null,
-    imageUrl ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}` : null,
-    imageUrl ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}` : null,
+    imageUrl
+      ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
+      : null,
+    imageUrl
+      ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}`
+      : null,
+    imageUrl
+      ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}`
+      : null,
+    imageUrl
+      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
+      : null,
     fallbackImage,
   ].filter(Boolean) as string[];
 
@@ -124,7 +129,7 @@ export default function CardA({
     setIsImageLoading(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
-  
+
   if (loading) {
     return <CardSkeleton />;
   }

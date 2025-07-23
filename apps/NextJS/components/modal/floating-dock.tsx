@@ -6,7 +6,6 @@ import AnimatedButton from './AnimatedButton'; // Import your custom AnimatedBut
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
-
 export const FloatingDock = ({
   items,
   desktopClassName,

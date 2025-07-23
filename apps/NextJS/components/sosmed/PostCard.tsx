@@ -64,7 +64,7 @@ export default function PostCard({
     setEditingCommentId(null);
   };
 
-  const userHasLiked = post.likes.some((like) => like.userId === currentUserId);
+  const userHasLiked = post.likes.some((like: Likes) => like.userId === currentUserId);
 
   return (
     <div className='relative p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl hover:shadow-2xl transition-all border border-transparent hover:border-blue-500/20 group'>
@@ -199,7 +199,7 @@ export default function PostCard({
       {/* Comments Section */}
       {showComments && (
         <div className='mt-6 space-y-6'>
-          {post.comments.map((comment) => (
+          {post.comments.map((comment: Comments & { user: User }) => (
             <div
               key={comment.id}
               className='pl-6 border-l-2 border-blue-200 dark:border-blue-900/50 relative'

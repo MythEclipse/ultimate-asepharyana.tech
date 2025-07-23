@@ -14,6 +14,7 @@ pub struct ChatMessage {
     pub timestamp: String,
 }
 
+#[allow(dead_code)]
 impl ChatMessage {
     pub fn new(
         user_id: String,

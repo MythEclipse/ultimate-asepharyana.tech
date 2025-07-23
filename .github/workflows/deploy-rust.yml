@@ -43,7 +43,7 @@ jobs:
       - name: Check Build Output
         run: |
           echo "RustExpress build output:" && ls -l apps/RustExpress/target/release
-          if [ ! -f "apps/RustExpress/target/release/rust_express" ]; then
+          if [ ! -f "apps/RustExpress/target/release/RustExpress" ]; then
             echo "ERROR: RustExpress build output executable not found. Deployment aborted."
             exit 1
           fi
@@ -63,7 +63,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/RustExpress/target/release/rust_express ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/RustExpress/target/release/rust_express
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/RustExpress/target/release/RustExpress ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/RustExpress/target/release/RustExpress
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy RustExpress
@@ -81,5 +81,5 @@ jobs:
               echo "Existing rust_express process stopped."
             fi
             # Start the new binary in the background
-            nohup apps/RustExpress/target/release/rust_express > rust_express.log 2>&1 &
+            nohup apps/RustExpress/target/release/RustExpress > rust_express.log 2>&1 &
             echo "RustExpress Deployment successful!"

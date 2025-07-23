@@ -22,7 +22,11 @@ const ryzenCDN = async (
           : 'file';
 
       // Convert Buffer to Uint8Array then to ArrayBuffer for native FormData
-      form.append('file', new Blob([new Uint8Array(buffer)], { type: type.mime }), `${originalName}.${type.ext}`);
+      form.append(
+        'file',
+        new Blob([new Uint8Array(buffer)], { type: type.mime }),
+        `${originalName}.${type.ext}`
+      );
     }
 
     const res = await fetch('https://api.ryzumi.vip/api/uploader/ryzencdn', {

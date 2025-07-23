@@ -70,7 +70,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
 
     // Create a channel for this client
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
-    let client_id = uuid::Uuid::new_v4().to_string();
+    
 
     // Add the client's sender to the shared state
     state.clients.lock().unwrap().push(tx.clone());

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@asepharyana/database';
+import { PrismaClient } from '@prisma/client';
+
 import { auth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
@@ -10,6 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { postId } = await req.json();
+const prisma = new PrismaClient();
 
   try {
     // Check if the user has already liked the post
@@ -50,6 +52,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   const { postId } = await req.json();
+const prisma = new PrismaClient();
 
   try {
     // Check if the like exists and belongs to the user
