@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'apps/RustExpress/**'
-      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesa
+      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesaa
 
 # Hardcoded path, tidak perlu secreta
 env:
