@@ -13,7 +13,7 @@
     "build": "turbo run build",
     "buildnc": "turbo run build --force",
     "build:express": "turbo run build --filter=@asepharyana/express",
-    "build:nextjs": "turbo run build --filter=@asepharyana/web",
+    "build:nextjs": "bun run generate && turbo run build --filter=@asepharyana/web",
     "db:migrate:deploy": "turbo run db:migrate:deploy",
     "db:push": "turbo run db:push",
     "dev": "turbo run dev",
