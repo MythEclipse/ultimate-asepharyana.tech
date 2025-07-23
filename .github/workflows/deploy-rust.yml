@@ -63,7 +63,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" target/release/RustExpress ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.VPS_TARGET_DIR }}/apps/RustExpress/target/release/RustExpress
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" target/release/RustExpress ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/asephs/ultimate-asepharyana.cloud/apps/RustExpress/target/release/RustExpress
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy RustExpress
