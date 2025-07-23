@@ -10,7 +10,7 @@ import {
 import Image from 'next/image';
 import { Textarea } from '@/components/text/textarea';
 import ButtonA from '@/components/button/NormalButton';
-import { type Posts, type User, type Likes, type Comments } from '@prisma/client';
+import { Posts, User, Likes, Comments } from '@prisma/client';
 import { formatDistanceToNow } from 'date-fns';
 import { useSession } from 'next-auth/react';
 interface PostCardProps {
