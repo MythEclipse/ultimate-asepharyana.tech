@@ -22,10 +22,10 @@
     "generate": "prisma generate",
     "build": "tsup src/client.ts src/seed.ts --out-dir dist --format esm,cjs --dts ",
     "lint": "eslint . --max-warnings 0",
-    "prebuild": "npm run generate && rimraf dist",
-    "predev": "npm run generate",
+    "prebuild": "bun run generate && rimraf dist",
+    "predev": "bun run generate",
     "studio": "prisma studio",
-    "update": "npm update",
+    "update": "bun update",
     "build:tsc": "tsc --project ./tsconfig.json"
   },
   "dependencies": {

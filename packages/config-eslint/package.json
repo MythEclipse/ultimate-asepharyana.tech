@@ -59,7 +59,7 @@
     "copy-dts": "ncp ./types dist/types && ncp ./types dist/esm && ncp ./types dist/cjs",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "rimraf dist",
-    "update": "npm update",
+    "update": "bun update",
     "build:tsc": "tsc --project ./tsconfig.json"
   },
   "type": "module",
