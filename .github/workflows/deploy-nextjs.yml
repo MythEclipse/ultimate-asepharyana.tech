@@ -44,7 +44,7 @@ jobs:
         run: bun run build --filter=@asepharyana/database
 
       - name: Build Next.js
-        run: bun run build --filter=@asepharyana/web
+        run: bun run build:nextjs
 
       - name: Check Build Output
         run: |

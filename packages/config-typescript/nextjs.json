@@ -1,8 +1,6 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "./base.json",
   "compilerOptions": {
-    "forceConsistentCasingInFileNames": true,
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -10,11 +8,13 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "typeRoots": ["./types", "./node_modules/@types"],
     "incremental": true,
+    "maxNodeModuleJsDepth": 2000,
     "plugins": [
       {
         "name": "next"
@@ -22,22 +22,17 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    },
-    "target": "esnext",
-    "types": ["node", "jest", "@testing-library/jest-dom"],
-    "allowSyntheticDefaultImports": true,
-    "useDefineForClassFields": true
+    }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.js",
     "**/*.tsx",
-    "**/*.config.js",
     ".next/types/**/*.ts",
-    "jest.config.ts",
-    "app/(backend)/api/komik/[function]/route.ts.bak",
-    "eslint.config.mjs"
+    "types"
   ],
-  "exclude": ["node_modules", "!node_modules/.prisma"]
+  "exclude": [
+    "node_modules",
+    "public"
+  ]
 }
