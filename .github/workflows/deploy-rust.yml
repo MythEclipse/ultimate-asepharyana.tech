@@ -42,7 +42,7 @@ jobs:
 
       - name: Check Build Output
         run: |
-          echo "RustExpress build output:" && ls -l apps/RustExpress/target/release
+          echo "RustExpress build output:" && ls -l target/release
           if [ ! -f "target/release/RustExpress" ]; then
             echo "ERROR: RustExpress build output executable not found. Deployment aborted."
             exit 1
