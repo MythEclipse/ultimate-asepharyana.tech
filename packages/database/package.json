@@ -20,7 +20,7 @@
     "dev": "bun build src/* --outdir dist --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "tsup src/client.ts src/seed.ts --format esm,cjs --dts --outDir dist",
+    "build": "tsup src/client.ts src/seed.ts --format esm,cjs --dts --outDir dist --external @prisma/client",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "bun run generate && rimraf dist",
     "predev": "bun run generate",

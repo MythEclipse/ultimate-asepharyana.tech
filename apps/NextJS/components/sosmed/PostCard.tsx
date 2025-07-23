@@ -10,27 +10,27 @@ import {
 import Image from 'next/image';
 import { Textarea } from '@/components/text/textarea';
 import ButtonA from '@/components/button/NormalButton';
-import { Posts, User, Likes, Comments } from '@prisma/client';
+import { type Posts, type User, type Likes, type Comments } from '@prisma/client';
 import { formatDistanceToNow } from 'date-fns';
 import { useSession } from 'next-auth/react';
 interface PostCardProps {
-  post: Posts & {
-    user: User;
-    likes: Likes[];
-    comments: (Comments & { user: User })[];
+  readonly post: Posts & {
+    readonly user: User;
+    readonly likes: readonly Likes[];
+    readonly comments: readonly (Comments & { readonly user: User })[];
   };
-  currentUserId: string;
-  handleLike: (postId: string) => void;
-  handleUnlike: (postId: string) => void;
-  handleAddComment: (postId: string, comment: string) => void;
-  handleEditPost: (postId: string, content: string) => void;
-  handleDeletePost: (postId: string) => void;
-  handleEditComment: (commentId: string, content: string) => void;
-  handleDeleteComment: (commentId: string) => void;
-  toggleComments: (postId: string) => void;
-  showComments: boolean;
-  newComment: string;
-  setNewComment: (comment: string) => void;
+  readonly currentUserId: string;
+  readonly handleLike: (postId: string) => void;
+  readonly handleUnlike: (postId: string) => void;
+  readonly handleAddComment: (postId: string, comment: string) => void;
+  readonly handleEditPost: (postId: string, content: string) => void;
+  readonly handleDeletePost: (postId: string) => void;
+  readonly handleEditComment: (commentId: string, content: string) => void;
+  readonly handleDeleteComment: (commentId: string) => void;
+  readonly toggleComments: (postId: string) => void;
+  readonly showComments: boolean;
+  readonly newComment: string;
+  readonly setNewComment: (comment: string) => void;
 }
 
 export default function PostCard({
