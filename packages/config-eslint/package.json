@@ -53,7 +53,7 @@
   },
   "private": true,
   "scripts": {
-    "dev": "tsup src/* --watch",
+    "dev": "bun build src/* --outdir dist --target node --watch",
     "build": "bun build src/* --outdir dist --target node --splitting --format esm --dts",
     "generate-types": "tsc --emitDeclarationOnly --project tsconfig.json",
     "copy-dts": "ncp ./types dist/types && ncp ./types dist/esm && ncp ./types dist/cjs",
