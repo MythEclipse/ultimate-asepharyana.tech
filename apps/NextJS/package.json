@@ -26,7 +26,7 @@
     "check-format": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "check-lint": "next lint",
     "update": "bun update",
-    "postinstall": "flowbite-react patch"
+    "postinstall": "bun x flowbite-react patch"
   },
   "dependencies": {
     "@asepharyana/config-eslint": "workspace:^",
