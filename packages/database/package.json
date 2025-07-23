@@ -20,13 +20,14 @@
     "dev": "bun build src/* --outdir dist --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "build": "tsup src/client.ts src/seed.ts --format esm,cjs --dts --outDir dist",
+    "build": "tsup src/client.ts src/seed.ts --format esm,cjs --outDir dist && bun run dts",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "bun run generate && rimraf dist",
     "predev": "bun run generate",
     "studio": "prisma studio",
     "update": "bun update",
-    "build:tsc": "tsc --project ./tsconfig.json"
+    "build:tsc": "tsc --project ./tsconfig.json",
+    "dts": "tsc --emitDeclarationOnly --project ./tsconfig.json"
   },
   "dependencies": {
     "@asepharyana/config-eslint": "workspace:*",
@@ -42,9 +43,9 @@
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.5.3"
   },
   "overrides": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.5.3"
   }
 }
