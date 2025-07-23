@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'apps/NextJS/**'
-      - '.github/workflows/deploy-nextjs.yml' # Trigger if this workflow file changesaaaaa
+      - '.github/workflows/deploy-nextjs.yml' # Trigger if this workflow file achangesaaaaa
 
 # Hardcoded path, tidak perlu secretaaa
 env:
