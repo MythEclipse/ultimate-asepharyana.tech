@@ -1,7 +1,7 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
   // The base URL of your site
-  siteUrl: 'https://asepharyana.cloud',
+  siteUrl: 'https://https://asepharyana.tech',
 
   // Paths to exclude from the sitemap
   exclude: ['/icon.svg', '/apple-icon.png', '/manifest.webmanifest', '/tags/*'],

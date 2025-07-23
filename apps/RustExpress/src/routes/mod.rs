@@ -32,7 +32,7 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
 // Root handler - compatible with Express.js version
 async fn root_handler() -> impl IntoResponse {
     // Redirect to the same URL as Express version for compatibility
-    Redirect::permanent("https://asepharyana.cloud/chat")
+    Redirect::permanent("https://asepharyana.tech/chat")
 }
 
 // Health check endpoint

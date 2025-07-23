@@ -1473,7 +1473,7 @@ paths:
           required: true
           schema:
             type: string
-            example: 'https://asepharyana.cloud'
+            example: 'https://asepharyana.tech'
       responses:
         '200':
           description: 'Successful proxy response'

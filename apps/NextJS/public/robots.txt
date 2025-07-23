@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://asepharyana.cloud
+Host: https://asepharyana.tech
 
 # Sitemaps
-Sitemap: https://asepharyana.cloud/sitemap.xml
+Sitemap: https://asepharyana.tech/sitemap.xml

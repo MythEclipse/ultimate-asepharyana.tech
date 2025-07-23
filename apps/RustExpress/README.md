@@ -187,7 +187,7 @@ chmod +x migrate.sh
 
 | Express.js Route | RustExpress Route | Status |
 |------------------|------------------|--------|
-| `GET /` | `GET /` | ✅ Compatible (redirects to asepharyana.cloud/chat) |
+| `GET /` | `GET /` | ✅ Compatible (redirects to asepharyana.tech/chat) |
 | `POST /merge-pdfs` | `POST /merge-pdfs` | ✅ Compatible (same API) |
 | WebSocket `/` | WebSocket `/ws` | ✅ Compatible (same protocol) |
 | N/A | `GET /api/health` | ✨ New (health check endpoint) |

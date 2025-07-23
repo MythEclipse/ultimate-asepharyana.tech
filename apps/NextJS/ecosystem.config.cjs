@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'asepharyana.cloud',
+      name: 'asepharyana.tech',
       script: 'bun',
       args: 'start',
       interpreter: 'none',

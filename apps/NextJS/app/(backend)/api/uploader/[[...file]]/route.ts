@@ -6,7 +6,7 @@ import logger from '@/lib/logger';
 // Logger global
 
 const PRODUCTION_URL =
-  process.env.PRODUCTION_URL || 'https://asepharyana.cloud';
+  process.env.PRODUCTION_URL || 'https://asepharyana.tech';
 const MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024; // 1GB
 
 export async function POST(req: NextRequest) {

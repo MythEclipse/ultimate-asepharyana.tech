@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "@asepharyana/asepharyana.cloud",
+      "name": "@asepharyana/asepharyana.tech",
       "dependencies": {
         "@babel/cli": "^7.27.2",
         "@babel/core": "^7.27.4",

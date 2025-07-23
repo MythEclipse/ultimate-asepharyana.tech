@@ -77,7 +77,7 @@ export default function ChatClient() {
     const host =
       process.env.NODE_ENV === 'development'
         ? 'localhost:4091'
-        : 'ws.asepharyana.cloud';
+        : 'ws.asepharyana.tech';
     ws.current = new ReconnectingWebSocket(`${protocol}//${host}/ws`);
 
     const handleHistory = (data: { messages: RawChatMessage[] }) => {
