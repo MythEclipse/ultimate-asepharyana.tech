@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ${{ env.VPS_TARGET_DIR }}
+            cd ${{ secrets.VPS_TARGET_DIR }}
             mkdir -p apps/NextJS/.next
 
       - name: Sync Next.js Build Artifacts to VPS
@@ -77,7 +77,7 @@ jobs:
           script: |
             export PATH="$HOME/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             source ~/.bashrc
-            cd ${{ env.VPS_TARGET_DIR }}
+            cd ${{ secrets.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
             bun install --filter=@asepharyana/web # Install dependencies only for Next.js
             pm2 startOrRestart apps/NextJS/ecosystem.config.cjs
