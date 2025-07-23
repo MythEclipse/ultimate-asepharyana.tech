@@ -37,6 +37,12 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      - name: Generate Prisma Client
+        run: bun --cwd packages/database run prisma generate
+
+      - name: Build Database Package
+        run: bun run build --filter=@asepharyana/database
+
       - name: Build Next.js
         run: bun run build --filter=@asepharyana/web
 
