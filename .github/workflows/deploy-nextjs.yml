@@ -75,7 +75,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            export PATH="$HOME/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+            export PATH=$PATH:/root/.local/share/pnpm
+            export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
             source ~/.bashrc
             cd ${{ secrets.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
