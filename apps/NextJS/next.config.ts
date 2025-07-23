@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   images: {
     // GANTI 'hostname: '**'' DENGAN DAFTAR HOSTNAME TEPERCAYA.
     // Menggunakan wildcard '**' adalah risiko keamanan yang sangat serius (Open Image Proxy).
-    // Ganti dengan domain spesifik tempat gambar Anda di-hosting.
+    // Ganti dengan domain spesifik tempat gambar Anda di-hosting.a
     remotePatterns: [
       // {
       //   protocol: 'https',
