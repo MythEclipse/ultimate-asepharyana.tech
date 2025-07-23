@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
 import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@asepharyana/database';
 
 const prisma = new PrismaClient();
 

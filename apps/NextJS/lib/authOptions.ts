@@ -1,4 +1,4 @@
-// import { PrismaClient, User as PrismaUser } from '@prisma/client';
+// import { PrismaClient, User as PrismaUser } from '@asepharyana/database';
 // import { PrismaAdapter } from '@next-auth/prisma-adapter';
 // import { NextAuthOptions } from 'next-auth';
 // import CredentialsProvider from 'next-auth/providers/credentials';
