@@ -25,8 +25,7 @@
     "check-types": "tsc --noEmit",
     "check-format": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "check-lint": "next lint",
-    "update": "bun update",
-    "postinstall": "bun x flowbite-react patch"
+    "update": "bun update"
   },
   "dependencies": {
     "@asepharyana/config-eslint": "workspace:^",
