@@ -16,6 +16,7 @@
     "dev:https": "next dev --experimental-https",
     "build": "cross-env next build",
     "postbuild": "next-sitemap --config next-sitemap.config.cjs",
+    "postinstall": "prisma generate",
     "start": "next start --port 4090",
     "lint": "concurrently \"next lint\" \"tsc --noEmit\"",
     "lint:debug": "next lint  --debug",
