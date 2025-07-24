@@ -26,5 +26,14 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts","types"],
-  "exclude": ["node_modules","public"]
+  "exclude": [
+    "node_modules",
+    "public",
+    "apps/NextJS/lib/auth.ts",
+    "apps/NextJS/lib/authOptions.ts",
+    "apps/NextJS/app/api/auth",
+    "apps/NextJS/components/button/SignOutComponent.tsx",
+    "apps/NextJS/components/button/SignInComponent.tsx",
+    "apps/NextJS/lib/signOutAction.ts"
+  ]
 }

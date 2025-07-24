@@ -10,16 +10,27 @@ import {
 import Image from 'next/image';
 import { Textarea } from '@/components/text/textarea';
 import ButtonA from '@/components/button/NormalButton';
-import { Posts, User, Likes, Comments } from '@asepharyana/database';
+import { Posts, Comments, Likes } from '@asepharyana/database'; // Added User import back for internal types
 import { formatDistanceToNow } from 'date-fns';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
+
+// Define a client-safe User type by omitting 'password' for client-side usage
+interface ClientUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  emailVerified: Date | null;
+  role: string;
+}
+
 interface PostCardProps {
   readonly post: Posts & {
-    readonly user: User;
+    readonly user: ClientUser; // Use ClientUser here
     readonly likes: readonly Likes[];
-    readonly comments: readonly (Comments & { readonly user: User })[];
+    readonly comments: readonly (Comments & { readonly user: ClientUser })[]; // And here
   };
-  readonly currentUserId: string;
+  //  // Removed this prop
   readonly handleLike: (postId: string) => void;
   readonly handleUnlike: (postId: string) => void;
   readonly handleAddComment: (postId: string, comment: string) => void;
@@ -35,7 +46,7 @@ interface PostCardProps {
 
 export default function PostCard({
   post,
-  currentUserId,
+  // currentUserId, // Removed from function signature
   handleLike,
   handleUnlike,
   handleAddComment,
@@ -52,7 +63,10 @@ export default function PostCard({
   const [editedPostContent, setEditedPostContent] = useState(post.content);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState('');
-  const { data: session } = useSession();
+  const { user } = useAuth(); // Use useAuth hook instead of useSession()
+
+  // Derive authenticatedUserId from useAuth()
+  const authenticatedUserId = user?.id;
 
   const handleEditPostSubmit = () => {
     handleEditPost(post.id, editedPostContent);
@@ -64,7 +78,7 @@ export default function PostCard({
     setEditingCommentId(null);
   };
 
-  const userHasLiked = post.likes.some((like: Likes) => like.userId === currentUserId);
+  const userHasLiked = post.likes.some((like: Likes) => like.userId === authenticatedUserId);
 
   return (
     <div className='relative p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl hover:shadow-2xl transition-all border border-transparent hover:border-blue-500/20 group'>
@@ -100,7 +114,7 @@ export default function PostCard({
           </p>
         </div>
 
-        {currentUserId === post.user.id && (
+        {authenticatedUserId === post.user.id && (
           <div className='flex space-x-3 opacity-0 group-hover:opacity-100 transition-opacity'>
             <button
               onClick={() => setIsEditingPost(true)}
@@ -199,7 +213,7 @@ export default function PostCard({
       {/* Comments Section */}
       {showComments && (
         <div className='mt-6 space-y-6'>
-          {post.comments.map((comment: Comments & { user: User }) => (
+          {post.comments.map((comment: Comments & { user: ClientUser }) => (
             <div
               key={comment.id}
               className='pl-6 border-l-2 border-blue-200 dark:border-blue-900/50 relative'
@@ -255,7 +269,7 @@ export default function PostCard({
                     </p>
                   )}
                 </div>
-                {currentUserId === comment.user.id && !editingCommentId && (
+                {authenticatedUserId === comment.user.id && !editingCommentId && (
                   <div className='flex space-x-2 ml-3'>
                     <button
                       onClick={() => {
@@ -281,7 +295,7 @@ export default function PostCard({
           <div className='pt-6 border-t border-gray-100 dark:border-gray-800'>
             <div className='flex gap-4 items-start'>
               <Image
-                src={session?.user?.image || '/profile-circle-svgrepo-com.svg'}
+                src={user?.image || '/profile-circle-svgrepo-com.svg'} // Use user.image
                 alt='Your profile'
                 width={48}
                 height={48}

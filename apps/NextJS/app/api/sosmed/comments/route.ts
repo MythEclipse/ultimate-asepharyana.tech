@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@asepharyana/database';
-import { auth } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/lib/authUtils'; // Import getAuthenticatedUser
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const user = await getAuthenticatedUser(); // Get authenticated user
 
-  if (!session || !session.user || !session.user.id) {
+  if (!user || !user.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       data: {
         postId,
         content,
-        userId: session.user.id,
-        authorId: session.user.id,
+        userId: user.id, // Use user.id
+        authorId: user.id, // Use user.id
       },
     });
     return NextResponse.json(
@@ -84,9 +84,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth();
+  const user = await getAuthenticatedUser(); // Get authenticated user
 
-  if (!session || !session.user || !session.user.id) {
+  if (!user || !user.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -102,7 +102,7 @@ export async function PUT(req: NextRequest) {
   try {
     const comment = await prisma.comments.findUnique({ where: { id } });
 
-    if (!comment || comment.userId !== session.user.id) {
+    if (!comment || comment.userId !== user.id) { // Use user.id
       return NextResponse.json(
         { message: 'User not authorized to edit this comment' },
         { status: 403 }
@@ -130,9 +130,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
+  const user = await getAuthenticatedUser(); // Get authenticated user
 
-  if (!session || !session.user || !session.user.id) {
+  if (!user || !user.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -148,7 +148,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const comment = await prisma.comments.findUnique({ where: { id } });
 
-    if (!comment || comment.userId !== session.user.id) {
+    if (!comment || comment.userId !== user.id) { // Use user.id
       return NextResponse.json(
         { message: 'User not authorized to delete this comment' },
         { status: 403 }

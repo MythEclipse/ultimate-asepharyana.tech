@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
-import { Session } from 'next-auth';
+import { usePathname } from 'next/navigation'; // Keep usePathname for navigation links
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
@@ -26,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -42,11 +41,14 @@ const Logo = () => (
   </Link>
 );
 
-const UserNav = ({ session }: { session: Session | null }) => {
-  const pathname = usePathname();
+const UserNav = () => {
+  const { user, logout } = useAuth(); // Use useAuth hook
+  const pathname = usePathname(); // Keep pathname for loginUrl
+
+  // Re-evaluate loginUrl if it's based on pathname and session state
   const loginUrl = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
 
-  if (!session) {
+  if (!user) {
     return (
       <Button asChild>
         <Link href={loginUrl}>
@@ -63,12 +65,13 @@ const UserNav = ({ session }: { session: Session | null }) => {
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button variant='ghost' className='relative h-10 w-10 rounded-full'>
             <Avatar className='h-10 w-10 border-2 border-transparent group-hover:border-primary'>
+              {/* Assuming user object has image and name properties */}
               <AvatarImage
-                src={session.user?.image || ''}
-                alt={session.user?.name || 'User'}
+                src={user.image || ''} // Adjust based on your user object structure
+                alt={user.email || 'User'} // Adjust based on your user object structure
               />
               <AvatarFallback>
-                {session.user?.name?.charAt(0).toUpperCase()}
+                {user.email?.charAt(0).toUpperCase()} {/* Adjust based on your user object structure */}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -78,10 +81,10 @@ const UserNav = ({ session }: { session: Session | null }) => {
         <DropdownMenuLabel className='font-normal'>
           <div className='flex flex-col space-y-1'>
             <p className='text-sm font-medium leading-none'>
-              {session.user?.name}
+              {user.email} {/* Adjust based on your user object structure */}
             </p>
             <p className='text-xs leading-none text-muted-foreground'>
-              {session.user?.email}
+              {user.email} {/* Adjust based on your user object structure */}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -100,7 +103,7 @@ const UserNav = ({ session }: { session: Session | null }) => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={() => logout()} // Call logout from useAuth hook
           className='text-destructive focus:text-destructive cursor-pointer'
         >
           <LogOut className='mr-2 h-4 w-4' />
@@ -112,7 +115,7 @@ const UserNav = ({ session }: { session: Session | null }) => {
 };
 
 const DesktopNav = () => {
-  const pathname = usePathname();
+  const pathname = usePathname(); // Keep pathname for active link styling
 
   return (
     <nav className='hidden md:flex justify-center'>
@@ -143,9 +146,13 @@ const DesktopNav = () => {
   );
 };
 
-const MobileNav = ({ session }: { session: Session | null }) => {
+const MobileNav = () => { // Removed session prop, and now user variable
+
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => setIsOpen(!isOpen);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { user } = useAuth();
 
   const menuVariants = {
     hidden: { y: '-100%', opacity: 0.8 },
@@ -230,7 +237,7 @@ const MobileNav = ({ session }: { session: Session | null }) => {
                   ))}
                 </motion.ul>
                 <div className='mt-8 pt-6 border-t flex justify-center'>
-                  <UserNav session={session} />
+                  <UserNav /> {/* Removed session prop */}
                 </div>
               </div>
             </motion.div>
@@ -242,8 +249,6 @@ const MobileNav = ({ session }: { session: Session | null }) => {
 };
 
 export default function Navbar() {
-  const { data: session } = useSession();
-
   return (
     <header className='sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm'>
       <div className='flex h-16 items-center justify-between px-4 md:px-6 w-full'>
@@ -255,9 +260,9 @@ export default function Navbar() {
         </div>
         <div className='flex justify-end'>
           <div className='hidden md:block'>
-            <UserNav session={session} />
+            <UserNav /> {/* Removed session prop */}
           </div>
-          <MobileNav session={session} />
+          <MobileNav /> {/* Removed session prop */}
         </div>
       </div>
     </header>

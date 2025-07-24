@@ -5,15 +5,25 @@ import React, { useState } from 'react';
 import PostCard from '@/components/sosmed/PostCard';
 import Card from '@/components/card/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
-import { Comments, Likes, Posts, User } from '@asepharyana/database';
-import { useSession } from 'next-auth/react';
+import { Comments, Likes, Posts } from '@asepharyana/database'; 
+import { useAuth } from '@/hooks/AuthContext'; 
 import useSWR, { mutate } from 'swr';
 import ButtonA from '@/components/button/NormalButton';
 import { UploadCloud, Loader2, Lock } from 'lucide-react';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+// Define a client-safe User type with explicit properties, omitting 'password'
+interface ClientUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  emailVerified: Date | null;
+  role: string;
+}
+
 export default function PostPage() {
-  const { data: session } = useSession();
+  const { user } = useAuth(); 
   const { data: postsData } = useSWR(`/api/sosmed/posts`, fetcher, {
     refreshInterval: 1000,
     dedupingInterval: 1000,
@@ -32,6 +42,10 @@ export default function PostPage() {
 
   const handlePostSubmit = async () => {
     if (!content.trim() && !imageUrl) return;
+    if (!user) { 
+      console.error('User not authenticated to create post.');
+      return;
+    }
 
     try {
       await fetch(`/api/sosmed/posts`, {
@@ -73,6 +87,10 @@ export default function PostPage() {
   };
 
   const handleLike = async (postId: string) => {
+    if (!user) { 
+      console.error('User not authenticated to like post.');
+      return;
+    }
     try {
       await fetch(`/api/sosmed/likes`, {
         method: 'POST',
@@ -86,6 +104,10 @@ export default function PostPage() {
   };
 
   const handleUnlike = async (postId: string) => {
+    if (!user) { 
+      console.error('User not authenticated to unlike post.');
+      return;
+    }
     try {
       await fetch(`/api/sosmed/likes`, {
         method: 'DELETE',
@@ -100,6 +122,10 @@ export default function PostPage() {
 
   const handleAddComment = async (postId: string) => {
     if (!newComments[postId]?.trim()) return;
+    if (!user) { 
+      console.error('User not authenticated to add comment.');
+      return;
+    }
 
     try {
       await fetch(`/api/sosmed/comments`, {
@@ -115,6 +141,10 @@ export default function PostPage() {
   };
 
   const handleEditPost = async (postId: string, content: string) => {
+    if (!user) { 
+      console.error('User not authenticated to edit post.');
+      return;
+    }
     try {
       await fetch(`/api/sosmed/posts`, {
         method: 'PUT',
@@ -128,6 +158,10 @@ export default function PostPage() {
   };
 
   const handleDeletePost = async (postId: string) => {
+    if (!user) { 
+      console.error('User not authenticated to delete post.');
+      return;
+    }
     try {
       await fetch(`/api/sosmed/posts`, {
         method: 'DELETE',
@@ -141,6 +175,10 @@ export default function PostPage() {
   };
 
   const handleEditComment = async (commentId: string, content: string) => {
+    if (!user) { 
+      console.error('User not authenticated to edit comment.');
+      return;
+    }
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'PUT',
@@ -148,12 +186,17 @@ export default function PostPage() {
         body: JSON.stringify({ id: commentId, content }),
       });
       mutate(`/api/sosmed/posts`);
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error editing comment:', error);
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    if (!user) { 
+      console.error('User not authenticated to delete comment.');
+      return;
+    }
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'DELETE',
@@ -173,14 +216,14 @@ export default function PostPage() {
     <div className='container mx-auto py-8 px-4 max-w-4xl'>
       {/* Header Section */}
       <div className='mb-12 text-center space-y-2'>
-        <h1 className='text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent'>
+        <h1 className='text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
           Community Hub
         </h1>
         <div className='h-1 w-24 mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full' />
       </div>
 
       {/* Create Post Section */}
-      {session ? (
+      {user ? (
         <div className='mb-10 group'>
           <div className='relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl'>
             <Card
@@ -252,9 +295,9 @@ export default function PostPage() {
         {postsData?.posts?.map(
           (
             post: Posts & {
-              user?: User;
+              user?: ClientUser; 
               likes?: Likes[];
-              comments?: (Comments & { user?: User })[];
+              comments?: (Comments & { user?: ClientUser })[];
             }
           ) => (
             <PostCard
@@ -262,28 +305,28 @@ export default function PostPage() {
               post={{
                 ...post,
                 user: post.user || {
-                  name: null,
                   id: '',
+                  name: null,
                   email: null,
-                  role: '',
                   image: null,
                   emailVerified: null,
+                  role: '',
                 },
                 likes: post.likes || [],
                 comments:
-                  post.comments?.map((comment: Comments & { user?: User }) => ({
+                  post.comments?.map((comment: Comments & { user?: ClientUser }) => ({
                     ...comment,
                     user: comment.user || {
-                      name: null,
                       id: '',
+                      name: null,
                       email: null,
-                      role: '',
                       image: null,
                       emailVerified: null,
+                      role: '',
                     },
                   })) || [],
               }}
-              currentUserId={session?.user?.id ?? ''}
+              // Removed currentUserId prop passing
               handleLike={handleLike}
               handleUnlike={handleUnlike}
               handleAddComment={handleAddComment}

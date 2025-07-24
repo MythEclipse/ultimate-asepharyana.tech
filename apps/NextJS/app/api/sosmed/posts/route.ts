@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@asepharyana/database';
-import { auth } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/lib/authUtils'; // Import getAuthenticatedUser
 
 // Initialize Prisma Client
 
 export async function POST(request: Request) {
   try {
-    // Get session data
-    const session = await auth();
-    const userId = session?.user?.id;
+    // Get authenticated user
+    const user = await getAuthenticatedUser();
+    const userId = user?.id;
 
     // Parse the JSON request body
     const { content, imageUrl } = await request.json();
@@ -137,10 +137,11 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    // Get session data
-    const session = await auth();
-    const userId = session?.user?.id;
-    if (!session || !userId) {
+    // Get authenticated user
+    const user = await getAuthenticatedUser();
+    const userId = user?.id;
+
+    if (!user || !userId) {
       return NextResponse.json(
         { message: 'User not authenticated' },
         { status: 401 }
@@ -200,12 +201,12 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    // Get session data
-    const session = await auth();
-    const userId = session?.user?.id;
+    // Get authenticated user
+    const user = await getAuthenticatedUser();
+    const userId = user?.id;
 
     // Validate authentication
-    if (!session || !userId) {
+    if (!user || !userId) {
       return NextResponse.json(
         { message: 'User not authenticated' },
         { status: 401 }

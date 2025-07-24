@@ -1,14 +1,15 @@
-'use server';
-import { signOut } from '@/lib/auth';
+'use client';
 import React from 'react';
-export default async function SignOutComponent() {
+import { useAuth } from '@/hooks/AuthContext';
+
+export default function SignOutComponent() {
+  const { logout } = useAuth();
+  
+  const handleSignOut = async () => {
+    await logout();
+  };
+
   return (
-    <form
-      action={async () => {
-        await signOut();
-      }}
-    >
-      <button type='submit'>signOut with Google</button>
-    </form>
+    <button onClick={handleSignOut} type='button'>Sign Out</button>
   );
 }

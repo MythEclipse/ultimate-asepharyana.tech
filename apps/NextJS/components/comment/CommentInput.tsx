@@ -1,25 +1,31 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import React, { useState } from 'react';
+import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
 
 export default function CommentPage() {
   const { push } = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { data: session } = useSession();
+  const { user } = useAuth(); // Use useAuth hook
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
+    if (!user) { // Check if user is authenticated
+      setError('You must be logged in to comment.');
+      setIsLoading(false);
+      return;
+    }
+
     const res = await fetch('/api/comment', {
       method: 'POST',
       body: JSON.stringify({
         content: (e.target as HTMLFormElement).content.value,
-        email: session?.user?.email ?? 'Guest',
+        // The email is not directly sent from client anymore, but derived from JWT on server
       }),
     });
 

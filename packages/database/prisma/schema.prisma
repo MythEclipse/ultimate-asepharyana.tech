@@ -47,6 +47,7 @@ model User {
   emailVerified    DateTime?     @map("email_verified")
   role             String        @default("user")
   image            String?
+  password         String?       @db.VarChar(255) // Added password field
   authoredComments Comments[]    @relation("AuthoredComments")
   comments         Comments[]    @relation("UserComments")
   likes            Likes[]

@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@asepharyana/database';
+import { getAuthenticatedUser } from '@/lib/authUtils'; // Import getAuthenticatedUser
 
-import { auth } from '@/lib/auth';
+const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const user = await getAuthenticatedUser(); // Get authenticated user
 
-  if (!session || !session.user) {
+  if (!user || !user.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const { postId } = await req.json();
-const prisma = new PrismaClient();
 
   try {
     // Check if the user has already liked the post
     const existingLike = await prisma.likes.findUnique({
       where: {
         userId_postId: {
-          userId: session.user.id!,
+          userId: user.id, // Use user.id
           postId,
         },
       },
@@ -32,7 +32,7 @@ const prisma = new PrismaClient();
     const like = await prisma.likes.create({
       data: {
         postId,
-        userId: session.user.id!,
+        userId: user.id, // Use user.id
       },
     });
     return NextResponse.json({ like }, { status: 201 });
@@ -45,21 +45,20 @@ const prisma = new PrismaClient();
   }
 }
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
+  const user = await getAuthenticatedUser(); // Get authenticated user
 
-  if (!session || !session.user) {
+  if (!user || !user.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const { postId } = await req.json();
-const prisma = new PrismaClient();
 
   try {
     // Check if the like exists and belongs to the user
     const existingLike = await prisma.likes.findUnique({
       where: {
         userId_postId: {
-          userId: session.user.id!,
+          userId: user.id, // Use user.id
           postId,
         },
       },
@@ -76,7 +75,7 @@ const prisma = new PrismaClient();
     await prisma.likes.delete({
       where: {
         userId_postId: {
-          userId: session.user.id!,
+          userId: user.id, // Use user.id
           postId,
         },
       },

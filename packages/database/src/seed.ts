@@ -1,6 +1,6 @@
 // import { prisma } from "./client";
 
-// // import type { User } from "@prisma/client";
+
 
 // // const DEFAULT_USERS = [
 // //   {

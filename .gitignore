@@ -61,9 +61,10 @@ yarn-error.log*
 /.env.production.local
 .env
 /.env
-!packages/database/.env
-!apps/**/.env
-!apps\**\src\**\chat.ts
+**/.env
+# Removed !packages/database/.env to ignore all .env files
+# Removed !apps/**/.env to ignore app-specific .env files
+!apps/**/src/**/chat.ts
 # vercel
 .vercel
 /.vercel

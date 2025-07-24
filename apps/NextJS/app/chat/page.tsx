@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
 import Card from '@/components/card/ThemedCard';
@@ -53,7 +53,7 @@ const normalizeChatMessage = (
 };
 
 export default function ChatClient() {
-  const { data: session } = useSession();
+  const { user } = useAuth(); // Use useAuth hook
   const [messages, setMessages] = useState<NormalizedChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -66,13 +66,20 @@ export default function ChatClient() {
 
   const ws = useRef<ReconnectingWebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const sessionRef = useRef(session);
+  const userRef = useRef(user); // Use userRef for WebSocket context
 
   useEffect(() => {
-    sessionRef.current = session;
-  }, [session]);
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
+    // Only connect if user is authenticated
+    if (!userRef.current) {
+      setError('Please log in to join the chat.');
+      setStatus((prev) => ({ ...prev, connected: false }));
+      return;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host =
       process.env.NODE_ENV === 'development'
@@ -93,7 +100,7 @@ export default function ChatClient() {
         if (wsMessage.type === 'history') {
           handleHistory(wsMessage);
         } else if (wsMessage.type === 'error') {
-          if (wsMessage.user === sessionRef.current?.user?.name) {
+          if (wsMessage.user === userRef.current?.email) { // Use email for comparison
             setError(wsMessage.message || 'An error occurred');
           }
         } else if (wsMessage.type === 'new_message') {
@@ -118,13 +125,13 @@ export default function ChatClient() {
     ws.current.onclose = () =>
       setStatus((prev) => ({ ...prev, connected: false }));
     ws.current.onerror = () => {
-      if (sessionRef.current?.user?.name) setError('Connection error');
+      if (userRef.current?.email) setError('Connection error');
     };
 
     return () => {
       ws.current?.close();
     };
-  }, []);
+  }, [userRef.current?.email]); // Depend on user email for connection
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -132,13 +139,17 @@ export default function ChatClient() {
 
   const sendMessage = useCallback(async () => {
     if ((!input.trim() && !file) || status.sending) return;
+    if (!user) { // Ensure user is authenticated before sending
+      setError('You must be logged in to send messages.');
+      return;
+    }
 
     const newMessage: RawChatMessage = {
       id: crypto.randomUUID(), // Generate client-side UUID
-      user_id: session?.user?.name || 'Anonymous',
+      user_id: user.id || 'Anonymous', // Use user.id
       text: input,
-      email: session?.user?.email || '',
-      image_profile: session?.user?.image || '/profile-circle-svgrepo-com.svg',
+      email: user.email || '', // Use user.email
+      image_profile: user.image || '/profile-circle-svgrepo-com.svg', // Use user.image
       image_message: '',
       role: 'user',
       timestamp: new Date().toISOString(), // ISO 8601 format
@@ -165,11 +176,11 @@ export default function ChatClient() {
       ws.current?.send(JSON.stringify(newMessage));
       setInput('');
     } catch {
-      if (sessionRef.current?.user?.name) setError('Failed to send message');
+      if (userRef.current?.email) setError('Failed to send message');
     } finally {
       setStatus((prev) => ({ ...prev, sending: false }));
     }
-  }, [input, file, status.sending, session]);
+  }, [input, file, status.sending, user]); // Depend on user for message sending
 
   return (
     <div className='mx-auto p-4 max-w-3xl h-screen flex flex-col'>
@@ -206,7 +217,7 @@ export default function ChatClient() {
               <MessageBubble
                 key={message.id}
                 message={message}
-                isOwn={message.user === session?.user?.name}
+                isOwn={message.email === user?.email} // Use email for comparison
               />
             ))}
             <div ref={endRef} />
@@ -235,7 +246,7 @@ export default function ChatClient() {
                   placeholder='Type your message...'
                   className='min-h-[100px] md:min-h-[60px] pr-16 resize-none'
                   rows={1}
-                  disabled={!status.connected}
+                  disabled={!status.connected || !user} // Disable if not connected or not authenticated
                 />
                 <div className='absolute right-2 bottom-2 flex items-center gap-1.5'>
                   <input
@@ -243,7 +254,7 @@ export default function ChatClient() {
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                     className='hidden'
                     id='file-input'
-                    disabled={!status.connected || status.uploading}
+                    disabled={!status.connected || status.uploading || !user} // Disable if not authenticated
                   />
                   <label
                     htmlFor='file-input'
@@ -265,7 +276,7 @@ export default function ChatClient() {
               <Button
                 onClick={sendMessage}
                 disabled={
-                  !status.connected || status.sending || status.uploading
+                  !status.connected || status.sending || status.uploading || !user // Disable if not authenticated
                 }
                 className='h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg'
               >

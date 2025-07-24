@@ -1,5 +1,12 @@
 // src/lib/bookmarks.ts
-import { Bookmark } from '@/app/(frontend)/dashboard/bookmark';
+
+// Define the Bookmark interface directly here to resolve import issues
+export interface Bookmark {
+  id: string;
+  title: string;
+  url: string;
+  // Add any other properties that a bookmark object might have
+}
 
 export function getBookmarks(type: 'anime' | 'komik'): Bookmark[] {
   if (typeof window === 'undefined') return [];
