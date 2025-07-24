@@ -79,6 +79,7 @@ jobs:
             export PATH=$PATH:/root/.local/share/pnpm
             export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
             export PATH=$PATH:/home/asephs/.bun/bin/bun
+            source .bashrc
             cd ${{ secrets.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
             bun install --filter=@asepharyana/web # Install dependencies only for Next.js
