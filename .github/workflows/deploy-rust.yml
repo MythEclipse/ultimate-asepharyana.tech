@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'apps/RustExpress/**'
-      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changes
+      - "apps/RustExpress/**"
+      - ".github/workflows/deploy-rust.yml" # Trigger if this workflow file changes
 
 jobs:
   build-and-deploy-rust:
@@ -32,6 +32,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
+      - name: Prepare .env file for production
+        env:
+          ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
+        run: |
+          if [ -n "$ENV_FILE_PRODUCTION" ]; then
+            echo "$ENV_FILE_PRODUCTION" > .env
+          fi
 
       - name: Build RustExpress
         run: cargo build --release --manifest-path apps/RustExpress/Cargo.toml
