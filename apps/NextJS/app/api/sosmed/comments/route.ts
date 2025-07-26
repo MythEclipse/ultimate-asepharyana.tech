@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@asepharyana/database';
+import { prisma } from '@/lib/prisma/service';
 import { getAuthenticatedUser } from '@/lib/authUtils'; // Import getAuthenticatedUser
 
 export async function POST(req: NextRequest) {

@@ -33,7 +33,7 @@
         "./*"
       ],
       "@asepharyana/database": [
-        "../../packages/database"
+        "../../packages/database/dist"
       ]
     }
   },

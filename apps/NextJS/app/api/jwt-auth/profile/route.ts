@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma/service';
 import { jwtVerify } from 'jose';
 
 export async function GET(request: Request) {
