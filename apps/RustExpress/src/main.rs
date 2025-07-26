@@ -1,3 +1,13 @@
+//! # Logging Setup
+//!
+//! This application uses [`tracing`](https://docs.rs/tracing) for structured logging.
+//! The log level is controlled by the `RUST_LOG` environment variable (e.g., `info`, `debug`, `warn`, `error`).
+//! Example usage in `.env`:
+//! ```env
+//! RUST_LOG=info
+//! ```
+//! Logging is initialized with `tracing_subscriber::EnvFilter` for environment-based configuration.
+//! See the code below for details.
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::config::AppConfig;
@@ -13,22 +23,21 @@ mod pdf_service;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Read the .env file to get the path to the main environment file
-    if let Ok(env_content) = std::fs::read_to_string(".env") {
-        let env_path = env_content.trim();
-        if let Err(e) = dotenvy::from_filename(env_path) {
-            tracing::warn!("Could not load {}: {}", env_path, e);
-        }
-    } else {
-        // Fallback to local .env if available
-        dotenvy::dotenv().ok();
+    tracing::info!("RustExpress starting up...");
+
+    // Always load .env from current directory
+    match dotenvy::dotenv() {
+        Ok(path) => tracing::info!("Loaded environment from {:?}", path),
+        Err(e) => tracing::warn!("Could not load .env file: {}", e),
     }
 
     // Set default values for Rust-specific configs if not present
     if std::env::var("PORT").is_err() {
+        tracing::info!("PORT not set, using default 4091");
         std::env::set_var("PORT", "4091");
     }
     if std::env::var("RUST_LOG").is_err() {
+        tracing::info!("RUST_LOG not set, using default 'info'");
         std::env::set_var("RUST_LOG", "info");
     }
     // Don't override DATABASE_URL since it should come from root .env
@@ -40,26 +49,36 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    tracing::info!("Initializing configuration...");
     let config = AppConfig::from_env()?;
 
+    tracing::info!("Connecting to database...");
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
         .connect(&config.database_url)
         .await?;
+    tracing::info!("Database connection established.");
 
+    tracing::info!("Running database migrations...");
     sqlx::migrate!().run(&pool).await?;
+    tracing::info!("Database migrations complete.");
 
+    tracing::info!("Creating chat state...");
     let chat_state = Arc::new(ChatState {
         pool: Arc::new(pool),
         clients: Default::default(),
     });
 
+    tracing::info!("Building application routes...");
     let app = create_routes().with_state(chat_state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
+    tracing::info!("Binding server to address: {}", addr);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
-    tracing::info!("listening on {}", listener.local_addr()?);
+    tracing::info!("Server listening on {}", listener.local_addr()?);
+
     axum::serve(listener, app).await?;
+    tracing::info!("RustExpress shutting down.");
 
     Ok(())
 }

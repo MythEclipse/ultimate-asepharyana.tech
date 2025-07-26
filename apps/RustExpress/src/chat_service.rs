@@ -5,7 +5,7 @@ use anyhow::Result;
 pub async fn save_message(pool: &MySqlPool, message: &ChatMessage) -> Result<ChatMessage> {
     // MySQL doesn't support RETURNING, so we do INSERT then SELECT
     sqlx::query(
-        "INSERT INTO chat_messages (id, user_id, text, email, image_profile, image_message, role, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO ChatMessage (id, userId, text, email, imageProfile, imageMessage, role, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&message.id)
     .bind(&message.user_id)
@@ -21,7 +21,7 @@ pub async fn save_message(pool: &MySqlPool, message: &ChatMessage) -> Result<Cha
 
     // Now fetch the inserted message
     sqlx::query_as::<_, ChatMessage>(
-        "SELECT id, user_id, text, email, image_profile, image_message, role, timestamp FROM chat_messages WHERE id = ?"
+        "SELECT id, userId, text, email, imageProfile, imageMessage, role, timestamp FROM ChatMessage WHERE id = ?"
     )
     .bind(&message.id)
     .fetch_one(pool)
@@ -31,7 +31,7 @@ pub async fn save_message(pool: &MySqlPool, message: &ChatMessage) -> Result<Cha
 
 pub async fn load_messages(pool: &MySqlPool, limit: u32) -> Result<Vec<ChatMessage>> {
     sqlx::query_as::<_, ChatMessage>(
-        "SELECT id, user_id, text, email, image_profile, image_message, role, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT ?"
+        "SELECT id, userId, text, email, imageProfile, imageMessage, role, timestamp FROM ChatMessage ORDER BY timestamp DESC LIMIT ?"
     )
     .bind(limit)
     .fetch_all(pool)
@@ -65,11 +65,11 @@ mod tests {
     fn create_test_message() -> ChatMessage {
         ChatMessage {
             id: Uuid::new_v4().to_string(),
-            user_id: "test_user_123".to_string(),
+            userId: "test_user_123".to_string(),
             text: "This is a test message".to_string(),
             email: Some("test@example.com".to_string()),
-            image_profile: Some("https://example.com/avatar.jpg".to_string()),
-            image_message: None,
+            imageProfile: Some("https://example.com/avatar.jpg".to_string()),
+            imageMessage: None,
             role: "user".to_string(),
             timestamp: Utc::now().to_rfc3339(),
         }
@@ -80,13 +80,13 @@ mod tests {
         // Create test table
         sqlx::query(
             r#"
-            CREATE TABLE IF NOT EXISTS chat_messages (
+            CREATE TABLE IF NOT EXISTS ChatMessage (
                 id VARCHAR(36) PRIMARY KEY NOT NULL,
-                user_id VARCHAR(255) NOT NULL,
+                userId VARCHAR(255) NOT NULL,
                 text TEXT NOT NULL,
                 email VARCHAR(255),
-                image_profile TEXT,
-                image_message TEXT,
+                imageProfile TEXT,
+                imageMessage TEXT,
                 role VARCHAR(50) NOT NULL,
                 timestamp VARCHAR(50) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -102,7 +102,7 @@ mod tests {
 
     // Helper function to cleanup test database
     async fn cleanup_test_db(pool: &MySqlPool) -> Result<()> {
-        sqlx::query("DELETE FROM chat_messages")
+        sqlx::query("DELETE FROM ChatMessage")
             .execute(pool)
             .await?;
         Ok(())

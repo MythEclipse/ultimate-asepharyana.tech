@@ -14,7 +14,6 @@ use serde_json::json;
 use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::mpsc;
 
-// Define a shared state struct
 pub struct ChatState {
     pub pool: Arc<MySqlPool>,
     pub clients: Mutex<Vec<mpsc::UnboundedSender<Message>>>,
@@ -31,7 +30,6 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
 
 // Root handler - compatible with Express.js version
 async fn root_handler() -> impl IntoResponse {
-    // Redirect to the same URL as Express version for compatibility
     Redirect::permanent("https://asepharyana.tech/chat")
 }
 
@@ -112,8 +110,13 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
                         if chat_message.id.is_empty() {
                             chat_message.id = uuid::Uuid::new_v4().to_string();
                         }
-                        if chat_message.timestamp.is_empty() {
-                            chat_message.timestamp = chrono::Utc::now().to_rfc3339();
+                        // Remove is_empty check for timestamp; always set to now if needed
+                        // if chat_message.timestamp.is_empty() {
+                        //     chat_message.timestamp = chrono::Utc::now().to_rfc3339();
+                        // }
+                        // Instead, set to now if timestamp is the default (1970-01-01)
+                        if chat_message.timestamp == chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap() {
+                            chat_message.timestamp = chrono::Utc::now().naive_utc();
                         }
 
                         match chat_service::save_message(&recv_task_state.pool, &chat_message).await {

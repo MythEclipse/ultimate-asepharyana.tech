@@ -44,6 +44,9 @@ jobs:
             exit 1
           fi
 
+      - name: Copy .env to all subprojects/packages
+        run: bash 2updateenv.sh
+
       - name: SSH into VPS and Prepare RustExpress Directory
         uses: appleboy/ssh-action@master
         with:

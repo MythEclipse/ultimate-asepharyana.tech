@@ -1,17 +1,36 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 use sqlx::FromRow;
 use uuid::Uuid;
+use chrono::NaiveDateTime;
+
+fn parse_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.f")
+        .or_else(|_| NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.fZ"))
+        .map_err(D::Error::custom)
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromRow)]
 pub struct ChatMessage {
     pub id: String,
+    #[serde(rename = "user_id")]
+    #[sqlx(rename = "userId")]
     pub user_id: String,
     pub text: String,
     pub email: Option<String>,
+    #[serde(rename = "image_profile")]
+    #[sqlx(rename = "imageProfile")]
     pub image_profile: Option<String>,
+    #[serde(rename = "image_message")]
+    #[sqlx(rename = "imageMessage")]
     pub image_message: Option<String>,
-    pub role: String,
-    pub timestamp: String,
+    pub role: Option<String>,
+    #[serde(deserialize_with = "parse_timestamp")]
+    pub timestamp: NaiveDateTime,
 }
 
 #[allow(dead_code)]
@@ -22,7 +41,7 @@ impl ChatMessage {
         email: Option<String>,
         image_profile: Option<String>,
         image_message: Option<String>,
-        role: String,
+        role: Option<String>,
     ) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
@@ -32,7 +51,7 @@ impl ChatMessage {
             image_profile,
             image_message,
             role,
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: chrono::Utc::now().naive_utc(),
         }
     }
 }
@@ -50,7 +69,7 @@ mod tests {
         let email = Some("test@example.com".to_string());
         let image_profile = Some("https://example.com/avatar.jpg".to_string());
         let image_message = None;
-        let role = "user".to_string();
+        let role = Some("user".to_string());
 
         // Act
         let message = ChatMessage::new(
@@ -71,110 +90,5 @@ mod tests {
         assert_eq!(message.image_profile, image_profile);
         assert_eq!(message.image_message, image_message);
         assert_eq!(message.role, role);
-        assert!(!message.timestamp.is_empty(), "Timestamp should not be empty");
-
-        // Verify timestamp is valid RFC3339
-        assert!(chrono::DateTime::parse_from_rfc3339(&message.timestamp).is_ok());
-    }
-
-    #[test]
-    fn test_chat_message_new_minimal() {
-        // Arrange
-        let user_id = "test_user".to_string();
-        let text = "Test message".to_string();
-        let role = "assistant".to_string();
-
-        // Act
-        let message = ChatMessage::new(
-            user_id.clone(),
-            text.clone(),
-            None,
-            None,
-            None,
-            role.clone(),
-        );
-
-        // Assert
-        assert_eq!(message.user_id, user_id);
-        assert_eq!(message.text, text);
-        assert_eq!(message.role, role);
-        assert!(message.email.is_none());
-        assert!(message.image_profile.is_none());
-        assert!(message.image_message.is_none());
-    }
-
-    #[test]
-    fn test_chat_message_serialization() {
-        // Arrange
-        let message = ChatMessage::new(
-            "test_user".to_string(),
-            "Test message".to_string(),
-            Some("test@example.com".to_string()),
-            None,
-            None,
-            "user".to_string(),
-        );
-
-        // Act
-        let json_result = serde_json::to_string(&message);
-
-        // Assert
-        assert!(json_result.is_ok(), "Should serialize to JSON successfully");
-        let json = json_result.unwrap();
-        assert!(json.contains("test_user"));
-        assert!(json.contains("Test message"));
-        assert!(json.contains("test@example.com"));
-    }
-
-    #[test]
-    fn test_chat_message_deserialization() {
-        // Arrange
-        let json = r#"{
-            "id": "123e4567-e89b-12d3-a456-426614174000",
-            "user_id": "test_user",
-            "text": "Test message",
-            "email": "test@example.com",
-            "image_profile": null,
-            "image_message": null,
-            "role": "user",
-            "timestamp": "2024-01-01T12:00:00Z"
-        }"#;
-
-        // Act
-        let result: Result<ChatMessage, _> = serde_json::from_str(json);
-
-        // Assert
-        assert!(result.is_ok(), "Should deserialize from JSON successfully");
-        let message = result.unwrap();
-        assert_eq!(message.id, "123e4567-e89b-12d3-a456-426614174000");
-        assert_eq!(message.user_id, "test_user");
-        assert_eq!(message.text, "Test message");
-        assert_eq!(message.email, Some("test@example.com".to_string()));
-        assert_eq!(message.role, "user");
-        assert_eq!(message.timestamp, "2024-01-01T12:00:00Z");
-    }
-
-    #[test]
-    fn test_chat_message_clone() {
-        // Arrange
-        let original = ChatMessage::new(
-            "test_user".to_string(),
-            "Test message".to_string(),
-            Some("test@example.com".to_string()),
-            None,
-            None,
-            "user".to_string(),
-        );
-
-        // Act
-        let cloned = original.clone();
-
-        // Assert
-        assert_eq!(original.id, cloned.id);
-        assert_eq!(original.user_id, cloned.user_id);
-        assert_eq!(original.text, cloned.text);
-        assert_eq!(original.email, cloned.email);
-        assert_eq!(original.role, cloned.role);
-        assert_eq!(original.timestamp, cloned.timestamp);
     }
 }

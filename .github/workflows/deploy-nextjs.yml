@@ -30,6 +30,7 @@ jobs:
           if [ -n "$ENV_FILE_PRODUCTION" ]; then
             echo "$ENV_FILE_PRODUCTION" > .env
           fi
+
       - name: Install Dependencies
         run: bun install
 
@@ -49,6 +50,9 @@ jobs:
             echo "ERROR: Next.js build output is empty. Deployment aborted."
             exit 1
           fi
+
+      - name: Copy .env to all subprojects/packages
+        run: bash 2updateenv.sh
 
       - name: SSH into VPS and Prepare Next.js Directory
         uses: appleboy/ssh-action@master

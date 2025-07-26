@@ -3,61 +3,62 @@ use std::env;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppConfig {
-    pub PORT: u16,
-    pub DATABASE_URL: String,
-    pub NODE_ENV: String,
-    pub JWT_SECRET: String,
-    pub NEXTAUTH_SECRET: String,
-    pub NEXTAUTH_URL: String,
-    pub SECRET: String,
+    pub port: u16,
+    pub database_url: String,
+    pub env: String,
 }
 
 impl AppConfig {
     pub fn from_env() -> Result<Self, envy::Error> {
+        // Always load .env when loading config
+        match dotenvy::dotenv() {
+            Ok(path) => tracing::info!("Loaded environment from {:?}", path),
+            Err(e) => tracing::warn!("Could not load .env file: {}", e),
+        }
+
+        tracing::info!("Loading configuration from environment variables...");
         // Try to load from envy first, with fallbacks
-        let mut config: AppConfig = envy::from_env().unwrap_or_else(|_| AppConfig {
-            PORT: 4091,
-            DATABASE_URL: "mysql://root:password@localhost:3306/rustexpress".to_string(),
-            NODE_ENV: "development".to_string(),
-            JWT_SECRET: "changeme".to_string(),
-            NEXTAUTH_SECRET: "changeme".to_string(),
-            NEXTAUTH_URL: "http://localhost:3000".to_string(),
-            SECRET: "changeme".to_string(),
-        });
+        let mut config: AppConfig = match envy::from_env() {
+            Ok(cfg) => {
+                tracing::info!("Loaded config from environment: {:?}", cfg);
+                cfg
+            }
+            Err(e) => {
+                tracing::warn!("Failed to load config from environment, using defaults: {}", e);
+                AppConfig {
+                    port: 4091,
+                    database_url: "mysql://root:password@localhost:3306/rustexpress".to_string(),
+                    env: "development".to_string(),
+                }
+            }
+        };
 
         // Override with direct environment variable access for compatibility
         if let Ok(port_str) = env::var("PORT") {
-            if let Ok(port) = port_str.parse::<u16>() {
-                config.PORT = port;
+            match port_str.parse::<u16>() {
+                Ok(port) => {
+                    tracing::info!("Overriding port from env: {}", port);
+                    config.port = port;
+                }
+                Err(e) => {
+                    tracing::error!("Failed to parse PORT env variable: {}", e);
+                }
             }
         }
 
         if let Ok(db_url) = env::var("DATABASE_URL") {
             if !db_url.is_empty() {
-                config.DATABASE_URL = db_url;
+                tracing::info!("Overriding database_url from env: {}", db_url);
+                config.database_url = db_url;
             }
         }
 
         if let Ok(node_env) = env::var("NODE_ENV") {
-            config.NODE_ENV = node_env;
+            tracing::info!("Overriding env from env: {}", node_env);
+            config.env = node_env;
         }
 
-        if let Ok(jwt_secret) = env::var("JWT_SECRET") {
-            config.JWT_SECRET = jwt_secret;
-        }
-
-        if let Ok(nextauth_secret) = env::var("NEXTAUTH_SECRET") {
-            config.NEXTAUTH_SECRET = nextauth_secret;
-        }
-
-        if let Ok(nextauth_url) = env::var("NEXTAUTH_URL") {
-            config.NEXTAUTH_URL = nextauth_url;
-        }
-
-        if let Ok(secret) = env::var("SECRET") {
-            config.SECRET = secret;
-        }
-
+        tracing::info!("Final configuration: {:?}", config);
         Ok(config)
     }
 }
