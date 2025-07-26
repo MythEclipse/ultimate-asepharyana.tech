@@ -2,9 +2,16 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from '@asepharyana/database';
 
-
+// Define User type locally to match API response
+export interface User {
+  id: string;
+  email: string;
+  fullname?: string;
+  role?: string;
+  image?: string;
+  [key: string]: unknown;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -33,14 +40,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('AuthContext verifyToken: token from localStorage', token);
       }
       if (token) {
-        const profileResponse = await fetch('/api/jwt-auth/profile', {
+        // Use new /api/jwt-auth/me endpoint for secure user info
+        const meResponse = await fetch('/api/jwt-auth/me', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        if (profileResponse.ok) {
-          const profile = await profileResponse.json();
-          setUser(profile.user);
+        if (meResponse.ok) {
+          const { user: userPayload } = await meResponse.json();
+          setUser(userPayload as User);
         } else {
           setUser(null);
         }
@@ -69,7 +77,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (data.token) localStorage.setItem('token', data.token);
         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
-        setUser(data.user);
+        // Use /api/jwt-auth/me for user info after login
+        const meResponse = await fetch('/api/jwt-auth/me', {
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        });
+        if (meResponse.ok) {
+          const { user: userPayload } = await meResponse.json();
+          setUser(userPayload as User);
+        } else {
+          setUser(null);
+        }
         router.push('/');
         return true;
       } else {
