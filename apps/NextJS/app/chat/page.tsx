@@ -53,7 +53,7 @@ const normalizeChatMessage = (
 };
 
 export default function ChatClient() {
-  const { user } = useAuth(); // Use useAuth hook
+  const { user, isLoading } = useAuth(); // Use isLoading from AuthContext
   const [messages, setMessages] = useState<NormalizedChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -73,6 +73,9 @@ export default function ChatClient() {
   }, [user]);
 
   useEffect(() => {
+    // Wait for loading to finish before checking user
+    if (isLoading) return;
+
     // Only connect if user is authenticated
     if (!userRef.current) {
       setError('Please log in to join the chat.');
@@ -100,7 +103,7 @@ export default function ChatClient() {
         if (wsMessage.type === 'history') {
           handleHistory(wsMessage);
         } else if (wsMessage.type === 'error') {
-          if (wsMessage.user === userRef.current?.email) { // Use email for comparison
+          if (wsMessage.user === userRef.current?.email) {
             setError(wsMessage.message || 'An error occurred');
           }
         } else if (wsMessage.type === 'new_message') {
@@ -131,7 +134,7 @@ export default function ChatClient() {
     return () => {
       ws.current?.close();
     };
-  }, [userRef.current?.email]); // Depend on user email for connection
+  }, [userRef.current?.email, isLoading]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -139,20 +142,20 @@ export default function ChatClient() {
 
   const sendMessage = useCallback(async () => {
     if ((!input.trim() && !file) || status.sending) return;
-    if (!user) { // Ensure user is authenticated before sending
+    if (!user) {
       setError('You must be logged in to send messages.');
       return;
     }
 
     const newMessage: RawChatMessage = {
-      id: crypto.randomUUID(), // Generate client-side UUID
-      user_id: user.id || 'Anonymous', // Use user.id
+      id: crypto.randomUUID(),
+      user_id: user.id || 'Anonymous',
       text: input,
-      email: user.email || '', // Use user.email
-      image_profile: user.image || '/profile-circle-svgrepo-com.svg', // Use user.image
+      email: user.email || '',
+      image_profile: user.image || '/profile-circle-svgrepo-com.svg',
       image_message: '',
       role: 'user',
-      timestamp: new Date().toISOString(), // ISO 8601 format
+      timestamp: new Date().toISOString(),
     };
 
     try {
@@ -180,7 +183,16 @@ export default function ChatClient() {
     } finally {
       setStatus((prev) => ({ ...prev, sending: false }));
     }
-  }, [input, file, status.sending, user]); // Depend on user for message sending
+  }, [input, file, status.sending, user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin mr-2" />
+        <span className="text-lg">Checking authentication...</span>
+      </div>
+    );
+  }
 
   return (
     <div className='mx-auto p-4 max-w-3xl h-screen flex flex-col'>
@@ -209,15 +221,13 @@ export default function ChatClient() {
         </div>
 
         {/* Chat Messages */}
-        <Card
-        // className="flex-1 flex flex-col overflow-hidden"
-        >
+        <Card>
           <div className='flex-1 overflow-y-auto p-4 space-y-4'>
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}
-                isOwn={message.email === user?.email} // Use email for comparison
+                isOwn={message.email === user?.email}
               />
             ))}
             <div ref={endRef} />
@@ -246,7 +256,7 @@ export default function ChatClient() {
                   placeholder='Type your message...'
                   className='min-h-[100px] md:min-h-[60px] pr-16 resize-none'
                   rows={1}
-                  disabled={!status.connected || !user} // Disable if not connected or not authenticated
+                  disabled={!status.connected || !user}
                 />
                 <div className='absolute right-2 bottom-2 flex items-center gap-1.5'>
                   <input
@@ -254,7 +264,7 @@ export default function ChatClient() {
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                     className='hidden'
                     id='file-input'
-                    disabled={!status.connected || status.uploading || !user} // Disable if not authenticated
+                    disabled={!status.connected || status.uploading || !user}
                   />
                   <label
                     htmlFor='file-input'
@@ -276,7 +286,7 @@ export default function ChatClient() {
               <Button
                 onClick={sendMessage}
                 disabled={
-                  !status.connected || status.sending || status.uploading || !user // Disable if not authenticated
+                  !status.connected || status.sending || status.uploading || !user
                 }
                 className='h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg'
               >
