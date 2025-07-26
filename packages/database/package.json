@@ -1,7 +1,6 @@
 {
   "name": "@asepharyana/database",
   "version": "0.1.0",
-  "type": "module",
   "exports": {
     ".": {
       "ts": "./src/client.ts",

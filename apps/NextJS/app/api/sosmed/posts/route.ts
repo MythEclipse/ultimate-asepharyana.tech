@@ -43,15 +43,14 @@ export async function POST(request: Request) {
       { message: 'Post created successfully!', post: newPost },
       { status: 201 }
     );
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error('Error creating post:', error);
+    // console.error('Error creating post:', error);
     return NextResponse.json(
       { message: 'Failed to create post' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 }
 
 /**
@@ -123,16 +122,15 @@ export async function GET() {
       )
     );
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
     return NextResponse.json({ posts: sanitizedPosts }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    // console.error('Error fetching posts:', error);
     return NextResponse.json(
       { message: 'Failed to fetch posts' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 }
 
 export async function PUT(request: Request) {
@@ -186,17 +184,16 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(
       { message: 'Post updated successfully!', post: updatedPost },
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error updating post:', error);
+    // console.error('Error updating post:', error);
     return NextResponse.json(
       { message: 'Failed to update post' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 }
 
 export async function DELETE(request: Request) {
@@ -242,16 +239,15 @@ export async function DELETE(request: Request) {
     await prisma.posts.delete({ where: { id } });
 
     return NextResponse.json(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
       { message: 'Post deleted successfully!' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting post:', error);
+    // console.error('Error deleting post:', error);
     return NextResponse.json(
       { message: 'Failed to delete post' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 }

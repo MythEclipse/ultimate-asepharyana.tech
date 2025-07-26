@@ -1,9 +1,9 @@
 'use client';
+import Link from 'next/link';
 import { FcGoogle } from 'react-icons/fc';
 import React, { Suspense, useState } from 'react';
 import { useAuth } from '@/hooks/AuthContext';
 
-// 
 
 function LoginButton() {
   const { login } = useAuth();
@@ -63,6 +63,11 @@ function LoginButton() {
         <FcGoogle className='text-2xl' />
         Sign in with Google (Placeholder)
       </button>
+      <div className="text-center mt-4">
+        <Link href="/register" className="text-blue-600 hover:underline">
+          Don&apos;t have an account? Register here.
+        </Link>
+      </div>
     </form>
   );
 }
@@ -81,3 +86,4 @@ export default function SignIn() {
     </div>
   );
 }
+

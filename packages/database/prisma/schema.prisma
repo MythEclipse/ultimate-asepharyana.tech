@@ -1,7 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  engineType    = "binary"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
-  output   = "../client"
+  output        = "../client"
 }
 
 datasource db {
@@ -41,18 +42,19 @@ model Session {
 }
 
 model User {
-  id               String        @id @default(cuid()) @db.VarChar(255)
+  id               String     @id @default(cuid()) @db.VarChar(255)
   name             String?
-  email            String?       @unique
-  emailVerified    DateTime?     @map("email_verified")
-  role             String        @default("user")
+  email            String?    @unique
+  emailVerified    DateTime?  @map("email_verified")
+  role             String     @default("user")
   image            String?
-  password         String?       @db.VarChar(255) // Added password field
-  authoredComments Comments[]    @relation("AuthoredComments")
-  comments         Comments[]    @relation("UserComments")
+  password         String?    @db.VarChar(255) // Added password field
+  refreshToken     String?    @unique @db.VarChar(255) // Added refresh token field
+  authoredComments Comments[] @relation("AuthoredComments")
+  comments         Comments[] @relation("UserComments")
   likes            Likes[]
-  authoredPosts    Posts[]       @relation("AuthoredPosts")
-  posts            Posts[]       @relation("UserPosts")
+  authoredPosts    Posts[]    @relation("AuthoredPosts")
+  posts            Posts[]    @relation("UserPosts")
   replies          Replies[]
   accounts         Account[]
   sessions         Session[]

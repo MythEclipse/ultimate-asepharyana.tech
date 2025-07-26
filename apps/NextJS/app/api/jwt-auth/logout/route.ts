@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma/service'; // Added prisma import, though not used in logout
+
 
 export async function POST() {
   try {

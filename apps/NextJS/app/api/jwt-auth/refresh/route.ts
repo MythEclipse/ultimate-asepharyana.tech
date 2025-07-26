@@ -1,40 +1,35 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import prisma from '@/lib/prisma';
 import * as jose from 'jose';
-import { verifyJwt } from '@/lib/authUtils'; // Import verifyJwt
-import { prisma } from '@/lib/prisma/service'; // Added prisma import, though not directly used in refresh logic here, but might be implicitly for types
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const oldToken = cookieStore.get('authToken')?.value;
+    const { refreshToken } = await request.json();
 
-    if (!oldToken) {
-      return NextResponse.json({ message: 'No token provided' }, { status: 401 });
+    if (!refreshToken) {
+      return NextResponse.json({ message: 'Refresh token is required' }, { status: 400 });
     }
 
-    const decodedToken = await verifyJwt(oldToken);
-
-    if (!decodedToken) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
-    // Create a new token with a refreshed expiration time
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET as string); // Changed to JWT_SECRET
-    const newToken = await new jose.SignJWT({ id: decodedToken.id, email: decodedToken.email })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('2h') // Refresh token expires in 2 hours
-      .sign(secret);
-
-    const response = NextResponse.json({ message: 'Token refreshed successfully' }, { status: 200 });
-    response.cookies.set('authToken', newToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use secure in production
-      maxAge: 60 * 60 * 2, // 2 hours
-      path: '/',
+    const user = await prisma.user.findUnique({
+      where: { refreshToken },
     });
 
-    return response;
+    if (!user) {
+      return NextResponse.json({ message: 'Invalid refresh token' }, { status: 401 });
+    }
+
+    // Generate a new access token
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET as string);
+    const newToken = await new jose.SignJWT({ id: user.id, email: user.email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('2h') // New token expires in 2 hours
+      .sign(secret);
+
+    // Optionally, rotate refresh token (generate new one and invalidate old)
+    // For simplicity, we're not rotating it here, but it's a good practice for security.
+
+    return NextResponse.json({ accessToken: newToken }, { status: 200 });
+
   } catch (error) {
     console.error('Error during token refresh:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

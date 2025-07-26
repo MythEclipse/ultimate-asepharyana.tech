@@ -9,7 +9,7 @@ interface DecodedToken {
 
 export async function verifyJwt(token: string): Promise<DecodedToken | null> {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET_KEY);
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jose.jwtVerify(token, secret);
     // Explicitly cast to unknown first, then to DecodedToken
     return payload as unknown as DecodedToken;

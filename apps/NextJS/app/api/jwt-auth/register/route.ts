@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/service'; // Changed import
+import prisma from '@/lib/prisma'; // Changed import
 import bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     });
 
     // Remove password from the response
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({ message: 'Registration successful', user: userWithoutPassword }, { status: 201 });
@@ -36,5 +37,5 @@ export async function POST(request: Request) {
     console.error('Error during registration:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   } 
-  // Removed finally block with prisma.$disconnect();
+  
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/service';
+import prisma from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
 export async function GET(request: Request) {
@@ -19,9 +19,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
+console.error('Error verifying token:', error);
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
 }

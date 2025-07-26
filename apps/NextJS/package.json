@@ -3,7 +3,6 @@
   "name": "@asepharyana/web",
   "version": "0.1.0",
   "description": "My personal website",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Asepharyana71/asepharyana.tech.git"
@@ -16,7 +15,7 @@
     "dev:https": "next dev --experimental-https",
     "build": "cross-env next build",
     "postbuild": "next-sitemap --config next-sitemap.config.cjs",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate --schema ../../packages/database/prisma/schema.prisma",
     "start": "next start --port 4090",
     "lint": "concurrently \"next lint\" \"tsc --noEmit\"",
     "lint:debug": "next lint  --debug",
@@ -115,7 +114,8 @@
     "vaul": "^1.1.2",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "zod": "^4.0.5"
+    "zod": "^4.0.5",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

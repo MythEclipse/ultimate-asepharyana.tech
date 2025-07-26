@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,6 +73,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/jwt-auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Registration successful:', data.message);
+        // Optionally log in the user directly or redirect to login page
+        return true;
+      } else {
+        console.error('Registration failed:', data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -116,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshAccessToken }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshAccessToken, register }}>
       {children}
     </AuthContext.Provider>
   );
