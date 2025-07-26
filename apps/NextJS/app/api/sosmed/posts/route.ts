@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/service';
 import { getAuthenticatedUser } from '@/lib/authUtils';
 import logger from '@/lib/logger';
 
-function getIp(req: Request) {
-  // Next.js API routes may not have direct access to IP, so fallback to unknown
-  return 'unknown';
+function getIp(req: NextRequest) {
+  return (
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('remote-addr') ||
+    'unknown'
+  );
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const start = Date.now();
   const ip = getIp(request);
   let user;
@@ -151,7 +154,7 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   const start = Date.now();
   const ip = getIp(request);
   let user;
@@ -224,7 +227,7 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   const start = Date.now();
   const ip = getIp(request);
   let user;

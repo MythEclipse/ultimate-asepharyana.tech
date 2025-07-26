@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@asepharyana/database';
+import { prisma } from '@/lib/prisma/service';
 import { getAuthenticatedUser } from '@/lib/authUtils';
 import logger from '@/lib/logger';
-
-const prisma = new PrismaClient();
 
 function getIp(req: NextRequest) {
   return (
@@ -56,7 +54,6 @@ export async function POST(req: NextRequest) {
       ip,
       userId: user.id,
       postId,
-      likeId: like.id,
       durationMs: Date.now() - start,
     });
 
