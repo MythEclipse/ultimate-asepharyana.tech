@@ -26,7 +26,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (token) {
       // Simulate user data retrieval from token
       // For now, we'll use dummy data for image. In a real app, this would come from JWT or an API call.
-      setUser({ id: 'simulated_user_id', email: 'user@example.com', image: '/user_placeholder.png', name: 'user', password: 'user', emailVerified: null, role: 'user' });
+      const profileResponse = await fetch('/api/jwt-auth/profile');
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json();
+        setUser(profile.user);
+      }
     } else {
       setUser(null);
     }
@@ -53,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.ok) {
         // Update user state with actual user data from response if available
         // For image, using a placeholder until a real image URL is available from the API
-        setUser({ id: 'simulated_user_id', email, image: '/user_placeholder.png', name: 'user', password: 'user', emailVerified: null, role: 'user' });
+        setUser(data.user);
         router.push('/'); // Redirect on successful login
         return true;
       } else {

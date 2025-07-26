@@ -113,6 +113,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/next": "^9.0.0",
     "@types/node": "^24.1.0",

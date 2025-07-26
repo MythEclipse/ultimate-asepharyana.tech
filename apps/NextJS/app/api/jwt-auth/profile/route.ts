@@ -1,0 +1,27 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma/service';
+import { jwtVerify } from 'jose';
+
+export async function GET(request: Request) {
+  const token = request.headers.get('authorization')?.split(' ')[1];
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.NEXTAUTH_SECRET));
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id as string },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const { password, ...userWithoutPassword } = user;
+    return NextResponse.json({ user: userWithoutPassword });
+  } catch (error) {
+    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  }
+}

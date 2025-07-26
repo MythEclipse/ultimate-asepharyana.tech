@@ -2,7 +2,11 @@
   "extends": "@asepharyana/config-typescript/nextjs.json",
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -13,7 +17,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "typeRoots": ["./types", "./node_modules/@types"],
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
     "incremental": true,
     "maxNodeModuleJsDepth": 2000,
     "plugins": [
@@ -22,19 +29,26 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@asepharyana/database": ["../../packages/database"]
+      "@/*": [
+        "./*"
+      ],
+      "@asepharyana/database": [
+        "../../packages/database"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts","types"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "types",
+  ],
   "exclude": [
     "node_modules",
     "public",
-    "apps/NextJS/lib/auth.ts",
-    "apps/NextJS/lib/authOptions.ts",
-    "apps/NextJS/app/api/auth",
-    "apps/NextJS/components/button/SignOutComponent.tsx",
-    "apps/NextJS/components/button/SignInComponent.tsx",
-    "apps/NextJS/lib/signOutAction.ts"
+    "dist",
+    "coverage",
+    "__tests__",
   ]
 }
