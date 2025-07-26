@@ -95,12 +95,6 @@ const nextConfig: NextConfig = {
   // Mengaktifkan kompresi Gzip. Jika proxy (misalnya Nginx) sudah menangani kompresi, setel ke 'false'.
   compress: true,
 
-  compiler: {
-    // Mengaktifkan optimasi SWC untuk styled-components.
-    styledComponents: true,
-    // Menghapus 'console.*' hanya pada build produksi untuk menjaga kebersihan konsol.
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
 
   // Menghasilkan source map di produksi untuk mempermudah debugging.
   // PERHATIAN: Ini akan mengekspos kode sumber sisi klien Anda. Nonaktifkan jika ini menjadi masalah keamanan.
