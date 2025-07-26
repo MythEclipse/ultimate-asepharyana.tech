@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
         port: '4090',
         pathname: '/api/imageproxy',
       },
+      {
+        protocol: 'https',
+        hostname: 'asepharyana.tech',
+      },
     ],
 
     // Cache Time To Live (TTL) selama 1 hari. Nilai yang wajar untuk kebanyakan kasus.

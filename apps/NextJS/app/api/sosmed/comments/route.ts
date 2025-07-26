@@ -1,32 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/service';
-import { getAuthenticatedUser } from '@/lib/authUtils'; // Import getAuthenticatedUser
+import { getAuthenticatedUser } from '@/lib/authUtils';
+import logger from '@/lib/logger';
+
+function getIp(req: NextRequest) {
+  return (
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('remote-addr') ||
+    'unknown'
+  );
+}
 
 export async function POST(req: NextRequest) {
-  const user = await getAuthenticatedUser(); // Get authenticated user
-
-  if (!user || !user.id) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { postId, content } = await req.json();
-
-  if (!content) {
-    return NextResponse.json(
-      { message: 'Content is required' },
-      { status: 400 }
-    );
-  }
-
+  const start = Date.now();
+  const ip = getIp(req);
+  let user;
   try {
+    user = await getAuthenticatedUser();
+    logger.info(`[POST /api/sosmed/comments] Request received`, {
+      ip,
+      userId: user?.id,
+    });
+    if (!user || !user.id) {
+      logger.warn(`[POST /api/sosmed/comments] Unauthorized`, { ip });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { postId, content } = await req.json();
+    logger.debug(`[POST /api/sosmed/comments] Payload`, { postId, content });
+
+    if (!content) {
+      logger.warn(`[POST /api/sosmed/comments] Content required`, { ip });
+      return NextResponse.json(
+        { message: 'Content is required' },
+        { status: 400 }
+      );
+    }
+
     const comment = await prisma.comments.create({
       data: {
         postId,
         content,
-        userId: user.id, // Use user.id
-        authorId: user.id, // Use user.id
+        userId: user.id,
+        authorId: user.id,
       },
     });
+
+    logger.info(`[POST /api/sosmed/comments] Comment created`, {
+      ip,
+      userId: user.id,
+      commentId: comment.id,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json(
       {
         comment: {
@@ -39,7 +65,12 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error adding comment:', error);
+    logger.error(`[POST /api/sosmed/comments] Error`, {
+      ip,
+      userId: user?.id,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to add comment' },
       { status: 500 }
@@ -48,17 +79,21 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const postId = searchParams.get('postId');
-
-  if (!postId) {
-    return NextResponse.json(
-      { message: 'Post ID is required' },
-      { status: 400 }
-    );
-  }
-
+  const start = Date.now();
+  const ip = getIp(req);
   try {
+    const { searchParams } = new URL(req.url);
+    const postId = searchParams.get('postId');
+    logger.info(`[GET /api/sosmed/comments] Request received`, { ip, postId });
+
+    if (!postId) {
+      logger.warn(`[GET /api/sosmed/comments] Post ID required`, { ip });
+      return NextResponse.json(
+        { message: 'Post ID is required' },
+        { status: 400 }
+      );
+    }
+
     const comments = await prisma.comments.findMany({
       where: { postId: postId as string },
       include: {
@@ -73,9 +108,20 @@ export async function GET(req: NextRequest) {
       orderBy: { created_at: 'desc' },
     });
 
+    logger.info(`[GET /api/sosmed/comments] Success`, {
+      ip,
+      postId,
+      count: comments.length,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json({ comments }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    logger.error(`[GET /api/sosmed/comments] Error`, {
+      ip,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to fetch comments' },
       { status: 500 }
@@ -84,25 +130,40 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const user = await getAuthenticatedUser(); // Get authenticated user
-
-  if (!user || !user.id) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { id, content } = await req.json();
-
-  if (!id || !content) {
-    return NextResponse.json(
-      { message: 'Comment ID and content are required' },
-      { status: 400 }
-    );
-  }
-
+  const start = Date.now();
+  const ip = getIp(req);
+  let user;
   try {
+    user = await getAuthenticatedUser();
+    logger.info(`[PUT /api/sosmed/comments] Request received`, {
+      ip,
+      userId: user?.id,
+    });
+
+    if (!user || !user.id) {
+      logger.warn(`[PUT /api/sosmed/comments] Unauthorized`, { ip });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id, content } = await req.json();
+    logger.debug(`[PUT /api/sosmed/comments] Payload`, { id, content });
+
+    if (!id || !content) {
+      logger.warn(`[PUT /api/sosmed/comments] ID/content required`, { ip });
+      return NextResponse.json(
+        { message: 'Comment ID and content are required' },
+        { status: 400 }
+      );
+    }
+
     const comment = await prisma.comments.findUnique({ where: { id } });
 
-    if (!comment || comment.userId !== user.id) { // Use user.id
+    if (!comment || comment.userId !== user.id) {
+      logger.warn(`[PUT /api/sosmed/comments] Not authorized to edit`, {
+        ip,
+        userId: user.id,
+        commentId: id,
+      });
       return NextResponse.json(
         { message: 'User not authorized to edit this comment' },
         { status: 403 }
@@ -116,12 +177,24 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    logger.info(`[PUT /api/sosmed/comments] Comment updated`, {
+      ip,
+      userId: user.id,
+      commentId: id,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json(
       { message: 'Comment updated successfully!', comment: updatedComment },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error updating comment:', error);
+    logger.error(`[PUT /api/sosmed/comments] Error`, {
+      ip,
+      userId: user?.id,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to update comment' },
       { status: 500 }
@@ -130,25 +203,40 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await getAuthenticatedUser(); // Get authenticated user
-
-  if (!user || !user.id) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { id } = await req.json();
-
-  if (!id) {
-    return NextResponse.json(
-      { message: 'Comment ID is required' },
-      { status: 400 }
-    );
-  }
-
+  const start = Date.now();
+  const ip = getIp(req);
+  let user;
   try {
+    user = await getAuthenticatedUser();
+    logger.info(`[DELETE /api/sosmed/comments] Request received`, {
+      ip,
+      userId: user?.id,
+    });
+
+    if (!user || !user.id) {
+      logger.warn(`[DELETE /api/sosmed/comments] Unauthorized`, { ip });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await req.json();
+    logger.debug(`[DELETE /api/sosmed/comments] Payload`, { id });
+
+    if (!id) {
+      logger.warn(`[DELETE /api/sosmed/comments] ID required`, { ip });
+      return NextResponse.json(
+        { message: 'Comment ID is required' },
+        { status: 400 }
+      );
+    }
+
     const comment = await prisma.comments.findUnique({ where: { id } });
 
-    if (!comment || comment.userId !== user.id) { // Use user.id
+    if (!comment || comment.userId !== user.id) {
+      logger.warn(`[DELETE /api/sosmed/comments] Not authorized to delete`, {
+        ip,
+        userId: user.id,
+        commentId: id,
+      });
       return NextResponse.json(
         { message: 'User not authorized to delete this comment' },
         { status: 403 }
@@ -157,12 +245,24 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.comments.delete({ where: { id } });
 
+    logger.info(`[DELETE /api/sosmed/comments] Comment deleted`, {
+      ip,
+      userId: user.id,
+      commentId: id,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json(
       { message: 'Comment deleted successfully!' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting comment:', error);
+    logger.error(`[DELETE /api/sosmed/comments] Error`, {
+      ip,
+      userId: user?.id,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to delete comment' },
       { status: 500 }

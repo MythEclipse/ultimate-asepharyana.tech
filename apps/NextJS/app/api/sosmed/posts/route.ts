@@ -1,70 +1,80 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/service';
-import { getAuthenticatedUser } from '@/lib/authUtils'; // Import getAuthenticatedUser
+import { getAuthenticatedUser } from '@/lib/authUtils';
+import logger from '@/lib/logger';
 
-// Initialize Prisma Client
+function getIp(req: Request) {
+  // Next.js API routes may not have direct access to IP, so fallback to unknown
+  return 'unknown';
+}
 
 export async function POST(request: Request) {
+  const start = Date.now();
+  const ip = getIp(request);
+  let user;
   try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser();
-    const userId = user?.id;
+    user = await getAuthenticatedUser();
+    logger.info(`[POST /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
-    // Parse the JSON request body
     const { content, imageUrl } = await request.json();
+    logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
 
-    // Validate request data
     if (!content || typeof content !== 'string') {
+      logger.warn(`[POST /api/sosmed/posts] Content required`, { ip });
       return NextResponse.json(
         { message: 'Content is required and must be a string' },
         { status: 400 }
       );
     }
 
-    // Check if userId is available
-    if (!userId) {
+    if (!user || !user.id) {
+      logger.warn(`[POST /api/sosmed/posts] Unauthorized`, { ip });
       return NextResponse.json(
         { message: 'User not authenticated' },
         { status: 401 }
       );
     }
 
-    // Create post in the database
     const newPost = await prisma.posts.create({
       data: {
         content,
-        authorId: userId,
+        authorId: user.id,
         image_url: imageUrl || '',
-        userId,
+        userId: user.id,
       },
+    });
+
+    logger.info(`[POST /api/sosmed/posts] Post created`, {
+      ip,
+      userId: user.id,
+      postId: newPost.id,
+      durationMs: Date.now() - start,
     });
 
     return NextResponse.json(
       { message: 'Post created successfully!', post: newPost },
       { status: 201 }
     );
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    // console.error('Error creating post:', error);
+    logger.error(`[POST /api/sosmed/posts] Error`, {
+      ip,
+      userId: user?.id,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to create post' },
       { status: 500 }
     );
-  } 
+  }
 }
 
-/**
- * Fetches all posts from the database, including associated user, comments, and likes.
- * The posts are ordered by creation date in descending order.
- * Each post's comments are enriched with user information.
- *
- * @returns {Promise<NextResponse>} A JSON response containing the sanitized posts or an error message.
- *
- * @throws {Error} If there is an error fetching the posts from the database.
- */
 export async function GET() {
+  const start = Date.now();
+  const ip = 'unknown';
   try {
-    // Fetch all posts from the database
+    logger.info(`[GET /api/sosmed/posts] Request received`, { ip });
+
     const posts = await prisma.posts.findMany({
       include: {
         user: {
@@ -82,7 +92,6 @@ export async function GET() {
       },
     });
 
-    // Sanitize the response
     const sanitizedPosts = await Promise.all(
       posts.map(
         async (post: {
@@ -122,59 +131,67 @@ export async function GET() {
       )
     );
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+    logger.info(`[GET /api/sosmed/posts] Success`, {
+      ip,
+      count: sanitizedPosts.length,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json({ posts: sanitizedPosts }, { status: 200 });
   } catch (error) {
-    // console.error('Error fetching posts:', error);
+    logger.error(`[GET /api/sosmed/posts] Error`, {
+      ip,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to fetch posts' },
       { status: 500 }
     );
-  } 
+  }
 }
 
 export async function PUT(request: Request) {
+  const start = Date.now();
+  const ip = getIp(request);
+  let user;
   try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser();
-    const userId = user?.id;
+    user = await getAuthenticatedUser();
+    logger.info(`[PUT /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
-    if (!user || !userId) {
+    if (!user || !user.id) {
+      logger.warn(`[PUT /api/sosmed/posts] Unauthorized`, { ip });
       return NextResponse.json(
         { message: 'User not authenticated' },
         { status: 401 }
       );
     }
-    // Parse the JSON request body
-    const { id, content } = await request.json();
 
-    // Validate request data
+    const { id, content } = await request.json();
+    logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
+
     if (!id || !content || typeof content !== 'string') {
+      logger.warn(`[PUT /api/sosmed/posts] ID/content required`, { ip });
       return NextResponse.json(
         { message: 'Post ID and content are required and must be valid' },
         { status: 400 }
       );
     }
 
-    // Check if userId is available
-    if (!userId) {
-      return NextResponse.json(
-        { message: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-
-    // Fetch the post to check ownership
     const post = await prisma.posts.findUnique({ where: { id } });
 
-    if (!post || post.userId !== userId) {
+    if (!post || post.userId !== user.id) {
+      logger.warn(`[PUT /api/sosmed/posts] Not authorized to edit`, {
+        ip,
+        userId: user.id,
+        postId: id,
+      });
       return NextResponse.json(
         { message: 'User not authorized to edit this post' },
         { status: 403 }
       );
     }
 
-    // Update post in the database
     const updatedPost = await prisma.posts.update({
       where: { id },
       data: {
@@ -182,72 +199,100 @@ export async function PUT(request: Request) {
       },
     });
 
+    logger.info(`[PUT /api/sosmed/posts] Post updated`, {
+      ip,
+      userId: user.id,
+      postId: id,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json(
       { message: 'Post updated successfully!', post: updatedPost },
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
       { status: 200 }
     );
   } catch (error) {
-    // console.error('Error updating post:', error);
+    logger.error(`[PUT /api/sosmed/posts] Error`, {
+      ip,
+      userId: user?.id,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to update post' },
       { status: 500 }
     );
-  } 
+  }
 }
 
 export async function DELETE(request: Request) {
+  const start = Date.now();
+  const ip = getIp(request);
+  let user;
   try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser();
-    const userId = user?.id;
+    user = await getAuthenticatedUser();
+    logger.info(`[DELETE /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
-    // Validate authentication
-    if (!user || !userId) {
+    if (!user || !user.id) {
+      logger.warn(`[DELETE /api/sosmed/posts] Unauthorized`, { ip });
       return NextResponse.json(
         { message: 'User not authenticated' },
         { status: 401 }
       );
     }
 
-    // Parse the JSON request body
     const { id } = await request.json();
+    logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
 
-    // Validate request data
     if (!id) {
+      logger.warn(`[DELETE /api/sosmed/posts] ID required`, { ip });
       return NextResponse.json(
         { message: 'Post ID is required' },
         { status: 400 }
       );
     }
 
-    // Fetch the post to check ownership
     const post = await prisma.posts.findUnique({ where: { id } });
 
     if (!post) {
+      logger.warn(`[DELETE /api/sosmed/posts] Post not found`, { ip, postId: id });
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (post.userId !== userId) {
+    if (post.userId !== user.id) {
+      logger.warn(`[DELETE /api/sosmed/posts] Not authorized to delete`, {
+        ip,
+        userId: user.id,
+        postId: id,
+      });
       return NextResponse.json(
         { message: 'User not authorized to delete this post' },
         { status: 403 }
       );
     }
 
-    // Delete post from the database
     await prisma.posts.delete({ where: { id } });
 
+    logger.info(`[DELETE /api/sosmed/posts] Post deleted`, {
+      ip,
+      userId: user.id,
+      postId: id,
+      durationMs: Date.now() - start,
+    });
+
     return NextResponse.json(
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
       { message: 'Post deleted successfully!' },
       { status: 200 }
     );
   } catch (error) {
-    // console.error('Error deleting post:', error);
+    logger.error(`[DELETE /api/sosmed/posts] Error`, {
+      ip,
+      userId: user?.id,
+      error,
+      durationMs: Date.now() - start,
+    });
     return NextResponse.json(
       { message: 'Failed to delete post' },
       { status: 500 }
     );
-  } 
+  }
 }
