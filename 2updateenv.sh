@@ -2,7 +2,7 @@
 # Copy .env from root to all direct subprojects/packages (not nested, not build, not .git, not .github, not node_modules, not .turbo, not .next, not .vscode, not dist, not public, not src, not coverage, not logs, not .devcontainer, not .yarn, not target)
 # Do NOT copy to /apps or /packages root, only to their subfolders.
 
-ROOT_ENV="/workspaces/ultimate-asepharyana.cloud/.env"
+ROOT_ENV="./.env"
 
 if [ ! -f "$ROOT_ENV" ]; then
   echo "Root .env file not found at $ROOT_ENV"
@@ -10,7 +10,7 @@ if [ ! -f "$ROOT_ENV" ]; then
 fi
 
 for parent in apps packages; do
-  for dir in /workspaces/ultimate-asepharyana.cloud/$parent/*/; do
+  for dir in ./$parent/*/; do
     # Remove trailing slash
     dir="${dir%/}"
     base=$(basename "$dir")
