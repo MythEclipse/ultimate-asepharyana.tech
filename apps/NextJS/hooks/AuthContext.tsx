@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@asepharyana/database';
+
+
 
 interface AuthContextType {
   user: User | null;
@@ -20,27 +22,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const verifyToken = useCallback(async () => {
-    // In a real application, you'd verify the token with your backend or decode it
-    // and check its expiration. For now, we'll assume a token means authenticated.
-    const token = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
-    if (token) {
-      // Simulate user data retrieval from token
-      // For now, we'll use dummy data for image. In a real app, this would come from JWT or an API call.
-      const profileResponse = await fetch('/api/jwt-auth/profile');
-      if (profileResponse.ok) {
-        const profile = await profileResponse.json();
-        setUser(profile.user);
-      }
-    } else {
-      setUser(null);
-    }
-    setIsLoading(false);
-  }, []);
-
   useEffect(() => {
+    // Only run on client
+    const verifyToken = async () => {
+      setIsLoading(true);
+      let token: string | null = null;
+      if (typeof window !== 'undefined') {
+        token = localStorage.getItem('token');
+        // DEBUG: Log token and profile fetch result
+        console.log('AuthContext verifyToken: token from localStorage', token);
+      }
+      if (token) {
+        const profileResponse = await fetch('/api/jwt-auth/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (profileResponse.ok) {
+          const profile = await profileResponse.json();
+          setUser(profile.user);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
     verifyToken();
-  }, [verifyToken]);
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
@@ -56,10 +66,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await response.json();
 
       if (response.ok) {
-        // Update user state with actual user data from response if available
-        // For image, using a placeholder until a real image URL is available from the API
+        if (data.token) localStorage.setItem('token', data.token);
+        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+
         setUser(data.user);
-        router.push('/'); // Redirect on successful login
+        router.push('/');
         return true;
       } else {
         console.error('Login failed:', data.message);
@@ -88,7 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         console.log('Registration successful:', data.message);
-        // Optionally log in the user directly or redirect to login page
         return true;
       } else {
         console.error('Registration failed:', data.message);
@@ -110,7 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       if (response.ok) {
         setUser(null);
-        router.push('/login'); // Redirect to login page after logout
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        router.push('/login');
       } else {
         console.error('Logout failed');
       }
@@ -127,13 +139,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         method: 'POST',
       });
       if (response.ok) {
-        // Assuming refresh returns new token and updates cookies
         console.log('Access token refreshed');
-        verifyToken(); // Re-verify token to update user state if needed
+        // Optionally re-verify token here
         return true;
       } else {
         console.error('Failed to refresh access token');
-        setUser(null); // Clear user if refresh fails (e.g., refresh token expired)
+        setUser(null);
         router.push('/login');
         return false;
       }
