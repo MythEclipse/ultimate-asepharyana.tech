@@ -1,5 +1,6 @@
 import { NextConfig } from 'next';
 import withFlowbiteReact from 'flowbite-react/plugin/nextjs';
+import path from 'path';
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
@@ -14,7 +15,8 @@ const nextConfig: NextConfig = {
     // Optimasi memori Webpack, dianggap berisiko rendah dan bermanfaat untuk proyek besar.
     webpackMemoryOptimizations: true,
   },
-
+  
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   images: {
     // GANTI 'hostname: '**'' DENGAN DAFTAR HOSTNAME TEPERCAYA.
     // Menggunakan wildcard '**' adalah risiko keamanan yang sangat serius (Open Image Proxy).
