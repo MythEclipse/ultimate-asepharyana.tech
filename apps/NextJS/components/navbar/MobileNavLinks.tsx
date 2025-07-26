@@ -2,14 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Session } from 'next-auth';
+
 
 interface MobileNavLinksProps {
   isNavOpen: boolean;
   setIsNavOpen: (isOpen: boolean) => void;
   pathname: string;
   loginUrl: string;
-  session: Session | null;
+  
 }
 
 export default function MobileNavLinks({

@@ -1,34 +1,18 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Session } from 'next-auth';
 import { FcGoogle } from 'react-icons/fc';
-import { signOut } from 'next-auth/react';
+import { useAuth } from '@/hooks/AuthContext';
 
-interface UserMenuProps {
-  session: Session | null;
-  loginUrl: string;
-}
+export default function UserMenu() {
+  const { user, logout } = useAuth();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
-const mockSession: Session = {
-  user: {
-    id: '1',
-    name: 'Dev User',
-    email: 'devuser@example.com',
-    image: '/profile-circle-svgrepo-com.svg',
-  },
-  expires: '9999-12-31T23:59:59.999Z',
-};
-
-export default function UserMenu({ session, loginUrl }: UserMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown if click is outside
-  useEffect(() => {
+  React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         menuRef.current &&
@@ -46,12 +30,9 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
     };
   }, []);
 
-  const isDev = process.env.NODE_ENV === 'development';
-  const currentSession = isDev ? mockSession : session;
-
   return (
     <div className='relative'>
-      {currentSession ? (
+      {user ? (
         <>
           <button
             ref={buttonRef}
@@ -59,9 +40,7 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
             onClick={() => setIsOpen(!isOpen)}
           >
             <img
-              src={
-                currentSession.user?.image || '/profile-circle-svgrepo-com.svg'
-              }
+              src={user.image || '/profile-circle-svgrepo-com.svg'}
               width={40}
               height={40}
               className='w-10 h-10 rounded-full object-cover'
@@ -89,7 +68,7 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
                 Settings
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => logout()}
                 className='flex items-center gap-1 px-8 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
               >
                 <FcGoogle className='text-xl' />
@@ -99,7 +78,7 @@ export default function UserMenu({ session, loginUrl }: UserMenuProps) {
           )}
         </>
       ) : (
-        <Link href={loginUrl}>
+        <Link href='/login'>
           <button className='px-4 py-2 bg-blue-500 text-white rounded-full'>
             Login
           </button>

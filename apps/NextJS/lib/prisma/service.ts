@@ -12,3 +12,20 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+export const updateUserImage = async (id: string, image: string) => {
+  try {
+    const user = await prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        image,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error('Error updating user image:', error);
+    throw new Error('Failed to update user image');
+  }
+};

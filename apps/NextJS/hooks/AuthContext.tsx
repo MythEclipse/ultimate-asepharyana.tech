@@ -2,13 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface User {
-  id: string;
-  email: string;
-  image?: string; // Add optional image property
-  // Add other user properties as needed
-}
+import { User } from '@asepharyana/database';
 
 interface AuthContextType {
   user: User | null;
@@ -32,7 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (token) {
       // Simulate user data retrieval from token
       // For now, we'll use dummy data for image. In a real app, this would come from JWT or an API call.
-      setUser({ id: 'simulated_user_id', email: 'user@example.com', image: '/user_placeholder.png' });
+      setUser({ id: 'simulated_user_id', email: 'user@example.com', image: '/user_placeholder.png', name: 'user', password: 'user', emailVerified: null, role: 'user' });
     } else {
       setUser(null);
     }
@@ -59,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.ok) {
         // Update user state with actual user data from response if available
         // For image, using a placeholder until a real image URL is available from the API
-        setUser({ id: 'simulated_user_id', email, image: '/user_placeholder.png' });
+        setUser({ id: 'simulated_user_id', email, image: '/user_placeholder.png', name: 'user', password: 'user', emailVerified: null, role: 'user' });
         router.push('/'); // Redirect on successful login
         return true;
       } else {
