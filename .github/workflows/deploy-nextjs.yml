@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "apps/NextJS/**"
-      - ".github/workflows/deploy-nextjs.yml" # Trigger if this workflow file achangesaaaaaaaaaaa
+      - ".github/workflows/deploy-nextjs.yml" # Trigger if this workflow file changes
 
 jobs:
   build-and-deploy-nextjs:
@@ -54,6 +54,17 @@ jobs:
       - name: Copy .env to all subprojects/packages
         run: bash 2updateenv.sh
 
+      - name: Sync all .env files to VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          find . -type f -name ".env" | while read file; do
+            target="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/${file#./}"
+            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" "$file" "$target"
+          done
+          rm -f /tmp/deploy_key
+
       - name: SSH into VPS and Prepare Next.js Directory
         uses: appleboy/ssh-action@master
         with:
@@ -85,6 +96,7 @@ jobs:
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             source .bashrc
             cd ${{ secrets.VPS_TARGET_DIR }}
+            bash 2updateenv.sh
             git pull # Need to pull to get the ecosystem.config.cjs
             bun install --filter=@asepharyana/web # Install dependencies only for Next.js
             pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/ecosystem.config.cjs
