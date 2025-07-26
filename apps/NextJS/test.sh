@@ -99,7 +99,9 @@ echo "Protected Endpoint Response: $PROTECTED_RESPONSE"
 
 echo "--- Testing Refresh Token Endpoint ---"
 REFRESH_RESPONSE=$(curl -s -X POST "${NEXTJS_APP_URL}/api/jwt-auth/refresh" \
--b "cookie-jar.txt" -c "cookie-jar.txt") # Send refresh token and get new ones
+-H "Content-Type: application/json" \
+-d "{\"refreshToken\": \"$REFRESH_TOKEN\"}" \
+-b "cookie-jar.txt" -c "cookie-jar.txt") # Send refresh token in body and get new ones
 echo "Refresh Token Response: $REFRESH_RESPONSE"
 
 NEW_ACCESS_TOKEN=$(echo "$REFRESH_RESPONSE" | jq -r '.accessToken')
