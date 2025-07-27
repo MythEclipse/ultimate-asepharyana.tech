@@ -99,7 +99,10 @@ apps/NextJS/public/sitemap*.xml
 **/sitemap*.xml
 **/dist/*
 **/build/*
+# Ignore all types folders except apps/NextJS/types
 **/types/*
+!apps/NextJS/types/
+!apps/NextJS/types/**
 apps/NextJS/public/hihahahahah
 # Rust
 /target
