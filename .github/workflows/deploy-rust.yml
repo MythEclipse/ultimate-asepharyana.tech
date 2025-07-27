@@ -51,9 +51,6 @@ jobs:
             exit 1
           fi
 
-      - name: Move RustExpress executable
-        run: mv ./target apps/RustExpress/
-
       - name: Copy .env to all subprojects/packages
         run: bash 2updateenv.sh
 
