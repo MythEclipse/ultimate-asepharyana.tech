@@ -5,7 +5,7 @@ import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
 
 const baseUrl = {
-  komik: 'https://komikindo2.com',
+  komik: 'https://komikindo.rip',
 };
 const baseURL = baseUrl.komik;
 
