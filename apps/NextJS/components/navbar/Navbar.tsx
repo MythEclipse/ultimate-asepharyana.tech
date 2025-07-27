@@ -1,14 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { navLinks } from '@/lib/constants';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation'; // Keep usePathname for DesktopNavLinks
-import { motion, AnimatePresence } from 'framer-motion'; // Keep these for DesktopNavLinks
-import { Menu, X } from 'lucide-react'; // Keep these for MobileNav
 
-import { Button } from '@/components/ui/button'; // Keep this for MobileNav
 import UserMenu from './UserMenu';
 import DesktopNavLinks from './DesktopNavLinks';
 import MobileNav from './MobileNav';
