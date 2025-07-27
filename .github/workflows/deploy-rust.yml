@@ -65,8 +65,6 @@ jobs:
           done
           rm -f /tmp/deploy_key
 
-      
-
       - name: Sync RustExpress Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -89,10 +87,5 @@ jobs:
             cd ${{ secrets.VPS_TARGET_DIR }}
             bash 2updateenv.sh
             # Check if the process is running and stop it
-            if pgrep -x "rust_express" > /dev/null; then
-              killall rust_express
-              echo "Existing rust_express process stopped."
-            fi
-            # Start the new binary in the background
-            nohup target/release/RustExpress > rust_express.log 2>&1 &
+            pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/RustExpress/pm2-rustexpress.config.js
             echo "RustExpress Deployment successful!"
