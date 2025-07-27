@@ -36,6 +36,11 @@ export default function PostPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [newComments, setNewComments] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [isPosting, setIsPosting] = useState(false);
+  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
+  const [isCommenting, setIsCommenting] = useState<Record<string, boolean>>({});
+  const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
+  const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
@@ -47,6 +52,7 @@ export default function PostPage() {
       return;
     }
 
+    setIsPosting(true);
     try {
       await fetch(`/api/sosmed/posts`, {
         method: 'POST',
@@ -60,6 +66,8 @@ export default function PostPage() {
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error creating post:', error);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -91,6 +99,7 @@ export default function PostPage() {
       console.error('User not authenticated to like post.');
       return;
     }
+    setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/likes`, {
         method: 'POST',
@@ -100,6 +109,8 @@ export default function PostPage() {
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error liking post:', error);
+    } finally {
+      setIsLiking((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -108,6 +119,7 @@ export default function PostPage() {
       console.error('User not authenticated to unlike post.');
       return;
     }
+    setIsLiking((prev) => ({ ...prev, [postId]: true })); // Use isLiking for unlike as well
     try {
       await fetch(`/api/sosmed/likes`, {
         method: 'DELETE',
@@ -117,6 +129,8 @@ export default function PostPage() {
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error unliking post:', error);
+    } finally {
+      setIsLiking((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -126,7 +140,7 @@ export default function PostPage() {
       console.error('User not authenticated to add comment.');
       return;
     }
-
+    setIsCommenting((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'POST',
@@ -137,6 +151,8 @@ export default function PostPage() {
       setNewComments((prev) => ({ ...prev, [postId]: '' }));
     } catch (error) {
       console.error('Error adding comment:', error);
+    } finally {
+      setIsCommenting((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -145,6 +161,7 @@ export default function PostPage() {
       console.error('User not authenticated to edit post.');
       return;
     }
+    setIsEditing((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/posts`, {
         method: 'PUT',
@@ -154,6 +171,8 @@ export default function PostPage() {
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing post:', error);
+    } finally {
+      setIsEditing((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -162,6 +181,7 @@ export default function PostPage() {
       console.error('User not authenticated to delete post.');
       return;
     }
+    setIsDeleting((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/posts`, {
         method: 'DELETE',
@@ -171,6 +191,8 @@ export default function PostPage() {
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting post:', error);
+    } finally {
+      setIsDeleting((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -179,6 +201,7 @@ export default function PostPage() {
       console.error('User not authenticated to edit comment.');
       return;
     }
+    setIsEditing((prev) => ({ ...prev, [commentId]: true })); // Using isEditing for comments as well
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'PUT',
@@ -189,6 +212,8 @@ export default function PostPage() {
     }
     catch (error) {
       console.error('Error editing comment:', error);
+    } finally {
+      setIsEditing((prev) => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -197,6 +222,7 @@ export default function PostPage() {
       console.error('User not authenticated to delete comment.');
       return;
     }
+    setIsDeleting((prev) => ({ ...prev, [commentId]: true })); // Using isDeleting for comments as well
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'DELETE',
@@ -206,6 +232,8 @@ export default function PostPage() {
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting comment:', error);
+    } finally {
+      setIsDeleting((prev) => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -252,13 +280,13 @@ export default function PostPage() {
 
                   <button
                     onClick={handlePostSubmit}
-                    disabled={isUploading || !content.trim()}
+                    disabled={isUploading || isPosting || (!content.trim() && !imageUrl)}
                     className='w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-70 disabled:pointer-events-none'
                   >
-                    {isUploading ? (
+                    {(isUploading || isPosting) ? (
                       <div className='flex items-center justify-center gap-2'>
                         <Loader2 className='w-5 h-5 animate-spin' />
-                        <span>Sharing...</span>
+                        <span>{isPosting ? 'Publishing...' : 'Uploading...'}</span>
                       </div>
                     ) : (
                       'Publish Post'
@@ -340,6 +368,10 @@ export default function PostPage() {
               setNewComment={(value) =>
                 setNewComments((prev) => ({ ...prev, [post.id]: value }))
               }
+              isLiking={isLiking}
+              isCommenting={isCommenting}
+              isEditing={isEditing}
+              isDeleting={isDeleting}
             />
           )
         )}
