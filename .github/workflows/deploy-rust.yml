@@ -61,19 +61,11 @@ jobs:
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           find . -type f -name ".env" | while read file; do
             target="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/${file#./}"
-            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" "$file" "$target"
+            rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" "$file" "$target"
           done
           rm -f /tmp/deploy_key
 
-      - name: SSH into VPS and Prepare RustExpress Directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.VPS_TARGET_DIR }}
-            mkdir -p apps/RustExpress/target/release
+      
 
       - name: Sync RustExpress Build Artifacts to VPS
         env:
