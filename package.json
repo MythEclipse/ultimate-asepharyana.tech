@@ -12,7 +12,6 @@
   "scripts": {
     "build": "turbo run build",
     "buildnc": "turbo run build --force",
-    "build:express": "turbo run build --filter=@asepharyana/express",
     "build:nextjs": "bun run generate && turbo run build --filter=@asepharyana/web",
     "db:migrate:deploy": "turbo run db:migrate:deploy",
     "db:push": "turbo run db:push",
@@ -22,8 +21,8 @@
     "lint": "turbo run lint",
     "nextjs": "turbo run start --filter=@asepharyana/web",
     "express": "turbo run start --filter=@asepharyana/express",
-    "start:rust": "cd apps/RustExpress && cargo run --release",
-    "start": "concurrently \"bun run express\" \"bun run nextjs\"",
+    "start:rust": "cd apps/RustExpress && bun run start",
+    "start": "concurrently \"bun run start:rust\" \"bun run nextjs\"",
     "update": "bun update",
     "ceklog": "tail -n 3000 apps/NextJS/app.log"
   },

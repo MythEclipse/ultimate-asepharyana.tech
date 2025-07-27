@@ -85,6 +85,7 @@ jobs:
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
+            git pull
             bash 2updateenv.sh
             # Check if the process is running and stop it
             pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/RustExpress/pm2-rustexpress.config.js

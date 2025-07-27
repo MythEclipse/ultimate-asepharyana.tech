@@ -56,7 +56,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Database connection established.");
 
     tracing::info!("Running database migrations...");
-    sqlx::migrate!().run(&pool).await?;
+    // sqlx::migrate!().run(&pool).await?;
     tracing::info!("Database migrations complete.");
 
     tracing::info!("Creating chat state...");
