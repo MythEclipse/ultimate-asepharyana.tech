@@ -22,6 +22,7 @@
     "lint": "turbo run lint",
     "nextjs": "turbo run start --filter=@asepharyana/web",
     "express": "turbo run start --filter=@asepharyana/express",
+    "start:rust": "cd apps/RustExpress && cargo run --release",
     "start": "concurrently \"bun run express\" \"bun run nextjs\"",
     "update": "bun update",
     "ceklog": "tail -n 3000 apps/NextJS/app.log"

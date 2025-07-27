@@ -1,11 +1,17 @@
 module.exports = {
-  apps : [{
-    name   : "RustExpress",
-    script : "./target/release/RustExpress",
-    instances: "max",
-    exec_mode: "cluster",
-    env: {
-      "NODE_ENV": "production"
-    }
-  }]
+  apps: [
+    {
+      name: 'RustExpress',
+      script: 'bun',
+      args: 'start',
+      interpreter: 'none',
+      cwd: __dirname,
+      env: {
+        NODE_ENV: 'production',
+      },
+      env_production: {
+        DOTENV_CONFIG_PATH: './.env',
+      },
+    },
+  ],
 };
