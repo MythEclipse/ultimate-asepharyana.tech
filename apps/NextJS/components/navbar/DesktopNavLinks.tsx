@@ -2,51 +2,38 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { navLinks } from '@/lib/constants';
 
-interface DesktopNavLinksProps {
-  pathname: string;
-  indicatorPos: number;
-  indicatorWidth: number;
-}
-
-export default function DesktopNavLinks({
-  pathname,
-  indicatorPos,
-  indicatorWidth,
-}: DesktopNavLinksProps) {
-  const links = [
-    { href: '/', label: 'Home' },
-    { href: '/docs', label: 'Docs' },
-    { href: '/project', label: 'Project' },
-  ];
+export default function DesktopNavLinks() {
+  const pathname = usePathname();
 
   return (
-    <div className='relative'>
-      <ul className='flex space-x-4'>
-        {links.map((link, index) => (
-          <li key={index} id={`nav-link-${index}`}>
-            <Link prefetch={true} href={link.href}>
+    <nav className='hidden md:flex justify-center'>
+      <ul className='flex items-center gap-2 rounded-full bg-muted/50 p-1'>
+        {navLinks.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className='relative px-3 py-1.5 text-sm font-medium transition-colors md:px-4 md:py-2'
+            >
               <span
-                className={`px-3 py-2 relative ${
-                  pathname === link.href
-                    ? 'text-blue-600 font-semibold'
-                    : 'text-gray-900 dark:text-gray-300'
-                }`}
+                className={`relative z-10 ${pathname === link.href ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {link.label}
               </span>
+              {pathname === link.href && (
+                <motion.div
+                  layoutId='active-pill'
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  className='absolute inset-0 z-0 rounded-full bg-background shadow-sm'
+                />
+              )}
             </Link>
           </li>
         ))}
       </ul>
-      <div
-        className='absolute bottom-[-2px] left-0 h-1 bg-blue-600 rounded transition-transform'
-        style={{
-          width: `${indicatorWidth}px`,
-          transform: `translateX(${indicatorPos}px)`,
-          transition: 'transform 0.3s ease',
-        }}
-      />
-    </div>
+    </nav>
   );
 }

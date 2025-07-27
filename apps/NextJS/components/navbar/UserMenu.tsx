@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '@/hooks/AuthContext';
 
@@ -39,12 +39,11 @@ export default function UserMenu() {
             className='w-10 h-10 rounded-full border border-blue-500 overflow-hidden'
             onClick={() => setIsOpen(!isOpen)}
           >
-            <img
+            <Image
               src={user.image || '/profile-circle-svgrepo-com.svg'}
               width={40}
               height={40}
               className='w-10 h-10 rounded-full object-cover'
-              style={{ width: 'auto', height: 'auto' }}
               alt='User Avatar'
             />
           </button>
