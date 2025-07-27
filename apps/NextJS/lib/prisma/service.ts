@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../../../packages/database/client';
+import { PrismaClient } from '@asepharyana/database';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 

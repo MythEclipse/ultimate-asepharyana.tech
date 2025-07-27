@@ -213,9 +213,9 @@ export default function PostPage() {
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
 
   return (
-    <div className='container mx-auto py-8 px-4 max-w-4xl'>
+    <div className='container mx-auto py-8 px-4 max-w-4xl md:py-12 bg-background text-foreground'>
       {/* Header Section */}
-      <div className='mb-12 text-center space-y-2'>
+      <div className='mb-8 md:mb-12 text-center space-y-2'>
         <h1 className='text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
           Community Hub
         </h1>
@@ -224,7 +224,7 @@ export default function PostPage() {
 
       {/* Create Post Section */}
       {user ? (
-        <div className='mb-10 group'>
+        <div className='mb-8 md:mb-10 group'>
           <div className='relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl'>
             <Card
             // className="!bg-transparent !border-none"
@@ -279,7 +279,7 @@ export default function PostPage() {
             <p className='text-gray-600 dark:text-gray-400 mb-4'>
               Sign in to share your thoughts and engage with the community
             </p>
-            <div className='w-full max-w-[200px]'>
+            <div className='w-full max-w-[150px] sm:max-w-[200px]'>
               <ButtonA
                 href='/login'
                 className='w-full bg-blue-600 hover:bg-blue-700 text-white'

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation'; // Keep usePathname for navigation links
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
+import { useAuth } from '@/hooks/AuthContext';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -35,17 +35,16 @@ const navLinks = [
 const Logo = () => (
   <Link href='/' className='flex items-center gap-2'>
     <Image src='/Logo.svg' alt='Logo' width={28} height={28} />
-    <span className='hidden text-lg font-semibold sm:inline-block'>
+    <span className='hidden text-base font-semibold sm:inline-block md:text-lg'>
       Asep Haryana
     </span>
   </Link>
 );
 
 const UserNav = () => {
-  const { user, logout } = useAuth(); // Use useAuth hook
-  const pathname = usePathname(); // Keep pathname for loginUrl
+  const { user, logout } = useAuth();
+  const pathname = usePathname();
 
-  // Re-evaluate loginUrl if it's based on pathname and session state
   const loginUrl = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
 
   if (!user) {
@@ -65,26 +64,25 @@ const UserNav = () => {
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button variant='ghost' className='relative h-10 w-10 rounded-full'>
             <Avatar className='h-10 w-10 border-2 border-transparent group-hover:border-primary'>
-              {/* Assuming user object has image and name properties */}
               <AvatarImage
-                src={user.image || ''} // Adjust based on your user object structure
-                alt={user.email || 'User'} // Adjust based on your user object structure
+                src={user.image || ''}
+                alt={user.email || 'User'}
               />
               <AvatarFallback>
-                {user.email?.charAt(0).toUpperCase()} {/* Adjust based on your user object structure */}
+                {user.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           </Button>
         </motion.div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56' align='end' forceMount>
+      <DropdownMenuContent className='w-full sm:w-56' align='end' forceMount>
         <DropdownMenuLabel className='font-normal'>
           <div className='flex flex-col space-y-1'>
             <p className='text-sm font-medium leading-none'>
-              {user.email} {/* Adjust based on your user object structure */}
+              {user.email}
             </p>
             <p className='text-xs leading-none text-muted-foreground'>
-              {user.email} {/* Adjust based on your user object structure */}
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -103,7 +101,7 @@ const UserNav = () => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => logout()} // Call logout from useAuth hook
+          onClick={() => logout()}
           className='text-destructive focus:text-destructive cursor-pointer'
         >
           <LogOut className='mr-2 h-4 w-4' />
@@ -115,7 +113,7 @@ const UserNav = () => {
 };
 
 const DesktopNav = () => {
-  const pathname = usePathname(); // Keep pathname for active link styling
+  const pathname = usePathname();
 
   return (
     <nav className='hidden md:flex justify-center'>
@@ -124,7 +122,7 @@ const DesktopNav = () => {
           <li key={link.href}>
             <Link
               href={link.href}
-              className='relative px-4 py-2 text-sm font-medium transition-colors'
+              className='relative px-3 py-1.5 text-sm font-medium transition-colors md:px-4 md:py-2'
             >
               <span
                 className={`relative z-10 ${pathname === link.href ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
@@ -146,13 +144,9 @@ const DesktopNav = () => {
   );
 };
 
-const MobileNav = () => { // Removed session prop, and now user variable
-
+const MobileNav = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const toggleMenu = () => setIsOpen(!isOpen);
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { user } = useAuth();
+  const toggleMenu = () => setIsOpen(!isOpen);;
 
   const menuVariants = {
     hidden: { y: '-100%', opacity: 0.8 },
@@ -207,7 +201,7 @@ const MobileNav = () => { // Removed session prop, and now user variable
               initial='hidden'
               animate='visible'
               exit='exit'
-              className='fixed inset-x-0 top-0 z-50 bg-background shadow-lg rounded-b-2xl'
+              className='fixed inset-x-0 top-0 z-50 bg-background shadow-lg rounded-b-lg md:rounded-b-2xl'
               onClick={(e) => e.stopPropagation()}
             >
               <div className='flex items-center justify-between p-4 border-b'>
@@ -222,7 +216,7 @@ const MobileNav = () => { // Removed session prop, and now user variable
                   variants={listVariants}
                   initial='hidden'
                   animate='visible'
-                  className='flex flex-col items-center gap-6'
+                  className='flex flex-col items-center gap-4 sm:gap-6'
                 >
                   {navLinks.map((link) => (
                     <motion.li key={link.href} variants={itemVariants}>
@@ -236,8 +230,8 @@ const MobileNav = () => { // Removed session prop, and now user variable
                     </motion.li>
                   ))}
                 </motion.ul>
-                <div className='mt-8 pt-6 border-t flex justify-center'>
-                  <UserNav /> {/* Removed session prop */}
+                <div className='mt-6 pt-4 border-t flex justify-center sm:mt-8 sm:pt-6'>
+                  <UserNav />
                 </div>
               </div>
             </motion.div>
@@ -251,7 +245,7 @@ const MobileNav = () => { // Removed session prop, and now user variable
 export default function Navbar() {
   return (
     <header className='sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm'>
-      <div className='flex h-16 items-center justify-between px-4 md:px-6 w-full'>
+      <div className='flex h-16 items-center justify-between px-4 md:px-8 lg:px-12 w-full'>
         <div className='flex justify-start'>
           <Logo />
         </div>
@@ -260,9 +254,9 @@ export default function Navbar() {
         </div>
         <div className='flex justify-end'>
           <div className='hidden md:block'>
-            <UserNav /> {/* Removed session prop */}
+            <UserNav />
           </div>
-          <MobileNav /> {/* Removed session prop */}
+          <MobileNav />
         </div>
       </div>
     </header>

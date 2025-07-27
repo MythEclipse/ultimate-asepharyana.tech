@@ -40,7 +40,7 @@ export default function AnimePage() {
   if (error) return <div>Error loading data</div>;
   if (!data)
     return (
-      <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+      <main className='p-4 md:p-8 lg:p-12 bg-background text-foreground min-h-screen'>
         <div className='max-w-7xl mx-auto'>
           <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
             Anime
@@ -53,7 +53,7 @@ export default function AnimePage() {
                 <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
                   <Clapperboard className='w-6 h-6 text-blue-600 dark:text-blue-400' />
                 </div>
-                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+                <h2 className='text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
                   Ongoing Anime
                 </h2>
               </div>
@@ -90,7 +90,7 @@ export default function AnimePage() {
     );
 
   return (
-    <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
+    <main className='p-4 md:p-8 lg:p-12 bg-background text-foreground min-h-screen'>
       <div className='max-w-7xl mx-auto'>
         <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
           Anime
@@ -102,7 +102,7 @@ export default function AnimePage() {
               <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
                 <Clapperboard className='w-6 h-6 text-blue-600 dark:text-blue-400' />
               </div>
-              <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+              <h2 className='text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
                 Ongoing Anime
               </h2>
             </div>

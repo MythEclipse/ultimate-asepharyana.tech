@@ -51,19 +51,19 @@ export default function UserMenu() {
           {isOpen && (
             <div
               ref={menuRef}
-              className='absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg'
+              className='absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg'
             >
               <Link
                 prefetch={true}
                 href='/dashboard'
-                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-center'
+                className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-center'
               >
                 Dashboard
               </Link>
               <Link
                 prefetch={true}
                 href='/settings'
-                className='block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-center'
+                className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-center'
               >
                 Settings
               </Link>
@@ -79,7 +79,7 @@ export default function UserMenu() {
         </>
       ) : (
         <Link href='/login'>
-          <button className='px-4 py-2 bg-blue-500 text-white rounded-full'>
+          <button className='px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800'>
             Login
           </button>
         </Link>
