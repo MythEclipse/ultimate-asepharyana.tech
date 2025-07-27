@@ -31,7 +31,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ClientUser } from '../types/types'; // Import ClientUser from '@/types'
+import { ClientUser } from '@/types/types'; // Use absolute import for reliability
 
 interface AuthContextType {
   user: ClientUser | null;
