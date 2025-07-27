@@ -50,7 +50,7 @@ export const AnimatedHeader = ({
                 <span
                   key={`char-${charIdx}`}
                   className={cn(
-                    `dark:text-white text-black transition-opacity duration-300 ease-in-out`,
+                    `dark:text-white text-foreground transition-opacity duration-300 ease-in-out`,
                     isInView
                       ? 'opacity-100 translate-y-0'
                       : 'opacity-0 translate-y-2',
