@@ -33,19 +33,6 @@ impl AppConfig {
             }
         };
 
-        // Override with direct environment variable access for compatibility
-        if let Ok(port_str) = env::var("PORT") {
-            match port_str.parse::<u16>() {
-                Ok(port) => {
-                    tracing::info!("Overriding port from env: {}", port);
-                    config.port = port;
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse PORT env variable: {}", e);
-                }
-            }
-        }
-
         if let Ok(db_url) = env::var("DATABASE_URL") {
             if !db_url.is_empty() {
                 tracing::info!("Overriding database_url from env: {}", db_url);

@@ -32,10 +32,6 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Set default values for Rust-specific configs if not present
-    if std::env::var("PORT").is_err() {
-        tracing::info!("PORT not set, using default 4091");
-        std::env::set_var("PORT", "4091");
-    }
     if std::env::var("RUST_LOG").is_err() {
         tracing::info!("RUST_LOG not set, using default 'info'");
         std::env::set_var("RUST_LOG", "info");
