@@ -9,7 +9,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "target": "es2017"
   },
   "include": [
     "./src/**/*",

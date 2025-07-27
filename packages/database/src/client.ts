@@ -1,5 +1,5 @@
 // File: database/index.ts
-import { Prisma, PrismaClient } from "../client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

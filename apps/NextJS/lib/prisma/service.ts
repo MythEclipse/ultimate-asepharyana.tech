@@ -1,17 +1,8 @@
-import { PrismaClient } from '@asepharyana/database';
+import { prisma } from '@asepharyana/database';
+export { prisma };
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development'
-        ? ['query', 'error', 'warn']
-        : ['error'],
-  });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export const updateUserImage = async (id: string, image: string) => {
   try {
@@ -27,5 +18,20 @@ export const updateUserImage = async (id: string, image: string) => {
   } catch (error) {
     console.error('Error updating user image:', error);
     throw new Error('Failed to update user image');
+  }
+};
+
+export const getUserById = async (id: string) => {
+  try {
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error('Error fetching user by ID:', error);
+    throw new Error('Failed to fetch user by ID');
   }
 };
