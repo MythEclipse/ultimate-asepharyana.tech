@@ -1,3 +1,4 @@
+// apps/NextJS/app/sosmed/page.tsx
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,7 @@ import { useAuth } from '@/hooks/AuthContext';
 import useSWR, { mutate } from 'swr';
 import ButtonA from '@/components/button/NormalButton';
 import { UploadCloud, Loader2, Lock } from 'lucide-react';
+import { useGlobalStore } from '@/hooks/useGlobalStore';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // Define a client-safe User type with explicit properties, omitting 'password'
@@ -34,13 +36,15 @@ export default function PostPage() {
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [newComments, setNewComments] = useState<Record<string, string>>({});
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
   const [isPosting, setIsPosting] = useState(false);
   const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
   const [isCommenting, setIsCommenting] = useState<Record<string, boolean>>({});
   const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
+
+  // Zustand global state for Sosmed UI
+  // Removed unused setShowComments
+  const setNewComment = useGlobalStore((s) => s.setNewComment);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
@@ -134,8 +138,8 @@ export default function PostPage() {
     }
   };
 
-  const handleAddComment = async (postId: string) => {
-    if (!newComments[postId]?.trim()) return;
+  const handleAddComment = async (postId: string, comment: string) => {
+    if (!comment?.trim()) return;
     if (!user) { 
       console.error('User not authenticated to add comment.');
       return;
@@ -145,10 +149,10 @@ export default function PostPage() {
       await fetch(`/api/sosmed/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newComments[postId], postId }),
+        body: JSON.stringify({ content: comment, postId }),
       });
       mutate(`/api/sosmed/posts`);
-      setNewComments((prev) => ({ ...prev, [postId]: '' }));
+      setNewComment(postId, '');
     } catch (error) {
       console.error('Error adding comment:', error);
     } finally {
@@ -236,9 +240,6 @@ export default function PostPage() {
       setIsDeleting((prev) => ({ ...prev, [commentId]: false }));
     }
   };
-
-  const toggleComments = (postId: string) =>
-    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
 
   return (
     <div className='container mx-auto py-8 px-4 max-w-4xl md:py-12 bg-background text-foreground'>
@@ -354,7 +355,6 @@ export default function PostPage() {
                     },
                   })) || [],
               }}
-              // Removed currentUserId prop passing
               handleLike={handleLike}
               handleUnlike={handleUnlike}
               handleAddComment={handleAddComment}
@@ -362,12 +362,6 @@ export default function PostPage() {
               handleDeletePost={handleDeletePost}
               handleEditComment={handleEditComment}
               handleDeleteComment={handleDeleteComment}
-              toggleComments={toggleComments}
-              showComments={!!showComments[post.id]}
-              newComment={newComments[post.id] || ''}
-              setNewComment={(value) =>
-                setNewComments((prev) => ({ ...prev, [post.id]: value }))
-              }
               isLiking={isLiking}
               isCommenting={isCommenting}
               isEditing={isEditing}

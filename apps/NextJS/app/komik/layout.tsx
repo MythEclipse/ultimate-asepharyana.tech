@@ -1,5 +1,5 @@
 import DockKomik from '@/components/modal/DockKomik';
-import React from 'react';
+import React, { memo } from 'react';
 import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { FaPencilAlt, FaDragon, FaBook } from 'react-icons/fa';
 
@@ -57,7 +57,7 @@ export const metadata = {
     'nextjs, asep, haryana, saputra, asep haryana, asep haryana saputra',
 };
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className=''>{children}</div>
@@ -65,3 +65,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
+
+export default memo(Layout);

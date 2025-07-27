@@ -2,8 +2,13 @@
 
 import React, { createContext, useState, ReactNode } from 'react';
 
+/**
+ * Context type for the ContextApp.
+ */
 interface ContextAppType {
+  /** The current location (string) */
   lokasi: string;
+  /** Setter for the location (React.Dispatch<React.SetStateAction<string>>) */
   setLokasi: React.Dispatch<React.SetStateAction<string>>;
 }
 

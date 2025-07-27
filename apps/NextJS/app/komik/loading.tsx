@@ -1,8 +1,9 @@
 import Loading from '@/components/misc/loading';
-import React from 'react';
+import React, { memo } from 'react';
 
-const loading = () => {
+const loading = memo(() => {
   return <Loading></Loading>;
-};
+});
+loading.displayName = 'LoadingPage';
 
 export default loading;

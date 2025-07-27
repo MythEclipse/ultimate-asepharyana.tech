@@ -1,18 +1,24 @@
-'use client';
-
-import * as React from 'react';
-
+// Required imports
+import React from 'react';
 import * as RechartsPrimitive from 'recharts';
-
 import { cn } from '@/lib/utils';
 
+// JSDoc for ChartTooltipPayload
+/**
+ * Represents a single payload item for chart tooltips.
+ * @property {string} [dataKey] - The key of the data.
+ * @property {string} [name] - The name of the data item.
+ * @property {number} [value] - The value of the data item.
+ * @property {string} [color] - The color associated with the data item.
+ * @property {Record<string, any>} [payload] - Additional payload data.
+ */
 interface ChartTooltipPayload {
   dataKey?: string;
   name?: string;
   value?: number;
   color?: string;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: Record<string, any>; 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload?: Record<string, any>;
 }
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
@@ -115,7 +121,7 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 function ChartTooltipContent({
   active,
-  payload, 
+  payload,
   className,
   indicator = 'dot',
   hideLabel = false,
@@ -127,20 +133,59 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: { // Start of new type definition for props
+}: {
+  /**
+   * Whether the tooltip is active.
+   */
   active?: boolean;
+  /**
+   * The payload data for the tooltip.
+   */
   payload?: ChartTooltipPayload[];
+  /**
+   * Additional class name for the tooltip.
+   */
   className?: string;
+  /**
+   * Indicator style for the tooltip.
+   */
   indicator?: 'line' | 'dot' | 'dashed';
+  /**
+   * Hide the label in the tooltip.
+   */
   hideLabel?: boolean;
+  /**
+   * Hide the indicator in the tooltip.
+   */
   hideIndicator?: boolean;
-  label?: React.ReactNode; 
+  /**
+   * The label to display.
+   */
+  label?: React.ReactNode;
+  /**
+   * Formatter for the label.
+   */
   labelFormatter?: (value: string | number | undefined, payload: ChartTooltipPayload[]) => React.ReactNode;
+  /**
+   * Additional class name for the label.
+   */
   labelClassName?: string;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /**
+   * Formatter for the value.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatter?: (value: string | number, name: string, item: ChartTooltipPayload, index: number, payload: Record<string, any>) => React.ReactNode;
+  /**
+   * Color for the indicator.
+   */
   color?: string;
+  /**
+   * Key for the name.
+   */
   nameKey?: string;
+  /**
+   * Key for the label.
+   */
   labelKey?: string;
 } & React.ComponentProps<'div'>) {
   const { config } = useChart();
@@ -274,10 +319,25 @@ function ChartLegendContent({
   verticalAlign = 'bottom',
   nameKey,
 }: {
+  /**
+   * Additional class name for the legend.
+   */
   className?: string;
+  /**
+   * Hide the icon in the legend.
+   */
   hideIcon?: boolean;
+  /**
+   * The payload data for the legend.
+   */
   payload?: ChartTooltipPayload[]; // Using ChartTooltipPayload[] for consistency
+  /**
+   * Vertical alignment for the legend.
+   */
   verticalAlign?: 'top' | 'middle' | 'bottom';
+  /**
+   * Key for the name.
+   */
   nameKey?: string;
 } & React.ComponentProps<'div'>) {
   const { config } = useChart();

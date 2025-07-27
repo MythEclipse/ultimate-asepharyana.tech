@@ -1,4 +1,5 @@
-// Add missing heading for test compatibility
+// apps/NextJS/app/page.tsx
+
 import React from 'react';
 import Bg from '@/components/background/Bg';
 import AnimatedContent from '@/components/landing/AnimatedContent';

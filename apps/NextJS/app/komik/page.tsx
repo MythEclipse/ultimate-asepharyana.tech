@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import ComicGrid from '@/components/card/ComicGrid';
@@ -18,7 +18,7 @@ export interface Komik {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function HomePage() {
+function HomePage() {
   const { data: manga, error: mangaError } = useSWR(
     `/api/komik/manga?page=1&order=update`,
     fetcher
@@ -136,3 +136,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+export default memo(HomePage);

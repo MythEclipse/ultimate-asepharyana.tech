@@ -7,15 +7,22 @@ const PROXY_LIST_URL =
   'https://raw.githubusercontent.com/MythEclipse/proxy-auto-ts/refs/heads/main/proxies.txt';
 
 async function getProxies(): Promise<string[]> {
-  const res = await fetch(PROXY_LIST_URL);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch proxy list: ${res.statusText}`);
+  try {
+    const res = await fetch(PROXY_LIST_URL);
+    if (!res.ok) {
+      const error = new Error(`Failed to fetch proxy list: ${res.statusText}`);
+      logger.error('Error fetching proxy list:', error);
+      throw error;
+    }
+    const data = await res.text();
+    return data
+      .split('\n')
+      .filter((line) => line.trim() !== '' && !line.startsWith('#'))
+      .map((line) => line.split(' ')[0].trim());
+  } catch (error) {
+    logger.error('Network or unexpected error while fetching proxy list:', error);
+    throw error;
   }
-  const data = await res.text();
-  return data
-    .split('\n')
-    .filter((line) => line.trim() !== '' && !line.startsWith('#'))
-    .map((line) => line.split(' ')[0].trim());
 }
 
 let cachedProxies: string[] | null = null;
@@ -53,19 +60,24 @@ export async function fetchWithProxy(
         const textData = await res.text();
         return { data: textData, contentType };
       }
-      throw new Error(`Direct fetch failed with status ${res.status}`);
-    } catch {
+      const error = new Error(`Direct fetch failed with status ${res.status}`);
+      logger.error(`Direct fetch failed for ${slug}: Status ${res.status}`, error);
+      throw error;
+    } catch (error) {
+      logger.warn(`Attempt ${attempts + 1} of direct fetch failed for ${slug}:`, error);
       attempts++;
       if (attempts >= maxAttempts) {
         if (useProxies) {
-          logger.error('Direct fetch failed, trying proxies');
+          logger.error('Direct fetch failed after maximum attempts, trying proxies');
           return await fetchFromProxies(slug);
         } else {
+          logger.error('Direct fetch failed and proxy usage is disabled');
           throw new Error('Direct fetch failed and proxy usage is disabled');
         }
       }
     }
   }
+  logger.error('Failed to fetch after maximum attempts (should not reach here)');
   throw new Error('Failed to fetch after maximum attempts');
 }
 
@@ -86,12 +98,14 @@ async function fetchFromProxies(
       });
       if (response.status === 200) {
         const contentType = response.headers['content-type'] || null;
-        logger.info(`Fetched from ${host}:${port}`);
+        logger.info(`Fetched from ${host}:${port} for ${slug}`);
         return { data: response.data, contentType };
       }
     } catch (error) {
       lastError = error as Error;
+      logger.warn(`Proxy fetch failed for ${slug} via ${host}:${port}:`, error);
     }
   }
+  logger.error(`Failed to fetch from all proxies for ${slug}:`, lastError);
   throw new Error(lastError?.message || 'Failed to fetch from all proxies');
 }

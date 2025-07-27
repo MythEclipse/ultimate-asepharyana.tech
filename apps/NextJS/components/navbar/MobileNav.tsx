@@ -1,6 +1,7 @@
+// apps/NextJS/components/navbar/MobileNav.tsx
 'use client';
 
-import React from 'react';
+import React, { memo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,26 +10,43 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { navLinks } from '@/lib/constants';
 import UserMenu from './UserMenu';
+import { useGlobalStore } from '@/hooks/useGlobalStore';
 
-const Logo = () => (
+const Logo = memo(() => (
   <Link href='/' className='flex items-center gap-2'>
     <Image src='/Logo.svg' alt='Logo' width={28} height={28} />
     <span className='hidden text-base font-semibold sm:inline-block md:text-lg'>
       Asep Haryana
     </span>
   </Link>
-);
+));
+Logo.displayName = 'Logo';
 
-interface MobileNavProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-}
+function MobileNav() {
+  const isOpen = useGlobalStore((s) => s.isMobileNavOpen);
+  const setIsOpen = useGlobalStore((s) => s.setMobileNavOpen);
 
-export default function MobileNav({
-  isOpen,
-  setIsOpen,
-}: MobileNavProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const toggleMenu = () => setIsOpen(!isOpen);
+
+  // Focus management and ESC key to close
+  useEffect(() => {
+    if (isOpen && menuRef.current) {
+      menuRef.current.focus();
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, setIsOpen]);
 
   const menuVariants = {
     hidden: { y: '-100%', opacity: 0.8 },
@@ -63,10 +81,18 @@ export default function MobileNav({
   };
 
   return (
-    <div className='md:hidden'>
-      <Button onClick={toggleMenu} variant='ghost' size='icon'>
-        <Menu className='h-6 w-6' />
-        <span className='sr-only'>Buka Menu</span>
+    <nav className='md:hidden' aria-label="Mobile Navigation">
+      <Button
+        onClick={toggleMenu}
+        variant='ghost'
+        size='icon'
+        aria-label="Open navigation menu"
+        aria-controls="mobile-nav-menu"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+      >
+        <Menu className='h-6 w-6' aria-hidden="true" />
+        <span className='sr-only'>Open Menu</span>
       </Button>
 
       <AnimatePresence>
@@ -79,18 +105,28 @@ export default function MobileNav({
             onClick={toggleMenu}
           >
             <motion.div
+              ref={menuRef}
               variants={menuVariants}
               initial='hidden'
               animate='visible'
               exit='exit'
               className='fixed inset-x-0 top-0 z-50 bg-background shadow-lg rounded-b-lg md:rounded-b-2xl'
               onClick={(e) => e.stopPropagation()}
+              id="mobile-nav-menu"
+              tabIndex={-1}
+              role="menu"
+              aria-label="Main menu"
             >
               <div className='flex items-center justify-between p-4 border-b'>
                 <Logo />
-                <Button onClick={toggleMenu} variant='ghost' size='icon'>
-                  <X className='h-6 w-6' />
-                  <span className='sr-only'>Tutup Menu</span>
+                <Button
+                  onClick={toggleMenu}
+                  variant='ghost'
+                  size='icon'
+                  aria-label="Close navigation menu"
+                >
+                  <X className='h-6 w-6' aria-hidden="true" />
+                  <span className='sr-only'>Close Menu</span>
                 </Button>
               </div>
               <div className='p-6'>
@@ -99,13 +135,18 @@ export default function MobileNav({
                   initial='hidden'
                   animate='visible'
                   className='flex flex-col items-center gap-4 sm:gap-6'
+                  role="menu"
+                  aria-label="Navigation links"
                 >
                   {navLinks.map((link) => (
-                    <motion.li key={link.href} variants={itemVariants}>
+                    <motion.li key={link.href} variants={itemVariants} role="none">
                       <Link
                         href={link.href}
                         onClick={toggleMenu}
                         className='text-xl font-medium text-muted-foreground hover:text-primary transition-colors'
+                        role="menuitem"
+                        tabIndex={0}
+                        aria-label={link.label}
                       >
                         {link.label}
                       </Link>
@@ -120,6 +161,8 @@ export default function MobileNav({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </nav>
   );
 }
+
+export default memo(MobileNav);

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React from 'react';
+import React, { memo } from 'react';
 import { CardBody, CardContainer, CardItem } from '@/components/card/3d-card';
 import Link from 'next/link';
 import { BaseUrl } from '@/lib/url';
@@ -13,7 +13,7 @@ interface ThreeDCardProps {
   linkUrl: string;
 }
 
-const ThreeDCard: React.FC<ThreeDCardProps> = ({
+const ThreeDCard: React.FC<ThreeDCardProps> = memo(({
   title,
   description,
   imageUrl,
@@ -50,6 +50,8 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({
       </CardContainer>
     </Link>
   );
-};
+});
+
+ThreeDCard.displayName = 'MiniTildCard';
 
 export default ThreeDCard;

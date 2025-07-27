@@ -1,7 +1,8 @@
-'use client';
-import React from 'react';
-
+/**
+ * Props for the VideoPlayer component.
+ */
 interface VideoPlayerProps {
+  /** The URL of the video to play (string) */
   url: string;
 }
 

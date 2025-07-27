@@ -7,13 +7,14 @@ import React, {
   useContext,
   useRef,
   useEffect,
+  memo,
 } from 'react';
 
 const MouseEnterContext = createContext<
   [boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined
 >(undefined);
 
-export const CardContainer = ({
+export const CardContainer = memo(({
   children,
   className,
   containerClassName,
@@ -73,9 +74,11 @@ export const CardContainer = ({
       </div>
     </MouseEnterContext.Provider>
   );
-};
+});
 
-export const CardBody = ({
+CardContainer.displayName = 'CardContainer';
+
+export const CardBody = memo(({
   children,
   className,
 }: {
@@ -92,9 +95,11 @@ export const CardBody = ({
       {children}
     </div>
   );
-};
+});
 
-export const CardItem = ({
+CardBody.displayName = 'CardBody';
+
+export const CardItem = memo(({
   as: Tag = 'div',
   children,
   className,
@@ -150,7 +155,9 @@ export const CardItem = ({
       {children}
     </Tag>
   );
-};
+});
+
+CardItem.displayName = 'CardItem';
 
 // Create a hook to use the context
 export const useMouseEnter = () => {

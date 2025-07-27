@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import Navbar from './Navbar';
 
-export default function NavbarWrapper() {
+function NavbarWrapper() {
   return <Navbar />;
 }
+
+export default memo(NavbarWrapper);

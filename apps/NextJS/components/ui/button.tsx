@@ -35,15 +35,23 @@ const buttonVariants = cva(
   }
 );
 
+/**
+ * Renders a customizable Button component with accessibility improvements.
+ * Supports aria-label and aria-pressed for toggle buttons.
+ */
 function Button({
   className,
   variant,
   size,
   asChild = false,
+  'aria-label': ariaLabel,
+  'aria-pressed': ariaPressed,
   ...props
 }: React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
+    'aria-label'?: string;
+    'aria-pressed'?: boolean;
   }) {
   const Comp = asChild ? Slot : 'button';
 
@@ -51,6 +59,8 @@ function Button({
     <Comp
       data-slot='button'
       className={cn(buttonVariants({ variant, size, className }), 'focus-visible:outline-none')}
+      aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
       {...props}
     />
   );

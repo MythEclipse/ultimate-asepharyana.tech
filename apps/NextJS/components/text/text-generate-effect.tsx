@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { cn } from '@/lib/utils';
 import React from 'react';
-export const TextGenerateEffect = ({
+
+export const TextGenerateEffect = memo(({
   words,
   className,
   filter = true,
@@ -29,7 +30,7 @@ export const TextGenerateEffect = ({
 
   const renderWords = () => {
     return (
-      <div ref={containerRef}>
+      <div ref={containerRef} aria-hidden="true">
         {wordsArray.map((word, idx) => {
           return (
             <span
@@ -38,6 +39,7 @@ export const TextGenerateEffect = ({
               style={{
                 filter: filter ? 'blur(10px)' : 'none',
               }}
+              aria-hidden="true"
             >
               {word}{' '}
             </span>
@@ -51,9 +53,13 @@ export const TextGenerateEffect = ({
     <div className={cn('font-bold', className)}>
       <div className='mt-4'>
         <div className='dark:text-white text-foreground text-2xl leading-snug tracking-wide'>
+          {/* Visually hidden text for screen readers */}
+          <span className="sr-only">{words}</span>
           {renderWords()}
         </div>
       </div>
     </div>
   );
-};
+});
+
+TextGenerateEffect.displayName = 'TextGenerateEffect';

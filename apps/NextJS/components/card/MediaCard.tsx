@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ const typeColors: { [key: string]: string } = {
   ONA: 'bg-indigo-500 hover:bg-indigo-600',
 };
 
-const TypeBadge = ({ type, badge }: { type?: string; badge?: string }) => {
+const TypeBadge = memo(({ type, badge }: { type?: string; badge?: string }) => {
   const label = badge || type;
   if (!label) return null;
 
@@ -49,9 +49,11 @@ const TypeBadge = ({ type, badge }: { type?: string; badge?: string }) => {
       {label}
     </Badge>
   );
-};
+});
 
-const CardSkeleton = () => {
+TypeBadge.displayName = 'TypeBadge';
+
+const CardSkeleton = memo(() => {
   return (
     <Card className='w-full max-w-sm overflow-hidden'>
       <div className='relative h-64'>
@@ -66,9 +68,11 @@ const CardSkeleton = () => {
       </CardContent>
     </Card>
   );
-};
+});
 
-export default function CardA({
+CardSkeleton.displayName = 'CardSkeleton';
+
+function CardA({
   title,
   description,
   imageUrl,
@@ -82,22 +86,27 @@ export default function CardA({
   const router = useRouter();
   const fallbackImage = '/default.png';
 
-  const imageSources = [
-    imageUrl,
-    imageUrl
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
-      : null,
-    imageUrl
-      ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}`
-      : null,
-    imageUrl
-      ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}`
-      : null,
-    imageUrl
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
-      : null,
-    fallbackImage,
-  ].filter(Boolean) as string[];
+  const imageSources = useMemo(
+    () =>
+      [
+        imageUrl,
+        imageUrl
+          ? `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl)}`
+          : null,
+        imageUrl
+          ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(imageUrl)}`
+          : null,
+        imageUrl
+          ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(imageUrl)}`
+          : null,
+        imageUrl
+          ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`
+          : null,
+        fallbackImage,
+      ].filter(Boolean) as string[],
+    // Remove PRODUCTION from dependency array to fix warning
+    [imageUrl]
+  );
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -116,19 +125,23 @@ export default function CardA({
     };
   }, [currentImageIndex, isImageLoading, imageSources.length]);
 
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (currentImageIndex < imageSources.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
     } else {
       setIsImageLoading(false);
     }
-  };
+  }, [currentImageIndex, imageSources.length]);
 
-  const handleImageLoad = () => {
+  const handleImageLoad = useCallback(() => {
     setIsImageLoading(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  };
+  }, []);
+
+  const handleCardClick = useCallback(() => {
+    router.push(linkUrl || '/');
+  }, [router, linkUrl]);
 
   if (loading) {
     return <CardSkeleton />;
@@ -136,7 +149,7 @@ export default function CardA({
 
   return (
     <Card
-      onClick={() => router.push(linkUrl || '/')}
+      onClick={handleCardClick}
       className='w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl'
     >
       <div className='relative h-64'>
@@ -169,3 +182,5 @@ export default function CardA({
     </Card>
   );
 }
+
+export default memo(CardA);

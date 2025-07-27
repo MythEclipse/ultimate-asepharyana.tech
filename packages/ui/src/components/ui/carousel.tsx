@@ -1,6 +1,6 @@
 "use client";
 import { IconArrowNarrowRight } from "@tabler/icons-react";
-import { useState, useRef, useId, useEffect } from "react";
+import { useState, useRef, useId, useEffect, memo } from "react";
 import Image from "next/image"; // Import Image component
 
 interface SlideData {
@@ -16,7 +16,7 @@ interface SlideProps {
   handleSlideClick: (index: number) => void;
 }
 
-const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
+const Slide = memo(({ slide, index, current, handleSlideClick }: SlideProps) => {
   const slideRef = useRef<HTMLLIElement>(null);
 
   const xRef = useRef(0);
@@ -125,7 +125,9 @@ const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
       </li>
     </div>
   );
-};
+});
+
+Slide.displayName = 'Slide';
 
 interface CarouselControlProps {
   type: string;
@@ -133,7 +135,7 @@ interface CarouselControlProps {
   handleClick: () => void;
 }
 
-const CarouselControl = ({
+const CarouselControl = memo(({
   type,
   title,
   handleClick,
@@ -149,13 +151,15 @@ const CarouselControl = ({
       <IconArrowNarrowRight className="text-neutral-600 dark:text-neutral-200" />
     </button>
   );
-};
+});
+
+CarouselControl.displayName = 'CarouselControl';
 
 interface CarouselProps {
   slides: SlideData[];
 }
 
-export default function Carousel({ slides }: CarouselProps) {
+function Carousel({ slides }: CarouselProps) {
   const [current, setCurrent] = useState(0);
 
   const handlePreviousClick = () => {
@@ -214,3 +218,5 @@ export default function Carousel({ slides }: CarouselProps) {
     </div>
   );
 }
+
+export default memo(Carousel);

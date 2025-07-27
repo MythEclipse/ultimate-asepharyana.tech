@@ -1,20 +1,40 @@
+/**
+ * AuthContext provides authentication state and actions for the app.
+ *
+ * ## State Managed:
+ * - user: The current authenticated user (ClientUser or null)
+ * - isLoading: Whether authentication state is being resolved
+ *
+ * ## Actions:
+ * - login(email, password): Authenticates user, stores tokens, fetches user info, updates state, redirects to home
+ * - logout(): Clears tokens, resets user, redirects to login
+ * - register(name, email, password): Registers a new user
+ * - refreshAccessToken(): Refreshes the access token, handles session expiry
+ *
+ * ## Effects:
+ * - On mount, verifies token from localStorage and fetches user profile
+ *
+ * ## Usage:
+ * Wrap your app with <AuthProvider>. Use the useAuth() hook to access state and actions.
+ *
+ * ## Example:
+ * ```tsx
+ * import { AuthProvider, useAuth } from '@/hooks/AuthContext';
+ * 
+ * function MyComponent() {
+ *   const { user, login, logout, isLoading } = useAuth();
+ *   // ...
+ * }
+ * ```
+ */
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-
-// Define User type locally to match API response
-export interface User {
-  id: string;
-  email: string;
-  fullname?: string;
-  role?: string;
-  image?: string;
-  [key: string]: unknown;
-}
+import { ClientUser } from '@/types'; // Import ClientUser from '@/types'
 
 interface AuthContextType {
-  user: User | null;
+  user: ClientUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -25,7 +45,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ClientUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -48,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         if (meResponse.ok) {
           const { user: userPayload } = await meResponse.json();
-          setUser(userPayload as User);
+          setUser(userPayload as ClientUser);
         } else {
           setUser(null);
         }
@@ -85,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         if (meResponse.ok) {
           const { user: userPayload } = await meResponse.json();
-          setUser(userPayload as User);
+          setUser(userPayload as ClientUser);
         } else {
           setUser(null);
         }

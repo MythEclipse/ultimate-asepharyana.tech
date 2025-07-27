@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import AnimeGrid from '@/components/card/AnimeGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React, { memo } from 'react';
 
 interface HomeData {
   status: string;
@@ -32,7 +33,7 @@ interface CompleteAnime {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function AnimePage() {
+function AnimePage() {
   const { data, error } = useSWR<HomeData>(`/api/anime/`, fetcher, {
     refreshInterval: 60000,
   });
@@ -141,3 +142,5 @@ export default function AnimePage() {
     </main>
   );
 }
+
+export default memo(AnimePage);

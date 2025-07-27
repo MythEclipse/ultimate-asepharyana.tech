@@ -1,3 +1,4 @@
+// apps/NextJS/components/sosmed/PostCard.tsx
 'use client';
 import React, { useState } from 'react';
 import {
@@ -10,12 +11,12 @@ import {
 import Image from 'next/image';
 import { Textarea } from '@/components/text/textarea';
 import ButtonA from '@/components/button/NormalButton';
-import { Posts, Comments, Likes } from '@asepharyana/database'; // Added User import back for internal types
+import { Posts, Comments, Likes } from '@asepharyana/database';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
-import { Loader2 } from 'lucide-react'; // Import Loader2
+import { useAuth } from '@/hooks/AuthContext';
+import { Loader2 } from 'lucide-react';
+import { useGlobalStore } from '@/hooks/useGlobalStore';
 
-// Define a client-safe User type by omitting 'password' for client-side usage
 interface ClientUser {
   id: string;
   name: string | null;
@@ -27,11 +28,10 @@ interface ClientUser {
 
 interface PostCardProps {
   readonly post: Posts & {
-    readonly user: ClientUser; // Use ClientUser here
+    readonly user: ClientUser;
     readonly likes: readonly Likes[];
-    readonly comments: readonly (Comments & { readonly user: ClientUser })[]; // And here
+    readonly comments: readonly (Comments & { readonly user: ClientUser })[];
   };
-  //  // Removed this prop
   readonly handleLike: (postId: string) => void;
   readonly handleUnlike: (postId: string) => void;
   readonly handleAddComment: (postId: string, comment: string) => void;
@@ -39,10 +39,6 @@ interface PostCardProps {
   readonly handleDeletePost: (postId: string) => void;
   readonly handleEditComment: (commentId: string, content: string) => void;
   readonly handleDeleteComment: (commentId: string) => void;
-  readonly toggleComments: (postId: string) => void;
-  readonly showComments: boolean;
-  readonly newComment: string;
-  readonly setNewComment: (comment: string) => void;
   readonly isLiking: Record<string, boolean>;
   readonly isCommenting: Record<string, boolean>;
   readonly isEditing: Record<string, boolean>;
@@ -51,7 +47,6 @@ interface PostCardProps {
 
 export default function PostCard({
   post,
-  // currentUserId, // Removed from function signature
   handleLike,
   handleUnlike,
   handleAddComment,
@@ -59,10 +54,6 @@ export default function PostCard({
   handleDeletePost,
   handleEditComment,
   handleDeleteComment,
-  toggleComments,
-  showComments,
-  newComment,
-  setNewComment,
   isLiking,
   isCommenting,
   isEditing,
@@ -72,9 +63,14 @@ export default function PostCard({
   const [editedPostContent, setEditedPostContent] = useState(post.content);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState('');
-  const { user } = useAuth(); // Use useAuth hook instead of useSession()
+  const { user } = useAuth();
 
-  // Derive authenticatedUserId from useAuth()
+  // Zustand global state for Sosmed UI
+  const showComments = useGlobalStore((s) => s.showComments[post.id] || false);
+  const setShowComments = useGlobalStore((s) => s.setShowComments);
+  const newComment = useGlobalStore((s) => s.newComments[post.id] || '');
+  const setNewComment = useGlobalStore((s) => s.setNewComment);
+
   const authenticatedUserId = user?.id;
 
   const handleEditPostSubmit = () => {
@@ -90,19 +86,23 @@ export default function PostCard({
   const userHasLiked = post.likes.some((like: Likes) => like.userId === authenticatedUserId);
 
   return (
-    <div className='relative p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl hover:shadow-2xl transition-all border border-transparent hover:border-blue-500/20 group'>
+    <div
+      className='relative p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl hover:shadow-2xl transition-all border border-transparent hover:border-blue-500/20 group'
+      role="region"
+      aria-label={`Post by ${post.user.name || 'User'}`}
+    >
       {/* User Header */}
       <div className='flex items-start gap-4 mb-6'>
         <div className='relative'>
           <Image
             src={post.user.image || '/default-profile.png'}
-            alt={post.user.name || 'User'}
+            alt={post.user.name || 'User profile picture'}
             width={56}
             height={56}
             className='rounded-full border-2 border-blue-400/80 shadow-md hover:border-blue-500 transition-all cursor-pointer'
           />
           <div className='absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full px-2 py-0.5 text-xs shadow-sm'>
-            <HiBadgeCheck className='w-4 h-4' />
+            <HiBadgeCheck className='w-4 h-4' aria-hidden="true" />
           </div>
         </div>
 
@@ -129,17 +129,19 @@ export default function PostCard({
               onClick={() => setIsEditingPost(true)}
               className='p-2 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-full text-blue-500 hover:text-blue-600 transition-colors'
               title='Edit post'
+              aria-label="Edit post"
               disabled={isEditing[post.id]}
             >
-              <HiPencil className='w-5 h-5' />
+              <HiPencil className='w-5 h-5' aria-hidden="true" />
             </button>
             <button
               onClick={() => handleDeletePost(post.id)}
               className='p-2 hover:bg-red-50 dark:hover:bg-gray-800 rounded-full text-red-500 hover:text-red-600 transition-colors'
               title='Delete post'
+              aria-label="Delete post"
               disabled={isDeleting[post.id]}
             >
-              <HiTrash className='w-5 h-5' />
+              <HiTrash className='w-5 h-5' aria-hidden="true" />
             </button>
           </div>
         )}
@@ -152,16 +154,18 @@ export default function PostCard({
             value={editedPostContent}
             onChange={(e) => setEditedPostContent(e.target.value)}
             className='min-h-[120px] text-lg border-2 border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:focus:border-blue-500 dark:bg-gray-800 rounded-xl transition-all'
+            aria-label="Edit post content"
           />
           <div className='flex gap-3'>
             <ButtonA
               onClick={handleEditPostSubmit}
               className='bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all'
               disabled={isEditing[post.id]}
+              aria-label="Save changes"
             >
               {isEditing[post.id] ? (
                 <div className='flex items-center justify-center gap-2'>
-                  <Loader2 className='w-5 h-5 animate-spin' />
+                  <Loader2 className='w-5 h-5 animate-spin' aria-hidden="true" />
                   <span>Saving...</span>
                 </div>
               ) : (
@@ -171,6 +175,7 @@ export default function PostCard({
             <ButtonA
               onClick={() => setIsEditingPost(false)}
               className='bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+              aria-label="Cancel editing"
             >
               Cancel
             </ButtonA>
@@ -204,14 +209,17 @@ export default function PostCard({
           }
           className='flex items-center gap-2 group/like'
           disabled={isLiking[post.id]}
+          aria-label={userHasLiked ? "Unlike post" : "Like post"}
+          aria-pressed={userHasLiked}
         >
           <div className='p-2 rounded-full bg-gray-100 dark:bg-gray-800 group-hover/like:bg-red-50 dark:group-hover/like:bg-red-900/20 transition-colors'>
             <HiHeart
               className={`w-6 h-6 ${userHasLiked ? 'text-red-500 fill-current' : 'text-gray-500 dark:text-gray-400'} group-hover/like:text-red-500 transition-colors`}
+              aria-hidden="true"
             />
           </div>
           {isLiking[post.id] ? (
-            <Loader2 className='w-5 h-5 animate-spin' />
+            <Loader2 className='w-5 h-5 animate-spin' aria-hidden="true" />
           ) : (
             <span
               className={`font-medium ${userHasLiked ? 'text-red-600' : 'text-gray-600 dark:text-gray-400'} group-hover/like:text-red-600`}
@@ -222,15 +230,16 @@ export default function PostCard({
         </button>
 
         <button
-          onClick={() => toggleComments(post.id)}
+          onClick={() => setShowComments(post.id, !showComments)}
           className='flex items-center gap-2 group/comment'
           disabled={isCommenting[post.id]}
+          aria-label="Show comments"
         >
           <div className='p-2 rounded-full bg-gray-100 dark:bg-gray-800 group-hover/comment:bg-blue-50 dark:group-hover/comment:bg-blue-900/20 transition-colors'>
-            <HiChatAlt className='w-6 h-6 text-gray-500 dark:text-gray-400 group-hover/comment:text-blue-500 transition-colors' />
+            <HiChatAlt className='w-6 h-6 text-gray-500 dark:text-gray-400 group-hover/comment:text-blue-500 transition-colors' aria-hidden="true" />
           </div>
           {isCommenting[post.id] ? (
-            <Loader2 className='w-5 h-5 animate-spin' />
+            <Loader2 className='w-5 h-5 animate-spin' aria-hidden="true" />
           ) : (
             <span className='font-medium text-gray-600 dark:text-gray-400 group-hover/comment:text-blue-600'>
               {post.comments.length}
@@ -246,12 +255,14 @@ export default function PostCard({
             <div
               key={comment.id}
               className='pl-6 border-l-2 border-blue-200 dark:border-blue-900/50 relative'
+              role="region"
+              aria-label={`Comment by ${comment.user.name || 'User'}`}
             >
               <div className='absolute left-0 top-4 w-4 h-px bg-gray-200 dark:bg-gray-800' />
               <div className='flex items-start gap-3 mb-3'>
                 <Image
                   src={comment.user.image || '/profile-circle-svgrepo-com.svg'}
-                  alt={comment.user.name || 'User'}
+                  alt={comment.user.name || 'User profile picture'}
                   width={40}
                   height={40}
                   unoptimized
@@ -276,16 +287,18 @@ export default function PostCard({
                           setEditedCommentContent(e.target.value)
                         }
                         className='border-2 border-blue-200 focus:border-blue-400 dark:border-gray-700 dark:focus:border-blue-500 dark:bg-gray-800 rounded-lg'
+                        aria-label="Edit comment"
                       />
                       <div className='flex gap-3'>
                         <ButtonA
                           onClick={() => handleEditCommentSubmit(comment.id)}
                           className='px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm'
                           disabled={isEditing[comment.id]}
+                          aria-label="Save comment"
                         >
                           {isEditing[comment.id] ? (
                             <div className='flex items-center justify-center gap-2'>
-                              <Loader2 className='w-4 h-4 animate-spin' />
+                              <Loader2 className='w-4 h-4 animate-spin' aria-hidden="true" />
                               <span>Saving...</span>
                             </div>
                           ) : (
@@ -295,6 +308,7 @@ export default function PostCard({
                         <ButtonA
                           onClick={() => setEditingCommentId(null)}
                           className='px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm'
+                          aria-label="Cancel editing comment"
                         >
                           Cancel
                         </ButtonA>
@@ -315,15 +329,17 @@ export default function PostCard({
                       }}
                       className='p-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-full text-blue-500 hover:text-blue-600'
                       disabled={isEditing[comment.id]}
+                      aria-label="Edit comment"
                     >
-                      <HiPencil className='w-4 h-4' />
+                      <HiPencil className='w-4 h-4' aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => handleDeleteComment(comment.id)}
                       className='p-1.5 hover:bg-red-50 dark:hover:bg-gray-800 rounded-full text-red-500 hover:text-red-600'
                       disabled={isDeleting[comment.id]}
+                      aria-label="Delete comment"
                     >
-                      <HiTrash className='w-4 h-4' />
+                      <HiTrash className='w-4 h-4' aria-hidden="true" />
                     </button>
                   </div>
                 )}
@@ -334,7 +350,7 @@ export default function PostCard({
           <div className='pt-6 border-t border-gray-100 dark:border-gray-800'>
             <div className='flex gap-4 items-start'>
               <Image
-                src={user?.image || '/profile-circle-svgrepo-com.svg'} // Use user.image
+                src={user?.image || '/profile-circle-svgrepo-com.svg'}
                 alt='Your profile'
                 width={48}
                 height={48}
@@ -345,17 +361,19 @@ export default function PostCard({
                 <Textarea
                   placeholder='Add a comment...'
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={(e) => setNewComment(post.id, e.target.value)}
                   className='min-h-[100px] border-2 border-blue-200 focus:border-blue-400 dark:border-gray-700 dark:focus:border-blue-500 dark:bg-gray-800 rounded-xl'
+                  aria-label="Add a comment"
                 />
                 <ButtonA
                   onClick={() => handleAddComment(post.id, newComment)}
                   className='bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all'
                   disabled={isCommenting[post.id]}
+                  aria-label="Post comment"
                 >
                   {isCommenting[post.id] ? (
                     <div className='flex items-center justify-center gap-2'>
-                      <Loader2 className='w-5 h-5 animate-spin' />
+                      <Loader2 className='w-5 h-5 animate-spin' aria-hidden="true" />
                       <span>Commenting...</span>
                     </div>
                   ) : (

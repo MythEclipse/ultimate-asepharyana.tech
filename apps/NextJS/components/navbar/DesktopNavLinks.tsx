@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { navLinks } from '@/lib/constants';
 
-export default function DesktopNavLinks() {
+function DesktopNavLinks() {
   const pathname = usePathname();
 
   return (
@@ -37,3 +37,5 @@ export default function DesktopNavLinks() {
     </nav>
   );
 }
+
+export default memo(DesktopNavLinks);

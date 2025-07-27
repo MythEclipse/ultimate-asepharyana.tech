@@ -1,9 +1,9 @@
 'use client';
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
-export const TypewriterEffect = ({
+export const TypewriterEffect = memo(({
   words,
   className,
   cursorClassName,
@@ -48,7 +48,7 @@ export const TypewriterEffect = ({
 
   const renderWords = () => {
     return (
-      <div ref={ref} className='inline'>
+      <div ref={ref} className='inline' aria-hidden="true">
         {wordsArray.map((word, idx) => {
           return (
             <div key={`word-${idx}`} className='inline-block'>
@@ -61,6 +61,7 @@ export const TypewriterEffect = ({
                     isInView ? 'opacity-100' : 'opacity-0'
                   )}
                   style={{ transitionDelay: `${index * 0.1}s` }}
+                  aria-hidden="true"
                 >
                   {char}
                 </span>
@@ -73,6 +74,9 @@ export const TypewriterEffect = ({
     );
   };
 
+  // Compose the full text for screen readers
+  const fullText = words.map(w => w.text).join(' ');
+
   return (
     <div
       className={cn(
@@ -80,18 +84,22 @@ export const TypewriterEffect = ({
         className
       )}
     >
+      <span className="sr-only">{fullText}</span>
       {renderWords()}
       <span
         className={cn(
           'inline-block rounded-sm w-[4px] h-4 md:h-6 lg:h-10 bg-blue-500 animate-blink',
           cursorClassName
         )}
+        aria-hidden="true"
       ></span>
     </div>
   );
-};
+});
 
-export const TypewriterEffectSmooth = ({
+TypewriterEffect.displayName = 'TypewriterEffect';
+
+export const TypewriterEffectSmooth = memo(({
   words,
   className,
   cursorClassName,
@@ -136,7 +144,7 @@ export const TypewriterEffectSmooth = ({
 
   const renderWords = () => {
     return (
-      <div>
+      <div aria-hidden="true">
         {wordsArray.map((word, idx) => {
           return (
             <div key={`word-${idx}`} className='inline-block'>
@@ -144,6 +152,7 @@ export const TypewriterEffectSmooth = ({
                 <span
                   key={`char-${index}`}
                   className={cn(`dark:text-white text-foreground `, word.className)}
+                  aria-hidden="true"
                 >
                   {char}
                 </span>
@@ -156,8 +165,12 @@ export const TypewriterEffectSmooth = ({
     );
   };
 
+  // Compose the full text for screen readers
+  const fullText = words.map(w => w.text).join(' ');
+
   return (
     <div className={cn('flex space-x-1 my-6', className)}>
+      <span className="sr-only">{fullText}</span>
       <div
         className={cn(
           'overflow-hidden pb-2 transition-all duration-2000 ease-linear',
@@ -179,10 +192,13 @@ export const TypewriterEffectSmooth = ({
           'block rounded-sm w-[4px] h-4 sm:h-6 xl:h-12 bg-blue-500 animate-blink',
           cursorClassName
         )}
+        aria-hidden="true"
       ></span>
     </div>
   );
-};
+});
+
+TypewriterEffectSmooth.displayName = 'TypewriterEffectSmooth';
 
 // Add this to your global CSS or Tailwind CSS configuration
 // .animate-blink {

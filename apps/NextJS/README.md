@@ -14,6 +14,13 @@ Check out the live demo: [asepharyana](https://asepharyana.tech)
 - **Full-Stack Support:** Utilizes Prisma and MySQL for comprehensive data management.
 - **Enhanced UI:** Styled with Tailwind CSS, Flowbite, and various React components for a polished look.
 - **Internationalization:** Supports multiple languages with Next-Intl for a global audience.
+### 📝 Documentation Standards
+
+- **JSDoc Comments:** All TypeScript interfaces and complex functions are documented with JSDoc for clarity and IDE support.
+- **PropTypes-like Comments:** All component props are documented inline for maintainability.
+- **Component READMEs:** Each component includes a README file with usage examples and prop documentation.
+- **Storybook:** UI components have Storybook stories for interactive documentation and testing.
+- **State Management Docs:** Complex hooks and context providers include detailed comments explaining state logic and usage patterns.
 
 ### 🚀 Getting Started
 

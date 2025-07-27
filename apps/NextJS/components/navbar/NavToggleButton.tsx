@@ -1,16 +1,13 @@
+// apps/NextJS/components/navbar/NavToggleButton.tsx
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
+import { useGlobalStore } from '@/hooks/useGlobalStore';
 
-interface NavToggleButtonProps {
-  isNavOpen: boolean;
-  setIsNavOpen: (isOpen: boolean) => void;
-}
+function NavToggleButton() {
+  const isNavOpen = useGlobalStore((s) => s.isMobileNavOpen);
+  const setIsNavOpen = useGlobalStore((s) => s.setMobileNavOpen);
 
-export default function NavToggleButton({
-  isNavOpen,
-  setIsNavOpen,
-}: NavToggleButtonProps) {
   return (
     <button
       className='md:hidden flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full text-white'
@@ -41,3 +38,5 @@ export default function NavToggleButton({
     </button>
   );
 }
+
+export default memo(NavToggleButton);

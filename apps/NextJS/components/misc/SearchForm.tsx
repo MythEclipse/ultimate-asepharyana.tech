@@ -3,10 +3,17 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 
-interface SearchFormProps {
+/**
+ * Props for the SearchForm component.
+ */
+export interface SearchFormProps {
+  /** The initial search query (string) */
   initialQuery: string;
+/** The base URL for search navigation (string) */
   baseUrl: string;
+  /** Optional class name for styling (string) */
   classname?: string;
+  /** Optional page identifier (string) */
   page?: string;
 }
 
@@ -52,3 +59,4 @@ const SearchForm: React.FC<SearchFormProps> = ({
 };
 
 export default SearchForm;
+

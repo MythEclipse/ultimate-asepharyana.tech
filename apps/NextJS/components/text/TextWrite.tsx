@@ -1,9 +1,9 @@
 'use client';
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
-export const AnimatedHeader = ({
+export const AnimatedHeader = memo(({
   words,
   className,
   cursorClassName,
@@ -38,14 +38,14 @@ export const AnimatedHeader = ({
   }, []);
 
   const renderWords = () => {
-    let globalIndex = 0; // Untuk mengatur delay secara global di semua huruf
+    let globalIndex = 0;
     return (
-      <div ref={headerRef} className='inline'>
+      <div ref={headerRef} className='inline' aria-hidden="true">
         {wordsArray.map((word, wordIdx) => (
           <div key={`word-${wordIdx}`} className='inline-block'>
             {word.text.map((char, charIdx) => {
-              const charDelay = globalIndex * 100; // Delay 100ms per huruf
-              globalIndex++; // Tingkatkan indeks global untuk huruf berikutnya
+              const charDelay = globalIndex * 100;
+              globalIndex++;
               return (
                 <span
                   key={`char-${charIdx}`}
@@ -57,6 +57,7 @@ export const AnimatedHeader = ({
                     word.className
                   )}
                   style={{ transitionDelay: `${charDelay}ms` }}
+                  aria-hidden="true"
                 >
                   {char}
                 </span>
@@ -69,17 +70,24 @@ export const AnimatedHeader = ({
     );
   };
 
+  // Compose the full text for screen readers
+  const fullText = words.map(w => w.text).join(' ');
+
   return (
     <header className={cn('py-8', className)}>
       <h1 className='text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight'>
+        <span className="sr-only">{fullText}</span>
         {renderWords()}
         <span
           className={cn(
             'inline-block rounded-sm w-[3px] h-7 bg-blue-500 animate-blink ml-1',
             cursorClassName
           )}
+          aria-hidden="true"
         ></span>
       </h1>
     </header>
   );
-};
+});
+
+AnimatedHeader.displayName = 'AnimatedHeader';
