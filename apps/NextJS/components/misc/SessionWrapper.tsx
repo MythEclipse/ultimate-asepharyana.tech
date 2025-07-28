@@ -1,20 +1,4 @@
-import React from 'react';
-import { AuthProvider } from '@/hooks/AuthContext';
-import { ReactNode } from 'react';
-
-/**
- * Props for the SessionWrapper component.
- * @property {ReactNode} children - The child components to be wrapped with AuthProvider.
- */
-interface SessionWrapperProps {
-  /** React children to be rendered inside the AuthProvider */
-  children: ReactNode;
-}
-
-export default function SessionWrapper({ children }: SessionWrapperProps) {
-  return (
-    <AuthProvider>
-      {children}
-    </AuthProvider>
-  );
+// Deprecated: Use apps/NextJS/core/providers/SessionWrapper.tsx instead.
+export default function SessionWrapper() {
+  throw new Error("SessionWrapper.tsx in components/misc is deprecated. Use core/providers/SessionWrapper.tsx.");
 }

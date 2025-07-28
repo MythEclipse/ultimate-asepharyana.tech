@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[POST /api/sosmed/comments] Request received`, {
       ip,
       userId: user?.id,
@@ -134,7 +134,7 @@ export async function PUT(req: NextRequest) {
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[PUT /api/sosmed/comments] Request received`, {
       ip,
       userId: user?.id,
@@ -207,7 +207,7 @@ export async function DELETE(req: NextRequest) {
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[DELETE /api/sosmed/comments] Request received`, {
       ip,
       userId: user?.id,

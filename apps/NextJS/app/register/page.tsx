@@ -1,53 +1,44 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
 
-import { useRouter } from 'next/navigation';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 
 function RegisterForm() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const errorRef = useRef<HTMLParagraphElement>(null);
-  const successRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (error && errorRef.current) {
       errorRef.current.focus();
     }
-    if (success && successRef.current) {
-      successRef.current.focus();
-    }
-  }, [error, success]);
+  }, [error]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
-
+    
     try {
-      const response = await fetch('/api/jwt-auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
+      // Use NextAuth's signIn function with credentials provider
+      const result = await signIn('credentials', {
+        name,
+        email,
+        password,
+        redirect: false,
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('Registration successful! Redirecting to login...');
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+      
+      if (result?.ok) {
+        // Registration successful, redirect to home
+        window.location.href = '/';
       } else {
-        setError(data.message || 'Registration failed.');
+        // Check if error is an object before accessing message
+        setError(typeof result?.error === 'object' ? 'Registration failed.' : result?.error || 'Registration failed.');
       }
-    } catch {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
       setError('An unexpected error occurred during registration.');
     }
   };
@@ -63,17 +54,6 @@ function RegisterForm() {
           aria-live="polite"
         >
           {error}
-        </p>
-      )}
-      {success && (
-        <p
-          className="text-green-500 text-center"
-          id="register-success"
-          tabIndex={-1}
-          ref={successRef}
-          aria-live="polite"
-        >
-          {success}
         </p>
       )}
       <div>

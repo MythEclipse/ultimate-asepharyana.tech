@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
+import { useSession } from 'next-auth/react'; // Import useSession hook
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
 import Card from '@core/ui/ThemedCard';
@@ -53,7 +53,10 @@ const normalizeChatMessage = (
 };
 
 export default function ChatClient() {
-  const { user, isLoading } = useAuth(); // Use isLoading from AuthContext
+  const { data: session, status: sessionStatus } = useSession();
+  const user = session?.user;
+  const isLoading = sessionStatus === 'loading';
+
   const [messages, setMessages] = useState<NormalizedChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [file, setFile] = useState<File | null>(null);

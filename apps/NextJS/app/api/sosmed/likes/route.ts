@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[POST /api/sosmed/likes] Request received`, { ip, userId: user?.id });
 
     if (!user || !user.id) {
@@ -77,7 +77,7 @@ export async function DELETE(req: NextRequest) {
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[DELETE /api/sosmed/likes] Request received`, { ip, userId: user?.id });
 
     if (!user || !user.id) {

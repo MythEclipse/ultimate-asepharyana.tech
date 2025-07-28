@@ -33,9 +33,6 @@
       "@/*": [
         "./*"
       ],
-      "@asepharyana/database": [
-        "../../packages/database/dist"
-      ],
       "@core/ui/*": [
         "./core/ui/*"
       ],

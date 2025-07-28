@@ -1,11 +1,14 @@
 // apps/NextJS/hooks/useSosmedActions.ts
 import { useState } from 'react';
 import { mutate } from 'swr';
-import { useAuth } from '@/hooks/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useGlobalStore } from '@/hooks/useGlobalStore';
 
 export function useSosmedActions() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+
+  
+
   const setNewComment = useGlobalStore((s) => s.setNewComment);
 
   const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
@@ -14,7 +17,7 @@ export function useSosmedActions() {
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
 
   const handleLike = async (postId: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/likes`, {
@@ -29,7 +32,7 @@ export function useSosmedActions() {
   };
 
   const handleUnlike = async (postId: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/likes`, {
@@ -44,7 +47,7 @@ export function useSosmedActions() {
   };
 
   const handleAddComment = async (postId: string, comment: string) => {
-    if (!user || !comment?.trim()) return;
+    if (!session?.user || !comment?.trim()) return;
     setIsCommenting((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/comments`, {
@@ -60,7 +63,7 @@ export function useSosmedActions() {
   };
 
   const handleEditPost = async (postId: string, content: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     setIsEditing((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/posts`, {
@@ -75,7 +78,7 @@ export function useSosmedActions() {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     setIsDeleting((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/posts`, {
@@ -90,7 +93,7 @@ export function useSosmedActions() {
   };
 
   const handleEditComment = async (commentId: string, content: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     setIsEditing((prev) => ({ ...prev, [commentId]: true }));
     try {
       await fetch(`/api/sosmed/comments`, {
@@ -105,7 +108,7 @@ export function useSosmedActions() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!user) return;
+    if (!session?.user) return;
     setIsDeleting((prev) => ({ ...prev, [commentId]: true }));
     try {
       await fetch(`/api/sosmed/comments`, {

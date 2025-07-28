@@ -13,7 +13,7 @@ import { Textarea } from '@/components/text/textarea';
 import ButtonA from '@core/ui/BaseButton';
 import { Posts, Comments, Likes } from '@asepharyana/database';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/hooks/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import { useGlobalStore } from '@/hooks/useGlobalStore';
 
@@ -63,7 +63,7 @@ export default function PostCard({
   const [editedPostContent, setEditedPostContent] = useState(post.content);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState('');
-  const { user } = useAuth();
+  const { data: session } = useSession();
 
   // Zustand global state for Sosmed UI
   const showComments = useGlobalStore((s) => s.showComments[post.id] || false);
@@ -71,7 +71,7 @@ export default function PostCard({
   const newComment = useGlobalStore((s) => s.newComments[post.id] || '');
   const setNewComment = useGlobalStore((s) => s.setNewComment);
 
-  const authenticatedUserId = user?.id;
+  const authenticatedUserId = session?.user?.id;
 
   const handleEditPostSubmit = () => {
     handleEditPost(post.id, editedPostContent);
@@ -350,7 +350,7 @@ export default function PostCard({
           <div className='pt-6 border-t border-gray-100 dark:border-gray-800'>
             <div className='flex gap-4 items-start'>
               <Image
-                src={user?.image || '/profile-circle-svgrepo-com.svg'}
+                src={session?.user?.image || '/profile-circle-svgrepo-com.svg'}
                 alt='Your profile'
                 width={48}
                 height={48}

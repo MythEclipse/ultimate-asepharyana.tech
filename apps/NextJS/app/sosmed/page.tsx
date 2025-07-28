@@ -1,20 +1,47 @@
-// apps/NextJS/app/sosmed/page.tsx
 'use client';
-export const dynamic = 'force-dynamic';
-
 import React, { useState } from 'react';
 import PostCard from '@/components/sosmed/PostCard';
 import Card from '@core/ui/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
-import { Comments, Likes, Posts } from '@asepharyana/database'; 
-import { useAuth } from '@/hooks/AuthContext'; 
-import useSWR, { mutate } from 'swr';
 import ButtonA from '@core/ui/BaseButton';
-import { UploadCloud, Loader2, Lock } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Loader2, UploadCloud, Lock } from 'lucide-react';
 import { useGlobalStore } from '@/hooks/useGlobalStore';
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import useSWR, { mutate } from 'swr';
 
-// Define a client-safe User type with explicit properties, omitting 'password'
+// Define missing types locally with corrected field names to match API response
+interface Posts {
+  id: string;
+  content: string;
+  userId: string;
+  postId: string;
+  created_at: Date;
+  updated_at: Date;
+  authorId: string;
+  image_url: string | null; // Added missing image_url field
+  user: ClientUser;
+  likes: Likes[];
+  comments: Comments[];
+}
+
+interface Likes {
+  id: string;
+  userId: string;
+  postId: string;
+  created_at: Date;
+}
+
+interface Comments {
+  id: string;
+  content: string;
+  userId: string;
+  postId: string;
+  created_at: Date;
+  updated_at: Date;
+  authorId: string;
+  user: ClientUser;
+}
+
 interface ClientUser {
   id: string;
   name: string | null;
@@ -24,15 +51,11 @@ interface ClientUser {
   role: string;
 }
 
-export default function PostPage() {
-  const { user } = useAuth(); 
-  const { data: postsData } = useSWR(`/api/sosmed/posts`, fetcher, {
-    refreshInterval: 1000,
-    dedupingInterval: 1000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-  });
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export default function PostPage() {
+  const { data: session } = useSession();
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -42,31 +65,50 @@ export default function PostPage() {
   const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
 
-  // Zustand global state for Sosmed UI
-  // Removed unused setShowComments
-  const setNewComment = useGlobalStore((s) => s.setNewComment);
+  const { data: postsData } = useSWR(
+    session?.user?.email ? `/api/sosmed/posts` : null,
+    fetcher,
+    {
+      refreshInterval: 1000,
+      dedupingInterval: 1000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  // Correctly implement setNewComment using the global store
+  const globalStore = useGlobalStore();
+  const setNewComment = (postId: string, value: string) => {
+    globalStore.setNewComment(postId, value);
+  };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
 
   const handlePostSubmit = async () => {
-    if (!content.trim() && !imageUrl) return;
-    if (!user) { 
+    if ((!content.trim() && !imageUrl) || isPosting) return;
+    if (!session?.user?.email) {
       console.error('User not authenticated to create post.');
       return;
     }
 
     setIsPosting(true);
     try {
-      await fetch(`/api/sosmed/posts`, {
+      const request = {
+        content,
+        imageUrl,
+      };
+      const response = await fetch(`/api/sosmed/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, imageUrl }),
+        body: JSON.stringify(request),
       });
+      if (!response.ok) {
+        throw new Error('Failed to create post');
+      }
       setContent('');
       setImageUrl('');
-      (document.querySelector('input[type="file"]') as HTMLInputElement).value =
-        '';
+      (document.querySelector('input[type="file"]') as HTMLInputElement).value = '';
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -81,7 +123,6 @@ export default function PostPage() {
       setIsUploading(true);
       const formData = new FormData();
       formData.append('file', file);
-
       fetch(`/api/uploader`, {
         method: 'POST',
         body: formData,
@@ -99,7 +140,7 @@ export default function PostPage() {
   };
 
   const handleLike = async (postId: string) => {
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to like post.');
       return;
     }
@@ -119,11 +160,11 @@ export default function PostPage() {
   };
 
   const handleUnlike = async (postId: string) => {
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to unlike post.');
       return;
     }
-    setIsLiking((prev) => ({ ...prev, [postId]: true })); // Use isLiking for unlike as well
+    setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
       await fetch(`/api/sosmed/likes`, {
         method: 'DELETE',
@@ -140,7 +181,7 @@ export default function PostPage() {
 
   const handleAddComment = async (postId: string, comment: string) => {
     if (!comment?.trim()) return;
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to add comment.');
       return;
     }
@@ -161,7 +202,7 @@ export default function PostPage() {
   };
 
   const handleEditPost = async (postId: string, content: string) => {
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to edit post.');
       return;
     }
@@ -181,7 +222,7 @@ export default function PostPage() {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to delete post.');
       return;
     }
@@ -201,11 +242,11 @@ export default function PostPage() {
   };
 
   const handleEditComment = async (commentId: string, content: string) => {
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to edit comment.');
       return;
     }
-    setIsEditing((prev) => ({ ...prev, [commentId]: true })); // Using isEditing for comments as well
+    setIsEditing((prev) => ({ ...prev, [commentId]: true }));
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'PUT',
@@ -213,8 +254,7 @@ export default function PostPage() {
         body: JSON.stringify({ id: commentId, content }),
       });
       mutate(`/api/sosmed/posts`);
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error editing comment:', error);
     } finally {
       setIsEditing((prev) => ({ ...prev, [commentId]: false }));
@@ -222,11 +262,11 @@ export default function PostPage() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!user) { 
+    if (!session?.user?.email) {
       console.error('User not authenticated to delete comment.');
       return;
     }
-    setIsDeleting((prev) => ({ ...prev, [commentId]: true })); // Using isDeleting for comments as well
+    setIsDeleting((prev) => ({ ...prev, [commentId]: true }));
     try {
       await fetch(`/api/sosmed/comments`, {
         method: 'DELETE',
@@ -243,63 +283,55 @@ export default function PostPage() {
 
   return (
     <div className='container mx-auto py-8 px-4 max-w-4xl md:py-12 bg-background text-foreground'>
-      {/* Header Section */}
-      <div className='mb-8 md:mb-12 text-center space-y-2'>
-        <h1 className='text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-          Community Hub
-        </h1>
-        <div className='h-1 w-24 mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full' />
-      </div>
+      <h1 className='text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+        Community Hub
+      </h1>
 
-      {/* Create Post Section */}
-      {user ? (
+      {session?.user ? (
         <div className='mb-8 md:mb-10 group'>
           <div className='relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl'>
-            <Card
-            // className="!bg-transparent !border-none"
-            >
+            <Card>
               <div className='space-y-4'>
                 <Textarea
                   placeholder='Share your thoughts...'
                   value={content}
                   onChange={handleContentChange}
-                  className='min-h-[120px] text-lg border-2 border-blue-100 dark:border-gray-700 hover:border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all'
+                  className='min-h-[120px] text-lg border-2 border-blue-200 focus:border-blue-400 dark:border-gray-700 dark:focus:border-blue-500 dark:bg-gray-800 rounded-xl transition-all'
                 />
-
                 <div className='flex flex-col gap-4'>
                   <label className='flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-blue-100 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800/50 transition-colors'>
                     <UploadCloud className='w-8 h-8 text-blue-500' />
-                    <span className='text-gray-600 dark:text-gray-300'>
-                      {File ? File.name : 'Attach image or video'}
+                    <span className='text-gray-600 dark:text-gray-400'>
+                      {imageUrl ? 'Image attached' : 'Attach image or video'}
                     </span>
                     <input
                       type='file'
                       onChange={handleFileChange}
                       className='hidden'
+                      id='file-input'
                     />
                   </label>
-
-                  <button
+                  <ButtonA
                     onClick={handlePostSubmit}
                     disabled={isUploading || isPosting || (!content.trim() && !imageUrl)}
-                    className='w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-70 disabled:pointer-events-none'
+                    className='w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-70 disabled:pointer-events-none'
                   >
-                    {(isUploading || isPosting) ? (
+                    {isUploading || isPosting ? (
                       <div className='flex items-center justify-center gap-2'>
-                        <Loader2 className='w-5 h-5 animate-spin' />
+                        <Loader2 className='w-5 h-5 animate-spin' aria-hidden="true" />
                         <span>{isPosting ? 'Publishing...' : 'Uploading...'}</span>
                       </div>
                     ) : (
                       'Publish Post'
                     )}
-                  </button>
+                  </ButtonA>
                 </div>
               </div>
             </Card>
           </div>
         </div>
       ) : (
-        <div className='mb-10 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900/50 rounded-2xl p-6 text-center'>
+        <div className='mb-10 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900/50 rounded-2xl p-6 text-center space-y-4'>
           <div className='flex flex-col items-center gap-4'>
             <Lock className='w-10 h-10 text-blue-500' />
             <h3 className='text-xl font-semibold text-gray-800 dark:text-gray-100'>
@@ -322,13 +354,11 @@ export default function PostPage() {
 
       <div className='grid gap-8'>
         {postsData?.posts?.map(
-          (
-            post: Posts & {
-              user?: ClientUser; 
-              likes?: Likes[];
-              comments?: (Comments & { user?: ClientUser })[];
-            }
-          ) => (
+          (post: Posts & {
+            user: ClientUser;
+            likes: Likes[];
+            comments: Comments[];
+          }) => (
             <PostCard
               key={post.id}
               post={{
@@ -373,4 +403,3 @@ export default function PostPage() {
     </div>
   );
 }
-

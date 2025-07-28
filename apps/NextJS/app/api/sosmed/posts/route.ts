@@ -11,15 +11,15 @@ function getIp(req: NextRequest) {
   );
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   const start = Date.now();
-  const ip = getIp(request);
+  const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[POST /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
-    const { content, imageUrl } = await request.json();
+    const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
 
     if (!content || typeof content !== 'string') {
@@ -154,23 +154,24 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(req: NextRequest) {
   const start = Date.now();
-  const ip = getIp(request);
+  const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[PUT /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
     if (!user || !user.id) {
       logger.warn(`[PUT /api/sosmed/posts] Unauthorized`, { ip });
+
       return NextResponse.json(
         { message: 'User not authenticated' },
         { status: 401 }
       );
     }
 
-    const { id, content } = await request.json();
+    const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
 
     if (!id || !content || typeof content !== 'string') {
@@ -227,12 +228,12 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(req: NextRequest) {
   const start = Date.now();
-  const ip = getIp(request);
+  const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser();
+    user = await getAuthenticatedUser(req);
     logger.info(`[DELETE /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
     if (!user || !user.id) {
@@ -243,7 +244,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { id } = await request.json();
+    const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
 
     if (!id) {

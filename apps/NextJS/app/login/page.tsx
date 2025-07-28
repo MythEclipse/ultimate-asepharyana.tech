@@ -1,11 +1,12 @@
 'use client';
+
+import React, { useState, memo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { FcGoogle } from 'react-icons/fc';
-import React, { Suspense, useState, memo, useRef, useEffect } from 'react';
-import { useAuth } from '@/hooks/AuthContext';
+import { signIn } from 'next-auth/react';
+import { Suspense } from 'react';
 
 function LoginButton() {
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,9 +21,31 @@ function LoginButton() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = await login(email, password);
-    if (!success) {
-      setError('Login failed. Please check your credentials.');
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+      if (result?.ok) {
+        window.location.href = '/';
+      } else {
+        setError(typeof result?.error === 'object' ? 'Login failed. Please check your credentials.' : result?.error || 'Login failed.');
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setError('An unexpected error occurred during login.');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const result = await signIn('google', {
+      redirect: false,
+    });
+    if (result?.ok) {
+      window.location.href = '/';
+    } else {
+      setError(typeof result?.error === 'object' ? 'Google login failed.' : result?.error || 'Google login failed.');
     }
   };
 
@@ -72,15 +95,14 @@ function LoginButton() {
       >
         Sign in
       </button>
-      {/* Google Sign-in button (optional, if you still want to support it or for later removal) */}
       <button
         type="button"
-        onClick={() => { /* Implement Google login via your API or remove if not needed */ }}
+        onClick={handleGoogleLogin}
         className='w-full flex items-center justify-center gap-3 px-6 py-3 text-xl text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
         aria-label="Sign in with Google"
       >
         <FcGoogle className='text-2xl' aria-hidden="true" />
-        Sign in with Google (Placeholder)
+        Sign in with Google
       </button>
       <div className="text-center mt-4">
         <Link href="/register" className="text-blue-600 hover:underline">

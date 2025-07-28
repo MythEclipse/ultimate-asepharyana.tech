@@ -2,13 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
+import { useSession } from "next-auth/react";
 
 export default function CommentPage() {
   const { push } = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth(); // Use useAuth hook
+  const { data: session } = useSession();
+const user = session?.user;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

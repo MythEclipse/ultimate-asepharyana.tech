@@ -1,3 +1,4 @@
+// 'use client'
 // apps/NextJS/app/layout.tsx
 
 import type { Metadata } from 'next';
@@ -6,7 +7,7 @@ import './globals.css';
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/misc/theme-provider';
-import SessionWrapper from '@/components/misc/SessionWrapper';
+import SessionWrapper from '@/core/providers/SessionWrapper';
 import Navbar from '@/components/navbar/Navbar';
 import { Toaster } from 'sonner';
 
