@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     // Optimasi memori Webpack, dianggap berisiko rendah dan bermanfaat untuk proyek besar.
     webpackMemoryOptimizations: true,
   },
-  
+
   images: {
     // GANTI 'hostname: '**'' DENGAN DAFTAR HOSTNAME TEPERCAYA.
     // Menggunakan wildcard '**' adalah risiko keamanan yang sangat serius (Open Image Proxy).
@@ -99,7 +99,6 @@ const nextConfig: NextConfig = {
   // Mengaktifkan kompresi Gzip. Jika proxy (misalnya Nginx) sudah menangani kompresi, setel ke 'false'.
   compress: true,
 
-
   // Menghasilkan source map di produksi untuk mempermudah debugging.
   // PERHATIAN: Ini akan mengekspos kode sumber sisi klien Anda. Nonaktifkan jika ini menjadi masalah keamanan.
   productionBrowserSourceMaps: true,
@@ -107,6 +106,12 @@ const nextConfig: NextConfig = {
   // Transpilasi paket dari node_modules atau monorepo.
   // '@asepharyana/ui' adalah contoh umum untuk paket UI lokal.
   transpilePackages: ['@asepharyana/ui', 'swagger-ui'],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('@prisma/client', '.prisma/client');
+    }
+    return config;
+  },
 };
 
 export default withFlowbiteReact(nextConfig);

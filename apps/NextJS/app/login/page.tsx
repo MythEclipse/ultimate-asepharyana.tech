@@ -3,7 +3,7 @@
 import React, { useState, memo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { FcGoogle } from 'react-icons/fc';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { Suspense } from 'react';
 
 function LoginButton() {
@@ -17,6 +17,15 @@ function LoginButton() {
       errorRef.current.focus();
     }
   }, [error]);
+useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session) {
+        window.location.href = '/';
+      }
+    };
+    checkSession();
+  }, []); // Run once on component mount
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,14 +48,7 @@ function LoginButton() {
   };
 
   const handleGoogleLogin = async () => {
-    const result = await signIn('google', {
-      redirect: false,
-    });
-    if (result?.ok) {
-      window.location.href = '/';
-    } else {
-      setError(typeof result?.error === 'object' ? 'Google login failed.' : result?.error || 'Google login failed.');
-    }
+    await signIn('google');
   };
 
   return (

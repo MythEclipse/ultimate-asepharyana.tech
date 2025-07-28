@@ -1,7 +1,9 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import { prisma } from '../../../../lib/prisma/service';
+
+import { prisma } from '../../../../lib/db';
+import { upsertGoogleUser } from '../../../../lib/prisma/service';
 import bcrypt from 'bcrypt';
 
 // Extend the default session user type to include 'id'
@@ -51,11 +53,26 @@ const handler = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+
+        // Add user persistence for Google OAuth
+        if (account?.provider === 'google' && user.email) {
+          try {
+            const upsertedUser = await upsertGoogleUser(
+              user.email,
+              user.name || null,
+              user.image || null
+            );
+            token.id = upsertedUser.id; // Ensure token.id is the database ID
+          } catch (error) {
+            console.error('Error upserting Google user in JWT callback:', error);
+            // Optionally, handle the error (e.g., redirect to an error page)
+          }
+        }
       }
       return token;
     },
