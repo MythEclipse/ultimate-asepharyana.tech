@@ -24,6 +24,7 @@ function RegisterForm() {
     try {
       // Use NextAuth's signIn function with credentials provider
       const result = await signIn('credentials', {
+      
         name,
         email,
         password,
