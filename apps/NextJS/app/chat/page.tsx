@@ -5,9 +5,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
-import Card from '@/components/card/ThemedCard';
+import Card from '@core/ui/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
-import Button from '@/components/button/NormalButton';
+import Button from '@core/ui/BaseButton';
 import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 

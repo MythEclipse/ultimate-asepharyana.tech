@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { PRODUCTION } from '@/lib/url';
 
 import { BackgroundGradient } from '@/components/background/background-gradient';
-import MediaCard from '@/components/card/MediaCard';
+import MediaCard from '@features/anime/MediaCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {

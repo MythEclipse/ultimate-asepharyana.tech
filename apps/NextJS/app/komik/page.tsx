@@ -3,7 +3,7 @@
 import React, { memo } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
-import ComicGrid from '@/components/card/ComicGrid';
+import ComicGrid from '@features/komik/ComicGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 
 export interface Komik {

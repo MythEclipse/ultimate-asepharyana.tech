@@ -65,6 +65,7 @@ yarn-error.log*
 # Removed !packages/database/.env to ignore all .env files
 # Removed !apps/**/.env to ignore app-specific .env files
 !apps/**/src/**/chat.ts
+!**/apps/NextJS/core
 # vercel
 .vercel
 /.vercel

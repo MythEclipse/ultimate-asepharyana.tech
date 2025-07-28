@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import AnimeGrid from '@/components/card/AnimeGrid';
+import AnimeGrid from '@features/anime/AnimeGrid';
 import {
   AlertTriangle,
   ChevronLeft,

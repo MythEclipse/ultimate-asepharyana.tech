@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import KomikGrid from '@/components/card/ComicGrid';
-import ButtonA from '@/components/button/ScrollButton';
+import KomikGrid from '@features/komik/ComicGrid';
+import ButtonA from '@core/ui/ScrollButton';
 
 interface Bookmark {
   title: string;

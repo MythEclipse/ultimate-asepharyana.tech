@@ -1,6 +1,6 @@
 'use client';
 
-import AnimeGrid from '@/components/card/AnimeGrid';
+import AnimeGrid from '@features/anime/AnimeGrid';
 import useSWR from 'swr';
 import {
   ArrowRight,

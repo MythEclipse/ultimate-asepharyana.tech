@@ -10,7 +10,7 @@ import {
 } from 'react-icons/hi';
 import Image from 'next/image';
 import { Textarea } from '@/components/text/textarea';
-import ButtonA from '@/components/button/NormalButton';
+import ButtonA from '@core/ui/BaseButton';
 import { Posts, Comments, Likes } from '@asepharyana/database';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/AuthContext';

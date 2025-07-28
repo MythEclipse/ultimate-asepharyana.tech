@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
-import { Card } from '../card/ComponentCard';
+import { Card } from '@core/ui/ComponentCard';
 
 // Define the type for the props
 type BoxContentProps = {

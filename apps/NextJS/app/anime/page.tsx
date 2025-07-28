@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import AnimeGrid from '@/components/card/AnimeGrid';
+import AnimeGrid from '@features/anime/AnimeGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { memo } from 'react';

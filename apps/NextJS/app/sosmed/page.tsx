@@ -4,12 +4,12 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
 import PostCard from '@/components/sosmed/PostCard';
-import Card from '@/components/card/ThemedCard';
+import Card from '@core/ui/ThemedCard';
 import { Textarea } from '@/components/text/textarea';
 import { Comments, Likes, Posts } from '@asepharyana/database'; 
 import { useAuth } from '@/hooks/AuthContext'; 
 import useSWR, { mutate } from 'swr';
-import ButtonA from '@/components/button/NormalButton';
+import ButtonA from '@core/ui/BaseButton';
 import { UploadCloud, Loader2, Lock } from 'lucide-react';
 import { useGlobalStore } from '@/hooks/useGlobalStore';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -373,3 +373,4 @@ export default function PostPage() {
     </div>
   );
 }
+

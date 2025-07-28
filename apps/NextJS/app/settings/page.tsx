@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Button from '@/components/button/NormalButton';
-import { Card } from '@/components/card/ComponentCard';
+import Button from '@core/ui/BaseButton';
+import { Card } from '@core/ui/ComponentCard';
 import { updateUserImage } from '@/lib/prisma/service'; // This will likely change or be removed
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/AuthContext'; // Import useAuth hook

@@ -23,6 +23,7 @@
     ],
     "incremental": true,
     "maxNodeModuleJsDepth": 2000,
+    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
@@ -34,6 +35,18 @@
       ],
       "@asepharyana/database": [
         "../../packages/database/dist"
+      ],
+      "@core/ui/*": [
+        "./core/ui/*"
+      ],
+      "@features/anime/*": [
+        "./features/anime/*"
+      ],
+      "@features/komik/*": [
+        "./features/komik/*"
+      ],
+      "@layout/navigation/*": [
+        "./layout/navigation/*"
       ]
     }
   },
@@ -50,6 +63,6 @@
     "dist",
     "coverage",
     "__tests__",
-"__mocks__",
+    "__mocks__",
   ]
 }
