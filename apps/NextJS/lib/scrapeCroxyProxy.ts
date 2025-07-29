@@ -7,9 +7,25 @@
  * This will fill the input, submit the form, and print the resulting HTML.
  */
 // Scrape https://www.croxyproxy.com/ using Puppeteer with stealth and CLI support
+
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import logger from './logger';
+
+// Generate random user agent for session isolation
+function getRandomUserAgent(): string {
+  const versions = [
+    '114.0.0.0',
+    '115.0.0.0',
+    '116.0.0.0',
+    '117.0.0.0',
+  ];
+  const os = [
+    'Windows NT 10.0; Win64; x64',
+    'Macintosh; Intel Mac OS X 10_15_7'
+  ];
+  return `Mozilla/5.0 (${os[Math.floor(Math.random() * os.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${versions[Math.floor(Math.random() * versions.length)]} Safari/537.36`;
+}
 
 puppeteer.use(StealthPlugin());
 
@@ -23,15 +39,14 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
       '--disable-blink-features=AutomationControlled',
     ],
   });
-  logger.debug('Browser launched');
+
+  // Use default context (no incognito) for session isolation, since only newPage() is available
   const page = await browser.newPage();
   logger.debug('New page created');
 
-  // Set a realistic user agent
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
-  );
-  logger.debug('User agent set');
+  // Set a random user agent for session isolation
+  await page.setUserAgent(getRandomUserAgent());
+  logger.debug('Random user agent set');
 
   // Try to bypass some basic bot detection
   await page.setExtraHTTPHeaders({
@@ -45,7 +60,7 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   });
   logger.info('Navigated to CroxyProxy homepage');
   await new Promise((resolve) => setTimeout(resolve, 3000));
-  logger.debug('Waited 1 second before interacting with the page');
+  logger.debug('Waited 3 seconds before interacting with the page');
   // Wait for the main form input to load
   await page.waitForSelector('input#url', { timeout: 30000 });
   logger.debug('URL input is visible');
@@ -92,6 +107,7 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
     }).catch(() => false);
     if (errorExists) {
       logger.error('Still detected "Something went wrong" after retry.');
+      await browser.close();
       throw new Error('CroxyProxy error: Something went wrong');
     }
   }
@@ -106,24 +122,6 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   logger.info('Browser closed');
   return html;
 }
-
-// async function waitForProxyReady(page: import('puppeteer').Page) {
-//   logger.debug('Waiting for proxy to be ready...');
-//   try {
-//     // Check for video element AND ensure page title has changed
-//     await Promise.all([
-//       page.waitForSelector('video', { timeout: 60000 }),
-//       page.waitForFunction(() => document.title !== 'CroxyProxy Free Online Proxy - Hide IP Address')
-//     ]);
-//     logger.debug('Proxy ready indicators detected');
-
-//     // Add a short delay to ensure stability
-//     await new Promise(resolve => setTimeout(resolve, 2000));
-//   } catch (error) {
-//     logger.error('Proxy ready indicator not found:', error);
-//     throw new Error('Proxy did not launch in time');
-//   }
-// }
 
 // CLI usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "https://asepharyana.tech/"
 if (require.main === module) {
