@@ -14,29 +14,52 @@ async function handler(request: Request) {
   }
 
   try {
-    // Use fetchWithProxy for all proxying
     const result = await fetchWithProxyOnly(slug);
 
-    // If the response is JSON, return it as JSON
-    if (typeof result.data === 'object') {
-      return NextResponse.json(result.data, {
-        status: 200,
-        headers: {
-          'X-Proxy-Used': 'fetchWithProxy'
-        }
-      });
+    // If the response is JSON, return as JSON
+    if (
+      result.contentType &&
+      result.contentType.includes('application/json')
+    ) {
+      // If already parsed as object, return as JSON
+      if (typeof result.data === 'object') {
+        return NextResponse.json(result.data, {
+          status: 200,
+          headers: {
+            'X-Proxy-Used': 'fetchWithProxy'
+          }
+        });
+      }
+      // If string, try to parse as JSON
+      try {
+        const parsed = JSON.parse(result.data as string);
+        return NextResponse.json(parsed, {
+          status: 200,
+          headers: {
+            'X-Proxy-Used': 'fetchWithProxy'
+          }
+        });
+      } catch {
+        // Fallback: return as text
+        return new NextResponse(result.data as string, {
+          status: 200,
+          headers: {
+            'content-type': result.contentType,
+            'X-Proxy-Used': 'fetchWithProxy'
+          }
+        });
+      }
     }
 
-    // For non-JSON responses, return as text in a JSON envelope
-    return NextResponse.json(
-      {
-        data: result.data,
-        proxy: 'fetchWithProxy',
-        contentType: result.contentType || 'text/plain',
-      },
+    // For other content types, return as raw text or buffer
+    return new NextResponse(
+      typeof result.data === 'string'
+        ? result.data
+        : JSON.stringify(result.data),
       {
         status: 200,
         headers: {
+          'content-type': result.contentType || 'text/plain',
           'X-Proxy-Used': 'fetchWithProxy'
         }
       }
