@@ -1,16 +1,26 @@
 import axios from 'axios';
 import { DEFAULT_HEADERS } from '@/lib/DHead';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 import logger from '@/lib/logger';
 import https from 'https';
 
 const DEFAULT_PROXY_LIST_URL =
-  'https://www.proxy-list.download/api/v1/get?type=http';
-// const DEFAULT_PROXY_LIST_URL =
-//   'https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt';
+  'https://www.proxy-list.download/api/v1/get?type=https';
 
 function getProxyListUrl(): string {
   return process.env.PROXY_LIST_URL || DEFAULT_PROXY_LIST_URL;
+}
+
+// Accepts lines like host:port, adds https:// prefix for agent
+function parseProxyLine(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) return null;
+  // If already protocol-prefixed, use as is
+  if (/^(http|https|socks4|socks5):\/\//.test(trimmed)) return trimmed;
+  // If just host:port, treat as https proxy
+  if (/^[^:]+:\d+$/.test(trimmed)) return `https://${trimmed}`;
+  return null;
 }
 
 async function getProxies(): Promise<string[]> {
@@ -24,12 +34,8 @@ async function getProxies(): Promise<string[]> {
     const data = await res.text();
     return data
       .split('\n')
-      .filter((line) => {
-        const trimmed = line.trim();
-        // Only allow lines that look like host:port
-        return trimmed !== '' && !trimmed.startsWith('#') && /^[^:]+:\d+$/.test(trimmed);
-      })
-      .map((line) => line.split(' ')[0].trim());
+      .map(parseProxyLine)
+      .filter((proxy): proxy is string => !!proxy);
   } catch (error) {
     logger.error('Network or unexpected error while fetching proxy list:', error);
     throw error;
@@ -111,25 +117,22 @@ export async function fetchWithProxyOnly(
   return await fetchFromProxies(slug);
 }
 
+function getAgent(proxyUrl: string) {
+  if (proxyUrl.startsWith('socks4://') || proxyUrl.startsWith('socks5://')) {
+    return new SocksProxyAgent(proxyUrl);
+  }
+  // Default to HTTP/HTTPS
+  return new HttpsProxyAgent(proxyUrl);
+}
+
 async function fetchFromProxies(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
   let lastError: Error | null = null;
   const proxies = await getCachedProxies();
-  for (const proxy of proxies) {
-    // Validate proxy format again for safety
-    if (!proxy || !/^[^:]+:\d+$/.test(proxy)) {
-      logger.warn(`Skipping invalid proxy entry: "${proxy}"`);
-      continue;
-    }
-    const [host, port] = proxy.split(':');
-    if (!host || !port) {
-      logger.warn(`Skipping malformed proxy: "${proxy}"`);
-      continue;
-    }
+  for (const proxyUrl of proxies) {
     try {
-      const proxyUrl = `http://${host}:${port}`;
-      const agent = new HttpsProxyAgent(proxyUrl);
+      const agent = getAgent(proxyUrl);
 
       // Create HTTPS agent to bypass SSL verification
       const httpsAgent = new https.Agent({
@@ -168,12 +171,12 @@ async function fetchFromProxies(
             continue;
           }
         }
-        logger.info(`Fetched from ${host}:${port} for ${slug}`);
+        logger.info(`Fetched from ${proxyUrl} for ${slug}`);
         return { data: response.data, contentType };
       }
     } catch (error) {
       lastError = error as Error;
-      logger.warn(`Proxy fetch failed for ${slug} via ${host}:${port}:`, error);
+      logger.warn(`Proxy fetch failed for ${slug} via ${proxyUrl}:`, error);
     }
   }
   logger.error(`Failed to fetch from all proxies for ${slug}:`, lastError);
