@@ -44,31 +44,56 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
     timeout: 60000,
   });
   logger.info('Navigated to CroxyProxy homepage');
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
   logger.debug('Waited 1 second before interacting with the page');
   // Wait for the main form input to load
   await page.waitForSelector('input#url', { timeout: 30000 });
   logger.debug('URL input is visible');
-  
+
   // Fill the input and submit the form
   await page.type('input#url', targetUrl, { delay: 50 });
   logger.debug(`Typing URL: ${targetUrl}`);
   await page.click('#requestSubmit');
   logger.info('Submitted the form');
   // Check for error message and retry if needed
-  const errorExists = await page.$eval('h1', el => el.textContent?.trim() === 'Something went wrong').catch(() => false);
+  // Check for error message in both 'h1' and '#contentBody > h1'
+  // Improved error detection: check for error message after form submission and after navigation
+  let errorExists = await page.evaluate(() => {
+    const h1s = Array.from(
+      document.querySelectorAll('h1, #contentBody > h1')
+    );
+    return h1s.some(
+      (el) => el.textContent?.trim().toLowerCase().includes('something went wrong')
+    );
+  }).catch(() => false);
+
   if (errorExists) {
-    logger.warn('Detected "Something went wrong" error, retrying from homepage...');
+    logger.warn(
+      'Detected "Something went wrong" error, retrying from homepage...'
+    );
     await page.goto('https://www.croxyproxy.com/', {
       waitUntil: 'domcontentloaded',
       timeout: 60000,
     });
     logger.info('Retried navigation to CroxyProxy homepage');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     await page.waitForSelector('input#url', { timeout: 30000 });
     await page.type('input#url', targetUrl, { delay: 50 });
     await page.click('#requestSubmit');
     logger.info('Resubmitted the form after error');
+    // Check again after resubmission
+    errorExists = await page.evaluate(() => {
+      const h1s = Array.from(
+        document.querySelectorAll('h1, #contentBody > h1')
+      );
+      return h1s.some(
+        (el) => el.textContent?.trim().toLowerCase().includes('something went wrong')
+      );
+    }).catch(() => false);
+    if (errorExists) {
+      logger.error('Still detected "Something went wrong" after retry.');
+      throw new Error('CroxyProxy error: Something went wrong');
+    }
   }
   // Wait for proxy to be ready using multiple checks
   await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 120000 });
@@ -91,7 +116,7 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
 //       page.waitForFunction(() => document.title !== 'CroxyProxy Free Online Proxy - Hide IP Address')
 //     ]);
 //     logger.debug('Proxy ready indicators detected');
-    
+
 //     // Add a short delay to ensure stability
 //     await new Promise(resolve => setTimeout(resolve, 2000));
 //   } catch (error) {
@@ -104,16 +129,18 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
 if (require.main === module) {
   const [, , inputUrl] = process.argv;
   if (!inputUrl) {
-    logger.error('Usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "<url or query>"');
+    logger.error(
+      'Usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "<url or query>"'
+    );
     process.exit(1);
   }
   logger.info(`CLI execution started for URL: ${inputUrl}`);
   scrapeCroxyProxy(inputUrl)
-    .then(html => {
+    .then((html) => {
       console.log(html);
       logger.info('CLI execution finished successfully.');
     })
-    .catch(err => {
+    .catch((err) => {
       logger.error('Scraping failed:', err);
       process.exit(1);
     });
