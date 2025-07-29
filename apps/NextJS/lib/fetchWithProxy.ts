@@ -5,7 +5,9 @@ import logger from '@/lib/logger';
 import https from 'https';
 
 const DEFAULT_PROXY_LIST_URL =
-  'https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt';
+  'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt';
+// const DEFAULT_PROXY_LIST_URL =
+//   'https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt';
 
 function getProxyListUrl(): string {
   return process.env.PROXY_LIST_URL || DEFAULT_PROXY_LIST_URL;
@@ -47,6 +49,16 @@ async function getCachedProxies(): Promise<string[]> {
   return cachedProxies;
 }
 
+// Helper: detect "internetbaik" block page
+function isInternetBaikBlockPage(data: string | object): boolean {
+  if (typeof data !== 'string') return false;
+  return (
+    data.includes('internetbaik.telkomsel.com') ||
+    data.includes('VmaxAdManager.js') ||
+    data.includes('VmaxAdHelper')
+  );
+}
+
 export async function fetchWithProxy(
   slug: string,
   useProxies: boolean = true
@@ -66,10 +78,18 @@ export async function fetchWithProxy(
       if (contentType && contentType.includes('application/json')) {
         const jsonData = await res.json();
         logger.info(`[fetchWithProxy] Direct fetch JSON body:`, jsonData);
+        if (isInternetBaikBlockPage(JSON.stringify(jsonData))) {
+          logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
+          return await fetchFromProxies(slug);
+        }
         return { data: jsonData, contentType };
       }
       const textData = await res.text();
       logger.info(`[fetchWithProxy] Direct fetch text body:`, textData);
+      if (isInternetBaikBlockPage(textData)) {
+        logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
+        return await fetchFromProxies(slug);
+      }
       return { data: textData, contentType };
     }
     const error = new Error(`Direct fetch failed with status ${res.status}`);
@@ -129,8 +149,16 @@ async function fetchFromProxies(
         const contentType = response.headers['content-type'] || null;
         if (typeof response.data === 'string') {
           logger.info(`[fetchWithProxy] Proxy fetch text body:`, response.data);
+          if (isInternetBaikBlockPage(response.data)) {
+            logger.warn(`Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`);
+            continue;
+          }
         } else {
           logger.info(`[fetchWithProxy] Proxy fetch JSON body:`, response.data);
+          if (isInternetBaikBlockPage(JSON.stringify(response.data))) {
+            logger.warn(`Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`);
+            continue;
+          }
         }
         logger.info(`Fetched from ${host}:${port} for ${slug}`);
         return { data: response.data, contentType };
