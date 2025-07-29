@@ -68,12 +68,22 @@ async function handler(request: NextRequest) {
       stack: (error as Error).stack,
       url: slug,
     });
+    // Narrow error type to safely access custom properties
+    const err = error as Error & {
+      status?: number;
+      response?: unknown;
+      code?: string;
+    };
     return NextResponse.json(
       {
         error: 'Failed to fetch URL',
-        details: (error as Error).message,
+        details: err.message,
+        stack: err.stack,
+        status: err.status || 500,
+        response: err.response || undefined,
+        code: err.code || undefined,
       },
-      { status: 500 }
+      { status: err.status || 500 }
     );
   }
 }
