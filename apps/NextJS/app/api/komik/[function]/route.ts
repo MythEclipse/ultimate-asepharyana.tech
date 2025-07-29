@@ -312,12 +312,7 @@ export async function GET(
       throw new Error('Invalid type parameter');
     }
 
-    logger.info('Request processed', {
-      ip,
-      url,
-      type,
-      page,
-    });
+    
 
     return NextResponse.json(data, {
       status: 200,

@@ -85,7 +85,7 @@ export async function fetchWithProxy(
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const jsonData = await res.json();
-        logger.info(`[fetchWithProxy] Direct fetch JSON body:`, jsonData);
+        
         if (isInternetBaikBlockPage(JSON.stringify(jsonData))) {
           logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
           return await fetchFromProxies(slug);
@@ -93,7 +93,7 @@ export async function fetchWithProxy(
         return { data: jsonData, contentType };
       }
       const textData = await res.text();
-      logger.info(`[fetchWithProxy] Direct fetch text body:`, textData);
+      
       if (isInternetBaikBlockPage(textData)) {
         logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
         return await fetchFromProxies(slug);
@@ -160,19 +160,19 @@ async function fetchFromProxies(
       if (response.status === 200) {
         const contentType = response.headers['content-type'] || null;
         if (typeof response.data === 'string') {
-          logger.info(`[fetchWithProxy] Proxy fetch text body:`, response.data);
+          
           if (isInternetBaikBlockPage(response.data)) {
             logger.warn(`Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`);
             continue;
           }
         } else {
-          logger.info(`[fetchWithProxy] Proxy fetch JSON body:`, response.data);
+          
           if (isInternetBaikBlockPage(JSON.stringify(response.data))) {
             logger.warn(`Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`);
             continue;
           }
         }
-        logger.info(`Fetched from ${proxyUrl} for ${slug}`);
+        
         return { data: response.data, contentType };
       }
     } catch (error) {

@@ -72,7 +72,7 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
-const logger = winston.createLogger({
+const winstonLogger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: baseFormat,
   transports,
@@ -98,12 +98,43 @@ const logger = winston.createLogger({
 });
 
 // Handle error pada transport file
-logger.transports.forEach((transport) => {
+winstonLogger.transports.forEach((transport) => {
   if (transport instanceof winston.transports.File) {
     transport.on('error', (error) => {
       console.error('Error dalam transport file:', error);
     });
   }
+});
+
+// Helper to serialize arguments like console.log
+function formatLogArgs(args: unknown[]): string {
+  return args
+    .map((arg) => {
+      if (typeof arg === 'string') return arg;
+      try {
+        return JSON.stringify(arg, null, 2);
+      } catch {
+        return String(arg);
+      }
+    })
+    .join(' ');
+}
+
+// Create a proxy to wrap logger methods for variadic arguments
+const logger = new Proxy(winstonLogger, {
+  get(target, prop, receiver) {
+    // Only wrap log level methods
+    if (
+      ['info', 'warn', 'error', 'debug', 'verbose', 'silly', 'http'].includes(String(prop))
+    ) {
+      return (...args: unknown[]) => {
+        const msg = formatLogArgs(args);
+        return ((target as unknown) as Record<string, (...args: unknown[]) => unknown>)[prop as string](msg);
+      };
+    }
+    // Default: passthrough
+    return Reflect.get(target, prop, receiver);
+  },
 });
 
 export default logger;

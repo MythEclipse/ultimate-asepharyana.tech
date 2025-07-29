@@ -22,7 +22,7 @@ export const POST = auth(async function POST(req) {
   }
 
   try {
-    logger.info(`[POST /api/sosmed/likes] Request received`, { ip, userId: session?.user?.id });
+    
 
     const { postId } = await req.json();
     logger.debug(`[POST /api/sosmed/likes] Payload`, { postId });
@@ -86,7 +86,7 @@ export const DELETE = auth(async function DELETE(req) {
   }
 
   try {
-    logger.info(`[DELETE /api/sosmed/likes] Request received`, { ip, userId: session?.user?.id });
+    
 
     const { postId } = await req.json();
     logger.debug(`[DELETE /api/sosmed/likes] Payload`, { postId });

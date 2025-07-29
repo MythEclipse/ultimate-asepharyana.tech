@@ -18,10 +18,7 @@ async function postHandler(req: NextRequest) {
   try {
     const session = await auth();
     user = session?.user;
-    logger.info(`[POST /api/sosmed/comments] Request received`, {
-      ip,
-      userId: user?.id,
-    });
+    
     if (!user || !user.id) {
       logger.warn(`[POST /api/sosmed/comments] Unauthorized`, { ip });
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -85,7 +82,7 @@ async function getHandler(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('postId');
-    logger.info(`[GET /api/sosmed/comments] Request received`, { ip, postId });
+    
 
     if (!postId) {
       logger.warn(`[GET /api/sosmed/comments] Post ID required`, { ip });
@@ -137,10 +134,7 @@ async function putHandler(req: NextRequest) {
   try {
     const session = await auth();
     user = session?.user;
-    logger.info(`[PUT /api/sosmed/comments] Request received`, {
-      ip,
-      userId: user?.id,
-    });
+    
 
     if (!user || !user.id) {
       logger.warn(`[PUT /api/sosmed/comments] Unauthorized`, { ip });
@@ -211,10 +205,7 @@ async function deleteHandler(req: NextRequest) {
   try {
     const session = await auth();
     user = session?.user;
-    logger.info(`[DELETE /api/sosmed/comments] Request received`, {
-      ip,
-      userId: user?.id,
-    });
+    
 
     if (!user || !user.id) {
       logger.warn(`[DELETE /api/sosmed/comments] Unauthorized`, { ip });

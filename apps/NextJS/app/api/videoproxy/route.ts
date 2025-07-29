@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
 
-  logger.info(`Received request with URL: ${url}`);
+  
 
   if (!url) {
     logger.error('URL is required');
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     }
 
     const videoBuffer = Buffer.from(await response.arrayBuffer());
-    logger.info(`Successfully fetched video from URL: ${url}`);
+    
     return new NextResponse(videoBuffer, {
       headers: { 'Content-Type': contentType },
     });

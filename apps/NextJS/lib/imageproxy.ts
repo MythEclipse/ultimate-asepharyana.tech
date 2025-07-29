@@ -11,16 +11,16 @@ export async function imageProxy(url: string) {
     if (cdnResponse.status !== 200) {
       const fetchRespone = await fetchManual(url);
       if (fetchRespone.status !== 200) {
-        logger.info(`Successfully fetched image from Upload: ${url}`);
+        
         return await uploadImage(url);
       }
       logger.error(`Failed to fetch image from URL: ${url}`);
       return fetchRespone;
     }
-    logger.info(`Successfully fetched image from CDN v2: ${url}`);
+    
     return cdnResponse;
   }
-  logger.info(`Successfully fetched image from CDN: ${url}`);
+  
   return cdnResponse;
 }
 
@@ -198,7 +198,7 @@ async function fetchManual(url: string) {
     }
 
     const imageBuffer = await response.arrayBuffer();
-    logger.info(`Successfully fetched image from URL: ${url}`);
+    
 
     return new NextResponse(imageBuffer, {
       headers: {

@@ -117,9 +117,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
 
     const duration = Date.now() - start;
-    logger.info(
-      `[Request processed] ip=${ip} | url=${url} | method=${method} | status=${response.status} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
-    );
+    
     if (requestId) {
       response.headers.set('x-request-id', requestId);
     }

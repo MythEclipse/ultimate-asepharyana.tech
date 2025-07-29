@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { withLogging } from '@/lib/api-wrapper';
 import { fetchWithProxyOnly } from '@/lib/fetchWithProxy';
+import logger from '@/lib/logger';
 
 async function handler(request: NextRequest) {
   const url = new URL(request.url);
@@ -14,20 +15,18 @@ async function handler(request: NextRequest) {
   }
 
   try {
-    const result = await fetchWithProxyOnly(slug);
+const result = await fetchWithProxyOnly(slug);
+
 
     // If the response is JSON, return as JSON
-    if (
-      result.contentType &&
-      result.contentType.includes('application/json')
-    ) {
+    if (result.contentType && result.contentType.includes('application/json')) {
       // If already parsed as object, return as JSON
       if (typeof result.data === 'object') {
         return NextResponse.json(result.data, {
           status: 200,
           headers: {
-            'X-Proxy-Used': 'fetchWithProxy'
-          }
+            'X-Proxy-Used': 'fetchWithProxy',
+          },
         });
       }
       // If string, try to parse as JSON
@@ -36,8 +35,8 @@ async function handler(request: NextRequest) {
         return NextResponse.json(parsed, {
           status: 200,
           headers: {
-            'X-Proxy-Used': 'fetchWithProxy'
-          }
+            'X-Proxy-Used': 'fetchWithProxy',
+          },
         });
       } catch {
         // Fallback: return as text
@@ -45,8 +44,8 @@ async function handler(request: NextRequest) {
           status: 200,
           headers: {
             'content-type': result.contentType,
-            'X-Proxy-Used': 'fetchWithProxy'
-          }
+            'X-Proxy-Used': 'fetchWithProxy',
+          },
         });
       }
     }
@@ -60,8 +59,8 @@ async function handler(request: NextRequest) {
         status: 200,
         headers: {
           'content-type': result.contentType || 'text/plain',
-          'X-Proxy-Used': 'fetchWithProxy'
-        }
+          'X-Proxy-Used': 'fetchWithProxy',
+        },
       }
     );
   } catch (error) {
@@ -76,4 +75,5 @@ async function handler(request: NextRequest) {
 }
 
 // Ensure withLogging only passes the Request object to handler
-export const GET = (request: NextRequest) => withLogging(handler)(request, { params: {} });
+export const GET = (request: NextRequest) =>
+  withLogging(handler)(request, { params: {} });

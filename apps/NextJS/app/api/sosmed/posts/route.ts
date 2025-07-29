@@ -24,10 +24,7 @@ export const POST = auth(async function POST(req) {
   }
 
   try {
-    logger.info(`[POST /api/sosmed/posts] Request received`, {
-      ip,
-      userId: req.auth.user.id,
-    });
+    
 
     const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
@@ -87,7 +84,7 @@ export const GET = auth(async function GET(req) {
   }
 
   try {
-    logger.info(`[GET /api/sosmed/posts] Request received`, { ip, userId: req.auth.user.id });
+    
 
     const posts = await prisma.posts.findMany({
       include: {
@@ -179,10 +176,7 @@ export const PUT = auth(async function PUT(req) {
   }
 
   try {
-    logger.info(`[PUT /api/sosmed/posts] Request received`, {
-      ip,
-      userId: req.auth.user.id,
-    });
+    
 
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
@@ -254,10 +248,7 @@ export const DELETE = auth(async function DELETE(req) {
   }
 
   try {
-    logger.info(`[DELETE /api/sosmed/posts] Request received`, {
-      ip,
-      userId: req.auth.user.id,
-    });
+    
 
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
