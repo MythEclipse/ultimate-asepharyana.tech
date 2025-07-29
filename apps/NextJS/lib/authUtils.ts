@@ -11,10 +11,18 @@ export async function getAuthenticatedUser(req: NextRequest) {
   try {
     // Use relative import for the API route
     const { GET } = await import('../app/api/auth/[...nextauth]/route');
-    const session = await GET(req, new Request(req.url));
+    const session = await GET(req);
 
     if (session && session.body && session.status === 200) {
-      const sessionJson = await session.body.json();
+      const reader = session.body?.getReader();
+      let sessionJson = null;
+      if (reader) {
+        const { value } = await reader.read();
+        if (value) {
+          const text = new TextDecoder().decode(value);
+          sessionJson = JSON.parse(text);
+        }
+      }
       // Remove .profile from include if not defined in Prisma schema
       const user = await prisma.user.findUnique({
         where: { email: sessionJson.user?.email },

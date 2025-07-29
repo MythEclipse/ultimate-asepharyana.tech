@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/service';
-import { getAuthenticatedUser } from '@/lib/authUtils';
 import logger from '@/lib/logger';
+import { auth } from '@/auth';
 
-function getIp(req: NextRequest) {
+function getIp(req: Request) {
   return (
     req.headers.get('x-forwarded-for') ||
     req.headers.get('remote-addr') ||
@@ -11,13 +11,23 @@ function getIp(req: NextRequest) {
   );
 }
 
-export async function POST(req: NextRequest) {
+export const POST = auth(async function POST(req) {
   const start = Date.now();
   const ip = getIp(req);
-  let user;
+
+  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+    logger.warn(`[POST /api/sosmed/posts] Unauthorized`, { ip });
+    return NextResponse.json(
+      { message: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+
   try {
-    user = await getAuthenticatedUser(req);
-    logger.info(`[POST /api/sosmed/posts] Request received`, { ip, userId: user?.id });
+    logger.info(`[POST /api/sosmed/posts] Request received`, {
+      ip,
+      userId: req.auth.user.id,
+    });
 
     const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
@@ -30,26 +40,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!user || !user.id) {
-      logger.warn(`[POST /api/sosmed/posts] Unauthorized`, { ip });
-      return NextResponse.json(
-        { message: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const newPost = await prisma.posts.create({
       data: {
         content,
-        authorId: user.id,
+        authorId: req.auth.user.id,
         image_url: imageUrl || '',
-        userId: user.id,
+        userId: req.auth.user.id,
       },
     });
 
     logger.info(`[POST /api/sosmed/posts] Post created`, {
       ip,
-      userId: user.id,
+      userId: req.auth.user.id,
       postId: newPost.id,
       durationMs: Date.now() - start,
     });
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     logger.error(`[POST /api/sosmed/posts] Error`, {
       ip,
-      userId: user?.id,
+      userId: req.auth.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -70,13 +72,22 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function GET() {
+export const GET = auth(async function GET(req) {
   const start = Date.now();
-  const ip = 'unknown';
+  const ip = getIp(req);
+
+  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+    logger.warn(`[GET /api/sosmed/posts] Unauthorized`, { ip });
+    return NextResponse.json(
+      { message: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+
   try {
-    logger.info(`[GET /api/sosmed/posts] Request received`, { ip });
+    logger.info(`[GET /api/sosmed/posts] Request received`, { ip, userId: req.auth.user.id });
 
     const posts = await prisma.posts.findMany({
       include: {
@@ -136,6 +147,7 @@ export async function GET() {
 
     logger.info(`[GET /api/sosmed/posts] Success`, {
       ip,
+      userId: req.auth.user.id,
       count: sanitizedPosts.length,
       durationMs: Date.now() - start,
     });
@@ -144,6 +156,7 @@ export async function GET() {
   } catch (error) {
     logger.error(`[GET /api/sosmed/posts] Error`, {
       ip,
+      userId: req.auth.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -152,24 +165,24 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-
-export async function PUT(req: NextRequest) {
+});
+export const PUT = auth(async function PUT(req) {
   const start = Date.now();
   const ip = getIp(req);
-  let user;
+
+  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+    logger.warn(`[PUT /api/sosmed/posts] Unauthorized`, { ip });
+    return NextResponse.json(
+      { message: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+
   try {
-    user = await getAuthenticatedUser(req);
-    logger.info(`[PUT /api/sosmed/posts] Request received`, { ip, userId: user?.id });
-
-    if (!user || !user.id) {
-      logger.warn(`[PUT /api/sosmed/posts] Unauthorized`, { ip });
-
-      return NextResponse.json(
-        { message: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
+    logger.info(`[PUT /api/sosmed/posts] Request received`, {
+      ip,
+      userId: req.auth.user.id,
+    });
 
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
@@ -184,10 +197,10 @@ export async function PUT(req: NextRequest) {
 
     const post = await prisma.posts.findUnique({ where: { id } });
 
-    if (!post || post.userId !== user.id) {
+    if (!post || post.userId !== req.auth.user.id) {
       logger.warn(`[PUT /api/sosmed/posts] Not authorized to edit`, {
         ip,
-        userId: user.id,
+        userId: req.auth.user.id,
         postId: id,
       });
       return NextResponse.json(
@@ -205,7 +218,7 @@ export async function PUT(req: NextRequest) {
 
     logger.info(`[PUT /api/sosmed/posts] Post updated`, {
       ip,
-      userId: user.id,
+      userId: req.auth.user.id,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -217,7 +230,7 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     logger.error(`[PUT /api/sosmed/posts] Error`, {
       ip,
-      userId: user?.id,
+      userId: req.auth.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -226,23 +239,25 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = auth(async function DELETE(req) {
   const start = Date.now();
   const ip = getIp(req);
-  let user;
-  try {
-    user = await getAuthenticatedUser(req);
-    logger.info(`[DELETE /api/sosmed/posts] Request received`, { ip, userId: user?.id });
 
-    if (!user || !user.id) {
-      logger.warn(`[DELETE /api/sosmed/posts] Unauthorized`, { ip });
-      return NextResponse.json(
-        { message: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
+  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+    logger.warn(`[DELETE /api/sosmed/posts] Unauthorized`, { ip });
+    return NextResponse.json(
+      { message: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+
+  try {
+    logger.info(`[DELETE /api/sosmed/posts] Request received`, {
+      ip,
+      userId: req.auth.user.id,
+    });
 
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
@@ -258,14 +273,17 @@ export async function DELETE(req: NextRequest) {
     const post = await prisma.posts.findUnique({ where: { id } });
 
     if (!post) {
-      logger.warn(`[DELETE /api/sosmed/posts] Post not found`, { ip, postId: id });
+      logger.warn(`[DELETE /api/sosmed/posts] Post not found`, {
+        ip,
+        postId: id,
+      });
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (post.userId !== user.id) {
+    if (post.userId !== req.auth.user.id) {
       logger.warn(`[DELETE /api/sosmed/posts] Not authorized to delete`, {
         ip,
-        userId: user.id,
+        userId: req.auth.user.id,
         postId: id,
       });
       return NextResponse.json(
@@ -278,7 +296,7 @@ export async function DELETE(req: NextRequest) {
 
     logger.info(`[DELETE /api/sosmed/posts] Post deleted`, {
       ip,
-      userId: user.id,
+      userId: req.auth.user.id,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -290,7 +308,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/posts] Error`, {
       ip,
-      userId: user?.id,
+      userId: req.auth.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -299,4 +317,4 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

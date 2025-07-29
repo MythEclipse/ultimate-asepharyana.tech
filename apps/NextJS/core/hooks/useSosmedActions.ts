@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { mutate } from 'swr';
 import { useSession } from 'next-auth/react';
-import { useGlobalStore } from '@/hooks/useGlobalStore';
+import { useGlobalStore } from '@/core/hooks/useGlobalStore';
 
 export function useSosmedActions() {
   const { data: session } = useSession();

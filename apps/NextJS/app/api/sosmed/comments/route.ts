@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/service';
-import { getAuthenticatedUser } from '@/lib/authUtils';
 import logger from '@/lib/logger';
+import { auth } from '@/auth';
 
 function getIp(req: NextRequest) {
   return (
@@ -11,12 +11,13 @@ function getIp(req: NextRequest) {
   );
 }
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser(req);
+    const session = await auth();
+    user = session?.user;
     logger.info(`[POST /api/sosmed/comments] Request received`, {
       ip,
       userId: user?.id,
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+async function getHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   try {
@@ -129,12 +130,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+async function putHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser(req);
+    const session = await auth();
+    user = session?.user;
     logger.info(`[PUT /api/sosmed/comments] Request received`, {
       ip,
       userId: user?.id,
@@ -202,12 +204,13 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+async function deleteHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let user;
   try {
-    user = await getAuthenticatedUser(req);
+    const session = await auth();
+    user = session?.user;
     logger.info(`[DELETE /api/sosmed/comments] Request received`, {
       ip,
       userId: user?.id,
@@ -269,3 +272,9 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+// Export with auth protection
+export const POST = auth(postHandler);
+export const GET = auth(getHandler);
+export const PUT = auth(putHandler);
+export const DELETE = auth(deleteHandler);

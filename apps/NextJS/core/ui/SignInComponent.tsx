@@ -3,17 +3,24 @@ import React from 'react';
 
 // import { useAuth } from '@/hooks/AuthContext';
 import { FcGoogle } from 'react-icons/fc'; // Assuming you still want a Google button as a placeholder
-import { signIn } from "next-auth/react"
+import { signIn } from "@/auth"
 function LoginButton() {
 
   return (
-    <button
-      onClick={() => signIn()}
-      className='flex items-center gap-3 px-6 py-3 text-xl text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors'
+    <form
+      action={async () => {
+      "use server"
+      await signIn("github", { redirectTo: "/dashboard" })
+      }}
     >
+      <button
+      type="submit"
+      className='flex items-center gap-3 px-6 py-3 text-xl text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors'
+      >
       <FcGoogle className='text-2xl' />
-      Sign in with Google (Placeholder)
-    </button>
+      Sign in with Google
+      </button>
+    </form>
   );
 }
 
