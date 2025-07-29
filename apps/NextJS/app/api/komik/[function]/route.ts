@@ -8,20 +8,42 @@ import { corsHeaders } from '@/lib/corsHeaders';
 
 // Function to dynamically fetch komik base URL from komikindo.cz
 const getDynamicKomikBaseUrl = async (): Promise<string> => {
+  logger.debug('[getDynamicKomikBaseUrl] Fetching komik base URL');
   const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
   const $ = cheerio.load(body);
-  // Cari link yang bukan cz, misal .co, .io, .id, dst
-  const orgLink = $('a[href^="https://komikindo."]')
-    .map((_, el) => $(el).attr('href'))
-    .get()
-    .find(href => href && !href.includes('.cz'));
-  if (!orgLink) throw new Error('Failed to fetch komik base URL selain cz');
-  return orgLink.replace(/\/$/, '');
-};
 
-// Logging Function (kept for internal use)
-const logError = (error: { message: string }) => {
-  console.error('Error:', error.message);
+  // Cari tombol WEBSITE yang mengandung link asli (bukan .cz)
+  const websiteBtn = $('a.elementskit-btn')
+    .filter((_, el) => {
+      const href = $(el).attr('href') || '';
+      // Cari href yang mengandung komikindo dan bukan .cz
+      return /komikindo\.(?!cz)/.test(href) || /komikindo\./.test($(el).attr('__cporiginalvalueofhref') || '');
+    })
+    .first();
+
+  // Cek di atribut __cporiginalvalueofhref jika ada, jika tidak pakai href
+  let orgLink = websiteBtn.attr('__cporiginalvalueofhref') || websiteBtn.attr('href') || '';
+
+  // Jika link berupa IP, decode dari query string __cpo
+  if (/^\d+\.\d+\.\d+\.\d+/.test(orgLink)) {
+    const urlObj = new URL(orgLink);
+    const cpo = urlObj.searchParams.get('__cpo');
+    if (cpo) {
+      try {
+        const decoded = Buffer.from(cpo, 'base64').toString('utf-8');
+        orgLink = decoded;
+      } catch (e) {
+        logger.error('[getDynamicKomikBaseUrl] Failed to decode __cpo', { cpo });
+      }
+    }
+  }
+
+  if (!orgLink || orgLink.includes('.cz')) {
+    logger.error('[getDynamicKomikBaseUrl] Failed to fetch komik base URL selain cz');
+    throw new Error('Failed to fetch komik base URL selain cz');
+  }
+  logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
+  return orgLink.replace(/\/$/, '');
 };
 
 // Type Definitions
@@ -105,12 +127,14 @@ const parseMangaData = (body: string): MangaData[] => {
 // Always-proxy fetch wrapper for Komik API
 const fetchWithProxyOnlyWrapper = async (url: string): Promise<string> => {
   try {
+    logger.debug('[fetchWithProxyOnlyWrapper] Fetching', { url });
     const response = await fetchWithProxy(url);
+    logger.info('[fetchWithProxyOnlyWrapper] Fetched', { url });
     return typeof response.data === 'string'
       ? response.data
       : JSON.stringify(response.data);
   } catch (error) {
-    logError(error as { message: string });
+    logger.error('[fetchWithProxyOnlyWrapper] Error', { url, error: (error as Error).message });
     throw new Error('Failed to fetch data');
   }
 };
@@ -118,6 +142,7 @@ const fetchWithProxyOnlyWrapper = async (url: string): Promise<string> => {
 // Function to get manga detail
 const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail> => {
   try {
+    logger.debug('[getDetail] Fetching detail', { komik_id, baseURL });
     const body = await fetchWithProxyOnlyWrapper(`${baseURL}/komik/${komik_id}`);
     const $ = cheerio.load(body);
 
@@ -187,6 +212,7 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
       chapters.push({ chapter, date, chapter_id });
     });
 
+    logger.info('[getDetail] Success', { komik_id, title });
     return {
       title,
       alternativeTitle,
@@ -203,7 +229,7 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
       chapters,
     };
   } catch (error) {
-    logError(error as { message: string });
+    logger.error('[getDetail] Error', { komik_id, error: (error as Error).message });
     throw new Error('Failed to fetch manga detail');
   }
 };
@@ -211,6 +237,7 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
 // Function to get manga chapter
 const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaChapter> => {
   try {
+    logger.debug('[getChapter] Fetching chapter', { chapter_url, baseURL });
     const body = await fetchWithProxyOnlyWrapper(
       `${baseURL}/chapter/${chapter_url}`
     );
@@ -241,9 +268,10 @@ const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaCh
       images.push(image);
     });
 
+    logger.info('[getChapter] Success', { chapter_url, title, imagesCount: images.length });
     return { title, next_chapter_id, prev_chapter_id, images, list_chapter };
   } catch (error) {
-    logError(error as { message: string });
+    logger.error('[getChapter] Error', { chapter_url, error: (error as Error).message });
     throw new Error('Failed to fetch manga chapter');
   }
 };
@@ -251,16 +279,19 @@ const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaCh
 // Handler function for GET (dynamic route)
 export async function GET(
   req: NextRequest) {
+  const start = Date.now();
   const ip =
     req.headers.get('x-forwarded-for') ||
     req.headers.get('remote-addr') ||
     'unknown';
   const url = req.url;
+  let type = '';
+  let params: Record<string, string> = {};
 
   try {
     const urlObj = new URL(req.url);
     const page = urlObj.searchParams.get('page') || '1';
-    const type = urlObj.pathname.split('/')[3] as
+    type = urlObj.pathname.split('/')[3] as
       | 'manga'
       | 'manhwa'
       | 'manhua'
@@ -270,21 +301,26 @@ export async function GET(
       | 'external-link';
 
     let data: unknown;
+    logger.info('[API][komik] Incoming request', { ip, url, type, page });
+
     if (type === 'detail' || type === 'chapter' || type === 'manga' || type === 'manhwa' || type === 'manhua' || type === 'search') {
       // Always get the dynamic base URL for all komik requests
       const baseURL = await getDynamicKomikBaseUrl();
 
       if (type === 'detail') {
         const komik_id = urlObj.searchParams.get('komik_id') || 'one-piece';
+        params = { komik_id };
         data = await getDetail(komik_id, baseURL);
       } else if (type === 'chapter') {
         const chapter_url = urlObj.searchParams.get('chapter_url') || '';
+        params = { chapter_url };
         data = await getChapter(chapter_url, baseURL);
       } else {
         let apiUrl = `${baseURL}/${type}/page/${page}/`;
         if (type === 'search') {
           const query = urlObj.searchParams.get('query') || '';
           apiUrl = `${baseURL}/page/${page}/?s=${query}`;
+          params = { query };
         }
         const body = await fetchWithProxyOnlyWrapper(apiUrl);
         const $ = cheerio.load(body);
@@ -313,17 +349,27 @@ export async function GET(
       const baseURL = await getDynamicKomikBaseUrl();
       data = { link: baseURL };
     } else {
+      logger.error('[API][komik] Invalid type parameter', { type });
       throw new Error('Invalid type parameter');
     }
 
-    
+    const duration = Date.now() - start;
+    logger.info('[API][komik] Success', { ip, url, type, params, durationMs: duration });
 
     return NextResponse.json(data, {
       status: 200,
       headers: corsHeaders,
     });
   } catch (error) {
-    logError(error as { message: string });
+    const duration = Date.now() - start;
+    logger.error('[API][komik] Error', {
+      ip,
+      url,
+      type,
+      params,
+      error: (error as Error).message,
+      durationMs: duration,
+    });
     return NextResponse.json(
       {
         status: false,
