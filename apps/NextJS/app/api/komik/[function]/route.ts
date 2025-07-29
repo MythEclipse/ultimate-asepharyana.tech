@@ -8,12 +8,11 @@ import { corsHeaders } from '@/lib/corsHeaders';
 
 // Function to dynamically fetch komik base URL from komikindo.cz
 const getDynamicKomikBaseUrl = async (): Promise<string> => {
-  const body = await fetchWithProxyWrapper('https://komikindo.cz/');
+  const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
   const $ = cheerio.load(body);
-  const link =
-    $('div.elementor-element.elementor-element-17eb05c.e-flex.e-con-boxed.e-con.e-parent.e-lazyloaded > div > div.elementor-element.elementor-element-8e1e584.e-con-full.e-flex.e-con.e-child > div.elementor-element.elementor-element-722d778.elementor-widget__width-inherit.elementor-widget.elementor-widget-elementskit-button > div > div > div > a').attr('href');
-  if (!link) throw new Error('Failed to fetch komik base URL');
-  return link.endsWith('/') ? link.slice(0, -1) : link;
+  const orgLink = $('a[href*="komikindo.org"]').attr('href');
+  if (!orgLink) throw new Error('Failed to fetch komik base URL (.org) from .cz');
+  return orgLink.endsWith('/') ? orgLink.slice(0, -1) : orgLink;
 };
 
 // Logging Function (kept for internal use)
@@ -99,8 +98,8 @@ const parseMangaData = (body: string): MangaData[] => {
   return data;
 };
 
-// Function to fetch data with proxy
-const fetchWithProxyWrapper = async (url: string): Promise<string> => {
+// Always-proxy fetch wrapper for Komik API
+const fetchWithProxyOnlyWrapper = async (url: string): Promise<string> => {
   try {
     const response = await fetchWithProxy(url);
     return typeof response.data === 'string'
@@ -115,7 +114,7 @@ const fetchWithProxyWrapper = async (url: string): Promise<string> => {
 // Function to get manga detail
 const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail> => {
   try {
-    const body = await fetchWithProxyWrapper(`${baseURL}/komik/${komik_id}`);
+    const body = await fetchWithProxyOnlyWrapper(`${baseURL}/komik/${komik_id}`);
     const $ = cheerio.load(body);
 
     // Title
@@ -208,7 +207,7 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
 // Function to get manga chapter
 const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaChapter> => {
   try {
-    const body = await fetchWithProxyWrapper(
+    const body = await fetchWithProxyOnlyWrapper(
       `${baseURL}/chapter/${chapter_url}`
     );
     const $ = cheerio.load(body);
@@ -283,7 +282,7 @@ export async function GET(
           const query = urlObj.searchParams.get('query') || '';
           apiUrl = `${baseURL}/page/${page}/?s=${query}`;
         }
-        const body = await fetchWithProxyWrapper(apiUrl);
+        const body = await fetchWithProxyOnlyWrapper(apiUrl);
         const $ = cheerio.load(body);
         const currentPage =
           parseInt($('.pagination .current').text().trim()) || 1;
