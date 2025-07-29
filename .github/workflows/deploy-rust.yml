@@ -40,6 +40,9 @@ jobs:
             echo "$ENV_FILE_PRODUCTION" > .env
           fi
 
+      - name: Setup Env
+        run: bash ./2updateenv.sh
+
       - name: Build RustExpress
         run: cargo build --release --manifest-path apps/RustExpress/Cargo.toml
 

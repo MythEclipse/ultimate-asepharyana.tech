@@ -31,7 +31,7 @@ jobs:
             echo "$ENV_FILE_PRODUCTION" > .env
           fi
 
-      - name: Install Dependencies
+      - name: Setup Env
         run: bash ./2updateenv.sh
 
       - name: Install Dependencies
