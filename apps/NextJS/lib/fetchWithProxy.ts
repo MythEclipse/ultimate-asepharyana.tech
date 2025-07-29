@@ -68,6 +68,7 @@ function isInternetBaikBlockPage(data: string | object): boolean {
 // Direct fetch, fallback to proxy if needed
 export async function fetchWithProxy(
   slug: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   useProxies: boolean = true
 ): Promise<{ data: string | object; contentType: string | null }> {
   try {

@@ -254,6 +254,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             { error: 'Format tidak didukung' },
             { status: 400, headers: corsHeaders }
           );
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           return NextResponse.json(
             { error: 'Kompresi gagal' },

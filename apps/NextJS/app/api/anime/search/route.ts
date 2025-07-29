@@ -104,12 +104,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const html = await fetchAnimeData(slug);
     const { animeList, pagination } = parseAnimeData(html, slug);
 
-    const ongoingAnime = animeList.filter(
-      (anime) => anime.status === 'Ongoing'
-    );
-    const completeAnime = animeList.filter(
-      (anime) => anime.status === 'Completed'
-    );
 
     const response = NextResponse.json(
       {

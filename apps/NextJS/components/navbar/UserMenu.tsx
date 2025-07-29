@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useRef, memo, KeyboardEvent } from 'react';
+import React, { useState, useRef, memo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -13,11 +12,6 @@ const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      setIsOpen(false);
-    }
-  };
 
   if (status === 'loading') {
     return (
