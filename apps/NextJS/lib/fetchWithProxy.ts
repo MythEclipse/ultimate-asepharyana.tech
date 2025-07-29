@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { DEFAULT_HEADERS } from '@/lib/DHead';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import logger from '@/lib/logger';
 import https from 'https';
+import { DEFAULT_HEADERS } from '@/lib/DHead';
 
 const DEFAULT_PROXY_LIST_URL =
   'https://www.proxy-list.download/api/v1/get?type=https';
@@ -12,13 +12,10 @@ function getProxyListUrl(): string {
   return process.env.PROXY_LIST_URL || DEFAULT_PROXY_LIST_URL;
 }
 
-// Accepts lines like host:port, adds https:// prefix for agent
 function parseProxyLine(line: string): string | null {
   const trimmed = line.trim();
   if (!trimmed || trimmed.startsWith('#')) return null;
-  // If already protocol-prefixed, use as is
   if (/^(http|https|socks4|socks5):\/\//.test(trimmed)) return trimmed;
-  // If just host:port, treat as https proxy
   if (/^[^:]+:\d+$/.test(trimmed)) return `https://${trimmed}`;
   return null;
 }
@@ -55,7 +52,6 @@ async function getCachedProxies(): Promise<string[]> {
   return cachedProxies;
 }
 
-// Helper: detect "internetbaik" block page
 function isInternetBaikBlockPage(data: string | object): boolean {
   if (typeof data !== 'string') return false;
   return (
@@ -65,10 +61,8 @@ function isInternetBaikBlockPage(data: string | object): boolean {
   );
 }
 
-// Direct fetch, fallback to proxy if needed
 export async function fetchWithProxy(
   slug: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   useProxies: boolean = true
 ): Promise<{ data: string | object; contentType: string | null }> {
   try {
@@ -85,7 +79,6 @@ export async function fetchWithProxy(
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const jsonData = await res.json();
-        
         if (isInternetBaikBlockPage(JSON.stringify(jsonData))) {
           logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
           return await fetchFromProxies(slug);
@@ -93,7 +86,6 @@ export async function fetchWithProxy(
         return { data: jsonData, contentType };
       }
       const textData = await res.text();
-      
       if (isInternetBaikBlockPage(textData)) {
         logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
         return await fetchFromProxies(slug);
@@ -111,7 +103,6 @@ export async function fetchWithProxy(
   }
 }
 
-// Proxy only, never direct
 export async function fetchWithProxyOnly(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
@@ -122,7 +113,6 @@ function getAgent(proxyUrl: string) {
   if (proxyUrl.startsWith('socks4://') || proxyUrl.startsWith('socks5://')) {
     return new SocksProxyAgent(proxyUrl);
   }
-  // Default to HTTP/HTTPS
   return new HttpsProxyAgent(proxyUrl);
 }
 
@@ -134,45 +124,35 @@ async function fetchFromProxies(
   for (const proxyUrl of proxies) {
     try {
       const agent = getAgent(proxyUrl);
-
-      // Create HTTPS agent to bypass SSL verification
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       });
-
-      // Configure axios with both proxy agent and https agent
       const axiosConfig = {
         headers: DEFAULT_HEADERS,
         httpsAgent,
         httpAgent: agent,
         timeout: 6000
       };
-
       const response = await axios.get(slug, axiosConfig);
-
       logger.info(`[fetchWithProxy] Proxy fetch response:`, {
         url: slug,
         proxy: proxyUrl,
         status: response.status,
         headers: response.headers
       });
-
       if (response.status === 200) {
         const contentType = response.headers['content-type'] || null;
         if (typeof response.data === 'string') {
-          
           if (isInternetBaikBlockPage(response.data)) {
             logger.warn(`Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`);
             continue;
           }
         } else {
-          
           if (isInternetBaikBlockPage(JSON.stringify(response.data))) {
             logger.warn(`Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`);
             continue;
           }
         }
-        
         return { data: response.data, contentType };
       }
     } catch (error) {
