@@ -4,6 +4,7 @@ import { SocksProxyAgent } from 'socks-proxy-agent';
 import logger from '@/lib/logger';
 import https from 'https';
 import { DEFAULT_HEADERS } from '@/lib/DHead';
+import { scrapeCroxyProxy } from './scrapeCroxyProxy';
 
 const DEFAULT_PROXY_LIST_URL =
   'https://www.proxy-list.download/api/v1/get?type=https';
@@ -161,5 +162,14 @@ async function fetchFromProxies(
     }
   }
   logger.error(`Failed to fetch from all proxies for ${slug}:`, lastError);
-  throw new Error(lastError?.message || 'Failed to fetch from all proxies');
+
+  // Fallback: try scrapeCroxyProxy as last resort
+  try {
+    logger.warn('Trying scrapeCroxyProxy fallback...');
+    const html = await scrapeCroxyProxy(slug);
+    return { data: html, contentType: 'text/html' };
+  } catch (scrapeError) {
+    logger.error('scrapeCroxyProxy fallback failed:', scrapeError);
+    throw new Error(lastError?.message || 'Failed to fetch from all proxies and scrapeCroxyProxy');
+  }
 }

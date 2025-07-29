@@ -6,10 +6,9 @@
  *
  * This will fill the input, submit the form, and print the resulting HTML.
  */
-// Scrape https://www.croxyproxy.com/ using Puppeteer with stealth and CLI support
+// Scrape https://www.croxyproxy.com/ using Puppeteer with CLI support
 
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import puppeteer from 'puppeteer';
 import logger from './logger';
 
 // Generate random user agent for session isolation
@@ -26,8 +25,6 @@ function getRandomUserAgent(): string {
   ];
   return `Mozilla/5.0 (${os[Math.floor(Math.random() * os.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${versions[Math.floor(Math.random() * versions.length)]} Safari/537.36`;
 }
-
-puppeteer.use(StealthPlugin());
 
 export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   logger.info(`Scraping ${targetUrl} with CroxyProxy`);
