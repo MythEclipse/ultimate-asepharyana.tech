@@ -41,25 +41,37 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   // Wait for the main form input to load
   await page.waitForSelector('input#url', { timeout: 30000 });
 
+// Wait for navigation after clicking submit
+await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
   // Fill the input and submit the form
   await page.type('input#url', targetUrl, { delay: 50 });
   await page.click('#requestSubmit');
 
-  // Wait for navigation or page update (adjust selector as needed)
-  await new Promise(res => setTimeout(res, 5000));
+  // Wait until the page is no longer the "Proxy is launching..." screen
+  await waitForProxyReady(page);
 
   // Get the full HTML content after submission
   const html = await page.content();
-
   await browser.close();
   return html;
 }
 
-// CLI usage: npx ts-node scrapeCroxyProxy.ts "https://asepharyana.tech/"
+async function waitForProxyReady(page: import('puppeteer').Page) {
+  for (let i = 0; i < 60; i++) {
+    const content = await page.content();
+    if (!content.includes('<title>Proxy is launching...</title>')) {
+      return;
+    }
+    await new Promise(res => setTimeout(res, 1000));
+  }
+  throw new Error('Proxy did not launch in time');
+}
+
+// CLI usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "https://asepharyana.tech/"
 if (require.main === module) {
   const [, , inputUrl] = process.argv;
   if (!inputUrl) {
-    console.error('Usage: npx ts-node scrapeCroxyProxy.ts "<url or query>"');
+    console.error('Usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "<url or query>"');
     process.exit(1);
   }
   scrapeCroxyProxy(inputUrl)
