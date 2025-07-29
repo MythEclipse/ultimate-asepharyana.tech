@@ -15,8 +15,7 @@ async function handler(request: NextRequest) {
   }
 
   try {
-const result = await fetchWithProxyOnly(slug);
-
+    const result = await fetchWithProxyOnly(slug);
 
     // If the response is JSON, return as JSON
     if (result.contentType && result.contentType.includes('application/json')) {
@@ -64,6 +63,11 @@ const result = await fetchWithProxyOnly(slug);
       }
     );
   } catch (error) {
+    logger.error('Failed to fetch URL', {
+      error: (error as Error).message,
+      stack: (error as Error).stack,
+      url: slug,
+    });
     return NextResponse.json(
       {
         error: 'Failed to fetch URL',
