@@ -22,12 +22,12 @@ export const POST = auth(async function POST(req) {
   }
 
   try {
-    logger.info(`[POST /api/sosmed/likes] Request received`, { ip, userId: session?.user.id });
+    logger.info(`[POST /api/sosmed/likes] Request received`, { ip, userId: session?.user?.id });
 
     const { postId } = await req.json();
     logger.debug(`[POST /api/sosmed/likes] Payload`, { postId });
 
-    if (!session?.user.id) {
+    if (!session?.user?.id) {
       logger.warn(`[POST /api/sosmed/likes] User ID missing in session`, { ip });
       return NextResponse.json({ message: 'User ID missing' }, { status: 400 });
     }
@@ -64,7 +64,7 @@ export const POST = auth(async function POST(req) {
   } catch (error) {
     logger.error(`[POST /api/sosmed/likes] Error`, {
       ip,
-      userId: session?.user.id,
+      userId: session?.user?.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -86,12 +86,12 @@ export const DELETE = auth(async function DELETE(req) {
   }
 
   try {
-    logger.info(`[DELETE /api/sosmed/likes] Request received`, { ip, userId: session?.user.id });
+    logger.info(`[DELETE /api/sosmed/likes] Request received`, { ip, userId: session?.user?.id });
 
     const { postId } = await req.json();
     logger.debug(`[DELETE /api/sosmed/likes] Payload`, { postId });
 
-    if (!session?.user.id) {
+    if (!session?.user?.id) {
       logger.warn(`[DELETE /api/sosmed/likes] User ID missing in session`, { ip });
       return NextResponse.json({ message: 'User ID missing' }, { status: 400 });
     }
@@ -136,7 +136,7 @@ export const DELETE = auth(async function DELETE(req) {
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/likes] Error`, {
       ip,
-      userId: session?.user.id,
+      userId: session?.user?.id,
       error,
       durationMs: Date.now() - start,
     });

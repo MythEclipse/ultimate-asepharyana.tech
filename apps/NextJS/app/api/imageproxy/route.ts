@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { imageProxy } from '@/lib/imageproxy';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
 
-async function handler(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
 
@@ -23,5 +22,3 @@ async function handler(req: NextRequest) {
     },
   });
 }
-
-export const GET = withLogging(handler);

@@ -2,7 +2,6 @@ import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(`https://alqanime.net/?s=${slug}`);
@@ -75,7 +74,8 @@ function parseAnimeData(html: string) {
   return { animeList, pagination };
 }
 
-async function handler(req: NextRequest): Promise<NextResponse> {
+// Handler for static route: only (req: NextRequest)
+export async function GET(req: NextRequest): Promise<NextResponse> {
   const slug = new URL(req.url).searchParams.get('q') || 'log';
   const html = await fetchAnimeData(slug);
   const { animeList, pagination } = parseAnimeData(html);
@@ -92,5 +92,3 @@ async function handler(req: NextRequest): Promise<NextResponse> {
 
   return response;
 }
-
-export const GET = withLogging(handler);

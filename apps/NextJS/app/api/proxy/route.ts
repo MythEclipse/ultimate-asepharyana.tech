@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { withLogging } from '@/lib/api-wrapper';
 import { fetchWithProxyOnly } from '@/lib/fetchWithProxy';
 
-async function handler(request: Request) {
+async function handler(request: NextRequest) {
   const url = new URL(request.url);
   const slug = url.searchParams.get('url');
 
@@ -75,4 +75,5 @@ async function handler(request: Request) {
   }
 }
 
-export const GET = withLogging(handler);
+// Ensure withLogging only passes the Request object to handler
+export const GET = (request: NextRequest) => withLogging(handler)(request, { params: {} });

@@ -65,4 +65,4 @@ async function handler(request: NextRequest) {
   }
 }
 
-export const POST = withLogging(handler);
+export const POST = (request: NextRequest) => withLogging(handler)(request, { params: {} });

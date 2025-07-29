@@ -9,7 +9,6 @@ import { join } from 'path';
 import crypto from 'crypto';
 import { ryzenCDN } from '@/lib/ryzencdn';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
 
 const CACHE_DIR = join(tmpdir(), 'compress-cache');
 const CACHE_EXPIRY = 3600 * 1000;
@@ -188,7 +187,7 @@ const compressVideo = async (
   }
 };
 
-async function handler(req: NextRequest): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   if (API_DISABLED) {
     return NextResponse.json(
       { error: 'API is currently disabled' },
@@ -267,5 +266,3 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     if (!isProcessing) processNext();
   });
 }
-
-export const GET = withLogging(handler);

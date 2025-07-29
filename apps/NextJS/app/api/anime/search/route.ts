@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
+import logger from '@/lib/logger';
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(
@@ -88,28 +88,65 @@ function parseAnimeData(html: string, slug: string) {
   return { animeList, pagination };
 }
 
-async function handler(req: NextRequest): Promise<NextResponse> {
-  const slug = new URL(req.url).searchParams.get('q') || 'one';
-  const html = await fetchAnimeData(slug);
-  const { animeList, pagination } = parseAnimeData(html, slug);
+// Handler for static route: only (req: NextRequest)
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const ip =
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('remote-addr') ||
+    'unknown';
+  const url = req.url;
+  const method = req.method;
+  const requestId = req.headers.get('x-request-id') || undefined;
+  const start = Date.now();
 
-  const ongoingAnime = animeList.filter(
-    (anime) => anime.status === 'Ongoing'
-  );
-  const completeAnime = animeList.filter(
-    (anime) => anime.status === 'Completed'
-  );
+  try {
+    const slug = new URL(req.url).searchParams.get('q') || 'one';
+    const html = await fetchAnimeData(slug);
+    const { animeList, pagination } = parseAnimeData(html, slug);
 
-  return NextResponse.json(
-    {
-      status: 'Ok',
-      data: animeList,
-      pagination,
-    },
-    {
-      headers: corsHeaders,
+    const ongoingAnime = animeList.filter(
+      (anime) => anime.status === 'Ongoing'
+    );
+    const completeAnime = animeList.filter(
+      (anime) => anime.status === 'Completed'
+    );
+
+    const response = NextResponse.json(
+      {
+        status: 'Ok',
+        data: animeList,
+        pagination,
+      },
+      {
+        headers: corsHeaders,
+      }
+    );
+
+    const duration = Date.now() - start;
+    logger.info(
+      `[Request processed] ip=${ip} | url=${url} | method=${method} | status=${response.status} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
+    );
+    if (requestId) {
+      response.headers.set('x-request-id', requestId);
     }
-  );
+    return response;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const duration = Date.now() - start;
+    logger.error(
+      `[Error processing request] ip=${ip} | url=${url} | method=${method} | error=${errorMessage} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
+    );
+    const response = NextResponse.json(
+      {
+        message: 'Failed to process request',
+        error: errorMessage,
+        ...(requestId ? { requestId } : {}),
+      },
+      { status: 500, headers: corsHeaders }
+    );
+    if (requestId) {
+      response.headers.set('x-request-id', requestId);
+    }
+    return response;
+  }
 }
-
-export const GET = withLogging(handler);

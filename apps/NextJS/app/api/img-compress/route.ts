@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import logger from '@/lib/logger';
 import { PRODUCTION } from '@/lib/url';
-import { withLogging } from '@/lib/api-wrapper';
 
 declare global {
   interface RequestInit {
@@ -84,7 +83,7 @@ async function postHandler(request: NextRequest) {
   return NextResponse.json(result);
 }
 
-async function getHandler(request: NextRequest) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const fileName = searchParams.get('url');
 
@@ -115,8 +114,7 @@ async function getHandler(request: NextRequest) {
   });
 }
 
-export const POST = withLogging(postHandler);
-export const GET = withLogging(getHandler);
+export const POST = postHandler;
 
 export const config = {
   api: {

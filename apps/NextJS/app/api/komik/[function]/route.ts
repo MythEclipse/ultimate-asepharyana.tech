@@ -1,19 +1,17 @@
-// Refactored to use withLogging for centralized logging
+// Refactored to use correct dynamic route signature for Next.js 15
 
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import * as cheerio from 'cheerio';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
 
 // Function to dynamically fetch komik base URL from komikindo.cz
 const getDynamicKomikBaseUrl = async (): Promise<string> => {
   const body = await fetchWithProxyWrapper('https://komikindo.cz/');
   const $ = cheerio.load(body);
-  const link = $(
-    'div.elementor-element.elementor-element-17eb05c.e-flex.e-con-boxed.e-con.e-parent.e-lazyloaded > div > div.elementor-element.elementor-element-8e1e584.e-con-full.e-flex.e-con.e-child > div.elementor-element.elementor-element-722d778.elementor-widget__width-inherit.elementor-widget.elementor-widget-elementskit-button > div > div > div > a'
-  ).attr('href');
+  const link =
+    $('div.elementor-element.elementor-element-17eb05c.e-flex.e-con-boxed.e-con.e-parent.e-lazyloaded > div > div.elementor-element.elementor-element-8e1e584.e-con-full.e-flex.e-con.e-child > div.elementor-element.elementor-element-722d778.elementor-widget__width-inherit.elementor-widget.elementor-widget-elementskit-button > div > div > div > a').attr('href');
   if (!link) throw new Error('Failed to fetch komik base URL');
   return link.endsWith('/') ? link.slice(0, -1) : link;
 };
@@ -139,9 +137,7 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
 
     // Description
     const description =
-      $(
-        '#sinopsis > section > div > div.entry-content.entry-content-single > p'
-      )
+      $('#sinopsis > section > div > div.entry-content.entry-content-single > p')
         .text()
         .trim() || '';
 
@@ -249,8 +245,9 @@ const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaCh
   }
 };
 
-// Handler function for GET
-async function handler(req: Request) {
+// Handler function for GET (dynamic route)
+export async function GET(
+  req: NextRequest) {
   const ip =
     req.headers.get('x-forwarded-for') ||
     req.headers.get('remote-addr') ||
@@ -341,6 +338,3 @@ async function handler(req: Request) {
     );
   }
 }
-
-// Export GET handler with logging wrapper
-export const GET = withLogging(handler);

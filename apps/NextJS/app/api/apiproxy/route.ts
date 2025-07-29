@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withLogging } from '@/lib/api-wrapper';
 
 /**
  * Handles GET requests to proxy API calls to a target URL.
@@ -28,7 +27,7 @@ import { withLogging } from '@/lib/api-wrapper';
  *
  * @throws Will throw an error if the `url` query parameter is missing or if the fetch operation fails.
  */
-async function handler(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
   const targetUrl = searchParams.get('url'); // Extract the full URL from the query parameter
 
@@ -44,5 +43,3 @@ async function handler(request: NextRequest): Promise<NextResponse> {
   const data = await response.json();
   return NextResponse.json(data);
 }
-
-export const GET = withLogging(handler);

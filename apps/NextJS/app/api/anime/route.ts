@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
+import logger from '@/lib/logger';
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetchWithProxy(url);
@@ -77,33 +77,65 @@ function parseCompleteAnime(html: string) {
   return completeAnime;
 }
 
-async function handler(
-  req: NextRequest,
-  { params }: { params: Record<string, never> }
-): Promise<NextResponse> {
-  const ongoingHtml = await fetchHtml(
-    'https://otakudesu.cloud/ongoing-anime/'
-  );
-  const completeHtml = await fetchHtml(
-    'https://otakudesu.cloud/complete-anime/'
-  );
+// Handler for static route: only (req: NextRequest)
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const ip =
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('remote-addr') ||
+    'unknown';
+  const url = req.url;
+  const method = req.method;
+  const requestId = req.headers.get('x-request-id') || undefined;
+  const start = Date.now();
 
-  const ongoingAnime = parseOngoingAnime(ongoingHtml);
-  const completeAnime = parseCompleteAnime(completeHtml);
+  try {
+    const ongoingHtml = await fetchHtml(
+      'https://otakudesu.cloud/ongoing-anime/'
+    );
+    const completeHtml = await fetchHtml(
+      'https://otakudesu.cloud/complete-anime/'
+    );
 
-  const response = NextResponse.json({
-    status: 'Ok',
-    data: {
-      ongoing_anime: ongoingAnime,
-      complete_anime: completeAnime,
-    },
-  });
+    const ongoingAnime = parseOngoingAnime(ongoingHtml);
+    const completeAnime = parseCompleteAnime(completeHtml);
 
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+    const response = NextResponse.json({
+      status: 'Ok',
+      data: {
+        ongoing_anime: ongoingAnime,
+        complete_anime: completeAnime,
+      },
+    });
 
-  return response;
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    const duration = Date.now() - start;
+    logger.info(
+      `[Request processed] ip=${ip} | url=${url} | method=${method} | status=${response.status} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
+    );
+    if (requestId) {
+      response.headers.set('x-request-id', requestId);
+    }
+    return response;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const duration = Date.now() - start;
+    logger.error(
+      `[Error processing request] ip=${ip} | url=${url} | method=${method} | error=${errorMessage} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
+    );
+    const response = NextResponse.json(
+      {
+        message: 'Failed to process request',
+        error: errorMessage,
+        ...(requestId ? { requestId } : {}),
+      },
+      { status: 500, headers: corsHeaders }
+    );
+    if (requestId) {
+      response.headers.set('x-request-id', requestId);
+    }
+    return response;
+  }
 }
-
-export const GET = withLogging(handler);
