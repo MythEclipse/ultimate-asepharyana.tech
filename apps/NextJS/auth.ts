@@ -1,26 +1,9 @@
 // Minimal NextAuth config for middleware compatibility (no Prisma/server-only logic)
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./lib/db";
 import { PrismaAdapter } from "@auth/prisma-adapter"
 // Only export middleware-compatible handlers and auth
-declare module "next-auth" {
-  /**
-   * Returned by `auth`, `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
-   */
-  interface Session {
-    user: {
-      /** The user's postal address. */
-      address: string
-      /**
-       * By default, TypeScript merges new interface properties and overwrites existing ones.
-       * In this case, the default session user properties will be overwritten,
-       * with the new ones defined above. To keep the default session user properties,
-       * you need to add them back into the newly declared interface.
-       */
-    } & DefaultSession["user"]
-  }
-}
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GoogleProvider({
@@ -42,16 +25,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
-    session({ session, token }) {
-      // `session.user.address` is now a valid property, and will be type-checked
-      // in places like `useSession().data.user` or `auth().user`
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          address: token.address ?? "",
-        },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = typeof token.id === "string" ? token.id : "";
+        session.user.email = token.email ?? "";
+        session.user.name = token.name ?? null;
       }
+      return session;
     },
   },
 });

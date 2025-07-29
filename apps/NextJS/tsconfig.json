@@ -44,6 +44,9 @@
       ],
       "@layout/navigation/*": [
         "./layout/navigation/*"
+      ],
+      "@hooks/*": [
+        "./core/hooks/*"
       ]
     }
   },
@@ -54,6 +57,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "types",
+    "**/*.js"
   ],
   "exclude": [
     "node_modules",
@@ -61,6 +65,6 @@
     "dist",
     "coverage",
     "__tests__",
-    "__mocks__",
+    "__mocks__"
   ]
 }

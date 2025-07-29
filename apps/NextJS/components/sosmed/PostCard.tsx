@@ -15,7 +15,7 @@ import { Posts, Comments, Likes } from '@asepharyana/database';
 import { formatDistanceToNow } from 'date-fns';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
-import { useGlobalStore } from '@/hooks/useGlobalStore';
+import { useGlobalStore } from '@hooks/useGlobalStore';
 
 interface ClientUser {
   id: string;

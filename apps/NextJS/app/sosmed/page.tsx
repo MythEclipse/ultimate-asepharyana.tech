@@ -6,7 +6,7 @@ import { Textarea } from '@/components/text/textarea';
 import ButtonA from '@core/ui/BaseButton';
 import { useSession } from 'next-auth/react';
 import { Loader2, UploadCloud, Lock } from 'lucide-react';
-import { useGlobalStore } from '@/hooks/useGlobalStore';
+import { useGlobalStore } from '@hooks/useGlobalStore';
 import useSWR, { mutate } from 'swr';
 
 // Define missing types locally with corrected field names to match API response
