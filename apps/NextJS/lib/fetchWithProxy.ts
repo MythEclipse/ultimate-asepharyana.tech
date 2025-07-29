@@ -33,7 +33,8 @@ async function getProxies(): Promise<string[]> {
     return data
       .split('\n')
       .map(parseProxyLine)
-      .filter((proxy): proxy is string => !!proxy);
+      .filter((proxy): proxy is string => !!proxy)
+      .slice(0, 10); // Only use the first 10 proxies
   } catch (error) {
     logger.error('Network or unexpected error while fetching proxy list:', error);
     throw error;

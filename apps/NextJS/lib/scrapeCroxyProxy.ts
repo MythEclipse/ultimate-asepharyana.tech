@@ -55,7 +55,7 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   let html = '';
   while (retry < 3) {
     await page.goto('https://www.croxyproxy.com/', {
-      waitUntil: 'networkidle0',
+      waitUntil: 'domcontentloaded',
       timeout: 60000,
     });
     logger.info('Navigated to CroxyProxy homepage');
