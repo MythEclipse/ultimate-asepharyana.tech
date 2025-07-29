@@ -54,59 +54,73 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   logger.debug('Extra HTTP headers set');
 
   // Always start from homepage to avoid session outdated error
-  await page.goto('https://www.croxyproxy.com/', {
-    waitUntil: 'domcontentloaded',
-    timeout: 60000,
-  });
-  logger.info('Navigated to CroxyProxy homepage');
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-  logger.debug('Waited 3 seconds before interacting with the page');
+  let retry = 0;
+  let html = '';
+  while (retry < 3) {
+    await page.goto('https://www.croxyproxy.com/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
+    });
+    logger.info('Navigated to CroxyProxy homepage');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    logger.debug('Waited 3 seconds before interacting with the page');
 
-  // Wait for the main form input to load
-  await page.waitForSelector('input#url', { timeout: 30000 });
-  logger.debug('URL input is visible');
+    // Wait for the main form input to load
+    await page.waitForSelector('input#url', { timeout: 30000 });
+    logger.debug('URL input is visible');
 
-  // Fill the input and submit the form
-  await page.type('input#url', targetUrl, { delay: 50 });
-  logger.debug(`Typing URL: ${targetUrl}`);
-  await page.click('#requestSubmit');
-  logger.info('Submitted the form');
+    // Fill the input and submit the form
+    await page.type('input#url', targetUrl, { delay: 50 });
+    logger.debug(`Typing URL: ${targetUrl}`);
+    await page.click('#requestSubmit');
+    logger.info('Submitted the form');
 
-  // Wait for navigation or error
-  await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+    // Wait for navigation or error
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
 
-  // Check for session outdated or error message
-  const errorText = await page.evaluate(() => {
-    const h1s = Array.from(document.querySelectorAll('h1, #contentBody > h1'));
-    const bodyText = document.body.innerText || '';
-    let error = '';
-    if (h1s.some(el => el.textContent?.toLowerCase().includes('something went wrong'))) {
-      error = 'Something went wrong';
+    // Check for session outdated or error message
+    const errorText = await page.evaluate(() => {
+      const h1s = Array.from(document.querySelectorAll('h1, #contentBody > h1'));
+      const bodyText = document.body.innerText || '';
+      let error = '';
+      if (h1s.some(el => el.textContent?.toLowerCase().includes('something went wrong'))) {
+        error = 'Something went wrong';
+      }
+      if (bodyText.toLowerCase().includes('your session has outdated')) {
+        error = 'Your session has outdated. Please visit the home page and start a new one';
+      }
+      if (bodyText.toLowerCase().includes('web proxy server')) {
+        error = 'Web proxy server error';
+      }
+      return error;
+    });
+
+    if (errorText === 'Your session has outdated. Please visit the home page and start a new one') {
+      logger.warn('Session outdated detected, retrying from homepage...');
+      retry++;
+      continue;
     }
-    if (bodyText.toLowerCase().includes('your session has outdated')) {
-      error = 'Your session has outdated. Please visit the home page and start a new one';
+    if (errorText) {
+      logger.error(errorText);
+      await browser.close();
+      throw new Error(errorText);
     }
-    if (bodyText.toLowerCase().includes('web proxy server')) {
-      error = 'Web proxy server error';
-    }
-    return error;
-  });
 
-  if (errorText) {
-    logger.error(errorText);
-    await browser.close();
-    throw new Error(errorText);
+    // Wait for proxy to be ready using multiple checks
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 120000 }).catch(() => {});
+    logger.info('Proxy has launched');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    logger.debug('Waited 2 seconds after proxy launch');
+
+    // Get the full HTML content after submission
+    html = await page.content();
+    logger.debug('Retrieved page content');
+    break;
   }
 
-  // Wait for proxy to be ready using multiple checks
-  await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 120000 }).catch(() => {});
-  logger.info('Proxy has launched');
-
-  // Get the full HTML content after submission
-  const html = await page.content();
-  logger.debug('Retrieved page content');
   await browser.close();
   logger.info('Browser closed');
+  if (!html) throw new Error('Failed to get valid session after retries');
   return html;
 }
 
