@@ -58,11 +58,10 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   let html = '';
   while (retry < 3) {
     await page.goto('https://www.croxyproxy.com/', {
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'networkidle0',
       timeout: 60000,
     });
     logger.info('Navigated to CroxyProxy homepage');
-    await new Promise((resolve) => setTimeout(resolve, 3000));
     logger.debug('Waited 3 seconds before interacting with the page');
 
     // Wait for the main form input to load
