@@ -1,15 +1,52 @@
-// Minimal NextAuth config for middleware compatibility (no Prisma/server-only logic)
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./lib/db";
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { compare } from "bcryptjs";
 
-// Only export middleware-compatible handlers and auth
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "jsmith@example.com" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials.password) {
+          return null;
+        }
+
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email as string,
+          },
+        });
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        const isPasswordValid = await compare(
+          credentials.password as string,
+          user.password
+        );
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        };
+      },
     }),
   ],
   adapter: PrismaAdapter(prisma),
@@ -18,7 +55,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
-      // Automatic account linking for users with the same email
       if (account?.provider && user?.email) {
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
@@ -27,10 +63,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (existingUser) {
           const alreadyLinked = existingUser.accounts.some(
-            (acc) => acc.provider === account.provider && acc.providerAccountId === account.providerAccountId
+            (acc) =>
+              acc.provider === account.provider &&
+              acc.providerAccountId === account.providerAccountId
           );
           if (!alreadyLinked) {
-            // Link the new OAuth account to the existing user
             await prisma.account.create({
               data: {
                 userId: existingUser.id,
@@ -43,7 +80,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token_type: account.token_type,
                 scope: account.scope,
                 id_token: account.id_token,
-                session_state: account.session_state ? String(account.session_state) : null,
+                session_state: account.session_state
+                  ? String(account.session_state)
+                  : null,
               },
             });
           }
@@ -56,7 +95,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id ?? null;
         token.email = user.email ?? null;
         token.name = user.name ?? null;
-        // Do NOT call Prisma or upsertGoogleUser here (middleware-safe)
       }
       return token;
     },

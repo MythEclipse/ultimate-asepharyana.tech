@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
 function RegisterForm() {
@@ -9,7 +10,9 @@ function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (error && errorRef.current) {
@@ -17,30 +20,57 @@ function RegisterForm() {
     }
   }, [error]);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    
+    setIsSubmitting(true);
+
     try {
-      // Use NextAuth's signIn function with credentials provider
-      const result = await signIn('credentials', {
-      
-        name,
+      // Step 1: Send data to the registration API
+      const registerResponse = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const registerData = await registerResponse.json();
+
+      if (!registerResponse.ok) {
+        setError(registerData.message || 'Registration failed. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Step 2: If registration is successful, try to sign in automatically
+      const signInResponse = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: false, // Do not redirect automatically, we handle it manually
       });
-      
-      if (result?.ok) {
-        // Registration successful, redirect to home
-        window.location.href = '/';
-      } else {
-        // Check if error is an object before accessing message
-        setError(typeof result?.error === 'object' ? 'Registration failed.' : result?.error || 'Registration failed.');
+
+      if (signInResponse?.error) {
+        // If auto-login fails, inform the user to log in manually
+        setError('Registration successful, but auto-login failed. Please log in from the login page.');
+        // Redirect to the login page after a moment
+        setTimeout(() => {
+          router.push('/login');
+        }, 3000);
+      } else if (signInResponse?.ok) {
+        // If auto-login is successful, redirect to the homepage
+        router.push('/');
+        router.refresh(); // Refresh the page to update session status
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      setError('An unexpected error occurred during registration.');
+
+    } catch (err) {
+      setError('An error occurred. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -48,7 +78,7 @@ function RegisterForm() {
     <form onSubmit={handleRegister} className="space-y-4" role="form" aria-label="Register form">
       {error && (
         <p
-          className="text-red-500 text-center"
+          className="text-red-500 text-center bg-red-100 p-2 rounded-md"
           id="register-error"
           tabIndex={-1}
           ref={errorRef}
@@ -92,16 +122,18 @@ function RegisterForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          minLength={6}
           aria-describedby={error ? 'register-error' : undefined}
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
       <button
         type="submit"
-        className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+        disabled={isSubmitting}
+        className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400'
         aria-label="Register"
       >
-        Register
+        {isSubmitting ? 'Registering...' : 'Register'}
       </button>
       <div className="text-center mt-4">
         <Link href="/login" className="text-blue-600 hover:underline">
