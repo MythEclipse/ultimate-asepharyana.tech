@@ -29,12 +29,19 @@ function getRandomUserAgent(): string {
 export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   logger.info(`Scraping ${targetUrl} with CroxyProxy`);
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: 'shell', // Use headless mode for better compatibility
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-blink-features=AutomationControlled',
+      '--disable-dev-shm-usage',
+      '--disable-infobars',
+      '--window-size=1280,800',
     ],
+    defaultViewport: {
+      width: 1280,
+      height: 800,
+    },
   });
 
   const page = await browser.newPage();

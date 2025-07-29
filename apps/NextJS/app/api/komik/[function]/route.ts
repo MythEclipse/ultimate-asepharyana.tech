@@ -10,9 +10,13 @@ import { corsHeaders } from '@/lib/corsHeaders';
 const getDynamicKomikBaseUrl = async (): Promise<string> => {
   const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
   const $ = cheerio.load(body);
-  const orgLink = $('a[href*="komikindo.org"]').attr('href');
-  if (!orgLink) throw new Error('Failed to fetch komik base URL (.org) from .cz');
-  return orgLink.endsWith('/') ? orgLink.slice(0, -1) : orgLink;
+  // Cari link yang bukan cz, misal .co, .io, .id, dst
+  const orgLink = $('a[href^="https://komikindo."]')
+    .map((_, el) => $(el).attr('href'))
+    .get()
+    .find(href => href && !href.includes('.cz'));
+  if (!orgLink) throw new Error('Failed to fetch komik base URL selain cz');
+  return orgLink.replace(/\/$/, '');
 };
 
 // Logging Function (kept for internal use)
