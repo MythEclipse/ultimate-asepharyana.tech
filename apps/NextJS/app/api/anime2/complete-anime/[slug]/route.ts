@@ -69,9 +69,9 @@ function parseAnimePage(html: string, slug: string) {
 
 async function handler(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
-  const { slug } = params;
+  const { slug } = await params;
   const html = await fetchAnimePage(slug);
   const { animeList, pagination } = parseAnimePage(html, slug);
 

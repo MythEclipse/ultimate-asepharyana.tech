@@ -104,9 +104,9 @@ const parseAnimeData = (html: string) => {
 
 async function handler(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<NextResponse> {
-  const { slug } = params;
+  const { slug } = await params;
   const html = (await fetchAnimePage(slug)) as string;
   const animeData = parseAnimeData(html);
 
