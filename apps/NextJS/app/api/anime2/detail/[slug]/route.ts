@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 const fetchAnimePage = async (slug: string) => {
   const { data, contentType } = await fetchWithProxy(
@@ -129,38 +129,18 @@ const parseAnimeData = (html: string) => {
   };
 };
 
-export async function GET(
+async function handler(
   req: NextRequest,
-  props: { params: Promise<{ slug: string }> }
-) {
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('remote-addr') ||
-    'unknown';
-  const url = req.url;
+  { params }: { params: { slug: string } }
+): Promise<NextResponse> {
+  const { slug } = params;
+  const html = (await fetchAnimePage(slug)) as string;
+  const animeData = parseAnimeData(html);
 
-  try {
-    const { slug } = await props.params;
-    const html = (await fetchAnimePage(slug)) as string;
-    const animeData = parseAnimeData(html);
-
-    logger.info('Request processed', {
-      ip,
-      url,
-      slug,
-    });
-
-    return NextResponse.json(
-      { status: 'Ok', data: animeData },
-      { headers: corsHeaders }
-    );
-  } catch (error) {
-    console.error('Error fetching anime data:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to scrape data';
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500, headers: corsHeaders }
-    );
-  }
+  return NextResponse.json(
+    { status: 'Ok', data: animeData },
+    { headers: corsHeaders }
+  );
 }
+
+export const GET = withLogging(handler);

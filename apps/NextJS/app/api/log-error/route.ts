@@ -1,8 +1,9 @@
-// apps/NextJS/app/api/log-error/route.ts
+// Wrapped POST handler with withLogging for centralized logging
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-wrapper';
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   try {
     const { error, info } = await req.json();
     // Here you could log to a database, external service, or file
@@ -13,3 +14,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: (e as Error).message }, { status: 500 });
   }
 }
+
+export const POST = withLogging(handler);

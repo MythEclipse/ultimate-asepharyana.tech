@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger'; // Make sure to import your logger
-import { corsHeaders } from '@/lib/corsHeaders'; // Import CORS headers
+import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 const fetchAnimePage = async (slug: string) => {
   const { data, contentType } = await fetchWithProxy(
@@ -102,45 +102,20 @@ const parseAnimeData = (html: string) => {
   };
 };
 
-export async function GET(
+async function handler(
   req: NextRequest,
-  props: { params: Promise<{ slug: string }> }
-) {
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('remote-addr') ||
-    'unknown';
-  const url = req.url;
+  { params }: { params: { slug: string } }
+): Promise<NextResponse> {
+  const { slug } = params;
+  const html = (await fetchAnimePage(slug)) as string;
+  const animeData = parseAnimeData(html);
 
-  try {
-    const { slug } = await props.params;
-    const html = (await fetchAnimePage(slug)) as string;
-    const animeData = parseAnimeData(html);
+  const response = NextResponse.json({ status: 'Ok', data: animeData });
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
 
-    logger.info('Request processed', {
-      ip,
-      url,
-      slug,
-    });
-
-    const response = NextResponse.json({ status: 'Ok', data: animeData });
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    return response;
-  } catch (error) {
-    console.error('Error fetching anime data:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to scrape data';
-    const response = NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    return response;
-  }
+  return response;
 }
+
+export const GET = withLogging(handler);

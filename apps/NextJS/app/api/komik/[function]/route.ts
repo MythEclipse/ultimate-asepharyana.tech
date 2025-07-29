@@ -1,15 +1,18 @@
+// Refactored to use withLogging for centralized logging
+
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 const baseUrl = {
   komik: 'https://komikindo.rip',
 };
 const baseURL = baseUrl.komik;
 
-// Logging Function
+// Logging Function (kept for internal use)
 const logError = (error: { message: string }) => {
   console.error('Error:', error.message);
 };
@@ -240,7 +243,8 @@ const getChapter = async (chapter_url: string): Promise<MangaChapter> => {
   }
 };
 
-export const GET = async (req: Request) => {
+// Handler function for GET
+async function handler(req: Request) {
   const ip =
     req.headers.get('x-forwarded-for') ||
     req.headers.get('remote-addr') ||
@@ -318,4 +322,7 @@ export const GET = async (req: Request) => {
       }
     );
   }
-};
+}
+
+// Export GET handler with logging wrapper
+export const GET = withLogging(handler);

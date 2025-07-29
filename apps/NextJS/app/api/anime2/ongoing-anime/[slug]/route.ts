@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger'; // Make sure to import your logger
-import { corsHeaders } from '@/lib/corsHeaders'; // Import the CORS headers
+import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 async function fetchAnimePage(slug: string): Promise<string> {
   const response = await fetchWithProxy(
@@ -59,48 +59,24 @@ function parseAnimePage(html: string, slug: string) {
   return { animeList, pagination };
 }
 
-export async function GET(
+async function handler(
   req: NextRequest,
-  props: { params: Promise<{ slug: string }> }
-) {
-  const params = await props.params;
+  { params }: { params: { slug: string } }
+): Promise<NextResponse> {
   const { slug } = params;
+  const html = await fetchAnimePage(slug);
+  const { animeList, pagination } = parseAnimePage(html, slug);
 
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('remote-addr') ||
-    'unknown';
-  const url = req.url;
-
-  try {
-    const html = await fetchAnimePage(slug);
-    const { animeList, pagination } = parseAnimePage(html, slug);
-
-    logger.info('Request processed', {
-      ip,
-      url,
-      ongoingAnimeCount: animeList.length,
+  return NextResponse.json(
+    {
+      status: 'Ok',
+      data: animeList,
       pagination,
-    });
-
-    return NextResponse.json(
-      {
-        status: 'Ok',
-        data: animeList,
-        pagination,
-      },
-      {
-        headers: corsHeaders,
-      }
-    );
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { message: 'Failed to scrape data' },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
-    );
-  }
+    },
+    {
+      headers: corsHeaders,
+    }
+  );
 }
+
+export const GET = withLogging(handler);

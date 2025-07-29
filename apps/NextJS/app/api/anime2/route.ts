@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetchWithProxy(url);
@@ -77,46 +77,27 @@ function parseCompleteAnime(html: string) {
   return completeAnime;
 }
 
-export async function GET(req: NextRequest) {
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('remote-addr') ||
-    'unknown';
-  const url = req.url;
+async function handler(req: NextRequest): Promise<NextResponse> {
+  const ongoingHtml = await fetchHtml(
+    'https://alqanime.net/advanced-search/?status=ongoing&order=update'
+  );
+  const completeHtml = await fetchHtml(
+    'https://alqanime.net/advanced-search/?status=completed&order=update'
+  );
 
-  try {
-    const ongoingHtml = await fetchHtml(
-      'https://alqanime.net/advanced-search/?status=ongoing&order=update'
-    );
-    const completeHtml = await fetchHtml(
-      'https://alqanime.net/advanced-search/?status=completed&order=update'
-    );
+  const ongoingAnime = parseOngoingAnime(ongoingHtml);
+  const completeAnime = parseCompleteAnime(completeHtml);
 
-    const ongoingAnime = parseOngoingAnime(ongoingHtml);
-    const completeAnime = parseCompleteAnime(completeHtml);
-
-    logger.info('Request processed', {
-      ip,
-      url,
-      ongoingAnimeCount: ongoingAnime.length,
-      completeAnimeCount: completeAnime.length,
-    });
-
-    return NextResponse.json(
-      {
-        status: 'Ok',
-        data: {
-          ongoing_anime: ongoingAnime,
-          complete_anime: completeAnime,
-        },
+  return NextResponse.json(
+    {
+      status: 'Ok',
+      data: {
+        ongoing_anime: ongoingAnime,
+        complete_anime: completeAnime,
       },
-      { headers: corsHeaders }
-    );
-  } catch (error) {
-    logger.error('Failed to scrape data', { error, url });
-    return NextResponse.json(
-      { message: 'Failed to scrape data' },
-      { status: 500, headers: corsHeaders }
-    );
-  }
+    },
+    { headers: corsHeaders }
+  );
 }
+
+export const GET = withLogging(handler);

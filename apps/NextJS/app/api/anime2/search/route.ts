@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger'; // Import your logger
-import { corsHeaders } from '@/lib/corsHeaders'; // Import CORS headers
+import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(`https://alqanime.net/?s=${slug}`);
@@ -75,46 +75,22 @@ function parseAnimeData(html: string) {
   return { animeList, pagination };
 }
 
-export async function GET(req: NextRequest) {
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('remote-addr') ||
-    'unknown';
-  const url = req.url;
+async function handler(req: NextRequest): Promise<NextResponse> {
   const slug = new URL(req.url).searchParams.get('q') || 'log';
+  const html = await fetchAnimeData(slug);
+  const { animeList, pagination } = parseAnimeData(html);
 
-  try {
-    const html = await fetchAnimeData(slug);
-    const { animeList, pagination } = parseAnimeData(html);
+  const response = NextResponse.json({
+    status: 'Ok',
+    data: animeList,
+    pagination,
+  });
 
-    logger.info('Request processed', {
-      ip,
-      url,
-      animeCount: animeList.length,
-    });
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
 
-    const response = NextResponse.json({
-      status: 'Ok',
-      data: animeList,
-      pagination,
-    });
-
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    return response;
-  } catch (error) {
-    console.error(error);
-    const response = NextResponse.json(
-      { message: 'Failed to scrape data' },
-      { status: 500 }
-    );
-
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    return response;
-  }
+  return response;
 }
+
+export const GET = withLogging(handler);

@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger'; // Import your logger
-import { corsHeaders } from '@/lib/corsHeaders'; // Import CORS headers
+import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(
@@ -88,50 +88,28 @@ function parseAnimeData(html: string, slug: string) {
   return { animeList, pagination };
 }
 
-export async function GET(req: NextRequest) {
-  const ip =
-    req.headers.get('x-forwarded-for') ||
-    req.headers.get('remote-addr') ||
-    'unknown';
-  const url = req.url;
+async function handler(req: NextRequest): Promise<NextResponse> {
   const slug = new URL(req.url).searchParams.get('q') || 'one';
+  const html = await fetchAnimeData(slug);
+  const { animeList, pagination } = parseAnimeData(html, slug);
 
-  try {
-    const html = await fetchAnimeData(slug);
-    const { animeList, pagination } = parseAnimeData(html, slug);
+  const ongoingAnime = animeList.filter(
+    (anime) => anime.status === 'Ongoing'
+  );
+  const completeAnime = animeList.filter(
+    (anime) => anime.status === 'Completed'
+  );
 
-    const ongoingAnime = animeList.filter(
-      (anime) => anime.status === 'Ongoing'
-    );
-    const completeAnime = animeList.filter(
-      (anime) => anime.status === 'Completed'
-    );
-
-    logger.info('Request processed', {
-      ip,
-      url,
-      ongoingAnimeCount: ongoingAnime.length,
-      completeAnimeCount: completeAnime.length,
-    });
-
-    return NextResponse.json(
-      {
-        status: 'Ok',
-        data: animeList,
-        pagination,
-      },
-      {
-        headers: corsHeaders,
-      }
-    );
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { message: 'Failed to scrape data' },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
-    );
-  }
+  return NextResponse.json(
+    {
+      status: 'Ok',
+      data: animeList,
+      pagination,
+    },
+    {
+      headers: corsHeaders,
+    }
+  );
 }
+
+export const GET = withLogging(handler);

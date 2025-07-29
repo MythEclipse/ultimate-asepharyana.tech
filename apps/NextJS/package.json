@@ -69,6 +69,8 @@
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@testing-library/jest-dom": "^6.6.4",
+    "@upstash/ratelimit": "^2.0.6",
+    "@upstash/redis": "^1.35.2",
     "autoprefixer": "^10.4.21",
     "axios": "^1.11.0",
     "babel-jest": "^30.0.5",

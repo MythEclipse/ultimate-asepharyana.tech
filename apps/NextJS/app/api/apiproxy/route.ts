@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-wrapper';
 
 /**
  * Handles GET requests to proxy API calls to a target URL.
@@ -27,26 +28,21 @@ import { NextResponse } from 'next/server';
  *
  * @throws Will throw an error if the `url` query parameter is missing or if the fetch operation fails.
  */
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const targetUrl = searchParams.get('url'); // Extract the full URL from the query parameter
+async function handler(request: NextRequest): Promise<NextResponse> {
+  const { searchParams } = new URL(request.url);
+  const targetUrl = searchParams.get('url'); // Extract the full URL from the query parameter
 
-    if (!targetUrl) {
-      throw new Error('Missing "url" parameter');
-    }
-
-    const response = await fetch(targetUrl); // Use the provided URL directly
-    if (!response.ok) {
-      throw new Error('Failed to fetch data from the API');
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch data', details: (error as Error).message },
-      { status: 500 }
-    );
+  if (!targetUrl) {
+    throw new Error('Missing "url" parameter');
   }
+
+  const response = await fetch(targetUrl); // Use the provided URL directly
+  if (!response.ok) {
+    throw new Error('Failed to fetch data from the API');
+  }
+
+  const data = await response.json();
+  return NextResponse.json(data);
 }
+
+export const GET = withLogging(handler);

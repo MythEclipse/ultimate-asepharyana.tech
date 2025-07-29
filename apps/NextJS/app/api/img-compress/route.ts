@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import logger from '@/lib/logger';
 import { PRODUCTION } from '@/lib/url';
+import { withLogging } from '@/lib/api-wrapper';
 
 declare global {
   interface RequestInit {
@@ -59,7 +60,9 @@ async function compressImageFromBody(
         filename: responseData.data.filename,
         link: constructUrl(
           PRODUCTION,
-          `/api/img-compress?url=${encodeURIComponent(responseData.data.filename)}`
+          `/api/img-compress?url=${encodeURIComponent(
+            responseData.data.filename
+          )}`
         ),
       },
     };
@@ -70,67 +73,50 @@ async function compressImageFromBody(
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const headers = new Headers();
-    ALLOWED_HEADERS.forEach((header) => {
-      const value = request.headers.get(header);
-      if (value) headers.set(header, value);
-    });
+async function postHandler(request: NextRequest) {
+  const headers = new Headers();
+  ALLOWED_HEADERS.forEach((header) => {
+    const value = request.headers.get(header);
+    if (value) headers.set(header, value);
+  });
 
-    const result = await compressImageFromBody(request.body, headers);
-    return NextResponse.json(result);
-  } catch (error) {
-    const status =
-      error instanceof Error && error.message.includes('API request failed')
-        ? Number(error.message.split(': ')[1]) || 500
-        : 500;
-
-    return NextResponse.json(
-      { status, message: 'Proxy error occurred' },
-      { status }
-    );
-  }
+  const result = await compressImageFromBody(request.body, headers);
+  return NextResponse.json(result);
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const fileName = searchParams.get('url');
+async function getHandler(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const fileName = searchParams.get('url');
 
-    if (!fileName) {
-      return NextResponse.json(
-        { status: 400, message: 'Bad Request: Missing fileName parameter' },
-        { status: 400 }
-      );
-    }
-
-    const apiUrl = `https://staging.kecilin.id/api/upload_compress/${fileName}`;
-
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
-      throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const responseData = await response.blob();
-
-    return new Response(responseData, {
-      headers: {
-        'Content-Type':
-          response.headers.get('Content-Type') || 'application/octet-stream',
-      },
-    });
-  } catch (error) {
-    logger.error('Proxy error:', error);
+  if (!fileName) {
     return NextResponse.json(
-      { status: 500, message: 'Internal Server Error' },
-      { status: 500 }
+      { status: 400, message: 'Bad Request: Missing fileName parameter' },
+      { status: 400 }
     );
   }
+
+  const apiUrl = `https://staging.kecilin.id/api/upload_compress/${fileName}`;
+
+  const response = await fetch(apiUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      `API request failed: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const responseData = await response.blob();
+
+  return new NextResponse(responseData, {
+    headers: {
+      'Content-Type':
+        response.headers.get('Content-Type') || 'application/octet-stream',
+    },
+  });
 }
+
+export const POST = withLogging(postHandler);
+export const GET = withLogging(getHandler);
 
 export const config = {
   api: {

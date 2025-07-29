@@ -1,5 +1,9 @@
+// Wrapped GET handler with withLogging for centralized logging
+// Fixed: Always return NextResponse for compatibility with withLogging
+
 import { ProxyManager } from 'proxy-auto-ts';
 import { NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-wrapper';
 
 // Initialize ProxyManager with custom configuration
 const proxyManager = new ProxyManager({
@@ -8,7 +12,7 @@ const proxyManager = new ProxyManager({
   fallbackUrls: ['https://httpbin.org/ip', 'https://api.ipify.org?format=json'],
 });
 
-export async function GET(request: Request) {
+async function handler(request: Request) {
   const url = new URL(request.url);
   const slug = url.searchParams.get('url');
 
@@ -25,17 +29,31 @@ export async function GET(request: Request) {
 
     // If the response is JSON, return it as JSON
     if (typeof result.data === 'object') {
-      return NextResponse.json(result.data);
+      return NextResponse.json(result.data, {
+        status: 200,
+        headers: {
+          'X-Proxy-Used': result.proxy,
+          'X-Proxy-Latency': result.latency.toString(),
+        },
+      });
     }
 
-    // For non-JSON responses, return as text
-    return new Response(result.data, {
-      headers: {
-        'Content-Type': 'text/plain',
-        'X-Proxy-Used': result.proxy,
-        'X-Proxy-Latency': result.latency.toString(),
+    // For non-JSON responses, return as text in a JSON envelope
+    return NextResponse.json(
+      {
+        data: result.data,
+        proxy: result.proxy,
+        latency: result.latency,
+        contentType: 'text/plain',
       },
-    });
+      {
+        status: 200,
+        headers: {
+          'X-Proxy-Used': result.proxy,
+          'X-Proxy-Latency': result.latency.toString(),
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       {
@@ -46,3 +64,5 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export const GET = withLogging(handler);

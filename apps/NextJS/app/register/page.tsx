@@ -67,7 +67,7 @@ function RegisterForm() {
         router.refresh(); // Refresh the page to update session status
       }
 
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);

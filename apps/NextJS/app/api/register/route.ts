@@ -1,9 +1,31 @@
+// Wrapped POST handler with withLogging for centralized logging
+// Fixed: Always return NextResponse for compatibility with withLogging
+
 import { NextResponse, NextRequest } from 'next/server';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/db';
+import { ratelimit } from '@/lib/ratelimit';
+import { withLogging } from '@/lib/api-wrapper';
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return NextResponse.json(
+        { message: 'Too many requests' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': reset.toString(),
+          },
+        }
+      );
+    }
+
     const { name, email, password } = await request.json();
 
     // Validasi input dasar
@@ -42,3 +64,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Terjadi kesalahan pada server.' }, { status: 500 });
   }
 }
+
+export const POST = withLogging(handler);

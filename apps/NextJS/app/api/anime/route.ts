@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetchWithProxy(url);
@@ -77,55 +77,33 @@ function parseCompleteAnime(html: string) {
   return completeAnime;
 }
 
-export async function GET(request: Request) {
-  const ip =
-    request.headers.get('x-forwarded-for') ||
-    request.headers.get('remote-addr') ||
-    'unknown';
-  const url = request.url;
+async function handler(
+  req: NextRequest,
+  { params }: { params: Record<string, never> }
+): Promise<NextResponse> {
+  const ongoingHtml = await fetchHtml(
+    'https://otakudesu.cloud/ongoing-anime/'
+  );
+  const completeHtml = await fetchHtml(
+    'https://otakudesu.cloud/complete-anime/'
+  );
 
-  try {
-    const ongoingHtml = await fetchHtml(
-      'https://otakudesu.cloud/ongoing-anime/'
-    );
-    const completeHtml = await fetchHtml(
-      'https://otakudesu.cloud/complete-anime/'
-    );
+  const ongoingAnime = parseOngoingAnime(ongoingHtml);
+  const completeAnime = parseCompleteAnime(completeHtml);
 
-    const ongoingAnime = parseOngoingAnime(ongoingHtml);
-    const completeAnime = parseCompleteAnime(completeHtml);
+  const response = NextResponse.json({
+    status: 'Ok',
+    data: {
+      ongoing_anime: ongoingAnime,
+      complete_anime: completeAnime,
+    },
+  });
 
-    logger.info('Request processed', {
-      ip,
-      url,
-      ongoingAnimeCount: ongoingAnime.length,
-      completeAnimeCount: completeAnime.length,
-    });
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
 
-    const response = NextResponse.json({
-      status: 'Ok',
-      data: {
-        ongoing_anime: ongoingAnime,
-        complete_anime: completeAnime,
-      },
-    });
-
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    return response;
-  } catch (error) {
-    logger.error('Failed to scrape data', { error, url });
-    const response = NextResponse.json(
-      { message: 'Failed to scrape data' },
-      { status: 500 }
-    );
-
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    return response;
-  }
+  return response;
 }
+
+export const GET = withLogging(handler);

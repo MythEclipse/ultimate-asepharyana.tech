@@ -9,6 +9,7 @@ import { join } from 'path';
 import crypto from 'crypto';
 import { ryzenCDN } from '@/lib/ryzencdn';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 const CACHE_DIR = join(tmpdir(), 'compress-cache');
 const CACHE_EXPIRY = 3600 * 1000;
@@ -19,8 +20,8 @@ if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
 let isProcessing = false;
 const queue: Array<{
-  task: () => Promise<Response>;
-  resolve: (value: Response) => void;
+  task: () => Promise<NextResponse>;
+  resolve: (value: NextResponse) => void;
 }> = [];
 
 const generateCacheKey = (url: string, sizeParam: string): string => {
@@ -187,7 +188,7 @@ const compressVideo = async (
   }
 };
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest): Promise<NextResponse> {
   if (API_DISABLED) {
     return NextResponse.json(
       { error: 'API is currently disabled' },
@@ -208,7 +209,7 @@ export async function GET(req: NextRequest) {
       { error: 'Server sibuk, coba lagi nanti' },
       { status: 429, headers: corsHeaders }
     );
-  return new Promise<Response>((resolve) => {
+  return new Promise<NextResponse>((resolve) => {
     queue.push({
       task: async () => {
         try {
@@ -222,41 +223,39 @@ export async function GET(req: NextRequest) {
           const ext = path.extname(url).toLowerCase();
           const isPercentage = sizeParam.includes('%');
           const sizeValue = parseFloat(sizeParam.replace('%', ''));
-          if (['.jpg', '.jpeg', '.png'].includes(ext))
+          if (['.jpg', '.jpeg', '.png'].includes(ext)) {
+            const result = await compressImage(
+              buffer,
+              isPercentage
+                ? ((buffer.length / 1024) * sizeValue) / 100
+                : sizeValue * 1024,
+              cacheKey
+            );
+            const cdnLink = await ryzenCDN(result);
             return NextResponse.json(
-              {
-                link: await ryzenCDN(
-                  await compressImage(
-                    buffer,
-                    isPercentage
-                      ? ((buffer.length / 1024) * sizeValue) / 100
-                      : sizeValue * 1024,
-                    cacheKey
-                  )
-                ),
-              },
+              { link: cdnLink },
               { status: 200, headers: corsHeaders }
             );
-          if (['.mp4', '.mov', '.avi'].includes(ext))
+          }
+          if (['.mp4', '.mov', '.avi'].includes(ext)) {
+            const result = await compressVideo(
+              buffer,
+              sizeValue,
+              isPercentage,
+              buffer.length / 1024 ** 2,
+              cacheKey
+            );
+            const cdnLink = await ryzenCDN(result);
             return NextResponse.json(
-              {
-                link: await ryzenCDN(
-                  await compressVideo(
-                    buffer,
-                    sizeValue,
-                    isPercentage,
-                    buffer.length / 1024 ** 2,
-                    cacheKey
-                  )
-                ),
-              },
+              { link: cdnLink },
               { status: 200, headers: corsHeaders }
             );
+          }
           return NextResponse.json(
             { error: 'Format tidak didukung' },
             { status: 400, headers: corsHeaders }
           );
-        } catch {
+        } catch (error) {
           return NextResponse.json(
             { error: 'Kompresi gagal' },
             { status: 500, headers: corsHeaders }
@@ -268,3 +267,5 @@ export async function GET(req: NextRequest) {
     if (!isProcessing) processNext();
   });
 }
+
+export const GET = withLogging(handler);

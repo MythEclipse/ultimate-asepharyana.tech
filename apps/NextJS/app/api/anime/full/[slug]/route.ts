@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { withLogging } from '@/lib/api-wrapper';
 
 interface AnimeResponse {
   status: string;
@@ -98,55 +98,23 @@ const parseAnimePage = (html: string, slug: string): AnimeData => {
   };
 };
 
-export async function GET(
+async function handler(
   request: NextRequest,
-  props: { params: Promise<{ slug: string }> }
-) {
-  const params = await props.params;
+  { params }: { params: { slug: string } }
+): Promise<NextResponse> {
   const { slug } = params;
+  const html = await fetchAnimePage(slug);
+  const data = parseAnimePage(html, slug);
 
-  const ip =
-    request.headers.get('x-forwarded-for') ||
-    request.headers.get('remote-addr') ||
-    'unknown';
-  const url = request.url;
+  const animeResponse: AnimeResponse = {
+    status: 'Ok',
+    data,
+  };
 
-  try {
-    const html = await fetchAnimePage(slug);
-    const data = parseAnimePage(html, slug);
-
-    const animeResponse: AnimeResponse = {
-      status: 'Ok',
-      data,
-    };
-
-    logger.info('Request processed', {
-      ip,
-      url,
-      slug,
-    });
-
-    return NextResponse.json(animeResponse, {
-      status: 200,
-      headers: corsHeaders,
-    });
-  } catch (error: unknown) {
-    const err = error as { message: string };
-    logger.error('Error processing request', {
-      ip,
-      url,
-      slug,
-      error: err.message,
-    });
-    return NextResponse.json(
-      {
-        status: 'Error',
-        message: (error as { message: string }).message,
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
-    );
-  }
+  return NextResponse.json(animeResponse, {
+    status: 200,
+    headers: corsHeaders,
+  });
 }
+
+export const GET = withLogging(handler);
