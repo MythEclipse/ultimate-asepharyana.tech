@@ -5,7 +5,7 @@ import logger from '@/lib/logger';
 import https from 'https';
 
 const DEFAULT_PROXY_LIST_URL =
-  'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt';
+  'https://www.proxy-list.download/api/v1/get?type=http';
 // const DEFAULT_PROXY_LIST_URL =
 //   'https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt';
 
@@ -59,6 +59,7 @@ function isInternetBaikBlockPage(data: string | object): boolean {
   );
 }
 
+// Direct fetch, fallback to proxy if needed
 export async function fetchWithProxy(
   slug: string,
   useProxies: boolean = true
@@ -101,6 +102,13 @@ export async function fetchWithProxy(
     logger.error('Direct fetch failed, trying proxies');
     return await fetchFromProxies(slug);
   }
+}
+
+// Proxy only, never direct
+export async function fetchWithProxyOnly(
+  slug: string
+): Promise<{ data: string | object; contentType: string | null }> {
+  return await fetchFromProxies(slug);
 }
 
 async function fetchFromProxies(

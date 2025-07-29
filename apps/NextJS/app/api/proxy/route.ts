@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withLogging } from '@/lib/api-wrapper';
-import { fetchWithProxy } from '@/lib/fetchWithProxy';
+import { fetchWithProxyOnly } from '@/lib/fetchWithProxy';
 
 async function handler(request: Request) {
   const url = new URL(request.url);
@@ -15,7 +15,7 @@ async function handler(request: Request) {
 
   try {
     // Use fetchWithProxy for all proxying
-    const result = await fetchWithProxy(slug, true);
+    const result = await fetchWithProxyOnly(slug);
 
     // If the response is JSON, return it as JSON
     if (typeof result.data === 'object') {
