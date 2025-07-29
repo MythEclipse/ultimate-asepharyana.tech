@@ -32,6 +32,9 @@ jobs:
           fi
 
       - name: Install Dependencies
+        run: bash ./2updateenv.sh
+
+      - name: Install Dependencies
         run: bun install
 
       - name: Generate Prisma Client
