@@ -134,6 +134,26 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
     logger.info('Browser closed.');
   }
 }
+// Cached version: 1 hour cache
+import { redis } from '@/lib/redis';
+
+/**
+ * Cached wrapper for scrapeCroxyProxy.
+ * @param targetUrl URL to scrape via CroxyProxy
+ * @returns HTML string (cached for 1 hour)
+ */
+export async function scrapeCroxyProxyCached(targetUrl: string): Promise<string> {
+  const cacheKey = `scrapeCroxyProxy:${targetUrl}`;
+  const cached = await redis.get(cacheKey);
+  if (typeof cached === 'string' && cached) {
+    logger.info(`[scrapeCroxyProxyCached] Returning cached result for ${targetUrl}`);
+    return cached;
+  }
+  const html = await scrapeCroxyProxy(targetUrl);
+  await redis.set(cacheKey, html, { ex: 3600 });
+  logger.info(`[scrapeCroxyProxyCached] Cached result for ${targetUrl} (1 hour)`);
+  return html;
+}
 
 if (require.main === module) {
   const [, , inputUrl] = process.argv;
