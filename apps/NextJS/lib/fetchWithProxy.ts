@@ -199,11 +199,21 @@ async function fetchFromProxies(
         timeout: 6000,
       };
       const response = await axios.get(slug, axiosConfig);
+      logger.info(`[ProxyListOnly] Proxy fetch request: ${proxyUrl}`, {
+        url: slug,
+        proxy: proxyUrl,
+        headers: JSON.stringify(axiosConfig.headers),
+        payload: JSON.stringify({
+          httpsAgent: !!axiosConfig.httpsAgent,
+          httpAgent: !!axiosConfig.httpAgent,
+          timeout: axiosConfig.timeout,
+        }),
+      });
       logger.info(`[fetchWithProxy] Proxy fetch response:`, {
         url: slug,
         proxy: proxyUrl,
         status: response.status,
-        headers: response.headers,
+        headers: JSON.stringify(response.headers),
       });
       if (response.status === 200) {
         const contentType = response.headers['content-type'] || null;
@@ -282,18 +292,27 @@ export async function ProxyListOnly(
         timeout: 6000,
       };
       const response = await axios.get(slug, axiosConfig);
+      logger.info(`[ProxyListOnly] Proxy fetch request: ${proxyUrl}`, {
+        url: slug,
+        proxy: proxyUrl,
+        headers: JSON.stringify(axiosConfig.headers),
+        payload: JSON.stringify({
+          httpsAgent: !!axiosConfig.httpsAgent,
+          httpAgent: !!axiosConfig.httpAgent,
+          timeout: axiosConfig.timeout,
+        }),
+      });
       logger.info(`[ProxyListOnly] Proxy fetch response:`, {
         url: slug,
         proxy: proxyUrl,
         status: response.status,
-        headers: response.headers,
+        headers: JSON.stringify(response.headers),
       });
+
       if (response.status === 200) {
         const contentType = response.headers['content-type'] || null;
         let data: string | object = response.data;
-        if (
-          contentType?.includes('application/json')
-        ) {
+        if (contentType?.includes('application/json')) {
           try {
             data = JSON.parse(response.data);
           } catch {
@@ -318,12 +337,17 @@ export async function ProxyListOnly(
       }
     } catch (error) {
       lastError = error as Error;
-      logger.warn(`[ProxyListOnly] Proxy fetch failed for ${slug} via ${proxyUrl}:`, error);
+      logger.warn(
+        `[ProxyListOnly] Proxy fetch failed for ${slug} via ${proxyUrl}:`,
+        error
+      );
     }
   }
-  logger.error(`[ProxyListOnly] Failed to fetch from all proxies for ${slug}:`, lastError);
+  logger.error(
+    `[ProxyListOnly] Failed to fetch from all proxies for ${slug}:`,
+    lastError
+  );
   throw new Error(
-    lastError?.message ||
-      '[ProxyListOnly] Failed to fetch from all proxies'
+    lastError?.message || '[ProxyListOnly] Failed to fetch from all proxies'
   );
 }

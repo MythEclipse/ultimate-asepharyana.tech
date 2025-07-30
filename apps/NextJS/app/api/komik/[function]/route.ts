@@ -2,10 +2,9 @@
 
 import { NextResponse, NextRequest } from 'next/server';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy, ProxyListOnly } from '@/lib/fetchWithProxy';
+import { fetchWithProxy, ProxyListOnly,CroxyProxyOnly } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
-import { CroxyProxyOnly } from '@/lib/fetchWithProxy';
 import { getCachedKomikBaseUrl } from '@/lib/komikBaseUrl';
 
 // Type Definitions
