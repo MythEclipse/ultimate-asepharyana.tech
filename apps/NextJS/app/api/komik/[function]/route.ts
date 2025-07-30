@@ -5,46 +5,7 @@ import * as cheerio from 'cheerio';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
-
-// Function to dynamically fetch komik base URL from komikindo.cz
-const getDynamicKomikBaseUrl = async (): Promise<string> => {
-  logger.debug('[getDynamicKomikBaseUrl] Fetching komik base URL');
-  const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
-  const $ = cheerio.load(body);
-
-  // Cari tombol WEBSITE yang mengandung link asli (bukan .cz)
-  const websiteBtn = $('a.elementskit-btn')
-    .filter((_, el) => {
-      const href = $(el).attr('href') || '';
-      // Cari href yang mengandung komikindo dan bukan .cz
-      return /komikindo\.(?!cz)/.test(href) || /komikindo\./.test($(el).attr('__cporiginalvalueofhref') || '');
-    })
-    .first();
-
-  // Cek di atribut __cporiginalvalueofhref jika ada, jika tidak pakai href
-  let orgLink = websiteBtn.attr('__cporiginalvalueofhref') || websiteBtn.attr('href') || '';
-
-  // Jika link berupa IP, decode dari query string __cpo
-  if (/^\d+\.\d+\.\d+\.\d+/.test(orgLink)) {
-    const urlObj = new URL(orgLink);
-    const cpo = urlObj.searchParams.get('__cpo');
-    if (cpo) {
-      try {
-        const decoded = Buffer.from(cpo, 'base64').toString('utf-8');
-        orgLink = decoded;
-      } catch (e) {
-        logger.error('[getDynamicKomikBaseUrl] Failed to decode __cpo', { cpo });
-      }
-    }
-  }
-
-  if (!orgLink || orgLink.includes('.cz')) {
-    logger.error('[getDynamicKomikBaseUrl] Failed to fetch komik base URL selain cz');
-    throw new Error('Failed to fetch komik base URL selain cz');
-  }
-  logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
-  return orgLink.replace(/\/$/, '');
-};
+import { redis } from '@/lib/redis';
 
 // Type Definitions
 interface MangaData {
@@ -89,6 +50,62 @@ interface MangaChapter {
   list_chapter: string;
 }
 
+export const getDynamicKomikBaseUrl = async (): Promise<string> => {
+  logger.debug('[getDynamicKomikBaseUrl] Fetching komik base URL');
+  const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
+  const $ = cheerio.load(body);
+
+  // Cari tombol WEBSITE yang mengandung link asli (bukan .cz)
+  const websiteBtn = $('a.elementskit-btn')
+    .filter((_, el) => {
+      const href = $(el).attr('href') || '';
+      // Cari href yang mengandung komikindo dan bukan .cz
+      return /komikindo\.(?!cz)/.test(href) || /komikindo\./.test($(el).attr('__cporiginalvalueofhref') || '');
+    })
+    .first();
+
+  // Cek di atribut __cporiginalvalueofhref jika ada, jika tidak pakai href
+  let orgLink = websiteBtn.attr('__cporiginalvalueofhref') || websiteBtn.attr('href') || '';
+
+  // Jika link berupa IP, decode dari query string __cpo
+  if (/^\d+\.\d+\.\d+\.\d+/.test(orgLink)) {
+    const urlObj = new URL(orgLink);
+    const cpo = urlObj.searchParams.get('__cpo');
+    if (cpo) {
+      try {
+        const decoded = Buffer.from(cpo, 'base64').toString('utf-8');
+        orgLink = decoded;
+      } catch {
+        logger.error('[getDynamicKomikBaseUrl] Failed to decode __cpo', { cpo });
+      }
+    }
+  }
+
+  if (!orgLink || orgLink.includes('.cz')) {
+    logger.error('[getDynamicKomikBaseUrl] Failed to fetch komik base URL selain cz');
+    throw new Error('Failed to fetch komik base URL selain cz');
+  }
+  logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
+  return orgLink.replace(/\/$/, '');
+};
+
+// Komik Base URL Redis cache key
+const KOMIK_BASE_URL_KEY = 'komik:baseurl';
+
+export const getCachedKomikBaseUrl = async (forceRefresh = false): Promise<string> => {
+  if (!forceRefresh) {
+    const cached = await redis.get(KOMIK_BASE_URL_KEY);
+    if (typeof cached === 'string' && cached && !cached.includes('.cz')) {
+      logger.info('[getCachedKomikBaseUrl] Using cached base URL', { cached });
+      return cached;
+    }
+  }
+  // Fetch new value and cache it
+  const url = await getDynamicKomikBaseUrl();
+  await redis.set(KOMIK_BASE_URL_KEY, url, { ex: 60 * 60 * 24 * 30 });
+  logger.info('[getCachedKomikBaseUrl] Refreshed and cached base URL', { url });
+  return url;
+};
 // Utility function to parse manga data
 const parseMangaData = (body: string): MangaData[] => {
   const $ = cheerio.load(body);
@@ -303,9 +320,19 @@ export async function GET(
     let data: unknown;
     logger.info('[API][komik] Incoming request', { ip, url, type, page });
 
+    // Helper to get baseURL with cache refresh on failure
+    const getBaseUrlWithRetry = async (): Promise<string> => {
+      try {
+        return await getCachedKomikBaseUrl();
+      } catch {
+        logger.warn('[API][komik] Cached base URL failed, retrying with refresh');
+        return await getCachedKomikBaseUrl(true);
+      }
+    };
+
     if (type === 'detail' || type === 'chapter' || type === 'manga' || type === 'manhwa' || type === 'manhua' || type === 'search') {
       // Always get the dynamic base URL for all komik requests
-      const baseURL = await getDynamicKomikBaseUrl();
+      const baseURL = await getBaseUrlWithRetry();
 
       if (type === 'detail') {
         const komik_id = urlObj.searchParams.get('komik_id') || 'one-piece';
@@ -346,7 +373,7 @@ export async function GET(
       }
     } else if (type === 'external-link') {
       // Fetch and parse external link from komikindo.cz
-      const baseURL = await getDynamicKomikBaseUrl();
+      const baseURL = await getBaseUrlWithRetry();
       data = { link: baseURL };
     } else {
       logger.error('[API][komik] Invalid type parameter', { type });
