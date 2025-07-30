@@ -7,27 +7,25 @@
  * This will fill the input, submit the form, and print the resulting HTML.
  */
 // Scrape https://www.croxyproxy.com/ using Puppeteer with CLI supportimport puppeteer, { Browser, Page } from 'puppeteer';
-import logger from './logger';
 import puppeteer, { Browser, Page } from 'puppeteer';
+import logger from './logger';
+import { performance } from 'perf_hooks';
 
 const CROXY_PROXY_URL = 'https://www.croxyproxy.com/';
 const URL_INPUT_SELECTOR = 'input#url';
 const SUBMIT_BUTTON_SELECTOR = '#requestSubmit';
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 1;
+
 const BROWSER_ARGS = [
-  // Argumen Anda yang sudah ada (bagus untuk stabilitas & anti-deteksi)
   '--no-sandbox',
   '--disable-setuid-sandbox',
   '--disable-blink-features=AutomationControlled',
   '--disable-dev-shm-usage',
   '--disable-infobars',
   '--window-size=1280,800',
-  
-  // Argumen Tambahan untuk Performa & Tanpa Media
-  '--blink-settings=imagesEnabled=false', // <-- Kunci: Menonaktifkan gambar
-  '--disable-gpu',                     // Nonaktifkan akselerasi hardware GPU
-  '--disable-extensions',              // Nonaktifkan ekstensi browser
-  '--mute-audio',                      // Matikan audio
+  '--disable-gpu',
+  '--disable-extensions',
+  '--mute-audio',
 ];
 
 function getRandomUserAgent(): string {
@@ -43,79 +41,98 @@ function getRandomUserAgent(): string {
 
 async function initializeBrowser(): Promise<{ browser: Browser; page: Page }> {
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     args: BROWSER_ARGS,
     defaultViewport: { width: 1280, height: 800 },
   });
   const page = await browser.newPage();
+  
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    const resourceType = request.resourceType();
+    if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+
   await page.setUserAgent(getRandomUserAgent());
   await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
   return { browser, page };
 }
 
 export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
+  const startTime = performance.now();
   logger.info(`Scraping ${targetUrl} with CroxyProxy`);
   const { browser, page } = await initializeBrowser();
   let html = '';
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      logger.info(`Attempt ${attempt}/${MAX_RETRIES}`);
-      await page.goto(CROXY_PROXY_URL, {
-        waitUntil: 'domcontentloaded',
-        timeout: 60000,
-      });
+  try {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        logger.info(`Attempt ${attempt}/${MAX_RETRIES}`);
+        await page.goto(CROXY_PROXY_URL, {
+          waitUntil: 'domcontentloaded',
+          timeout: 60000,
+        });
 
-      await page.waitForSelector(URL_INPUT_SELECTOR, { timeout: 30000 });
-      await page.type(URL_INPUT_SELECTOR, targetUrl, { delay: 50 });
-      
-      logger.info('Form submitted. Waiting for initial navigation...');
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }),
-        page.click(SUBMIT_BUTTON_SELECTOR),
-      ]);
-      
-      const pageContent = await page.content();
-      const pageText = pageContent.toLowerCase();
-      const currentUrl = page.url();
+        await page.waitForSelector(URL_INPUT_SELECTOR, { timeout: 30000 });
+        await page.type(URL_INPUT_SELECTOR, targetUrl, { delay: 50 });
+        
+        logger.info('Form submitted. Waiting for initial navigation...');
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }),
+          page.click(SUBMIT_BUTTON_SELECTOR),
+        ]);
+        
+        const currentUrl = page.url();
+        const pageContent = await page.content();
+        const pageText = pageContent.toLowerCase();
 
-      if (currentUrl === CROXY_PROXY_URL && pageText.includes('your session has outdated')) {
-        logger.warn('Session outdated detected, retrying...');
-        continue;
-      }
+        const isErrorUrl = currentUrl.includes('/requests?fso=');
+        const hasErrorText = pageText.includes('your session has outdated') || pageText.includes('something went wrong');
 
-      if (pageText.includes('proxy is launching')) {
-        logger.info('Proxy launching page detected. Waiting for final redirect...');
-        await page.waitForNavigation({ waitUntil: 'load', timeout: 120000 });
-        logger.info(`Redirected successfully to: ${page.url()}`);
-      } else {
-        logger.info(`Mapsd directly to: ${page.url()}`);
-      }
-      
-      logger.info('Waiting for CroxyProxy frame to render...');
-      await page.waitForSelector('#__cpsHeaderTab', { timeout: 30000 });
-      logger.info('CroxyProxy frame rendered.');
+        if (isErrorUrl || hasErrorText) {
+          logger.warn(`Error detected (URL: ${isErrorUrl}, Text: ${hasErrorText}). Retrying...`);
+          continue;
+        }
 
-      html = await page.content();
-      logger.debug('Retrieved page content.');
-      break;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Attempt ${attempt} failed: ${errorMessage}`);
-      if (attempt === MAX_RETRIES) {
-        await browser.close();
-        throw new Error(`Failed to scrape after ${MAX_RETRIES} attempts: ${errorMessage}`);
+        if (pageText.includes('proxy is launching')) {
+          logger.info('Proxy launching page detected. Waiting for final redirect...');
+          await page.waitForNavigation({ waitUntil: 'load', timeout: 120000 });
+          logger.info(`Redirected successfully to: ${page.url()}`);
+        } else {
+          logger.info(`Mapsd directly to: ${page.url()}`);
+        }
+        
+        logger.info('Waiting for CroxyProxy frame to render...');
+        await page.waitForSelector('#__cpsHeaderTab', { timeout: 30000 });
+        logger.info('CroxyProxy frame rendered.');
+
+        html = await page.content();
+        logger.debug('Retrieved page content.');
+        break;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(`Attempt ${attempt} failed: ${errorMessage}`);
+        if (attempt === MAX_RETRIES) {
+          throw new Error(`Failed to scrape after ${MAX_RETRIES} attempts: ${errorMessage}`);
+        }
       }
     }
-  }
 
-  await browser.close();
-  logger.info('Browser closed.');
-
-  if (!html) {
-    throw new Error('Failed to retrieve HTML content after all retries.');
+    if (!html) {
+      throw new Error('Failed to retrieve HTML content after all retries.');
+    }
+    return html;
+  } finally {
+    const duration = Math.round(performance.now() - startTime);
+    console.log(`[info] Total execution time: ${duration} ms`);
+    
+    await browser.close();
+    logger.info('Browser closed.');
   }
-  return html;
 }
 
 if (require.main === module) {
@@ -126,13 +143,15 @@ if (require.main === module) {
   }
 
   logger.info(`CLI execution started for URL: ${inputUrl}`);
+  const cliStartTime = performance.now();
   scrapeCroxyProxy(inputUrl)
     .then((resultHtml) => {
       console.log(resultHtml);
       logger.info('CLI execution finished successfully.');
+      const duration = Math.round(performance.now() - cliStartTime);
+      logger.info(`[info] Total execution time: ${duration} ms`);
     })
     .catch((err) => {
       logger.error(`Scraping failed: ${err.message}`);
-      process.exit(1);
     });
 }
