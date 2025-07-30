@@ -50,8 +50,24 @@ interface MangaChapter {
   list_chapter: string;
 }
 
-// --- SINGLE FLIGHT LOGIC START ---
+// --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 let komikBaseUrlPromise: Promise<string> | null = null;
+const KOMIK_BASE_URL_LOCK_KEY = 'komik:baseurl:lock';
+const KOMIK_BASE_URL_KEY = 'komik:baseurl';
+
+async function acquireRedisLock(key: string, ttlMs: number): Promise<boolean> {
+  
+  return await redis.set(key, 'locked', { nx: true, px: ttlMs }) === 'OK';
+}
+
+async function releaseRedisLock(key: string) {
+  
+  await redis.del(key);
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export const getDynamicKomikBaseUrl = async (): Promise<string> => {
   if (komikBaseUrlPromise) {
@@ -59,6 +75,29 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
     return komikBaseUrlPromise;
   }
   komikBaseUrlPromise = (async () => {
+    const lockTtl = 10000; // 10 seconds
+    const waitInterval = 200; // ms
+    const maxWait = 10000; // 10 seconds
+    let waited = 0;
+
+    // Try to acquire lock
+    while (!(await acquireRedisLock(KOMIK_BASE_URL_LOCK_KEY, lockTtl))) {
+      logger.debug('[getDynamicKomikBaseUrl] Waiting for Redis lock...');
+      await sleep(waitInterval);
+      waited += waitInterval;
+      // If waited too long, break and try anyway
+      if (waited >= maxWait) {
+        logger.warn('[getDynamicKomikBaseUrl] Waited too long for lock, proceeding anyway');
+        break;
+      }
+      // Check if value is already cached by other process
+      const cached = await redis.get(KOMIK_BASE_URL_KEY);
+      if (typeof cached === 'string' && cached && !cached.includes('.cz')) {
+        logger.info('[getDynamicKomikBaseUrl] Found cached base URL while waiting for lock', { cached });
+        return cached;
+      }
+    }
+
     try {
       logger.debug('[getDynamicKomikBaseUrl] Fetching komik base URL');
       const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
@@ -95,17 +134,17 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
         throw new Error('Failed to fetch komik base URL selain cz');
       }
       logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
+      // Cache the result immediately for other waiters
+      await redis.set(KOMIK_BASE_URL_KEY, orgLink.replace(/\/$/, ''), { ex: 60 * 60 * 24 * 30 });
       return orgLink.replace(/\/$/, '');
     } finally {
+      await releaseRedisLock(KOMIK_BASE_URL_LOCK_KEY);
       komikBaseUrlPromise = null;
     }
   })();
   return komikBaseUrlPromise;
 };
-// --- SINGLE FLIGHT LOGIC END ---
-
-// Komik Base URL Redis cache key
-const KOMIK_BASE_URL_KEY = 'komik:baseurl';
+// --- SINGLE FLIGHT LOGIC WITH REDIS LOCK END ---
 
 export const getCachedKomikBaseUrl = async (forceRefresh = false): Promise<string> => {
   if (!forceRefresh) {
