@@ -47,17 +47,8 @@ const komik = [
     href: '/komik/bookmark/1',
   },
 ];
-export const metadata = {
-  title: {
-    default: 'Tempat baca komik',
-    template: '%s - Tempat baca komik',
-  },
-  description: 'Tempat baca komik',
-  keywords:
-    'nextjs, asep, haryana, saputra, asep haryana, asep haryana saputra',
-};
 
-function Layout({ children }: { children: React.ReactNode }) {
+function Layout({ children }: { readonly children: React.ReactNode }) {
   return (
     <>
       <div className=''>{children}</div>
