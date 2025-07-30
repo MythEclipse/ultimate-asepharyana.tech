@@ -92,7 +92,6 @@ async function setCachedFetch(slug: string, value: { data: string | object; cont
 
 export async function fetchWithProxy(
   slug: string,
-  useProxies: boolean = true
 ): Promise<{ data: string | object; contentType: string | null }> {
   // Try Redis cache first
   const cached = await getCachedFetch(slug);
