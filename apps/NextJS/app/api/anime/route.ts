@@ -111,7 +111,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       response.headers.set(key, value);
     });
 
-    const duration = Date.now() - start;
     
     if (requestId) {
       response.headers.set('x-request-id', requestId);
@@ -121,7 +120,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const duration = Date.now() - start;
     logger.error(
-      `[Error processing request] ip=${ip} | url=${url} | method=${method} | error=${errorMessage} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
+      '[Error processing request] ip=' + ip +
+      ' | url=' + url +
+      ' | method=' + method +
+      ' | error=' + errorMessage +
+      ' | durationMs=' + duration +
+      (requestId ? ' | requestId=' + requestId : '')
     );
     const response = NextResponse.json(
       {

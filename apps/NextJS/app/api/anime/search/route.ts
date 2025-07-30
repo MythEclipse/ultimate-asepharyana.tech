@@ -34,11 +34,14 @@ function parseAnimeData(html: string, slug: string) {
     const title = $(element).find('h2 a').text().trim() || '';
     const slug = $(element).find('a').attr('href')?.split('/')[4] || '';
     const poster = $(element).find('img').attr('src') || '';
-    const episode =
-      $(element)
-        .find('h2 a')
-        .text()
-        .match(/\(([^)]+)\)/)?.[1] || 'Ongoing';
+    const episodeText = $(element).find('h2 a').text();
+    // LOG: About to execute regex on episodeText
+    logger.info('[DEBUG] About to execute regex on episodeText:', episodeText);
+    const episodeRegex = /\(([^)]+)\)/;
+    const episodeMatch = episodeRegex.exec(episodeText);
+    // LOG: Regex execution result
+    logger.info('[DEBUG] Regex execution result:', episodeMatch);
+    const episode = episodeMatch ? episodeMatch[1] : 'Ongoing';
     const anime_url = $(element).find('a').attr('href') || '';
     const genres = $(element)
       .find('.set b:contains("Genres")')
@@ -72,17 +75,14 @@ function parseAnimeData(html: string, slug: string) {
     });
   });
 
+  const pageNum = parseInt(slug, 10) || 1;
   const pagination = {
-    current_page: parseInt(slug as string, 10) || 1,
+    current_page: pageNum,
     last_visible_page: 57,
     has_next_page: $('.hpage .r').length > 0,
-    next_page:
-      $('.hpage .r').length > 0 ? parseInt(slug as string, 10) + 1 : null,
-    has_previous_page: parseInt(slug as string, 10) > 1,
-    previous_page:
-      parseInt(slug as string, 10) > 1
-        ? parseInt(slug as string, 10) - 1
-        : null,
+    next_page: $('.hpage .r').length > 0 ? pageNum + 1 : null,
+    has_previous_page: pageNum > 1,
+    previous_page: pageNum > 1 ? pageNum - 1 : null,
   };
 
   return { animeList, pagination };
@@ -97,13 +97,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const url = req.url;
   const method = req.method;
   const requestId = req.headers.get('x-request-id') || undefined;
-  const start = Date.now();
 
   try {
     const slug = new URL(req.url).searchParams.get('q') || 'one';
     const html = await fetchAnimeData(slug);
     const { animeList, pagination } = parseAnimeData(html, slug);
-
 
     const response = NextResponse.json(
       {
@@ -116,17 +114,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       }
     );
 
-    const duration = Date.now() - start;
-    
     if (requestId) {
       response.headers.set('x-request-id', requestId);
     }
     return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const duration = Date.now() - start;
     logger.error(
-      `[Error processing request] ip=${ip} | url=${url} | method=${method} | error=${errorMessage} | durationMs=${duration}${requestId ? ` | requestId=${requestId}` : ''}`
+      `[Error processing request] ip=${ip} | url=${url} | method=${method} | error=${errorMessage}` +
+      (requestId ? ` | requestId=${requestId}` : '')
     );
     const response = NextResponse.json(
       {

@@ -108,11 +108,15 @@ export default function Compressor() {
           <div className='p-8 space-y-8'>
             {/* Upload Method Selector */}
             <div className='space-y-2'>
-              <label className='block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2'>
+              <label
+                htmlFor='upload-method'
+                className='block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2'
+              >
                 Upload Method
               </label>
               <div className='relative'>
                 <select
+                  id='upload-method'
                   value={uploadMethod}
                   onChange={(e) =>
                     setUploadMethod(e.target.value as 'url' | 'file')
@@ -130,11 +134,12 @@ export default function Compressor() {
             <form onSubmit={handleSubmit} className='space-y-8'>
               {uploadMethod === 'url' ? (
                 <div className='space-y-2'>
-                  <label className='block text-sm font-medium text-gray-600 dark:text-gray-400'>
+                  <label htmlFor='media-url' className='block text-sm font-medium text-gray-600 dark:text-gray-400'>
                     Media URL
                   </label>
                   <div className='relative'>
                     <input
+                      id='media-url'
                       type='url'
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
@@ -147,7 +152,7 @@ export default function Compressor() {
                 </div>
               ) : (
                 <div className='space-y-4'>
-                  <label className='block text-sm font-medium text-gray-600 dark:text-gray-400'>
+                  <label htmlFor='file-upload' className='block text-sm font-medium text-gray-600 dark:text-gray-400'>
                     Upload File
                   </label>
                   <label className='flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-blue-400 cursor-pointer transition-colors bg-gradient-to-b from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50'>
@@ -160,6 +165,7 @@ export default function Compressor() {
                         : 'Drag & drop or click to browse'}
                     </span>
                     <input
+                      id='file-upload'
                       type='file'
                       onChange={(e) =>
                         e.target.files?.[0] &&
@@ -183,19 +189,20 @@ export default function Compressor() {
 
               {/* Compression Settings */}
               <div className='space-y-2'>
-                <label className='block text-sm font-medium text-gray-600 dark:text-gray-400'>
+                <label htmlFor='compression-size' className='block text-sm font-medium text-gray-600 dark:text-gray-400'>
                   Compression Settings
                 </label>
                 <div className='relative'>
-                  <input
-                    type='text'
-                    value={size}
-                    onChange={(e) => setSize(e.target.value)}
-                    placeholder='Example: 5MB or 50%'
-                    className='w-full pl-12 pr-4 py-3.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all shadow-sm'
-                    required
-                  />
-                  <HiCog className='w-5 h-5 absolute left-4 top-4 text-gray-500 dark:text-gray-400' />
+                <input
+                  id='compression-size'
+                  type='text'
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                  placeholder='Example: 5MB or 50%'
+                  className='w-full pl-12 pr-4 py-3.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all shadow-sm'
+                  required
+                />
+                <HiCog className='w-5 h-5 absolute left-4 top-4 text-gray-500 dark:text-gray-400' />
                 </div>
               </div>
 

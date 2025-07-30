@@ -2,6 +2,7 @@
 
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import util from 'util';
 
 /**
  * Sends error details to the /api/log-error endpoint with retry logic.
@@ -29,12 +30,26 @@ export async function logErrorToApi(
   let lastError: unknown = null;
   while (attempt < maxRetries) {
     try {
+      let errorPayload: unknown;
+      if (error instanceof Error) {
+        errorPayload = { message: error.message, stack: error.stack };
+      } else if (typeof error === 'object' && error !== null) {
+        try {
+          errorPayload = JSON.stringify(error);
+        } catch {
+          // Use util.inspect for better object representation as a fallback
+          errorPayload = util.inspect(error, { depth: 3, breakLength: 120 });
+        }
+      } else {
+        errorPayload = String(error);
+      }
+
       await fetch('/api/log-error', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          error: typeof error === 'object' ? JSON.stringify(error) : String(error),
-          info: typeof info === 'object' ? JSON.stringify(info) : String(info),
+          error: errorPayload,
+          info: typeof info === 'object' && info !== null ? JSON.stringify(info) : String(info),
         }),
       });
       return;
