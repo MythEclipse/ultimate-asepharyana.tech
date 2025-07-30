@@ -109,7 +109,7 @@ export async function fetchWithProxy(
     });
     if (res.ok) {
       const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         const jsonData = await res.json();
         if (isInternetBaikBlockPage(JSON.stringify(jsonData))) {
           logger.warn('Blocked by internetbaik (direct fetch), trying proxies');

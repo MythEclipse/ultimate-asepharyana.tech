@@ -237,6 +237,74 @@ const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaCh
   }
 };
 
+// Helper to get baseURL with cache refresh on failure
+const getBaseUrlWithRetry = async (): Promise<string> => {
+  try {
+    return await getCachedKomikBaseUrl();
+  } catch {
+    logger.warn('[API][komik] Cached base URL failed, retrying with refresh');
+    return await getCachedKomikBaseUrl(true);
+  }
+};
+
+// Extracted handlers for each type
+const handleDetail = async (urlObj: URL, baseURL: string) => {
+  const komik_id = urlObj.searchParams.get('komik_id') || 'one-piece';
+  return {
+    data: await getDetail(komik_id, baseURL),
+    params: { komik_id }
+  };
+};
+
+const handleChapter = async (urlObj: URL, baseURL: string) => {
+  const chapter_url = urlObj.searchParams.get('chapter_url') || '';
+  return {
+    data: await getChapter(chapter_url, baseURL),
+    params: { chapter_url }
+  };
+};
+
+const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, page: string) => {
+  let apiUrl = `${baseURL}/${type}/page/${page}/`;
+  let params: Record<string, string> = {};
+  if (type === 'search') {
+    const query = urlObj.searchParams.get('query') || '';
+    apiUrl = `${baseURL}/page/${page}/?s=${query}`;
+    params = { query };
+  }
+  const body = await fetchWithProxyOnlyWrapper(apiUrl);
+  const $ = cheerio.load(body);
+  const currentPage =
+    parseInt($('.pagination .current').text().trim()) || 1;
+  const totalPages =
+    parseInt($('.pagination a:not(.next):last').text().trim()) ||
+    currentPage;
+
+  const pagination: Pagination = {
+    current_page: currentPage,
+    last_visible_page: totalPages,
+    has_next_page: $('.pagination .next').length > 0,
+    next_page: currentPage < totalPages ? currentPage + 1 : null,
+    has_previous_page: $('.pagination .prev').length > 0,
+    previous_page: currentPage > 1 ? currentPage - 1 : null,
+  };
+
+  return {
+    data: {
+      data: parseMangaData(body),
+      pagination,
+    },
+    params
+  };
+};
+
+const handleExternalLink = async (baseURL: string) => {
+  return {
+    data: { link: baseURL },
+    params: {}
+  };
+};
+
 // Handler function for GET (dynamic route)
 export async function GET(
   req: NextRequest) {
@@ -261,68 +329,29 @@ export async function GET(
       | 'chapter'
       | 'external-link';
 
-    let data: unknown;
     logger.info('[API][komik] Incoming request', { ip, url, type, page });
 
-    // Helper to get baseURL with cache refresh on failure
-    const getBaseUrlWithRetry = async (): Promise<string> => {
-      try {
-        return await getCachedKomikBaseUrl();
-      } catch {
-        logger.warn('[API][komik] Cached base URL failed, retrying with refresh');
-        return await getCachedKomikBaseUrl(true);
-      }
-    };
+    let handlerResult: { data: unknown; params: Record<string, string> } | undefined;
 
     if (type === 'detail' || type === 'chapter' || type === 'manga' || type === 'manhwa' || type === 'manhua' || type === 'search') {
-      // Always get the dynamic base URL for all komik requests
       const baseURL = await getBaseUrlWithRetry();
-
       if (type === 'detail') {
-        const komik_id = urlObj.searchParams.get('komik_id') || 'one-piece';
-        params = { komik_id };
-        data = await getDetail(komik_id, baseURL);
+        handlerResult = await handleDetail(urlObj, baseURL);
       } else if (type === 'chapter') {
-        const chapter_url = urlObj.searchParams.get('chapter_url') || '';
-        params = { chapter_url };
-        data = await getChapter(chapter_url, baseURL);
+        handlerResult = await handleChapter(urlObj, baseURL);
       } else {
-        let apiUrl = `${baseURL}/${type}/page/${page}/`;
-        if (type === 'search') {
-          const query = urlObj.searchParams.get('query') || '';
-          apiUrl = `${baseURL}/page/${page}/?s=${query}`;
-          params = { query };
-        }
-        const body = await fetchWithProxyOnlyWrapper(apiUrl);
-        const $ = cheerio.load(body);
-        const currentPage =
-          parseInt($('.pagination .current').text().trim()) || 1;
-        const totalPages =
-          parseInt($('.pagination a:not(.next):last').text().trim()) ||
-          currentPage;
-
-        const pagination: Pagination = {
-          current_page: currentPage,
-          last_visible_page: totalPages,
-          has_next_page: $('.pagination .next').length > 0,
-          next_page: currentPage < totalPages ? currentPage + 1 : null,
-          has_previous_page: $('.pagination .prev').length > 0,
-          previous_page: currentPage > 1 ? currentPage - 1 : null,
-        };
-
-        data = {
-          data: parseMangaData(body),
-          pagination,
-        };
+        handlerResult = await handleListOrSearch(urlObj, baseURL, type, page);
       }
     } else if (type === 'external-link') {
-      // Fetch and parse external link from komikindo.cz
       const baseURL = await getBaseUrlWithRetry();
-      data = { link: baseURL };
+      handlerResult = await handleExternalLink(baseURL);
     } else {
       logger.error('[API][komik] Invalid type parameter', { type });
       throw new Error('Invalid type parameter');
     }
+
+    const data = handlerResult.data;
+    params = handlerResult.params;
 
     const duration = Date.now() - start;
     logger.info('[API][komik] Success', { ip, url, type, params, durationMs: duration });
