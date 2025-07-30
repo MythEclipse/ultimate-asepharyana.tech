@@ -5,6 +5,7 @@ import logger from '@/lib/logger';
 import https from 'https';
 import { DEFAULT_HEADERS } from '@/lib/DHead';
 import { scrapeCroxyProxy } from './scrapeCroxyProxy';
+import { redis } from '@/lib/redis';
 
 const DEFAULT_PROXY_LIST_URL =
   'https://www.proxy-list.download/api/v1/get?type=https';
@@ -63,10 +64,40 @@ function isInternetBaikBlockPage(data: string | object): boolean {
   );
 }
 
+// --- REDIS CACHE WRAPPER START ---
+function getFetchCacheKey(slug: string): string {
+  return `fetch:proxy:${slug}`;
+}
+
+async function getCachedFetch(slug: string): Promise<{ data: string | object; contentType: string | null } | null> {
+  const key = getFetchCacheKey(slug);
+  const cached = await redis.get(key);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(typeof cached === 'string' ? cached : JSON.stringify(cached));
+      logger.info(`[fetchWithProxy] Returning cached response for ${slug}`);
+      return parsed;
+    } catch {
+      // ignore parse error, fallback to fetch
+    }
+  }
+  return null;
+}
+
+async function setCachedFetch(slug: string, value: { data: string | object; contentType: string | null }) {
+  const key = getFetchCacheKey(slug);
+  await redis.set(key, JSON.stringify(value), { ex: 120 });
+}
+// --- REDIS CACHE WRAPPER END ---
+
 export async function fetchWithProxy(
   slug: string,
   useProxies: boolean = true
 ): Promise<{ data: string | object; contentType: string | null }> {
+  // Try Redis cache first
+  const cached = await getCachedFetch(slug);
+  if (cached) return cached;
+
   try {
     const res = await fetch(slug, {
       headers: DEFAULT_HEADERS,
@@ -83,32 +114,50 @@ export async function fetchWithProxy(
         const jsonData = await res.json();
         if (isInternetBaikBlockPage(JSON.stringify(jsonData))) {
           logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
-          return await fetchFromProxies(slug);
+          const proxyResult = await fetchFromProxies(slug);
+          await setCachedFetch(slug, proxyResult);
+          return proxyResult;
         }
-        return { data: jsonData, contentType };
+        const result = { data: jsonData, contentType };
+        await setCachedFetch(slug, result);
+        return result;
       }
       const textData = await res.text();
       if (isInternetBaikBlockPage(textData)) {
         logger.warn('Blocked by internetbaik (direct fetch), trying proxies');
-        return await fetchFromProxies(slug);
+        const proxyResult = await fetchFromProxies(slug);
+        await setCachedFetch(slug, proxyResult);
+        return proxyResult;
       }
-      return { data: textData, contentType };
+      const result = { data: textData, contentType };
+      await setCachedFetch(slug, result);
+      return result;
     }
     const error = new Error(`Direct fetch failed with status ${res.status}`);
     logger.error(`Direct fetch failed for ${slug}: Status ${res.status}`, error);
     logger.error('Direct fetch failed, trying proxies');
-    return await fetchFromProxies(slug);
+    const proxyResult = await fetchFromProxies(slug);
+    await setCachedFetch(slug, proxyResult);
+    return proxyResult;
   } catch (error) {
     logger.warn(`Direct fetch failed for ${slug}:`, error);
     logger.error('Direct fetch failed, trying proxies');
-    return await fetchFromProxies(slug);
+    const proxyResult = await fetchFromProxies(slug);
+    await setCachedFetch(slug, proxyResult);
+    return proxyResult;
   }
 }
 
 export async function fetchWithProxyOnly(
   slug: string
 ): Promise<{ data: string | object; contentType: string | null }> {
-  return await fetchFromProxies(slug);
+  // Try Redis cache first
+  const cached = await getCachedFetch(slug);
+  if (cached) return cached;
+
+  const proxyResult = await fetchFromProxies(slug);
+  await setCachedFetch(slug, proxyResult);
+  return proxyResult;
 }
 
 function getAgent(proxyUrl: string) {
