@@ -74,7 +74,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/.next/
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/.next/
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy Next.js
