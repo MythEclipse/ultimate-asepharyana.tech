@@ -50,44 +50,59 @@ interface MangaChapter {
   list_chapter: string;
 }
 
+// --- SINGLE FLIGHT LOGIC START ---
+let komikBaseUrlPromise: Promise<string> | null = null;
+
 export const getDynamicKomikBaseUrl = async (): Promise<string> => {
-  logger.debug('[getDynamicKomikBaseUrl] Fetching komik base URL');
-  const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
-  const $ = cheerio.load(body);
+  if (komikBaseUrlPromise) {
+    logger.debug('[getDynamicKomikBaseUrl] Returning in-flight promise');
+    return komikBaseUrlPromise;
+  }
+  komikBaseUrlPromise = (async () => {
+    try {
+      logger.debug('[getDynamicKomikBaseUrl] Fetching komik base URL');
+      const body = await fetchWithProxyOnlyWrapper('https://komikindo.cz/');
+      const $ = cheerio.load(body);
 
-  // Cari tombol WEBSITE yang mengandung link asli (bukan .cz)
-  const websiteBtn = $('a.elementskit-btn')
-    .filter((_, el) => {
-      const href = $(el).attr('href') || '';
-      // Cari href yang mengandung komikindo dan bukan .cz
-      return /komikindo\.(?!cz)/.test(href) || /komikindo\./.test($(el).attr('__cporiginalvalueofhref') || '');
-    })
-    .first();
+      // Cari tombol WEBSITE yang mengandung link asli (bukan .cz)
+      const websiteBtn = $('a.elementskit-btn')
+        .filter((_, el) => {
+          const href = $(el).attr('href') || '';
+          // Cari href yang mengandung komikindo dan bukan .cz
+          return /komikindo\.(?!cz)/.test(href) || /komikindo\./.test($(el).attr('__cporiginalvalueofhref') || '');
+        })
+        .first();
 
-  // Cek di atribut __cporiginalvalueofhref jika ada, jika tidak pakai href
-  let orgLink = websiteBtn.attr('__cporiginalvalueofhref') || websiteBtn.attr('href') || '';
+      // Cek di atribut __cporiginalvalueofhref jika ada, jika tidak pakai href
+      let orgLink = websiteBtn.attr('__cporiginalvalueofhref') || websiteBtn.attr('href') || '';
 
-  // Jika link berupa IP, decode dari query string __cpo
-  if (/^\d+\.\d+\.\d+\.\d+/.test(orgLink)) {
-    const urlObj = new URL(orgLink);
-    const cpo = urlObj.searchParams.get('__cpo');
-    if (cpo) {
-      try {
-        const decoded = Buffer.from(cpo, 'base64').toString('utf-8');
-        orgLink = decoded;
-      } catch {
-        logger.error('[getDynamicKomikBaseUrl] Failed to decode __cpo', { cpo });
+      // Jika link berupa IP, decode dari query string __cpo
+      if (/^\d+\.\d+\.\d+\.\d+/.test(orgLink)) {
+        const urlObj = new URL(orgLink);
+        const cpo = urlObj.searchParams.get('__cpo');
+        if (cpo) {
+          try {
+            const decoded = Buffer.from(cpo, 'base64').toString('utf-8');
+            orgLink = decoded;
+          } catch {
+            logger.error('[getDynamicKomikBaseUrl] Failed to decode __cpo', { cpo });
+          }
+        }
       }
-    }
-  }
 
-  if (!orgLink || orgLink.includes('.cz')) {
-    logger.error('[getDynamicKomikBaseUrl] Failed to fetch komik base URL selain cz');
-    throw new Error('Failed to fetch komik base URL selain cz');
-  }
-  logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
-  return orgLink.replace(/\/$/, '');
+      if (!orgLink || orgLink.includes('.cz')) {
+        logger.error('[getDynamicKomikBaseUrl] Failed to fetch komik base URL selain cz');
+        throw new Error('Failed to fetch komik base URL selain cz');
+      }
+      logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
+      return orgLink.replace(/\/$/, '');
+    } finally {
+      komikBaseUrlPromise = null;
+    }
+  })();
+  return komikBaseUrlPromise;
 };
+// --- SINGLE FLIGHT LOGIC END ---
 
 // Komik Base URL Redis cache key
 const KOMIK_BASE_URL_KEY = 'komik:baseurl';
