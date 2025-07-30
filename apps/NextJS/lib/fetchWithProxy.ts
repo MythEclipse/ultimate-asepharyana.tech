@@ -246,3 +246,84 @@ async function fetchFromProxies(
     );
   }
 }
+
+// --- CroxyProxyOnly Export ---
+export async function CroxyProxyOnly(
+  slug: string
+): Promise<{ data: string | object; contentType: string | null }> {
+  try {
+    logger.info(`[CroxyProxyOnly] Using scrapeCroxyProxy for ${slug}`);
+    const html = await scrapeCroxyProxy(slug);
+    return { data: html, contentType: 'text/html' };
+  } catch (error) {
+    logger.error('[CroxyProxyOnly] scrapeCroxyProxy failed:', error);
+    throw new Error('CroxyProxyOnly failed: ' + (error as Error).message);
+  }
+}
+
+// --- ProxyListOnly Export ---
+export async function ProxyListOnly(
+  slug: string,
+  limit: number = 10
+): Promise<{ data: string | object; contentType: string | null }> {
+  let lastError: Error | null = null;
+  const proxies = (await getCachedProxies()).slice(0, limit);
+  for (const proxyUrl of proxies) {
+    logger.info(`[ProxyListOnly] Trying proxy ${proxyUrl}`);
+    try {
+      const agent = getAgent(proxyUrl);
+      const httpsAgent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+      const axiosConfig = {
+        headers: DEFAULT_HEADERS,
+        httpsAgent,
+        httpAgent: agent,
+        timeout: 6000,
+      };
+      const response = await axios.get(slug, axiosConfig);
+      logger.info(`[ProxyListOnly] Proxy fetch response:`, {
+        url: slug,
+        proxy: proxyUrl,
+        status: response.status,
+        headers: response.headers,
+      });
+      if (response.status === 200) {
+        const contentType = response.headers['content-type'] || null;
+        let data: string | object = response.data;
+        if (
+          contentType?.includes('application/json')
+        ) {
+          try {
+            data = JSON.parse(response.data);
+          } catch {
+            // fallback to plain text if JSON parse fails
+            data = response.data;
+          }
+        }
+        if (typeof data === 'string') {
+          if (isInternetBaikBlockPage(data)) {
+            logger.warn(
+              `[ProxyListOnly] Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`
+            );
+            continue;
+          }
+        } else if (isInternetBaikBlockPage(JSON.stringify(data))) {
+          logger.warn(
+            `[ProxyListOnly] Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`
+          );
+          continue;
+        }
+        return { data, contentType };
+      }
+    } catch (error) {
+      lastError = error as Error;
+      logger.warn(`[ProxyListOnly] Proxy fetch failed for ${slug} via ${proxyUrl}:`, error);
+    }
+  }
+  logger.error(`[ProxyListOnly] Failed to fetch from all proxies for ${slug}:`, lastError);
+  throw new Error(
+    lastError?.message ||
+      '[ProxyListOnly] Failed to fetch from all proxies'
+  );
+}

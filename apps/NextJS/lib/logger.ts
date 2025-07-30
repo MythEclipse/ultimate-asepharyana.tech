@@ -75,14 +75,19 @@ const baseFormat = winston.format.combine(
 const transports = [];
 
 if (process.env.NODE_ENV !== 'production') {
-  // Transport untuk Console (development)
   transports.push(
     new winston.transports.Console({
       format: winston.format.combine(
-        winston.format.colorize(), // Warna hanya untuk console
+        winston.format.colorize(),
         baseFormat
-      ),
-      handleExceptions: true,
+      )
+    })
+  );
+} else {
+  transports.push(
+    new winston.transports.Console({
+      level: 'warn',
+      format: baseFormat
     })
   );
 }

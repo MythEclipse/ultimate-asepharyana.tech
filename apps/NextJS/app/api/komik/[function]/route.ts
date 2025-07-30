@@ -2,9 +2,10 @@
 
 import { NextResponse, NextRequest } from 'next/server';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy } from '@/lib/fetchWithProxy';
+import { fetchWithProxy, ProxyListOnly } from '@/lib/fetchWithProxy';
 import logger from '@/lib/logger';
 import { corsHeaders } from '@/lib/corsHeaders';
+import { CroxyProxyOnly } from '@/lib/fetchWithProxy';
 import { getCachedKomikBaseUrl } from '@/lib/komikBaseUrl';
 
 // Type Definitions
@@ -173,6 +174,10 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
       chapters.push({ chapter, date, chapter_id });
     });
 
+    if (chapters.length === 0) {
+      logger.error('[getDetail] Empty chapters parsed', { raw: body.slice(0, 500) });
+    }
+
     logger.info('[getDetail] Success', { komik_id, title });
     return {
       title,
@@ -229,6 +234,10 @@ const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaCh
       images.push(image);
     });
 
+    if (images.length === 0) {
+      logger.error('[getChapter] Empty images parsed', { raw: body.slice(0, 500) });
+    }
+
     logger.info('[getChapter] Success', { chapter_url, title, imagesCount: images.length });
     return { title, next_chapter_id, prev_chapter_id, images, list_chapter };
   } catch (error) {
@@ -272,15 +281,20 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
     apiUrl = `${baseURL}/page/${page}/?s=${query}`;
     params = { query };
   }
-  const body = await fetchWithProxyOnlyWrapper(apiUrl);
-  const $ = cheerio.load(body);
+  // First attempt
+  let body = await fetchWithProxyOnlyWrapper(apiUrl);
+  let $ = cheerio.load(body);
+  let parsedData = parseMangaData(body);
+  if (parsedData.length === 0) {
+    logger.error('[handleListOrSearch] Empty data after parsing', { raw: body.slice(0, 500) });
+  }
   const currentPage =
     parseInt($('.pagination .current').text().trim()) || 1;
   const totalPages =
     parseInt($('.pagination a:not(.next):last').text().trim()) ||
     currentPage;
 
-  const pagination: Pagination = {
+  let pagination: Pagination = {
     current_page: currentPage,
     last_visible_page: totalPages,
     has_next_page: $('.pagination .next').length > 0,
@@ -289,9 +303,72 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
     previous_page: currentPage > 1 ? currentPage - 1 : null,
   };
 
+  // If data is empty, try with a refreshed proxy
+  if (parsedData.length === 0) {
+    const refreshedBaseUrl = await getCachedKomikBaseUrl(true);
+    let retryApiUrl = `${refreshedBaseUrl}/${type}/page/${page}/`;
+    if (type === 'search') {
+      const query = urlObj.searchParams.get('query') || '';
+      retryApiUrl = `${refreshedBaseUrl}/page/${page}/?s=${query}`;
+    }
+    const proxyResult = await ProxyListOnly(retryApiUrl, 10);
+    body = typeof proxyResult.data === 'string' ? proxyResult.data : JSON.stringify(proxyResult.data);
+    $ = cheerio.load(body);
+    parsedData = parseMangaData(body);
+    if (parsedData.length === 0) {
+      logger.error('[handleListOrSearch] Empty data after parsing (retry)', { raw: body.slice(0, 500) });
+    }
+    // Update pagination after retry
+    const retryCurrentPage =
+      parseInt($('.pagination .current').text().trim()) || 1;
+    const retryTotalPages =
+      parseInt($('.pagination a:not(.next):last').text().trim()) ||
+      retryCurrentPage;
+    pagination = {
+      current_page: retryCurrentPage,
+      last_visible_page: retryTotalPages,
+      has_next_page: $('.pagination .next').length > 0,
+      next_page: retryCurrentPage < retryTotalPages ? retryCurrentPage + 1 : null,
+      has_previous_page: $('.pagination .prev').length > 0,
+      previous_page: retryCurrentPage > 1 ? retryCurrentPage - 1 : null,
+    };
+  }
+
+  // If still empty, try CroxyProxyOnly
+  if (parsedData.length === 0) {
+    let croxyHtml: string | null = null;
+    try {
+      const croxyResult = await CroxyProxyOnly(apiUrl);
+      croxyHtml = typeof croxyResult.data === 'string' ? croxyResult.data : '';
+      if (croxyHtml) {
+        $ = cheerio.load(croxyHtml);
+        parsedData = parseMangaData(croxyHtml);
+        if (parsedData.length === 0) {
+          logger.error('[handleListOrSearch] CroxyProxyOnly returned empty data after parsing', { raw: croxyHtml.slice(0, 500) });
+        }
+        // Update pagination after CroxyProxyOnly
+        const croxyCurrentPage =
+          parseInt($('.pagination .current').text().trim()) || 1;
+        const croxyTotalPages =
+          parseInt($('.pagination a:not(.next):last').text().trim()) ||
+          croxyCurrentPage;
+        pagination = {
+          current_page: croxyCurrentPage,
+          last_visible_page: croxyTotalPages,
+          has_next_page: $('.pagination .next').length > 0,
+          next_page: croxyCurrentPage < croxyTotalPages ? croxyCurrentPage + 1 : null,
+          has_previous_page: $('.pagination .prev').length > 0,
+          previous_page: croxyCurrentPage > 1 ? croxyCurrentPage - 1 : null,
+        };
+      }
+    } catch (err) {
+      logger.error('[handleListOrSearch] CroxyProxyOnly failed', { err, raw: croxyHtml ? croxyHtml.slice(0, 500) : undefined });
+    }
+  }
+
   return {
     data: {
-      data: parseMangaData(body),
+      data: parsedData,
       pagination,
     },
     params
@@ -352,6 +429,31 @@ export async function GET(
 
     const data = handlerResult.data;
     params = handlerResult.params;
+
+    // === EMPTY DATA CHECK FOR LIST/SEARCH ===
+    if (
+      (type === 'manga' || type === 'manhwa' || type === 'manhua' || type === 'search') &&
+      typeof data === 'object' &&
+      data !== null &&
+      'data' in data &&
+      Array.isArray((data as { data: unknown } & Record<string, unknown>).data) &&
+      ((data as { data: unknown[] } & Record<string, unknown>).data.length === 0)
+    ) {
+      const duration = Date.now() - start;
+      logger.warn('[API][komik] Empty data array after all proxy attempts', { ip, url, type, params, durationMs: duration });
+      return NextResponse.json(
+        {
+          status: false,
+          message: 'No data found',
+          data: [],
+          pagination: typeof data === 'object' && data !== null && 'pagination' in data ? (data as { pagination?: unknown }).pagination ?? null : null,
+        },
+        {
+          status: 404,
+          headers: corsHeaders,
+        }
+      );
+    }
 
     const duration = Date.now() - start;
     logger.info('[API][komik] Success', { ip, url, type, params, durationMs: duration });
