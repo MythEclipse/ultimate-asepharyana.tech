@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from 'lib/utils';
 import React, { useRef, useState, useLayoutEffect, useEffect } from 'react';
 
 type BeamOptions = {

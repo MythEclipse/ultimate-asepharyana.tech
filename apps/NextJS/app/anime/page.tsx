@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import AnimeGrid from '@features/anime/AnimeGrid';
+import UnifiedGrid from 'components/UnifiedGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { memo } from 'react';
@@ -64,7 +64,7 @@ function AnimePage() {
               </div>
             </div>
 
-            <AnimeGrid animes={[]} loading={true} />
+            <UnifiedGrid items={[]} loading={true} itemType="anime" />
           </section>
 
           {/* Complete Anime Section */}
@@ -84,7 +84,7 @@ function AnimePage() {
               </div>
             </div>
 
-            <AnimeGrid animes={[]} loading={true} />
+            <UnifiedGrid items={[]} loading={true} itemType="anime" />
           </section>
         </div>
       </main>
@@ -115,7 +115,7 @@ function AnimePage() {
               <ArrowRight className='w-4 h-4' />
             </button>
           </div>
-          <AnimeGrid animes={data.data.ongoing_anime} />
+          <UnifiedGrid items={data.data.ongoing_anime} itemType="anime" />
         </section>
 
         <section className='space-y-6'>
@@ -136,7 +136,7 @@ function AnimePage() {
               <ArrowRight className='w-4 h-4' />
             </button>
           </div>
-          <AnimeGrid animes={data.data.complete_anime} />
+          <UnifiedGrid items={data.data.complete_anime} itemType="anime" />
         </section>
       </div>
     </main>

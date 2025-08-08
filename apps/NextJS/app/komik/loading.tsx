@@ -1,4 +1,4 @@
-import Loading from '@/components/misc/loading';
+import Loading from 'components/misc/loading';
 import React, { memo } from 'react';
 
 const loading = memo(() => {

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import KomikGrid from '@features/komik/ComicGrid';
+import UnifiedGrid from 'components/UnifiedGrid';
 import ButtonA from '@core/ui/ScrollButton';
 
 interface Bookmark {
@@ -72,7 +72,7 @@ export default function BookmarkPage() {
         <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
           Bookmarked Comic ({bookmarks.length})
         </h1>
-        <KomikGrid loading={true} komiks={[]} />
+        <UnifiedGrid loading={true} items={[]} itemType="komik" />
         <div className='flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse'>
           <div className='flex gap-4'>
             <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
@@ -98,7 +98,7 @@ export default function BookmarkPage() {
       <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
         Bookmarked Comic ({bookmarks.length})
       </h1>
-      <KomikGrid komiks={getPaginatedBookmarks()} />
+      <UnifiedGrid items={getPaginatedBookmarks()} itemType="komik" />
       <PaginationComponent
         pagination={pagination}
         onPageChange={handlePageChange}

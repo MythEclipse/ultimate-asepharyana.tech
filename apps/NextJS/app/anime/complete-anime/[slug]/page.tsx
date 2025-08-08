@@ -1,6 +1,6 @@
 'use client';
 
-import AnimeGrid from '@features/anime/AnimeGrid';
+import UnifiedGrid from 'components/UnifiedGrid';
 import Link from 'next/link';
 import {
   CheckCircle,
@@ -118,7 +118,7 @@ export default function AnimePage() {
             </div>
           </div>
 
-          <AnimeGrid animes={[]} loading={true} />
+          <UnifiedGrid items={[]} loading={true} itemType="anime" />
         </section>
       </div>
     </main>;
@@ -172,7 +172,7 @@ export default function AnimePage() {
               </div>
             </div>
 
-            <AnimeGrid animes={[]} loading={true} />
+            <UnifiedGrid items={[]} loading={true} itemType="anime" />
           </section>
         </div>
       </main>
@@ -197,7 +197,7 @@ export default function AnimePage() {
           </div>
         </div>
 
-        <AnimeGrid animes={data.data} />
+        <UnifiedGrid items={data.data} itemType="anime" />
 
         <PaginationComponent pagination={data.pagination} />
       </div>

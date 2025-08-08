@@ -3,7 +3,7 @@
 import React, { memo } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
-import ComicGrid from '@features/komik/ComicGrid';
+import UnifiedGrid from 'components/UnifiedGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 
 export interface Komik {
@@ -108,15 +108,16 @@ function HomePage() {
                   </div>
 
                   {isLoading[type as keyof typeof isLoading] ? (
-                    <ComicGrid loading={true} komiks={[]} />
+                    <UnifiedGrid loading={true} items={[]} itemType="komik" />
                   ) : komiks ? (
                     komiks.length > 0 ? (
-                      <ComicGrid
-                        komiks={komiks.map((comic: Komik) => ({
+                      <UnifiedGrid
+                        items={komiks.map((comic: Komik) => ({
                           ...comic,
                           poster: comic.poster,
                           slug: comic.slug,
                         }))}
+                        itemType="komik"
                       />
                     ) : (
                       <div className='p-4 sm:p-6 bg-blue-100 dark:bg-blue-900/30 rounded-xl sm:rounded-2xl flex items-center gap-3 sm:gap-4'>
