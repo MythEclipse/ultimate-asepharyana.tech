@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import UnifiedGrid from 'components/UnifiedGrid';
+import UnifiedGrid from 'components/shared/UnifiedGrid';
 import {
   AlertTriangle,
   ChevronLeft,

@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@core/ui/ComponentCard';
+} from '@/components/ui/ComponentCard';
 import { getBookmarks } from '@/lib/bookmarks';
 
 export default function DashboardPage() {

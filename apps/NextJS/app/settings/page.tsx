@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import Button from '@core/ui/BaseButton';
-import { Card } from '@core/ui/ComponentCard';
+import Button from '@/components/ui/BaseButton';
+import { Card } from '@/components/ui/ComponentCard';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 

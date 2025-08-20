@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import { corsHeaders } from '@/lib/corsHeaders';
-import logger from '@/lib/logger';
+import logger from '@/utils/logger';
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetchWithProxy(url);

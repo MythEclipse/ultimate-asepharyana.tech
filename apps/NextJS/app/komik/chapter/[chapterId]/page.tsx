@@ -9,7 +9,7 @@ import {
   BookOpen,
   AlertTriangle,
 } from 'lucide-react';
-import { ImageWithFallback } from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components/shared/ImageWithFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParams } from 'next/navigation';
 

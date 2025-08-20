@@ -1,4 +1,4 @@
-import logger from '@/lib/logger';
+import logger from '@/utils/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {

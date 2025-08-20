@@ -1,6 +1,6 @@
 'use client';
 
-import TildCard from '@core/ui/TildCard';
+import TildCard from '@/components/ui/TildCard';
 import React, { useState, useEffect } from 'react'; // Import useState dan useEffect
 import { useTheme } from 'next-themes';
 

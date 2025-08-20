@@ -8,7 +8,7 @@
  */
 // Scrape https://www.croxyproxy.com/ using Puppeteer with CLI supportimport puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteer, { Browser, Page } from 'puppeteer';
-import logger from './logger';
+import logger from '../utils/logger';
 import { performance } from 'perf_hooks';
 
 const CROXY_PROXY_URL = 'https://www.croxyproxy.com/';

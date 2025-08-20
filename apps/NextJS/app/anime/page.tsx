@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import UnifiedGrid from 'components/UnifiedGrid';
+import UnifiedGrid from 'components/shared/UnifiedGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { memo } from 'react';

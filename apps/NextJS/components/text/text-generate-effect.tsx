@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, memo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/utils';
 import React from 'react';
 
 export const TextGenerateEffect = memo(({

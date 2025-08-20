@@ -1,4 +1,4 @@
-import logger from '@/lib/logger';
+import logger from '@/utils/logger';
 import { BaseUrl } from '@/lib/url';
 import { NextResponse } from 'next/server';
 

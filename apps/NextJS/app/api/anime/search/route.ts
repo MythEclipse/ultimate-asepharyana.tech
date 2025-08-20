@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithProxy } from '@/lib/fetchWithProxy';
 import { corsHeaders } from '@/lib/corsHeaders';
-import logger from '@/lib/logger';
+import logger from '@/utils/logger';
 
 async function fetchAnimeData(slug: string) {
   const response = await fetchWithProxy(

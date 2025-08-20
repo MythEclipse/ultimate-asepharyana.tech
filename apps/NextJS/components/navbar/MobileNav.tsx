@@ -8,9 +8,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { navLinks } from '@/lib/constants';
+import { navLinks } from '@/utils/constants';
 import UserMenu from './UserMenu';
-import { useGlobalStore } from '@hooks/useGlobalStore';
+import { useGlobalStore } from '@/utils/hooks/useGlobalStore';
 
 const Logo = memo(() => (
   <Link href='/' className='flex items-center gap-2'>

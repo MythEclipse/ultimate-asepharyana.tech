@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import AnimeGrid from '@features/anime/AnimeGrid';
+import AnimeGrid from '@/components/anime/AnimeGrid';
 import BookmarkLoadingSkeleton from '@/components/skeleton/BookmarkLoadingSkeleton';
 import EmptyBookmarkMessage from '@/components/misc/EmptyBookmarkMessage';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';

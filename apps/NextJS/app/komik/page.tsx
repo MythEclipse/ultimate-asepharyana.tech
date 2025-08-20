@@ -3,7 +3,7 @@
 import React, { memo } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
-import UnifiedGrid from 'components/UnifiedGrid';
+import UnifiedGrid from 'components/shared/UnifiedGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 
 export interface Komik {

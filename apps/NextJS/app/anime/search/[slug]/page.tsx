@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import SearchForm from '@/components/misc/SearchForm';
-import CardA from '@features/anime/MediaCard';
+import CardA from '@/components/anime/MediaCard';
 import { Info } from 'lucide-react';
 
 interface Genre {

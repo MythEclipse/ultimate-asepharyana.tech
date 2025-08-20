@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@core/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@core/ui/card";
+} from "@/components/ui/card";
 import { FallbackProps } from "react-error-boundary";
 
 export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
