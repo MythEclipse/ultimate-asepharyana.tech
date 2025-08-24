@@ -7,7 +7,9 @@
     "asepharyana:lint": "nx lint asepharyana",
     "asepharyana:start": "nx start asepharyana",
     "db:migrate": "prisma migrate dev --schema=libs/src/lib/schema.prisma",
-    "db:generate": "prisma generate --schema=libs/src/lib/schema.prisma"
+    "db:generate": "prisma generate --schema=libs/src/lib/schema.prisma",
+    "db:studio": "prisma studio --schema=libs/src/lib/schema.prisma",
+    "db:pull": "prisma db pull --schema=libs/src/lib/schema.prisma"
   },
   "private": true,
   "dependencies": {

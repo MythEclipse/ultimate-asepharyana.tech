@@ -1,8 +1,8 @@
 generator client {
   provider      = "prisma-client-js"
-  output = "./generated/client"
-  engineType    = "binary"
+  output        = "./generated/client"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
+  engineType    = "binary"
 }
 
 datasource db {
@@ -48,8 +48,8 @@ model User {
   emailVerified    DateTime?  @map("email_verified")
   role             String     @default("user")
   image            String?
-  password         String?    @db.VarChar(255) // Added password field
-  refreshToken     String?    @unique @db.VarChar(255) // Added refresh token field
+  password         String?    @db.VarChar(255)
+  refreshToken     String?    @unique @db.VarChar(255)
   authoredComments Comments[] @relation("AuthoredComments")
   comments         Comments[] @relation("UserComments")
   likes            Likes[]
