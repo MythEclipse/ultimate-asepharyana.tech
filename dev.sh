@@ -1,1 +1,0 @@
- bun install && bun run db:push && bun run generate && bun run dev

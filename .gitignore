@@ -1,114 +1,55 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-**/apps/NextJS/coverage/
+# compiled output
+dist
+tmp
+out-tsc
+
 # dependencies
-/pnpm-store
 node_modules
-/node_modules
-.pnp
-/.pnp
-homebrew
-/homebrew
-.pnp.js
-/.pnp.js
-.yarn/install-state.gz
-/yarn/install-state.gz
-public/sitemap.xml
-.pnpm-*
-/.pnpm-*
-pnpm-lock.yaml
-**/database.sqlite
-# sw
-**/sw.js
-**/sw.js.map
-**/swe-worker-*.js
-**/swe-worker-*.js.map
-**/workbox-*.js
-**/workbox-*.js.map
-# next.js
-apps/NextJS/logs/
-**/core
-/**/core
-**/logs/** 
-/**/logs/** 
-.next/
-/.next/
-out/
-/out/
-build
-/build
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
 .DS_Store
-/*.DS_Store
-*.pem
+Thumbs.db
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.nx/cache
+.nx/workspace-data
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 
-# local env files
-.env*.local
-/.env*.local
-.env.local
-/.env.local
-.env.development.local
-/.env.development.local
-.env.test.local
-/.env.test.local
-.env.production.local
-/.env.production.local
-.env
-/.env
-**/.env
-# Removed !packages/database/.env to ignore all .env files
-# Removed !apps/**/.env to ignore app-specific .env files
-!apps/**/src/**/chat.ts
-!**/apps/NextJS/core
-# vercel
-.vercel
-/.vercel
+# Next.js
+.next
+out
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-/next-env.d.ts
+test-output
+**/**.env
+.nx
 
-# public files
-public/sw.js
-/public/sw.js
-public/swe-worker-*.js
-/public/swe-worker-*.js
-public/workbox-*.js
-/public/workbox-*.js
-public/sitemap.xml
-/public/sitemap.xml
-public/robots.txt
-/public/robots.txt
-public/sitemap-0.xml
-/public/sitemap-0.xml
-
-# logs
-app.log
-/app.log
-
-# turbo
-.turbo
-/.turbo
-apps/NextJS/public/sitemap*.xml
-**/sitemap*.xml
-**/dist/*
-**/build/*
-# Ignore all types folders except apps/NextJS/types
-**/types/*
-!apps/NextJS/types/
-!apps/NextJS/types/**
-apps/NextJS/public/hihahahahah
-# Rust
-/target
-**/target
-Cargo.lock
-/cargo.lock
-**/*.rs.bk
-**/packages/database/client
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
