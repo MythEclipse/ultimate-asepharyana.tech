@@ -6,5 +6,11 @@
     "next": "~15.2.4",
     "react": "19.0.0",
     "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/js-yaml": "^4.0.9",
+    "@types/safe-json-stringify": "^1.1.5",
+    "@types/swagger-ui-dist": "^3.30.6"
   }
 }

@@ -17,6 +17,8 @@ export default function SwaggerUIComponent({ spec }: SwaggerUIComponentProps) {
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
+    let cleanupFn: (() => void) | undefined;
+
     if (swaggerUIRef.current && spec) {
       const ui = SwaggerUIBundle({
         spec: spec,
@@ -32,15 +34,16 @@ export default function SwaggerUIComponent({ spec }: SwaggerUIComponentProps) {
         },
       });
 
-      const currentRef = swaggerUIRef.current; // Capture the current ref value
-
-      return () => {
+      const currentRef = swaggerUIRef.current;
+      cleanupFn = () => {
         if (currentRef) {
           currentRef.innerHTML = '';
         }
         ui.getSystem().specActions.updateSpec('{}');
       };
     }
+
+    return cleanupFn;
   }, [spec, resolvedTheme]);
 
   return (

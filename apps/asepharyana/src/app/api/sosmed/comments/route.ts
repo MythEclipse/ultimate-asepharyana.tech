@@ -18,7 +18,7 @@ async function postHandler(req: NextRequest) {
   try {
     const session = await auth();
     user = session?.user;
-    
+
     if (!user || !user.id) {
       logger.warn(`[POST /api/sosmed/comments] Unauthorized`, { ip });
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -82,7 +82,7 @@ async function getHandler(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('postId');
-    
+
 
     if (!postId) {
       logger.warn(`[GET /api/sosmed/comments] Post ID required`, { ip });
@@ -134,7 +134,7 @@ async function putHandler(req: NextRequest) {
   try {
     const session = await auth();
     user = session?.user;
-    
+
 
     if (!user || !user.id) {
       logger.warn(`[PUT /api/sosmed/comments] Unauthorized`, { ip });
@@ -205,7 +205,7 @@ async function deleteHandler(req: NextRequest) {
   try {
     const session = await auth();
     user = session?.user;
-    
+
 
     if (!user || !user.id) {
       logger.warn(`[DELETE /api/sosmed/comments] Unauthorized`, { ip });
@@ -265,7 +265,7 @@ async function deleteHandler(req: NextRequest) {
 }
 
 // Export with auth protection
-export const POST = auth(postHandler);
-export const GET = auth(getHandler);
-export const PUT = auth(putHandler);
-export const DELETE = auth(deleteHandler);
+export const POST = postHandler;
+export const GET = getHandler;
+export const PUT = putHandler;
+export const DELETE = deleteHandler;

@@ -5,7 +5,9 @@
   "scripts": {
     "asepharyana:build": "nx build asepharyana",
     "asepharyana:lint": "nx lint asepharyana",
-    "asepharyana:start": "nx start asepharyana"
+    "asepharyana:start": "nx start asepharyana",
+    "db:migrate": "prisma migrate dev --schema=libs/src/lib/schema.prisma",
+    "db:generate": "prisma generate --schema=libs/src/lib/schema.prisma"
   },
   "private": true,
   "dependencies": {
@@ -124,6 +126,7 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@swc/jest": "~0.2.38",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.1.0",
     "@types/jest": "^30.0.0",
@@ -145,6 +148,7 @@
     "eslint-plugin-react-hooks": "5.0.0",
     "jest": "^30.0.2",
     "jest-environment-jsdom": "^30.0.2",
+    "jest-environment-node": "^30.0.2",
     "jest-util": "^30.0.2",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
@@ -158,6 +162,7 @@
     "tslib": "^2.3.0",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.29.0",
+    "verdaccio": "^6.0.5",
     "vite": "^7.1.3",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^3.0.0"
@@ -184,5 +189,18 @@
       "tree-sitter-json",
       "unrs-resolver"
     ]
+  },
+  "nx": {
+    "includedScripts": [],
+    "targets": {
+      "local-registry": {
+        "executor": "@nx/js:verdaccio",
+        "options": {
+          "port": 4873,
+          "config": ".verdaccio/config.yml",
+          "storage": "tmp/local-registry/storage"
+        }
+      }
+    }
   }
 }

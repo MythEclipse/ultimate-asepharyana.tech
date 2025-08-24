@@ -4,7 +4,6 @@
  * =============================================================================
  * Menambahkan `!important` untuk memastikan gaya kustom menimpa gaya bawaan.
  */
-@layer components {
   /* --- Variabel Warna & Dasar --- */
   .dark-theme .swagger-ui {
     --sw-bg: oklch(0.12 0.02 240);
@@ -139,4 +138,3 @@
     background-color: var(--sw-bg) !important;
     color: var(--sw-text-primary) !important;
   }
-}

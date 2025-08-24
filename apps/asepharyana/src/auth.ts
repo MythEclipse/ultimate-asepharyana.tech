@@ -1,3 +1,4 @@
+import { Account } from "next-auth";
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -64,7 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (existingUser) {
           const alreadyLinked = existingUser.accounts.some(
-            (acc) =>
+            (acc: Account) =>
               acc.provider === account.provider &&
               acc.providerAccountId === account.providerAccountId
           );

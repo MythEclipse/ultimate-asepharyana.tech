@@ -1,9 +1,9 @@
 import { auth } from '@/auth';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/service';
 import logger from '@/utils/logger';
 
-function getIp(req: NextRequest) {
+function getIp(req: Request) {
   return (
     req.headers.get('x-forwarded-for') ||
     req.headers.get('remote-addr') ||
@@ -22,7 +22,7 @@ export const POST = auth(async function POST(req) {
   }
 
   try {
-    
+
 
     const { postId } = await req.json();
     logger.debug(`[POST /api/sosmed/likes] Payload`, { postId });
@@ -86,7 +86,7 @@ export const DELETE = auth(async function DELETE(req) {
   }
 
   try {
-    
+
 
     const { postId } = await req.json();
     logger.debug(`[DELETE /api/sosmed/likes] Payload`, { postId });
