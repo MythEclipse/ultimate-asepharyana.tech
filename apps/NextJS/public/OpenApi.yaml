@@ -1557,6 +1557,52 @@ paths:
                 type: object
                 properties:
                   error:
+/api/drivepng:
+    get:
+      summary: 'Drive Downloader'
+      tags:
+        - tools
+      description: 'Scrapes Google Drive thumbnail URLs to extract direct download links.'
+      parameters:
+        - in: query
+          name: url
+          required: true
+          schema:
+            type: string
+          description: 'The Google Drive thumbnail URL (e.g., https://drive.google.com/thumbnail?id=...).'
+          example: 'https://drive.google.com/thumbnail?id=1tbOJKacQGsfldr5TsWtzNKL65iCpADz2'
+      responses:
+        '200':
+          description: 'Successful response with the direct download URL.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  downloadUrl:
+                    type: string
+                    description: 'The direct download URL for the file.'
+                    example: 'https://drive.usercontent.google.com/download?id=1tbOJKacQGsfldr5TsWtzNKL65iCpADz2&export=download&confirm=t&uuid=...'
+        '400':
+          description: 'Bad request, e.g., missing URL parameter.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'URL parameter is missing'
+        '500':
+          description: 'Internal server error, e.g., failed to scrape or downloadUrl not found.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'Failed to scrape drive downloader'
                     type: string
 info:
   title: Freefire
