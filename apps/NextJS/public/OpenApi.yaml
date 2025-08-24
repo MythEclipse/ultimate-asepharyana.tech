@@ -1557,7 +1557,8 @@ paths:
                 type: object
                 properties:
                   error:
-/api/drivepng:
+                    type: string
+  /api/drivepng:
     get:
       summary: 'Drive Downloader'
       tags:
@@ -1565,12 +1566,12 @@ paths:
       description: 'Scrapes Google Drive thumbnail URLs to extract direct download links.'
       parameters:
         - in: query
-          name: url
+          name: id
           required: true
           schema:
             type: string
-          description: 'The Google Drive thumbnail URL (e.g., https://drive.google.com/thumbnail?id=...).'
-          example: 'https://drive.google.com/thumbnail?id=1tbOJKacQGsfldr5TsWtzNKL65iCpADz2'
+          description: 'The Google Drive file ID (e.g., 1tbOJKacQGsfldr5TsWtzNKL65iCpADz2).'
+          example: '1tbOJKacQGsfldr5TsWtzNKL65iCpADz2'
       responses:
         '200':
           description: 'Successful response with the direct download URL.'
