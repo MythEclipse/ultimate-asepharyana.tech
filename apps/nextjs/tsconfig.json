@@ -7,7 +7,10 @@
     "resolveJsonModule": true,
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "next-env.d.ts",

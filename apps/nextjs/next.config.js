@@ -81,6 +81,8 @@ const nextConfig = {
       }
       // Ensure webpack resolves @hooks alias like tsconfig
       config.resolve.alias['@hooks'] = path.resolve(__dirname, 'core/hooks');
+config.resolve.alias['@'] = path.resolve(__dirname, './src');
+config.resolve.alias['@asepharyana/database'] = path.resolve(__dirname, '../../libs/src/index.ts');
       return config;
     },
   // Use this to set Nx-specific options

@@ -1,7 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
 
 /*
  * =============================================================================
@@ -9,6 +6,7 @@
  * Didefinisikan di level atas sesuai standar CSS.
  * =============================================================================
  */
+/*
 @keyframes accordion-down {
   from { height: 0 }
   to { height: var(--radix-accordion-content-height) }
@@ -33,8 +31,10 @@
   '0%' { transform: scale(1); opacity: 1 }
   '100%' { transform: scale(0); opacity: 0 }
 }
+*/
 
-@theme inline {
+/*
+@theme {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -71,6 +71,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+*/
 
 :root {
   --radius: 0.625rem;
@@ -141,14 +142,13 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
-* {
-  border-color: var(--border);
-  border-width: 1px;
-  outline-color: oklch(from var(--ring) l c h / 0.5);
-  outline-width: 2px;
-}
-body {
-  @apply bg-background text-foreground;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 .custom-scroll {
