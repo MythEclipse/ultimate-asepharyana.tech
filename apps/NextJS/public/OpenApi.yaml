@@ -1603,7 +1603,7 @@ paths:
                   error:
                     type: string
                     example: 'Failed to scrape drive downloader'
-                    type: string
+                    
 info:
   title: Freefire
   version: '0.0.1'
