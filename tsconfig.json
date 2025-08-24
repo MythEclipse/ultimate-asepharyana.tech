@@ -4,10 +4,10 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/asepharyana-e2e"
+      "path": "./apps/nextjs-e2e"
     },
     {
-      "path": "./apps/asepharyana"
+      "path": "./apps/nextjs"
     },
     {
       "path": "./libs"

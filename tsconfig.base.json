@@ -2,6 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "declarationMap": true,
+    "baseUrl": ".",
     "emitDeclarationOnly": true,
     "importHelpers": true,
     "isolatedModules": true,
@@ -18,7 +19,7 @@
     "target": "es2022",
     "customConditions": ["development"],
     "paths": {
-      "@asepharyana/database": ["packages/database/src/client.ts"]
+      "@asepharyana/database": ["libs/database/src/index.ts"]
     }
   }
 }

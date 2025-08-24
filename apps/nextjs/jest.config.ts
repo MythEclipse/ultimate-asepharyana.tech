@@ -6,13 +6,13 @@ const createJestConfig = nextJest({
 });
 
 const config: Config = {
-  displayName: '@asepharyana/asepharyana',
-  preset: '../../jest.preset.js',
+  displayName: '@asepharyana/my-next',
+  preset: '../jest.preset.js',
   transform: {
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '@nx/react/plugins/jest',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  coverageDirectory: '../../coverage/apps/asepharyana',
+  coverageDirectory: '../coverage/my-next',
   testEnvironment: 'jsdom',
 };
 

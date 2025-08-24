@@ -6,11 +6,7 @@
     "emitDeclarationOnly": false,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
@@ -20,26 +16,19 @@
         "name": "next"
       }
     ],
-    "paths": {
-
-    },
-    "types": [
-      "jest",
-      "node"
-    ],
+    "types": ["jest", "node"],
     "outDir": "dist",
     "rootDir": "src",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
   "include": [
-    "../../apps/asepharyana/.next/types/**/*.ts",
-    "../../dist/apps/asepharyana/.next/types/**/*.ts",
-    "src/**/*.js",
-    "src/**/*.jsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/next-env.d.ts",
-    ".next/types/**/*.ts"
+    "src/**/*.js",
+    "src/**/*.jsx",
+    "../my-next/.next/types/**/*.ts",
+    "../dist/my-next/.next/types/**/*.ts",
+    "next-env.d.ts"
   ],
   "exclude": [
     "out-tsc",
@@ -52,5 +41,6 @@
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs"
-  ]
+  ],
+  "references": []
 }
