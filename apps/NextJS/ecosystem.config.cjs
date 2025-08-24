@@ -3,14 +3,12 @@ module.exports = {
     {
       name: 'asepharyana.tech',
       script: 'bun',
-      args: 'start',
+      args: '-r dotenv/config start', // <-- ini load .env otomatis
       interpreter: 'none',
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',
-      },
-      env_production: {
-        DOTENV_CONFIG_PATH: './.env',
+        DOTENV_CONFIG_PATH: './.env', // path ke file .env
       },
     },
   ],
