@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { memo } from 'react';
 
-import { cn } from '@/utils/utils';
+import { cn } from '../../utils/utils';
 
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 

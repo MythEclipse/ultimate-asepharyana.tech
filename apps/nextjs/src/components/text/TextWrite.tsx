@@ -1,6 +1,6 @@
 'use client';
 import React, { memo } from 'react';
-import { cn } from '@/utils/utils';
+import { cn } from '../../utils/utils';
 import { useEffect, useRef, useState } from 'react';
 
 export const AnimatedHeader = memo(({

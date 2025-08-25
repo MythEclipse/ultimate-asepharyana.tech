@@ -1,6 +1,6 @@
 'use client';
 
-import { Card as ShadcnCard } from '@/components/ui/ComponentCard';
+import { Card as ShadcnCard } from './ComponentCard';
 import { ReactNode } from 'react';
 import React, { memo } from 'react';
 interface CardProps {

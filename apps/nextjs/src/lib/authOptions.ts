@@ -4,7 +4,7 @@
 // import CredentialsProvider from 'next-auth/providers/credentials';
 // import bcrypt from 'bcrypt';
 // import GoogleProvider from 'next-auth/providers/google';
-// import { loginWithGoogle } from '@/lib/prisma/service';
+// import { loginWithGoogle } from './prisma/service';
 
 // // Define the User type expected by NextAuth
 // interface User extends PrismaUser {

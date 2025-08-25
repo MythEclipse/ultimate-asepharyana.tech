@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { memo } from 'react';
 
-import { cn } from '@/utils/utils';
+import { cn } from '../../utils/utils';
 
 const Card = memo(React.forwardRef<
   HTMLDivElement,

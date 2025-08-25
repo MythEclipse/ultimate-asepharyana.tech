@@ -2,9 +2,9 @@
 
 import Image from 'next/image';
 import React, { memo } from 'react';
-import { CardBody, CardContainer, CardItem } from '@/components/ui/3d-card';
+import { CardBody, CardContainer, CardItem } from './3d-card';
 import Link from 'next/link';
-import { BaseUrl } from '@/lib/url';
+import { BaseUrl } from '../../lib/url';
 
 interface ThreeDCardProps {
   title: string;
