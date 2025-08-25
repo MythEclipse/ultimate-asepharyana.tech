@@ -78,6 +78,16 @@ const nextConfig = {
       config.resolve.alias['@prisma/client'] = false;
       config.resolve.alias['.prisma/client'] = false;
     }
+
+    // Normalize module paths to lowercase to prevent casing issues on case-insensitive file systems
+    config.plugins.push(
+      new (require('webpack').NormalModuleReplacementPlugin)(
+        /^(.+?)([/\\])(.+?)$/,
+        (resource) => {
+          resource.request = resource.request.toLowerCase();
+        }
+      )
+    );
     return config;
   },
   // Use this to set Nx-specific options

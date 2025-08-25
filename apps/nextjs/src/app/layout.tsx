@@ -11,7 +11,7 @@ import SessionWrapper from '../components/providers/SessionWrapper';
 import Navbar from '../components/navbar/Navbar';
 import { Toaster } from 'sonner';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Asepharyana',
