@@ -19,7 +19,7 @@ const fetchAnimePage = async (slug: string) => {
 const parseAnimeData = (html: string) => {
   const $ = cheerio.load(html);
 
-  const extractText = (selector: string, prefix: string = '') =>
+  const extractText = (selector: string, prefix = '') =>
     $(selector).text().replace(prefix, '').trim();
 
   const title = extractText('.infozingle p:contains("Judul")', 'Judul: ');

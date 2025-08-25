@@ -11,7 +11,7 @@ function getIp(req: Request) {
   );
 }
 
-export const POST = auth(async function POST(req) {
+export const POST: (req: Request, ctx?: { params?: Record<string, string> }) => Promise<Response> = auth(async function POST(req, ctx) {
   const session = await auth()
   const start = Date.now();
   const ip = getIp(req);
@@ -22,8 +22,6 @@ export const POST = auth(async function POST(req) {
   }
 
   try {
-
-
     const { postId } = await req.json();
     logger.debug(`[POST /api/sosmed/likes] Payload`, { postId });
 
@@ -75,7 +73,7 @@ export const POST = auth(async function POST(req) {
   }
 });
 
-export const DELETE = auth(async function DELETE(req) {
+export const DELETE: (req: Request, ctx?: { params?: Record<string, string> }) => Promise<Response> = auth(async function DELETE(req, ctx) {
   const session = await auth()
   const start = Date.now();
   const ip = getIp(req);
@@ -86,8 +84,6 @@ export const DELETE = auth(async function DELETE(req) {
   }
 
   try {
-
-
     const { postId } = await req.json();
     logger.debug(`[DELETE /api/sosmed/likes] Payload`, { postId });
 

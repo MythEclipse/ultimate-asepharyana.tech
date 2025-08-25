@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import loadingGif from '@/public/loading.webp';
+import loadingGif from '../../../public/loading.webp';
 
 const Loading: React.FC = () => {
   return (

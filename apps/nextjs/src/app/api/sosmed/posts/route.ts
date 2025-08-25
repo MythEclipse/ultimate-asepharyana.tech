@@ -11,7 +11,7 @@ function getIp(req: Request) {
   );
 }
 
-export const POST = auth(async function POST(req) {
+export const POST: (req: Request) => Promise<Response> = auth(async function POST(req) {
   const start = Date.now();
   const ip = getIp(req);
 
@@ -71,7 +71,7 @@ export const POST = auth(async function POST(req) {
   }
 });
 
-export const GET = auth(async function GET(req) {
+export const GET: (req: Request) => Promise<Response> = auth(async function GET(req) {
   const start = Date.now();
   const ip = getIp(req);
 
@@ -84,8 +84,6 @@ export const GET = auth(async function GET(req) {
   }
 
   try {
-
-
     const posts = await prisma.posts.findMany({
       include: {
         user: {
@@ -163,7 +161,7 @@ export const GET = auth(async function GET(req) {
     );
   }
 });
-export const PUT = auth(async function PUT(req) {
+export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(req) {
   const start = Date.now();
   const ip = getIp(req);
 
@@ -235,7 +233,7 @@ export const PUT = auth(async function PUT(req) {
   }
 });
 
-export const DELETE = auth(async function DELETE(req) {
+export const DELETE: (req: Request) => Promise<Response> = auth(async function DELETE(req) {
   const start = Date.now();
   const ip = getIp(req);
 

@@ -55,7 +55,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     async signIn({ user, account, profile, email, credentials }) {
       if (account?.provider && user?.email) {
         const existingUser = await prisma.user.findUnique({

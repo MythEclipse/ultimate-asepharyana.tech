@@ -274,7 +274,7 @@ export async function CroxyProxyOnly(
 // --- ProxyListOnly Export ---
 export async function ProxyListOnly(
   slug: string,
-  limit: number = 10
+  limit = 10
 ): Promise<{ data: string | object; contentType: string | null }> {
   let lastError: Error | null = null;
   const proxies = (await getCachedProxies()).slice(0, limit);

@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "asepharyana:build": "nx build asepharyana",
-    "asepharyana:lint": "nx lint asepharyana",
-    "asepharyana:start": "nx start asepharyana",
+    "nextjs:build": "nx build nextjs",
+    "nextjs:lint": "nx lint nextjs",
+    "nextjs:start": "nx start nextjs",
     "db:migrate": "prisma migrate dev --schema=libs/src/lib/schema.prisma",
     "db:generate": "prisma generate --schema=libs/src/lib/schema.prisma",
     "db:studio": "prisma studio --schema=libs/src/lib/schema.prisma",
