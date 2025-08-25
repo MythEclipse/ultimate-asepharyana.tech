@@ -2,43 +2,46 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "emitDeclarationOnly": false,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "isolatedModules": true,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "types": [
-      "jest",
-      "node"
-    ],
-    "allowJs": true,
-    "noEmit": true,
-    "strict": false,
-    "isolatedModules": true
+    "baseUrl": ".",
   },
   "include": [
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.ts",
+    "**/*.tsx",
+    "../../apps/landing/.next/types/**/*.ts",
+    "../../dist/apps/landing/.next/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    "src/**/*.js",
-    "src/**/*.jsx",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/components/anime/AnimeGrid.tsx",
     "../../dist/apps/nextjs/.next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "out-tsc",
     "jest.config.ts",
-    "src/**/*.spec.ts",
-    "src/**/*.test.ts",
-    "eslint.config.js",
-    "eslint.config.cjs",
-    "eslint.config.mjs"
+    "**/*.spec.ts",
+    "**/*.test.ts"
   ]
 }

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import SearchForm from '../../../../components/misc/SearchForm';
 import CardA from '../../../../components/anime/MediaCard'; // Changed to default import
-import { Info } from 'lucide-react';
+import { Info, AlertTriangle } from 'lucide-react';
 
 interface Genre {
   name: string;
@@ -42,19 +42,44 @@ const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
 };
 const SearchPage = () => {
   const params = useParams();
-  const slug = params.slug || '';
+  const slug = params?.slug || ''; // Access slug safely
   const query = decodeURIComponent(Array.isArray(slug) ? slug[0] : slug);
+
   const [searchResults, setSearchResults] = useState<SearchDetailData>({
     status: '',
     data: [],
   });
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetchSearchResults(query).then((result) => {
-      setSearchResults(result);
-      setLoading(false);
-    });
-  }, [query]);
+    if (slug) { // Conditionally fetch data
+      fetchSearchResults(query).then((result) => {
+        setSearchResults(result);
+        setLoading(false);
+      });
+    } else {
+      setLoading(false); // If no slug, stop loading and show no results
+    }
+  }, [query, slug]); // Add slug to dependency array
+
+  if (!slug) {
+    return (
+      <main className='p-6'>
+        <h1 className='text-2xl font-bold mb-4'>Search Results</h1>
+        <SearchForm
+          classname='w-full mb-8'
+          initialQuery={query}
+          baseUrl='/anime'
+        />
+        <div className='p-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center gap-4'>
+          <AlertTriangle className='w-8 h-8 text-yellow-600 dark:text-yellow-400' />
+          <h2 className='text-xl font-medium text-yellow-800 dark:text-yellow-200'>
+            Please enter a search query.
+          </h2>
+        </div>
+      </main>
+    );
+  }
   if (loading) {
     return (
       <main className='p-6'>

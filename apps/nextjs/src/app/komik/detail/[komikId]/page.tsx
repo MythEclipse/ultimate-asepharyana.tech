@@ -102,7 +102,7 @@ const DetailPageSkeleton = () => (
 export default function DetailMangaPage() {
   const router = useRouter();
   const params = useParams();
-  const komikId = params.komikId as string;
+  const komikId = params?.komikId as string;
 
   const {
     data: mangaData,

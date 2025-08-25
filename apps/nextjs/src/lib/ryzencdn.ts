@@ -13,7 +13,7 @@ const ryzenCDN = async (
       const buffer = Buffer.isBuffer(file) ? file : file.buffer;
       if (!Buffer.isBuffer(buffer)) throw new Error('Invalid buffer format');
 
-      const type = await fileTypeFromBuffer(buffer);
+      const type = await fileTypeFromBuffer(buffer as Uint8Array);
       if (!type) throw new Error('Unsupported file type');
 
       const originalName =

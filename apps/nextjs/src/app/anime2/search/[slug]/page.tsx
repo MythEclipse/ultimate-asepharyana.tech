@@ -42,7 +42,7 @@ const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
 };
 const SearchPage = () => {
   const params = useParams();
-  const slug = params.slug || '';
+  const slug = params?.slug || '';
   const query = decodeURIComponent(Array.isArray(slug) ? slug[0] : slug);
   const [searchResults, setSearchResults] = useState<SearchDetailData>({
     status: '',

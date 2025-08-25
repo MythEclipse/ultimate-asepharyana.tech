@@ -43,14 +43,35 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AnimePage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
+
   const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
-    `/api/anime/ongoing-anime/${slug}`,
+    slug ? `/api/anime/ongoing-anime/${slug}` : null,
     fetcher,
     {
       revalidateOnFocus: false,
     }
   );
+
+  if (!slug) {
+    return (
+      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
+        <div className='max-w-7xl mx-auto mt-12'>
+          <div className='p-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center gap-4'>
+            <AlertTriangle className='w-8 h-8 text-yellow-600 dark:text-yellow-400' />
+            <div>
+              <h1 className='text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-2'>
+                Loading or Invalid URL
+              </h1>
+              <p className='text-yellow-700 dark:text-yellow-300'>
+                Please ensure you are accessing this page with a valid slug.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (isLoading) {
     return (

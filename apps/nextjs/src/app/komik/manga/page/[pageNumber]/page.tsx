@@ -42,7 +42,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function Page() {
   const params = useParams();
   const router = useRouter();
-  const pageNumber = parseInt(params.pageNumber as string, 10);
+  const pageNumber = parseInt(params?.pageNumber as string, 10);
 
   const {
     data: komikData,

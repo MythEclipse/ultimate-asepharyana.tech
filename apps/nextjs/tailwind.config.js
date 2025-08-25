@@ -8,7 +8,14 @@ module.exports = {
     '!../../libs/**/*.{stories,spec}.{ts,tsx,js,jsx,html}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      borderColor: {
+        border: 'hsl(var(--border))',
+      },
+      colors: {
+        ring: 'hsl(var(--ring))',
+      },
+    },
   },
   plugins: [],
 };

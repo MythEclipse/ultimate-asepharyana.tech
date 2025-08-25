@@ -83,17 +83,31 @@ const PlayerPageSkeleton = () => (
 // --- MAIN COMPONENT ---
 export default function WatchAnimePage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = params?.slug as string; // Access slug safely
 
   // --- Menggunakan kembali cara fetch SWR yang lama ---
   const { data, error, isLoading } = useSWR<AnimeResponse | null>(
-    `/api/anime/full/${slug}`,
+    slug ? `/api/anime/full/${slug}` : null, // Conditionally fetch data
     fetcher,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
     }
   );
+
+  if (!slug) {
+    return (
+      <main className='p-4 md:p-8 flex items-center justify-center min-h-[70vh]'>
+        <Alert variant='destructive' className='max-w-lg'>
+          <AlertTriangle className='h-4 w-4' />
+          <AlertTitle>Invalid URL</AlertTitle>
+          <AlertDescription>
+            The episode slug is missing. Please ensure you are accessing this page with a valid episode.
+          </AlertDescription>
+        </Alert>
+      </main>
+    );
+  }
 
   if (isLoading) return <PlayerPageSkeleton />;
   if (error || !data || data.status !== 'Ok') {

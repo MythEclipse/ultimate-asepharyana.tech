@@ -126,7 +126,7 @@ const DetailPageSkeleton = () => (
 export default function DetailAnimePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const params = useParams();
-  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug || '');
 
   const { data, error, isLoading } = useSWR<{ data: AnimeData }>(
     slug ? `/api/anime2/detail/${slug}` : null,

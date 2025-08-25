@@ -71,7 +71,7 @@ const baseFormat = winston.format.combine(
   })
 );
 
-const transports = [];
+const transports: winston.transport[] = [];
 
 if (process.env.NODE_ENV !== 'production') {
   transports.push(

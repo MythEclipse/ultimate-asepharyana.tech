@@ -24,7 +24,8 @@ interface ChapterDetail {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ChapterPage() {
-  const { chapterId } = useParams();
+  const params = useParams();
+  const chapterId = params?.chapterId;
   const {
     data: chapter,
     error,
