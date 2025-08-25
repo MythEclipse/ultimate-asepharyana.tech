@@ -6,9 +6,6 @@
     "noEmit": true,
     "emitDeclarationOnly": false,
     "esModuleInterop": true,
-    "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "lib": [

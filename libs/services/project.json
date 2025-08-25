@@ -19,12 +19,6 @@
       "options": {
         "packageRoot": "dist/{projectRoot}"
       }
-    },
-    "compile": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --project libs/services/tsconfig.lib.json && xcopy /E /I /Y libs\\services\\dist dist\\libs\\services && rmdir /s /q libs\\services\\dist"
-      }
     }
   },
   "release": {

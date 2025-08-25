@@ -71,7 +71,7 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   productionBrowserSourceMaps: true,
-  transpilePackages: ['swagger-ui'],
+  transpilePackages: ['swagger-ui', '@asepharyana/services'],
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },

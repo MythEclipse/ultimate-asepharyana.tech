@@ -19,7 +19,7 @@
       "options": {
         "outputPath": "dist/apps/nextjs"
       },
-      "dependsOn": ["services:compile"]
+      "dependsOn": ["services:build"]
     }
   }
 }
