@@ -22,6 +22,6 @@
     "name": "database"
   },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "@prisma/client": "^6.1.4"
   }
 }

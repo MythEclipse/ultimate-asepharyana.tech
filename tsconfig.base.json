@@ -18,8 +18,5 @@
     "strict": true,
     "target": "es2022",
     "customConditions": ["development"],
-    "paths": {
-      "@asepharyana/database": ["libs/src/index.ts"]
-    }
   }
 }
