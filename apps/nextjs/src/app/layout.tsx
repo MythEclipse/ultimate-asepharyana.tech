@@ -2,7 +2,6 @@
 // apps/NextJS/app/layout.tsx
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -11,11 +10,12 @@ import SessionWrapper from '../components/providers/SessionWrapper';
 import Navbar from '../components/navbar/Navbar';
 import { Toaster } from 'sonner';
 
-const inter = Inter({ subsets: ['latin'], display: 'swap' });
-
 export const metadata: Metadata = {
   title: 'Asepharyana',
   description: 'A personal website by Asep Haryayana',
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en' suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`antialiased`}>
         <SessionWrapper>
           <ThemeProvider
             attribute='class'

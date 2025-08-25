@@ -71,25 +71,7 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   productionBrowserSourceMaps: true,
-  transpilePackages: ['@asepharyana/ui', 'swagger-ui'],
-  webpack: (config, { isServer }) => {
-    // Exclude @prisma/client and .prisma/client from client-side bundle
-    if (!isServer) {
-      config.resolve.alias['@prisma/client'] = false;
-      config.resolve.alias['.prisma/client'] = false;
-    }
-
-    // Normalize module paths to lowercase to prevent casing issues on case-insensitive file systems
-    config.plugins.push(
-      new (require('webpack').NormalModuleReplacementPlugin)(
-        /^(.+?)([/\\])(.+?)$/,
-        (resource) => {
-          resource.request = resource.request.toLowerCase();
-        }
-      )
-    );
-    return config;
-  },
+  transpilePackages: ['swagger-ui'],
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },

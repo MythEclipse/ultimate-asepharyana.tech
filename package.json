@@ -6,10 +6,10 @@
     "nextjs:build": "nx build nextjs",
     "nextjs:lint": "nx lint nextjs",
     "nextjs:start": "nx start nextjs",
-    "db:migrate": "prisma migrate dev --schema=libs/src/lib/schema.prisma",
-    "db:generate": "prisma generate --schema=libs/src/lib/schema.prisma",
-    "db:studio": "prisma studio --schema=libs/src/lib/schema.prisma",
-    "db:pull": "prisma db pull --schema=libs/src/lib/schema.prisma"
+    "db:migrate": "prisma migrate dev --schema=libs/services/src/lib/schema.prisma",
+    "db:generate": "prisma generate --schema=libs/services/src/lib/schema.prisma",
+    "db:studio": "prisma studio --schema=libs/services/src/lib/schema.prisma",
+    "db:pull": "prisma db pull --schema=libs/services/src/lib/schema.prisma"
   },
   "private": true,
   "dependencies": {

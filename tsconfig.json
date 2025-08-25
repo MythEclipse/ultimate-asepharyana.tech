@@ -10,7 +10,7 @@
       "path": "./apps/nextjs"
     },
     {
-      "path": "./libs"
+      "path": "./libs/services"
     },
   ]
 }

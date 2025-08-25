@@ -1,5 +1,5 @@
 {
-  "name": "@asepharyana/database",
+  "name": "@asepharyana/services",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,9 +19,9 @@
     "!**/*.tsbuildinfo"
   ],
   "nx": {
-    "name": "database"
+    "name": "services"
   },
   "dependencies": {
-    "@prisma/client": "^6.1.4"
+  "@prisma/client": "^6.14.0"
   }
 }
