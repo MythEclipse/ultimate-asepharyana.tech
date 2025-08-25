@@ -75,6 +75,13 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
+  webpack: (config, { isServer }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@asepharyana/services': require('path').resolve(__dirname, '../../dist/libs/services'),
+    };
+    return config;
+  },
 };
 
 const plugins = [

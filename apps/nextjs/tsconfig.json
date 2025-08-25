@@ -6,9 +6,9 @@
     "noEmit": true,
     "emitDeclarationOnly": false,
     "esModuleInterop": true,
-    "target": "ES2022",
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "lib": [

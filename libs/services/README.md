@@ -1,11 +1,11 @@
-# database
+# services
 
 This library was generated with [Nx](https://nx.dev).
 
 ## Building
 
-Run `nx build database` to build the library.
+Run `nx build services` to build the library.
 
 ## Running unit tests
 
-Run `nx test database` to execute the unit tests via [Vitest](https://vitest.dev/).
+Run `nx test services` to execute the unit tests via [Vitest](https://vitest.dev/).
