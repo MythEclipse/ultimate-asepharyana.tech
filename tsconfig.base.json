@@ -14,6 +14,9 @@
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
+    "paths": {
+      "@asepharyana/services": ["libs/services/src/index.ts"],
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

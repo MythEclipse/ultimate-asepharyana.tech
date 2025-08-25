@@ -11,7 +11,7 @@ import {
 import Image from 'next/image';
 import { Textarea } from '../text/textarea';
 import ButtonA from '../ui/BaseButton';
-import { Posts, Comments, Likes } from '@asepharyana/database';
+import { Posts, Comments, Likes } from '@asepharyana/services';
 import { formatDistanceToNow } from 'date-fns';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';

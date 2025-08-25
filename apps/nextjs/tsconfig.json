@@ -16,16 +16,19 @@
       "node"
     ],
     "allowJs": true,
-    "noEmit": true
+    "noEmit": true,
+    "strict": false,
+    "isolatedModules": true
   },
   "include": [
+    ".next/types/**/*.ts",
     "next-env.d.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
     "src/**/*.js",
     "src/**/*.jsx",
-    ".next/types/**/*.ts",
-    "src/components/anime/AnimeGrid.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/components/anime/AnimeGrid.tsx",
+    "../../dist/apps/nextjs/.next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

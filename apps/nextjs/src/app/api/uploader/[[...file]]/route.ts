@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 async function uploadToPomf2(
   buffer: Buffer
 ): Promise<{ url: string; fileName: string }> {
-  const { ext, mime } = (await fileTypeFromBuffer(buffer)) || {
+  const { ext, mime } = (await fileTypeFromBuffer(buffer as Uint8Array)) || {
     ext: 'bin',
     mime: 'application/octet-stream',
   };
@@ -200,7 +200,7 @@ export async function GET(req: NextRequest) {
     };
     logger.info(logData);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer).buffer, {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${fileName}"`,

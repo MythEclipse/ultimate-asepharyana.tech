@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     const videoBuffer = Buffer.from(await response.arrayBuffer());
 
-    return new NextResponse(videoBuffer, {
+    return new NextResponse(new Uint8Array(videoBuffer).buffer, {
       headers: { 'Content-Type': contentType },
     });
   } catch (error) {

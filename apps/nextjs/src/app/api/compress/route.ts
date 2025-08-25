@@ -88,7 +88,7 @@ const compressImage = async (
       quality += 5;
       bestBuffer = compressed;
     } else {
-      fs.writeFileSync(cachePath, compressed);
+      fs.writeFileSync(cachePath, compressed as Uint8Array);
       return {
         buffer: compressed,
         sizeReduction:
@@ -96,7 +96,7 @@ const compressImage = async (
       };
     }
   }
-  fs.writeFileSync(cachePath, bestBuffer);
+  fs.writeFileSync(cachePath, bestBuffer as Uint8Array);
   return {
     buffer: bestBuffer,
     sizeReduction: ((buffer.length - bestBuffer.length) / buffer.length) * 100,
@@ -125,7 +125,7 @@ const compressVideo = async (
   const tempDir = tmpdir(),
     inputPath = join(tempDir, `vid_in_${Date.now()}.mp4`),
     outputPath = join(tempDir, `vid_out_${Date.now()}.mp4`);
-  fs.writeFileSync(inputPath, buffer);
+  fs.writeFileSync(inputPath, buffer as Uint8Array);
   try {
     const metadata = await getVideoMetadata(inputPath);
     let finalTargetMB = isPercentage ? (originalMB * targetMB) / 100 : targetMB;
@@ -174,7 +174,7 @@ const compressVideo = async (
       else break;
       attempts++;
     } while (attempts < 5);
-    fs.writeFileSync(cachePath, resultBuffer);
+    fs.writeFileSync(cachePath, resultBuffer as Uint8Array);
     return {
       buffer: resultBuffer,
       sizeReduction:
