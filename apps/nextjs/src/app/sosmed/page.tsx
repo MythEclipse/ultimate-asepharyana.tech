@@ -1,12 +1,12 @@
 'use client';
 import React, { useState } from 'react';
-import PostCard from '@/components/sosmed/PostCard';
-import Card from '@/components/ui/ThemedCard';
-import { Textarea } from '@/components/text/textarea';
-import ButtonA from '@/components/ui/BaseButton';
+import PostCard from '../../components/sosmed/PostCard';
+import Card from '../../components/ui/ThemedCard';
+import { Textarea } from '../../components/text/textarea';
+import ButtonA from '../../components/ui/BaseButton';
 import { useSession } from 'next-auth/react';
 import { Loader2, UploadCloud, Lock } from 'lucide-react';
-import { useGlobalStore } from '@/utils/hooks/useGlobalStore';
+import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 import useSWR, { mutate } from 'swr';
 
 // Define missing types locally with corrected field names to match API response
@@ -18,7 +18,7 @@ interface Posts {
   created_at: Date;
   updated_at: Date;
   authorId: string;
-  image_url: string | null; // Added missing image_url field
+  image_url: string | null;
   user: ClientUser;
   likes: Likes[];
   comments: Comments[];

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import Button from '@/components/ui/BaseButton';
-import { Card } from '@/components/ui/ComponentCard';
+import Button from '../../components/ui/BaseButton';
+import { Card } from '../../components/ui/ComponentCard';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 
@@ -27,17 +27,17 @@ export default function Settings() {
     try {
       const formData = new FormData();
       formData.append('file', image);
-      
+
       const response = await fetch('/api/uploader', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Upload failed');
       }
-      
-      
+
+
       setSaving(false);
     } catch (err) {
       console.error('Error saving settings:', err);
@@ -51,7 +51,7 @@ export default function Settings() {
       <h1 className='text-4xl font-bold text-gray-800 dark:text-gray-100 mb-8 text-center'>
         Edit Profile
       </h1>
-      
+
       <Card>
         <div className='p-4 space-y-4'>
           <div>
@@ -65,7 +65,7 @@ export default function Settings() {
               className='mt-1 block w-full'
             />
           </div>
-          
+
           <Button
             onClick={handleSave}
             disabled={saving || status === 'loading'}
@@ -77,7 +77,7 @@ export default function Settings() {
               'Save Changes'
             )}
           </Button>
-          
+
           {error && (
             <div className='text-red-500 text-sm mt-2 text-center'>
               {error}
