@@ -6,11 +6,17 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "types": ["jest", "node"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": [
+      "jest",
+      "node"
+    ],
+    "allowJs": true,
+    "noEmit": true
   },
   "include": [
     "next-env.d.ts",
@@ -18,7 +24,8 @@
     "src/**/*.tsx",
     "src/**/*.js",
     "src/**/*.jsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "src/components/anime/AnimeGrid.tsx"
   ],
   "exclude": [
     "node_modules",

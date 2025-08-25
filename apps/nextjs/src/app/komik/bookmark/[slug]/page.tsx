@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import UnifiedGrid from '@/components/shared/UnifiedGrid';
-import ButtonA from '@/components/ui/ScrollButton';
+import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
+import ButtonA from '../../../../components/ui/ScrollButton';
 
 interface Bookmark {
   title: string;

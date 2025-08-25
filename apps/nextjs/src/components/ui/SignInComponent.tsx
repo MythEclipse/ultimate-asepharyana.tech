@@ -3,7 +3,7 @@ import React from 'react';
 
 // import { useAuth } from '@/hooks/AuthContext';
 import { FcGoogle } from 'react-icons/fc'; // Assuming you still want a Google button as a placeholder
-import { signIn } from "@/auth"
+import { signIn } from "../../auth"
 function LoginButton() {
 
   return (

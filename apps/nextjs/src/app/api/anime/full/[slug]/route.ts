@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
+import { fetchWithProxy } from '../../../../../lib/fetchWithProxy';
+import { corsHeaders } from '../../../../../lib/corsHeaders';
+import { withLogging } from '../../../../../lib/api-wrapper';
 
 interface AnimeResponse {
   status: string;

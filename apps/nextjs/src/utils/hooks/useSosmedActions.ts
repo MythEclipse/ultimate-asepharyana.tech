@@ -2,12 +2,12 @@
 import { useState } from 'react';
 import { mutate } from 'swr';
 import { useSession } from 'next-auth/react';
-import { useGlobalStore } from '@/utils/hooks/useGlobalStore';
+import { useGlobalStore } from './useGlobalStore';
 
 export function useSosmedActions() {
   const { data: session } = useSession();
 
-  
+
 
   const setNewComment = useGlobalStore((s) => s.setNewComment);
 

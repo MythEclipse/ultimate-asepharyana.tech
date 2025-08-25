@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fileTypeFromBuffer } from 'file-type';
 import FormData from 'form-data';
 import axios from 'axios';
-import logger from '@/utils/logger';
+import logger from '../../../../utils/logger';
 // Logger global
 
 const PRODUCTION_URL =

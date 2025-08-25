@@ -1,20 +1,20 @@
 'use client';
 
-import TildCard from '@/components/ui/TildCard';
+import TildCard from '../../components/ui/TildCard';
 import React, { useState, useEffect } from 'react'; // Import useState dan useEffect
 import { useTheme } from 'next-themes';
 
 // Import gambar lokal
-import webAnimeL from '@/public/webAnimeL.png';
-import webAnime from '@/public/webAnime.png';
-import webKomikL from '@/public/webKomikL.png';
-import webKomik from '@/public/webKomik.png';
-import webSosmedL from '@/public/websosmedL.png';
-import webSosmed from '@/public/websosmed.png';
-import webChatL from '@/public/webChatL.png';
-import webChat from '@/public/webChat.png';
-import webCompressorL from '@/public/WebCompressorL.png';
-import webCompressor from '@/public/WebCompressor.png';
+import webAnimeL from '../../../public/webAnimeL.png';
+import webAnime from '../../../public/webAnime.png';
+import webKomikL from '../../../public/webKomikL.png';
+import webKomik from '../../../public/webKomik.png';
+import webSosmedL from '../../../public/websosmedL.png';
+import webSosmed from '../../../public/websosmed.png';
+import webChatL from '../../../public/webChatL.png';
+import webChat from '../../../public/webChat.png';
+import webCompressorL from '../../../public/WebCompressorL.png';
+import webCompressor from '../../../public/WebCompressor.png';
 
 // Komponen Skeleton sederhana untuk TildCard
 const TildCardSkeleton = () => (

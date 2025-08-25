@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { withLogging } from '@/lib/api-wrapper';
-import { fetchWithProxyOnly } from '@/lib/fetchWithProxy';
-import logger from '@/utils/logger';
+import { withLogging } from '../../../lib/api-wrapper';
+import { fetchWithProxyOnly } from '../../../lib/fetchWithProxy';
+import logger from '../../../utils/logger';
 
 async function handler(request: NextRequest) {
   const url = new URL(request.url);

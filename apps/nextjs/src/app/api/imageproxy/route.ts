@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { imageProxy } from '@/lib/imageproxy';
-import { corsHeaders } from '@/lib/corsHeaders';
+import { imageProxy } from '../../../lib/imageproxy';
+import { corsHeaders } from '../../../lib/corsHeaders';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

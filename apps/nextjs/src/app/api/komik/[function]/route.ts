@@ -2,10 +2,10 @@
 
 import { NextResponse, NextRequest } from 'next/server';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy, ProxyListOnly,CroxyProxyOnly } from '@/lib/fetchWithProxy';
-import logger from '@/utils/logger';
-import { corsHeaders } from '@/lib/corsHeaders';
-import { getCachedKomikBaseUrl } from '@/lib/komikBaseUrl';
+import { fetchWithProxy, ProxyListOnly, CroxyProxyOnly } from '../../../../lib/fetchWithProxy';
+import logger from '../../../../utils/logger';
+import { corsHeaders } from '../../../../lib/corsHeaders';
+import { getCachedKomikBaseUrl } from '../../../../lib/komikBaseUrl';
 
 // Type Definitions
 interface MangaData {

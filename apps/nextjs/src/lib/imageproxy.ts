@@ -1,5 +1,5 @@
-import logger from '@/utils/logger';
-import { BaseUrl } from '@/lib/url';
+import logger from '../utils/logger';
+import { BaseUrl } from './url';
 import { NextResponse } from 'next/server';
 
 export const revalidate = 0;
@@ -11,16 +11,16 @@ export async function imageProxy(url: string) {
     if (cdnResponse.status !== 200) {
       const fetchRespone = await fetchManual(url);
       if (fetchRespone.status !== 200) {
-        
+
         return await uploadImage(url);
       }
       logger.error(`Failed to fetch image from URL: ${url}`);
       return fetchRespone;
     }
-    
+
     return cdnResponse;
   }
-  
+
   return cdnResponse;
 }
 
@@ -198,7 +198,7 @@ async function fetchManual(url: string) {
     }
 
     const imageBuffer = await response.arrayBuffer();
-    
+
 
     return new NextResponse(imageBuffer, {
       headers: {

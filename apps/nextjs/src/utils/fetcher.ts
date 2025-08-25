@@ -1,4 +1,4 @@
-import logger from '@/utils/logger';
+import logger from './logger';
 
 const fetcher = async (url: string) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

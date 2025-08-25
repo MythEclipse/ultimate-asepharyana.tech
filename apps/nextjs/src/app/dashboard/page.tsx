@@ -6,8 +6,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@/components/ui/ComponentCard';
-import { getBookmarks } from '@/lib/bookmarks';
+} from '../../components/ui/ComponentCard';
+import { getBookmarks } from '../../lib/bookmarks';
 
 export default function DashboardPage() {
   const [animeCount, setAnimeCount] = useState(0);

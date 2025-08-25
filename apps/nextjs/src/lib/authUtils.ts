@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma/service';
+import { prisma } from './prisma/service';
 
 export async function getAuthenticatedUser(req: NextRequest) {
   const sessionToken = req.cookies.get('next-auth.token')?.value;

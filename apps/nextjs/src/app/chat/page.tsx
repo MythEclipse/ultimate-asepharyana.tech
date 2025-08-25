@@ -5,9 +5,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react'; // Import useSession hook
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
-import Card from '@/components/ui/ThemedCard';
-import { Textarea } from '@/components/text/textarea';
-import Button from '@/components/ui/BaseButton';
+import Card from '../../components/ui/ThemedCard';
+import { Textarea } from '../../components/ui/textarea';
+import Button from '../../components/ui/BaseButton';
 import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 

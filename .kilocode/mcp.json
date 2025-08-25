@@ -1,35 +1,3 @@
 {
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "ultimate-asepharyana.cloud"
-      ]
-    },
-    "git": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/inspector",
-        "uvx",
-        "mcp-server-git",
-        "--repository",
-        "https://github.com/MythEclipse/ultimate-asepharyana.cloud.git"
-      ]
-    },
-    "qdrant": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-qdrant"
-      ],
-      "env": {
-        "QDRANT_URL": "https://862ceee9-db11-4865-80c6-37cff91bdf2f.eu-west-2-0.aws.cloud.qdrant.io",
-        "QDRANT_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.Ui_g701VP0umooZOYmLHPa7TscB-seDCI1pE2wMhbEc",
-        "COLLECTION_NAME": "aseptech",
-        "EMBEDDING_MODEL": ""
-      }
-    }
-  }
+  "mcpServers": {}
 }

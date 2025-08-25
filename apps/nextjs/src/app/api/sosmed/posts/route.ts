@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/service';
-import logger from '@/utils/logger';
-import { auth } from '@/auth';
+import { prisma } from '../../../../lib/prisma/service';
+import logger from '../../../../utils/logger';
+import { auth } from '../../../../auth';
 
 function getIp(req: Request) {
   return (
@@ -24,7 +24,7 @@ export const POST = auth(async function POST(req) {
   }
 
   try {
-    
+
 
     const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
@@ -84,7 +84,7 @@ export const GET = auth(async function GET(req) {
   }
 
   try {
-    
+
 
     const posts = await prisma.posts.findMany({
       include: {
@@ -176,7 +176,7 @@ export const PUT = auth(async function PUT(req) {
   }
 
   try {
-    
+
 
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
@@ -248,7 +248,7 @@ export const DELETE = auth(async function DELETE(req) {
   }
 
   try {
-    
+
 
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });

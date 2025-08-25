@@ -1,7 +1,7 @@
-import { auth } from '@/auth';
+import { auth } from '../../../../auth';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/service';
-import logger from '@/utils/logger';
+import { prisma } from '../../../../lib/prisma/service';
+import logger from '../../../../utils/logger';
 
 function getIp(req: Request) {
   return (

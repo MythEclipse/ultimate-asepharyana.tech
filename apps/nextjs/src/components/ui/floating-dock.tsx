@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { cn } from '@/utils/utils';
+import { cn } from '../../utils/utils';
 import { IconLayoutNavbarCollapse } from '@tabler/icons-react';
 import AnimatedButton from './AnimatedButton'; // Import your custom AnimatedButton
 import { usePathname } from 'next/navigation';

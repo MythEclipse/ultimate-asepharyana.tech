@@ -3,9 +3,9 @@
 
 import { NextResponse, NextRequest } from 'next/server';
 import { hash } from 'bcryptjs';
-import { prisma } from '@/lib/db';
-import { ratelimit } from '@/lib/ratelimit';
-import { withLogging } from '@/lib/api-wrapper';
+import { prisma } from '../../../lib/db';
+import { ratelimit } from '../../../lib/ratelimit';
+import { withLogging } from '../../../lib/api-wrapper';
 
 async function handler(request: NextRequest) {
   try {

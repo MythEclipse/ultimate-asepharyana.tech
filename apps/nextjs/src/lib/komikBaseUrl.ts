@@ -1,9 +1,9 @@
 // Utility functions for Komik base URL logic
 
-import logger from '@/utils/logger';
-import { redis } from '@/lib/redis';
+import logger from '../utils/logger';
+import { redis } from './redis';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy } from '@/lib/fetchWithProxy';
+import { fetchWithProxy } from './fetchWithProxy';
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 let komikBaseUrlPromise: Promise<string> | null = null;
@@ -55,7 +55,7 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
       // If waited too long, break and try anyway
       if (waited >= maxWait) {
         logger.warn('[getDynamicKomikBaseUrl] Waited too long for lock, proceeding anyway');
-        break;
+        return ''; // Return empty string or throw error as appropriate
       }
       // Check if value is already cached by other process
       const cached = await redis.get(KOMIK_BASE_URL_KEY);

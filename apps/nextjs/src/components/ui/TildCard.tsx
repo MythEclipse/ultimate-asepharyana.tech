@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import React from 'react';
 import { StaticImageData } from 'next/image';
-import { CardBody, CardContainer, CardItem } from '@/components/ui/3d-card';
+import { CardBody, CardContainer, CardItem } from './3d-card';
 import Link from 'next/link';
 
 interface ThreeDCardProps {

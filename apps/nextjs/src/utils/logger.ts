@@ -9,7 +9,6 @@ import util from 'util';
  *
  * Usage:
  * ```ts
- * import { logErrorToApi } from '@/utils/logger';
  * import type { ErrorInfo } from 'react';
  *
  * function logErrorToService(error: Error, info: ErrorInfo) {

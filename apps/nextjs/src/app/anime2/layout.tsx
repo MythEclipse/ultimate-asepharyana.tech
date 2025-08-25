@@ -1,4 +1,4 @@
-import DockKomik from '@/components/komik/DockKomik';
+import DockKomik from '../../components/komik/DockKomik';
 import React from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { HiHome, HiOutlineSearch } from 'react-icons/hi';

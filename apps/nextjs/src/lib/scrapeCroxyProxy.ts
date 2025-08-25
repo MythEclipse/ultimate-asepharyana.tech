@@ -46,7 +46,7 @@ async function initializeBrowser(): Promise<{ browser: Browser; page: Page }> {
     defaultViewport: { width: 1280, height: 800 },
   });
   const page = await browser.newPage();
-  
+
   await page.setRequestInterception(true);
   page.on('request', (request) => {
     const resourceType = request.resourceType();
@@ -76,16 +76,15 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
           waitUntil: 'domcontentloaded',
           timeout: 60000,
         });
-
         await page.waitForSelector(URL_INPUT_SELECTOR, { timeout: 30000 });
         await page.type(URL_INPUT_SELECTOR, targetUrl, { delay: 50 });
-        
+
         logger.info('Form submitted. Waiting for initial navigation...');
         await Promise.all([
           page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }),
           page.click(SUBMIT_BUTTON_SELECTOR),
         ]);
-        
+
         const currentUrl = page.url();
         const pageContent = await page.content();
         const pageText = pageContent.toLowerCase();
@@ -105,7 +104,7 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
         } else {
           logger.info(`Mapsd directly to: ${page.url()}`);
         }
-        
+
         logger.info('Waiting for CroxyProxy frame to render...');
         await page.waitForSelector('#__cpsHeaderTab', { timeout: 30000 });
         logger.info('CroxyProxy frame rendered.');
@@ -129,13 +128,13 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   } finally {
     const duration = Math.round(performance.now() - startTime);
     console.log(`[info] Total execution time: ${duration} ms`);
-    
+
     await browser.close();
     logger.info('Browser closed.');
   }
 }
 // Cached version: 1 hour cache
-import { redis } from '@/lib/redis';
+import { redis } from './redis';
 
 /**
  * Cached wrapper for scrapeCroxyProxy.

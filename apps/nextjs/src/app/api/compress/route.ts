@@ -7,8 +7,8 @@ import fs from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import crypto from 'crypto';
-import { ryzenCDN } from '@/lib/ryzencdn';
-import { corsHeaders } from '@/lib/corsHeaders';
+import { ryzenCDN } from '../../../lib/ryzencdn';
+import { corsHeaders } from '../../../lib/corsHeaders';
 
 const CACHE_DIR = join(tmpdir(), 'compress-cache');
 const CACHE_EXPIRY = 3600 * 1000;

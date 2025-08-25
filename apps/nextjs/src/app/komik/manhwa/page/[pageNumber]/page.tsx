@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import ComicCard from '@/components/komik/ComicGrid';
+import ComicCard from '../../../../../components/komik/ComicGrid';
 import {
   BookOpen,
   ChevronLeft,

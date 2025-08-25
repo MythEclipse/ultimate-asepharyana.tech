@@ -1,6 +1,6 @@
 'use client';
 
-import UnifiedGrid from '@/components/shared/UnifiedGrid';
+import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import Link from 'next/link';
 import {
   CheckCircle,

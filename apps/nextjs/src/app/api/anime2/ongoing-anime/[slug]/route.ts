@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchWithProxy } from '@/lib/fetchWithProxy';
-import { corsHeaders } from '@/lib/corsHeaders';
-import { withLogging } from '@/lib/api-wrapper';
+import { fetchWithProxy } from '../../../../../lib/fetchWithProxy';
+import { corsHeaders } from '../../../../../lib/corsHeaders';
+import { withLogging } from '../../../../../lib/api-wrapper';
 
 async function fetchAnimePage(slug: string): Promise<string> {
   const response = await fetchWithProxy(

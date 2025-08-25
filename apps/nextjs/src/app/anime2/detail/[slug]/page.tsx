@@ -4,26 +4,26 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import Image from 'next/image';
-import { PRODUCTION } from '@/lib/url';
+import { PRODUCTION } from '../../../../lib/url';
 
-import { BackgroundGradient } from '@/components/background/background-gradient';
-import MediaCard from '@/components/anime/MediaCard';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { BackgroundGradient } from '../../../../components/background/background-gradient';
+import MediaCard from '../../../../components/anime/MediaCard';
+import { Button } from '../../../../components/ui/button';
+import { Badge } from '../../../../components/ui/badge';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../../../../components/ui/card';
+import { Skeleton } from '../../../../components/ui/skeleton';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
+} from '../../../../components/ui/accordion';
 import {
   CircleDot,
   Calendar,

@@ -4,26 +4,26 @@ import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { PRODUCTION } from '@/lib/url';
+import { PRODUCTION } from '../../../../lib/url';
 
-import { BackgroundGradient } from '@/components/background/background-gradient';
-import MediaCard from '@/components/anime/MediaCard';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { BackgroundGradient } from '../../../../components/background/background-gradient';
+import MediaCard from '../../../../components/anime/MediaCard';
+import { Button } from '../../../../components/ui/button';
+import { Badge } from '../../../../components/ui/badge';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../../../../components/ui/card';
+import { Skeleton } from '../../../../components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '../../../../components/ui/tooltip';
 import {
   Bookmark,
   Calendar,

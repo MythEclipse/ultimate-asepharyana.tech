@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BaseUrl } from '@/lib/url';
+import { BaseUrl } from '../../lib/url';
 import { Posts } from '@asepharyana/database';
 
 export const usePosts = () => {

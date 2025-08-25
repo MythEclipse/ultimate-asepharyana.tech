@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import logger from '@/utils/logger';
+import logger from '../utils/logger';
 import https from 'https';
-import { DEFAULT_HEADERS } from '@/utils/DHead';
+import { DEFAULT_HEADERS } from '../utils/DHead';
 import { scrapeCroxyProxy } from './scrapeCroxyProxy';
-import { redis } from '@/lib/redis';
+import { redis } from './redis';
 
 const DEFAULT_PROXY_LIST_URL =
   'https://www.proxy-list.download/api/v1/get?type=https';

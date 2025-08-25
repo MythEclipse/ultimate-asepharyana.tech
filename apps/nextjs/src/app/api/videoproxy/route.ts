@@ -1,11 +1,11 @@
-import logger from '@/utils/logger';
+import logger from '../../../utils/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
 
-  
+
 
   if (!url) {
     logger.error('URL is required');
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     }
 
     const videoBuffer = Buffer.from(await response.arrayBuffer());
-    
+
     return new NextResponse(videoBuffer, {
       headers: { 'Content-Type': contentType },
     });

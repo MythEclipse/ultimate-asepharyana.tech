@@ -3,17 +3,17 @@
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import Link from 'next/link';
-import ClientPlayer from '@/components/misc/ClientPlayer';
-import { Button } from '@/components/ui/button';
+import ClientPlayer from '../../../../components/misc/ClientPlayer';
+import { Button } from '../../../../components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../../../../components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '../../../../components/ui/alert';
+import { Skeleton } from '../../../../components/ui/skeleton';
 import {
   ArrowLeft,
   ArrowRight,

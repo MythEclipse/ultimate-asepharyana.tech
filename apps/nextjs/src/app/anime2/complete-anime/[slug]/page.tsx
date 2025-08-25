@@ -1,6 +1,6 @@
 'use client';
 
-import AnimeGrid from '@/components/anime/AnimeGrid';
+import AnimeGrid from '../../../../components/anime/AnimeGrid';
 import Link from 'next/link';
 import {
   AlertTriangle,

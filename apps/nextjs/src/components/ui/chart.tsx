@@ -1,7 +1,7 @@
 // Required imports
 import React from 'react';
 import * as RechartsPrimitive from 'recharts';
-import { cn } from '@/utils/utils';
+import { cn } from '../../utils/utils';
 
 // JSDoc for ChartTooltipPayload
 /**
