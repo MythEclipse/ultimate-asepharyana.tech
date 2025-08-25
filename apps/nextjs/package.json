@@ -1,11 +1,5 @@
 {
   "name": "@asepharyana/nextjs",
   "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-
-  },
-  "devDependencies": {
-
-  }
+  "private": true
 }
