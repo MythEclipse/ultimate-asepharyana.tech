@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { PRODUCTION } from '../../../../lib/url';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
-import MediaCard from '../../../../components/anime/MediaCard';
+import MediaCard from '../../../../components/anime/MediaCard'; // Changed to default import
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import {
@@ -241,8 +241,8 @@ export default function DetailAnimePage({
                       height={600}
                       className='object-cover w-full aspect-[2/3]'
                       priority
-                      onError={handleImageError}
                       unoptimized
+                      onError={handleImageError}
                     />
                   </Card>
                   <Button

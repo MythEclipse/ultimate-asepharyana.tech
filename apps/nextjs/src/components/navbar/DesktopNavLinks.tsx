@@ -4,7 +4,7 @@ import React, { memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { navLinks } from '@/utils/constants';
+import { navLinks } from '../../utils/constants'; // Corrected relative path
 
 function DesktopNavLinks() {
   const pathname = usePathname();

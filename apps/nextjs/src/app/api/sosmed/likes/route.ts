@@ -11,12 +11,12 @@ function getIp(req: Request) {
   );
 }
 
-export const POST: (req: Request, ctx?: { params?: Record<string, string> }) => Promise<Response> = auth(async function POST(req, ctx) {
-  const session = await auth()
+async function postHandler(req: Request) {
+  const session = await auth();
   const start = Date.now();
   const ip = getIp(req);
 
-   if (!req.auth) {
+   if (!session?.user) { // Changed from !req.auth to !session?.user
     logger.warn(`[POST /api/sosmed/likes] Unauthorized`, { ip });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -71,14 +71,14 @@ export const POST: (req: Request, ctx?: { params?: Record<string, string> }) => 
       { status: 500 }
     );
   }
-});
+}
 
-export const DELETE: (req: Request, ctx?: { params?: Record<string, string> }) => Promise<Response> = auth(async function DELETE(req, ctx) {
-  const session = await auth()
+async function deleteHandler(req: Request) {
+  const session = await auth();
   const start = Date.now();
   const ip = getIp(req);
 
- if (!req.auth) {
+ if (!session?.user) { // Changed from !req.auth to !session?.user
     logger.warn(`[DELETE /api/sosmed/likes] Unauthorized`, { ip });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -141,4 +141,7 @@ export const DELETE: (req: Request, ctx?: { params?: Record<string, string> }) =
       { status: 500 }
     );
   }
-});
+}
+
+export const POST = postHandler;
+export const DELETE = deleteHandler;

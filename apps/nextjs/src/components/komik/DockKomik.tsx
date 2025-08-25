@@ -1,5 +1,5 @@
 import React from 'react';
-import { FloatingDock } from '@/components/ui/floating-dock';
+import { FloatingDock } from '../ui/floating-dock'; // Corrected relative path
 
 interface FloatingDockDemoProps {
   content: Array<{ title: string; icon: React.ReactNode; href: string }>;

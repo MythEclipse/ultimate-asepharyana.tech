@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import SearchForm from '../../../../components/misc/SearchForm';
-import CardA from '../../../../components/anime/MediaCard';
+import CardA from '../../../../components/anime/MediaCard'; // Changed to default import
 import { Info } from 'lucide-react';
 
 interface Genre {
@@ -96,7 +96,7 @@ const SearchPage = () => {
         <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
           <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
           <h2 className='text-xl font-medium text-blue-800 dark:text-blue-200'>
-            No results found for &quot;{query}&quot;
+            No results found for "{query}"
           </h2>
         </div>
       )}

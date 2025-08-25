@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 import React from 'react';
-import Instagram from '@/components/logo/Instagram';
-import Facebook from '@/components/logo/Facebook';
-import Linkedln from '@/components/logo/LinkedIn';
-import Discord from '@/components/logo/Discord';
+import Instagram from '../logo/Instagram';
+import Facebook from '../logo/Facebook';
+import Linkedln from '../logo/LinkedIn';
+import Discord from '../logo/Discord';
 import Link from 'next/link';
-import { AnimatedHeader } from '@/components/text/TextWrite';
+import { AnimatedHeader } from '../text/TextWrite';
 import { motion } from 'framer-motion';
 
 const fadeInUp = {

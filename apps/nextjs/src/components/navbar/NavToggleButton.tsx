@@ -2,7 +2,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import { useGlobalStore } from '@/utils/hooks/useGlobalStore';
+import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 
 function NavToggleButton() {
   const isNavOpen = useGlobalStore((s) => s.isMobileNavOpen);

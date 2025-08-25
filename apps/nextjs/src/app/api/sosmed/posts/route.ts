@@ -11,11 +11,12 @@ function getIp(req: Request) {
   );
 }
 
-export const POST: (req: Request) => Promise<Response> = auth(async function POST(req) {
+export async function POST(req: Request) {
+  const session = await auth();
   const start = Date.now();
   const ip = getIp(req);
 
-  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+  if (!session?.user || !session.user.id) {
     logger.warn(`[POST /api/sosmed/posts] Unauthorized`, { ip });
     return NextResponse.json(
       { message: 'User not authenticated' },
@@ -24,8 +25,6 @@ export const POST: (req: Request) => Promise<Response> = auth(async function POS
   }
 
   try {
-
-
     const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
 
@@ -40,15 +39,15 @@ export const POST: (req: Request) => Promise<Response> = auth(async function POS
     const newPost = await prisma.posts.create({
       data: {
         content,
-        authorId: req.auth.user.id,
+        authorId: session.user.id,
         image_url: imageUrl || '',
-        userId: req.auth.user.id,
+        userId: session.user.id,
       },
     });
 
     logger.info(`[POST /api/sosmed/posts] Post created`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       postId: newPost.id,
       durationMs: Date.now() - start,
     });
@@ -60,7 +59,7 @@ export const POST: (req: Request) => Promise<Response> = auth(async function POS
   } catch (error) {
     logger.error(`[POST /api/sosmed/posts] Error`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -69,13 +68,14 @@ export const POST: (req: Request) => Promise<Response> = auth(async function POS
       { status: 500 }
     );
   }
-});
+}
 
-export const GET: (req: Request) => Promise<Response> = auth(async function GET(req) {
+export async function GET(req: Request) {
+  const session = await auth();
   const start = Date.now();
   const ip = getIp(req);
 
-  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+  if (!session?.user || !session.user.id) {
     logger.warn(`[GET /api/sosmed/posts] Unauthorized`, { ip });
     return NextResponse.json(
       { message: 'User not authenticated' },
@@ -142,7 +142,7 @@ export const GET: (req: Request) => Promise<Response> = auth(async function GET(
 
     logger.info(`[GET /api/sosmed/posts] Success`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       count: sanitizedPosts.length,
       durationMs: Date.now() - start,
     });
@@ -151,7 +151,7 @@ export const GET: (req: Request) => Promise<Response> = auth(async function GET(
   } catch (error) {
     logger.error(`[GET /api/sosmed/posts] Error`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -160,12 +160,13 @@ export const GET: (req: Request) => Promise<Response> = auth(async function GET(
       { status: 500 }
     );
   }
-});
-export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(req) {
+}
+export async function PUT(req: Request) {
+  const session = await auth();
   const start = Date.now();
   const ip = getIp(req);
 
-  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+  if (!session?.user || !session.user.id) {
     logger.warn(`[PUT /api/sosmed/posts] Unauthorized`, { ip });
     return NextResponse.json(
       { message: 'User not authenticated' },
@@ -174,8 +175,6 @@ export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(
   }
 
   try {
-
-
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
 
@@ -189,10 +188,10 @@ export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(
 
     const post = await prisma.posts.findUnique({ where: { id } });
 
-    if (!post || post.userId !== req.auth.user.id) {
+    if (!post || post.userId !== session.user.id) {
       logger.warn(`[PUT /api/sosmed/posts] Not authorized to edit`, {
         ip,
-        userId: req.auth.user.id,
+        userId: session.user.id,
         postId: id,
       });
       return NextResponse.json(
@@ -210,7 +209,7 @@ export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(
 
     logger.info(`[PUT /api/sosmed/posts] Post updated`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -222,7 +221,7 @@ export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(
   } catch (error) {
     logger.error(`[PUT /api/sosmed/posts] Error`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -231,13 +230,14 @@ export const PUT: (req: Request) => Promise<Response> = auth(async function PUT(
       { status: 500 }
     );
   }
-});
+}
 
-export const DELETE: (req: Request) => Promise<Response> = auth(async function DELETE(req) {
+export async function DELETE(req: Request) {
+  const session = await auth();
   const start = Date.now();
   const ip = getIp(req);
 
-  if (!req.auth || !req.auth.user || !req.auth.user.id) {
+  if (!session?.user || !session.user.id) {
     logger.warn(`[DELETE /api/sosmed/posts] Unauthorized`, { ip });
     return NextResponse.json(
       { message: 'User not authenticated' },
@@ -246,8 +246,6 @@ export const DELETE: (req: Request) => Promise<Response> = auth(async function D
   }
 
   try {
-
-
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
 
@@ -269,10 +267,10 @@ export const DELETE: (req: Request) => Promise<Response> = auth(async function D
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (post.userId !== req.auth.user.id) {
+    if (post.userId !== session.user.id) {
       logger.warn(`[DELETE /api/sosmed/posts] Not authorized to delete`, {
         ip,
-        userId: req.auth.user.id,
+        userId: session.user.id,
         postId: id,
       });
       return NextResponse.json(
@@ -285,7 +283,7 @@ export const DELETE: (req: Request) => Promise<Response> = auth(async function D
 
     logger.info(`[DELETE /api/sosmed/posts] Post deleted`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -297,7 +295,7 @@ export const DELETE: (req: Request) => Promise<Response> = auth(async function D
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/posts] Error`, {
       ip,
-      userId: req.auth.user.id,
+      userId: session.user.id,
       error,
       durationMs: Date.now() - start,
     });
@@ -306,4 +304,4 @@ export const DELETE: (req: Request) => Promise<Response> = auth(async function D
       { status: 500 }
     );
   }
-});
+}

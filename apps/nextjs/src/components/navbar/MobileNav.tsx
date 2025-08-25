@@ -7,10 +7,10 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { navLinks } from '@/utils/constants';
+import { Button } from '../ui/button';
+import { navLinks } from '../../utils/constants';
 import UserMenu from './UserMenu';
-import { useGlobalStore } from '@/utils/hooks/useGlobalStore';
+import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 
 const Logo = memo(() => (
   <Link href='/' className='flex items-center gap-2'>

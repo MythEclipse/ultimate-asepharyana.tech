@@ -1,10 +1,23 @@
-import { Account } from "next-auth";
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./lib/db";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
+
+// Define a local Account interface to ensure type compatibility
+interface LocalAccount {
+  provider: string;
+  type: string; // Use string as it's what's coming from the account object
+  providerAccountId: string;
+  access_token?: string | null;
+  expires_at?: number | null;
+  refresh_token?: string | null;
+  id_token?: string | null;
+  scope?: string | null;
+  session_state?: string | null;
+  token_type?: string | null;
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -55,7 +68,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-     
+
     async signIn({ user, account, profile, email, credentials }) {
       if (account?.provider && user?.email) {
         const existingUser = await prisma.user.findUnique({
@@ -65,7 +78,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (existingUser) {
           const alreadyLinked = existingUser.accounts.some(
-            (acc: Account) =>
+            (acc: LocalAccount) => // Use LocalAccount here
               acc.provider === account.provider &&
               acc.providerAccountId === account.providerAccountId
           );
@@ -73,7 +86,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             await prisma.account.create({
               data: {
                 userId: existingUser.id,
-                type: account.type,
+                type: account.type as string, // Explicitly cast to string
                 provider: account.provider,
                 providerAccountId: account.providerAccountId,
                 refresh_token: account.refresh_token,

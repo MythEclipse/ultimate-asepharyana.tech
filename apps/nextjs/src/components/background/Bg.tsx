@@ -1,5 +1,5 @@
 import React from 'react';
-import { BackgroundBeamsWithCollision } from '@/components/background/background-beams-with-collision';
+import { BackgroundBeamsWithCollision } from './background-beams-with-collision';
 
 import { ReactNode } from 'react';
 
