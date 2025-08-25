@@ -115,7 +115,7 @@ export async function fetchWithProxy(
     logger.info(`[fetchWithProxy] Direct fetch response:`, {
       url: slug,
       status: res.status,
-      headers: Object.fromEntries(res.headers.entries()),
+      headers: Object.fromEntries((res.headers as any).entries()),
     });
     if (res.ok) {
       const contentType = res.headers.get('content-type');

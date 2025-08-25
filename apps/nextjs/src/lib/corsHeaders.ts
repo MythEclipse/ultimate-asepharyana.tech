@@ -17,4 +17,5 @@ export function cors(req: Request, res: Response) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204 });
   }
+  return res; // Explicitly return res for other methods
 }
