@@ -19,7 +19,10 @@ interface LocalAccount {
   token_type?: string | null;
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+import type { NextAuthConfig } from "next-auth";
+import type { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react";
+
+const nextAuthInstance = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -123,3 +126,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+// Explicitly export destructured NextAuth instance members with type annotations
+export const handlers = nextAuthInstance.handlers;
+export const signIn: typeof nextAuthSignIn = nextAuthInstance.signIn;
+export const signOut: typeof nextAuthSignOut = nextAuthInstance.signOut;
+export const auth = nextAuthInstance.auth;

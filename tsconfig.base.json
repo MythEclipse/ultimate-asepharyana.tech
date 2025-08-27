@@ -17,8 +17,9 @@
     "skipDefaultLibCheck": true,
     "paths": {
       "@asepharyana/services": [
-        "libs/services/dist/index.js",
-        "libs/services/dist/index.d.ts"
+        "dist/libs/services/index.js",
+        "dist/libs/services/index.d.ts",
+        "dist/libs/services/src/lib/index.d.ts"
       ]
     }
   },
