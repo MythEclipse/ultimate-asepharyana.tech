@@ -13,6 +13,7 @@
   },
   "private": true,
   "dependencies": {
+    "@asepharyana/services": "workspace:*",
     "@auth/prisma-adapter": "^2.10.0",
     "@nx/storybook": "^21.4.1",
     "@prisma/client": "^6.14.0",
