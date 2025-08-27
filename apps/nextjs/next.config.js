@@ -8,7 +8,6 @@ const { composePlugins, withNx } = require('@nx/next');
 const nextConfig = {
   output: process.env.DOCKER === 'enable' ? 'standalone' : undefined,
   experimental: {
-    nextScriptWorkers: true,
     webpackMemoryOptimizations: true,
   },
   images: {
