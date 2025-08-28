@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma/service';
 import logger from '../../../../utils/logger';
-import { auth } from '../../../../auth';
+import { verifyJwt } from '../../../../lib/jwt';
 
-function getIp(req: Request) {
+function getIp(req: NextRequest) {
   return (
     req.headers.get('x-forwarded-for') ||
     req.headers.get('remote-addr') ||
@@ -11,20 +11,25 @@ function getIp(req: Request) {
   );
 }
 
-export async function POST(req: Request) {
-  const session = await auth();
+export async function POST(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-
-  if (!session?.user || !session.user.id) {
-    logger.warn(`[POST /api/sosmed/posts] Unauthorized`, { ip });
-    return NextResponse.json(
-      { message: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  let userId: string | undefined;
 
   try {
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[POST /api/sosmed/posts] No token provided`, { ip });
+      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(`[POST /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
+
     const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
 
@@ -39,15 +44,15 @@ export async function POST(req: Request) {
     const newPost = await prisma.posts.create({
       data: {
         content,
-        authorId: session.user.id,
+        authorId: userId,
         image_url: imageUrl || '',
-        userId: session.user.id,
+        userId: userId,
       },
     });
 
     logger.info(`[POST /api/sosmed/posts] Post created`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       postId: newPost.id,
       durationMs: Date.now() - start,
     });
@@ -59,7 +64,7 @@ export async function POST(req: Request) {
   } catch (error) {
     logger.error(`[POST /api/sosmed/posts] Error`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -70,20 +75,25 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
-  const session = await auth();
+export async function GET(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-
-  if (!session?.user || !session.user.id) {
-    logger.warn(`[GET /api/sosmed/posts] Unauthorized`, { ip });
-    return NextResponse.json(
-      { message: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  let userId: string | undefined;
 
   try {
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[GET /api/sosmed/posts] No token provided`, { ip });
+      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(`[GET /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
+
     const posts = await prisma.posts.findMany({
       include: {
         user: {
@@ -142,7 +152,7 @@ export async function GET(req: Request) {
 
     logger.info(`[GET /api/sosmed/posts] Success`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       count: sanitizedPosts.length,
       durationMs: Date.now() - start,
     });
@@ -151,7 +161,7 @@ export async function GET(req: Request) {
   } catch (error) {
     logger.error(`[GET /api/sosmed/posts] Error`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -161,20 +171,26 @@ export async function GET(req: Request) {
     );
   }
 }
-export async function PUT(req: Request) {
-  const session = await auth();
+
+export async function PUT(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-
-  if (!session?.user || !session.user.id) {
-    logger.warn(`[PUT /api/sosmed/posts] Unauthorized`, { ip });
-    return NextResponse.json(
-      { message: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  let userId: string | undefined;
 
   try {
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[PUT /api/sosmed/posts] No token provided`, { ip });
+      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(`[PUT /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
+
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
 
@@ -188,10 +204,10 @@ export async function PUT(req: Request) {
 
     const post = await prisma.posts.findUnique({ where: { id } });
 
-    if (!post || post.userId !== session.user.id) {
+    if (!post || post.userId !== userId) {
       logger.warn(`[PUT /api/sosmed/posts] Not authorized to edit`, {
         ip,
-        userId: session.user.id,
+        userId: userId,
         postId: id,
       });
       return NextResponse.json(
@@ -209,7 +225,7 @@ export async function PUT(req: Request) {
 
     logger.info(`[PUT /api/sosmed/posts] Post updated`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -221,7 +237,7 @@ export async function PUT(req: Request) {
   } catch (error) {
     logger.error(`[PUT /api/sosmed/posts] Error`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -232,20 +248,25 @@ export async function PUT(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
-  const session = await auth();
+export async function DELETE(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-
-  if (!session?.user || !session.user.id) {
-    logger.warn(`[DELETE /api/sosmed/posts] Unauthorized`, { ip });
-    return NextResponse.json(
-      { message: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  let userId: string | undefined;
 
   try {
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[DELETE /api/sosmed/posts] No token provided`, { ip });
+      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(`[DELETE /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
+
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
 
@@ -267,10 +288,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (post.userId !== session.user.id) {
+    if (post.userId !== userId) {
       logger.warn(`[DELETE /api/sosmed/posts] Not authorized to delete`, {
         ip,
-        userId: session.user.id,
+        userId: userId,
         postId: id,
       });
       return NextResponse.json(
@@ -283,7 +304,7 @@ export async function DELETE(req: Request) {
 
     logger.info(`[DELETE /api/sosmed/posts] Post deleted`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -295,7 +316,7 @@ export async function DELETE(req: Request) {
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/posts] Error`, {
       ip,
-      userId: session.user.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });

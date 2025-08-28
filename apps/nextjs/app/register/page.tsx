@@ -3,8 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-
 function RegisterForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -26,7 +24,6 @@ function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      // Step 1: Send data to the registration API
       const registerResponse = await fetch('/api/register', {
         method: 'POST',
         headers: {
@@ -47,27 +44,14 @@ function RegisterForm() {
         return;
       }
 
-      // Step 2: If registration is successful, try to sign in automatically
-      const signInResponse = await signIn('credentials', {
-        email,
-        password,
-        redirect: false, // Do not redirect automatically, we handle it manually
-      });
+      // Registration successful, redirect to login page
+      setError('Registration successful! Please log in.');
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
 
-      if (signInResponse?.error) {
-        // If auto-login fails, inform the user to log in manually
-        setError('Registration successful, but auto-login failed. Please log in from the login page.');
-        // Redirect to the login page after a moment
-        setTimeout(() => {
-          router.push('/login');
-        }, 3000);
-      } else if (signInResponse?.ok) {
-        // If auto-login is successful, redirect to the homepage
-        router.push('/');
-        router.refresh(); // Refresh the page to update session status
-      }
-
-    } catch {
+    } catch (error) {
+      console.error('Registration error:', error);
       setError('An error occurred. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);

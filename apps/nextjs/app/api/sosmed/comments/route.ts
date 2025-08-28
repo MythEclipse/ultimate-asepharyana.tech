@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma/service';
 import logger from '../../../../utils/logger';
-import { auth } from '../../../../auth';
+import { verifyJwt } from '../../../../lib/jwt';
 
 function getIp(req: NextRequest) {
   return (
@@ -14,15 +14,26 @@ function getIp(req: NextRequest) {
 async function postHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let user;
+  let userId: string | undefined;
   try {
-    const session = await auth();
-    user = session?.user;
-
-    if (!user || !user.id) {
-      logger.warn(`[POST /api/sosmed/comments] Unauthorized`, { ip });
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[POST /api/sosmed/comments] No token provided`, { ip });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(
+        `[POST /api/sosmed/comments] Invalid token or missing userId`,
+        { ip },
+      );
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
 
     const { postId, content } = await req.json();
     logger.debug(`[POST /api/sosmed/comments] Payload`, { postId, content });
@@ -31,7 +42,7 @@ async function postHandler(req: NextRequest) {
       logger.warn(`[POST /api/sosmed/comments] Content required`, { ip });
       return NextResponse.json(
         { message: 'Content is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,14 +50,14 @@ async function postHandler(req: NextRequest) {
       data: {
         postId,
         content,
-        userId: user.id,
-        authorId: user.id,
+        userId: userId,
+        authorId: userId,
       },
     });
 
     logger.info(`[POST /api/sosmed/comments] Comment created`, {
       ip,
-      userId: user.id,
+      userId: userId,
       commentId: comment.id,
       durationMs: Date.now() - start,
     });
@@ -60,18 +71,18 @@ async function postHandler(req: NextRequest) {
           created_at: comment.created_at,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error(`[POST /api/sosmed/comments] Error`, {
       ip,
-      userId: user?.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
     return NextResponse.json(
       { message: 'Failed to add comment' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -83,12 +94,11 @@ async function getHandler(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('postId');
 
-
     if (!postId) {
       logger.warn(`[GET /api/sosmed/comments] Post ID required`, { ip });
       return NextResponse.json(
         { message: 'Post ID is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -122,7 +132,7 @@ async function getHandler(req: NextRequest) {
     });
     return NextResponse.json(
       { message: 'Failed to fetch comments' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -130,16 +140,26 @@ async function getHandler(req: NextRequest) {
 async function putHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let user;
+  let userId: string | undefined;
   try {
-    const session = await auth();
-    user = session?.user;
-
-
-    if (!user || !user.id) {
-      logger.warn(`[PUT /api/sosmed/comments] Unauthorized`, { ip });
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[PUT /api/sosmed/comments] No token provided`, { ip });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(
+        `[PUT /api/sosmed/comments] Invalid token or missing userId`,
+        { ip },
+      );
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
 
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/comments] Payload`, { id, content });
@@ -148,21 +168,21 @@ async function putHandler(req: NextRequest) {
       logger.warn(`[PUT /api/sosmed/comments] ID/content required`, { ip });
       return NextResponse.json(
         { message: 'Comment ID and content are required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const comment = await prisma.comments.findUnique({ where: { id } });
 
-    if (!comment || comment.userId !== user.id) {
+    if (!comment || comment.userId !== userId) {
       logger.warn(`[PUT /api/sosmed/comments] Not authorized to edit`, {
         ip,
-        userId: user.id,
+        userId: userId,
         commentId: id,
       });
       return NextResponse.json(
         { message: 'User not authorized to edit this comment' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -175,25 +195,25 @@ async function putHandler(req: NextRequest) {
 
     logger.info(`[PUT /api/sosmed/comments] Comment updated`, {
       ip,
-      userId: user.id,
+      userId: userId,
       commentId: id,
       durationMs: Date.now() - start,
     });
 
     return NextResponse.json(
       { message: 'Comment updated successfully!', comment: updatedComment },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     logger.error(`[PUT /api/sosmed/comments] Error`, {
       ip,
-      userId: user?.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
     return NextResponse.json(
       { message: 'Failed to update comment' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -201,16 +221,26 @@ async function putHandler(req: NextRequest) {
 async function deleteHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let user;
+  let userId: string | undefined;
   try {
-    const session = await auth();
-    user = session?.user;
-
-
-    if (!user || !user.id) {
-      logger.warn(`[DELETE /api/sosmed/comments] Unauthorized`, { ip });
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const token = req.cookies.get('token')?.value;
+    if (!token) {
+      logger.warn(`[DELETE /api/sosmed/comments] No token provided`, { ip });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
+
+    const decoded = await verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn(
+        `[DELETE /api/sosmed/comments] Invalid token or missing userId`,
+        { ip },
+      );
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+    userId = decoded.userId as string;
 
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/comments] Payload`, { id });
@@ -219,21 +249,21 @@ async function deleteHandler(req: NextRequest) {
       logger.warn(`[DELETE /api/sosmed/comments] ID required`, { ip });
       return NextResponse.json(
         { message: 'Comment ID is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const comment = await prisma.comments.findUnique({ where: { id } });
 
-    if (!comment || comment.userId !== user.id) {
+    if (!comment || comment.userId !== userId) {
       logger.warn(`[DELETE /api/sosmed/comments] Not authorized to delete`, {
         ip,
-        userId: user.id,
+        userId: userId,
         commentId: id,
       });
       return NextResponse.json(
         { message: 'User not authorized to delete this comment' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -241,25 +271,25 @@ async function deleteHandler(req: NextRequest) {
 
     logger.info(`[DELETE /api/sosmed/comments] Comment deleted`, {
       ip,
-      userId: user.id,
+      userId: userId,
       commentId: id,
       durationMs: Date.now() - start,
     });
 
     return NextResponse.json(
       { message: 'Comment deleted successfully!' },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/comments] Error`, {
       ip,
-      userId: user?.id,
+      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
     return NextResponse.json(
       { message: 'Failed to delete comment' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

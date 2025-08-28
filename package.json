@@ -15,7 +15,6 @@
   "private": true,
   "dependencies": {
     "@asepharyana/services": "workspace:*",
-    "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.15.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -74,7 +73,6 @@
     "js-yaml": "^4.1.0",
     "lucide-react": "^0.542.0",
     "next": "^15.5.2",
-    "next-auth": "^5.0.0-beta.29",
     "next-sitemap": "^4.2.3",
     "next-themes": "^0.4.6",
     "openapi-types": "^12.1.3",
