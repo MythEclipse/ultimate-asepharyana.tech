@@ -1,113 +1,82 @@
-# Ultimate-Asepharyana.cloud
+# Asepharyana
 
-Selamat datang di proyek Ultimate-Asepharyana.cloud! Repositori ini adalah portofolio pribadi yang menampilkan pengaturan monorepo menggunakan Turborepo. Jika Anda mengalami masalah atau memiliki saran untuk perbaikan, silakan kirim pull request.
+<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-## Persyaratan
+✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
 
-Proyek ini membutuhkan Node.js versi 22 atau lebih baru. Anda dapat mengunduh versi terbaru dari [situs resmi Node.js](https://nodejs.org/).
+[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
 
-```bash
-node -v
-# Pastikan outputnya adalah v22.x.x atau lebih baru
+## Finish your CI setup
+
+[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/yZszpZZeBc)
+
+
+## Run tasks
+
+To run the dev server for your app, use:
+
+```sh
+npx nx dev asepharyana
 ```
 
-## Menggunakan proyek ini
+To create a production bundle:
 
-Jalankan perintah berikut:
-
-```bash
-git clone https://github.com/MythEclipse/ultimate-asepharyana.cloud.git
+```sh
+npx nx build asepharyana
 ```
 
-## Apa yang ada di dalamnya?
+To see all available targets to run for a project, run:
 
-Turborepo ini mencakup paket/aplikasi berikut:
-
-### Aplikasi dan Paket
-
-- `@asepharyana/web`: aplikasi [Next.js](https://github.com/MythEclipse/asepharyana.cloud)
-- `@asepharyana/api`: aplikasi [Express](https://github.com/MythEclipse/API)
-- `@asepharyana/ui`: komponen react yang dapat digunakan di aplikasi lain
-- `@asepharyana/eslint-config`: konfigurasi `eslint` (termasuk `eslint-config-next` dan `eslint-config-prettier`)
-- `@asepharyana/database`: pembungkus ORM [Prisma](https://prisma.io/) untuk mengelola & mengakses database Anda
-- `@asepharyana/typescript-config`: `tsconfig.json` yang digunakan di seluruh monorepo
-
-### Utilitas
-
-Turborepo ini memiliki beberapa alat tambahan yang sudah diatur untuk Anda:
-
-- [TypeScript](https://www.typescriptlang.org/) untuk pemeriksaan tipe statis
-- [ESLint](https://eslint.org/) untuk linting kode
-- [Prettier](https://prettier.io) untuk pemformatan kode
-- [Prisma](https://prisma.io/) untuk ORM database
-- [Docker Compose](https://docs.docker.com/compose/) untuk database lokal
-
-### Database
-
-Kami menggunakan [Prisma](https://prisma.io/) untuk mengelola & mengakses database kami. Oleh karena itu, Anda memerlukan database untuk proyek ini, baik secara lokal atau di-host di cloud.
-
-Untuk mempermudah proses ini, kami menawarkan file [`docker-compose.yml`](https://docs.docker.com/compose/) untuk menerapkan server MySQL secara lokal dengan database baru bernama `turborepo` (Untuk mengubah ini, perbarui variabel lingkungan `MYSQL_DATABASE` dalam file `docker-compose.yml`):
-
-```bash
-cd my-turborepo
-docker-compose up -d
+```sh
+npx nx show project asepharyana
 ```
 
-Setelah diterapkan, Anda perlu menyalin file `.env.example` ke `.env` agar Prisma memiliki variabel lingkungan `DATABASE_URL` untuk diakses.
+These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
 
-```bash
-cp .env.example .env
+[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+## Add new projects
+
+While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+
+Use the plugin's generator to create new projects.
+
+To generate a new application, use:
+
+```sh
+npx nx g @nx/next:app demo
 ```
 
-Jika Anda menambahkan nama database khusus atau menggunakan database berbasis cloud, Anda perlu memperbarui `DATABASE_URL` dalam `.env` Anda sesuai kebutuhan.
+To generate a new library, use:
 
-Setelah diterapkan & berjalan, Anda perlu membuat & menerapkan migrasi ke database Anda untuk menambahkan tabel yang diperlukan. Ini dapat dilakukan menggunakan [Prisma Migrate](https://www.prisma.io/migrate):
-
-```bash
-npx prisma migrate dev
+```sh
+npx nx g @nx/react:lib mylib
 ```
 
-Jika Anda perlu mendorong migrasi yang ada ke database, Anda dapat menggunakan perintah Prisma db push atau Prisma migrate deploy:
+You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
 
-```bash
-pnpm run db:push
+[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-# ATAU
 
-pnpm run db:migrate:deploy
-```
+[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-Setelah diedit, jalankan perintah berikut untuk memberi tahu Prisma untuk menjalankan skrip seed yang ditentukan dalam konfigurasi Prisma:
+## Install Nx Console
 
-```bash
-pnpm run db:seed
-```
+Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
 
-Untuk informasi lebih lanjut tentang migrasi, seeding & lainnya, kami merekomendasikan membaca [Dokumentasi Prisma](https://www.prisma.io/docs/).
+[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-### Build
+## Useful links
 
-Untuk membangun semua aplikasi dan paket, jalankan perintah berikut:
+Learn more:
 
-```bash
-pnpm run build
-```
+- [Learn more about this workspace setup](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
+- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-### Develop
-
-Untuk mengembangkan semua aplikasi dan paket, jalankan perintah berikut:
-
-```bash
-pnpm run dev
-```
-
-## Tautan Berguna
-
-Pelajari lebih lanjut tentang kekuatan Turborepo:
-
-- [Tugas](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Opsi Konfigurasi](https://turbo.build/repo/docs/reference/configuration)
-- [Penggunaan CLI](https://turbo.build/repo/docs/reference/command-line-reference)
+And join the Nx community:
+- [Discord](https://go.nx.dev/community)
+- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
+- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
+- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)

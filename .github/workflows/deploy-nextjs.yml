@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - "apps/NextJS/**"
-      - ".github/workflows/deploy-nextjs.yml" # Trigger if this workflow file changesaaaa
+      - "apps/nextjs/**"
+      - ".github/workflows/deploy-nextjs.yml"
 
 jobs:
   build-and-deploy-nextjs:
@@ -18,10 +18,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 22 and Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
       - name: Prepare .env file for production
         env:
@@ -35,28 +40,27 @@ jobs:
         run: bash ./2updateenv.sh
 
       - name: Install Dependencies
-        run: bun install
+        run: pnpm install
 
       - name: Generate Prisma Client
-        run: cd packages/database && bun run prisma generate && cd ../../
+        run: cd libs/services && pnpm prisma generate && cd ../../
 
-      - name: Build Database Package
-        run: bun run build --filter=@asepharyana/database
+      - name: Build Services Package
+        run: pnpm build @asepharyana/services
 
       - name: Build Next.js
-        run: bun run build:nextjs
+        run: pnpm build @asepharyana/nextjs
 
       - name: Check Build Output
         run: |
-          echo "NextJS build output:" && ls -l apps/NextJS/.next
-          if [ -z "$(ls -A apps/NextJS/.next)" ]; then
+          echo "Next.js build output:" && ls -l apps/nextjs/.next
+          if [ -z "$(ls -A apps/nextjs/.next)" ]; then
             echo "ERROR: Next.js build output is empty. Deployment aborted."
             exit 1
           fi
 
       - name: Copy .env to all subprojects/packages
         run: bash 2updateenv.sh
-
 
       - name: Sync all .env files to VPS
         env:
@@ -74,7 +78,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/NextJS/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/.next/
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/nextjs/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.next/
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy Next.js
@@ -85,16 +89,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             export PATH=$PATH:/root/.local/share/pnpm
-            export PATH=$PATH:/root/.local/share/pnpm
             export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
-            export PATH=$PATH:/home/asephs/.bun/bin/bun
             source .bashrc
             cd ${{ secrets.VPS_TARGET_DIR }}
             bash 2updateenv.sh
             git pull # Need to pull to get the ecosystem.config.cjs
-            bun install --filter=@asepharyana/web # Install dependencies only for Next.js
-            cd ./packages/database
-            bunx prisma generate
+            pnpm install --filter=@asepharyana/nextjs # Install dependencies only for Next.js
+            cd ./libs/services
+            pnpm prisma generate
             cd ../../
-            pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/NextJS/ecosystem.config.cjs
+            pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/ecosystem.config.cjs
             echo "Next.js Deployment successful!"

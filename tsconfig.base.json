@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "jsx": "preserve",
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "allowJs": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "@asepharyana/services": ["libs/services/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

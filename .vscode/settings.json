@@ -1,8 +1,5 @@
 {
-  "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
-  ],
-  "postman.settings.dotenv-detection-notification-visibility": false
+    "nxConsole.generateAiAgentRules": true,
+    "WillLuke.nextjs.addTypesOnSave": true,
+    "WillLuke.nextjs.hasPrompted": true
 }
