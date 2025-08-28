@@ -9,7 +9,7 @@
     "serve": {
       "executor": "@nx/next:server",
       "options": {
-        "buildTarget": "nextjs:build",
+        "buildTarget": "@asepharyana/nextjs:build",
         "dev": true
       }
     },

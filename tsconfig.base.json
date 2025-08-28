@@ -7,20 +7,19 @@
     "declaration": true,
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    "allowJs": true,
+    "strict": true,
+    "esModuleInterop": true,
     "baseUrl": ".",
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@asepharyana/services": [
-        "dist/libs/services/index.js",
-        "dist/libs/services/index.d.ts",
-        "dist/libs/services/src/lib/index.d.ts"
-      ]
+      "@asepharyana/services": ["libs/services/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

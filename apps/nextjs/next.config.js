@@ -79,6 +79,10 @@ const nextConfig = {
       ...config.resolve.alias,
       '@asepharyana/services': require('path').resolve(__dirname, '../../dist/libs/services'),
     };
+      if (!isServer) {
+      config.resolve.alias['@prisma/client'] = false;
+      config.resolve.alias['.prisma/client'] = false;
+    }
     return config;
   },
 };
