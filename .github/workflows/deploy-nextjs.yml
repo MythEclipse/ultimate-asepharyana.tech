@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - "apps/nextjs/**"
-      - ".github/workflows/deploy-nextjs.yml"
+      - 'apps/nextjs/**'
+      - '.github/workflows/deploy-nextjs.yml'
 
 jobs:
   build-and-deploy-nextjs:
@@ -92,8 +92,8 @@ jobs:
             export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
             source .bashrc
             cd ${{ secrets.VPS_TARGET_DIR }}
-            bash 2updateenv.sh
             git pull # Need to pull to get the ecosystem.config.cjs
+            bash 2updateenv.sh
             pnpm install --filter=@asepharyana/nextjs # Install dependencies only for Next.js
             cd ./libs/services
             pnpm db:generate
