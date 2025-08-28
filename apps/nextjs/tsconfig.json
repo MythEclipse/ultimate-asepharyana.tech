@@ -28,12 +28,13 @@
     "**/*.ts",
     "**/*.tsx",
     "../../apps/landing/.next/types/**/*.ts",
+    "../../apps/nextjs/.next/.next/types/**/*.ts",
     "../../dist/apps/landing/.next/types/**/*.ts",
     "../../dist/apps/nextjs/.next/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
     "postcss.config.mjs",
-    "../../apps/nextjs/.next/.next/types/**/*.ts"
+    "../../apps/nextjs/.next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

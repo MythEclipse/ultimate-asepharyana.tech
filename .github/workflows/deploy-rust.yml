@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - "apps/RustExpress/**"
-      - ".github/workflows/deploy-rust.yml" # Trigger if this workflow file changesaa
+      - 'apps/RustExpress/**'
+      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesaa
 
 jobs:
   build-and-deploy-rust:
@@ -91,5 +91,5 @@ jobs:
             git pull
             bash 2updateenv.sh
             # Check if the process is running and stop it
-            pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/RustExpress/pm2-rustexpress.config.js
+            pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/RustExpress/ecosystem.config.cjs
             echo "RustExpress Deployment successful!"
