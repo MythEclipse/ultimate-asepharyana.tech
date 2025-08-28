@@ -20,5 +20,9 @@
   ],
   "nx": {
     "name": "services"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.15.0",
+    "tslib": "^2.6.2"
   }
 }
