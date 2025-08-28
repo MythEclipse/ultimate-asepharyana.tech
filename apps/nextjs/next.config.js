@@ -10,6 +10,7 @@ const nextConfig = {
   experimental: {
     webpackMemoryOptimizations: true,
   },
+  serverExternalPackages: ['bcrypt'],
   images: {
     remotePatterns: [
       {
@@ -74,14 +75,25 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@asepharyana/services': require('path').resolve(__dirname, '../../dist/libs/services'),
     };
-      if (!isServer) {
-        config.externals.push({ '@prisma/client': 'commonjs @prisma/client' });
-      }
+
+    if (!isServer) {
+      config.externals.push({ '@prisma/client': 'commonjs @prisma/client' });
+    }
+
+    // Suppress warnings for Node.js APIs in Edge Runtime for bcrypt
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        'process.versions.node': JSON.stringify(process.versions.node),
+        'process.config': JSON.stringify({}),
+        'process.execPath': JSON.stringify(process.execPath),
+      })
+    );
+
     return config;
   },
 };
