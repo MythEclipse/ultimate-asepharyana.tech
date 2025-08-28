@@ -1,6 +1,7 @@
 name: Deploy Next.js to VPS
-#a
+#aa
 on:
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - main
@@ -37,7 +38,7 @@ jobs:
           fi
 
       - name: Setup Env
-        run: bash ./2updateenv.sh
+        run: bash ./scripts/2updateenv.sh
 
       - name: Install Dependencies
         run: pnpm install
@@ -60,7 +61,7 @@ jobs:
           fi
 
       - name: Copy .env to all subprojects/packages
-        run: bash 2updateenv.sh
+        run: bash scripts/2updateenv.sh
 
       - name: Sync all .env files to VPS
         env:
@@ -94,7 +95,7 @@ jobs:
             source .bashrc
             cd ${{ secrets.VPS_TARGET_DIR }}
             git pull # Need to pull to get the ecosystem.config.cjs
-            bash 2updateenv.sh
+            bash scripts/2updateenv.sh
             pnpm install --filter=@asepharyana/nextjs # Install dependencies only for Next.js
             cd ./libs/services
             pnpm db:generate

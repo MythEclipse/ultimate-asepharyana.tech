@@ -1,6 +1,7 @@
 name: Deploy Rust to VPS
 #a
 on:
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - main
@@ -41,7 +42,7 @@ jobs:
           fi
 
       - name: Setup Env
-        run: bash ./2updateenv.sh
+        run: bash ./scripts/2updateenv.sh
 
       - name: Build Rust
         run: cargo build --release --manifest-path apps/rust/Cargo.toml
@@ -55,7 +56,7 @@ jobs:
           fi
 
       - name: Copy .env to all subprojects/packages
-        run: bash 2updateenv.sh
+        run: bash scripts/2updateenv.sh
 
       - name: Sync all .env files to VPS
         env:
@@ -90,7 +91,7 @@ jobs:
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
             git pull
-            bash 2updateenv.sh
+            bash scripts/2updateenv.sh
             # Check if the process is running and stop it
             pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/rust/ecosystem.config.cjs
             echo "Rust Deployment successful!"
