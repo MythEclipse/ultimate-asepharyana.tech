@@ -19,7 +19,8 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@asepharyana/services": ["libs/services/src/index.ts"]
+      "@asepharyana/services": ["libs/services/src/index.ts"],
+      "@asepharyana/storybook-ui": ["storybook-ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

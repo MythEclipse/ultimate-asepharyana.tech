@@ -17,7 +17,12 @@
     "sharedGlobals": []
   },
   "plugins": [
-    { "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
     {
       "plugin": "@nx/vite/plugin",
       "options": {
@@ -52,7 +57,23 @@
         "watchDepsTargetName": "watch-deps"
       }
     },
-    { "plugin": "@nx/playwright/plugin", "options": { "targetName": "e2e" } }
+    {
+      "plugin": "@nx/playwright/plugin",
+      "options": {
+        "targetName": "e2e"
+      }
+    },
+    {
+      "plugin": "@nx/react/router-plugin",
+      "options": {
+        "buildTargetName": "build",
+        "devTargetName": "dev",
+        "startTargetName": "start",
+        "watchDepsTargetName": "watch-deps",
+        "buildDepsTargetName": "build-deps",
+        "typecheckTargetName": "typecheck"
+      }
+    }
   ],
   "generators": {
     "@nx/react": {
@@ -62,17 +83,34 @@
         "linter": "eslint",
         "bundler": "vite"
       },
-      "component": { "style": "css" },
+      "component": {
+        "style": "css"
+      },
       "library": {
         "style": "css",
         "linter": "eslint",
         "unitTestRunner": "vitest"
       }
     },
-    "@nx/next": { "application": { "style": "none", "linter": "eslint" } }
+    "@nx/next": {
+      "application": {
+        "style": "none",
+        "linter": "eslint"
+      }
+    }
   },
-  "release": { "version": { "preVersionCommand": "npx nx run-many -t build" } },
-  "targetDefaults": { "e2e-ci--**/**": { "dependsOn": ["^build"] } },
-  "implicitDependencies": { "nextjs": ["nextjs-e2e"] },
+  "release": {
+    "version": {
+      "preVersionCommand": "npx nx run-many -t build"
+    }
+  },
+  "targetDefaults": {
+    "e2e-ci--**/**": {
+      "dependsOn": ["^build"]
+    }
+  },
+  "implicitDependencies": {
+    "nextjs": ["nextjs-e2e"]
+  },
   "nxCloudId": "68b04008bef28d534255e0a8"
 }

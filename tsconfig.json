@@ -11,6 +11,12 @@
     },
     {
       "path": "./libs/services"
-    },
-  ]
+    }
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node10"
+    }
+  }
 }
