@@ -48,8 +48,8 @@ jobs:
 
       - name: Check Build Output
         run: |
-          echo "Rust build output:" && ls -l target/release
-          if [ ! -f "target/release/rust" ]; then
+          echo "Rust build output:" && ls -l apps/rust/target/release
+          if [ ! -f "apps/rust/target/release/rust" ]; then
             echo "ERROR: Rust build output executable not found. Deployment aborted."
             exit 1
           fi
@@ -73,7 +73,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" target/release/rust ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release/rust
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/rust/target/release/rust ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release/rust
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy Rust
