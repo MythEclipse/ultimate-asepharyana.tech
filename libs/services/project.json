@@ -9,7 +9,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/services",
+        "outputPath": "libs/services/dist",
         "tsConfig": "libs/services/tsconfig.json",
         "main": "libs/services/src/index.ts",
         "assets": ["libs/services/*.md"]

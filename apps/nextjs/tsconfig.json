@@ -21,7 +21,7 @@
       {
         "name": "next"
       }
-    ],
+    ]
   },
   "include": [
     "**/*.jsx",
@@ -29,10 +29,12 @@
     "**/*.tsx",
     "../../apps/landing/.next/types/**/*.ts",
     "../../dist/apps/landing/.next/types/**/*.ts",
+    "../../dist/apps/nextjs/.next/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    "../../dist/apps/nextjs/.next/types/**/*.ts"
-, "postcss.config.mjs"  ],
+    "postcss.config.mjs",
+    "../../apps/nextjs/.next/.next/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "jest.config.ts",
