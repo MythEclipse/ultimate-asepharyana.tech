@@ -1,8 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/libs/services",
-    "rootDir": ".",
+    "outDir": "./dist/libs/services",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
