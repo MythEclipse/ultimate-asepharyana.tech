@@ -22,6 +22,6 @@
     "name": "services"
   },
   "dependencies": {
-  "@prisma/client": "^6.14.0"
+  "tslib": "*"
   }
 }
