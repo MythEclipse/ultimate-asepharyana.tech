@@ -7,10 +7,10 @@
     "nextjs:build": "nx build nextjs",
     "nextjs:lint": "nx lint nextjs --fix",
     "nextjs:start": "nx start nextjs",
-    "service:dev": "nx serve service",
-    "service:build": "nx build service",
-    "service:lint": "nx lint service --fix",
-    "service:start": "nx start service"
+    "service:dev": "nx serve services",
+    "service:build": "nx build services",
+    "service:lint": "nx lint services --fix",
+    "service:start": "nx start services"
   },
   "private": true,
   "dependencies": {
