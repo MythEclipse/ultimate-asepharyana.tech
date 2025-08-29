@@ -10,7 +10,7 @@ import CommentsSection from './CommentsSection';
 import { ClientUser } from '../../types/ClientUser';
 
 interface PostCardProps {
-  readonly post: (Posts & {
+  readonly post: Posts & {
     id: string;
     created_at: Date;
     updated_at: Date;
@@ -22,7 +22,7 @@ interface PostCardProps {
       updated_at: Date;
       user: ClientUser;
     })[];
-  })
+  };
   readonly handleLike: (postId: string) => void;
   readonly handleUnlike: (postId: string) => void;
   readonly handleAddComment: (postId: string, comment: string) => Promise<void>;
@@ -132,7 +132,14 @@ export default function PostCard({
 
       {showComments && (
         <CommentsSection
-          comments={post.comments as (Comments & { id: string; created_at: Date; updated_at: Date; user: ClientUser; })[]}
+          comments={
+            post.comments as (Comments & {
+              id: string;
+              created_at: Date;
+              updated_at: Date;
+              user: ClientUser;
+            })[]
+          }
           authenticatedUserId={authenticatedUserId}
           newComment={newComment}
           onNewCommentChange={(value) => setNewComment(post.id, value)}
