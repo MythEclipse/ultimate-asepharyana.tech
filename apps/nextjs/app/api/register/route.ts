@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     const token = await signJwt(
       { userId: newUser.id, email: newUser.email, name: newUser.name },
-      '1h',
+      { expiresIn: '1h' },
     );
 
     const response = NextResponse.json(

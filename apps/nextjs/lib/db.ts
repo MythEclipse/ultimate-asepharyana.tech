@@ -1,3 +1,3 @@
-import { db } from './kysely-db';
+import { getDb } from '@asepharyana/services';
 
-export { db };
+export { getDb };
