@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../lib/db';
+import { getDb } from '@asepharyana/services';
 import bcrypt from 'bcrypt';
 import { signJwt } from '../../../lib/jwt';
 
 export async function POST(request: Request) {
+  const db = getDb();
   try {
     const { email, password } = await request.json();
 
@@ -11,9 +12,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Missing email or password' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await db.selectFrom('User')
+      .selectAll()
+      .where('email', '=', email)
+      .executeTakeFirst() as any | undefined;
 
     if (!user || !user.password) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });

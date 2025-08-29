@@ -22,7 +22,8 @@
     "name": "services"
   },
   "dependencies": {
-    "@prisma/client": "^6.15.0",
-    "tslib": "^2.6.2"
+    "tslib": "^2.6.2",
+    "kysely": "^0.28.5",
+    "mysql2": "^3.14.3"
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma/service';
 import logger from '../../../../utils/logger';
 import { verifyJwt } from '../../../../lib/jwt';
+import { getDb, Comments, User } from '@asepharyana/services';
 
 function getIp(req: NextRequest) {
   return (
@@ -15,6 +15,7 @@ async function postHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
@@ -46,14 +47,16 @@ async function postHandler(req: NextRequest) {
       );
     }
 
-    const comment = await prisma.comments.create({
-      data: {
+    const comment = (await db
+      .insertInto('Comments')
+      .values({
         postId,
         content,
         userId: userId,
         authorId: userId,
-      },
-    });
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow()) as Comments;
 
     logger.info(`[POST /api/sosmed/comments] Comment created`, {
       ip,
@@ -90,6 +93,7 @@ async function postHandler(req: NextRequest) {
 async function getHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
+  const db = getDb();
   try {
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('postId');
@@ -102,19 +106,18 @@ async function getHandler(req: NextRequest) {
       );
     }
 
-    const comments = await prisma.comments.findMany({
-      where: { postId: postId as string },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: { created_at: 'desc' },
-    });
+    const comments = await db
+      .selectFrom('Comments')
+      .selectAll()
+      .where('Comments.postId', '=', postId)
+      .leftJoin('User', 'User.id', 'Comments.userId')
+      .select([
+        'User.id as user_id',
+        'User.name as user_name',
+        'User.image as user_image',
+      ])
+      .orderBy('Comments.created_at', 'desc')
+      .execute();
 
     logger.info(`[GET /api/sosmed/comments] Success`, {
       ip,
@@ -141,6 +144,7 @@ async function putHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
@@ -172,7 +176,11 @@ async function putHandler(req: NextRequest) {
       );
     }
 
-    const comment = await prisma.comments.findUnique({ where: { id } });
+    const comment = (await db
+      .selectFrom('Comments')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()) as Comments | undefined;
 
     if (!comment || comment.userId !== userId) {
       logger.warn(`[PUT /api/sosmed/comments] Not authorized to edit`, {
@@ -186,12 +194,14 @@ async function putHandler(req: NextRequest) {
       );
     }
 
-    const updatedComment = await prisma.comments.update({
-      where: { id },
-      data: {
+    const updatedComment = (await db
+      .updateTable('Comments')
+      .set({
         content: `${content} -edited`,
-      },
-    });
+      })
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow()) as Comments;
 
     logger.info(`[PUT /api/sosmed/comments] Comment updated`, {
       ip,
@@ -222,6 +232,7 @@ async function deleteHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
@@ -253,7 +264,11 @@ async function deleteHandler(req: NextRequest) {
       );
     }
 
-    const comment = await prisma.comments.findUnique({ where: { id } });
+    const comment = (await db
+      .selectFrom('Comments')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()) as Comments | undefined;
 
     if (!comment || comment.userId !== userId) {
       logger.warn(`[DELETE /api/sosmed/comments] Not authorized to delete`, {
@@ -267,7 +282,7 @@ async function deleteHandler(req: NextRequest) {
       );
     }
 
-    await prisma.comments.delete({ where: { id } });
+    await db.deleteFrom('Comments').where('id', '=', id).execute();
 
     logger.info(`[DELETE /api/sosmed/comments] Comment deleted`, {
       ip,

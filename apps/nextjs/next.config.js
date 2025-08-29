@@ -76,15 +76,6 @@ const nextConfig = {
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
   webpack: (config, { isServer, webpack }) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@asepharyana/services': require('path').resolve(__dirname, '../../dist/libs/services'),
-    };
-
-    if (!isServer) {
-      config.externals.push({ '@prisma/client': 'commonjs @prisma/client' });
-    }
-
     // Suppress warnings for Node.js APIs in Edge Runtime for bcrypt
     config.plugins.push(
       new webpack.DefinePlugin({

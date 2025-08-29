@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma/service';
 import logger from '../../../../utils/logger';
 import { verifyJwt } from '../../../../lib/jwt';
+import { getDb, Likes } from '@asepharyana/services';
 
 function getIp(req: Request) {
   return (
@@ -15,6 +15,7 @@ async function postHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
 
   try {
     const token = req.cookies.get('token')?.value;
@@ -38,14 +39,12 @@ async function postHandler(req: NextRequest) {
     const { postId } = await req.json();
     logger.debug(`[POST /api/sosmed/likes] Payload`, { postId });
 
-    const existingLike = await prisma.likes.findUnique({
-      where: {
-        userId_postId: {
-          userId: userId,
-          postId,
-        },
-      },
-    });
+    const existingLike = (await db
+      .selectFrom('Likes')
+      .selectAll()
+      .where('userId', '=', userId)
+      .where('postId', '=', postId)
+      .executeTakeFirst()) as Likes | undefined;
 
     if (existingLike) {
       logger.warn(`[POST /api/sosmed/likes] Already liked`, {
@@ -56,12 +55,14 @@ async function postHandler(req: NextRequest) {
       return NextResponse.json({ message: 'Already liked' }, { status: 409 });
     }
 
-    const like = await prisma.likes.create({
-      data: {
+    const like = (await db
+      .insertInto('Likes')
+      .values({
         postId,
         userId: userId,
-      },
-    });
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow()) as Likes;
 
     logger.info(`[POST /api/sosmed/likes] Like created`, {
       ip,
@@ -89,6 +90,7 @@ async function deleteHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
 
   try {
     const token = req.cookies.get('token')?.value;
@@ -113,14 +115,12 @@ async function deleteHandler(req: NextRequest) {
     const { postId } = await req.json();
     logger.debug(`[DELETE /api/sosmed/likes] Payload`, { postId });
 
-    const existingLike = await prisma.likes.findUnique({
-      where: {
-        userId_postId: {
-          userId: userId,
-          postId,
-        },
-      },
-    });
+    const existingLike = (await db
+      .selectFrom('Likes')
+      .selectAll()
+      .where('userId', '=', userId)
+      .where('postId', '=', postId)
+      .executeTakeFirst()) as Likes | undefined;
 
     if (!existingLike) {
       logger.warn(`[DELETE /api/sosmed/likes] Like not found`, {
@@ -131,14 +131,11 @@ async function deleteHandler(req: NextRequest) {
       return NextResponse.json({ message: 'Like not found' }, { status: 404 });
     }
 
-    await prisma.likes.delete({
-      where: {
-        userId_postId: {
-          userId: userId,
-          postId,
-        },
-      },
-    });
+    await db
+      .deleteFrom('Likes')
+      .where('userId', '=', userId)
+      .where('postId', '=', postId)
+      .execute();
 
     logger.info(`[DELETE /api/sosmed/likes] Like removed`, {
       ip,

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJwt } from './jwt';
-import { prisma } from './prisma/service'; // Assuming prisma is accessible here
+import { getDb, User } from '@asepharyana/services';
 
 interface AuthorizedUser {
   id: string;
-  email: string;
-  name?: string;
+  email: string | null;
+  name?: string | null;
   roles?: string[];
   permissions?: string[];
 }
@@ -23,43 +23,40 @@ export async function verifyToken(
     return null;
   }
 
+  const db = getDb();
+
   // Fetch user roles and permissions from the database
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.userId as string },
-    include: {
-      roles: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  const user = await db
+    .selectFrom('User')
+    .selectAll()
+    .where('User.id', '=', decoded.userId as string)
+    .leftJoin('UserRole', 'UserRole.userId', 'User.id')
+    .leftJoin('Role', 'Role.id', 'UserRole.roleId')
+    .leftJoin('RolePermission', 'RolePermission.roleId', 'Role.id')
+    .leftJoin('Permission', 'Permission.id', 'RolePermission.permissionId')
+    .select([
+      'User.id',
+      'User.email',
+      'User.name',
+      db.fn.agg('GROUP_CONCAT', ['Role.name']).as('roles'),
+      db.fn.agg('GROUP_CONCAT', ['Permission.name']).as('permissions'),
+    ])
+    .groupBy('User.id')
+    .executeTakeFirst();
 
   if (!user) {
     return null;
   }
 
-  const roles = user.roles.map((ur) => ur.role.name);
-  const permissions = Array.from(
-    new Set(
-      user.roles.flatMap((ur) =>
-        ur.role.permissions.map((rp) => rp.permission.name),
-      ),
-    ),
-  );
+  const roles = user.roles ? (user.roles as string).split(',') : [];
+  const permissions = user.permissions
+    ? (user.permissions as string).split(',')
+    : [];
 
   return {
-    id: user.id,
+    id: user.id ?? "",
     email: user.email,
-    name: user.name || undefined,
+    name: user.name,
     roles,
     permissions,
   };

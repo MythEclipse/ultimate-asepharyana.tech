@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../lib/db';
+import { getDb } from '@asepharyana/services';
 import bcrypt from 'bcrypt';
 import { signJwt } from '../../../lib/jwt';
 
 export async function POST(request: Request) {
+  const db = getDb();
   try {
     const { name, email, password } = await request.json();
 
@@ -11,9 +12,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await db.selectFrom('User')
+      .selectAll()
+      .where('email', '=', email)
+      .executeTakeFirst() as any | undefined;
 
     if (existingUser) {
       return NextResponse.json({ message: 'User with this email already exists' }, { status: 409 });
@@ -21,13 +23,12 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-    });
+    const newUser = await db.insertInto('User').values({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'member', // Assuming a default role for new users
+    }).returningAll().executeTakeFirstOrThrow() as any;
 
     const token = await signJwt({ userId: newUser.id, email: newUser.email, name: newUser.name }, '1h');
 

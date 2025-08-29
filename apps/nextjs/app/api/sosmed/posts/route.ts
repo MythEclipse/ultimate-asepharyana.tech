@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma/service';
 import logger from '../../../../utils/logger';
 import { verifyJwt } from '../../../../lib/jwt';
+import { getDb, Posts, User, Comments, Likes } from '@asepharyana/services';
 
 function getIp(req: NextRequest) {
   return (
@@ -15,17 +15,23 @@ export async function POST(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
 
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
       logger.warn(`[POST /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
 
     const decoded = await verifyJwt(token);
     if (!decoded || !decoded.userId) {
-      logger.warn(`[POST /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      logger.warn(`[POST /api/sosmed/posts] Invalid token or missing userId`, {
+        ip,
+      });
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
     userId = decoded.userId as string;
@@ -37,18 +43,20 @@ export async function POST(req: NextRequest) {
       logger.warn(`[POST /api/sosmed/posts] Content required`, { ip });
       return NextResponse.json(
         { message: 'Content is required and must be a string' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const newPost = await prisma.posts.create({
-      data: {
+    const newPost = (await db
+      .insertInto('Posts')
+      .values({
         content,
         authorId: userId,
         image_url: imageUrl || '',
         userId: userId,
-      },
-    });
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow()) as Posts;
 
     logger.info(`[POST /api/sosmed/posts] Post created`, {
       ip,
@@ -59,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: 'Post created successfully!', post: newPost },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error(`[POST /api/sosmed/posts] Error`, {
@@ -70,7 +78,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(
       { message: 'Failed to create post' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -79,75 +87,80 @@ export async function GET(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
 
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
       logger.warn(`[GET /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
 
     const decoded = await verifyJwt(token);
     if (!decoded || !decoded.userId) {
-      logger.warn(`[GET /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      logger.warn(`[GET /api/sosmed/posts] Invalid token or missing userId`, {
+        ip,
+      });
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
     userId = decoded.userId as string;
 
-    const posts = await prisma.posts.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        comments: true,
-        likes: true,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+    const posts = await db
+      .selectFrom('Posts')
+      .selectAll()
+      .leftJoin('User', 'User.id', 'Posts.userId')
+      .select([
+        'User.id as user_id',
+        'User.name as user_name',
+        'User.image as user_image',
+      ])
+      .orderBy('Posts.created_at', 'desc')
+      .execute();
 
     const sanitizedPosts = await Promise.all(
-      posts.map(
-        async (post: {
-          id: string;
-          content: string;
-          user: { id: string; name: string | null; image: string | null };
-          comments: { id: string; content: string; userId: string }[];
-          likes: { userId: string; postId: string }[];
-        }) => {
-          const commentsWithUser = await Promise.all(
-            post.comments.map(async (comment) => {
-              const user = await prisma.user.findUnique({
-                where: { id: comment.userId },
-                select: { id: true, name: true, image: true },
-              });
-              return {
-                ...comment,
-                user,
-              };
-            })
-          );
+      posts.map(async (post) => {
+        const comments = await db
+          .selectFrom('Comments')
+          .selectAll()
+          .where('Comments.postId', '=', post.id as string) // Cast to string
+          .leftJoin('User', 'User.id', 'Comments.userId')
+          .select([
+            'User.id as user_id',
+            'User.name as user_name',
+            'User.image as user_image',
+          ])
+          .execute();
 
-          return {
-            ...post,
+        const likes = await db
+          .selectFrom('Likes')
+          .selectAll()
+          .where('Likes.postId', '=', post.id as string) // Cast to string
+          .execute();
+
+        return {
+          ...post,
+          user: {
+            id: post.user_id,
+            name: post.user_name,
+            image: post.user_image,
+          },
+          comments: comments.map((comment) => ({
+            ...comment,
             user: {
-              id: post.user.id,
-              name: post.user.name,
-              image: post.user.image,
+              id: comment.user_id,
+              name: comment.user_name,
+              image: comment.user_image,
             },
-            comments: commentsWithUser,
-            likes: post.likes.map((like) => ({
-              userId: like.userId,
-              postId: like.postId,
-            })),
-          };
-        }
-      )
+          })),
+          likes: likes.map((like) => ({
+            userId: like.userId,
+            postId: like.postId,
+          })),
+        };
+      }),
     );
 
     logger.info(`[GET /api/sosmed/posts] Success`, {
@@ -167,7 +180,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(
       { message: 'Failed to fetch posts' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -176,17 +189,23 @@ export async function PUT(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
 
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
       logger.warn(`[PUT /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
 
     const decoded = await verifyJwt(token);
     if (!decoded || !decoded.userId) {
-      logger.warn(`[PUT /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      logger.warn(`[PUT /api/sosmed/posts] Invalid token or missing userId`, {
+        ip,
+      });
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
     userId = decoded.userId as string;
@@ -198,11 +217,15 @@ export async function PUT(req: NextRequest) {
       logger.warn(`[PUT /api/sosmed/posts] ID/content required`, { ip });
       return NextResponse.json(
         { message: 'Post ID and content are required and must be valid' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const post = await prisma.posts.findUnique({ where: { id } });
+    const post = (await db
+      .selectFrom('Posts')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()) as Posts | undefined;
 
     if (!post || post.userId !== userId) {
       logger.warn(`[PUT /api/sosmed/posts] Not authorized to edit`, {
@@ -212,16 +235,18 @@ export async function PUT(req: NextRequest) {
       });
       return NextResponse.json(
         { message: 'User not authorized to edit this post' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const updatedPost = await prisma.posts.update({
-      where: { id },
-      data: {
+    const updatedPost = (await db
+      .updateTable('Posts')
+      .set({
         content,
-      },
-    });
+      })
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow()) as Posts;
 
     logger.info(`[PUT /api/sosmed/posts] Post updated`, {
       ip,
@@ -232,7 +257,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(
       { message: 'Post updated successfully!', post: updatedPost },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     logger.error(`[PUT /api/sosmed/posts] Error`, {
@@ -243,7 +268,7 @@ export async function PUT(req: NextRequest) {
     });
     return NextResponse.json(
       { message: 'Failed to update post' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -252,17 +277,24 @@ export async function DELETE(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
   let userId: string | undefined;
+  const db = getDb();
 
   try {
     const token = req.cookies.get('token')?.value;
     if (!token) {
       logger.warn(`[DELETE /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 },
+      );
     }
 
     const decoded = await verifyJwt(token);
     if (!decoded || !decoded.userId) {
-      logger.warn(`[DELETE /api/sosmed/posts] Invalid token or missing userId`, { ip });
+      logger.warn(
+        `[DELETE /api/sosmed/posts] Invalid token or missing userId`,
+        { ip },
+      );
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
     userId = decoded.userId as string;
@@ -274,11 +306,15 @@ export async function DELETE(req: NextRequest) {
       logger.warn(`[DELETE /api/sosmed/posts] ID required`, { ip });
       return NextResponse.json(
         { message: 'Post ID is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const post = await prisma.posts.findUnique({ where: { id } });
+    const post = (await db
+      .selectFrom('Posts')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()) as Posts | undefined;
 
     if (!post) {
       logger.warn(`[DELETE /api/sosmed/posts] Post not found`, {
@@ -296,11 +332,11 @@ export async function DELETE(req: NextRequest) {
       });
       return NextResponse.json(
         { message: 'User not authorized to delete this post' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    await prisma.posts.delete({ where: { id } });
+    await db.deleteFrom('Posts').where('id', '=', id).execute();
 
     logger.info(`[DELETE /api/sosmed/posts] Post deleted`, {
       ip,
@@ -311,7 +347,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json(
       { message: 'Post deleted successfully!' },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/posts] Error`, {
@@ -322,7 +358,7 @@ export async function DELETE(req: NextRequest) {
     });
     return NextResponse.json(
       { message: 'Failed to delete post' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
