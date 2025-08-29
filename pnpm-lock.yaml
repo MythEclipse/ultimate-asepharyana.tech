@@ -579,6 +579,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.12
         version: 4.1.12
+      '@types/jsonwebtoken':
+        specifier: 9.0.10
+        version: 9.0.10
       '@types/prettier':
         specifier: 3.0.0
         version: 3.0.0
@@ -648,6 +651,9 @@ importers:
       js-yaml:
         specifier: 4.1.0
         version: 4.1.0
+      jsonwebtoken:
+        specifier: 9.0.2
+        version: 9.0.2
       kysely:
         specifier: 0.28.5
         version: 0.28.5
@@ -744,10 +750,6 @@ importers:
       zustand:
         specifier: 5.0.8
         version: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
-    devDependencies:
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
 
   apps/nextjs-e2e: {}
 
