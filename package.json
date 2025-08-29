@@ -182,8 +182,6 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@parcel/watcher",
-      "@prisma/client",
-      "@prisma/engines",
       "@scarf/scarf",
       "@swc/core",
       "@tailwindcss/oxide",
@@ -193,7 +191,6 @@
       "esbuild",
       "nx",
       "oxc-resolver",
-      "prisma",
       "puppeteer",
       "sharp",
       "sleep",
