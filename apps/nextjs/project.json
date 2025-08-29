@@ -4,6 +4,7 @@
   "sourceRoot": "apps/nextjs",
   "projectType": "application",
   "tags": [],
+  "implicitDependencies": ["nextjs-e2e"],
   "// targets": "to see all targets run: nx show project nextjs --web",
   "targets": {
     "serve": {

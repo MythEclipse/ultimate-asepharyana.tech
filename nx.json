@@ -109,8 +109,5 @@
       "dependsOn": ["^build"]
     }
   },
-  "implicitDependencies": {
-    "nextjs": ["nextjs-e2e"]
-  },
   "nxCloudId": "68b04008bef28d534255e0a8"
 }
