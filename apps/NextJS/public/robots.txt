@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://https://asepharyana.tech
+
+# Sitemaps
+Sitemap: https://https://asepharyana.tech/sitemap.xml
