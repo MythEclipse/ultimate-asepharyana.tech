@@ -44,10 +44,10 @@ jobs:
         run: pnpm install
 
       - name: Build Services Package (Kysely)
-        run: pnpm build @asepharyana/services
+        run: pnpm run service:build
 
       - name: Build Next.js
-        run: pnpm build @asepharyana/nextjs
+        run: pnpm run nextjs:build
 
       - name: Check Build Output
         run: |

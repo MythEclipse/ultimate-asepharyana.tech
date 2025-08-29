@@ -6,7 +6,11 @@
     "nextjs:dev": "nx serve nextjs",
     "nextjs:build": "nx build nextjs",
     "nextjs:lint": "nx lint nextjs --fix",
-    "nextjs:start": "nx start nextjs"
+    "nextjs:start": "nx start nextjs",
+    "service:dev": "nx serve service",
+    "service:build": "nx build service",
+    "service:lint": "nx lint service --fix",
+    "service:start": "nx start service"
   },
   "private": true,
   "dependencies": {
