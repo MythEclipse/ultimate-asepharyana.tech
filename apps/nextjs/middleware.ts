@@ -6,12 +6,18 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
 
   // Allow access to login and register routes without authentication
-  if (request.nextUrl.pathname.startsWith('/api/login') || request.nextUrl.pathname.startsWith('/api/register')) {
+  if (
+    request.nextUrl.pathname.startsWith('/api/login') ||
+    request.nextUrl.pathname.startsWith('/api/register')
+  ) {
     return NextResponse.next();
   }
 
   if (!token) {
-    return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    return NextResponse.json(
+      { message: 'Authentication required' },
+      { status: 401 },
+    );
   }
 
   try {
@@ -30,5 +36,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*', // Protect all API routes
+  matcher: '/api/sosmed/:path*', // Protect only /api/sosmed routes
 };
