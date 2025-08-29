@@ -39,7 +39,7 @@ async function getProxies(): Promise<string[]> {
   } catch (error) {
     logger.error(
       'Network or unexpected error while fetching proxy list:',
-      error
+      error,
     );
     throw error;
   }
@@ -73,14 +73,14 @@ function getFetchCacheKey(slug: string): string {
 }
 
 async function getCachedFetch(
-  slug: string
+  slug: string,
 ): Promise<{ data: string | object; contentType: string | null } | null> {
   const key = getFetchCacheKey(slug);
   const cached = await redis.get(key);
   if (cached) {
     try {
       const parsed = JSON.parse(
-        typeof cached === 'string' ? cached : JSON.stringify(cached)
+        typeof cached === 'string' ? cached : JSON.stringify(cached),
       );
       logger.info(`[fetchWithProxy] Returning cached response for ${slug}`);
       return parsed;
@@ -93,7 +93,7 @@ async function getCachedFetch(
 
 async function setCachedFetch(
   slug: string,
-  value: { data: string | object; contentType: string | null }
+  value: { data: string | object; contentType: string | null },
 ) {
   const key = getFetchCacheKey(slug);
   await redis.set(key, JSON.stringify(value), { ex: 120 });
@@ -101,7 +101,7 @@ async function setCachedFetch(
 // --- REDIS CACHE WRAPPER END ---
 
 export async function fetchWithProxy(
-  slug: string
+  slug: string,
 ): Promise<{ data: string | object; contentType: string | null }> {
   // Try Redis cache first
   const cached = await getCachedFetch(slug);
@@ -115,6 +115,7 @@ export async function fetchWithProxy(
     logger.info(`[fetchWithProxy] Direct fetch response:`, {
       url: slug,
       status: res.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       headers: Object.fromEntries((res.headers as any).entries()),
     });
     if (res.ok) {
@@ -145,7 +146,7 @@ export async function fetchWithProxy(
     const error = new Error(`Direct fetch failed with status ${res.status}`);
     logger.error(
       `Direct fetch failed for ${slug}: Status ${res.status}`,
-      error
+      error,
     );
     logger.error('Direct fetch failed, trying proxies');
     const proxyResult = await fetchFromProxies(slug);
@@ -161,7 +162,7 @@ export async function fetchWithProxy(
 }
 
 export async function fetchWithProxyOnly(
-  slug: string
+  slug: string,
 ): Promise<{ data: string | object; contentType: string | null }> {
   // Try Redis cache first
   const cached = await getCachedFetch(slug);
@@ -180,7 +181,7 @@ function getAgent(proxyUrl: string) {
 }
 
 async function fetchFromProxies(
-  slug: string
+  slug: string,
 ): Promise<{ data: string | object; contentType: string | null }> {
   let lastError: Error | null = null;
   const proxies = await getCachedProxies();
@@ -222,7 +223,7 @@ async function fetchFromProxies(
           if (isInternetBaikBlockPage(response.data)) {
             logger.info('[DEBUG] continue: block page detected for string');
             logger.warn(
-              `Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`
+              `Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`,
             );
             continue;
           }
@@ -230,7 +231,7 @@ async function fetchFromProxies(
           logger.info('[DEBUG] response.data is NOT string');
           logger.info('[DEBUG] continue: block page detected for object');
           logger.warn(
-            `Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`
+            `Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`,
           );
           continue;
         }
@@ -252,14 +253,14 @@ async function fetchFromProxies(
     logger.error('scrapeCroxyProxy fallback failed:', scrapeError);
     throw new Error(
       lastError?.message ||
-        'Failed to fetch from all proxies and scrapeCroxyProxy'
+        'Failed to fetch from all proxies and scrapeCroxyProxy',
     );
   }
 }
 
 // --- CroxyProxyOnly Export ---
 export async function CroxyProxyOnly(
-  slug: string
+  slug: string,
 ): Promise<{ data: string | object; contentType: string | null }> {
   try {
     logger.info(`[CroxyProxyOnly] Using scrapeCroxyProxy for ${slug}`);
@@ -274,7 +275,7 @@ export async function CroxyProxyOnly(
 // --- ProxyListOnly Export ---
 export async function ProxyListOnly(
   slug: string,
-  limit = 10
+  limit = 10,
 ): Promise<{ data: string | object; contentType: string | null }> {
   let lastError: Error | null = null;
   const proxies = (await getCachedProxies()).slice(0, limit);
@@ -323,13 +324,13 @@ export async function ProxyListOnly(
         if (typeof data === 'string') {
           if (isInternetBaikBlockPage(data)) {
             logger.warn(
-              `[ProxyListOnly] Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`
+              `[ProxyListOnly] Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`,
             );
             continue;
           }
         } else if (isInternetBaikBlockPage(JSON.stringify(data))) {
           logger.warn(
-            `[ProxyListOnly] Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`
+            `[ProxyListOnly] Blocked by internetbaik (proxy ${proxyUrl}), trying next proxy`,
           );
           continue;
         }
@@ -339,15 +340,15 @@ export async function ProxyListOnly(
       lastError = error as Error;
       logger.warn(
         `[ProxyListOnly] Proxy fetch failed for ${slug} via ${proxyUrl}:`,
-        error
+        error,
       );
     }
   }
   logger.error(
     `[ProxyListOnly] Failed to fetch from all proxies for ${slug}:`,
-    lastError
+    lastError,
   );
   throw new Error(
-    lastError?.message || '[ProxyListOnly] Failed to fetch from all proxies'
+    lastError?.message || '[ProxyListOnly] Failed to fetch from all proxies',
   );
 }

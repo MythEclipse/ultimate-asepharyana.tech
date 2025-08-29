@@ -28,7 +28,7 @@ interface SearchDetailData {
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
   try {
     const response = await fetch(
-      `/api/anime/search?q=${encodeURIComponent(query)}`
+      `/api/anime/search?q=${encodeURIComponent(query)}`,
     );
     if (!response.ok) {
       throw new Error('Network response was not ok');
@@ -52,7 +52,8 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (slug) { // Conditionally fetch data
+    if (slug) {
+      // Conditionally fetch data
       fetchSearchResults(query).then((result) => {
         setSearchResults(result);
         setLoading(false);
@@ -64,16 +65,16 @@ const SearchPage = () => {
 
   if (!slug) {
     return (
-      <main className='p-6'>
-        <h1 className='text-2xl font-bold mb-4'>Search Results</h1>
+      <main className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Search Results</h1>
         <SearchForm
-          classname='w-full mb-8'
+          classname="w-full mb-8"
           initialQuery={query}
-          baseUrl='/anime'
+          baseUrl="/anime"
         />
-        <div className='p-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center gap-4'>
-          <AlertTriangle className='w-8 h-8 text-yellow-600 dark:text-yellow-400' />
-          <h2 className='text-xl font-medium text-yellow-800 dark:text-yellow-200'>
+        <div className="p-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center gap-4">
+          <AlertTriangle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+          <h2 className="text-xl font-medium text-yellow-800 dark:text-yellow-200">
             Please enter a search query.
           </h2>
         </div>
@@ -82,14 +83,14 @@ const SearchPage = () => {
   }
   if (loading) {
     return (
-      <main className='p-6'>
-        <h1 className='text-2xl font-bold mb-4'>Search Results</h1>
+      <main className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Search Results</h1>
         <SearchForm
-          classname='w-full mb-8'
+          classname="w-full mb-8"
           initialQuery={query}
-          baseUrl='/anime'
+          baseUrl="/anime"
         />
-        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4'>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
           {Array.from({ length: 15 }).map((_, index) => (
             <CardA key={index} loading={loading} />
           ))}
@@ -98,15 +99,15 @@ const SearchPage = () => {
     );
   }
   return (
-    <main className='p-6'>
-      <h1 className='text-2xl font-bold mb-4'>Search Results</h1>
+    <main className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Search Results</h1>
       <SearchForm
-        classname='w-full mb-8'
+        classname="w-full mb-8"
         initialQuery={query}
-        baseUrl='/anime'
+        baseUrl="/anime"
       />
       {searchResults.data.length > 0 ? (
-        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4'>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
           {searchResults.data.map((anime) => (
             <CardA
               key={anime.slug}
@@ -118,10 +119,10 @@ const SearchPage = () => {
           ))}
         </div>
       ) : (
-        <div className='p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4'>
-          <Info className='w-8 h-8 text-blue-600 dark:text-blue-400' />
-          <h2 className='text-xl font-medium text-blue-800 dark:text-blue-200'>
-            No results found for "{query}"
+        <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
+          <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <h2 className="text-xl font-medium text-blue-800 dark:text-blue-200">
+            No results found for &quot;{query}&quot;
           </h2>
         </div>
       )}

@@ -5,7 +5,7 @@
   "scripts": {
     "nextjs:dev": "nx serve nextjs",
     "nextjs:build": "nx build nextjs",
-    "nextjs:lint": "nx lint nextjs",
+    "nextjs:lint": "nx lint nextjs --fix",
     "nextjs:start": "nx start nextjs"
   },
   "private": true,

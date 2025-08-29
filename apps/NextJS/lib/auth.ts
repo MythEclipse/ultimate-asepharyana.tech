@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJwt } from './jwt';
-import { getDb, User } from '@asepharyana/services';
+import { getDb } from '@asepharyana/services';
 
 interface AuthorizedUser {
   id: string;
@@ -54,7 +54,7 @@ export async function verifyToken(
     : [];
 
   return {
-    id: user.id ?? "",
+    id: user.id ?? '',
     email: user.email,
     name: user.name,
     roles,

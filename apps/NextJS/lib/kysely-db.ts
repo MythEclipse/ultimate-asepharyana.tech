@@ -1,5 +1,5 @@
 import { Kysely, MysqlDialect } from 'kysely';
-// eslint-disable-next-line @nx/enforce-module-boundaries
+ 
 import { createPool } from 'mysql2';
 import type { DB } from './types'; // We will define this type later
 

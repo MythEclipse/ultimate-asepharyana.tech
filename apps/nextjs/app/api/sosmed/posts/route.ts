@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../../utils/logger';
 import { verifyJwt } from '../../../../lib/jwt';
-import { getDb, Posts, User, Comments, Likes } from '@asepharyana/services';
+import { getDb, Posts } from '@asepharyana/services';
 
 function getIp(req: NextRequest) {
   return (
