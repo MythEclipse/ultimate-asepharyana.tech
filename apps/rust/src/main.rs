@@ -11,7 +11,8 @@
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::config::AppConfig;
-use crate::routes::{create_routes, ChatState};
+use crate::routes::mod_::{create_routes, ChatState}; // Updated path to create_routes and ChatState
+use rust_lib::models::{user::User, user::RegisterRequest}; // Import User and RegisterRequest
 use sqlx::mysql::MySqlPoolOptions;
 use std::sync::Arc;
 
@@ -20,6 +21,11 @@ mod routes;
 mod models;
 mod chat_service;
 mod pdf_service;
+mod compress_service; // Declare the new compress_service module
+mod komik_service; // Declare the new komik_service module
+mod pdf_service; // Declare the new pdf_service module
+mod anime_service; // Declare the new anime_service module
+mod anime2_service; // Declare the new anime2_service module
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -37,6 +43,10 @@ async fn main() -> anyhow::Result<()> {
         std::env::set_var("RUST_LOG", "info");
     }
     // Don't override DATABASE_URL since it should come from root .env
+
+    // Load JWT_SECRET from environment
+    let jwt_secret = std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET must be set in the environment");
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
@@ -63,6 +73,7 @@ async fn main() -> anyhow::Result<()> {
     let chat_state = Arc::new(ChatState {
         pool: Arc::new(pool),
         clients: Default::default(),
+        jwt_secret,
     });
 
     tracing::info!("Building application routes...");

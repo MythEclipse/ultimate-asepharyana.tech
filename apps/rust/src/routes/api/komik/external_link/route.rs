@@ -1,0 +1,31 @@
+use axum::{
+    extract::{State},
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
+use serde_json::json;
+use std::sync::Arc;
+use crate::routes::mod_::ChatState;
+use komik_service;
+
+pub async fn external_link_handler(
+    State(_state): State<Arc<ChatState>>,
+) -> Response {
+    match komik_service::handle_external_link().await {
+        Ok(link) => (StatusCode::OK, Json(json!({ "link": link }))).into_response(),
+        Err(e) => {
+            eprintln!("Error fetching external link: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": "Failed to fetch external link" })),
+            )
+                .into_response()
+        }
+    }
+}
+
+pub fn create_routes() -> Router<Arc<ChatState>> {
+    Router::new()
+        .route("/", get(external_link_handler))
+}

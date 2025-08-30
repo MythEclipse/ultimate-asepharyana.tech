@@ -19,6 +19,23 @@ chrono = { version = "0.4", features = ["serde"] }
 bytes = "1.6"
 multipart = "0.18"
 futures = "0.3"
+bcrypt = "0.15"
+jsonwebtoken = "9.3"
+reqwest = { version = "0.12", features = ["json", "stream"] } # For image proxy
+http = "1.1" # For http::StatusCode and HeaderMap
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] } # For image compression
+sha1 = "0.10" # For cache key generation
+data-url = "0.3" # For data URL parsing
+base64 = "0.22" # For base64 encoding/decoding
+tokio-util = { version = "0.7", features = ["codec"] } # For stream handling
+async-trait = "0.1" # For async traits
+tempfile = "3.10" # For temporary files
+serde_yaml = "0.9" # For parsing YAML files
+scraper = "0.19" # For HTML parsing (cheerio equivalent)
+oxidize-pdf = "1.2.0" # For PDF compression
+infer = "0.12" # For file type detection
+
+rust_lib = { path = "../../libs/rust" }
 
 [dev-dependencies]
 tokio-test = "0.4"
