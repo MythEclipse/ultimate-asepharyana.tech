@@ -9,8 +9,6 @@ pub mod anime_service; // otakudesu
 pub mod anime_dto;     // otakudesu
 pub mod alqanime_service;
 pub mod alqanime_dto;
-pub use self::anime_service as otakudesu;
-pub use self::alqanime_service as alqanime;
 
 // NOTE: The /search endpoint now supports ?status=complete or ?status=ongoing for filtering.
 

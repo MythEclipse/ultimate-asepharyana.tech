@@ -9,7 +9,12 @@ use std::sync::Arc;
 use crate::routes::ChatState;
 use reqwest::Client;
 
-const PRODUCTION_URL: &str = "https://asepharyana.tech"; // TODO: Load from environment
+use once_cell::sync::Lazy;
+use std::env;
+
+static PRODUCTION_URL: Lazy<String> = Lazy::new(|| {
+    env::var("PRODUCTION_URL").unwrap_or_else(|_| "https://asepharyana.tech".to_string())
+});
 
 pub async fn uploader_get_handler(
     Path(file_name): Path<String>,

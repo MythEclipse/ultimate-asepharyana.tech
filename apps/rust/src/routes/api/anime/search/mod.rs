@@ -8,8 +8,6 @@ use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use crate::routes::api::anime::anime_service;
-use crate::routes::api::anime;
 use crate::routes::api::anime::anime_service::{fetch_anime_data, parse_anime_data};
 
 #[derive(Debug, Deserialize)]

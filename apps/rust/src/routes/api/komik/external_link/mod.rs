@@ -9,7 +9,6 @@ use axum::{
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use crate::routes::api::komik::komik_service;
 use crate::routes::api::komik::komik;
 
 pub async fn external_link_handler(

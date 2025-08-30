@@ -105,8 +105,6 @@ async fn main() -> anyhow::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
-    let openapi = ApiDoc::openapi();
-
     // Serve OpenAPI JSON at /api-doc/openapi.json, merge with app routes
     use axum::{routing::get, Router, Json};
 

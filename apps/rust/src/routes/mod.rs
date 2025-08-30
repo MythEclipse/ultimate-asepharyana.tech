@@ -5,7 +5,6 @@ use axum::extract::{State, WebSocketUpgrade};
 use axum::response::{IntoResponse};
 use axum::extract::ws::{Message, WebSocket};
 use crate::routes::api::chat::chat_message_dto::ChatMessage;
-use crate::routes::api::chat::chat_service;
 use crate::routes::api::chat::chat;
 use tokio::sync::mpsc;
 use axum::Json;

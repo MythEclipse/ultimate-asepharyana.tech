@@ -34,6 +34,7 @@ serde_yaml = { workspace = true } # For parsing YAML files
 scraper = { workspace = true } # For HTML parsing (cheerio equivalent)
 oxidize-pdf = { workspace = true } # For PDF compression
 infer = { workspace = true } # For file type detection
+ffmpeg-next = "6.0.0"
 
 rust_lib = { path = "../../libs/rust" }
 utoipa = { version = "5.4.0" }

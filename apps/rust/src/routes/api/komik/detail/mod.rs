@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
@@ -10,7 +10,6 @@ use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use crate::routes::api::komik::komik_service;
 use crate::routes::api::komik::komik;
 
 #[derive(Debug, Deserialize)]

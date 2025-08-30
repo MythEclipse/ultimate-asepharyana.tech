@@ -11,7 +11,12 @@ use crate::routes::api::uploader::infer_service as infer;
 use reqwest::Client;
 use tokio_util::bytes::Bytes;
 
-const PRODUCTION_URL: &str = "https://asepharyana.tech"; // TODO: Load from environment
+use once_cell::sync::Lazy;
+use std::env;
+
+static PRODUCTION_URL: Lazy<String> = Lazy::new(|| {
+    env::var("PRODUCTION_URL").unwrap_or_else(|_| "https://asepharyana.tech".to_string())
+});
 const MAX_FILE_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
 
 async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std::error::Error>> {

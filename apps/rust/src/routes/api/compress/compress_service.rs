@@ -5,6 +5,8 @@ use tokio::fs;
 use std::env;
 use std::path::PathBuf;
 use std::time::SystemTime;
+use tokio_util::bytes::Bytes;
+use crate::routes::api::uploader::file::upload_to_pomf2;
 
 const CACHE_DIR: &str = "compress-cache"; // Relative to current working directory
 const CACHE_EXPIRY_SECONDS: u64 = 3600; // 1 hour
@@ -53,8 +55,11 @@ pub async fn compress_image_from_url(
     let cache_key = generate_cache_key(_url, _size_param);
 
     if let Some(_cached_data) = read_from_cache(&cache_key).await {
-        // TODO: Return CDN link for cached data
-        return Ok(format!("cached_cdn_link_for_{}", cache_key));
+        // Return CDN link for cached data by uploading cached file if not already uploaded
+        match upload_to_pomf2(Bytes::from(_cached_data)).await {
+            Ok((cdn_url, _file_name)) => return Ok(cdn_url),
+            Err(e) => return Err(format!("CDN upload failed for cached data: {}", e).into()),
+        }
     }
 
     let client = reqwest::Client::new();
@@ -96,16 +101,67 @@ pub async fn compress_image_from_url(
     }
 
     write_to_cache(&cache_key, &best_buffer).await?;
-    // TODO: Upload to CDN and return CDN link
-    Ok(format!("cdn_link_for_{}", cache_key))
+    // Upload to CDN and return CDN link
+    match upload_to_pomf2(Bytes::from(best_buffer)).await {
+        Ok((cdn_url, _file_name)) => Ok(cdn_url),
+        Err(e) => Err(format!("CDN upload failed: {}", e).into()),
+    }
 }
+
+use ffmpeg_next as ffmpeg;
 
 pub async fn compress_video_from_url(
     _url: &str,
     _size_param: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    // TODO: Implement video compression using ffmpeg-next
-    // This will be significantly more complex due to external process management
-    // and handling video streams.
-    Err("Video compression not yet implemented".into())
+    // Download video
+    let client = reqwest::Client::new();
+    let response = client.get(_url).send().await?.bytes().await?;
+    let original_buffer = response.to_vec();
+
+    // Write to temp file
+    let mut input_file = tempfile::NamedTempFile::new()?;
+    use std::io::Write;
+    input_file.write_all(&original_buffer)?;
+
+    let input_path = input_file.path().to_owned();
+    let output_file = tempfile::NamedTempFile::new()?;
+    let output_path = output_file.path().to_owned();
+
+    // Parse size_param for target bitrate (e.g., "1000k" or percent)
+    let target_bitrate = if _size_param.ends_with('k') {
+        _size_param.to_string()
+    } else if _size_param.ends_with('%') {
+        // For percent, fallback to 1000k as a safe default
+        "1000k".to_string()
+    } else {
+        "1000k".to_string()
+    };
+
+    // Initialize ffmpeg
+    ffmpeg::init().map_err(|e| format!("ffmpeg init failed: {e}"))?;
+
+    // Build ffmpeg command
+    let mut cmd = ffmpeg::Command::new();
+    cmd.arg("-i")
+        .arg(input_path.to_str().unwrap())
+        .arg("-b:v")
+        .arg(&target_bitrate)
+        .arg("-y")
+        .arg(output_path.to_str().unwrap());
+
+    // Run ffmpeg
+    let status = cmd.status().map_err(|e| format!("ffmpeg failed: {e}"))?;
+    if !status.success() {
+        return Err("ffmpeg compression failed".into());
+    }
+
+    // Read compressed video
+    let compressed_data = std::fs::read(&output_path)?;
+
+    // Upload to CDN
+    match upload_to_pomf2(Bytes::from(compressed_data)).await {
+        Ok((cdn_url, _file_name)) => Ok(cdn_url),
+        Err(e) => Err(format!("CDN upload failed: {}", e).into()),
+    }
 }
