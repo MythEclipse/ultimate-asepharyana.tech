@@ -7,7 +7,7 @@ use axum::{
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState; // Updated path to ChatState
-use rust_lib::services::infer_service as infer;
+use crate::routes::api::uploader::infer_service as infer;
 use reqwest::Client;
 use tokio_util::bytes::Bytes;
 

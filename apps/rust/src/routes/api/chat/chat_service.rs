@@ -1,5 +1,5 @@
 use sqlx::MySqlPool;
-use crate::models::chat_message::ChatMessage;
+use crate::routes::api::chat::chat_message_dto::ChatMessage;
 use anyhow::Result;
 
 pub async fn save_message(pool: &MySqlPool, message: &ChatMessage) -> Result<ChatMessage> {

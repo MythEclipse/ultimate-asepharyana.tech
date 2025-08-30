@@ -3,11 +3,14 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
+    Router,
+    routing::get,
 };
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use rust_lib::services::komik;
+use crate::routes::api::komik::komik_service;
+use crate::routes::api::komik::komik;
 
 pub async fn external_link_handler(
     State(_state): State<Arc<ChatState>>,

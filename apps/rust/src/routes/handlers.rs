@@ -13,7 +13,7 @@ use tokio::sync::mpsc;
 use serde_json::json;
 use http::StatusCode;
 use futures::StreamExt;
-use rust_lib::models::ChatMessage;
+use crate::routes::api::chat::chat_message_dto::ChatMessage;
 
 // Chat state struct
 pub struct ChatState {

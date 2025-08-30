@@ -6,7 +6,7 @@ use axum::{
 };
 use serde_json::json;
 use sqlx::MySqlPool;
-use rust_lib::models::{user::RegisterRequest, user::User};
+use crate::routes::api::user::user_dto::{RegisterRequest, User};
 use crate::routes::ChatState; // Updated path to ChatState
 use bcrypt::{hash, verify};
 use jsonwebtoken::{encode, Header, EncodingKey};

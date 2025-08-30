@@ -1,6 +1,6 @@
 use reqwest::Client;
 use scraper::{Html, Selector};
-use crate::models::manga::{MangaData, MangaDetail, MangaChapter, ChapterData, Pagination};
+use crate::routes::api::komik::manga_dto::{MangaData, MangaDetail, MangaChapter, ChapterData, Pagination};
 use std::error::Error;
 
 // Utility function to parse manga data

@@ -7,7 +7,8 @@ use axum::{
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use rust_lib::services::anime2;
+use crate::routes::api::anime2::anime2_service;
+use crate::routes::api::anime2::anime2;
 
 pub async fn episode_handler(
     Path(episode_url_slug): Path<String>,

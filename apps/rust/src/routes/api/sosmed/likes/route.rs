@@ -8,7 +8,7 @@ use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::mod_::ChatState; // Updated path to ChatState
-use rust_lib::models::{likes::Likes, likes::LikeRequest};
+use crate::routes::api::user::likes_dto::{Likes, LikeRequest};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use chrono::Utc;
 use sqlx::MySqlPool;

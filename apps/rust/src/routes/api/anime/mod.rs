@@ -5,6 +5,9 @@ use crate::routes::ChatState;
 pub mod search;
 pub mod detail;
 pub mod episode;
+pub mod anime_service;
+pub mod anime_dto;
+pub use self::anime_service as anime;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()

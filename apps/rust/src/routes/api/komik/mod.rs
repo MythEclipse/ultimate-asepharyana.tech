@@ -1,6 +1,6 @@
 use axum::{Router};
 use std::sync::Arc;
-use crate::routes::mod_::ChatState;
+use crate::routes::ChatState;
 
 pub mod detail;
 pub mod chapter;
@@ -9,6 +9,9 @@ pub mod manhwa;
 pub mod manhua;
 pub mod search;
 pub mod external_link;
+pub mod manga_dto;
+pub mod komik_service;
+pub use self::komik_service as komik;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()

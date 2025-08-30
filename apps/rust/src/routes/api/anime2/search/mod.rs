@@ -8,7 +8,8 @@ use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use rust_lib::services::anime2;
+use crate::routes::api::anime2::anime2_service;
+use crate::routes::api::anime2::anime2;
 
 #[derive(Debug, Deserialize)]
 pub struct Anime2QueryParams {

@@ -8,7 +8,8 @@ use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState; // Updated path to ChatState
-use rust_lib::services::compress;
+pub mod compress_service;
+pub use self::compress_service as compress;
 
 #[derive(Debug, Deserialize)]
 pub struct CompressParams {

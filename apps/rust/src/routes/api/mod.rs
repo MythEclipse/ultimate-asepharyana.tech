@@ -5,6 +5,9 @@ use crate::routes::ChatState;
 pub mod anime;
 pub mod anime2;
 pub mod sosmed;
+pub mod chat;
+pub mod komik;
+pub mod compress;
 
 pub fn create_api_routes() -> Router<Arc<ChatState>> {
     Router::new()

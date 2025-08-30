@@ -1,8 +1,8 @@
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::error::Error;
-use crate::models::anime::{AnimeData, AnimeDetail, AnimeEpisode, AnimeEpisodeImage};
-use crate::models::manga::Pagination;
+use crate::routes::api::anime::anime_dto::{AnimeData, AnimeDetail, AnimeEpisode, AnimeEpisodeImage};
+use crate::routes::api::komik::manga_dto::Pagination;
 
 // Placeholder for fetchWithProxy
 async fn fetch_with_proxy(url: &str) -> Result<String, Box<dyn Error>> {
