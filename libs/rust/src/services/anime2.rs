@@ -56,8 +56,7 @@ pub fn parse_anime2_data(html: &str) -> (Vec<Anime2Data>, Pagination) {
 
     let last_visible_page = document.select(&Selector::parse(".pagination .page-numbers").unwrap())
         .last()
-        .and_then(|e| e.prev_sibling().and_then(|s| s.value().as_element().map(|e| e.text().collect::<String>().trim().parse::<u32>().ok())))
-        .flatten()
+        .and_then(|e| e.prev_sibling().and_then(|s| scraper::ElementRef::wrap(s).and_then(|el| el.text().collect::<String>().trim().parse::<u32>().ok())))
         .unwrap_or(1);
 
     let has_next_page = document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some();
@@ -83,7 +82,6 @@ pub fn parse_anime2_data(html: &str) -> (Vec<Anime2Data>, Pagination) {
         last_visible_page,
         has_next_page,
         next_page,
-        has_previous_page,
         previous_page,
     };
 

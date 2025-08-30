@@ -10,22 +10,20 @@
 //! See the code below for details.
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use crate::config::AppConfig;
-use crate::routes::mod_::{create_routes, ChatState}; // Updated path to create_routes and ChatState
-use rust_lib::models::{user::User, user::RegisterRequest}; // Import User and RegisterRequest
+use rust_lib::config::AppConfig;
+use crate::routes::{create_routes, ChatState};
+// use rust_lib::models::{user::User, user::RegisterRequest}; // Import User and RegisterRequest
 use sqlx::mysql::MySqlPoolOptions;
 use std::sync::Arc;
 
 mod config;
 mod routes;
-mod models;
-mod chat_service;
-mod pdf_service;
-mod compress_service; // Declare the new compress_service module
-mod komik_service; // Declare the new komik_service module
-mod pdf_service; // Declare the new pdf_service module
-mod anime_service; // Declare the new anime_service module
-mod anime2_service; // Declare the new anime2_service module
+// use rust_lib::models;
+// use rust_lib::services::chat;
+// use rust_lib::services::compress;
+// use rust_lib::services::komik;
+// use rust_lib::services::anime;
+// use rust_lib::services::anime2;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

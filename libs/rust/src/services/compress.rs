@@ -1,11 +1,10 @@
-use image::{io::Reader as ImageReader, ImageFormat};
-use reqwest::Url;
+use image::ImageFormat;
 use std::io::Cursor;
 use sha1::{Sha1, Digest};
-use std::path::{Path, PathBuf};
 use tokio::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::env;
+use std::path::PathBuf;
+use std::time::SystemTime;
 
 const CACHE_DIR: &str = "compress-cache"; // Relative to current working directory
 const CACHE_EXPIRY_SECONDS: u64 = 3600; // 1 hour
@@ -48,24 +47,24 @@ async fn write_to_cache(cache_key: &str, data: &[u8]) -> Result<(), Box<dyn std:
 }
 
 pub async fn compress_image_from_url(
-    url: &str,
-    size_param: &str,
+    _url: &str,
+    _size_param: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let cache_key = generate_cache_key(url, size_param);
+    let cache_key = generate_cache_key(_url, _size_param);
 
-    if let Some(cached_data) = read_from_cache(&cache_key).await {
+    if let Some(_cached_data) = read_from_cache(&cache_key).await {
         // TODO: Return CDN link for cached data
         return Ok(format!("cached_cdn_link_for_{}", cache_key));
     }
 
     let client = reqwest::Client::new();
-    let response = client.get(url).send().await?.bytes().await?;
+    let response = client.get(_url).send().await?.bytes().await?;
     let original_buffer = response.to_vec();
 
-    let is_percentage = size_param.ends_with('%');
-    let size_value = size_param.trim_end_matches('%').parse::<f64>()?;
+    let is_percentage = _size_param.ends_with('%');
+    let size_value = _size_param.trim_end_matches('%').parse::<f64>()?;
 
-    let mut img = ImageReader::new(Cursor::new(&original_buffer))
+    let img = image::ImageReader::new(Cursor::new(&original_buffer))
         .with_guessed_format()?
         .decode()?;
 
@@ -102,8 +101,8 @@ pub async fn compress_image_from_url(
 }
 
 pub async fn compress_video_from_url(
-    url: &str,
-    size_param: &str,
+    _url: &str,
+    _size_param: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     // TODO: Implement video compression using ffmpeg-next
     // This will be significantly more complex due to external process management

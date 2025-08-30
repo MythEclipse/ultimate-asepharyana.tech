@@ -1,9 +1,7 @@
 use reqwest::Client;
 use scraper::{Html, Selector};
-use serde_json::json;
 use crate::models::manga::{MangaData, MangaDetail, MangaChapter, ChapterData, Pagination};
 use std::error::Error;
-use async_trait::async_trait; // For async traits if needed
 
 // Utility function to parse manga data
 pub fn parse_manga_data(body: &str) -> Vec<MangaData> {
@@ -186,7 +184,6 @@ pub async fn handle_list_or_search(
         last_visible_page: total_pages,
         has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
         next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
-        has_previous_page: document.select(&Selector::parse(".pagination .prev").unwrap()).next().is_some(),
         previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
     };
 

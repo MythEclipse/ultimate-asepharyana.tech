@@ -15,6 +15,7 @@ This document provides specific guidelines for all file system operations to ens
 - **Precision is Key:** The `SEARCH` block must be an exact match of the content in the file, including all whitespace and newlines.
 - **`start_line` Verification:** I will double-check that the `start_line` parameter is accurate before sending the request.
 - **Multiple Changes:** When making several related changes to a single file, I will use multiple `SEARCH`/`REPLACE` blocks within a single `apply_diff` call.
+- **Targeted Edits vs. Rewrites:** Use `apply_diff` for precise, targeted modifications to a few lines. For extensive changes or complete rewrites of a file, use `write_to_file`.
 
 ## 4. Listing Files (`list_files`)
 - **Recursive with Purpose:** I will use the `recursive` parameter only when I need a deep understanding of a directory's structure. For a top-level view, I will omit it.

@@ -42,10 +42,10 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
         let genres: Vec<String> = element.select(&genres_selector).map(|e| e.text().collect::<String>()).collect();
 
         let status_selector = Selector::parse(".set b:contains(\"Status\")").unwrap();
-        let status = element.select(&status_selector).next().map(|e| e.parent().and_then(|p| p.text().collect::<String>().strip_prefix("Status :").map(|s| s.trim().to_string()))).flatten().unwrap_or_default();
+        let status = element.select(&status_selector).next().map(|e| e.text().collect::<String>().strip_prefix("Status :").map(|s| s.trim().to_string())).flatten().unwrap_or_default();
 
         let rating_selector = Selector::parse(".set b:contains(\"Rating\")").unwrap();
-        let rating = element.select(&rating_selector).next().map(|e| e.parent().and_then(|p| p.text().collect::<String>().strip_prefix("Rating :").map(|s| s.trim().to_string()))).flatten().unwrap_or_default();
+        let rating = element.select(&rating_selector).next().map(|e| e.text().collect::<String>().strip_prefix("Rating :").map(|s| s.trim().to_string())).flatten().unwrap_or_default();
 
         anime_list.push(AnimeData {
             title,
@@ -65,7 +65,6 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
         last_visible_page: 57, // Hardcoded from Next.js example, needs dynamic scraping
         has_next_page: document.select(&Selector::parse(".hpage .r").unwrap()).next().is_some(),
         next_page: if document.select(&Selector::parse(".hpage .r").unwrap()).next().is_some() { Some(page_num + 1) } else { None },
-        has_previous_page: page_num > 1,
         previous_page: if page_num > 1 { Some(page_num - 1) } else { None },
     };
 
