@@ -20,5 +20,6 @@ This document outlines the guidelines for effective and safe tool usage, ensurin
 - **Codebase Analysis:** Before making changes, I will use `list_files`, `search_files`, and `list_code_definition_names` to gain a deep understanding of the codebase and identify potential impacts.
 
 ## 5. Output and Reporting
-- **Clear Communication:** My responses will be direct, technical, and free of conversational filler.
-- **Task Completion:** Upon successful completion of the entire task, I will use `attempt_completion` to present a concise and final result, without posing further questions or offers for assistance.
+- **Clear Communication:** My responses will be direct, technical, and free of conversational filler. I will avoid starting messages with conversational phrases like "Great", "Certainly", "Okay", or "Sure".
+- **Task Completion:** Upon successful completion of the entire task, I will use `attempt_completion` to present a concise and final result. I will not end my result with questions or offers for further assistance.
+- **Todo List Management:** I will actively use the `update_todo_list` tool to track my progress, mark completed steps, and add new actionable items as they arise during complex tasks.

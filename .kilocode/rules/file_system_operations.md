@@ -7,7 +7,7 @@ This document provides specific guidelines for all file system operations to ens
 - **Verification:** I will always check the result of a `read_file` operation to ensure the file was read successfully before proceeding.
 
 ## 2. Writing and Creating Files (`write_to_file`)
-- **Full Content Only:** When using `write_to_file`, I will always provide the *entire* file content. I will never use it for partial updates.
+- **Full Content Only:** When using `write_to_file`, I will always provide the *entire* file content, without any truncation or omissions. I will never use it for partial updates or placeholders like '// rest of code unchanged'.
 - **New Files:** `write_to_file` is the preferred tool for creating new files. I will ensure the path is correct and that the content is complete.
 - **Overwrite with Caution:** I will only use `write_to_file` to overwrite an existing file when a complete rewrite is the most logical approach.
 
