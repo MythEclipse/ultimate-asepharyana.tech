@@ -62,6 +62,17 @@ async fn get_cached_komik_base_url(refresh: bool) -> Result<String, Box<dyn Erro
         Ok("http://dummy-komik-base-url.com".to_string())
     }
 }
+#[utoipa::path(
+    get,
+    path = "/api/komik/detail/{komik_id}",
+    params(
+        ("komik_id" = String, Path, description = "ID of the komik")
+    ),
+    responses(
+        (status = 200, description = "Manga detail", body = MangaDetail)
+    ),
+    tag = "Komik"
+)]
 
 pub async fn get_detail(komik_id: &str) -> Result<MangaDetail, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
@@ -116,6 +127,17 @@ pub async fn get_detail(komik_id: &str) -> Result<MangaDetail, Box<dyn Error>> {
     })
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/chapter/{chapter_url}",
+    params(
+        ("chapter_url" = String, Path, description = "URL of the chapter")
+    ),
+    responses(
+        (status = 200, description = "Manga chapter", body = MangaChapter)
+    ),
+    tag = "Komik"
+)]
 pub async fn get_chapter(chapter_url: &str) -> Result<MangaChapter, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
     let body = fetch_with_proxy_only_wrapper(&format!("{}/chapter/{}", base_url, chapter_url)).await?;
@@ -153,6 +175,19 @@ pub async fn get_chapter(chapter_url: &str) -> Result<MangaChapter, Box<dyn Erro
     })
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/list/{manga_type}/{page}",
+    params(
+        ("manga_type" = String, Path, description = "Type of manga"),
+        ("page" = u32, Path, description = "Page number"),
+        ("query" = Option<String>, Query, description = "Search query")
+    ),
+    responses(
+        (status = 200, description = "Manga list and pagination", body = [MangaData])
+    ),
+    tag = "Komik"
+)]
 pub async fn handle_list_or_search(
     manga_type: &str,
     page: u32,
@@ -190,6 +225,14 @@ pub async fn handle_list_or_search(
     Ok((parsed_data, pagination))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/external-link",
+    responses(
+        (status = 200, description = "External Komik base URL", body = String)
+    ),
+    tag = "Komik"
+)]
 pub async fn handle_external_link() -> Result<String, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
     Ok(base_url)

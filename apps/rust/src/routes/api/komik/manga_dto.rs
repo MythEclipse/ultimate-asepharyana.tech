@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct MangaData {
     pub title: String,
     pub poster: String,
@@ -14,7 +14,7 @@ pub struct MangaData {
     pub pagination: Option<Pagination>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Pagination {
     pub current_page: u32,
     pub last_visible_page: u32,
@@ -23,7 +23,7 @@ pub struct Pagination {
     pub previous_page: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct MangaDetail {
     pub title: String,
     #[serde(rename = "alternativeTitle")]
@@ -45,14 +45,14 @@ pub struct MangaDetail {
     pub chapters: Vec<ChapterData>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct ChapterData {
     pub chapter: String,
     pub date: String,
     pub chapter_id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct MangaChapter {
     pub title: String,
     pub next_chapter_id: String,

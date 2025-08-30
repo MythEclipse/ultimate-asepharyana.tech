@@ -36,6 +36,9 @@ oxidize-pdf = { workspace = true } # For PDF compression
 infer = { workspace = true } # For file type detection
 
 rust_lib = { path = "../../libs/rust" }
+utoipa = { version = "5.4.0" }
+utoipa-axum = { version = "0.2.0" }
+# utoipa-swagger-ui temporarily removed due to version incompatibility with axum 0.8
 
 [dev-dependencies]
 tokio-test = { workspace = true }

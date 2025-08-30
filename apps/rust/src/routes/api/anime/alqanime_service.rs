@@ -1,7 +1,7 @@
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::error::Error;
-use crate::routes::api::anime2::anime2_dto::{Anime2Data, Anime2Detail, Anime2Episode};
+use crate::routes::api::anime::alqanime_dto::{Anime2Data, Anime2Detail, Anime2Episode};
 use crate::routes::api::komik::manga_dto::Pagination;
 
 // Placeholder for fetchWithProxy

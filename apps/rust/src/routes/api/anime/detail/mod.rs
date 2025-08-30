@@ -8,13 +8,13 @@ use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
 use crate::routes::api::anime::anime_service;
-use crate::routes::api::anime::anime;
+use crate::routes::api::anime::anime_service::get_anime_detail;
 
 pub async fn detail_handler(
     Path(slug): Path<String>,
     State(_state): State<Arc<ChatState>>,
 ) -> Response {
-    match anime::get_anime_detail(&slug).await {
+    match get_anime_detail(&slug).await {
         Ok(detail) => (StatusCode::OK, Json(detail)).into_response(),
         Err(e) => {
             eprintln!("Anime detail error: {:?}", e);

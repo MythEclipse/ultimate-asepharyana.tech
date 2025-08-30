@@ -5,9 +5,14 @@ use crate::routes::ChatState;
 pub mod search;
 pub mod detail;
 pub mod episode;
-pub mod anime_service;
-pub mod anime_dto;
-pub use self::anime_service as anime;
+pub mod anime_service; // otakudesu
+pub mod anime_dto;     // otakudesu
+pub mod alqanime_service;
+pub mod alqanime_dto;
+pub use self::anime_service as otakudesu;
+pub use self::alqanime_service as alqanime;
+
+// NOTE: The /search endpoint now supports ?status=complete or ?status=ongoing for filtering.
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()

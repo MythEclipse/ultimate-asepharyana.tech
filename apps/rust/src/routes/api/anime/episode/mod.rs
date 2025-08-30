@@ -8,7 +8,7 @@ use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
 use crate::routes::api::anime::anime_service;
-use crate::routes::api::anime::anime;
+use crate::routes::api::anime::anime_service::get_anime_episode_images;
 
 pub async fn episode_handler(
     Path(episode_url_slug): Path<String>,
@@ -16,7 +16,7 @@ pub async fn episode_handler(
 ) -> Response {
     let episode_url = format!("https://otakudesu.cloud/episode/{}", episode_url_slug);
 
-    match anime::get_anime_episode_images(&episode_url).await {
+    match get_anime_episode_images(&episode_url).await {
         Ok(images) => (StatusCode::OK, Json(images)).into_response(),
         Err(e) => {
             eprintln!("Anime episode images error: {:?}", e);

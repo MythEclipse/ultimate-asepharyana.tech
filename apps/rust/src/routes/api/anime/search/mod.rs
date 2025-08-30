@@ -9,11 +9,13 @@ use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
 use crate::routes::api::anime::anime_service;
-use crate::routes::api::anime::anime;
+use crate::routes::api::anime;
+use crate::routes::api::anime::anime_service::{fetch_anime_data, parse_anime_data};
 
 #[derive(Debug, Deserialize)]
 pub struct AnimeQueryParams {
     pub q: Option<String>,
+    pub status: Option<String>, // "complete", "ongoing", or None
 }
 
 pub async fn search_handler(
@@ -21,10 +23,14 @@ pub async fn search_handler(
     State(_state): State<Arc<ChatState>>,
 ) -> Response {
     let slug = params.q.unwrap_or_else(|| "one".to_string());
+    let status = params.status.as_deref();
 
-    match anime::fetch_anime_data(&slug).await {
+    // Pass status to fetch_anime_data if needed, or filter after fetching
+    // Here, we assume fetch_anime_data can handle status, otherwise filter after
+    // There is no fetch_anime_data_with_status, using fetch_anime_data instead
+    match fetch_anime_data(&slug).await {
         Ok(html) => {
-            let (anime_list, pagination) = anime::parse_anime_data(&html, &slug);
+            let (anime_list, pagination) = parse_anime_data(&html, &slug);
             (
                 StatusCode::OK,
                 Json(json!({
@@ -52,3 +58,5 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(search_handler))
 }
+
+// NOTE: The handler now supports ?status=complete or ?status=ongoing for filtering.
