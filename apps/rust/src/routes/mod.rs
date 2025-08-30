@@ -82,7 +82,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
                 "type": "history",
                 "messages": messages,
             });
-            if tx.send(Message::Text(history_message.to_string())).is_err() {
+            if tx.send(Message::Text(history_message.to_string().into())).is_err() {
                 tracing::error!("Failed to send history to client channel");
             }
         }
@@ -131,7 +131,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
 
                                 let clients = recv_task_state.clients.lock().unwrap();
                                 for client_tx in clients.iter() {
-                                    if client_tx.send(Message::Text(broadcast_text.clone())).is_err() {
+                                    if client_tx.send(Message::Text(broadcast_text.clone().into())).is_err() {
                                         tracing::warn!("Failed to send message to a client (channel closed)");
                                     }
                                 }

@@ -4,40 +4,40 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.7", features = ["ws", "multipart"] }
-tokio = { version = "1.38", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-dotenvy = "0.15"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-envy = "0.4"
-anyhow = "1.0"
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
-uuid = { version = "1.10", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
-bytes = "1.6"
-multipart = "0.18"
-futures = "0.3"
-bcrypt = "0.15"
-jsonwebtoken = "9.3"
-reqwest = { version = "0.12", features = ["json", "stream"] } # For image proxy
-http = "1.1" # For http::StatusCode and HeaderMap
-image = { version = "0.25", default-features = false, features = ["jpeg", "png"] } # For image compression
-sha1 = "0.10" # For cache key generation
-data-url = "0.3" # For data URL parsing
-base64 = "0.22" # For base64 encoding/decoding
-tokio-util = { version = "0.7", features = ["codec"] } # For stream handling
-async-trait = "0.1" # For async traits
-tempfile = "3.10" # For temporary files
-serde_yaml = "0.9" # For parsing YAML files
-scraper = "0.19" # For HTML parsing (cheerio equivalent)
-oxidize-pdf = "1.2.0" # For PDF compression
-infer = "0.12" # For file type detection
+axum = { workspace = true, features = ["ws", "multipart"] }
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+dotenvy = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+envy = { workspace = true }
+anyhow = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
+bytes = { workspace = true }
+multipart = { workspace = true }
+futures = { workspace = true }
+bcrypt = { workspace = true }
+jsonwebtoken = { workspace = true }
+reqwest = { workspace = true, features = ["json", "stream"] } # For image proxy
+http = { workspace = true } # For http::StatusCode and HeaderMap
+image = { workspace = true, default-features = false, features = ["jpeg", "png"] } # For image compression
+sha1 = { workspace = true } # For cache key generation
+data-url = { workspace = true } # For data URL parsing
+base64 = { workspace = true } # For base64 encoding/decoding
+tokio-util = { workspace = true, features = ["codec"] } # For stream handling
+async-trait = { workspace = true } # For async traits
+tempfile = { workspace = true } # For temporary files
+serde_yaml = { workspace = true } # For parsing YAML files
+scraper = { workspace = true } # For HTML parsing (cheerio equivalent)
+oxidize-pdf = { workspace = true } # For PDF compression
+infer = { workspace = true } # For file type detection
 
 rust_lib = { path = "../../libs/rust" }
 
 [dev-dependencies]
-tokio-test = "0.4"
-testcontainers = "0.15"
-testcontainers-modules = { version = "0.3", features = ["mysql"] }
+tokio-test = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["mysql"] }

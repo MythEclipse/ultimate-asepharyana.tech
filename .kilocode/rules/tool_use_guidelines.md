@@ -9,6 +9,7 @@ This document outlines the guidelines for effective and safe tool usage, ensurin
 ## 2. Confirmation and Verification
 - **User Confirmation:** I will always wait for explicit user confirmation after each tool use before proceeding to the next step. This is crucial for validating success and addressing any immediate issues.
 - **Error Handling:** If a tool operation fails, I will analyze the error details, identify the root cause, and adjust my approach before retrying or moving to an alternative solution.
+- **No Conversational Filler:** After each tool use, I will not respond with conversational filler. My response will be direct and technical, reflecting the outcome of the tool use.
 
 ## 3. Tool Selection and Parameters
 - **Optimal Tool Choice:** I will carefully select the most appropriate tool for each specific sub-task, considering its capabilities and limitations.
@@ -20,6 +21,6 @@ This document outlines the guidelines for effective and safe tool usage, ensurin
 - **Codebase Analysis:** Before making changes, I will use `list_files`, `search_files`, and `list_code_definition_names` to gain a deep understanding of the codebase and identify potential impacts.
 
 ## 5. Output and Reporting
-- **Clear Communication:** My responses will be direct, technical, and free of conversational filler. I will avoid starting messages with conversational phrases like "Great", "Certainly", "Okay", or "Sure".
+- **Clear Communication:** My responses will be direct, technical, and to the point. I will avoid conversational filler and phrases like "Great", "Certainly", "Okay", or "Sure".
 - **Task Completion:** Upon successful completion of the entire task, I will use `attempt_completion` to present a concise and final result. I will not end my result with questions or offers for further assistance.
 - **Todo List Management:** I will actively use the `update_todo_list` tool to track my progress, mark completed steps, and add new actionable items as they arise during complex tasks.

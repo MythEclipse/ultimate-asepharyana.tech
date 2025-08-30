@@ -4,34 +4,34 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0"
-async-trait = "0.1"
-bcrypt = "0.15"
-base64 = "0.22"
-bytes = "1.6"
-chrono = { version = "0.4", features = ["serde"] }
-data-url = "0.3"
-dotenvy = "0.15"
-envy = "0.4"
-futures = "0.3"
-image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
-infer = "0.12"
-jsonwebtoken = "9.3"
-reqwest = { version = "0.12", features = ["json", "stream"] }
-scraper = "0.19"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-sha1 = "0.10"
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
-tempfile = "3.10"
-tokio = { version = "1.38", features = ["full"] }
-tokio-util = { version = "0.7", features = ["codec"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1.10", features = ["v4", "serde"] }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+bcrypt = { workspace = true }
+base64 = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+data-url = { workspace = true }
+dotenvy = { workspace = true }
+envy = { workspace = true }
+futures = { workspace = true }
+image = { workspace = true, default-features = false, features = ["jpeg", "png"] }
+infer = { workspace = true }
+jsonwebtoken = { workspace = true }
+reqwest = { workspace = true, features = ["json", "stream"] }
+scraper = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+sha1 = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true, features = ["codec"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
-tokio-test = "0.4"
-testcontainers = "0.15"
-testcontainers-modules = { version = "0.3", features = ["mysql"] }
+tokio-test = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["mysql"] }
