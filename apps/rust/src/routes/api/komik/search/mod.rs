@@ -7,8 +7,8 @@ use axum::{
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState;
-use komik_service;
+use crate::routes::ChatState;
+use rust_lib::services::komik;
 
 #[derive(Debug, Deserialize)]
 pub struct KomikQueryParams {
@@ -23,7 +23,7 @@ pub async fn search_handler(
     let page = params.page.unwrap_or(1);
     let query = params.query.as_deref();
 
-    match komik_service::handle_list_or_search("search", page, query).await {
+    match komik::handle_list_or_search("search", page, query).await {
         Ok((data, pagination)) => (
             StatusCode::OK,
             Json(json!({ "data": data, "pagination": pagination })),

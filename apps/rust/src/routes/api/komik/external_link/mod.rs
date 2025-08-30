@@ -6,13 +6,13 @@ use axum::{
 };
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState;
-use komik_service;
+use crate::routes::ChatState;
+use rust_lib::services::komik;
 
 pub async fn external_link_handler(
     State(_state): State<Arc<ChatState>>,
 ) -> Response {
-    match komik_service::handle_external_link().await {
+    match komik::handle_external_link().await {
         Ok(link) => (StatusCode::OK, Json(json!({ "link": link }))).into_response(),
         Err(e) => {
             eprintln!("Error fetching external link: {:?}", e);

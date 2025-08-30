@@ -5,22 +5,22 @@ use axum::{
 };
 use serde::Deserialize;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState; // Updated path to ChatState
+use crate::routes::ChatState; // Updated path to ChatState
 
 #[derive(Debug, Deserialize)]
-pub struct ImageProxyParams {
+pub struct VideoProxyParams {
     url: String,
 }
 
-use axum::Router;
+use axum::{routing::get, Router};
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
-        .route("/", get(image_proxy_handler))
+        .route("/", get(video_proxy_handler))
 }
 
-pub async fn image_proxy_handler(
-    Query(params): Query<ImageProxyParams>,
+pub async fn video_proxy_handler(
+    Query(params): Query<VideoProxyParams>,
     State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency
 ) -> Response {
     let url = params.url;
@@ -33,7 +33,7 @@ pub async fn image_proxy_handler(
             .into_response();
     }
 
-    // Fetch the image
+    // Fetch the video
     let client = reqwest::Client::new();
     let response = client.get(&url).send().await;
 
@@ -45,6 +45,20 @@ pub async fn image_proxy_handler(
 
             match body {
                 Ok(bytes) => {
+                    // Check content type for video
+                    let content_type = headers.get(reqwest::header::CONTENT_TYPE)
+                        .and_then(|v| v.to_str().ok())
+                        .unwrap_or("");
+
+                    if !content_type.starts_with("video/") {
+                        eprintln!("URL does not point to a video: {}", url);
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "URL does not point to a video".to_string(),
+                        )
+                            .into_response();
+                    }
+
                     let mut response_builder = Response::builder().status(status);
 
                     // Copy relevant headers from the fetched response
@@ -76,7 +90,7 @@ pub async fn image_proxy_handler(
             }
         }
         Err(e) => {
-            eprintln!("Error fetching image: {:?}", e);
+            eprintln!("Error fetching video: {:?}", e);
             StatusCode::BAD_GATEWAY.into_response()
         }
     }

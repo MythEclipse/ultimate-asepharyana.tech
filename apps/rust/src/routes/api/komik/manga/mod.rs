@@ -7,8 +7,8 @@ use axum::{
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState;
-use komik_service;
+use crate::routes::ChatState;
+use rust_lib::services::komik;
 
 #[derive(Debug, Deserialize)]
 pub struct KomikQueryParams {
@@ -16,14 +16,14 @@ pub struct KomikQueryParams {
     pub query: Option<String>,
 }
 
-pub async fn manhua_handler(
+pub async fn manga_handler(
     Query(params): Query<KomikQueryParams>,
     State(_state): State<Arc<ChatState>>,
 ) -> Response {
     let page = params.page.unwrap_or(1);
     let query = params.query.as_deref();
 
-    match komik_service::handle_list_or_search("manhua", page, query).await {
+    match komik::handle_list_or_search("manga", page, query).await {
         Ok((data, pagination)) => (
             StatusCode::OK,
             Json(json!({ "data": data, "pagination": pagination })),
@@ -42,5 +42,5 @@ pub async fn manhua_handler(
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
-        .route("/", get(manhua_handler))
+        .route("/", get(manga_handler))
 }

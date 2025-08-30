@@ -7,8 +7,8 @@ use axum::{
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState; // Updated path to ChatState
-use compress_service;
+use crate::routes::ChatState; // Updated path to ChatState
+use rust_lib::services::compress;
 
 #[derive(Debug, Deserialize)]
 pub struct CompressParams {
@@ -45,7 +45,7 @@ pub async fn compress_handler(
 
     if ["jpg", "jpeg", "png"].contains(&extension.as_str()) {
         // Image compression logic
-        match compress_service::compress_image_from_url(&url, &size_param).await {
+        match compress::compress_image_from_url(&url, &size_param).await {
             Ok(cdn_link) => {
                 (
                     StatusCode::OK,
@@ -64,7 +64,7 @@ pub async fn compress_handler(
         }
     } else if ["mp4", "mov", "avi"].contains(&extension.as_str()) {
         // Video compression logic
-        match compress_service::compress_video_from_url(&url, &size_param).await {
+        match compress::compress_video_from_url(&url, &size_param).await {
             Ok(cdn_link) => {
                 (
                     StatusCode::OK,
