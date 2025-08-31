@@ -1,4 +1,4 @@
-use image::ImageFormat;
+
 use std::io::Cursor;
 use sha1::{Sha1, Digest};
 use tokio::fs;
