@@ -7,83 +7,142 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use scraper::{Html, Selector};
-use std::sync::Arc;
+use std::{collections::HashMap, error::Error};
+use regex::Regex;
 
-use crate::routes::ChatState;
 use rust_lib::utils::fetch_with_proxy;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FullAnimeData {
-    pub title: String,
-    pub slug: String,
-    pub poster: String,
+pub struct AnimeData {
     pub episode: String,
-    pub anime_url: String,
-    pub status: String,
-    pub release_date: String,
-    pub studio: String,
-    pub genre: Vec<String>,
-    pub synopsis: String,
+    pub episode_number: String,
+    pub anime: AnimeInfo,
+    pub has_next_episode: bool,
+    pub next_episode: Option<EpisodeInfo>,
+    pub has_previous_episode: bool,
+    pub previous_episode: Option<EpisodeInfo>,
+    pub stream_url: String,
+    pub download_urls: HashMap<String, Vec<DownloadLink>>,
+    pub image_url: String,
 }
 
-async fn fetch_anime_page_full(slug: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let url = format!("https://otakudesu.cloud/anime/{}", slug);
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnimeInfo {
+    pub slug: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EpisodeInfo {
+    pub slug: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadLink {
+    pub server: String,
+    pub url: String,
+}
+
+async fn fetch_anime_page_full(slug: &str) -> Result<String, Box<dyn Error>> {
+    let url = format!("https://otakudesu.cloud/episode/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
     Ok(response)
 }
 
-fn parse_anime_page_full(html: &str, slug: &str) -> FullAnimeData {
+fn parse_anime_page_full(html: &str, slug: &str) -> AnimeData {
     let document = Html::parse_document(html);
 
-    let title_selector = Selector::parse(".jdl h1").unwrap();
-    let poster_selector = Selector::parse(".fotoanime img").unwrap();
-    let detail_selector = Selector::parse(".infozingle p").unwrap();
-    let synopsis_selector = Selector::parse(".sinopc").unwrap();
-    let genre_selector = Selector::parse(".genre-info a").unwrap();
+    let episode = document
+        .select(&Selector::parse("h1.posttl").unwrap())
+        .next()
+        .map(|e| e.text().collect::<String>())
+        .unwrap_or_default();
+    let episode_number_re = Regex::new(r"Episode (\d+)").unwrap();
+    let episode_number = episode_number_re
+        .captures(&episode)
+        .and_then(|caps| caps.get(1).map(|m| m.as_str().to_string()))
+        .unwrap_or_default();
+    let image_url = document
+        .select(&Selector::parse(".cukder img").unwrap())
+        .next()
+        .and_then(|e| e.value().attr("src"))
+        .unwrap_or_default()
+        .to_string();
+    let stream_url = document
+        .select(&Selector::parse("#embed_holder iframe").unwrap())
+        .next()
+        .and_then(|e| e.value().attr("src"))
+        .unwrap_or_default()
+        .to_string();
 
-    let title = document.select(&title_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-    let poster = document.select(&poster_selector).next().and_then(|e| e.value().attr("src")).unwrap_or_default().to_string();
+    let mut download_urls: HashMap<String, Vec<DownloadLink>> = HashMap::new();
 
-    let mut status = String::new();
-    let mut release_date = String::new();
-    let mut studio = String::new();
-    let mut episode = String::new();
+    let download_selector = Selector::parse(".download ul li").unwrap();
+    for element in document.select(&download_selector) {
+        let resolution = element
+            .select(&Selector::parse("strong").unwrap())
+            .next()
+            .map(|e| e.text().collect::<String>().trim().to_string())
+            .unwrap_or_default();
+        let links: Vec<DownloadLink> = element
+            .select(&Selector::parse("a").unwrap())
+            .map(|link_element| DownloadLink {
+                server: link_element
+                    .text()
+                    .collect::<String>()
+                    .trim()
+                    .to_string(),
+                url: link_element
+                    .value()
+                    .attr("href")
+                    .unwrap_or_default()
+                    .to_string(),
+            })
+            .collect();
 
-    for element in document.select(&detail_selector) {
-        let text = element.text().collect::<String>();
-        if text.contains("Status:") {
-            status = text.replace("Status:", "").trim().to_string();
-        } else if text.contains("Rilis:") {
-            release_date = text.replace("Rilis:", "").trim().to_string();
-        } else if text.contains("Studio:") {
-            studio = text.replace("Studio:", "").trim().to_string();
-        } else if text.contains("Episode:") {
-            episode = text.replace("Episode:", "").trim().to_string();
+        if !resolution.is_empty() && !links.is_empty() {
+            download_urls.insert(resolution, links);
         }
     }
 
-    let synopsis = document.select(&synopsis_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-    let genre: Vec<String> = document.select(&genre_selector).map(|e| e.text().collect::<String>().trim().to_string()).collect();
+    let next_episode_element = document.select(&Selector::parse(".flir a[title=\"Episode Selanjutnya\"]").unwrap()).next();
+    let prev_episode_element = document.select(&Selector::parse(".flir a[title=\"Episode Sebelumnya\"]").unwrap()).next();
 
-    let anime_url = format!("https://otakudesu.cloud/anime/{}", slug);
+    let next_episode_url = next_episode_element.and_then(|e| e.value().attr("href"));
+    let previous_episode_url = prev_episode_element.and_then(|e| e.value().attr("href"));
 
-    FullAnimeData {
-        title,
-        slug: slug.to_string(),
-        poster,
+    let next_episode_slug = next_episode_url.map(|url| {
+        let segments: Vec<&str> = url.split('/').collect();
+        if segments.len() >= 2 {
+            segments[segments.len() - 2..].join("/")
+        } else {
+            url.to_string()
+        }
+    });
+    let previous_episode_slug = previous_episode_url.map(|url| {
+        let segments: Vec<&str> = url.split('/').collect();
+        if segments.len() >= 2 {
+            segments[segments.len() - 2..].join("/")
+        } else {
+            url.to_string()
+        }
+    });
+
+    AnimeData {
         episode,
-        anime_url,
-        status,
-        release_date,
-        studio,
-        genre,
-        synopsis,
+        episode_number,
+        anime: AnimeInfo { slug: slug.to_string() },
+        has_next_episode: next_episode_slug.is_some(),
+        next_episode: next_episode_slug.map(|s| EpisodeInfo { slug: s }),
+        has_previous_episode: previous_episode_slug.is_some(),
+        previous_episode: previous_episode_slug.map(|s| EpisodeInfo { slug: s }),
+        stream_url,
+        download_urls,
+        image_url,
     }
 }
 
 pub async fn full_anime_handler(
     Path(slug): Path<String>,
-    State(_state): State<Arc<ChatState>>,
 ) -> Response {
     match fetch_anime_page_full(&slug).await {
         Ok(html) => {

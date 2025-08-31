@@ -1,3 +1,4 @@
+use regex::Regex;
 use scraper::{Html, Selector};
 use std::error::Error;
 use crate::routes::api::anime::anime_dto::AnimeData;
@@ -23,21 +24,29 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
         let poster = element.select(&Selector::parse("img").unwrap()).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
 
         let episode_text = element.select(&Selector::parse("h2 a").unwrap()).next().map(|e| e.text().collect::<String>()).unwrap_or_default();
-        let episode = episode_text.find('(')
-            .and_then(|start| episode_text[start..].find(')').map(|end| &episode_text[start + 1..start + end]))
-            .unwrap_or("Ongoing")
-            .to_string();
+        let episode_regex = regex::Regex::new(r"\(([^)]+)\)").unwrap();
+        let episode = episode_regex.captures(&episode_text)
+            .and_then(|cap| cap.get(1).map(|m| m.as_str().to_string()))
+            .unwrap_or_else(|| "Ongoing".to_string());
 
-        let anime_url = element.select(&Selector::parse("h2 a").unwrap()).next().and_then(|e| e.value().attr("href").map(|s| s.to_string())).unwrap_or_default();
+        let anime_url = element.select(&Selector::parse("a").unwrap()).next().and_then(|e| e.value().attr("href").map(|s| s.to_string())).unwrap_or_default();
 
         let genres_selector = Selector::parse(".set b:contains(\"Genres\") + a").unwrap();
         let genres: Vec<String> = element.select(&genres_selector).map(|e| e.text().collect::<String>()).collect();
 
         let status_selector = Selector::parse(".set b:contains(\"Status\")").unwrap();
-        let status = element.select(&status_selector).next().map(|e| e.text().collect::<String>().strip_prefix("Status :").map(|s| s.trim().to_string())).flatten().unwrap_or_default();
+        let status = element.select(&status_selector)
+            .next()
+            .map(|e| e.parent_element().map(|p| p.text().collect::<String>().replace("Status :", "").trim().to_string()))
+            .flatten()
+            .unwrap_or_default();
 
         let rating_selector = Selector::parse(".set b:contains(\"Rating\")").unwrap();
-        let rating = element.select(&rating_selector).next().map(|e| e.text().collect::<String>().strip_prefix("Rating :").map(|s| s.trim().to_string())).flatten().unwrap_or_default();
+        let rating = element.select(&rating_selector)
+            .next()
+            .map(|e| e.parent_element().map(|p| p.text().collect::<String>().replace("Rating :", "").trim().to_string()))
+            .flatten()
+            .unwrap_or_default();
 
         anime_list.push(AnimeData {
             title,

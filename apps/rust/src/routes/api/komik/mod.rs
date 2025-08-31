@@ -32,11 +32,7 @@ pub async fn media_handler(
 ) -> Response {
     let allowed_types = ["manga", "manhwa", "manhua", "search", "detail", "chapter", "external-link"];
     if !allowed_types.contains(&media_type.as_str()) {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({ "status": false, "message": "Invalid type parameter" })),
-        )
-            .into_response();
+        return error_response(StatusCode::BAD_REQUEST, "Invalid type parameter");
     }
 
     match media_type.as_str() {
@@ -44,48 +40,23 @@ pub async fn media_handler(
             let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
             match komik::get_detail(&komik_id).await {
                 Ok(data) => (StatusCode::OK, Json(data)).into_response(),
-                Err(e) => {
-                    eprintln!("Error fetching komik detail: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({ "status": false, "message": "Failed to fetch manga detail" })),
-                    )
-                        .into_response()
-                }
+                Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to fetch manga detail: {}", e)),
             }
         }
         "chapter" => {
             let chapter_url = params.chapter_url.unwrap_or_default();
             if chapter_url.is_empty() {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!({ "status": false, "message": "chapter_url parameter is required" })),
-                )
-                    .into_response();
+                return error_response(StatusCode::BAD_REQUEST, "chapter_url parameter is required");
             }
             match komik::get_chapter(&chapter_url).await {
                 Ok(data) => (StatusCode::OK, Json(data)).into_response(),
-                Err(e) => {
-                    eprintln!("Error fetching komik chapter: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({ "status": false, "message": "Failed to fetch manga chapter" })),
-                    )
-                        .into_response()
-                }
+                Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to fetch manga chapter: {}", e)),
             }
         }
         "external-link" => {
             match komik::handle_external_link().await {
                 Ok(link) => (StatusCode::OK, Json(serde_json::json!({ "link": link }))).into_response(),
-                Err(e) => {
-                    eprintln!("Error fetching external link: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({ "status": false, "message": "Failed to fetch external link" })),
-                    )
-                        .into_response()
-                }
+                Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to fetch external link: {}", e)),
             }
         }
         _ => {
@@ -108,17 +79,18 @@ pub async fn media_handler(
                             .into_response()
                     }
                 }
-                Err(e) => {
-                    eprintln!("Error fetching komik list/search: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({ "status": false, "message": "Failed to fetch komik list/search" })),
-                    )
-                        .into_response()
-                }
+                Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to fetch komik list/search: {}", e)),
             }
         }
     }
+}
+
+fn error_response(status: StatusCode, message: &str) -> Response {
+    (
+        status,
+        Json(serde_json::json!({ "status": false, "message": message })),
+    )
+        .into_response()
 }
 
 #[allow(dead_code)]

@@ -43,23 +43,53 @@ pub fn parse_manga_data(body: &str) -> Vec<MangaData> {
     data
 }
 
-// Placeholder for fetchWithProxyOnlyWrapper
+// Placeholder for fetchWithProxyOnlyWrapper, simulating proxy behavior
 async fn fetch_with_proxy_only_wrapper(url: &str) -> Result<String, Box<dyn Error>> {
-    // In a real scenario, this would involve proxy logic.
-    // For now, a direct fetch.
     let client = Client::new();
     let response = client.get(url).send().await?.text().await?;
+    // In a real implementation, this would involve more sophisticated proxy logic
+    // and error handling, similar to the Next.js `fetchWithProxy`
     Ok(response)
 }
 
-// Placeholder for getCachedKomikBaseUrl
+// Placeholder for ProxyListOnly, simulating proxy behavior
+async fn proxy_list_only(url: &str, _retries: u8) -> Result<String, Box<dyn Error>> {
+    let client = Client::new();
+    let response = client.get(url).send().await?.text().await?;
+    // Simulate some proxy-specific logic if needed
+    Ok(response)
+}
+
+// Placeholder for CroxyProxyOnly, simulating proxy behavior
+async fn croxy_proxy_only(url: &str) -> Result<String, Box<dyn Error>> {
+    let client = Client::new();
+    let response = client.get(url).send().await?.text().await?;
+    // Simulate some proxy-specific logic if needed
+    Ok(response)
+}
+
+// Mock for getCachedKomikBaseUrl to simulate Next.js behavior
+// In a real scenario, this would involve actual caching and retry logic.
 async fn get_cached_komik_base_url(refresh: bool) -> Result<String, Box<dyn Error>> {
-    // In a real scenario, this would fetch from a cache or external service.
-    // For now, return a dummy URL.
+    // Simulate a failure and then a successful refresh
     if refresh {
-        Ok("http://dummy-komik-base-url-refreshed.com".to_string())
+        // This would typically involve invalidating cache and fetching a new URL
+        Ok("http://komik-api-refreshed.example.com".to_string())
     } else {
-        Ok("http://dummy-komik-base-url.com".to_string())
+        // Simulate initial attempt, potentially failing or succeeding
+        // For demonstration, let's assume it always succeeds with a default URL
+        Ok("http://komik-api.example.com".to_string())
+    }
+}
+
+// Helper to get baseURL with cache refresh on failure, mimicking Next.js logic
+async fn get_base_url_with_retry() -> Result<String, Box<dyn Error>> {
+    match get_cached_komik_base_url(false).await {
+        Ok(url) => Ok(url),
+        Err(_) => {
+            // logger.warn!("[API][komik] Cached base URL failed, retrying with refresh");
+            get_cached_komik_base_url(true).await
+        }
     }
 }
 #[utoipa::path(
@@ -75,7 +105,7 @@ async fn get_cached_komik_base_url(refresh: bool) -> Result<String, Box<dyn Erro
 )]
 
 pub async fn get_detail(komik_id: &str) -> Result<serde_json::Value, Box<dyn Error>> {
-    let base_url = get_cached_komik_base_url(false).await?;
+    let base_url = get_base_url_with_retry().await?;
     let body = fetch_with_proxy_only_wrapper(&format!("{}/komik/{}", base_url, komik_id)).await?;
     let document = Html::parse_document(&body);
 
@@ -138,41 +168,46 @@ pub async fn get_detail(komik_id: &str) -> Result<serde_json::Value, Box<dyn Err
     ),
     tag = "Komik"
 )]
-pub async fn get_chapter(chapter_url: &str) -> Result<serde_json::Value, Box<dyn Error>> {
-    let base_url = get_cached_komik_base_url(false).await?;
+pub async fn get_chapter(chapter_url: &str) -> Result<MangaChapter, Box<dyn Error>> {
+    let base_url = get_base_url_with_retry().await?;
     let body = fetch_with_proxy_only_wrapper(&format!("{}/chapter/{}", base_url, chapter_url)).await?;
     let document = Html::parse_document(&body);
 
-    let title = document.select(&Selector::parse(".entry-title").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let title_selector = Selector::parse(".entry-title").unwrap();
+    let prev_chapter_selector = Selector::parse(".nextprev a[rel='prev']").unwrap();
+    let list_chapter_selector = Selector::parse(".nextprev a:has(.icol.daftarch)").unwrap();
+    let next_chapter_selector = Selector::parse(".nextprev a[rel='next']").unwrap();
+    let image_selector = Selector::parse("#chimg-auh img").unwrap();
 
-    let prev_chapter_id = document.select(&Selector::parse(".nextprev a[rel='prev']").unwrap())
+    let title = document.select(&title_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+
+    let prev_chapter_id = document.select(&prev_chapter_selector)
         .next()
         .and_then(|e| e.value().attr("href").and_then(|s| s.split('/').nth(3).map(|s| s.to_string())))
         .unwrap_or_default();
 
-    let list_chapter = document.select(&Selector::parse(".nextprev a:has(.icol.daftarch)").unwrap())
+    let list_chapter = document.select(&list_chapter_selector)
         .next()
         .and_then(|e| e.value().attr("href").and_then(|s| s.split('/').nth(4).map(|s| s.to_string())))
         .unwrap_or_default();
 
-    let next_chapter_id = document.select(&Selector::parse(".nextprev a[rel='next']").unwrap())
+    let next_chapter_id = document.select(&next_chapter_selector)
         .next()
         .and_then(|e| e.value().attr("href").and_then(|s| s.split('/').nth(3).map(|s| s.to_string())))
         .unwrap_or_default();
 
     let mut images: Vec<String> = Vec::new();
-    let image_selector = Selector::parse("#chimg-auh img").unwrap();
     for element in document.select(&image_selector) {
         images.push(element.value().attr("src").map(|s| s.to_string()).unwrap_or_default());
     }
 
-    Ok(serde_json::json!({
-        "title": title,
-        "next_chapter_id": next_chapter_id,
-        "prev_chapter_id": prev_chapter_id,
-        "images": images,
-        "list_chapter": list_chapter,
-    }))
+    Ok(MangaChapter {
+        title,
+        next_chapter_id,
+        prev_chapter_id,
+        images,
+        list_chapter,
+    })
 }
 
 #[utoipa::path(
@@ -191,36 +226,94 @@ pub async fn get_chapter(chapter_url: &str) -> Result<serde_json::Value, Box<dyn
 pub async fn handle_list_or_search(
     manga_type: &str,
     page: u32,
-    query: Option<&str>,
+    query_slug: Option<&str>,
 ) -> Result<serde_json::Value, Box<dyn Error>> {
-    let base_url = get_cached_komik_base_url(false).await?;
+    let base_url = get_base_url_with_retry().await?;
     let mut api_url = format!("{}/{}/page/{}/", base_url, manga_type, page);
-    if let Some(q) = query {
-        api_url = format!("{}/page/{}/?s={}", base_url, page, q);
+    if manga_type == "search" {
+        if let Some(q) = query_slug {
+            api_url = format!("{}/page/{}/?s={}", base_url, page, q);
+        }
     }
 
-    let body = fetch_with_proxy_only_wrapper(&api_url).await?;
-    let document = Html::parse_document(&body);
+    // First attempt
+    let mut body = fetch_with_proxy_only_wrapper(&api_url).await?;
+    let mut document = Html::parse_document(&body);
+    let mut parsed_data = parse_manga_data(&body);
 
-    let parsed_data = parse_manga_data(&body);
-
-    let current_page = document.select(&Selector::parse(".pagination .current").unwrap())
+    let mut current_page = document.select(&Selector::parse(".pagination .current").unwrap())
         .next()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(1);
 
-    let total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
+    let mut total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
         .next()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(current_page);
 
-    let pagination = Pagination {
+    let mut pagination = Pagination {
         current_page,
         last_visible_page: total_pages,
         has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
         next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
         previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
     };
+
+    // If data is empty, try with a refreshed proxy (simulated)
+    if parsed_data.is_empty() {
+        let refreshed_base_url = get_cached_komik_base_url(true).await?;
+        let mut retry_api_url = format!("{}/{}/page/{}/", refreshed_base_url, manga_type, page);
+        if manga_type == "search" {
+            if let Some(q) = query_slug {
+                retry_api_url = format!("{}/page/{}/?s={}", refreshed_base_url, page, q);
+            }
+        }
+        let proxy_result = proxy_list_only(&retry_api_url, 10).await?;
+        body = proxy_result;
+        document = Html::parse_document(&body);
+        parsed_data = parse_manga_data(&body);
+
+        current_page = document.select(&Selector::parse(".pagination .current").unwrap())
+            .next()
+            .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
+            .unwrap_or(1);
+        total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
+            .next()
+            .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
+            .unwrap_or(current_page);
+        pagination = Pagination {
+            current_page,
+            last_visible_page: total_pages,
+            has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
+            next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
+            previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
+        };
+    }
+
+    // If still empty, try CroxyProxyOnly (simulated)
+    if parsed_data.is_empty() {
+        let croxy_html = croxy_proxy_only(&api_url).await;
+        if let Ok(html) = croxy_html {
+            document = Html::parse_document(&html);
+            parsed_data = parse_manga_data(&html);
+
+            current_page = document.select(&Selector::parse(".pagination .current").unwrap())
+                .next()
+                .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
+                .unwrap_or(1);
+            total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
+                .next()
+                .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
+                .unwrap_or(current_page);
+            pagination = Pagination {
+                current_page,
+                last_visible_page: total_pages,
+                has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
+                next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
+                previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
+            };
+        }
+    }
 
     Ok(serde_json::json!({
         "data": parsed_data,
@@ -237,6 +330,40 @@ pub async fn handle_list_or_search(
     tag = "Komik"
 )]
 pub async fn handle_external_link() -> Result<serde_json::Value, Box<dyn Error>> {
-    let base_url = get_cached_komik_base_url(false).await?;
+    let base_url = get_base_url_with_retry().await?;
     Ok(serde_json::json!({ "link": base_url }))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/komik/search/{query_slug}",
+    params(
+        ("query_slug" = String, Path, description = "Search query for komik"),
+        ("page" = Option<u32>, Query, description = "Page number for search results")
+    ),
+    responses(
+        (status = 200, description = "Komik search results with pagination", body = [MangaData])
+    ),
+    tag = "Komik"
+)]
+pub async fn search_komik(query_slug: &str, page: Option<u32>) -> Result<serde_json::Value, Box<dyn Error>> {
+    let page_num = page.unwrap_or(1);
+    handle_list_or_search("search", page_num, Some(query_slug)).await
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/komik/search/{query_slug}",
+    params(
+        ("query_slug" = String, Path, description = "Search query for komik"),
+        ("page" = Option<u32>, Query, description = "Page number for search results")
+    ),
+    responses(
+        (status = 200, description = "Komik search results with pagination", body = [MangaData])
+    ),
+    tag = "Komik"
+)]
+pub async fn search_komik(query_slug: &str, page: Option<u32>) -> Result<serde_json::Value, Box<dyn Error>> {
+    let page_num = page.unwrap_or(1);
+    handle_list_or_search("search", page_num, Some(query_slug)).await
 }

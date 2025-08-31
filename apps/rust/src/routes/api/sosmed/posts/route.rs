@@ -1,54 +1,49 @@
 use axum::{
     extract::{Query, State},
-    http::{HeaderMap, StatusCode},
+    http::{StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
+use axum_extra::extract::cookie::CookieJar;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState; // Updated path to ChatState
+use crate::routes::mod_::ChatState;
 use crate::routes::api::user::posts_dto::{Posts, PostRequest};
 use crate::routes::api::user::user_dto::User;
 use crate::routes::api::user::comments_dto::Comments;
 use crate::routes::api::user::likes_dto::Likes;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use crate::utils::auth::{Claims, verify_jwt};
 use chrono::Utc;
 use sqlx::MySqlPool;
 
-// Claims struct for JWT decoding (re-used from auth.rs)
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct Claims {
-    user_id: String,
-    email: String,
-    name: String,
-    exp: usize,
-}
-
-// Helper to verify JWT (re-used from auth.rs)
-async fn verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, Box<dyn std::error::Error>> {
-    let validation = Validation::default();
-    let decoded = decode::<Claims>(token, &DecodingKey::from_secret(jwt_secret.as_bytes()), &validation)?;
-    Ok(decoded.claims)
-}
-
 pub async fn posts_post_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
     Json(payload): Json<PostRequest>,
 ) -> Response {
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
@@ -97,20 +92,30 @@ pub async fn posts_post_handler(
 
 pub async fn posts_get_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
 ) -> Response {
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
@@ -121,7 +126,7 @@ pub async fn posts_get_handler(
         r#"
         SELECT
             p.id, p.content, p.authorId, p.image_url, p.userId, p.created_at,
-            u.name as user_name, u.image as user_image
+            u.id as user_id, u.name as user_name, u.image as user_image
         FROM Posts p
         LEFT JOIN User u ON u.id = p.userId
         ORDER BY p.created_at DESC
@@ -138,7 +143,7 @@ pub async fn posts_get_handler(
                     r#"
                     SELECT
                         c.id, c.postId, c.content, c.userId, c.authorId, c.created_at,
-                        u.name as user_name, u.image as user_image
+                        u.id as user_id, u.name as user_name, u.image as user_image
                     FROM Comments c
                     LEFT JOIN User u ON u.id = c.userId
                     WHERE c.postId = ?
@@ -162,8 +167,8 @@ pub async fn posts_get_handler(
                 // Manually construct the desired output structure
                 let user_info = json!({
                     "id": post.user_id,
-                    "name": post.author_id, // Assuming authorId is the name for now
-                    "image": post.image_url, // Assuming image_url is the user image for now
+                    "name": post.user_name,
+                    "image": post.user_image,
                 });
 
                 let comments_with_user_info: Vec<serde_json::Value> = comments.into_iter().map(|c| {
@@ -174,8 +179,8 @@ pub async fn posts_get_handler(
                         "created_at": c.created_at,
                         "user": {
                             "id": c.user_id,
-                            "name": c.author_id, // Assuming authorId is the name for now
-                            "image": c.image_profile, // Assuming image_profile is the user image for now
+                            "name": c.user_name,
+                            "image": c.image_profile,
                         }
                     })
                 }).collect();
@@ -212,21 +217,31 @@ pub async fn posts_get_handler(
 
 pub async fn posts_put_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
     Json(payload): Json<PostRequest>,
 ) -> Response {
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
@@ -299,21 +314,31 @@ pub async fn posts_put_handler(
 
 pub async fn posts_delete_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
     Json(payload): Json<PostRequest>,
 ) -> Response {
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }

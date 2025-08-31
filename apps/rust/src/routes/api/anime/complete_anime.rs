@@ -31,17 +31,25 @@ async fn fetch_anime_page_complete(slug: &str) -> Result<String, Box<dyn std::er
 fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>, Pagination) {
     let document = Html::parse_document(html);
 
+    // Declare selectors once for efficiency and readability
+    let pagenavix_last_page_selector = Selector::parse(".pagenavix .page-numbers:not(.next):last").unwrap();
+    let pagenavix_next_page_selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
+    let venz_ul_li_selector = Selector::parse(".venz ul li").unwrap();
+    let thumbz_h2_jdlflm_selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
+    let a_selector = Selector::parse("a").unwrap();
+    let img_selector = Selector::parse("img").unwrap();
+    let epz_selector = Selector::parse(".epz").unwrap();
+
     let mut anime_list: Vec<AnimeCompleteData> = Vec::new();
 
     let pagination = {
         let current_page = slug.parse::<u32>().unwrap_or(1);
-        let last_visible_page_selector = Selector::parse(".pagenavix .page-numbers:not(.next):last").unwrap();
-        let last_visible_page = document.select(&last_visible_page_selector)
+        let last_visible_page = document.select(&pagenavix_last_page_selector)
             .next()
             .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
             .unwrap_or(1);
 
-        let has_next_page = document.select(&Selector::parse(".pagenavix .next.page-numbers").unwrap()).next().is_some();
+        let has_next_page = document.select(&pagenavix_next_page_selector).next().is_some();
         let next_page = if has_next_page { Some(current_page + 1) } else { None };
         let has_previous_page = current_page > 1;
         let previous_page = if current_page > 1 { Some(current_page - 1) } else { None };
@@ -56,29 +64,29 @@ fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>,
         }
     };
 
-    let anime_selector = Selector::parse(".venz ul li").unwrap();
-    for element in document.select(&anime_selector) {
-        let title = element.select(&Selector::parse(".thumbz h2.jdlflm").unwrap())
+    for element in document.select(&venz_ul_li_selector) {
+        let title = element.select(&thumbz_h2_jdlflm_selector)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
-        let slug_val = element.select(&Selector::parse("a").unwrap())
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4).map(|s| s.to_string()))
-            .unwrap_or_default();
-        let poster = element.select(&Selector::parse("img").unwrap())
-            .next()
-            .and_then(|e| e.value().attr("src").map(|s| s.to_string()))
-            .unwrap_or_default();
-        let episode = element.select(&Selector::parse(".epz").unwrap())
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
-        let anime_url = element.select(&Selector::parse("a").unwrap())
+            .unwrap_or_default(); // Equivalent to || ''
+
+        let anime_url = element.select(&a_selector)
             .next()
             .and_then(|e| e.value().attr("href").map(|s| s.to_string()))
-            .unwrap_or_default();
+            .unwrap_or_default(); // Equivalent to || ''
+
+        // Extract slug from anime_url after getting anime_url
+        let slug_val = anime_url.split('/').nth(4).unwrap_or_default().to_string();
+
+        let poster = element.select(&img_selector)
+            .next()
+            .and_then(|e| e.value().attr("src").map(|s| s.to_string()))
+            .unwrap_or_default(); // Equivalent to || ''
+
+        let episode = element.select(&epz_selector)
+            .next()
+            .map(|e| e.text().collect::<String>().trim().to_string())
+            .unwrap_or_else(|| "N/A".to_string()); // Equivalent to || 'N/A'
 
         anime_list.push(AnimeCompleteData {
             title,

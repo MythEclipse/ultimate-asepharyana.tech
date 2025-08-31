@@ -6,28 +6,12 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
-use axum_extra::extract::cookie::{CookieJar, Cookie};
+use axum_extra::extract::cookie::CookieJar;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState; // Updated path to ChatState
+use crate::routes::mod_::ChatState;
 use crate::routes::api::user::likes_dto::{Likes, LikeRequest};
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use crate::utils::auth::{Claims, verify_jwt};
 use sqlx::MySqlPool;
-
-// Claims struct for JWT decoding
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct Claims {
-    user_id: String,
-    email: String,
-    name: String,
-    exp: usize,
-}
-
-// Helper to verify JWT
-async fn verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, Box<dyn std::error::Error>> {
-    let validation = Validation::default();
-    let decoded = decode::<Claims>(token, &DecodingKey::from_secret(jwt_secret.as_bytes()), &validation)?;
-    Ok(decoded.claims)
-}
 
 pub async fn likes_post_handler(
     State(state): State<Arc<ChatState>>,

@@ -4,47 +4,26 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use axum_extra::extract::cookie::{CookieJar, Cookie};
+use axum_extra::extract::cookie::CookieJar;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState; // Updated path to ChatState
+use crate::routes::mod_::ChatState;
 use crate::routes::api::user::comments_dto::{Comments, CommentRequest};
 use crate::routes::api::user::user_dto::User;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use crate::utils::auth::{Claims, verify_jwt};
 use chrono::Utc;
 use sqlx::MySqlPool;
 use sqlx::FromRow;
 use serde::Serialize;
+use chrono::NaiveDateTime;
 
-
-// Helper to get IP (simplified for Rust)
-fn get_ip() -> String {
-    "unknown".to_string() // Placeholder, actual IP extraction is more complex in Rust
-}
-
-// Claims struct for JWT decoding
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct Claims {
-    user_id: String,
-    email: String,
-    name: String,
-    exp: usize,
-}
-
-// Helper to verify JWT
-async fn verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, Box<dyn std::error::Error>> {
-    let validation = Validation::default();
-    let decoded = decode::<Claims>(token, &DecodingKey::from_secret(jwt_secret.as_bytes()), &validation)?;
-    Ok(decoded.claims)
-}
 
 pub async fn comments_post_handler(
     State(state): State<Arc<ChatState>>,
     cookies: CookieJar,
     Json(payload): Json<CommentRequest>,
 ) -> Response {
-    let ip = get_ip();
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
@@ -149,7 +128,6 @@ pub async fn comments_get_handler(
     Query(params): Query<CommentRequest>,
     State(state): State<Arc<ChatState>>,
 ) -> Response {
-    let ip = get_ip();
     let db_pool = &state.pool;
 
     let Some(post_id) = params.post_id else {
@@ -205,7 +183,6 @@ pub async fn comments_put_handler(
     cookies: CookieJar,
     Json(payload): Json<CommentRequest>,
 ) -> Response {
-    let ip = get_ip();
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
@@ -242,14 +219,14 @@ pub async fn comments_put_handler(
             .into_response();
     };
 
-    if payload.content.is_empty() {
+    let content = payload.content;
+    if content.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({ "message": "Content is required" })),
         )
             .into_response();
     }
-    let content = payload.content;
 
 
     let comment = match sqlx::query_as::<_, Comments>("SELECT * FROM Comments WHERE id = ?")
@@ -283,29 +260,20 @@ pub async fn comments_put_handler(
             .into_response();
     }
 
-    match sqlx::query(
+    match sqlx::query_as::<_, Comments>(
         "UPDATE Comments SET content = ? WHERE id = ? AND userId = ?"
     )
     .bind(&content)
     .bind(&id)
     .bind(&user_id)
-    .execute(db_pool.as_ref())
+    .fetch_one(db_pool.as_ref())
     .await
     {
-        Ok(result) => {
-            if result.rows_affected() == 0 {
-                return (
-                    StatusCode::NOT_FOUND,
-                    Json(json!({ "message": "Comment not found or user not authorized" })),
-                )
-                    .into_response();
-            }
-            (
-                StatusCode::OK,
-                Json(json!({ "message": "Comment updated successfully!" })),
-            )
-                .into_response()
-        },
+        Ok(updated_comment) => (
+            StatusCode::OK,
+            Json(json!({ "message": "Comment updated successfully!", "comment": updated_comment })),
+        )
+            .into_response(),
         Err(e) => {
             eprintln!("Error updating comment: {:?}", e);
             (
@@ -322,7 +290,6 @@ pub async fn comments_delete_handler(
     cookies: CookieJar,
     Json(payload): Json<CommentRequest>,
 ) -> Response {
-    let ip = get_ip();
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 

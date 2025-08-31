@@ -32,7 +32,7 @@ pub async fn detail_handler(
 
 use axum::{routing::{get}, Router};
 
-pub fn create_routes() -> Router<std::sync::Arc<crate::routes::ChatState>> {
+pub fn create_routes() -> Router {
     Router::new()
         .route("/:slug", get(detail_handler))
 }
