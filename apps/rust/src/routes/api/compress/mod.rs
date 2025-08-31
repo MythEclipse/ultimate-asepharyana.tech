@@ -42,7 +42,6 @@ pub async fn compress_handler(
             .into_response();
     }
 
-    // TODO: Implement queueing mechanism if needed
 
     // Determine if it's an image or video based on URL extension
     let extension = url.split('.').last().unwrap_or("").to_lowercase();

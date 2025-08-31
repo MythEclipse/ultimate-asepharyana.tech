@@ -7,35 +7,35 @@ use axum::{
 use serde::Deserialize;
 use std::sync::Arc;
 use crate::routes::ChatState;
-pub mod detail;
 pub mod chapter;
-pub mod search;
+pub mod detail;
 pub mod external_link;
 pub mod manga_dto;
 pub mod komik_service;
+pub mod search;
 pub use self::komik_service as komik;
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 pub struct KomikQueryParams {
-    pub page: Option<u32>,
-    pub query: Option<String>,
     pub komik_id: Option<String>,
     pub chapter_url: Option<String>,
+    pub page: Option<u32>,
+    pub query: Option<String>,
 }
 
 #[allow(dead_code)]
 pub async fn media_handler(
-    Path(media_type): Path<String>,
+    Path(function): Path<String>,
     Query(params): Query<KomikQueryParams>,
     State(_state): State<Arc<ChatState>>,
 ) -> Response {
-    let allowed_types = ["manga", "manhwa", "manhua", "search", "detail", "chapter", "external-link"];
-    if !allowed_types.contains(&media_type.as_str()) {
-        return error_response(StatusCode::BAD_REQUEST, "Invalid type parameter");
+    let allowed_functions = ["manga", "manhwa", "manhua", "search", "detail", "chapter", "external-link"];
+    if !allowed_functions.contains(&function.as_str()) {
+        return error_response(StatusCode::BAD_REQUEST, "Invalid function parameter");
     }
 
-    match media_type.as_str() {
+    match function.as_str() {
         "detail" => {
             let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
             match komik::get_detail(&komik_id).await {
@@ -63,7 +63,7 @@ pub async fn media_handler(
             // Handles "manga", "manhwa", "manhua", "search"
             let page = params.page.unwrap_or(1);
             let query = params.query.as_deref();
-            match komik::handle_list_or_search(&media_type, page, query).await {
+            match komik::handle_list_or_search(&function, page, query).await {
                 Ok(data) => {
                     if data["data"].is_null() || data["data"].as_array().map_or(true, |arr| arr.is_empty()) {
                         (
@@ -96,5 +96,5 @@ fn error_response(status: StatusCode, message: &str) -> Response {
 #[allow(dead_code)]
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
-        .route("/:type", get(media_handler))
+        .route("/:function", get(media_handler))
 }

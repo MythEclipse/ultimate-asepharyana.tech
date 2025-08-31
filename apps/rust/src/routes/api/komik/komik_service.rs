@@ -109,30 +109,38 @@ pub async fn get_detail(komik_id: &str) -> Result<serde_json::Value, Box<dyn Err
     let body = fetch_with_proxy_only_wrapper(&format!("{}/komik/{}", base_url, komik_id)).await?;
     let document = Html::parse_document(&body);
 
-    let title = document.select(&Selector::parse("h1.entry-title").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-    let alternative_title = document.select(&Selector::parse(".spe span:contains('Judul Alternatif:')").unwrap()).next().map(|e| e.text().collect::<String>().replace("Judul Alternatif:", "").trim().to_string()).unwrap_or_default();
-    let score = document.select(&Selector::parse(".rtg > div > i").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-    let mut poster = document.select(&Selector::parse(".thumb img").unwrap()).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
+    let title_selector = Selector::parse("h1.entry-title").unwrap();
+    let alternative_title_selector = Selector::parse(".spe span:contains('Judul Alternatif:')").unwrap();
+    let score_selector = Selector::parse(".rtg > div > i").unwrap();
+    let poster_selector = Selector::parse(".thumb img").unwrap();
+    let description_selector = Selector::parse("#sinopsis > section > div > div.entry-content.entry-content-single > p").unwrap();
+    let status_selector = Selector::parse(".spe span:contains('Status:')").unwrap();
+    let genre_selector = Selector::parse(".genre-info a").unwrap();
+    let author_selector = Selector::parse(".spe span:contains('Pengarang:')").unwrap();
+    let type_selector = Selector::parse(".spe span:contains('Jenis Komik:') a").unwrap();
+    let chapter_list_selector = Selector::parse("#chapter_list ul li").unwrap();
+    let chapter_link_selector = Selector::parse(".lchx a").unwrap();
+    let chapter_date_selector = Selector::parse(".dt a").unwrap();
+
+    let title = document.select(&title_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let alternative_title = document.select(&alternative_title_selector).next().map(|e| e.text().collect::<String>().replace("Judul Alternatif:", "").trim().to_string()).unwrap_or_default();
+    let score = document.select(&score_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let mut poster = document.select(&poster_selector).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
     poster = poster.split('?').next().unwrap_or(&poster).to_string();
-    let description = document.select(&Selector::parse("#sinopsis > section > div > div.entry-content.entry-content-single > p").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-    let status = document.select(&Selector::parse(".spe span:contains('Status:')").unwrap()).next().map(|e| e.text().collect::<String>().replace("Status:", "").trim().to_string()).unwrap_or_default();
-    let manga_type = document.select(&Selector::parse(".spe span:contains('Jenis Komik:') a").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let description = document.select(&description_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let status = document.select(&status_selector).next().map(|e| e.text().collect::<String>().replace("Status:", "").trim().to_string()).unwrap_or_default();
+    let manga_type = document.select(&type_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
     let release_date = document.select(&Selector::parse("#chapter_list > ul > li:last-child > span.dt").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-    let author = document.select(&Selector::parse(".spe span:contains('Pengarang:')").unwrap()).next().map(|e| e.text().collect::<String>().replace("Pengarang:", "").trim().to_string()).unwrap_or_default();
+    let author = document.select(&author_selector).next().map(|e| e.text().collect::<String>().replace("Pengarang:", "").trim().to_string()).unwrap_or_default();
     let total_chapter = document.select(&Selector::parse("#chapter_list > ul > li:nth-child(1) > span.lchx").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
     let updated_on = document.select(&Selector::parse("#chapter_list > ul > li:nth-child(1) > span.dt").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
 
     let mut genres: Vec<String> = Vec::new();
-    let genre_selector = Selector::parse(".genre-info a").unwrap();
     for element in document.select(&genre_selector) {
         genres.push(element.text().collect::<String>().trim().to_string());
     }
 
     let mut chapters: Vec<ChapterData> = Vec::new();
-    let chapter_list_selector = Selector::parse("#chapter_list ul li").unwrap();
-    let chapter_link_selector = Selector::parse(".lchx a").unwrap();
-    let chapter_date_selector = Selector::parse(".dt a").unwrap();
-
     for element in document.select(&chapter_list_selector) {
         let chapter = element.select(&chapter_link_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
         let date = element.select(&chapter_date_selector).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
@@ -332,38 +340,4 @@ pub async fn handle_list_or_search(
 pub async fn handle_external_link() -> Result<serde_json::Value, Box<dyn Error>> {
     let base_url = get_base_url_with_retry().await?;
     Ok(serde_json::json!({ "link": base_url }))
-}
-
-#[utoipa::path(
-    get,
-    path = "/api/komik/search/{query_slug}",
-    params(
-        ("query_slug" = String, Path, description = "Search query for komik"),
-        ("page" = Option<u32>, Query, description = "Page number for search results")
-    ),
-    responses(
-        (status = 200, description = "Komik search results with pagination", body = [MangaData])
-    ),
-    tag = "Komik"
-)]
-pub async fn search_komik(query_slug: &str, page: Option<u32>) -> Result<serde_json::Value, Box<dyn Error>> {
-    let page_num = page.unwrap_or(1);
-    handle_list_or_search("search", page_num, Some(query_slug)).await
-}
-
-#[utoipa::path(
-    get,
-    path = "/api/komik/search/{query_slug}",
-    params(
-        ("query_slug" = String, Path, description = "Search query for komik"),
-        ("page" = Option<u32>, Query, description = "Page number for search results")
-    ),
-    responses(
-        (status = 200, description = "Komik search results with pagination", body = [MangaData])
-    ),
-    tag = "Komik"
-)]
-pub async fn search_komik(query_slug: &str, page: Option<u32>) -> Result<serde_json::Value, Box<dyn Error>> {
-    let page_num = page.unwrap_or(1);
-    handle_list_or_search("search", page_num, Some(query_slug)).await
 }
