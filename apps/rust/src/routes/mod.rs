@@ -1,3 +1,6 @@
+//! Routing module for chat application
+//! All environment variables (including JWT secret) must be loaded via rust_lib::config::CONFIG_MAP
+
 use axum::{routing::{get}, Router, response::Redirect};
 use sqlx::MySqlPool;
 use std::sync::{Arc, Mutex};
@@ -12,12 +15,12 @@ use serde_json::json;
 use futures::StreamExt;
 use futures::SinkExt;
 pub mod api; // Declare the new top-level api module
-
+use rust_lib::config::CONFIG_MAP;
 
 pub struct ChatState {
     pub pool: Arc<MySqlPool>,
     pub clients: Mutex<Vec<mpsc::UnboundedSender<Message>>>,
-    #[allow(dead_code)]
+    /// JWT secret loaded from CONFIG_MAP
     pub jwt_secret: String,
 }
 
@@ -70,7 +73,6 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
 
     // Create a channel for this client
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
-
 
     // Add the client's sender to the shared state
     state.clients.lock().unwrap().push(tx.clone());
@@ -152,7 +154,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
         }
     });
 
-    // Wait for either task to finisha
+    // Wait for either task to finish
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort(),
@@ -163,5 +165,3 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
     clients.retain(|client_tx| !client_tx.same_channel(&tx));
     tracing::info!("Client disconnected, {} clients remaining.", clients.len());
 }
-
-

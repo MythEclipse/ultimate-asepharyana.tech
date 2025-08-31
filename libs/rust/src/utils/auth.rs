@@ -1,4 +1,7 @@
+// JWT Claims and verification using dynamic config from CONFIG_MAP
+
 use jsonwebtoken::{decode, DecodingKey, Validation};
+use crate::config::CONFIG_MAP;
 use crate::error::AppError;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -9,8 +12,11 @@ pub struct Claims {
     pub exp: usize,
 }
 
-pub async fn verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, AppError> {
+pub async fn verify_jwt(token: &str) -> Result<Claims, AppError> {
+    let secret = CONFIG_MAP.get("JWT_SECRET")
+        .cloned()
+        .unwrap_or_else(|| "default_secret".to_string());
     let validation = Validation::default();
-    let decoded = decode::<Claims>(token, &DecodingKey::from_secret(jwt_secret.as_bytes()), &validation)?;
+    let decoded = decode::<Claims>(token, &DecodingKey::from_secret(secret.as_bytes()), &validation)?;
     Ok(decoded.claims)
 }

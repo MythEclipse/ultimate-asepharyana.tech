@@ -1,4 +1,5 @@
 //! Handlers and state for chat routes
+//! All environment variables (including JWT secret) must be loaded via rust_lib::config::CONFIG_MAP
 
 use axum::{
     extract::{State, WebSocketUpgrade},
@@ -14,11 +15,13 @@ use serde_json::json;
 use http::StatusCode;
 use futures::StreamExt;
 use crate::routes::api::chat::chat_message_dto::ChatMessage;
+use rust_lib::config::CONFIG_MAP;
 
 // Chat state struct
 pub struct ChatState {
     pub pool: Arc<MySqlPool>,
     pub clients: Mutex<Vec<mpsc::UnboundedSender<Message>>>,
+    /// JWT secret loaded from CONFIG_MAP
     pub jwt_secret: String,
 }
 

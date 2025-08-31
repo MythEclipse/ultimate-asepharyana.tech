@@ -8,61 +8,53 @@
 //! ```
 //! Logging is initialized with `tracing_subscriber::EnvFilter` for environment-based configuration.
 //! See the code below for details.
-// --- Utoipa OpenAPI imports ---
-use utoipa::OpenApi;
 
+use utoipa::OpenApi;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use rust_lib::config::AppConfig;
+use rust_lib::config::CONFIG_MAP;
 use crate::routes::{create_routes, ChatState};
-// use rust_lib::models::{user::User, user::RegisterRequest}; // Import User and RegisterRequest
 use sqlx::mysql::MySqlPoolOptions;
 use std::sync::Arc;
 
-mod config;
 mod routes;
-// use rust_lib::models;
-// use rust_lib::services::chat;
-// use rust_lib::services::compress;
-// use rust_lib::services::komik;
-// use rust_lib::services::anime;
-// use rust_lib::services::anime2;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing::info!("RustExpress starting up...");
 
-    // Always load .env from current directory
-    match dotenvy::dotenv() {
-        Ok(path) => tracing::info!("Loaded environment from {:?}", path),
-        Err(e) => tracing::warn!("Could not load .env file: {}", e),
-    }
+    // .env is loaded by rust_lib::config, so no need to load again here
 
     // Set default values for Rust-specific configs if not present
-    if std::env::var("RUST_LOG").is_err() {
-        tracing::info!("RUST_LOG not set, using default 'info'");
-        std::env::set_var("RUST_LOG", "info");
-    }
-    // Don't override DATABASE_URL since it should come from root .env
-
-    // Load JWT_SECRET from environment
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .expect("JWT_SECRET must be set in the environment");
+    let rust_log = CONFIG_MAP
+        .get("RUST_LOG")
+        .cloned()
+        .unwrap_or_else(|| "info".to_string());
+    std::env::set_var("RUST_LOG", &rust_log);
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
-        ))
+        .with(tracing_subscriber::EnvFilter::new(rust_log))
         .with(tracing_subscriber::fmt::layer())
         .init();
 
     tracing::info!("Initializing configuration...");
-    let config = AppConfig::from_env()?;
+
+    // Use CONFIG_MAP for JWT_SECRET
+    let jwt_secret = CONFIG_MAP
+        .get("JWT_SECRET")
+        .cloned()
+        .expect("JWT_SECRET must be set in the environment");
+
+    // Use CONFIG_MAP for DATABASE_URL
+    let database_url = CONFIG_MAP
+        .get("DATABASE_URL")
+        .cloned()
+        .expect("DATABASE_URL must be set in the environment");
 
     tracing::info!("Connecting to database...");
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
-        .connect(&config.database_url)
+        .connect(&database_url)
         .await?;
     tracing::info!("Database connection established.");
 
@@ -116,7 +108,11 @@ async fn main() -> anyhow::Result<()> {
         .route("/api-doc/openapi.json", get(openapi_json))
         .merge(create_routes().with_state(chat_state));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
+    let port = CONFIG_MAP
+        .get("PORT")
+        .and_then(|s| s.parse::<u16>().ok())
+        .unwrap_or(3000);
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     tracing::info!("Binding server to address: {}", addr);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!("Server listening on {}", listener.local_addr()?);

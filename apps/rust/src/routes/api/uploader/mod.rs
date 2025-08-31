@@ -12,10 +12,10 @@ use reqwest::Client;
 use tokio_util::bytes::Bytes;
 
 use once_cell::sync::Lazy;
-use std::env;
+use rust_lib::config::CONFIG_MAP;
 
 static PRODUCTION_URL: Lazy<String> = Lazy::new(|| {
-    env::var("PRODUCTION_URL").unwrap_or_else(|_| "https://asepharyana.tech".to_string())
+    CONFIG_MAP.get("PRODUCTION_URL").cloned().unwrap_or_else(|| "https://asepharyana.tech".to_string())
 });
 const MAX_FILE_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
 

@@ -1,3 +1,5 @@
+// Library root. Modules can access static config via crate::config::CONFIG
+
 pub mod config;
 pub mod utils;
 pub mod urls;

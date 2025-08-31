@@ -1,48 +1,25 @@
-use serde::Deserialize;
+// Loads and exposes all environment variables as a static, dynamic HashMap using dotenv and once_cell.
+// This approach is fully dynamic: all env vars are available at runtime via CONFIG_MAP.
+
+use std::collections::HashMap;
 use std::env;
-use crate::error::AppError;
+use once_cell::sync::Lazy;
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct AppConfig {
-    pub port: u16,
-    pub database_url: String,
-    pub env: String,
-}
-
-impl AppConfig {
-    pub fn from_env() -> Result<Self, AppError> {
-        // Always load .env when loading config
-        match dotenvy::dotenv() {
-            Ok(path) => tracing::info!("Loaded environment from {:?}", path),
-            Err(e) => tracing::warn!("Could not load .env file: {}", e),
-        }
-
-        tracing::info!("Loading configuration from environment variables...");
-        // Try to load from envy first, with fallbacks
-        let mut config: AppConfig = match envy::from_env() {
-            Ok(cfg) => {
-                tracing::info!("Loaded config from environment: {:?}", cfg);
-                cfg
-            }
-            Err(e) => {
-                tracing::warn!("Failed to load config from environment, using defaults: {}", e);
-                return Err(AppError::Other(format!("Failed to load config from environment: {}", e)));
-            }
-        };
-
-        if let Ok(db_url) = env::var("DATABASE_URL") {
-            if !db_url.is_empty() {
-                tracing::info!("Overriding database_url from env: {}", db_url);
-                config.database_url = db_url;
-            }
-        }
-
-        if let Ok(node_env) = env::var("NODE_ENV") {
-            tracing::info!("Overriding env from env: {}", node_env);
-            config.env = node_env;
-        }
-
-        tracing::info!("Final configuration: {:?}", config);
-        Ok(config)
+// Static config map, loaded once at startup
+pub static CONFIG_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {
+    // Always load .env when loading config
+    match dotenvy::dotenv() {
+        Ok(path) => tracing::info!("Loaded environment from {:?}", path),
+        Err(e) => tracing::warn!("Could not load .env file: {}", e),
     }
-}
+
+    let mut map = HashMap::new();
+    for (key, value) in env::vars() {
+        tracing::info!("{} = {}", key, value);
+        map.insert(key, value);
+    }
+    map
+});
+
+// Usage example:
+// let db_url = CONFIG_MAP.get("DATABASE_URL");
