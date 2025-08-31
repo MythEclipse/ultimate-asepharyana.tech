@@ -16,11 +16,13 @@ pub mod komik_service;
 pub use self::komik_service as komik;
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct KomikQueryParams {
     pub page: Option<u32>,
     pub query: Option<String>,
 }
 
+#[allow(dead_code)]
 pub async fn media_handler(
     Path(media_type): Path<String>,
     Query(params): Query<KomikQueryParams>,
@@ -53,6 +55,7 @@ pub async fn media_handler(
     }
 }
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .nest("/detail", detail::create_routes())

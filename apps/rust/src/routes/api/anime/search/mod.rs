@@ -21,7 +21,7 @@ pub async fn search_handler(
     State(_state): State<Arc<ChatState>>,
 ) -> Response {
     let slug = params.q.unwrap_or_else(|| "one".to_string());
-    let status = params.status.as_deref();
+    let _status = params.status.as_deref();
 
     // Pass status to fetch_anime_data if needed, or filter after fetching
     // Here, we assume fetch_anime_data can handle status, otherwise filter after

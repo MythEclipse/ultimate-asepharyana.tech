@@ -1,5 +1,5 @@
 name: Deploy Rust to VPS
-#a
+
 on:
   workflow_dispatch: # Manual trigger
   push:
@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - 'apps/rust/**'
-      - '.github/workflows/deploy-rust.yml' # Trigger if this workflow file changesaa
+      - '.github/workflows/deploy-rust.yml'
 
 jobs:
   build-and-deploy-rust:
@@ -19,20 +19,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          profile: minimal
-          override: true
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.cargo
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            apps/rust/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+
+      - name: Install FFmpeg System Dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+
       - name: Prepare .env file for production
         env:
           ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}

@@ -8,9 +8,12 @@ use std::time::SystemTime;
 use tokio_util::bytes::Bytes;
 use crate::routes::api::uploader::file::upload_to_pomf2;
 
+#[allow(dead_code)]
 const CACHE_DIR: &str = "compress-cache"; // Relative to current working directory
+#[allow(dead_code)]
 const CACHE_EXPIRY_SECONDS: u64 = 3600; // 1 hour
 
+#[allow(dead_code)]
 fn generate_cache_key(url: &str, size_param: &str) -> String {
     let mut hasher = Sha1::new();
     hasher.update(url.as_bytes());
@@ -18,6 +21,7 @@ fn generate_cache_key(url: &str, size_param: &str) -> String {
     format!("{:x}.cache", hasher.finalize())
 }
 
+#[allow(dead_code)]
 async fn get_cache_path(cache_key: &str) -> PathBuf {
     let current_dir = env::current_dir().expect("Failed to get current directory");
     let cache_dir = current_dir.join(CACHE_DIR);
@@ -27,6 +31,7 @@ async fn get_cache_path(cache_key: &str) -> PathBuf {
     cache_dir.join(cache_key)
 }
 
+#[allow(dead_code)]
 async fn read_from_cache(cache_key: &str) -> Option<Vec<u8>> {
     let cache_path = get_cache_path(cache_key).await;
     if cache_path.exists() {
@@ -42,12 +47,14 @@ async fn read_from_cache(cache_key: &str) -> Option<Vec<u8>> {
     None
 }
 
+#[allow(dead_code)]
 async fn write_to_cache(cache_key: &str, data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
     let cache_path = get_cache_path(cache_key).await;
     fs::write(&cache_path, data).await?;
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn compress_image_from_url(
     _url: &str,
     _size_param: &str,
@@ -110,6 +117,7 @@ pub async fn compress_image_from_url(
 
 use ffmpeg_next as ffmpeg;
 
+#[allow(dead_code)]
 pub async fn compress_video_from_url(
     _url: &str,
     _size_param: &str,
@@ -142,7 +150,7 @@ pub async fn compress_video_from_url(
     ffmpeg::init().map_err(|e| format!("ffmpeg init failed: {e}"))?;
 
     // Build ffmpeg command
-    let mut cmd = ffmpeg::Command::new();
+    let mut cmd = std::process::Command::new("ffmpeg");
     cmd.arg("-i")
         .arg(input_path.to_str().unwrap())
         .arg("-b:v")

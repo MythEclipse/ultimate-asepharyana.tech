@@ -5,6 +5,7 @@ use crate::routes::api::anime::alqanime_dto::{Anime2Data, Anime2Detail, Anime2Ep
 use crate::routes::api::komik::manga_dto::Pagination;
 
 // Placeholder for fetchWithProxy
+#[allow(dead_code)]
 async fn fetch_with_proxy(url: &str) -> Result<String, Box<dyn Error>> {
     // In a real scenario, this would involve proxy logic.
     // For now, a direct fetch.
@@ -13,12 +14,14 @@ async fn fetch_with_proxy(url: &str) -> Result<String, Box<dyn Error>> {
     Ok(response)
 }
 
+#[allow(dead_code)]
 pub async fn fetch_anime2_data(slug: &str) -> Result<String, Box<dyn Error>> {
     let url = format!("https://alqanime.net/?s={}", slug);
     let response = fetch_with_proxy(&url).await?;
     Ok(response)
 }
 
+#[allow(dead_code)]
 pub fn parse_anime2_data(html: &str) -> (Vec<Anime2Data>, Pagination) {
     let document = Html::parse_document(html);
     let anime_list_selector = Selector::parse(".listupd article.bs").unwrap();
@@ -88,6 +91,7 @@ pub fn parse_anime2_data(html: &str) -> (Vec<Anime2Data>, Pagination) {
     (anime_list, pagination)
 }
 
+#[allow(dead_code)]
 pub async fn get_anime2_detail(slug: &str) -> Result<Anime2Detail, Box<dyn Error>> {
     let url = format!("https://alqanime.net/anime/{}", slug);
     let body = fetch_with_proxy(&url).await?;
@@ -138,6 +142,7 @@ pub async fn get_anime2_detail(slug: &str) -> Result<Anime2Detail, Box<dyn Error
     })
 }
 
+#[allow(dead_code)]
 pub async fn get_anime2_episode_images(episode_url: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let body = fetch_with_proxy(episode_url).await?;
     let document = Html::parse_document(&body);

@@ -1,3 +1,4 @@
+pub mod file;
 use axum::{
     extract::{Multipart, State},
     http::{StatusCode},
@@ -7,7 +8,6 @@ use axum::{
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use crate::routes::api::uploader::infer_service as infer;
 use reqwest::Client;
 use tokio_util::bytes::Bytes;
 
@@ -56,9 +56,11 @@ async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std:
     Ok((file_url, file_name))
 }
 
+#[axum::debug_handler]
+#[allow(dead_code)]
 pub async fn uploader_post_handler(
-    mut multipart: Multipart,
     State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency
+    mut multipart: Multipart,
 ) -> Response {
     let mut file_bytes: Option<Bytes> = None;
 
@@ -86,8 +88,8 @@ pub async fn uploader_post_handler(
     };
 
     match upload_to_pomf2(buffer).await {
-        Ok((file_url, file_name)) => {
-            let formatted_url = format!("{}/api/uploader/{}", PRODUCTION_URL, file_name);
+        Ok((_file_url, file_name)) => {
+            let formatted_url = format!("{}/api/uploader/{}", PRODUCTION_URL.as_str(), file_name);
             (
                 StatusCode::OK,
                 Json(json!({ "url": formatted_url })),
@@ -107,6 +109,7 @@ pub async fn uploader_post_handler(
 
 use axum::{routing::{post}, Router};
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", post(uploader_post_handler))

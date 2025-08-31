@@ -1,13 +1,12 @@
 use axum::{
     extract::{Multipart, Path, State},
-    http::{HeaderMap, HeaderValue, StatusCode},
+    http::{StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState; // Updated path to ChatState
-use crate::routes::api::uploader::infer_service as infer;
 use reqwest::Client;
 use tokio_util::bytes::Bytes;
 
@@ -19,7 +18,7 @@ static PRODUCTION_URL: Lazy<String> = Lazy::new(|| {
 });
 const MAX_FILE_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
 
-async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std::error::Error>> {
     let file_type = infer::get(&buffer);
     let (ext, mime) = match file_type {
         Some(ft) => (ft.extension(), ft.mime_type()),
@@ -56,9 +55,11 @@ async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std:
     Ok((file_url, file_name))
 }
 
+#[axum::debug_handler]
+#[allow(dead_code)]
 pub async fn uploader_post_handler(
-    mut multipart: Multipart,
     State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency
+    mut multipart: Multipart,
 ) -> Response {
     let mut file_bytes: Option<Bytes> = None;
 
@@ -86,8 +87,8 @@ pub async fn uploader_post_handler(
     };
 
     match upload_to_pomf2(buffer).await {
-        Ok((file_url, file_name)) => {
-            let formatted_url = format!("{}/api/uploader/{}", PRODUCTION_URL, file_name);
+        Ok((_file_url, file_name)) => {
+            let formatted_url = format!("{}/api/uploader/{}", PRODUCTION_URL.as_str(), file_name);
             (
                 StatusCode::OK,
                 Json(json!({ "url": formatted_url })),
@@ -105,6 +106,7 @@ pub async fn uploader_post_handler(
     }
 }
 
+#[allow(dead_code)]
 pub async fn uploader_get_handler(
     Path(file_name): Path<String>,
     State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency

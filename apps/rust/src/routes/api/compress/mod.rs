@@ -12,6 +12,7 @@ pub mod compress_service;
 pub use self::compress_service as compress;
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct CompressParams {
     url: String,
     size: String, // Can be "100kb" or "50%"
@@ -19,11 +20,13 @@ pub struct CompressParams {
 
 use axum::{routing::get, Router};
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(compress_handler))
 }
 
+#[allow(dead_code)]
 pub async fn compress_handler(
     Query(params): Query<CompressParams>,
     State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency

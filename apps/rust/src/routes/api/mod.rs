@@ -8,6 +8,7 @@ pub mod sosmed;
 pub mod chat;
 pub mod komik;
 pub mod compress;
+pub mod uploader;
 
 pub fn create_api_routes() -> Router<Arc<ChatState>> {
     Router::new()

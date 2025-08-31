@@ -1,7 +1,7 @@
-name: Deploy nextjs to VPS
-#aa
+name: Deploy Next.js to VPS
+
 on:
-  workflow_dispatch: # Manual triggeraa
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -29,16 +27,27 @@ jobs:
         with:
           version: 8
 
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
       - name: Prepare .env file for production
         env:
           ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
         run: |
           if [ -n "$ENV_FILE_PRODUCTION" ]; then
-            echo "$ENV_FILE_PRODUCTION" > .env
+            echo "$ENV_FILE_PRODUCTION" > apps/nextjs/.env.production
           fi
-
-      - name: Setup Env
-        run: bash ./scripts/2updateenv.sh
 
       - name: Install Dependencies
         run: pnpm install
@@ -49,38 +58,26 @@ jobs:
       - name: Build Next.js
         run: pnpm run nextjs:build
 
-      - name: Check Build Output
-        run: |
-          echo "Next.js build output:" && ls -l apps/nextjs/.next
-          if [ -z "$(ls -A apps/nextjs/.next)" ]; then
-            echo "ERROR: Next.js build output is empty. Deployment aborted."
-            exit 1
-          fi
-
-      - name: Copy .env to all subprojects/packages
-        run: bash scripts/2updateenv.sh
-
-      - name: Sync all .env files to VPS
+      - name: Sync Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          find . -type f -name ".env" | while read file; do
-            target="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/${file#./}"
-            rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" "$file" "$target"
-          done
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/nextjs/.next/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.next/
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/nextjs/node_modules/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/node_modules/
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/nextjs/package.json \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/package.json
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/nextjs/.env.production \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.env.production
           rm -f /tmp/deploy_key
 
-      - name: Sync Next.js Build Artifacts to VPS
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.next"
-          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/nextjs/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.next/
-          rm -f /tmp/deploy_key
-
-      - name: SSH into VPS and Deploy Next.js
+      - name: SSH into VPS and Deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -89,12 +86,10 @@ jobs:
           script: |
             export PATH=$PATH:/root/.local/share/pnpm
             export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
-            source .bashrc
+            export PATH=$PATH:/home/asephs/.bun/bin/bun
+            export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
-            git pull # Need to pull to get the ecosystem.config.cjs
-            bash scripts/2updateenv.sh
-            pnpm install --filter=@asepharyana/nextjs # Install dependencies only for Next.js
-            # Tidak perlu generate Prisma Client, sudah migrasi ke Kysely
-            cd ../../
+            git pull
+            pnpm install --prod --filter=@asepharyana/nextjs
             pm2 startOrRestart ${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/ecosystem.config.cjs
             echo "Next.js Deployment successful!"
