@@ -1,10 +1,12 @@
-use headless_chrome::{Browser, LaunchOptions};
-use std::error::Error;
-use std::time::{Duration, Instant};
+// CroxyProxy scraping and caching logic using headless_chrome and Redis.
+// Updated for latest headless_chrome API.
+
+use headless_chrome::Browser;
+use std::time::Instant;
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::http::is_internet_baik_block_page;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -30,8 +32,8 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
     let start_time = Instant::now();
     info!("Scraping {} with CroxyProxy", target_url);
 
-    let browser = Browser::new(LaunchOptions::default().with_headless(true))?;
-    let tab = browser.new_tab()?;
+    let browser = Browser::default().map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+    let tab = browser.new_tab().map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
 
     let mut html_content = String::new();
 
@@ -39,15 +41,56 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
         info!("Attempt {}/{}", attempt, MAX_RETRIES);
         match tab.navigate_to(CROXY_PROXY_URL) {
             Ok(_) => {
-                tab.wait_for_element_with_custom_timeout(URL_INPUT_SELECTOR, Duration::from_secs(30))?;
-                tab.type_str(URL_INPUT_SELECTOR, target_url)?;
-                tab.click(SUBMIT_BUTTON_SELECTOR)?;
+                tab.wait_for_element(URL_INPUT_SELECTOR)
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+
+                let input = tab.find_element(URL_INPUT_SELECTOR)
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                input.type_into(target_url)
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+
+                let submit_btn = tab.find_element(SUBMIT_BUTTON_SELECTOR)
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                submit_btn.click()
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
 
                 // Wait for navigation after form submission
-                tab.wait_for_navigation()?;
+                tab.wait_until_navigated()
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
 
                 let current_url = tab.get_url();
-                let page_content = tab.get_content()?;
+                // Use wait_for_element("body")?.get_inner_html()? to get HTML content
+                let page_content = tab.wait_for_element("body")
+                    .and_then(|el| {
+                        let js_result = el.call_js_fn("function() { return this.innerHTML; }", false);
+                        match js_result {
+                            Ok(val) => {
+                                // val.value is Option<serde_json::Value>, need to handle both Some(String) and fallback to to_string()
+                                info!("Debug: val.value type: {:?}", val.value);
+                                let html = match val.value {
+                                    Some(serde_json::Value::String(ref s)) => {
+                                        info!("Debug: Matched Some(String): {}", s);
+                                        s.clone()
+                                    },
+                                    Some(ref v) => {
+                                        info!("Debug: Matched Some(non-String): {:?}", v);
+                                        v.to_string()
+                                    },
+                                    None => {
+                                        info!("Debug: Matched None");
+                                        String::new()
+                                    }
+                                };
+                                info!("Debug: innerHTML extracted: {}", &html[..html.len().min(200)]);
+                                Ok(html)
+                            },
+                            Err(e) => {
+                                error!("Debug: call_js_fn failed: {:?}", e);
+                                Err(e)
+                            }
+                        }
+                    })
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
                 let page_text = page_content.to_lowercase();
 
                 let is_error_url = current_url.contains("/requests?fso=");
@@ -60,24 +103,56 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
 
                 if page_text.contains("proxy is launching") {
                     info!("Proxy launching page detected. Waiting for final redirect...");
-                    tab.wait_for_navigation_with_timeout(Duration::from_secs(120))?;
+                    tab.wait_until_navigated()
+                        .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
                     info!("Redirected successfully to: {}", tab.get_url());
                 } else {
                     info!("Mapped directly to: {}", tab.get_url());
                 }
 
                 info!("Waiting for CroxyProxy frame to render...");
-                tab.wait_for_element_with_custom_timeout("#__cpsHeaderTab", Duration::from_secs(30))?;
+                tab.wait_for_element("#__cpsHeaderTab")
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
                 info!("CroxyProxy frame rendered.");
 
-                html_content = tab.get_content()?;
+                html_content = tab.wait_for_element("body")
+                    .and_then(|el| {
+                        let js_result = el.call_js_fn("function() { return this.innerHTML; }", false);
+                        match js_result {
+                            Ok(val) => {
+                                // val.value is Option<serde_json::Value>, need to handle both Some(String) and fallback to to_string()
+                                info!("Debug: val.value type: {:?}", val.value);
+                                let html = match val.value {
+                                    Some(serde_json::Value::String(ref s)) => {
+                                        info!("Debug: Matched Some(String): {}", s);
+                                        s.clone()
+                                    },
+                                    Some(ref v) => {
+                                        info!("Debug: Matched Some(non-String): {:?}", v);
+                                        v.to_string()
+                                    },
+                                    None => {
+                                        info!("Debug: Matched None");
+                                        String::new()
+                                    }
+                                };
+                                info!("Debug: innerHTML extracted: {}", &html[..html.len().min(200)]);
+                                Ok(html)
+                            },
+                            Err(e) => {
+                                error!("Debug: call_js_fn failed: {:?}", e);
+                                Err(e)
+                            }
+                        }
+                    })
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
                 info!("Retrieved page content.");
                 break; // Success, break out of retry loop
             },
             Err(e) => {
                 error!("Attempt {} failed: {:?}", attempt, e);
                 if attempt == MAX_RETRIES {
-                    return Err(AppError::HeadlessChromeError(e)); // Return the last error
+                    return Err(AppError::HeadlessChromeError(format!("{:?}", e)));
                 }
             }
         }
@@ -104,7 +179,7 @@ pub async fn scrape_croxy_proxy_cached(target_url: &str) -> Result<String, AppEr
     }
 
     let html = scrape_croxy_proxy(target_url).await?;
-    redis::cmd("SET").arg(&cache_key).arg(&html).arg("EX").arg(3600).query(&mut conn)?;
+    redis::cmd("SET").arg(&cache_key).arg(&html).arg("EX").arg(3600).query::<()>(&mut conn)?;
     info!("[scrapeCroxyProxyCached] Cached result for {} (1 hour)", target_url);
 
     Ok(html)

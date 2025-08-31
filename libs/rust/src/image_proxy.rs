@@ -2,7 +2,7 @@ use reqwest::Client;
 use tracing::{info, error};
 use bytes::Bytes;
 use mime_guess;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 pub struct ImageProxyResult {
     pub data: Bytes,

@@ -1,3 +1,5 @@
+// Annotated with utoipa for OpenAPI generation
+
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -10,9 +12,10 @@ use scraper::{Html, Selector};
 use std::{collections::HashMap, error::Error};
 use regex::Regex;
 
-use rust_lib::utils::fetch_with_proxy;
+use rust_lib::fetch_with_proxy;
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AnimeData {
     pub episode: String,
     pub episode_number: String,
@@ -26,30 +29,33 @@ pub struct AnimeData {
     pub image_url: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AnimeInfo {
     pub slug: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct EpisodeInfo {
     pub slug: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DownloadLink {
     pub server: String,
     pub url: String,
 }
 
 async fn fetch_anime_page_full(slug: &str) -> Result<String, Box<dyn Error>> {
+    tracing::info!("[DEBUG] full/mod.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
+    tracing::info!("[DEBUG] full/mod.rs fetched body: {} bytes", response.len());
     Ok(response)
 }
 
 fn parse_anime_page_full(html: &str, slug: &str) -> AnimeData {
-    let document = Html::parse_document(html);
+    let body = html.to_string();
+    let document = Html::parse_document(&body);
 
     let episode = document
         .select(&Selector::parse("h1.posttl").unwrap())
@@ -141,6 +147,18 @@ fn parse_anime_page_full(html: &str, slug: &str) -> AnimeData {
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/full/{slug}",
+    params(
+        ("slug" = String, Path, description = "Anime episode slug")
+    ),
+    responses(
+        (status = 200, description = "Full anime episode data", body = AnimeData),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Anime"
+)]
 pub async fn full_anime_handler(
     Path(slug): Path<String>,
 ) -> Response {

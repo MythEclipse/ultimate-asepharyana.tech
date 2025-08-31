@@ -2,7 +2,7 @@ use reqwest::{Client, multipart};
 use tracing::error;
 use serde::{Deserialize, Serialize};
 use infer; // For file type detection
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RyzenCDNResponse {

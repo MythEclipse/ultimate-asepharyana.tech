@@ -3,7 +3,7 @@
 use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
 use serde::{Serialize, Deserialize};
 use crate::config::CONFIG_MAP;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

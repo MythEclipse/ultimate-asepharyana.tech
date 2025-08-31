@@ -2,7 +2,7 @@
 
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use crate::config::CONFIG_MAP;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Claims {

@@ -1,11 +1,15 @@
 //! Routing module for chat application
 //! All environment variables (including JWT secret) must be loaded via rust_lib::config::CONFIG_MAP
 
-use axum::{routing::{get}, Router, response::Redirect};
+use axum::{
+    routing::{get},
+    Router,
+    response::Redirect,
+    extract::{State, WebSocketUpgrade},
+    response::{IntoResponse},
+};
 use sqlx::MySqlPool;
 use std::sync::{Arc, Mutex};
-use axum::extract::{State, WebSocketUpgrade};
-use axum::response::{IntoResponse};
 use axum::extract::ws::{Message, WebSocket};
 use crate::routes::api::chat::chat_message_dto::ChatMessage;
 use crate::routes::api::chat::chat;
@@ -30,15 +34,21 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
         .route("/ws", get(ws_handler))
         .route("/api/health", get(health_check))
         .route("/api/status", get(status_handler))
-        .nest("/api", api::create_api_routes()) // Nest all API routes under /api
+        .nest("/api", api::create_api_routes())
 }
 
-// Root handler - compatible with Express.js version
 async fn root_handler() -> impl IntoResponse {
     Redirect::permanent("https://asepharyana.tech/chat")
 }
 
 // Health check endpoint
+#[utoipa::path(
+    get,
+    path = "/api/health",
+    responses(
+        (status = 200, description = "Health check OK")
+    )
+)]
 async fn health_check() -> impl IntoResponse {
     Json(json!({
         "status": "healthy",
@@ -49,6 +59,13 @@ async fn health_check() -> impl IntoResponse {
 }
 
 // Status endpoint for monitoring
+#[utoipa::path(
+    get,
+    path = "/api/status",
+    responses(
+        (status = 200, description = "Status OK")
+    )
+)]
 async fn status_handler(State(state): State<Arc<ChatState>>) -> impl IntoResponse {
     // Check database connection
     let db_status = match sqlx::query("SELECT 1").execute(state.pool.as_ref()).await {

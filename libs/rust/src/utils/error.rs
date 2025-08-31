@@ -17,7 +17,8 @@ pub enum AppError {
     #[error("Scraper error: {0}")]
     ScraperError(String), // Custom error for scraper issues
     #[error("Headless Chrome error: {0}")]
-    HeadlessChromeError(#[from] headless_chrome::Error),
+    // Use the correct error type for headless_chrome (TabError or BrowserError)
+    HeadlessChromeError(String),
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
     #[error("Timeout error: {0}")]

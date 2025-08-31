@@ -1,14 +1,17 @@
+// Komik base URL logic with Redis lock, updated for sync Redis API and correct imports.
+
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{info, debug, warn, error};
 use scraper::{Html, Selector};
 use regex::Regex;
 use base64;
+use url::Url;
 
 use crate::redis_client::get_redis_connection;
 use crate::fetch_with_proxy::{fetch_with_proxy, FetchResult};
 use crate::utils::http::is_internet_baik_block_page;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 // Using a static Mutex for single-flight promise simulation
@@ -18,7 +21,7 @@ static KOMIK_BASE_URL_PROMISE: once_cell::sync::Lazy<Arc<Mutex<Option<String>>>>
 const KOMIK_BASE_URL_LOCK_KEY: &str = "komik:baseurl:lock";
 const KOMIK_BASE_URL_KEY: &str = "komik:baseurl";
 
-async fn acquire_redis_lock(key: &str, ttl_seconds: usize) -> Result<bool, AppError> {
+fn acquire_redis_lock(key: &str, ttl_seconds: usize) -> Result<bool, AppError> {
     let mut conn = get_redis_connection()?;
     let acquired: bool = redis::cmd("SET")
         .arg(key)
@@ -26,15 +29,14 @@ async fn acquire_redis_lock(key: &str, ttl_seconds: usize) -> Result<bool, AppEr
         .arg("NX")
         .arg("EX")
         .arg(ttl_seconds)
-        .query_async(&mut conn)
-        .await
+        .query::<()>(&mut conn)
         .is_ok();
     Ok(acquired)
 }
 
-async fn release_redis_lock(key: &str) -> Result<(), AppError> {
+fn release_redis_lock(key: &str) -> Result<(), AppError> {
     let mut conn = get_redis_connection()?;
-    redis::cmd("DEL").arg(key).query_async(&mut conn).await?;
+    redis::cmd("DEL").arg(key).query::<()>(&mut conn)?;
     Ok(())
 }
 
@@ -62,7 +64,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
     let mut waited = 0;
 
     // Try to acquire lock
-    while !acquire_redis_lock(KOMIK_BASE_URL_LOCK_KEY, lock_ttl).await? {
+    while !acquire_redis_lock(KOMIK_BASE_URL_LOCK_KEY, lock_ttl)? {
         debug!("[getDynamicKomikBaseUrl] Waiting for Redis lock...");
         sleep_ms(wait_interval).await;
         waited += wait_interval;
@@ -72,7 +74,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
         }
         // Check if value is already cached by other process
         let mut conn = get_redis_connection()?;
-        let cached: Option<String> = redis::cmd("GET").arg(KOMIK_BASE_URL_KEY).query_async(&mut conn).await?;
+        let cached: Option<String> = redis::cmd("GET").arg(KOMIK_BASE_URL_KEY).query(&mut conn)?;
         if let Some(cached_url) = cached {
             if !cached_url.contains(".cz") {
                 info!("[getDynamicKomikBaseUrl] Found cached base URL while waiting for lock: {}", cached_url);
@@ -132,12 +134,12 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
         let final_url = org_link.trim_end_matches('/').to_string();
         // Cache the result immediately for other waiters
         let mut conn = get_redis_connection()?;
-        redis::cmd("SET").arg(KOMIK_BASE_URL_KEY).arg(&final_url).arg("EX").arg(60 * 60 * 24 * 30).query_async(&mut conn).await?;
+        redis::cmd("SET").arg(KOMIK_BASE_URL_KEY).arg(&final_url).arg("EX").arg(60 * 60 * 24 * 30).query::<()>(&mut conn)?;
         Ok(final_url)
     }).await;
 
     *promise_guard = result.as_ref().ok().cloned();
-    let _ = release_redis_lock(KOMIK_BASE_URL_LOCK_KEY).await; // Release lock regardless of success or failure
+    let _ = release_redis_lock(KOMIK_BASE_URL_LOCK_KEY); // Release lock regardless of success or failure
 
     result
 }
@@ -145,7 +147,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
 pub async fn get_cached_komik_base_url(force_refresh: bool) -> Result<String, AppError> {
     if !force_refresh {
         let mut conn = get_redis_connection()?;
-        let cached: Option<String> = redis::cmd("GET").arg(KOMIK_BASE_URL_KEY).query_async(&mut conn).await?;
+        let cached: Option<String> = redis::cmd("GET").arg(KOMIK_BASE_URL_KEY).query(&mut conn)?;
         if let Some(cached_url) = cached {
             if !cached_url.contains(".cz") {
                 info!("[getCachedKomikBaseUrl] Using cached base URL: {}", cached_url);

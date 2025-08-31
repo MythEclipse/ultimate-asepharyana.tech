@@ -1,3 +1,5 @@
+// Annotated with utoipa for OpenAPI generation
+
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -11,9 +13,10 @@ use std::sync::Arc;
 
 use crate::routes::ChatState;
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::utils::fetch_with_proxy;
+use rust_lib::fetch_with_proxy;
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AnimeCompleteData {
     pub title: String,
     pub slug: String,
@@ -23,13 +26,16 @@ pub struct AnimeCompleteData {
 }
 
 async fn fetch_anime_page_complete(slug: &str) -> Result<String, Box<dyn std::error::Error>> {
+    tracing::info!("[DEBUG] complete_anime.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
+    tracing::info!("[DEBUG] complete_anime.rs fetched body: {} bytes", response.len());
     Ok(response)
 }
 
 fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>, Pagination) {
-    let document = Html::parse_document(html);
+    let body = html.to_string();
+    let document = Html::parse_document(&body);
 
     // Declare selectors once for efficiency and readability
     let pagenavix_last_page_selector = Selector::parse(".pagenavix .page-numbers:not(.next):last").unwrap();
@@ -68,12 +74,12 @@ fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>,
         let title = element.select(&thumbz_h2_jdlflm_selector)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default(); // Equivalent to || ''
+            .unwrap_or_default();
 
         let anime_url = element.select(&a_selector)
             .next()
             .and_then(|e| e.value().attr("href").map(|s| s.to_string()))
-            .unwrap_or_default(); // Equivalent to || ''
+            .unwrap_or_default();
 
         // Extract slug from anime_url after getting anime_url
         let slug_val = anime_url.split('/').nth(4).unwrap_or_default().to_string();
@@ -81,12 +87,12 @@ fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>,
         let poster = element.select(&img_selector)
             .next()
             .and_then(|e| e.value().attr("src").map(|s| s.to_string()))
-            .unwrap_or_default(); // Equivalent to || ''
+            .unwrap_or_default();
 
         let episode = element.select(&epz_selector)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string()); // Equivalent to || 'N/A'
+            .unwrap_or_else(|| "N/A".to_string());
 
         anime_list.push(AnimeCompleteData {
             title,
@@ -100,6 +106,18 @@ fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>,
     (anime_list, pagination)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/complete-anime/{slug}",
+    params(
+        ("slug" = String, Path, description = "Anime page slug")
+    ),
+    responses(
+        (status = 200, description = "List of complete anime", body = [AnimeCompleteData]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Anime"
+)]
 pub async fn complete_anime_handler(
     Path(slug): Path<String>,
     State(_state): State<Arc<ChatState>>,

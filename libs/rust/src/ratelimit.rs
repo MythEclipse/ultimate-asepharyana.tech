@@ -1,6 +1,6 @@
 use redis::{Commands, Connection};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 pub struct RateLimiter {
     conn: Connection,

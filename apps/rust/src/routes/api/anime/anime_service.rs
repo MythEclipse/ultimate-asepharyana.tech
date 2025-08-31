@@ -4,9 +4,10 @@ use std::error::Error;
 use crate::routes::api::anime::anime_dto::AnimeData;
 use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponseData, Genre, EpisodeListItem, Recommendation};
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::utils::fetch_with_proxy;
+use rust_lib::fetch_with_proxy;
 
 pub async fn fetch_anime_data(slug: &str) -> Result<String, Box<dyn Error>> {
+    tracing::info!("[DEBUG] anime_service.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", slug);
     let response = fetch_with_proxy(&url).await?;
     Ok(response)
@@ -74,6 +75,7 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
 
 pub async fn get_anime_episode_images(episode_url: &str) -> Result<serde_json::Value, Box<dyn Error>> {
     let body = fetch_with_proxy(episode_url).await?;
+    let body = body.to_string();
     let document = Html::parse_document(&body);
 
     let mut images: Vec<String> = Vec::new();
@@ -90,6 +92,7 @@ pub async fn get_anime_episode_images(episode_url: &str) -> Result<serde_json::V
 pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetailResponseData, Box<dyn Error>> {
     let url = format!("https://otakudesu.cloud/anime/{}", slug);
     let body = fetch_with_proxy(&url).await?;
+    let body = body.to_string();
     let document = Html::parse_document(&body);
 
     let extract_text = |selector_str: &str, prefix: &str| -> String {
@@ -141,7 +144,7 @@ pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetailResponseData, Box
         let url = element.select(&Selector::parse("a").unwrap()).next().and_then(|e| e.value().attr("href").map(|s| s.to_string())).unwrap_or_default();
         let poster = element.select(&Selector::parse("img").unwrap()).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
         let slug = url.split('/').nth(4).unwrap_or_default().to_string();
-        recommendations.push(Recommendation { title, slug, poster, status: "".to_string(), r#type: "".to_string() });
+        recommendations.push(Recommendation { title, slug, poster });
     }
 
     Ok(AnimeDetailResponseData {

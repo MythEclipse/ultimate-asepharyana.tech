@@ -56,6 +56,17 @@ async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std:
     Ok((file_url, file_name))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/uploader/",
+    request_body = Multipart,
+    responses(
+        (status = 200, description = "File uploaded successfully", body = inline),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Uploader"
+)]
 #[axum::debug_handler]
 #[allow(dead_code)]
 pub async fn uploader_post_handler(

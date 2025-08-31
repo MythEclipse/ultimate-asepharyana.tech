@@ -2,10 +2,11 @@ use scraper::{Html, Selector};
 use std::error::Error;
 use crate::routes::api::anime::alqanime_dto::{Anime2Data, Anime2Detail, Anime2Episode};
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::utils::fetch_with_proxy;
+use rust_lib::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub async fn fetch_anime2_data(slug: &str) -> Result<String, Box<dyn Error>> {
+    tracing::info!("[DEBUG] alqanime_service.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://alqanime.net/?s={}", slug);
     let response = fetch_with_proxy(&url).await?;
     Ok(response)
@@ -85,6 +86,7 @@ pub fn parse_anime2_data(html: &str) -> (Vec<Anime2Data>, Pagination) {
 pub async fn get_anime2_detail(slug: &str) -> Result<Anime2Detail, Box<dyn Error>> {
     let url = format!("https://alqanime.net/anime/{}", slug);
     let body = fetch_with_proxy(&url).await?;
+    let body = body.to_string();
     let document = Html::parse_document(&body);
 
     let title = document.select(&Selector::parse(".entry-title").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
@@ -135,6 +137,7 @@ pub async fn get_anime2_detail(slug: &str) -> Result<Anime2Detail, Box<dyn Error
 #[allow(dead_code)]
 pub async fn get_anime2_episode_images(episode_url: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let body = fetch_with_proxy(episode_url).await?;
+    let body = body.to_string();
     let document = Html::parse_document(&body);
 
     let mut images: Vec<String> = Vec::new();

@@ -10,6 +10,18 @@ use std::sync::Arc;
 use crate::routes::ChatState;
 use crate::routes::api::anime::otakudesu_service::{fetch_anime_page_ongoing, parse_anime_page_ongoing};
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/ongoing-anime/{slug}",
+    params(
+        ("slug" = String, Path, description = "Anime page slug")
+    ),
+    responses(
+        (status = 200, description = "List of ongoing anime"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Anime"
+)]
 pub async fn ongoing_anime_handler(
     Path(slug): Path<String>,
     State(_state): State<Arc<ChatState>>,

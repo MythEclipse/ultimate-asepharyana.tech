@@ -1,6 +1,8 @@
+// Proxy fetch logic with Redis cache, updated for sync Redis API and reqwest API changes.
+
 use reqwest::{Client, Proxy};
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tracing::{info, warn, error};
 use url::Url;
 use regex::Regex;
@@ -8,11 +10,11 @@ use regex::Regex;
 use crate::redis_client::get_redis_connection;
 use crate::scrape_croxy_proxy::{scrape_croxy_proxy, scrape_croxy_proxy_cached};
 use crate::utils::http::is_internet_baik_block_page;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 const DEFAULT_PROXY_LIST_URL: &str = "https://www.proxy-list.download/api/v1/get?type=https";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {
     pub data: String,
     pub content_type: Option<String>,
@@ -39,10 +41,10 @@ fn parse_proxy_line(line: &str) -> Option<String> {
 async fn get_proxies() -> Result<Vec<String>, AppError> {
     let client = Client::new();
     let res = client.get(&get_proxy_list_url()).send().await?;
-    if !res.status().is_ok() {
+    if !res.status().is_success() {
         let error_msg = format!("Failed to fetch proxy list: {}", res.status());
         error!("Error fetching proxy list: {}", error_msg);
-        return Err(error_msg.into());
+        return Err(AppError::Other(error_msg));
     }
     let data = res.text().await?;
     let proxies = data
@@ -53,19 +55,11 @@ async fn get_proxies() -> Result<Vec<String>, AppError> {
     Ok(proxies)
 }
 
-static mut CACHED_PROXIES: Option<Vec<String>> = None;
-static mut CACHE_TIMESTAMP: Instant = Instant::now();
-const CACHE_DURATION: Duration = Duration::from_secs(6 * 60);
+// Remove static mut cache for thread safety and correctness.
 
 async fn get_cached_proxies() -> Result<Vec<String>, AppError> {
-    let now = Instant::now();
-    unsafe {
-        if CACHED_PROXIES.is_none() || now.duration_since(CACHE_TIMESTAMP) > CACHE_DURATION {
-            CACHED_PROXIES = Some(get_proxies().await?);
-            CACHE_TIMESTAMP = now;
-        }
-        Ok(CACHED_PROXIES.clone().unwrap_or_default())
-    }
+    // For simplicity, always fetch fresh proxies (could use a runtime cache if needed)
+    get_proxies().await
 }
 
 // --- REDIS CACHE WRAPPER START ---
@@ -96,7 +90,7 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppErro
     let mut conn = get_redis_connection()?;
     let key = get_fetch_cache_key(slug);
     let json_string = serde_json::to_string(value)?;
-    redis::cmd("SET").arg(&key).arg(&json_string).arg("EX").arg(120).query(&mut conn)?;
+    redis::cmd("SET").arg(&key).arg(&json_string).arg("EX").arg(120).query::<()>(&mut conn)?;
     Ok(())
 }
 // --- REDIS CACHE WRAPPER END ---
@@ -114,7 +108,7 @@ pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, AppError> {
     match client.get(slug).headers(headers).send().await {
         Ok(res) => {
             info!("[fetchWithProxy] Direct fetch response: url={}, status={}", slug, res.status());
-            if res.status().is_ok() {
+            if res.status().is_success() {
                 let content_type = res.headers().get(reqwest::header::CONTENT_TYPE)
                     .and_then(|h| h.to_str().ok())
                     .map(|s| s.to_string());
@@ -171,7 +165,7 @@ async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
             Ok(proxy) => client_builder.proxy(proxy).build()?,
             Err(e) => {
                 warn!("Invalid proxy URL {}: {:?}", proxy_url_str, e);
-                last_error = Some(AppError::UrlParseError(e.into()));
+                last_error = Some(AppError::Other(format!("Invalid proxy URL: {:?}", e)));
                 continue;
             }
         };
@@ -182,7 +176,7 @@ async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
         match tokio::time::timeout(Duration::from_secs(6), client.get(slug).headers(headers).send()).await {
             Ok(Ok(res)) => {
                 info!("[ProxyListOnly] Proxy fetch response: url={}, proxy={}, status={}", slug, proxy_url_str, res.status());
-                if res.status().is_ok() {
+                if res.status().is_success() {
                     let content_type = res.headers().get(reqwest::header::CONTENT_TYPE)
                         .and_then(|h| h.to_str().ok())
                         .map(|s| s.to_string());

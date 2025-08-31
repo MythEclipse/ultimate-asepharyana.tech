@@ -1,6 +1,6 @@
 use redis::{Client, Connection};
 use crate::config::CONFIG_MAP;
-use crate::error::AppError;
+use crate::utils::error::AppError;
 
 pub fn get_redis_connection() -> Result<Connection, AppError> {
     let redis_url = CONFIG_MAP.get("UPSTASH_REDIS_REST_URL")
