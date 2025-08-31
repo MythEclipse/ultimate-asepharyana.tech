@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::env;
+use crate::error::AppError;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppConfig {
@@ -9,7 +10,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn from_env() -> Result<Self, envy::Error> {
+    pub fn from_env() -> Result<Self, AppError> {
         // Always load .env when loading config
         match dotenvy::dotenv() {
             Ok(path) => tracing::info!("Loaded environment from {:?}", path),
@@ -25,11 +26,7 @@ impl AppConfig {
             }
             Err(e) => {
                 tracing::warn!("Failed to load config from environment, using defaults: {}", e);
-                AppConfig {
-                    port: 4091,
-                    database_url: "mysql://root:password@localhost:3306/rustexpress".to_string(),
-                    env: "development".to_string(),
-                }
+                return Err(AppError::Other(format!("Failed to load config from environment: {}", e)));
             }
         };
 

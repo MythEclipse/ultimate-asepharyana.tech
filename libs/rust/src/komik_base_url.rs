@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::error::Error;
 use tracing::{info, debug, warn, error};
 use scraper::{Html, Selector};
 use regex::Regex;
@@ -9,6 +8,7 @@ use base64;
 use crate::redis_client::get_redis_connection;
 use crate::fetch_with_proxy::{fetch_with_proxy, FetchResult};
 use crate::utils::http::is_internet_baik_block_page;
+use crate::error::AppError;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 // Using a static Mutex for single-flight promise simulation
@@ -18,7 +18,7 @@ static KOMIK_BASE_URL_PROMISE: once_cell::sync::Lazy<Arc<Mutex<Option<String>>>>
 const KOMIK_BASE_URL_LOCK_KEY: &str = "komik:baseurl:lock";
 const KOMIK_BASE_URL_KEY: &str = "komik:baseurl";
 
-async fn acquire_redis_lock(key: &str, ttl_seconds: usize) -> Result<bool, Box<dyn Error>> {
+async fn acquire_redis_lock(key: &str, ttl_seconds: usize) -> Result<bool, AppError> {
     let mut conn = get_redis_connection()?;
     let acquired: bool = redis::cmd("SET")
         .arg(key)
@@ -32,7 +32,7 @@ async fn acquire_redis_lock(key: &str, ttl_seconds: usize) -> Result<bool, Box<d
     Ok(acquired)
 }
 
-async fn release_redis_lock(key: &str) -> Result<(), Box<dyn Error>> {
+async fn release_redis_lock(key: &str) -> Result<(), AppError> {
     let mut conn = get_redis_connection()?;
     redis::cmd("DEL").arg(key).query_async(&mut conn).await?;
     Ok(())
@@ -42,14 +42,14 @@ async fn sleep_ms(ms: u64) {
     tokio::time::sleep(tokio::time::Duration::from_millis(ms)).await;
 }
 
-async fn fetch_with_proxy_only_wrapper(url: &str) -> Result<String, Box<dyn Error>> {
+async fn fetch_with_proxy_only_wrapper(url: &str) -> Result<String, AppError> {
     debug!("[fetchWithProxyOnlyWrapper] Fetching {}", url);
     let response = fetch_with_proxy(url).await?;
     info!("[fetchWithProxyOnlyWrapper] Fetched {}", url);
     Ok(response.data)
 }
 
-pub async fn get_dynamic_komik_base_url() -> Result<String, Box<dyn Error>> {
+pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
     let mut promise_guard = KOMIK_BASE_URL_PROMISE.lock().await;
     if let Some(url) = promise_guard.as_ref() {
         debug!("[getDynamicKomikBaseUrl] Returning in-flight promise");
@@ -68,8 +68,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, Box<dyn Error>> {
         waited += wait_interval;
         if waited >= max_wait {
             warn!("[getDynamicKomikBaseUrl] Waited too long for lock, proceeding anyway");
-            // Return empty string or throw error as appropriate
-            return Err("Waited too long for Redis lock".into());
+            return Err(AppError::Other("Waited too long for Redis lock".to_string()));
         }
         // Check if value is already cached by other process
         let mut conn = get_redis_connection()?;
@@ -127,7 +126,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, Box<dyn Error>> {
 
         if org_link.is_empty() || org_link.contains(".cz") {
             error!("[getDynamicKomikBaseUrl] Failed to fetch komik base URL selain cz");
-            return Err("Failed to fetch komik base URL selain cz".into());
+            return Err(AppError::Other("Failed to fetch komik base URL selain cz".to_string()));
         }
         info!("[getDynamicKomikBaseUrl] Got base URL: {}", org_link);
         let final_url = org_link.trim_end_matches('/').to_string();
@@ -143,7 +142,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, Box<dyn Error>> {
     result
 }
 
-pub async fn get_cached_komik_base_url(force_refresh: bool) -> Result<String, Box<dyn Error>> {
+pub async fn get_cached_komik_base_url(force_refresh: bool) -> Result<String, AppError> {
     if !force_refresh {
         let mut conn = get_redis_connection()?;
         let cached: Option<String> = redis::cmd("GET").arg(KOMIK_BASE_URL_KEY).query_async(&mut conn).await?;

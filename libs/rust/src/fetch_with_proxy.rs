@@ -1,6 +1,5 @@
 use reqwest::{Client, Proxy};
 use std::collections::HashMap;
-use std::error::Error;
 use std::time::{Duration, Instant};
 use tracing::{info, warn, error};
 use url::Url;
@@ -9,6 +8,7 @@ use regex::Regex;
 use crate::redis_client::get_redis_connection;
 use crate::scrape_croxy_proxy::{scrape_croxy_proxy, scrape_croxy_proxy_cached};
 use crate::utils::http::is_internet_baik_block_page;
+use crate::error::AppError;
 
 const DEFAULT_PROXY_LIST_URL: &str = "https://www.proxy-list.download/api/v1/get?type=https";
 
@@ -36,7 +36,7 @@ fn parse_proxy_line(line: &str) -> Option<String> {
     None
 }
 
-async fn get_proxies() -> Result<Vec<String>, Box<dyn Error>> {
+async fn get_proxies() -> Result<Vec<String>, AppError> {
     let client = Client::new();
     let res = client.get(&get_proxy_list_url()).send().await?;
     if !res.status().is_ok() {
@@ -57,7 +57,7 @@ static mut CACHED_PROXIES: Option<Vec<String>> = None;
 static mut CACHE_TIMESTAMP: Instant = Instant::now();
 const CACHE_DURATION: Duration = Duration::from_secs(6 * 60);
 
-async fn get_cached_proxies() -> Result<Vec<String>, Box<dyn Error>> {
+async fn get_cached_proxies() -> Result<Vec<String>, AppError> {
     let now = Instant::now();
     unsafe {
         if CACHED_PROXIES.is_none() || now.duration_since(CACHE_TIMESTAMP) > CACHE_DURATION {
@@ -73,7 +73,7 @@ fn get_fetch_cache_key(slug: &str) -> String {
     format!("fetch:proxy:{}", slug)
 }
 
-async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, Box<dyn Error>> {
+async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, AppError> {
     let mut conn = get_redis_connection()?;
     let key = get_fetch_cache_key(slug);
     let cached: Option<String> = redis::cmd("GET").arg(&key).query(&mut conn)?;
@@ -92,7 +92,7 @@ async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, Box<dyn Err
     }
 }
 
-async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), Box<dyn Error>> {
+async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppError> {
     let mut conn = get_redis_connection()?;
     let key = get_fetch_cache_key(slug);
     let json_string = serde_json::to_string(value)?;
@@ -101,7 +101,7 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), Box<dyn
 }
 // --- REDIS CACHE WRAPPER END ---
 
-pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
+pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, AppError> {
     if let Ok(Some(cached)) = get_cached_fetch(slug).await {
         return Ok(cached);
     }
@@ -149,7 +149,7 @@ pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, Box<dyn Error>>
     }
 }
 
-pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
+pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, AppError> {
     if let Ok(Some(cached)) = get_cached_fetch(slug).await {
         return Ok(cached);
     }
@@ -159,8 +159,8 @@ pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, Box<dyn Er
     Ok(proxy_result)
 }
 
-async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
-    let mut last_error: Option<Box<dyn Error>> = None;
+async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
+    let mut last_error: Option<AppError> = None;
     let proxies = get_cached_proxies().await?;
 
     for proxy_url_str in proxies {
@@ -171,7 +171,7 @@ async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
             Ok(proxy) => client_builder.proxy(proxy).build()?,
             Err(e) => {
                 warn!("Invalid proxy URL {}: {:?}", proxy_url_str, e);
-                last_error = Some(Box::new(e));
+                last_error = Some(AppError::UrlParseError(e.into()));
                 continue;
             }
         };
@@ -196,11 +196,11 @@ async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
                 }
             },
             Ok(Err(e)) => {
-                last_error = Some(Box::new(e));
+                last_error = Some(AppError::ReqwestError(e));
                 warn!("[ProxyListOnly] Proxy fetch failed for {} via {}: {:?}", slug, proxy_url_str, last_error);
             },
             Err(_) => {
-                last_error = Some(Box::new(std::io::Error::new(std::io::ErrorKind::TimedOut, "Proxy request timed out")));
+                last_error = Some(AppError::TimeoutError("Proxy request timed out".to_string()));
                 warn!("[ProxyListOnly] Proxy fetch timed out for {} via {}", slug, proxy_url_str);
             }
         }
@@ -217,7 +217,7 @@ async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
         },
         Err(e) => {
             error!("scrapeCroxyProxy fallback failed: {:?}", e);
-            Err(last_error.unwrap_or_else(|| "Failed to fetch from all proxies and scrapeCroxyProxy".into()))
+            Err(last_error.unwrap_or_else(|| AppError::Other("Failed to fetch from all proxies and scrapeCroxyProxy".to_string())))
         }
     }
 }

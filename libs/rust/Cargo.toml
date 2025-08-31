@@ -30,6 +30,7 @@ tokio-util = { workspace = true, features = ["codec"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 uuid = { workspace = true, features = ["v4", "serde"] }
+thiserror = { workspace = true }
 headless_chrome = "0.9.0" # Or a newer compatible version
 redis = { version = "0.25.3" }
 once_cell = "1.19.0"

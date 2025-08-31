@@ -1,8 +1,8 @@
 use reqwest::Client;
-use std::error::Error;
 use tracing::{info, error};
 use bytes::Bytes;
 use mime_guess;
+use crate::error::AppError;
 
 pub struct ImageProxyResult {
     pub data: Bytes,
@@ -10,7 +10,7 @@ pub struct ImageProxyResult {
     pub status: u16,
 }
 
-pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
+pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, AppError> {
     info!("Attempting to proxy image from: {}", url);
 
     // Try CDN image v1
@@ -35,10 +35,10 @@ pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> 
     // This part cannot be directly re-implemented without knowing the Rust equivalent of the uploader service
     // For now, return an error if all previous attempts fail.
     error!("All image proxy attempts failed for URL: {}", url);
-    Err("Failed to proxy image after all attempts".into())
+    Err(AppError::Other("Failed to proxy image after all attempts".to_string()))
 }
 
-async fn cdn_image(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
+async fn cdn_image(url: &str) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
     let encoded_url = urlencoding::encode(url);
     let cdn_url = format!("https://imagecdn.app/v1/images/{}", encoded_url);
@@ -66,12 +66,12 @@ async fn cdn_image(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
         },
         Err(e) => {
             error!("Internal server error during CDN v1 fetch for {}: {}", url, e);
-            Err(e.into())
+            Err(AppError::ReqwestError(e))
         }
     }
 }
 
-async fn cdn_image_v2(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
+async fn cdn_image_v2(url: &str) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
     let encoded_url = urlencoding::encode(url);
     let cdn_url = format!("https://imagecdn.app/v2/images/{}", encoded_url);
@@ -99,12 +99,12 @@ async fn cdn_image_v2(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
         },
         Err(e) => {
             error!("Internal server error during CDN v2 fetch for {}: {}", url, e);
-            Err(e.into())
+            Err(AppError::ReqwestError(e))
         }
     }
 }
 
-async fn fetch_manual(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
+async fn fetch_manual(url: &str) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
     match client.get(url).send().await {
         Ok(response) => {
@@ -129,7 +129,7 @@ async fn fetch_manual(url: &str) -> Result<ImageProxyResult, Box<dyn Error>> {
         },
         Err(e) => {
             error!("Internal server error during manual fetch for {}: {}", url, e);
-            Err(e.into())
+            Err(AppError::ReqwestError(e))
         }
     }
 }

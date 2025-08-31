@@ -1,8 +1,8 @@
 use reqwest::{Client, multipart};
-use std::error::Error;
 use tracing::error;
 use serde::{Deserialize, Serialize};
 use infer; // For file type detection
+use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RyzenCDNResponse {
@@ -14,7 +14,7 @@ pub struct RyzenCDNResponse {
 pub async fn ryzen_cdn(
     inp: Vec<u8>, // Simplified input to a single byte vector for now
     original_name: Option<String>,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String, AppError> {
     let client = Client::new();
     let form = multipart::Form::new();
 
@@ -52,12 +52,12 @@ pub async fn ryzen_cdn(
     if !json_response.success {
         let error_message = json_response.message.unwrap_or_else(|| "Upload failed".to_string());
         error!("RyzenCDN Error: {}", error_message);
-        return Err(error_message.into());
+        return Err(AppError::Other(error_message));
     }
 
     if let Some(url) = json_response.url {
         Ok(url)
     } else {
-        Err("RyzenCDN Error: URL not found in response".into())
+        Err(AppError::Other("RyzenCDN Error: URL not found in response".to_string()))
     }
 }

@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::http::is_internet_baik_block_page;
+use crate::error::AppError;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -25,7 +26,7 @@ fn get_random_user_agent() -> String {
     )
 }
 
-pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, Box<dyn Error>> {
+pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
     let start_time = Instant::now();
     info!("Scraping {} with CroxyProxy", target_url);
 
@@ -76,14 +77,14 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, Box<dyn Erro
             Err(e) => {
                 error!("Attempt {} failed: {:?}", attempt, e);
                 if attempt == MAX_RETRIES {
-                    return Err(Box::new(e)); // Return the last error
+                    return Err(AppError::HeadlessChromeError(e)); // Return the last error
                 }
             }
         }
     }
 
     if html_content.is_empty() {
-        return Err("Failed to retrieve HTML content after all retries.".into());
+        return Err(AppError::Other("Failed to retrieve HTML content after all retries.".to_string()));
     }
 
     let duration = start_time.elapsed().as_millis();
@@ -92,7 +93,7 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, Box<dyn Erro
     Ok(html_content)
 }
 
-pub async fn scrape_croxy_proxy_cached(target_url: &str) -> Result<String, Box<dyn Error>> {
+pub async fn scrape_croxy_proxy_cached(target_url: &str) -> Result<String, AppError> {
     let mut conn = get_redis_connection()?;
     let cache_key = format!("scrapeCroxyProxy:{}", target_url);
 

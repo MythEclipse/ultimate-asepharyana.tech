@@ -1,5 +1,6 @@
 use redis::{Commands, Connection};
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::error::AppError;
 
 pub struct RateLimiter {
     conn: Connection,
@@ -16,12 +17,12 @@ impl RateLimiter {
         }
     }
 
-    pub fn check(&mut self, key: &str) -> Result<bool, redis::RedisError> {
+    pub fn check(&mut self, key: &str) -> Result<bool, AppError> {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
         let window_start = now - self.window_seconds;
 
-        let _: () = self.conn.zrembyscore(key, 0, window_start)?;
-        let _: () = self.conn.zadd(key, now, now)?;
+        self.conn.zrembyscore(key, 0, window_start)?;
+        self.conn.zadd(key, now, now)?;
         let count: usize = self.conn.zcard(key)?;
 
         Ok(count <= self.limit)

@@ -9,3 +9,4 @@ pub mod fetch_with_proxy;
 pub mod komik_base_url;
 pub mod image_proxy;
 pub mod ryzen_cdn;
+pub mod error;
