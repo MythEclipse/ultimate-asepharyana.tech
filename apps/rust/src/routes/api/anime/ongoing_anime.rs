@@ -11,7 +11,7 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeItem {
     title: String,
     slug: String,
@@ -20,7 +20,7 @@ struct AnimeItem {
     anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct Pagination {
     current_page: usize,
     last_visible_page: usize,
@@ -30,7 +30,7 @@ struct Pagination {
     previous_page: Option<usize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeListResponse {
     status: &'static str,
     data: Vec<AnimeItem>,

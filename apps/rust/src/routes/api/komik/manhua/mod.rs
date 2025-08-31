@@ -118,5 +118,5 @@ pub async fn get_manhua_list(Query(params): Query<Params>) -> impl IntoResponse 
         }
     };
 
-    Json(ManhuaListResponse { data, pagination })
+    Json(ManhuaListResponse { data, pagination }).into_response()
 }

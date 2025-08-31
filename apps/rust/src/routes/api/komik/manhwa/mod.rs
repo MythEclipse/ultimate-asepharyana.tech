@@ -118,5 +118,5 @@ pub async fn get_manhwa_list(Query(params): Query<Params>) -> impl IntoResponse 
         }
     };
 
-    Json(ManhwaListResponse { data, pagination })
+    Json(ManhwaListResponse { data, pagination }).into_response()
 }
