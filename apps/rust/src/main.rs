@@ -23,10 +23,6 @@ mod routes;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::api::komik::komik_service::get_detail,
-        crate::routes::api::komik::komik_service::get_chapter,
-        crate::routes::api::komik::komik_service::handle_list_or_search,
-        crate::routes::api::komik::komik_service::handle_external_link,
         crate::routes::api::anime::complete_anime::complete_anime_handler,
         crate::routes::api::anime::ongoing_anime::ongoing_anime_handler,
         crate::routes::api::uploader::uploader_post_handler,
@@ -35,12 +31,6 @@ mod routes;
     ),
     components(
         schemas(
-            crate::routes::api::komik::manga_dto::MangaData,
-            crate::routes::api::komik::manga_dto::Pagination,
-            crate::routes::api::komik::manga_dto::MangaDetail,
-            crate::routes::api::komik::manga_dto::ChapterData,
-            crate::routes::api::komik::manga_dto::MangaChapter,
-            crate::routes::api::anime::anime_dto::AnimeData,
         )
     ),
     tags(

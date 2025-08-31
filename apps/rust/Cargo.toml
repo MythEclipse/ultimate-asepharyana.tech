@@ -41,6 +41,7 @@ rust_lib = { path = "../../libs/rust" }
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+urlencoding.workspace = true
 
 [dev-dependencies]
 tokio-test = { workspace = true }

@@ -11,8 +11,6 @@ use axum::{
 use sqlx::MySqlPool;
 use std::sync::{Arc, Mutex};
 use axum::extract::ws::{Message, WebSocket};
-use crate::routes::api::chat::chat_message_dto::ChatMessage;
-use crate::routes::api::chat::chat;
 use tokio::sync::mpsc;
 use axum::Json;
 use serde_json::json;
