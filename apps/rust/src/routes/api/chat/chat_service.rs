@@ -38,3 +38,12 @@ pub async fn load_messages(pool: &MySqlPool, limit: u32) -> Result<Vec<ChatMessa
     .await
     .map_err(|e| anyhow::anyhow!("Failed to load messages: {}", e))
 }
+
+use axum::Router;
+use std::sync::Arc;
+use crate::routes::ChatState;
+
+/// Returns the router for chat endpoints (currently empty).
+pub fn create_routes() -> Router<Arc<ChatState>> {
+    Router::new()
+}

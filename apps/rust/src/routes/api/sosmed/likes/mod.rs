@@ -1,3 +1,7 @@
+//! Likes API submodule router.
+//!
+//! Exposes endpoints for liking and unliking posts.
+
 use axum::{routing::{post, delete}, Router};
 use std::sync::Arc;
 use crate::routes::ChatState;

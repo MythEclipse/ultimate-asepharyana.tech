@@ -1,24 +1,39 @@
+// Minimal DTO definitions to resolve unresolved import errors
+#[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+pub struct Comments {
+    pub id: String,
+    pub post_id: String,
+    pub content: String,
+    pub user_id: String,
+    pub author_id: String,
+    pub created_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct CommentRequest {
+    pub id: Option<String>,
+    pub post_id: Option<String>,
+    pub content: String,
+}
+ // Handlers for Comments API endpoints.
+ //
+ /// Provides create, read, update, and delete operations for comments, including authentication and error handling.
+
 use axum::{
     extract::{Query, State},
-    http::{StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use axum_extra::extract::cookie::CookieJar;
-use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::ChatState;
-use crate::routes::api::user::comments_dto::{Comments, CommentRequest};
-use crate::routes::api::user::user_dto::User;
-use crate::utils::auth::{Claims, verify_jwt};
-use chrono::Utc;
-use sqlx::MySqlPool;
+use chrono::{Utc, NaiveDateTime};
 use sqlx::FromRow;
-use serde::Serialize;
-use chrono::NaiveDateTime;
+use crate::routes::ChatState;
+use rust_lib::utils::auth::verify_jwt;
 
-
+/// Handler for creating a new comment.
 pub async fn comments_post_handler(
     State(state): State<Arc<ChatState>>,
     cookies: CookieJar,
@@ -30,7 +45,6 @@ pub async fn comments_post_handler(
     let token_value = match cookies.get("token") {
         Some(cookie) => cookie.value().to_string(),
         None => {
-            eprintln!("No token cookie found");
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Authentication required" })),
@@ -39,10 +53,9 @@ pub async fn comments_post_handler(
         }
     };
 
-    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value).await {
         Ok(claims) => claims,
-        Err(e) => {
-            eprintln!("Authentication error: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Invalid token" })),
@@ -77,7 +90,7 @@ pub async fn comments_post_handler(
     .bind(&post_id)
     .bind(&payload.content)
     .bind(&user_id)
-    .bind(&user_id) // Assuming authorId is same as userId
+    .bind(&user_id)
     .bind(&created_at)
     .execute(db_pool.as_ref())
     .await
@@ -94,14 +107,11 @@ pub async fn comments_post_handler(
             })),
         )
             .into_response(),
-        Err(e) => {
-            eprintln!("Error creating comment: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to add comment" })),
-            )
-                .into_response()
-        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Failed to add comment" })),
+        )
+            .into_response(),
     }
 }
 
@@ -117,13 +127,14 @@ struct CommentWithUser {
     author_id: String,
     created_at: NaiveDateTime,
     #[serde(rename = "user_id")]
-    user_id_from_join: Option<String>, // Add this field to capture the User.id from the join
+    user_id_from_join: Option<String>,
     #[serde(rename = "user_name")]
     user_name: Option<String>,
     #[serde(rename = "user_image")]
     user_image: Option<String>,
 }
 
+/// Handler for fetching comments for a post.
 pub async fn comments_get_handler(
     Query(params): Query<CommentRequest>,
     State(state): State<Arc<ChatState>>,
@@ -167,17 +178,15 @@ pub async fn comments_get_handler(
             }).collect();
             (StatusCode::OK, Json(json!({ "comments": formatted_comments }))).into_response()
         },
-        Err(e) => {
-            eprintln!("Error fetching comments: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to fetch comments" })),
-            )
-                .into_response()
-        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Failed to fetch comments" })),
+        )
+            .into_response(),
     }
 }
 
+/// Handler for updating a comment.
 pub async fn comments_put_handler(
     State(state): State<Arc<ChatState>>,
     cookies: CookieJar,
@@ -189,7 +198,6 @@ pub async fn comments_put_handler(
     let token_value = match cookies.get("token") {
         Some(cookie) => cookie.value().to_string(),
         None => {
-            eprintln!("No token cookie found");
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Authentication required" })),
@@ -198,10 +206,9 @@ pub async fn comments_put_handler(
         }
     };
 
-    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value).await {
         Ok(claims) => claims,
-        Err(e) => {
-            eprintln!("Authentication error: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Invalid token" })),
@@ -228,7 +235,6 @@ pub async fn comments_put_handler(
             .into_response();
     }
 
-
     let comment = match sqlx::query_as::<_, Comments>("SELECT * FROM Comments WHERE id = ?")
         .bind(&id)
         .fetch_optional(db_pool.as_ref())
@@ -242,8 +248,7 @@ pub async fn comments_put_handler(
             )
                 .into_response();
         }
-        Err(e) => {
-            eprintln!("Database error fetching comment: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "message": "Internal server error" })),
@@ -274,17 +279,15 @@ pub async fn comments_put_handler(
             Json(json!({ "message": "Comment updated successfully!", "comment": updated_comment })),
         )
             .into_response(),
-        Err(e) => {
-            eprintln!("Error updating comment: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to update comment" })),
-            )
-                .into_response()
-        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Failed to update comment" })),
+        )
+            .into_response(),
     }
 }
 
+/// Handler for deleting a comment.
 pub async fn comments_delete_handler(
     State(state): State<Arc<ChatState>>,
     cookies: CookieJar,
@@ -296,7 +299,6 @@ pub async fn comments_delete_handler(
     let token_value = match cookies.get("token") {
         Some(cookie) => cookie.value().to_string(),
         None => {
-            eprintln!("No token cookie found");
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Authentication required" })),
@@ -305,10 +307,9 @@ pub async fn comments_delete_handler(
         }
     };
 
-    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value).await {
         Ok(claims) => claims,
-        Err(e) => {
-            eprintln!("Authentication error: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Invalid token" })),
@@ -339,8 +340,7 @@ pub async fn comments_delete_handler(
             )
                 .into_response();
         }
-        Err(e) => {
-            eprintln!("Database error fetching comment: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "message": "Internal server error" })),
@@ -377,13 +377,10 @@ pub async fn comments_delete_handler(
             )
                 .into_response()
         },
-        Err(e) => {
-            eprintln!("Error deleting comment: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to delete comment" })),
-            )
-                .into_response()
-        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Failed to delete comment" })),
+        )
+            .into_response(),
     }
 }

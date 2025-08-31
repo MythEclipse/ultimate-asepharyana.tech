@@ -1,15 +1,21 @@
+//! Uploader API module.
+//!
+//! Provides an endpoint for uploading files to Pomf2 and returning a formatted URL.
+//! Limits file size to 1GB and uses a production URL from configuration.
+
 use axum::{
     extract::{Multipart, State},
-    http::{StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
+    routing::post,
+    Router,
 };
 use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
 use reqwest::Client;
 use tokio_util::bytes::Bytes;
-
 use once_cell::sync::Lazy;
 use rust_lib::config::CONFIG_MAP;
 
@@ -18,6 +24,7 @@ static PRODUCTION_URL: Lazy<String> = Lazy::new(|| {
 });
 const MAX_FILE_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
 
+/// Uploads a file buffer to Pomf2 and returns (file_url, file_name).
 pub async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std::error::Error>> {
     let file_type = infer::get(&buffer);
     let (ext, mime) = match file_type {
@@ -39,7 +46,7 @@ pub async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn 
         .header("Accept", "*/*")
         .header("Origin", "https://pomf2.lain.la")
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-        .timeout(std::time::Duration::from_secs(600)) // 10 minutes
+        .timeout(std::time::Duration::from_secs(600))
         .send()
         .await?;
 
@@ -55,6 +62,7 @@ pub async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn 
     Ok((file_url, file_name))
 }
 
+/// POST handler for file upload.
 #[utoipa::path(
     post,
     path = "/api/uploader/",
@@ -66,9 +74,8 @@ pub async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn 
     tag = "Uploader"
 )]
 #[axum::debug_handler]
-#[allow(dead_code)]
 pub async fn uploader_post_handler(
-    State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency
+    State(_state): State<Arc<ChatState>>,
     mut multipart: Multipart,
 ) -> Response {
     let mut file_bytes: Option<Bytes> = None;
@@ -116,9 +123,7 @@ pub async fn uploader_post_handler(
     }
 }
 
-use axum::{routing::{post}, Router};
-
-#[allow(dead_code)]
+/// Returns the router for uploader endpoints.
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", post(uploader_post_handler))

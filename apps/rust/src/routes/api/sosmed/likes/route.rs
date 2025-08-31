@@ -1,18 +1,34 @@
+// Minimal DTO definitions to resolve unresolved import errors
+#[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+pub struct Likes {
+    pub id: String,
+    pub post_id: String,
+    pub user_id: String,
+    pub created_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct LikeRequest {
+    pub id: Option<String>,
+    pub post_id: Option<String>,
+}
+ // Handlers for Likes API endpoints.
+ //
+ /// Provides endpoints for liking and unliking posts, including authentication and error handling.
+
 use axum::{
-    extract::{State},
-    http::{StatusCode},
+    extract::State,
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Deserialize;
-use serde_json::json;
 use axum_extra::extract::cookie::CookieJar;
+use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
-use crate::routes::api::user::likes_dto::{Likes, LikeRequest};
-use crate::utils::auth::{Claims, verify_jwt};
-use sqlx::MySqlPool;
+use rust_lib::utils::auth::verify_jwt;
 
+/// Handler for liking a post.
 pub async fn likes_post_handler(
     State(state): State<Arc<ChatState>>,
     jar: CookieJar,
@@ -21,11 +37,9 @@ pub async fn likes_post_handler(
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = jar.get("token").map(|cookie| cookie.value().to_string());
-    let token_value = match token {
+    let token_value = match jar.get("token").map(|cookie| cookie.value().to_string()) {
         Some(t) => t,
         None => {
-            eprintln!("Authentication error: No token provided");
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Authentication required" })),
@@ -34,19 +48,17 @@ pub async fn likes_post_handler(
         }
     };
 
-    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value).await {
         Ok(claims) => claims,
-        Err(e) => {
-            eprintln!("Authentication error: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
     };
     let user_id = decoded_claims.user_id;
-
     let post_id = payload.post_id;
 
     let existing_like = match sqlx::query_as::<_, Likes>(
@@ -57,10 +69,9 @@ pub async fn likes_post_handler(
     .fetch_optional(db_pool.as_ref())
     .await
     {
-        Ok(Some(like)) => Some(like),
-        Ok(None) => None,
-        Err(e) => {
-            eprintln!("Database error checking existing like: {:?}", e);
+        Ok(Some(_)) => true,
+        Ok(None) => false,
+        Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "message": "Failed to like post" })),
@@ -69,7 +80,7 @@ pub async fn likes_post_handler(
         }
     };
 
-    if existing_like.is_some() {
+    if existing_like {
         return (
             StatusCode::CONFLICT,
             Json(json!({ "message": "Already liked" })),
@@ -90,17 +101,15 @@ pub async fn likes_post_handler(
             Json(json!({ "like": like })),
         )
             .into_response(),
-        Err(e) => {
-            eprintln!("Error creating like: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to like post" })),
-            )
-                .into_response()
-        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Failed to like post" })),
+        )
+            .into_response(),
     }
 }
 
+/// Handler for unliking a post.
 pub async fn likes_delete_handler(
     State(state): State<Arc<ChatState>>,
     jar: CookieJar,
@@ -109,11 +118,9 @@ pub async fn likes_delete_handler(
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = jar.get("token").map(|cookie| cookie.value().to_string());
-    let token_value = match token {
+    let token_value = match jar.get("token").map(|cookie| cookie.value().to_string()) {
         Some(t) => t,
         None => {
-            eprintln!("Authentication error: No token provided");
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Authentication required" })),
@@ -122,19 +129,17 @@ pub async fn likes_delete_handler(
         }
     };
 
-    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value).await {
         Ok(claims) => claims,
-        Err(e) => {
-            eprintln!("Authentication error: {:?}", e);
+        Err(_) => {
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
     };
     let user_id = decoded_claims.user_id;
-
     let post_id = payload.post_id;
 
     let existing_like = match sqlx::query_as::<_, Likes>(
@@ -145,10 +150,9 @@ pub async fn likes_delete_handler(
     .fetch_optional(db_pool.as_ref())
     .await
     {
-        Ok(Some(like)) => Some(like),
-        Ok(None) => None,
-        Err(e) => {
-            eprintln!("Database error checking existing like: {:?}", e);
+        Ok(Some(_)) => true,
+        Ok(None) => false,
+        Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "message": "Failed to remove like" })),
@@ -157,7 +161,7 @@ pub async fn likes_delete_handler(
         }
     };
 
-    if existing_like.is_none() {
+    if !existing_like {
         return (
             StatusCode::NOT_FOUND,
             Json(json!({ "message": "Like not found" })),
@@ -178,13 +182,10 @@ pub async fn likes_delete_handler(
             Json(json!({ "message": "Like removed successfully" })),
         )
             .into_response(),
-        Err(e) => {
-            eprintln!("Error deleting like: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to remove like" })),
-            )
-                .into_response()
-        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Failed to remove like" })),
+        )
+            .into_response(),
     }
 }

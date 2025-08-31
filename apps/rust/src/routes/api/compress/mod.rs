@@ -1,35 +1,41 @@
+//! Compression API module.
+//!
+//! Provides endpoints for compressing images and videos from a given URL and target size.
+//! Supports image (jpg, jpeg, png) and video (mp4, mov, avi) formats.
+
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
+    routing::get,
+    Router,
 };
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::ChatState; // Updated path to ChatState
+use crate::routes::ChatState;
+
 pub mod compress_service;
 pub use self::compress_service as compress;
 
+/// Query parameters for compression requests.
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 pub struct CompressParams {
     url: String,
-    size: String, // Can be "100kb" or "50%"
+    size: String, // e.g. "100kb" or "50%"
 }
 
-use axum::{routing::get, Router};
-
-#[allow(dead_code)]
+/// Returns the router for compression endpoints.
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(compress_handler))
 }
 
-#[allow(dead_code)]
+/// Handler for compressing images or videos from a URL.
 pub async fn compress_handler(
     Query(params): Query<CompressParams>,
-    State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency
+    State(_state): State<Arc<ChatState>>,
 ) -> Response {
     let url = params.url;
     let size_param = params.size;
@@ -42,47 +48,36 @@ pub async fn compress_handler(
             .into_response();
     }
 
-
     // Determine if it's an image or video based on URL extension
     let extension = url.split('.').last().unwrap_or("").to_lowercase();
 
     if ["jpg", "jpeg", "png"].contains(&extension.as_str()) {
         // Image compression logic
         match compress::compress_image_from_url(&url, &size_param).await {
-            Ok(cdn_link) => {
-                (
-                    StatusCode::OK,
-                    Json(json!({ "link": cdn_link })),
-                )
-                    .into_response()
-            }
-            Err(e) => {
-                eprintln!("Image compression error: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({ "error": "Kompresi gambar gagal" })),
-                )
-                    .into_response()
-            }
+            Ok(cdn_link) => (
+                StatusCode::OK,
+                Json(json!({ "link": cdn_link })),
+            )
+                .into_response(),
+            Err(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Kompresi gambar gagal" })),
+            )
+                .into_response(),
         }
     } else if ["mp4", "mov", "avi"].contains(&extension.as_str()) {
         // Video compression logic
         match compress::compress_video_from_url(&url, &size_param).await {
-            Ok(cdn_link) => {
-                (
-                    StatusCode::OK,
-                    Json(json!({ "link": cdn_link })),
-                )
-                    .into_response()
-            }
-            Err(e) => {
-                eprintln!("Video compression error: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({ "error": "Kompresi video gagal" })),
-                )
-                    .into_response()
-            }
+            Ok(cdn_link) => (
+                StatusCode::OK,
+                Json(json!({ "link": cdn_link })),
+            )
+                .into_response(),
+            Err(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Kompresi video gagal" })),
+            )
+                .into_response(),
         }
     } else {
         (

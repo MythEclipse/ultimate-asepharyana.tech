@@ -1,4 +1,8 @@
-use axum::{Router};
+//! Comments API submodule router.
+//!
+//! Exposes endpoints for creating, reading, updating, and deleting comments.
+
+use axum::{routing::{post, get, put, delete}, Router};
 use std::sync::Arc;
 use crate::routes::ChatState;
 
