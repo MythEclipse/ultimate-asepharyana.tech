@@ -9,6 +9,7 @@ use std::sync::Arc;
 use crate::routes::ChatState;
 use crate::routes::api::anime::anime_service::get_anime_episode_images;
 
+#[allow(dead_code)]
 pub async fn episode_handler(
     Path(episode_url_slug): Path<String>,
     State(_state): State<Arc<ChatState>>,
@@ -30,6 +31,7 @@ pub async fn episode_handler(
 
 use axum::{routing::{get}, Router};
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/:episode_url_slug", get(episode_handler))

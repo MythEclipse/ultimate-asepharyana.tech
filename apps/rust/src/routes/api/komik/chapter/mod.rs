@@ -13,10 +13,12 @@ use crate::routes::ChatState;
 use crate::routes::api::komik::komik;
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct KomikQueryParams {
     pub chapter_url: Option<String>,
 }
 
+#[allow(dead_code)]
 pub async fn chapter_handler(
     Query(params): Query<KomikQueryParams>,
     State(_state): State<Arc<ChatState>>,
@@ -42,6 +44,7 @@ pub async fn chapter_handler(
     }
 }
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(chapter_handler))

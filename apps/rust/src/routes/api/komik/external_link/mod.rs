@@ -8,6 +8,7 @@ use axum::{
 use serde_json::json;
 use crate::routes::api::komik::komik;
 
+#[allow(dead_code)]
 pub async fn external_link_handler() -> Response {
     match komik::handle_external_link().await {
         Ok(link) => (StatusCode::OK, Json(link)).into_response(),
@@ -22,6 +23,7 @@ pub async fn external_link_handler() -> Response {
     }
 }
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router {
     Router::new()
         .route("/", get(external_link_handler))

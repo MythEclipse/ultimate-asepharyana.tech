@@ -5,6 +5,7 @@ use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponseData, Genre
 use crate::routes::api::komik::manga_dto::Pagination;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
+#[allow(dead_code)]
 pub async fn fetch_anime_data(slug: &str) -> Result<String, Box<dyn Error>> {
     tracing::info!("[DEBUG] anime_service.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", slug);
@@ -13,6 +14,7 @@ pub async fn fetch_anime_data(slug: &str) -> Result<String, Box<dyn Error>> {
     Ok(response.data)
 }
 
+#[allow(dead_code)]
 pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) {
     let document = Html::parse_document(html);
     let anime_list_selector = Selector::parse("#venkonten .chivsrc li").unwrap();
@@ -75,6 +77,7 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
     (anime_list, pagination)
 }
 
+#[allow(dead_code)]
 pub async fn get_anime_episode_images(episode_url: &str) -> Result<serde_json::Value, Box<dyn Error>> {
     let body = fetch_with_proxy(episode_url).await?;
     let body = body.to_string();
@@ -91,6 +94,7 @@ pub async fn get_anime_episode_images(episode_url: &str) -> Result<serde_json::V
     Ok(serde_json::json!({ "images": images }))
 }
 
+#[allow(dead_code)]
 pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetailResponseData, Box<dyn Error>> {
     let url = format!("https://otakudesu.cloud/anime/{}", slug);
     let body = fetch_with_proxy(&url).await?;

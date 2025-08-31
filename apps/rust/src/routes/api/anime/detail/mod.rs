@@ -8,6 +8,7 @@ use serde_json::json;
 use crate::routes::api::anime::anime_detail_dto::AnimeDetailResponse;
 use crate::routes::api::anime::anime_service::get_anime_detail;
 
+#[allow(dead_code)]
 pub async fn detail_handler(
     Path(slug): Path<String>,
 ) -> Response {
@@ -32,6 +33,7 @@ pub async fn detail_handler(
 
 use axum::{routing::{get}, Router};
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router {
     Router::new()
         .route("/:slug", get(detail_handler))

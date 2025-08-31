@@ -24,6 +24,7 @@ pub struct ChatState {
     pub pool: Arc<MySqlPool>,
     pub clients: Mutex<Vec<mpsc::UnboundedSender<Message>>>,
     /// JWT secret loaded from CONFIG_MAP
+    #[allow(dead_code)]
     pub jwt_secret: String,
 }
 

@@ -14,6 +14,7 @@ const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
 const MAX_RETRIES: u8 = 1;
 
 // Helper function to simulate getRandomUserAgent from TS
+#[allow(dead_code)]
 fn get_random_user_agent() -> String {
     let versions = ["115.0.0.0", "116.0.0.0", "117.0.0.0", "118.0.0.0"];
     let os = [

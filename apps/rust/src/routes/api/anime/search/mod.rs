@@ -7,6 +7,7 @@ use axum::{
 use serde_json::json;
 use crate::routes::api::anime::anime_service::{fetch_anime_data, parse_anime_data};
 
+#[allow(dead_code)]
 pub async fn search_handler(
     Path(slug): Path<String>,
 ) -> Response {
@@ -42,6 +43,7 @@ pub async fn search_handler(
 
 use axum::{routing::{get}, Router};
 
+#[allow(dead_code)]
 pub fn create_routes() -> Router {
     Router::new()
         .route("/:slug", get(search_handler))
