@@ -16,6 +16,7 @@ use crate::routes::api::user::likes_dto::Likes;
 use crate::utils::auth::{Claims, verify_jwt};
 use chrono::Utc;
 use sqlx::MySqlPool;
+use sqlx::FromRow;
 
 pub async fn posts_post_handler(
     State(state): State<Arc<ChatState>>,
@@ -90,6 +91,48 @@ pub async fn posts_post_handler(
     }
 }
 
+#[derive(Debug, serde::Serialize, FromRow)]
+struct PostWithUser {
+    id: String,
+    content: String,
+    #[serde(rename = "authorId")]
+    author_id: String,
+    image_url: String,
+    #[serde(rename = "userId")]
+    user_id: String,
+    created_at: chrono::NaiveDateTime,
+    #[serde(rename = "user_name")]
+    user_name: Option<String>,
+    #[serde(rename = "user_image")]
+    user_image: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize, FromRow)]
+struct CommentWithUser {
+    id: String,
+    #[serde(rename = "postId")]
+    post_id: String,
+    content: String,
+    #[serde(rename = "userId")]
+    user_id: String,
+    #[serde(rename = "authorId")]
+    author_id: String,
+    created_at: chrono::NaiveDateTime,
+    #[serde(rename = "user_name")]
+    user_name: Option<String>,
+    #[serde(rename = "user_image")]
+    user_image: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize, FromRow)]
+struct LikeData {
+    #[serde(rename = "userId")]
+    user_id: String,
+    #[serde(rename = "postId")]
+    post_id: String,
+}
+
+
 pub async fn posts_get_handler(
     State(state): State<Arc<ChatState>>,
     cookies: CookieJar,
@@ -122,11 +165,11 @@ pub async fn posts_get_handler(
     };
     let user_id = decoded_claims.user_id;
 
-    match sqlx::query_as::<_, Posts>(
+    match sqlx::query_as::<_, PostWithUser>(
         r#"
         SELECT
             p.id, p.content, p.authorId, p.image_url, p.userId, p.created_at,
-            u.id as user_id, u.name as user_name, u.image as user_image
+            u.name as user_name, u.image as user_image
         FROM Posts p
         LEFT JOIN User u ON u.id = p.userId
         ORDER BY p.created_at DESC
@@ -137,13 +180,13 @@ pub async fn posts_get_handler(
     {
         Ok(posts) => {
             let mut sanitized_posts = Vec::new();
-            for mut post in posts {
+            for post in posts {
                 // Fetch comments for each post
-                let comments = sqlx::query_as::<_, Comments>(
+                let comments = sqlx::query_as::<_, CommentWithUser>(
                     r#"
                     SELECT
                         c.id, c.postId, c.content, c.userId, c.authorId, c.created_at,
-                        u.id as user_id, u.name as user_name, u.image as user_image
+                        u.name as user_name, u.image as user_image
                     FROM Comments c
                     LEFT JOIN User u ON u.id = c.userId
                     WHERE c.postId = ?
@@ -156,8 +199,8 @@ pub async fn posts_get_handler(
                 .unwrap_or_default();
 
                 // Fetch likes for each post
-                let likes = sqlx::query_as::<_, Likes>(
-                    "SELECT id, postId, userId, created_at FROM Likes WHERE postId = ?"
+                let likes = sqlx::query_as::<_, LikeData>(
+                    "SELECT userId, postId FROM Likes WHERE postId = ?"
                 )
                 .bind(&post.id)
                 .fetch_all(db_pool.as_ref())
@@ -180,7 +223,7 @@ pub async fn posts_get_handler(
                         "user": {
                             "id": c.user_id,
                             "name": c.user_name,
-                            "image": c.image_profile,
+                            "image": c.user_image,
                         }
                     })
                 }).collect();
