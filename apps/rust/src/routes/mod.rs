@@ -19,7 +19,6 @@ use serde_json::json;
 use futures::StreamExt;
 use futures::SinkExt;
 pub mod api; // Declare the new top-level api module
-use rust_lib::config::CONFIG_MAP;
 
 pub struct ChatState {
     pub pool: Arc<MySqlPool>,

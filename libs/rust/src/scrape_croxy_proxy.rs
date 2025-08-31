@@ -6,6 +6,7 @@ use std::time::Instant;
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
+use rand::RngCore;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -19,8 +20,9 @@ fn get_random_user_agent() -> String {
         "Windows NT 10.0; Win64; x64",
         "Macintosh; Intel Mac OS X 10_15_7",
     ];
-    let random_os = os[rand::random::<usize>() % os.len()];
-    let random_version = versions[rand::random::<usize>() % versions.len()];
+    let mut rng = rand::rngs::ThreadRng::default();
+    let random_os = os[(rng.next_u32() as usize) % os.len()];
+    let random_version = versions[(rng.next_u32() as usize) % versions.len()];
     format!(
         "Mozilla/5.0 ({}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{} Safari/537.36",
         random_os, random_version
@@ -61,7 +63,11 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
                 // Use wait_for_element("body")?.get_inner_html()? to get HTML content
                 let page_content = tab.wait_for_element("body")
                     .and_then(|el| {
-                        let js_result = el.call_js_fn("function() { return this.innerHTML; }", false);
+                        let js_result = el.call_js_fn(
+                            "function() { return this.innerHTML; }",
+                            vec![],
+                            false
+                        );
                         match js_result {
                             Ok(val) => {
                                 // val.value is Option<serde_json::Value>, need to handle both Some(String) and fallback to to_string()
@@ -116,7 +122,11 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
 
                 html_content = tab.wait_for_element("body")
                     .and_then(|el| {
-                        let js_result = el.call_js_fn("function() { return this.innerHTML; }", false);
+                        let js_result = el.call_js_fn(
+                            "function() { return this.innerHTML; }",
+                            vec![],
+                            false
+                        );
                         match js_result {
                             Ok(val) => {
                                 // val.value is Option<serde_json::Value>, need to handle both Some(String) and fallback to to_string()

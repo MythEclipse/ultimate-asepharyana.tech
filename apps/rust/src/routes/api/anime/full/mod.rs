@@ -1,7 +1,7 @@
 // Annotated with utoipa for OpenAPI generation
 
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,

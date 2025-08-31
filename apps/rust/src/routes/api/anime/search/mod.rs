@@ -1,11 +1,10 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use serde_json::json;
-use std::sync::Arc;
 use crate::routes::api::anime::anime_service::{fetch_anime_data, parse_anime_data};
 
 pub async fn search_handler(

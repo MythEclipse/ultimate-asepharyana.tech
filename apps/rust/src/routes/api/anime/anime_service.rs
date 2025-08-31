@@ -1,4 +1,3 @@
-use regex::Regex;
 use scraper::{Html, Selector, Element};
 use std::error::Error;
 use crate::routes::api::anime::anime_dto::AnimeData;

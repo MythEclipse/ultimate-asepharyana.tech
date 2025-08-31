@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use tracing::{info, debug, warn, error};
 use scraper::{Html, Selector};
 use regex::Regex;
-use base64;
+use base64::{engine::general_purpose, Engine as _}; // Updated for deprecation
 use url::Url;
 
 use crate::redis_client::get_redis_connection;
@@ -111,7 +111,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
         if re_ip.is_match(&org_link) {
             if let Ok(parsed_url) = Url::parse(&org_link) {
                 if let Some(cpo) = parsed_url.query_pairs().find(|(key, _)| key == "__cpo").map(|(_, value)| value) {
-                    match base64::decode(&*cpo) {
+                    match general_purpose::STANDARD.decode(&*cpo) {
                         Ok(decoded_bytes) => {
                             if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
                                 org_link = decoded_str;

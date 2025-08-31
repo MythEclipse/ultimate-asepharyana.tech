@@ -109,9 +109,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/api-doc/openapi.json", get(openapi_json))
-        .nest(
-            "/docs",
-            SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi()),
+        .merge(
+            SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi())
         )
         .merge(create_routes().with_state(chat_state));
 

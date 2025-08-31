@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use serde_json::json;
-use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponse, AnimeDetailResponseData, EpisodeListItem, Genre, Recommendation};
+use crate::routes::api::anime::anime_detail_dto::AnimeDetailResponse;
 use crate::routes::api::anime::anime_service::get_anime_detail;
 
 pub async fn detail_handler(
