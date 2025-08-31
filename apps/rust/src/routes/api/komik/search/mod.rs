@@ -26,9 +26,9 @@ pub async fn search_handler(
     let query = params.query.as_deref();
 
     match komik::handle_list_or_search("search", page, query).await {
-        Ok((data, pagination)) => (
+        Ok(data) => (
             StatusCode::OK,
-            Json(json!({ "data": data, "pagination": pagination })),
+            Json(json!({ "data": data["data"], "pagination": data["pagination"] })),
         )
             .into_response(),
         Err(e) => {

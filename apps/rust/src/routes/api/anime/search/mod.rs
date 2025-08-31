@@ -43,7 +43,10 @@ pub async fn search_handler(
             eprintln!("Anime search error: {:?}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": format!("Failed to process request: {}", e) })),
+                Json(json!({
+                    "message": "Failed to process request",
+                    "error": format!("{}", e)
+                })),
             )
                 .into_response()
         }

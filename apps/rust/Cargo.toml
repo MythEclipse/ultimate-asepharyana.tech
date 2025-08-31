@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 axum = { workspace = true, features = ["ws", "multipart"] }
 tokio = { workspace = true, features = ["full"] }
+axum-extra = { workspace = true, features = ["cookie"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 dotenvy = { workspace = true }

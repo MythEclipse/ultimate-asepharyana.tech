@@ -1,9 +1,10 @@
 use axum::{
     extract::{Query, State},
-    http::{HeaderMap, StatusCode},
+    http::{StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
+use axum_extra::extract::cookie::{CookieJar, Cookie};
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
@@ -13,6 +14,9 @@ use crate::routes::api::user::user_dto::User;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use chrono::Utc;
 use sqlx::MySqlPool;
+use sqlx::FromRow;
+use serde::Serialize;
+
 
 // Helper to get IP (simplified for Rust)
 fn get_ip() -> String {
@@ -37,19 +41,17 @@ async fn verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, Box<dyn std
 
 pub async fn comments_post_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
     Json(payload): Json<CommentRequest>,
 ) -> Response {
     let ip = get_ip();
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
-
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
-        Ok(claims) => claims,
-        Err(e) => {
-            eprintln!("Authentication error: {:?}", e);
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "message": "Authentication required" })),
@@ -57,21 +59,39 @@ pub async fn comments_post_handler(
                 .into_response();
         }
     };
+
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
+        Ok(claims) => claims,
+        Err(e) => {
+            eprintln!("Authentication error: {:?}", e);
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Invalid token" })),
+            )
+                .into_response();
+        }
+    };
     let user_id = decoded_claims.user_id;
 
-    if payload.content.is_empty() || payload.post_id.is_none() {
+    if payload.content.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({ "message": "Content and postId are required" })),
+            Json(json!({ "message": "Content is required" })),
         )
             .into_response();
     }
-    let post_id = payload.post_id.unwrap();
+    let Some(post_id) = payload.post_id else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "message": "Post ID is required" })),
+        )
+            .into_response();
+    };
 
     let new_comment_id = uuid::Uuid::new_v4().to_string();
     let created_at = Utc::now().naive_utc();
 
-    match sqlx::query_as::<_, Comments>(
+    match sqlx::query(
         "INSERT INTO Comments (id, postId, content, userId, authorId, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     )
     .bind(&new_comment_id)
@@ -80,17 +100,17 @@ pub async fn comments_post_handler(
     .bind(&user_id)
     .bind(&user_id) // Assuming authorId is same as userId
     .bind(&created_at)
-    .fetch_one(db_pool.as_ref())
+    .execute(db_pool.as_ref())
     .await
     {
-        Ok(comment) => (
+        Ok(_) => (
             StatusCode::CREATED,
             Json(json!({
                 "comment": {
-                    "id": comment.id,
-                    "postId": comment.post_id,
-                    "content": comment.content,
-                    "created_at": comment.created_at,
+                    "id": new_comment_id,
+                    "postId": post_id,
+                    "content": payload.content,
+                    "created_at": created_at,
                 }
             })),
         )
@@ -104,6 +124,25 @@ pub async fn comments_post_handler(
                 .into_response()
         }
     }
+}
+
+#[derive(Debug, serde::Serialize, FromRow)]
+struct CommentWithUser {
+    id: String,
+    #[serde(rename = "postId")]
+    post_id: String,
+    content: String,
+    #[serde(rename = "userId")]
+    user_id: String,
+    #[serde(rename = "authorId")]
+    author_id: String,
+    created_at: NaiveDateTime,
+    #[serde(rename = "user_id")]
+    user_id_from_join: Option<String>, // Add this field to capture the User.id from the join
+    #[serde(rename = "user_name")]
+    user_name: Option<String>,
+    #[serde(rename = "user_image")]
+    user_image: Option<String>,
 }
 
 pub async fn comments_get_handler(
@@ -121,11 +160,11 @@ pub async fn comments_get_handler(
             .into_response();
     };
 
-    match sqlx::query_as::<_, Comments>(
+    match sqlx::query_as::<_, CommentWithUser>(
         r#"
         SELECT
             Comments.id, Comments.postId, Comments.content, Comments.userId, Comments.authorId, Comments.created_at,
-            User.name as user_name, User.image as user_image
+            User.id as user_id, User.name as user_name, User.image as user_image
         FROM Comments
         LEFT JOIN User ON User.id = Comments.userId
         WHERE Comments.postId = ?
@@ -136,7 +175,20 @@ pub async fn comments_get_handler(
     .fetch_all(db_pool.as_ref())
     .await
     {
-        Ok(comments) => (StatusCode::OK, Json(json!({ "comments": comments }))).into_response(),
+        Ok(comments_with_user) => {
+            let formatted_comments: Vec<serde_json::Value> = comments_with_user.into_iter().map(|c| {
+                json!({
+                    "id": c.id,
+                    "postId": c.post_id,
+                    "content": c.content,
+                    "created_at": c.created_at,
+                    "user_id": c.user_id_from_join,
+                    "user_name": c.user_name,
+                    "user_image": c.user_image,
+                })
+            }).collect();
+            (StatusCode::OK, Json(json!({ "comments": formatted_comments }))).into_response()
+        },
         Err(e) => {
             eprintln!("Error fetching comments: {:?}", e);
             (
@@ -150,22 +202,32 @@ pub async fn comments_get_handler(
 
 pub async fn comments_put_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
     Json(payload): Json<CommentRequest>,
 ) -> Response {
     let ip = get_ip();
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
@@ -179,7 +241,16 @@ pub async fn comments_put_handler(
         )
             .into_response();
     };
+
+    if payload.content.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "message": "Content is required" })),
+        )
+            .into_response();
+    }
     let content = payload.content;
+
 
     let comment = match sqlx::query_as::<_, Comments>("SELECT * FROM Comments WHERE id = ?")
         .bind(&id)
@@ -212,19 +283,29 @@ pub async fn comments_put_handler(
             .into_response();
     }
 
-    match sqlx::query_as::<_, Comments>(
-        "UPDATE Comments SET content = ? WHERE id = ?"
+    match sqlx::query(
+        "UPDATE Comments SET content = ? WHERE id = ? AND userId = ?"
     )
-    .bind(&format!("{} -edited", content))
+    .bind(&content)
     .bind(&id)
-    .fetch_one(db_pool.as_ref())
+    .bind(&user_id)
+    .execute(db_pool.as_ref())
     .await
     {
-        Ok(updated_comment) => (
-            StatusCode::OK,
-            Json(json!({ "message": "Comment updated successfully!", "comment": updated_comment })),
-        )
-            .into_response(),
+        Ok(result) => {
+            if result.rows_affected() == 0 {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({ "message": "Comment not found or user not authorized" })),
+                )
+                    .into_response();
+            }
+            (
+                StatusCode::OK,
+                Json(json!({ "message": "Comment updated successfully!" })),
+            )
+                .into_response()
+        },
         Err(e) => {
             eprintln!("Error updating comment: {:?}", e);
             (
@@ -238,22 +319,32 @@ pub async fn comments_put_handler(
 
 pub async fn comments_delete_handler(
     State(state): State<Arc<ChatState>>,
+    cookies: CookieJar,
     Json(payload): Json<CommentRequest>,
 ) -> Response {
     let ip = get_ip();
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token_value = match cookies.get("token") {
+        Some(cookie) => cookie.value().to_string(),
+        None => {
+            eprintln!("No token cookie found");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "message": "Authentication required" })),
+                Json(json!({ "message": "Invalid token" })),
             )
                 .into_response();
         }
@@ -299,16 +390,26 @@ pub async fn comments_delete_handler(
             .into_response();
     }
 
-    match sqlx::query("DELETE FROM Comments WHERE id = ?")
+    match sqlx::query("DELETE FROM Comments WHERE id = ? AND userId = ?")
         .bind(&id)
+        .bind(&user_id)
         .execute(db_pool.as_ref())
         .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(json!({ "message": "Comment deleted successfully!" })),
-        )
-            .into_response(),
+        Ok(result) => {
+            if result.rows_affected() == 0 {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({ "message": "Comment not found or user not authorized" })),
+                )
+                    .into_response();
+            }
+            (
+                StatusCode::OK,
+                Json(json!({ "message": "Comment deleted successfully!" })),
+            )
+                .into_response()
+        },
         Err(e) => {
             eprintln!("Error deleting comment: {:?}", e);
             (

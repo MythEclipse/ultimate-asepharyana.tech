@@ -1,13 +1,11 @@
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::error::Error;
-use crate::routes::api::anime::anime_dto::{AnimeData, AnimeDetail, AnimeEpisode, AnimeEpisodeImage};
+use crate::routes::api::anime::anime_dto::AnimeData;
+use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponseData, Genre, EpisodeListItem, Recommendation};
 use crate::routes::api::komik::manga_dto::Pagination;
 
-// Placeholder for fetchWithProxy
 async fn fetch_with_proxy(url: &str) -> Result<String, Box<dyn Error>> {
-    // In a real scenario, this would involve proxy logic.
-    // For now, a direct fetch.
     let client = Client::new();
     let response = client.get(url).send().await?.text().await?;
     Ok(response)
@@ -71,65 +69,92 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
     (anime_list, pagination)
 }
 
-pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetail, Box<dyn Error>> {
+pub async fn get_anime_episode_images(episode_url: &str) -> Result<serde_json::Value, Box<dyn Error>> {
+    let body = fetch_with_proxy(episode_url).await?;
+    let document = Html::parse_document(&body);
+
+    let mut images: Vec<String> = Vec::new();
+    let image_selector = Selector::parse(".vmirror img").unwrap(); // Assuming images are within .vmirror and are <img> tags
+    for element in document.select(&image_selector) {
+        if let Some(src) = element.value().attr("src") {
+            images.push(src.to_string());
+        }
+    }
+
+    Ok(serde_json::json!({ "images": images }))
+}
+
+pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetailResponseData, Box<dyn Error>> {
     let url = format!("https://otakudesu.cloud/anime/{}", slug);
     let body = fetch_with_proxy(&url).await?;
     let document = Html::parse_document(&body);
 
-    let title = document.select(&Selector::parse(".jdlbar").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let extract_text = |selector_str: &str, prefix: &str| -> String {
+        let selector = Selector::parse(selector_str).unwrap();
+        document.select(&selector).next().map(|e| e.text().collect::<String>().replace(prefix, "").trim().to_string()).unwrap_or_default()
+    };
+
+    let title = extract_text(".infozingle p:contains(\"Judul\")", "Judul: ");
+    let alternative_title = extract_text(".infozingle p:contains(\"Japanese\")", "Japanese: ");
     let poster = document.select(&Selector::parse(".fotoanime img").unwrap()).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
-
-    let mut genres: Vec<String> = Vec::new();
-    let genres_selector = Selector::parse(".infozingle p:contains(\"Genres\") a").unwrap();
-    for element in document.select(&genres_selector) {
-        genres.push(element.text().collect::<String>().trim().to_string());
-    }
-
-    let status = document.select(&Selector::parse(".infozingle p:contains(\"Status\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Status :", "").trim().to_string()).unwrap_or_default();
-    let rating = document.select(&Selector::parse(".infozingle p:contains(\"Rating\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Rating :", "").trim().to_string()).unwrap_or_default();
-    let producer = document.select(&Selector::parse(".infozingle p:contains(\"Producer\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Producer :", "").trim().to_string()).unwrap_or_default();
-    let type_anime = document.select(&Selector::parse(".infozingle p:contains(\"Type\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Type :", "").trim().to_string()).unwrap_or_default();
-    let total_episode = document.select(&Selector::parse(".infozingle p:contains(\"Total Episode\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Total Episode :", "").trim().to_string()).unwrap_or_default();
-    let duration = document.select(&Selector::parse(".infozingle p:contains(\"Duration\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Duration :", "").trim().to_string()).unwrap_or_default();
-    let release_date = document.select(&Selector::parse(".infozingle p:contains(\"Release Date\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Release Date :", "").trim().to_string()).unwrap_or_default();
-    let studio = document.select(&Selector::parse(".infozingle p:contains(\"Studio\")").unwrap()).next().map(|e| e.text().collect::<String>().replace("Studio :", "").trim().to_string()).unwrap_or_default();
+    let r#type = extract_text(".infozingle p:contains(\"Tipe\")", "Tipe: ");
+    let release_date = extract_text(".infozingle p:contains(\"Tanggal Rilis\")", "Tanggal Rilis: ");
+    let status = extract_text(".infozingle p:contains(\"Status\")", "Status: ");
     let synopsis = document.select(&Selector::parse(".sinopc").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+    let studio = extract_text(".infozingle p:contains(\"Studio\")", "Studio: ");
 
-    let mut episodes: Vec<AnimeEpisode> = Vec::new();
-    let episode_selector = Selector::parse("#episode_list li").unwrap();
-    for element in document.select(&episode_selector) {
-        let episode_title = element.select(&Selector::parse("a").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-        let episode_url = element.select(&Selector::parse("a").unwrap()).next().and_then(|e| e.value().attr("href").map(|s| s.to_string())).unwrap_or_default();
-        let uploaded_on = element.select(&Selector::parse(".tgl").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
-        episodes.push(AnimeEpisode { episode_title, episode_url, uploaded_on });
+    let mut genres: Vec<Genre> = Vec::new();
+    let genres_selector = Selector::parse(".infozingle p:contains(\"Genre\") a").unwrap();
+    for element in document.select(&genres_selector) {
+        let name = element.text().collect::<String>().trim().to_string();
+        let href = element.value().attr("href").unwrap_or_default().to_string();
+        let genre_slug = href.split('/').nth(4).unwrap_or_default().to_string();
+        genres.push(Genre { name, slug: genre_slug, anime_url: href });
     }
 
-    Ok(AnimeDetail {
+    let producers_str = extract_text(".infozingle p:contains(\"Produser\")", "Produser: ");
+    let producers: Vec<String> = producers_str.split(',').map(|s| s.trim().to_string()).collect();
+
+    let mut episode_lists: Vec<EpisodeListItem> = Vec::new();
+    let mut batch: Vec<EpisodeListItem> = Vec::new();
+    let episode_selector = Selector::parse(".episodelist ul li span a").unwrap();
+    for element in document.select(&episode_selector) {
+        let episode = element.text().collect::<String>().trim().to_string();
+        let href = element.value().attr("href").unwrap_or_default().to_string();
+        let segments: Vec<&str> = href.split('/').collect();
+        let episode_slug = segments.last().unwrap_or(&"").to_string();
+
+        if episode.to_lowercase().contains("batch") {
+            batch.push(EpisodeListItem { episode, slug: episode_slug });
+        } else {
+            episode_lists.push(EpisodeListItem { episode, slug: episode_slug });
+        }
+    }
+
+    let mut recommendations: Vec<Recommendation> = Vec::new();
+    let recommendation_selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
+    for element in document.select(&recommendation_selector) {
+        let title = element.select(&Selector::parse(".judul-anime a").unwrap()).next().map(|e| e.text().collect::<String>().trim().to_string()).unwrap_or_default();
+        let url = element.select(&Selector::parse("a").unwrap()).next().and_then(|e| e.value().attr("href").map(|s| s.to_string())).unwrap_or_default();
+        let poster = element.select(&Selector::parse("img").unwrap()).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
+        let slug = url.split('/').nth(4).unwrap_or_default().to_string();
+        recommendations.push(Recommendation { title, slug, poster, status: "".to_string(), r#type: "".to_string() });
+    }
+
+    Ok(AnimeDetailResponseData {
         title,
+        alternative_title,
         poster,
-        genres,
-        status,
-        rating,
-        producer,
-        type_anime,
-        total_episode,
-        duration,
+        r#type,
         release_date,
-        studio,
+        status,
         synopsis,
-        episodes,
+        studio,
+        genres,
+        producers,
+        recommendations,
+        batch,
+        episode_lists,
     })
 }
 
-pub async fn get_anime_episode_images(episode_url: &str) -> Result<Vec<AnimeEpisodeImage>, Box<dyn Error>> {
-    let body = fetch_with_proxy(episode_url).await?;
-    let document = Html::parse_document(&body);
-
-    let mut images: Vec<AnimeEpisodeImage> = Vec::new();
-    let image_selector = Selector::parse("#lightgallery img").unwrap();
-    for element in document.select(&image_selector) {
-        images.push(AnimeEpisodeImage { image_url: element.value().attr("src").map(|s| s.to_string()).unwrap_or_default() });
-    }
-
-    Ok(images)
-}

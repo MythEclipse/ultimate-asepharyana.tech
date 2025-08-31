@@ -1,16 +1,16 @@
 use axum::{
-    extract::{Query, State},
-    http::{HeaderMap, StatusCode},
+    extract::{State},
+    http::{StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
 use serde::Deserialize;
 use serde_json::json;
+use axum_extra::extract::cookie::{CookieJar, Cookie};
 use std::sync::Arc;
 use crate::routes::mod_::ChatState; // Updated path to ChatState
 use crate::routes::api::user::likes_dto::{Likes, LikeRequest};
 use jsonwebtoken::{decode, DecodingKey, Validation};
-use chrono::Utc;
 use sqlx::MySqlPool;
 
 // Claims struct for JWT decoding
@@ -31,15 +31,26 @@ async fn verify_jwt(token: &str, jwt_secret: &str) -> Result<Claims, Box<dyn std
 
 pub async fn likes_post_handler(
     State(state): State<Arc<ChatState>>,
+    jar: CookieJar,
     Json(payload): Json<LikeRequest>,
 ) -> Response {
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token = jar.get("token").map(|cookie| cookie.value().to_string());
+    let token_value = match token {
+        Some(t) => t,
+        None => {
+            eprintln!("Authentication error: No token provided");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
@@ -68,7 +79,7 @@ pub async fn likes_post_handler(
             eprintln!("Database error checking existing like: {:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Internal server error" })),
+                Json(json!({ "message": "Failed to like post" })),
             )
                 .into_response();
         }
@@ -82,16 +93,11 @@ pub async fn likes_post_handler(
             .into_response();
     }
 
-    let new_like_id = uuid::Uuid::new_v4().to_string();
-    let created_at = Utc::now().naive_utc();
-
     match sqlx::query_as::<_, Likes>(
-        "INSERT INTO Likes (id, postId, userId, created_at) VALUES (?, ?, ?, ?)"
+        "INSERT INTO Likes (postId, userId) VALUES (?, ?)"
     )
-    .bind(&new_like_id)
     .bind(&post_id)
     .bind(&user_id)
-    .bind(&created_at)
     .fetch_one(db_pool.as_ref())
     .await
     {
@@ -113,15 +119,26 @@ pub async fn likes_post_handler(
 
 pub async fn likes_delete_handler(
     State(state): State<Arc<ChatState>>,
+    jar: CookieJar,
     Json(payload): Json<LikeRequest>,
 ) -> Response {
     let db_pool = &state.pool;
     let jwt_secret = &state.jwt_secret;
 
-    let token = HeaderMap::new(); // Placeholder for cookie extraction
-    let token_value = "dummy_token"; // Replace with actual cookie extraction
+    let token = jar.get("token").map(|cookie| cookie.value().to_string());
+    let token_value = match token {
+        Some(t) => t,
+        None => {
+            eprintln!("Authentication error: No token provided");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "message": "Authentication required" })),
+            )
+                .into_response();
+        }
+    };
 
-    let decoded_claims = match verify_jwt(token_value, jwt_secret).await {
+    let decoded_claims = match verify_jwt(&token_value, jwt_secret).await {
         Ok(claims) => claims,
         Err(e) => {
             eprintln!("Authentication error: {:?}", e);
@@ -150,7 +167,7 @@ pub async fn likes_delete_handler(
             eprintln!("Database error checking existing like: {:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Internal server error" })),
+                Json(json!({ "message": "Failed to remove like" })),
             )
                 .into_response();
         }

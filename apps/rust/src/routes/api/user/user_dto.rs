@@ -8,6 +8,7 @@ pub struct User {
     pub email: String,
     pub password: String,
     pub role: String,
+    pub image: Option<String>, // Added image field
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

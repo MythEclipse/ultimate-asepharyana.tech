@@ -1,3 +1,5 @@
+use axum::{routing::post, Router};
+use std::sync::Arc;
 use axum::{
     extract::State,
     http::StatusCode,
@@ -5,6 +7,7 @@ use axum::{
     Json,
 };
 use serde_json::json;
+use uuid;
 use sqlx::MySqlPool;
 use crate::routes::api::user::user_dto::{RegisterRequest, User};
 use crate::routes::ChatState; // Updated path to ChatState
@@ -130,7 +133,7 @@ pub async fn register_handler(
             // Set cookie
             response.headers_mut().insert(
                 "Set-Cookie",
-                format!("token={}; HttpOnly; Path=/; SameSite=Lax; Max-Age={}", token, Duration::hours(1).num_seconds())
+                format!("token={}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age={}", token, Duration::hours(1).num_seconds())
                     .parse()
                     .unwrap(),
             );

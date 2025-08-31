@@ -74,7 +74,7 @@ async fn get_cached_komik_base_url(refresh: bool) -> Result<String, Box<dyn Erro
     tag = "Komik"
 )]
 
-pub async fn get_detail(komik_id: &str) -> Result<MangaDetail, Box<dyn Error>> {
+pub async fn get_detail(komik_id: &str) -> Result<serde_json::Value, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
     let body = fetch_with_proxy_only_wrapper(&format!("{}/komik/{}", base_url, komik_id)).await?;
     let document = Html::parse_document(&body);
@@ -110,21 +110,21 @@ pub async fn get_detail(komik_id: &str) -> Result<MangaDetail, Box<dyn Error>> {
         chapters.push(ChapterData { chapter, date, chapter_id });
     }
 
-    Ok(MangaDetail {
-        title,
-        alternative_title,
-        score,
-        poster,
-        description,
-        status,
-        manga_type,
-        release_date,
-        author,
-        total_chapter,
-        updated_on,
-        genres,
-        chapters,
-    })
+    Ok(serde_json::json!({
+        "title": title,
+        "alternativeTitle": alternative_title,
+        "score": score,
+        "poster": poster,
+        "description": description,
+        "status": status,
+        "type": manga_type,
+        "releaseDate": release_date,
+        "author": author,
+        "totalChapter": total_chapter,
+        "updatedOn": updated_on,
+        "genres": genres,
+        "chapters": chapters,
+    }))
 }
 
 #[utoipa::path(
@@ -138,7 +138,7 @@ pub async fn get_detail(komik_id: &str) -> Result<MangaDetail, Box<dyn Error>> {
     ),
     tag = "Komik"
 )]
-pub async fn get_chapter(chapter_url: &str) -> Result<MangaChapter, Box<dyn Error>> {
+pub async fn get_chapter(chapter_url: &str) -> Result<serde_json::Value, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
     let body = fetch_with_proxy_only_wrapper(&format!("{}/chapter/{}", base_url, chapter_url)).await?;
     let document = Html::parse_document(&body);
@@ -166,13 +166,13 @@ pub async fn get_chapter(chapter_url: &str) -> Result<MangaChapter, Box<dyn Erro
         images.push(element.value().attr("src").map(|s| s.to_string()).unwrap_or_default());
     }
 
-    Ok(MangaChapter {
-        title,
-        next_chapter_id,
-        prev_chapter_id,
-        images,
-        list_chapter,
-    })
+    Ok(serde_json::json!({
+        "title": title,
+        "next_chapter_id": next_chapter_id,
+        "prev_chapter_id": prev_chapter_id,
+        "images": images,
+        "list_chapter": list_chapter,
+    }))
 }
 
 #[utoipa::path(
@@ -192,7 +192,7 @@ pub async fn handle_list_or_search(
     manga_type: &str,
     page: u32,
     query: Option<&str>,
-) -> Result<(Vec<MangaData>, Pagination), Box<dyn Error>> {
+) -> Result<serde_json::Value, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
     let mut api_url = format!("{}/{}/page/{}/", base_url, manga_type, page);
     if let Some(q) = query {
@@ -222,7 +222,10 @@ pub async fn handle_list_or_search(
         previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
     };
 
-    Ok((parsed_data, pagination))
+    Ok(serde_json::json!({
+        "data": parsed_data,
+        "pagination": pagination,
+    }))
 }
 
 #[utoipa::path(
@@ -233,7 +236,7 @@ pub async fn handle_list_or_search(
     ),
     tag = "Komik"
 )]
-pub async fn handle_external_link() -> Result<String, Box<dyn Error>> {
+pub async fn handle_external_link() -> Result<serde_json::Value, Box<dyn Error>> {
     let base_url = get_cached_komik_base_url(false).await?;
-    Ok(base_url)
+    Ok(serde_json::json!({ "link": base_url }))
 }

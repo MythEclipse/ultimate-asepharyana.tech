@@ -1,34 +1,39 @@
 use axum::{
-    extract::{Query, State},
-    http::{HeaderMap, HeaderValue, StatusCode},
+    extract::Query,
+    http::StatusCode,
     response::{IntoResponse, Response},
+    Json,
 };
-use serde::Deserialize;
-use std::sync::Arc;
-use crate::routes::ChatState; // Updated path to ChatState
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct VideoProxyParams {
     url: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct ErrorResponse {
+    error: String,
+}
+
 use axum::{routing::get, Router};
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
+pub fn create_routes() -> Router {
     Router::new()
         .route("/", get(video_proxy_handler))
 }
 
 pub async fn video_proxy_handler(
     Query(params): Query<VideoProxyParams>,
-    State(_state): State<Arc<ChatState>>, // State is not used here, but kept for consistency
 ) -> Response {
     let url = params.url;
 
     if url.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
-            "URL is required".to_string(),
+            Json(ErrorResponse {
+                error: "URL is required".to_string(),
+            }),
         )
             .into_response();
     }
@@ -54,7 +59,9 @@ pub async fn video_proxy_handler(
                         eprintln!("URL does not point to a video: {}", url);
                         return (
                             StatusCode::BAD_REQUEST,
-                            "URL does not point to a video".to_string(),
+                            Json(ErrorResponse {
+                                error: "URL does not point to a video".to_string(),
+                            }),
                         )
                             .into_response();
                     }
@@ -80,18 +87,36 @@ pub async fn video_proxy_handler(
 
                     response_builder.body(bytes.into()).unwrap_or_else(|e| {
                         eprintln!("Error building response: {:?}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ErrorResponse {
+                                error: "Internal server error".to_string(),
+                            }),
+                        )
+                            .into_response()
                     })
                 }
                 Err(e) => {
                     eprintln!("Error reading response body: {:?}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ErrorResponse {
+                            error: "Internal server error".to_string(),
+                        }),
+                    )
+                        .into_response()
                 }
             }
         }
         Err(e) => {
             eprintln!("Error fetching video: {:?}", e);
-            StatusCode::BAD_GATEWAY.into_response()
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(ErrorResponse {
+                    error: "Failed to fetch video".to_string(),
+                }),
+            )
+                .into_response()
         }
     }
 }
