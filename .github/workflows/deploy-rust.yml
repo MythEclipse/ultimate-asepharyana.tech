@@ -36,7 +36,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install FFmpeg System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavfilter-dev
 
       - name: Prepare .env file for production
         env:
