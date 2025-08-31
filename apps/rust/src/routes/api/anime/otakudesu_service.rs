@@ -2,7 +2,7 @@ use scraper::{Html, Selector};
 use std::error::Error;
 use serde::{Deserialize, Serialize};
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::fetch_with_proxy;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AnimeItem {
@@ -18,7 +18,8 @@ pub async fn fetch_anime_page_ongoing(slug: &str) -> Result<String, Box<dyn Erro
     let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
     tracing::info!("[DEBUG] otakudesu_service.rs fetched body: {} bytes", response.len());
-    Ok(response)
+    tracing::debug!("FetchResult (otakudesu_service.rs): {:?}", &response);
+    Ok(response.data)
 }
 
 pub fn parse_anime_page_ongoing(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {

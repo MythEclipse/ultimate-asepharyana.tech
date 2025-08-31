@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::routes::ChatState;
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::fetch_with_proxy;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -30,7 +30,8 @@ async fn fetch_anime_page_complete(slug: &str) -> Result<String, Box<dyn std::er
     let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
     tracing::info!("[DEBUG] complete_anime.rs fetched body: {} bytes", response.len());
-    Ok(response)
+    tracing::debug!("FetchResult (complete_anime.rs): {:?}", &response);
+    Ok(response.data)
 }
 
 fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>, Pagination) {

@@ -47,6 +47,7 @@ pub fn parse_manga_data(body: &str) -> Vec<MangaData> {
 async fn fetch_url_content(url: &str) -> Result<String, Box<dyn Error>> {
     let client = Client::new();
     let response = client.get(url).send().await?.text().await?;
+    tracing::debug!("FetchResult (komik_service.rs): {:?}", &response);
     Ok(response)
 }
 
@@ -230,12 +231,14 @@ pub async fn handle_list_or_search(
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(current_page);
 
+    tracing::debug!("current_page: {}, has_previous_page: {}", current_page, current_page > 1);
     let pagination = Pagination {
         current_page,
         last_visible_page: total_pages,
         has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
         next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
         previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
+        has_previous_page: current_page > 1,
     };
 
     Ok(serde_json::json!({

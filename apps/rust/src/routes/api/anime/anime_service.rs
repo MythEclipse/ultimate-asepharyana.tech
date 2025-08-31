@@ -4,13 +4,14 @@ use std::error::Error;
 use crate::routes::api::anime::anime_dto::AnimeData;
 use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponseData, Genre, EpisodeListItem, Recommendation};
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::fetch_with_proxy;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 pub async fn fetch_anime_data(slug: &str) -> Result<String, Box<dyn Error>> {
     tracing::info!("[DEBUG] anime_service.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", slug);
     let response = fetch_with_proxy(&url).await?;
-    Ok(response)
+    tracing::debug!("FetchResult (anime_service.rs): {:?}", &response);
+    Ok(response.data)
 }
 
 pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) {
@@ -62,12 +63,14 @@ pub fn parse_anime_data(html: &str, slug: &str) -> (Vec<AnimeData>, Pagination) 
     }
 
     let page_num = slug.parse::<u32>().unwrap_or(1);
+    tracing::debug!("current_page: {}, has_previous_page: {}", page_num, page_num > 1);
     let pagination = Pagination {
         current_page: page_num,
         last_visible_page: 57, // Hardcoded from Next.js example, needs dynamic scraping
         has_next_page: document.select(&Selector::parse(".hpage .r").unwrap()).next().is_some(),
         next_page: if document.select(&Selector::parse(".hpage .r").unwrap()).next().is_some() { Some(page_num + 1) } else { None },
         previous_page: if page_num > 1 { Some(page_num - 1) } else { None },
+        has_previous_page: page_num > 1,
     };
 
     (anime_list, pagination)

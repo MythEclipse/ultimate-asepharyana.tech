@@ -2,14 +2,15 @@ use scraper::{Html, Selector};
 use std::error::Error;
 use crate::routes::api::anime::alqanime_dto::{Anime2Data, Anime2Detail, Anime2Episode};
 use crate::routes::api::komik::manga_dto::Pagination;
-use rust_lib::fetch_with_proxy;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub async fn fetch_anime2_data(slug: &str) -> Result<String, Box<dyn Error>> {
     tracing::info!("[DEBUG] alqanime_service.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://alqanime.net/?s={}", slug);
     let response = fetch_with_proxy(&url).await?;
-    Ok(response)
+    tracing::debug!("FetchResult (alqanime_service.rs): {:?}", &response);
+    Ok(response.data)
 }
 
 #[allow(dead_code)]
@@ -71,12 +72,14 @@ pub fn parse_anime2_data(html: &str) -> (Vec<Anime2Data>, Pagination) {
         None
     };
 
+    tracing::debug!("current_page: {}, has_previous_page: {}", current_page, current_page > 1);
     let pagination = Pagination {
         current_page,
         last_visible_page,
         has_next_page,
         next_page,
         previous_page,
+        has_previous_page: current_page > 1,
     };
 
     (anime_list, pagination)

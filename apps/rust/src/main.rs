@@ -42,8 +42,6 @@ mod routes;
             crate::routes::api::komik::manga_dto::ChapterData,
             crate::routes::api::komik::manga_dto::MangaChapter,
             crate::routes::api::anime::anime_dto::AnimeData,
-            crate::routes::api::anime::anime_dto::AnimeDetail,
-            crate::routes::api::uploader::UploadResponse
         )
     ),
     tags(

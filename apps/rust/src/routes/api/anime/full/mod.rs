@@ -12,7 +12,7 @@ use scraper::{Html, Selector};
 use std::{collections::HashMap, error::Error};
 use regex::Regex;
 
-use rust_lib::fetch_with_proxy;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -50,7 +50,8 @@ async fn fetch_anime_page_full(slug: &str) -> Result<String, Box<dyn Error>> {
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
     tracing::info!("[DEBUG] full/mod.rs fetched body: {} bytes", response.len());
-    Ok(response)
+    tracing::debug!("FetchResult (full/mod.rs): {:?}", &response);
+    Ok(response.data)
 }
 
 fn parse_anime_page_full(html: &str, slug: &str) -> AnimeData {
