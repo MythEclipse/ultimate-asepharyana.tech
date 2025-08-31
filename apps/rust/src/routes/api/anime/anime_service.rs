@@ -1,15 +1,9 @@
-use reqwest::Client;
 use scraper::{Html, Selector};
 use std::error::Error;
 use crate::routes::api::anime::anime_dto::AnimeData;
 use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponseData, Genre, EpisodeListItem, Recommendation};
 use crate::routes::api::komik::manga_dto::Pagination;
-
-async fn fetch_with_proxy(url: &str) -> Result<String, Box<dyn Error>> {
-    let client = Client::new();
-    let response = client.get(url).send().await?.text().await?;
-    Ok(response)
-}
+use rust_lib::utils::fetch_with_proxy;
 
 pub async fn fetch_anime_data(slug: &str) -> Result<String, Box<dyn Error>> {
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", slug);
@@ -157,4 +151,3 @@ pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetailResponseData, Box
         episode_lists,
     })
 }
-

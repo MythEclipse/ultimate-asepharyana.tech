@@ -20,6 +20,7 @@ pub struct Pagination {
     pub last_visible_page: u32,
     pub has_next_page: bool,
     pub next_page: Option<u32>,
+    pub has_previous_page: bool,
     pub previous_page: Option<u32>,
 }
 

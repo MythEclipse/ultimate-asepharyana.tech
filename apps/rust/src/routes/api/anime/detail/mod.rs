@@ -13,41 +13,9 @@ pub async fn detail_handler(
 ) -> Response {
     match get_anime_detail(&slug).await {
         Ok(detail) => {
-            let anime_data = AnimeDetailResponseData {
-                title: detail.title,
-                alternative_title: detail.alternative_title,
-                poster: detail.poster,
-                r#type: detail.r#type,
-                release_date: detail.release_date,
-                status: detail.status,
-                synopsis: detail.synopsis,
-                studio: detail.studio,
-                genres: detail.genres.into_iter().map(|g| Genre {
-                    name: g.name,
-                    slug: g.slug,
-                    anime_url: g.anime_url,
-                }).collect(),
-                producers: detail.producers,
-                recommendations: detail.recommendations.into_iter().map(|r| Recommendation {
-                    title: r.title,
-                    slug: r.slug,
-                    poster: r.poster,
-                    status: r.status,
-                    r#type: r.r#type,
-                }).collect(),
-                batch: detail.batch.into_iter().map(|b| EpisodeListItem {
-                    episode: b.episode,
-                    slug: b.slug,
-                }).collect(),
-                episode_lists: detail.episode_lists.into_iter().map(|e| EpisodeListItem {
-                    episode: e.episode,
-                    slug: e.slug,
-                }).collect(),
-            };
-
             let response = AnimeDetailResponse {
                 status: "Ok".to_string(),
-                data: anime_data,
+                data: detail,
             };
             (StatusCode::OK, Json(response)).into_response()
         },

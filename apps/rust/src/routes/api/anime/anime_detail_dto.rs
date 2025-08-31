@@ -18,8 +18,8 @@ pub struct Recommendation {
     pub title: String,
     pub slug: String,
     pub poster: String,
-    pub status: String,
-    pub r#type: String, // 'type' is a reserved keyword, using r#type
+    #[serde(rename = "type")]
+    pub r#type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,7 +27,8 @@ pub struct AnimeDetailResponseData {
     pub title: String,
     pub alternative_title: String,
     pub poster: String,
-    pub r#type: String, // 'type' is a reserved keyword, using r#type
+    #[serde(rename = "type")]
+    pub r#type: String,
     pub release_date: String,
     pub status: String,
     pub synopsis: String,

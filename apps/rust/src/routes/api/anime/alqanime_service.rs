@@ -1,18 +1,8 @@
-use reqwest::Client;
 use scraper::{Html, Selector};
 use std::error::Error;
 use crate::routes::api::anime::alqanime_dto::{Anime2Data, Anime2Detail, Anime2Episode};
 use crate::routes::api::komik::manga_dto::Pagination;
-
-// Placeholder for fetchWithProxy
-#[allow(dead_code)]
-async fn fetch_with_proxy(url: &str) -> Result<String, Box<dyn Error>> {
-    // In a real scenario, this would involve proxy logic.
-    // For now, a direct fetch.
-    let client = Client::new();
-    let response = client.get(url).send().await?.text().await?;
-    Ok(response)
-}
+use rust_lib::utils::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub async fn fetch_anime2_data(slug: &str) -> Result<String, Box<dyn Error>> {
