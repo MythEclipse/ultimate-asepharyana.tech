@@ -108,7 +108,6 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let app = Router::new()
-        .route("/api-doc/openapi.json", get(openapi_json))
         .merge(
             SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi())
         )

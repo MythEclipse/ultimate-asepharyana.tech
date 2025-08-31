@@ -20,7 +20,7 @@ pub mod anime_detail_dto;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
-        .route("/complete-anime/:slug", axum::routing::get(complete_anime::complete_anime_handler))
-        .route("/ongoing-anime/:slug", axum::routing::get(ongoing_anime::ongoing_anime_handler))
-        .route("/full/:slug", axum::routing::get(full::full_anime_handler))
+        .route("/complete-anime/{slug}", axum::routing::get(complete_anime::complete_anime_handler))
+        .route("/ongoing-anime/{slug}", axum::routing::get(ongoing_anime::ongoing_anime_handler))
+        .route("/full/{slug}", axum::routing::get(full::full_anime_handler))
 }
