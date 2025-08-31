@@ -7,13 +7,14 @@ use url::Url;
 use regex::Regex;
 
 use crate::redis_client::get_redis_connection;
-use crate::scrape_croxy_proxy::{scrape_croxy_proxy, scrape_croxy_proxy_cached}; // Assuming these are ready
+use crate::scrape_croxy_proxy::{scrape_croxy_proxy, scrape_croxy_proxy_cached};
+use crate::utils::http::is_internet_baik_block_page;
 
 const DEFAULT_PROXY_LIST_URL: &str = "https://www.proxy-list.download/api/v1/get?type=https";
 
 #[derive(Debug, Clone)]
 pub struct FetchResult {
-    pub data: String, // Using String for simplicity, can be changed to Vec<u8> for binary data
+    pub data: String,
     pub content_type: Option<String>,
 }
 
@@ -47,15 +48,14 @@ async fn get_proxies() -> Result<Vec<String>, Box<dyn Error>> {
     let proxies = data
         .lines()
         .filter_map(parse_proxy_line)
-        .take(10) // Only use the first 10 proxies
+        .take(10)
         .collect();
     Ok(proxies)
 }
 
-// Simple in-memory cache for proxies (for demonstration, a more robust solution would use Redis)
 static mut CACHED_PROXIES: Option<Vec<String>> = None;
 static mut CACHE_TIMESTAMP: Instant = Instant::now();
-const CACHE_DURATION: Duration = Duration::from_secs(6 * 60); // 6 minutes
+const CACHE_DURATION: Duration = Duration::from_secs(6 * 60);
 
 async fn get_cached_proxies() -> Result<Vec<String>, Box<dyn Error>> {
     let now = Instant::now();
@@ -66,12 +66,6 @@ async fn get_cached_proxies() -> Result<Vec<String>, Box<dyn Error>> {
         }
         Ok(CACHED_PROXIES.clone().unwrap_or_default())
     }
-}
-
-fn is_internet_baik_block_page(data: &str) -> bool {
-    data.contains("internetbaik.telkomsel.com") ||
-    data.contains("VmaxAdManager.js") ||
-    data.contains("VmaxAdHelper")
 }
 
 // --- REDIS CACHE WRAPPER START ---
@@ -90,7 +84,6 @@ async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, Box<dyn Err
                 Ok(Some(parsed))
             },
             Err(_) => {
-                // ignore parse error, fallback to fetch
                 Ok(None)
             }
         }
@@ -109,7 +102,6 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), Box<dyn
 // --- REDIS CACHE WRAPPER END ---
 
 pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
-    // Try Redis cache first
     if let Ok(Some(cached)) = get_cached_fetch(slug).await {
         return Ok(cached);
     }
@@ -158,7 +150,6 @@ pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, Box<dyn Error>>
 }
 
 pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, Box<dyn Error>> {
-    // Try Redis cache first
     if let Ok(Some(cached)) = get_cached_fetch(slug).await {
         return Ok(cached);
     }

@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: 'bun',
+      script: 'node',
       args: '-r dotenv/config start', // <-- ini load .env otomatis
       interpreter: 'none',
       cwd: __dirname,

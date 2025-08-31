@@ -2,7 +2,8 @@ use headless_chrome::{Browser, LaunchOptions};
 use std::error::Error;
 use std::time::{Duration, Instant};
 use tracing::{info, warn, error};
-use crate::redis_client::get_redis_connection; // Assuming redis_client is in the same lib
+use crate::redis_client::get_redis_connection;
+use crate::utils::http::is_internet_baik_block_page;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -22,13 +23,6 @@ fn get_random_user_agent() -> String {
         "Mozilla/5.0 ({}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{} Safari/537.36",
         random_os, random_version
     )
-}
-
-// Helper to check for "internetbaik" block page
-fn is_internet_baik_block_page(data: &str) -> bool {
-    data.contains("internetbaik.telkomsel.com") ||
-    data.contains("VmaxAdManager.js") ||
-    data.contains("VmaxAdHelper")
 }
 
 pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, Box<dyn Error>> {

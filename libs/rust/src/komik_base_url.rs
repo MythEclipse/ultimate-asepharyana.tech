@@ -8,6 +8,7 @@ use base64;
 
 use crate::redis_client::get_redis_connection;
 use crate::fetch_with_proxy::{fetch_with_proxy, FetchResult};
+use crate::utils::http::is_internet_baik_block_page;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 // Using a static Mutex for single-flight promise simulation
@@ -37,7 +38,7 @@ async fn release_redis_lock(key: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn sleep_ms(ms: u66) {
+async fn sleep_ms(ms: u64) {
     tokio::time::sleep(tokio::time::Duration::from_millis(ms)).await;
 }
 
