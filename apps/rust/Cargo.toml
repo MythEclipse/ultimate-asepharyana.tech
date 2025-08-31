@@ -32,7 +32,7 @@ async-trait = { workspace = true } # For async traits
 tempfile = { workspace = true } # For temporary files
 serde_yaml = { workspace = true } # For parsing YAML files
 scraper = { workspace = true } # For HTML parsing (cheerio equivalent)
-regex = "1.5" # For regex matching in episode number extraction
+regex = "1.11" # For regex matching in episode number extraction
 oxidize-pdf = { workspace = true } # For PDF compression
 infer = { workspace = true } # For file type detection
 ffmpeg-next = { workspace = true }
