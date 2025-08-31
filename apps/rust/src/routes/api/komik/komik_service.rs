@@ -226,8 +226,8 @@ pub async fn handle_list_or_search(
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(1);
 
-    let total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
-        .next()
+    let total_pages = document.select(&Selector::parse(".pagination a:not(.next)").unwrap())
+        .last()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(current_page);
 

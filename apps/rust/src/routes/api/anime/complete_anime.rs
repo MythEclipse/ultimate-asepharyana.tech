@@ -39,7 +39,8 @@ fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>,
     let document = Html::parse_document(&body);
 
     // Declare selectors once for efficiency and readability
-    let pagenavix_last_page_selector = Selector::parse(".pagenavix .page-numbers:not(.next):last").unwrap();
+    let pagenavix_last_page_selector = Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
+    // To get the last element, select all matching elements and use .last() in Rust code.
     let pagenavix_next_page_selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
     let venz_ul_li_selector = Selector::parse(".venz ul li").unwrap();
     let thumbz_h2_jdlflm_selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
@@ -52,7 +53,7 @@ fn parse_anime_page_complete(html: &str, slug: &str) -> (Vec<AnimeCompleteData>,
     let pagination = {
         let current_page = slug.parse::<u32>().unwrap_or(1);
         let last_visible_page = document.select(&pagenavix_last_page_selector)
-            .next()
+            .last()
             .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
             .unwrap_or(1);
 

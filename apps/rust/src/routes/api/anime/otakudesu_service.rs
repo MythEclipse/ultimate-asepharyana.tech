@@ -49,11 +49,12 @@ pub fn parse_anime_page_ongoing(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagi
         });
     }
 
-    let pagination_selector = Selector::parse(".pagination .page-numbers:not(.next):last").unwrap();
+    let pagination_selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
+    // To get the last element, select all matching elements and use .last() in Rust code.
     let next_selector = Selector::parse(".pagination .next").unwrap();
 
     let current_page_int = slug.parse::<u32>().unwrap_or(1);
-    let last_visible_page_text = document.select(&pagination_selector).next().map(|e| e.text().collect::<String>()).unwrap_or("1".to_string());
+    let last_visible_page_text = document.select(&pagination_selector).last().map(|e| e.text().collect::<String>()).unwrap_or("1".to_string());
     let last_visible_page_int = last_visible_page_text.parse::<u32>().unwrap_or(1);
 
     let has_next_page = document.select(&next_selector).next().is_some();

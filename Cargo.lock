@@ -2580,6 +2580,7 @@ checksum = "7cd3650deebc68526b304898b192fa4102a4ef0b9ada24da096559cb60e0eef8"
 dependencies = [
  "combine",
  "itoa",
+ "native-tls",
  "num-bigint",
  "percent-encoding",
  "ryu",
