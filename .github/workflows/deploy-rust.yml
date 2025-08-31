@@ -69,6 +69,8 @@ jobs:
         run: bash ./scripts/2updateenv.sh
 
       - name: Build Rust
+        env:
+          BINDGEN_EXTRA_CLANG_ARGS: '-I/usr/include/x86_64-linux-gnu'
         run: cargo build --release --manifest-path apps/rust/Cargo.toml
 
       - name: Check Build Output
