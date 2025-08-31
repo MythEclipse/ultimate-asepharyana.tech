@@ -1,5 +1,4 @@
 use axum::{
-    extract::{State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
@@ -7,15 +6,11 @@ use axum::{
     routing::get,
 };
 use serde_json::json;
-use std::sync::Arc;
-use crate::routes::ChatState;
 use crate::routes::api::komik::komik;
 
-pub async fn external_link_handler(
-    State(_state): State<Arc<ChatState>>,
-) -> Response {
+pub async fn external_link_handler() -> Response {
     match komik::handle_external_link().await {
-        Ok(link) => (StatusCode::OK, Json(json!({ "link": link }))).into_response(),
+        Ok(link) => (StatusCode::OK, Json(link)).into_response(),
         Err(e) => {
             eprintln!("Error fetching external link: {:?}", e);
             (
@@ -27,7 +22,7 @@ pub async fn external_link_handler(
     }
 }
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
+pub fn create_routes() -> Router {
     Router::new()
         .route("/", get(external_link_handler))
 }
