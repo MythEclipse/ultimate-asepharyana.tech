@@ -18,7 +18,15 @@ pub fn router() -> Router {
     Router::new().route("/api/uploader", post(uploader_post))
 }
 
-async fn uploader_post(mut multipart: Multipart) -> impl IntoResponse {
+pub use uploader_post as uploader_post_handler;
+#[utoipa::path(
+    post,
+    path = "/api/uploader",
+    responses(
+        (status = 200, description = "File uploaded", body = serde_json::Value)
+    )
+)]
+pub async fn uploader_post(mut multipart: Multipart) -> impl IntoResponse {
     // Extract file part
     let mut file_bytes = Vec::new();
     let mut file_name = None;

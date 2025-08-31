@@ -9,9 +9,9 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-mod complete_anime;
+pub mod complete_anime;
 pub use complete_anime::complete_anime_handler;
-mod ongoing_anime;
+pub mod ongoing_anime;
 pub use ongoing_anime::ongoing_anime_handler;
 mod full;
 pub use full::full_handler;

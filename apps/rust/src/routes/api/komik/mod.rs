@@ -6,5 +6,3 @@ pub mod manga;
 pub mod manhua;
 pub mod manhwa;
 pub mod search;
-pub mod komik_service;
-pub mod manga_dto;

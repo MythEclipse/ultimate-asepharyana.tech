@@ -37,6 +37,16 @@ struct AnimeListResponse {
     pagination: Pagination,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/ongoing-anime/{slug}",
+    responses(
+        (status = 200, description = "Ongoing anime list", body = AnimeListResponse)
+    ),
+    params(
+        ("slug" = String, Path, description = "Page slug")
+    )
+)]
 pub async fn ongoing_anime_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);

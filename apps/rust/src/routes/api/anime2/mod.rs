@@ -16,6 +16,8 @@ use complete_anime::complete_anime_handler;
 mod detail;
 use detail::detail_handler;
 mod search;
+mod ongoing_anime;
+use ongoing_anime::ongoing_anime_handler;
 
 #[derive(Serialize)]
 struct OngoingAnime {
