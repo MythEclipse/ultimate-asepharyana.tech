@@ -1,4 +1,4 @@
-pub const ANIMEAPI: &str = "https://otakudesu.asepharyana.tech";
+pub const ANIMEAPI: &str = "https://anime.asepharyana.tech";
 pub const BASE_URL: &str = "http://127.0.0.1:4090";
 
 // For environment variables, you would typically read them at runtime.

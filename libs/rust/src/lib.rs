@@ -2,7 +2,6 @@ pub mod config;
 pub mod utils;
 pub mod urls;
 pub mod jwt;
-pub mod bookmarks;
 pub mod redis_client;
 pub mod ratelimit;
 pub mod scrape_croxy_proxy;
