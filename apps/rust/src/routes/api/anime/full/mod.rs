@@ -49,7 +49,7 @@ async fn fetch_anime_page_full(slug: &str) -> Result<String, Box<dyn Error>> {
     tracing::info!("[DEBUG] full/mod.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
-    tracing::info!("[DEBUG] full/mod.rs fetched body: {} bytes", response.len());
+    tracing::info!("[DEBUG] full/mod.rs fetched body: {} bytes", response.data.len());
     tracing::debug!("FetchResult (full/mod.rs): {:?}", &response);
     Ok(response.data)
 }

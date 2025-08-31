@@ -8,7 +8,7 @@ use axum_extra::extract::cookie::CookieJar;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState;
+use crate::routes::ChatState;
 use crate::routes::api::user::posts_dto::{Posts, PostRequest};
 use crate::routes::api::user::user_dto::User;
 use crate::routes::api::user::comments_dto::Comments;

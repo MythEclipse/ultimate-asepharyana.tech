@@ -1,5 +1,5 @@
 use regex::Regex;
-use scraper::{Html, Selector};
+use scraper::{Html, Selector, Element};
 use std::error::Error;
 use crate::routes::api::anime::anime_dto::AnimeData;
 use crate::routes::api::anime::anime_detail_dto::{AnimeDetailResponseData, Genre, EpisodeListItem, Recommendation};
@@ -147,7 +147,7 @@ pub async fn get_anime_detail(slug: &str) -> Result<AnimeDetailResponseData, Box
         let url = element.select(&Selector::parse("a").unwrap()).next().and_then(|e| e.value().attr("href").map(|s| s.to_string())).unwrap_or_default();
         let poster = element.select(&Selector::parse("img").unwrap()).next().and_then(|e| e.value().attr("src").map(|s| s.to_string())).unwrap_or_default();
         let slug = url.split('/').nth(4).unwrap_or_default().to_string();
-        recommendations.push(Recommendation { title, slug, poster });
+        recommendations.push(Recommendation { title, slug, poster, r#type: String::new() });
     }
 
     Ok(AnimeDetailResponseData {

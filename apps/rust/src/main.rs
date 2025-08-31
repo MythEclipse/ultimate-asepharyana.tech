@@ -27,10 +27,9 @@ mod routes;
         crate::routes::api::komik::komik_service::get_chapter,
         crate::routes::api::komik::komik_service::handle_list_or_search,
         crate::routes::api::komik::komik_service::handle_external_link,
-        crate::routes::api::anime::complete_anime::get_complete_anime,
-        crate::routes::api::anime::ongoing_anime::get_ongoing_anime,
-        crate::routes::api::anime::full::get_full_anime,
-        crate::routes::api::uploader::upload_file,
+        crate::routes::api::anime::complete_anime::complete_anime_handler,
+        crate::routes::api::anime::ongoing_anime::ongoing_anime_handler,
+        crate::routes::api::uploader::uploader_post_handler,
         crate::routes::health_check,
         crate::routes::status_handler
     ),

@@ -40,7 +40,7 @@ once_cell = { workspace = true }
 rust_lib = { path = "../../libs/rust" }
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
-utoipa-swagger-ui = "5.0"
+utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 
 [dev-dependencies]
 tokio-test = { workspace = true }

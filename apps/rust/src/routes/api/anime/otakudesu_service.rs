@@ -17,7 +17,7 @@ pub async fn fetch_anime_page_ongoing(slug: &str) -> Result<String, Box<dyn Erro
     tracing::info!("[DEBUG] otakudesu_service.rs using rust_lib::fetch_with_proxy import");
     let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
     let response = fetch_with_proxy(&url).await?;
-    tracing::info!("[DEBUG] otakudesu_service.rs fetched body: {} bytes", response.len());
+    tracing::info!("[DEBUG] otakudesu_service.rs fetched body: {} bytes", response.data.len());
     tracing::debug!("FetchResult (otakudesu_service.rs): {:?}", &response);
     Ok(response.data)
 }

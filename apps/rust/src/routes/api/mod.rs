@@ -19,5 +19,4 @@ pub fn create_api_routes() -> Router<Arc<ChatState>> {
         .nest("/anime", anime::create_routes())
         // .nest("/anime2", anime2::create_routes())
         .nest("/sosmed", sosmed::create_routes())
-        .nest("/nextjs-lib", nextjs_lib_api::create_routes())
 }

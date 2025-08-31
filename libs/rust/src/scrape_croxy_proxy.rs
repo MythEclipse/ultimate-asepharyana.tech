@@ -5,7 +5,6 @@ use headless_chrome::Browser;
 use std::time::Instant;
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
-use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";

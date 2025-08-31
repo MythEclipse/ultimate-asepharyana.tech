@@ -9,8 +9,7 @@ use base64;
 use url::Url;
 
 use crate::redis_client::get_redis_connection;
-use crate::fetch_with_proxy::{fetch_with_proxy, FetchResult};
-use crate::utils::http::is_internet_baik_block_page;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::utils::error::AppError;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---

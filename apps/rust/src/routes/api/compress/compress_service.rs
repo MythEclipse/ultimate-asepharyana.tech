@@ -6,7 +6,7 @@ use std::env;
 use std::path::PathBuf;
 use std::time::SystemTime;
 use tokio_util::bytes::Bytes;
-use crate::routes::api::uploader::file::upload_to_pomf2;
+use crate::routes::api::uploader::upload_to_pomf2;
 
 #[allow(dead_code)]
 const CACHE_DIR: &str = "compress-cache"; // Relative to current working directory

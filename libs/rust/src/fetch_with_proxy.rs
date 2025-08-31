@@ -1,14 +1,12 @@
 // Proxy fetch logic with Redis cache, updated for sync Redis API and reqwest API changes.
 
 use reqwest::{Client, Proxy};
-use std::collections::HashMap;
 use std::time::Duration;
 use tracing::{info, warn, error};
-use url::Url;
 use regex::Regex;
 
 use crate::redis_client::get_redis_connection;
-use crate::scrape_croxy_proxy::{scrape_croxy_proxy, scrape_croxy_proxy_cached};
+use crate::scrape_croxy_proxy::scrape_croxy_proxy_cached;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
 
@@ -18,6 +16,17 @@ const DEFAULT_PROXY_LIST_URL: &str = "https://www.proxy-list.download/api/v1/get
 pub struct FetchResult {
     pub data: String,
     pub content_type: Option<String>,
+}
+// Implement Display for FetchResult to allow .to_string() and formatting
+impl std::fmt::Display for FetchResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "FetchResult {{ data: {}, content_type: {} }}",
+            self.data,
+            self.content_type.as_deref().unwrap_or("None")
+        )
+    }
 }
 
 fn get_proxy_list_url() -> String {

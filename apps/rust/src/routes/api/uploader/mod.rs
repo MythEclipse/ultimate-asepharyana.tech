@@ -18,7 +18,7 @@ static PRODUCTION_URL: Lazy<String> = Lazy::new(|| {
 });
 const MAX_FILE_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
 
-async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std::error::Error>> {
     let file_type = infer::get(&buffer);
     let (ext, mime) = match file_type {
         Some(ft) => (ft.extension(), ft.mime_type()),
@@ -58,9 +58,8 @@ async fn upload_to_pomf2(buffer: Bytes) -> Result<(String, String), Box<dyn std:
 #[utoipa::path(
     post,
     path = "/api/uploader/",
-    request_body = Multipart,
     responses(
-        (status = 200, description = "File uploaded successfully", body = inline),
+        (status = 200, description = "File uploaded successfully"),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     ),

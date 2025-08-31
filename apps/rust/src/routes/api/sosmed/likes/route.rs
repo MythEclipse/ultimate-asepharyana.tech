@@ -8,7 +8,7 @@ use serde::Deserialize;
 use serde_json::json;
 use axum_extra::extract::cookie::CookieJar;
 use std::sync::Arc;
-use crate::routes::mod_::ChatState;
+use crate::routes::ChatState;
 use crate::routes::api::user::likes_dto::{Likes, LikeRequest};
 use crate::utils::auth::{Claims, verify_jwt};
 use sqlx::MySqlPool;
