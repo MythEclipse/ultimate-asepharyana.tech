@@ -44,53 +44,25 @@ pub fn parse_manga_data(body: &str) -> Vec<MangaData> {
 }
 
 // Placeholder for fetchWithProxyOnlyWrapper, simulating proxy behavior
-async fn fetch_with_proxy_only_wrapper(url: &str) -> Result<String, Box<dyn Error>> {
+async fn fetch_url_content(url: &str) -> Result<String, Box<dyn Error>> {
     let client = Client::new();
     let response = client.get(url).send().await?.text().await?;
-    // In a real implementation, this would involve more sophisticated proxy logic
-    // and error handling, similar to the Next.js `fetchWithProxy`
     Ok(response)
 }
 
-// Placeholder for ProxyListOnly, simulating proxy behavior
-async fn proxy_list_only(url: &str, _retries: u8) -> Result<String, Box<dyn Error>> {
-    let client = Client::new();
-    let response = client.get(url).send().await?.text().await?;
-    // Simulate some proxy-specific logic if needed
-    Ok(response)
-}
 
-// Placeholder for CroxyProxyOnly, simulating proxy behavior
-async fn croxy_proxy_only(url: &str) -> Result<String, Box<dyn Error>> {
-    let client = Client::new();
-    let response = client.get(url).send().await?.text().await?;
-    // Simulate some proxy-specific logic if needed
-    Ok(response)
-}
-
-// Mock for getCachedKomikBaseUrl to simulate Next.js behavior
-// In a real scenario, this would involve actual caching and retry logic.
-async fn get_cached_komik_base_url(refresh: bool) -> Result<String, Box<dyn Error>> {
-    // Simulate a failure and then a successful refresh
-    if refresh {
-        // This would typically involve invalidating cache and fetching a new URL
-        Ok("http://komik-api-refreshed.example.com".to_string())
-    } else {
-        // Simulate initial attempt, potentially failing or succeeding
-        // For demonstration, let's assume it always succeeds with a default URL
-        Ok("http://komik-api.example.com".to_string())
-    }
+// In a real scenario, this would involve retrieving the base URL from a configuration
+// or environment variable, and potentially caching it.
+async fn get_komik_base_url() -> Result<String, Box<dyn Error>> {
+    // Placeholder for actual implementation.
+    // For now, return a default URL.
+    Ok("http://komik-api.example.com".to_string())
 }
 
 // Helper to get baseURL with cache refresh on failure, mimicking Next.js logic
 async fn get_base_url_with_retry() -> Result<String, Box<dyn Error>> {
-    match get_cached_komik_base_url(false).await {
-        Ok(url) => Ok(url),
-        Err(_) => {
-            // logger.warn!("[API][komik] Cached base URL failed, retrying with refresh");
-            get_cached_komik_base_url(true).await
-        }
-    }
+    // In a real scenario, this would involve retry logic if the initial fetch fails.
+    get_komik_base_url().await
 }
 #[utoipa::path(
     get,
@@ -106,7 +78,7 @@ async fn get_base_url_with_retry() -> Result<String, Box<dyn Error>> {
 
 pub async fn get_detail(komik_id: &str) -> Result<serde_json::Value, Box<dyn Error>> {
     let base_url = get_base_url_with_retry().await?;
-    let body = fetch_with_proxy_only_wrapper(&format!("{}/komik/{}", base_url, komik_id)).await?;
+    let body = fetch_url_content(&format!("{}/komik/{}", base_url, komik_id)).await?;
     let document = Html::parse_document(&body);
 
     let title_selector = Selector::parse("h1.entry-title").unwrap();
@@ -178,7 +150,7 @@ pub async fn get_detail(komik_id: &str) -> Result<serde_json::Value, Box<dyn Err
 )]
 pub async fn get_chapter(chapter_url: &str) -> Result<MangaChapter, Box<dyn Error>> {
     let base_url = get_base_url_with_retry().await?;
-    let body = fetch_with_proxy_only_wrapper(&format!("{}/chapter/{}", base_url, chapter_url)).await?;
+    let body = fetch_url_content(&format!("{}/chapter/{}", base_url, chapter_url)).await?;
     let document = Html::parse_document(&body);
 
     let title_selector = Selector::parse(".entry-title").unwrap();
@@ -244,84 +216,27 @@ pub async fn handle_list_or_search(
         }
     }
 
-    // First attempt
-    let mut body = fetch_with_proxy_only_wrapper(&api_url).await?;
-    let mut document = Html::parse_document(&body);
-    let mut parsed_data = parse_manga_data(&body);
+    let body = fetch_url_content(&api_url).await?;
+    let document = Html::parse_document(&body);
+    let parsed_data = parse_manga_data(&body);
 
-    let mut current_page = document.select(&Selector::parse(".pagination .current").unwrap())
+    let current_page = document.select(&Selector::parse(".pagination .current").unwrap())
         .next()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(1);
 
-    let mut total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
+    let total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
         .next()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(current_page);
 
-    let mut pagination = Pagination {
+    let pagination = Pagination {
         current_page,
         last_visible_page: total_pages,
         has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
         next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
         previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
     };
-
-    // If data is empty, try with a refreshed proxy (simulated)
-    if parsed_data.is_empty() {
-        let refreshed_base_url = get_cached_komik_base_url(true).await?;
-        let mut retry_api_url = format!("{}/{}/page/{}/", refreshed_base_url, manga_type, page);
-        if manga_type == "search" {
-            if let Some(q) = query_slug {
-                retry_api_url = format!("{}/page/{}/?s={}", refreshed_base_url, page, q);
-            }
-        }
-        let proxy_result = proxy_list_only(&retry_api_url, 10).await?;
-        body = proxy_result;
-        document = Html::parse_document(&body);
-        parsed_data = parse_manga_data(&body);
-
-        current_page = document.select(&Selector::parse(".pagination .current").unwrap())
-            .next()
-            .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-            .unwrap_or(1);
-        total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
-            .next()
-            .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-            .unwrap_or(current_page);
-        pagination = Pagination {
-            current_page,
-            last_visible_page: total_pages,
-            has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
-            next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
-            previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
-        };
-    }
-
-    // If still empty, try CroxyProxyOnly (simulated)
-    if parsed_data.is_empty() {
-        let croxy_html = croxy_proxy_only(&api_url).await;
-        if let Ok(html) = croxy_html {
-            document = Html::parse_document(&html);
-            parsed_data = parse_manga_data(&html);
-
-            current_page = document.select(&Selector::parse(".pagination .current").unwrap())
-                .next()
-                .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-                .unwrap_or(1);
-            total_pages = document.select(&Selector::parse(".pagination a:not(.next):last").unwrap())
-                .next()
-                .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-                .unwrap_or(current_page);
-            pagination = Pagination {
-                current_page,
-                last_visible_page: total_pages,
-                has_next_page: document.select(&Selector::parse(".pagination .next").unwrap()).next().is_some(),
-                next_page: if current_page < total_pages { Some(current_page + 1) } else { None },
-                previous_page: if current_page > 1 { Some(current_page - 1) } else { None },
-            };
-        }
-    }
 
     Ok(serde_json::json!({
         "data": parsed_data,
