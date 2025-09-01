@@ -32,7 +32,7 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
         .route("/ws", get(ws_handler))
         .route("/api/health", get(health_check))
         .route("/api/status", get(status_handler))
-        // .nest("/api", api::create_api_routes())
+        .nest("/api", api::create_api_routes())
 }
 
 async fn root_handler() -> impl IntoResponse {

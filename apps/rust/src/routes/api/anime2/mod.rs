@@ -12,6 +12,8 @@ use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use utoipa::OpenApi;
+use crate::routes::ChatState;
+use std::sync::Arc;
 
 pub mod complete_anime;
 pub mod detail;
@@ -67,13 +69,13 @@ pub struct Anime2Data {
 pub struct Anime2ApiDoc;
 
 // Main router for /api/anime2 endpoints
-pub fn router() -> Router {
+pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
+        .route("/", get(anime2_handler))
         .route("/complete-anime/:slug", get(complete_anime::complete_anime_handler))
         .route("/ongoing-anime/:slug", get(ongoing_anime::ongoing_anime_handler))
         .route("/detail/:slug", get(detail::detail_handler))
         .route("/search", get(search::search_handler))
-        // Add other routes here as needed
 }
 
 pub async fn anime2_handler() -> Response {
@@ -243,13 +245,13 @@ fn parse_complete_anime(html: &str) -> Vec<CompleteAnime> {
             .map(|n| n.text().collect::<String>().trim().to_string())
             .unwrap_or("N/A".to_string());
 
-        result.push(CompleteAnime {
-            title,
-            slug,
-            poster,
-            episode_count,
-            anime_url,
-        });
+        anime.insert("title".to_string(), title);
+        anime.insert("slug".to_string(), slug);
+        anime.insert("poster".to_string(), poster);
+        anime.insert("episode_count".to_string(), episode_count);
+        anime.insert("anime_url".to_string(), anime_url);
+
+        result.push(anime);
     }
 
     result

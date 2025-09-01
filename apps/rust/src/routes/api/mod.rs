@@ -16,6 +16,42 @@ pub mod drivepng;
 #[openapi(
     tags(
         (name = "api", description = "Root API module")
+    ),
+    nest(
+        path = "/api/komik", api = komik::KomikApiDoc
+    ),
+    nest(
+        path = "/api/anime", api = anime::AnimeApiDoc
+    ),
+    nest(
+        path = "/api/anime2", api = anime2::Anime2ApiDoc
+    ),
+    nest(
+        path = "/api/uploader", api = uploader::UploaderApiDoc
+    ),
+    nest(
+        path = "/api/proxy", api = proxy::ProxyApiDoc
+    ),
+    nest(
+        path = "/api/compress", api = compress::CompressApiDoc
+    ),
+    nest(
+        path = "/api/drivepng", api = drivepng::DrivePngApiDoc
     )
 )]
 pub struct ApiDoc;
+
+use axum::{routing::get, Router};
+use crate::routes::ChatState;
+use std::sync::Arc;
+
+pub fn create_api_routes() -> Router<Arc<ChatState>> {
+    Router::new()
+        .nest("/komik", komik::create_routes())
+        .nest("/anime", anime::create_routes())
+        .nest("/anime2", anime2::create_routes())
+        .nest("/uploader", uploader::create_routes())
+        .nest("/proxy", proxy::create_routes())
+        .nest("/compress", compress::create_routes())
+        .nest("/drivepng", drivepng::create_routes())
+}

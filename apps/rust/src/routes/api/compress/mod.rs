@@ -1,102 +1,79 @@
-//! Compression API module.
+//! # Image and Video Compression API
 //!
-//! Provides endpoints for compressing images and videos from a given URL and target size.
-//! Supports image (jpg, jpeg, png) and video (mp4, mov, avi) formats.
+//! This module provides API endpoints for compressing images and videos from URLs.
 
 use axum::{
     extract::{Query, State},
-    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
-    routing::get,
-    Router,
+    Router, // Add Router import
+    routing::get, // Add get import
 };
 use serde::Deserialize;
-use serde_json::json;
 use std::sync::Arc;
 use crate::routes::ChatState;
+use serde_json::json;
 
 pub mod compress_service;
-pub use self::compress_service as compress;
 
-/// Query parameters for compression requests.
 #[derive(Debug, Deserialize)]
 pub struct CompressParams {
     url: String,
     size: String, // e.g. "100kb" or "50%"
 }
 
-/// Returns the router for compression endpoints.
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    Router::new()
-        .route("/", get(compress_handler))
-}
-
-/// Handler for compressing images or videos from a URL.
 #[utoipa::path(
     get,
     path = "/api/compress",
-    params(
-        ("url" = String, Query, description = "URL of the file to compress"),
-        ("size" = String, Query, description = "Target size for compression (e.g., '100kb' or '50%')")
-    ),
     responses(
-        (status = 200, description = "File compressed successfully", body = serde_json::Value),
-        (status = 400, description = "Bad request", body = serde_json::Value),
-        (status = 500, description = "Internal server error", body = serde_json::Value)
-    )
+        (status = 200, description = "Compression successful", body = String),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    params(
+        ("url" = String, Query, description = "URL of the image or video to compress"),
+        ("size" = String, Query, description = "Target size or percentage (e.g., '100kb', '50%')")
+    ),
+    tag = "Compression"
 )]
-pub async fn compress_handler(
-    Query(params): Query<CompressParams>,
-    State(_state): State<Arc<ChatState>>,
-) -> Response {
+pub async fn compress_handler(Query(params): Query<CompressParams>) -> impl IntoResponse {
     let url = params.url;
     let size_param = params.size;
 
     if url.is_empty() || size_param.is_empty() {
         return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({ "error": "Parameter url dan size diperlukan" })),
-        )
-            .into_response();
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({"message": "URL and size parameters are required"})),
+        ).into_response();
     }
 
-    // Determine if it's an image or video based on URL extension
-    let extension = url.split('.').last().unwrap_or("").to_lowercase();
+    let is_image = url.ends_with(".jpg")
+        || url.ends_with(".jpeg")
+        || url.ends_with(".png")
+        || url.ends_with(".gif")
+        || url.ends_with(".webp");
 
-    if ["jpg", "jpeg", "png"].contains(&extension.as_str()) {
-        // Image compression logic
-        match compress::compress_image_from_url(&url, &size_param).await {
-            Ok(cdn_link) => (
-                StatusCode::OK,
-                Json(json!({ "link": cdn_link })),
-            )
-                .into_response(),
-            Err(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": "Kompresi gambar gagal" })),
-            )
-                .into_response(),
-        }
-    } else if ["mp4", "mov", "avi"].contains(&extension.as_str()) {
-        // Video compression logic
-        match compress::compress_video_from_url(&url, &size_param).await {
-            Ok(cdn_link) => (
-                StatusCode::OK,
-                Json(json!({ "link": cdn_link })),
-            )
-                .into_response(),
-            Err(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": "Kompresi video gagal" })),
-            )
-                .into_response(),
-        }
+    let result = if is_image {
+        compress_service::compress_image_from_url(&url, &size_param).await
     } else {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(json!({ "error": "Format tidak didukung" })),
+        compress_service::compress_video_from_url(&url, &size_param).await
+    };
+
+    match result {
+        Ok(compressed_url) => (
+            axum::http::StatusCode::OK,
+            Json(json!({"compressed_url": compressed_url})),
         )
-            .into_response()
+            .into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"message": format!("Compression failed: {}", e)})),
+        )
+            .into_response(),
     }
+}
+
+pub fn create_routes() -> Router<Arc<ChatState>> {
+    Router::new()
+        .route("/", get(compress_handler))
 }

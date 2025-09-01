@@ -1,45 +1,35 @@
-// Handler for GET /api/drivepng
-// Generates a simple PNG image and returns it as an HTTP response.
+//! # drivepng API
+//!
+//! This module provides API endpoints for drivepng.
 
 use axum::{
     response::{IntoResponse, Response},
-    routing::get,
+    Json,
     Router,
+    routing::get,
 };
-use image::{ImageBuffer, Rgba};
-use std::io::Cursor;
+use serde_json::json;
+use crate::routes::ChatState;
+use std::sync::Arc;
 
 #[utoipa::path(
     get,
     path = "/api/drivepng",
     responses(
-        (status = 200, description = "PNG image generated successfully", content_type = "image/png")
-    )
+        (status = 200, description = "DrivePNG API response", body = String),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "DrivePNG"
 )]
 pub async fn drivepng_handler() -> Response {
-    // Create a 100x100 PNG with a solid color
-    let imgx = 100;
-    let imgy = 100;
-    let mut imgbuf = ImageBuffer::new(imgx, imgy);
-
-    for (_x, _y, pixel) in imgbuf.enumerate_pixels_mut() {
-        *pixel = Rgba([0, 128, 255, 255]);
-    }
-
-    let mut png_bytes: Vec<u8> = Vec::new();
-    {
-        let mut cursor = Cursor::new(&mut png_bytes);
-        let _ = image::DynamicImage::ImageRgba8(imgbuf)
-            .write_to(&mut cursor, image::ImageFormat::Png);
-    }
-
-    (
-        [("Content-Type", "image/png")],
-        png_bytes,
-    ).into_response()
+    // This is a dummy handler. Replace with actual logic.
+    Json(json!({
+        "message": "DrivePNG API endpoint"
+    }))
+    .into_response()
 }
 
-// Route registration function
-pub fn route() -> Router {
-    Router::new().route("/api/drivepng", get(drivepng_handler))
+pub fn create_routes() -> Router<Arc<ChatState>> {
+    Router::new()
+        .route("/", get(drivepng_handler))
 }

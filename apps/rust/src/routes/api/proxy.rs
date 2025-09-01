@@ -1,131 +1,84 @@
-// Handles GET /api/proxy: Proxies a remote URL provided as a `url` query parameter, mirroring the Next.js handler logic.
-// Uses reqwest for HTTP requests and axum for routing and response construction.
+//! # Proxy API
+//!
+//! This module provides a proxy endpoint for fetching external URLs.
 
 use axum::{
-    extract::Query,
-    http::{HeaderMap, HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
+    extract::{Query, Path},
+    response::{IntoResponse, Response},
+    Json,
+    Router, // Add Router import
+    routing::get, // Add get import
 };
 use reqwest::Client;
 use serde::Deserialize;
-use serde_json::json;
-use base64::{engine::general_purpose, Engine as _};
+use std::collections::HashMap;
+use http::HeaderValue;
+use crate::routes::ChatState;
+use std::sync::Arc;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct ProxyParams {
     url: Option<String>,
 }
 
-pub fn router() -> Router {
-    Router::new().route("/api/proxy", get(proxy_get))
+pub fn create_routes() -> Router<Arc<ChatState>> {
+    Router::new()
+        .route("/", get(proxy_get))
 }
 
 #[utoipa::path(
     get,
     path = "/api/proxy",
-    params(
-        ("url" = Option<String>, Query, description = "Remote URL to proxy")
-    ),
     responses(
-        (status = 200, description = "Proxied response, may be JSON or base64-encoded content"),
-        (status = 400, description = "Bad request", body = serde_json::Value),
-        (status = 502, description = "Bad gateway", body = serde_json::Value)
-    )
+        (status = 200, description = "Proxy successful"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    params(
+        ("url" = String, Query, description = "URL to proxy")
+    ),
+    tag = "Proxy"
 )]
-async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
-    let Some(target_url) = params.url else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({ "error": "Missing url parameter" })),
-        );
-    };
-
-    let client = Client::new();
-    let resp = match client.get(&target_url).send().await {
-        Ok(r) => r,
-        Err(e) => {
+pub async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
+    let url = match params.url {
+        Some(u) => u,
+        None => {
             return (
-                StatusCode::BAD_GATEWAY,
-                Json(json!({
-                    "error": "Failed to fetch URL",
-                    "details": e.to_string(),
-                    "status": 502,
-                })),
-            );
+                axum::http::StatusCode::BAD_REQUEST,
+                Json(json!({"message": "URL parameter is missing"})),
+            ).into_response();
         }
     };
 
-    let _status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("text/plain")
-        .to_string();
+    let client = Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
+        .build()
+        .unwrap();
 
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        "content-type",
-        HeaderValue::from_str(&content_type).unwrap_or(HeaderValue::from_static("text/plain")),
-    );
-    headers.insert(
-        "X-Proxy-Used",
-        HeaderValue::from_static("reqwest"),
-    );
+    match client.get(&url).send().await {
+        Ok(response) => {
+            let status = response.status();
+            let headers = response.headers().clone(); // Clone headers to use after consuming response
+            let content_type = headers.get(http::header::CONTENT_TYPE)
+                .and_then(|h| h.to_str().ok())
+                .map(|s| s.to_string());
 
-    // Try to handle JSON responses as JSON, otherwise return as bytes/text
-    if content_type.contains("application/json") {
-        match resp.bytes().await {
-            Ok(bytes) => {
-                let json_result = serde_json::from_slice::<serde_json::Value>(&bytes);
-                match json_result {
-                    Ok(json_val) => {
-                        return (StatusCode::OK, Json(json_val));
-                    }
-                    Err(_) => {
-                        // Fallback: return as text
-                        // Fallback: return as base64-encoded string in JSON
-                        return (
-                            StatusCode::OK,
-                            Json(json!({
-                                "content_type": content_type,
-                                "data": general_purpose::STANDARD.encode(&bytes),
-                            })),
-                        );
-                    }
-                }
+            let body = response.bytes().await.unwrap_or_default();
+
+            let mut axum_response = Response::builder()
+                .status(status);
+
+            if let Some(ct) = content_type {
+                axum_response = axum_response.header(http::header::CONTENT_TYPE, HeaderValue::from_str(&ct).unwrap());
             }
-            Err(e) => {
-                return (
-                    StatusCode::BAD_GATEWAY,
-                    Json(json!({
-                        "error": "Failed to read response body",
-                        "details": e.to_string(),
-                        "status": 502,
-                    })),
-                );
-            }
+
+            axum_response.body(body.into()).unwrap().into_response()
         }
-    } else {
-        // For other content types, return as bytes
-        match resp.bytes().await {
-            Ok(bytes) => (
-                StatusCode::OK,
-                Json(json!({
-                    "content_type": content_type,
-                    "data": general_purpose::STANDARD.encode(&bytes),
-                })),
-            ),
-            Err(e) => (
-                StatusCode::BAD_GATEWAY,
-                Json(json!({
-                    "error": "Failed to read response body",
-                    "details": e.to_string(),
-                    "status": 502,
-                })),
-            ),
+        Err(e) => {
+            (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"message": format!("Failed to proxy URL: {}", e)})),
+            ).into_response()
         }
     }
 }

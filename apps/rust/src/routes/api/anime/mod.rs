@@ -4,11 +4,16 @@
 use axum::{
     response::{IntoResponse, Response},
     Json,
+    Router, // Add Router import
+    routing::get, // Add get import
 };
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 use utoipa::OpenApi;
+use crate::routes::ChatState; // Add ChatState import
+use std::sync::Arc; // Add Arc import
+
 
 pub mod complete_anime;
 pub mod ongoing_anime;
@@ -35,6 +40,16 @@ pub mod detail;
     )
 )]
 pub struct AnimeApiDoc;
+
+pub fn create_routes() -> Router<Arc<ChatState>> { // Define create_routes function
+    Router::new()
+        .route("/", get(anime_handler))
+        .route("/complete-anime/:slug", get(complete_anime::complete_anime_handler))
+        .route("/ongoing-anime/:slug", get(ongoing_anime::ongoing_anime_handler))
+        .route("/full/:slug", get(full::handler))
+        .route("/search", get(search::handler))
+        .route("/detail/:slug", get(detail::detail_handler))
+}
 
 pub async fn anime_handler() -> Response {
     let client = Client::new();
