@@ -1,4 +1,5 @@
 // Handler for /api/anime endpoints. Fetches anime data from otakudesu.cloud and returns as JSON.
+// This module now exposes OpenAPI documentation for all anime endpoints.
 
 use axum::{
     response::{IntoResponse, Response},
@@ -7,12 +8,32 @@ use axum::{
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use utoipa::OpenApi;
 
 pub mod complete_anime;
 pub mod ongoing_anime;
 pub mod full;
 pub mod search;
 pub mod detail;
+
+/// Aggregates OpenAPI docs for all anime endpoints.
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        complete_anime::complete_anime_handler,
+        ongoing_anime::ongoing_anime_handler,
+        full::full_handler,
+        search::search_handler,
+        detail::detail_handler
+    ),
+    components(
+        schemas(complete_anime::AnimeItem, ongoing_anime::AnimeItem, full::FullAnime, search::SearchResult, detail::AnimeDetail)
+    ),
+    tags(
+        (name = "anime", description = "Anime API endpoints")
+    )
+)]
+pub struct AnimeApiDoc;
 
 pub async fn anime_handler() -> Response {
     let client = Client::new();

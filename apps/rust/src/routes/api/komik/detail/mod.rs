@@ -17,6 +17,7 @@ pub struct DetailParams {
 }
 
 #[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct MangaDetail {
     pub title: String,
     pub alternative_title: String,
@@ -34,6 +35,7 @@ pub struct MangaDetail {
 }
 
 #[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct ChapterInfo {
     pub chapter: String,
     pub date: String,

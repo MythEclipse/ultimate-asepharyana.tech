@@ -1,5 +1,6 @@
 // Handler for GET /api/anime2. Fetches ongoing and complete anime lists from alqanime.net and returns them as JSON.
 // Uses reqwest for HTTP requests and scraper for HTML parsing.
+// This module now exposes OpenAPI documentation for all anime2 endpoints.
 
 use axum::{
     routing::get,
@@ -10,6 +11,7 @@ use axum::{
 use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
+use utoipa::OpenApi;
 
 mod complete_anime;
 use complete_anime::complete_anime_handler;
@@ -47,6 +49,24 @@ struct Anime2Data {
     ongoing_anime: Vec<OngoingAnime>,
     complete_anime: Vec<CompleteAnime>,
 }
+
+/// Aggregates OpenAPI docs for all anime2 endpoints.
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        complete_anime::complete_anime_handler,
+        ongoing_anime::ongoing_anime_handler,
+        detail::detail_handler,
+        search::search_handler
+    ),
+    components(
+        schemas(OngoingAnime, CompleteAnime, Anime2Response, Anime2Data)
+    ),
+    tags(
+        (name = "anime2", description = "Anime2 API endpoints")
+    )
+)]
+pub struct Anime2ApiDoc;
 
 // Main router for /api/anime2 endpoints
 pub fn router() -> Router {

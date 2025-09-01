@@ -9,6 +9,13 @@ use axum::{
 use image::{ImageBuffer, Rgba};
 use std::io::Cursor;
 
+#[utoipa::path(
+    get,
+    path = "/api/drivepng",
+    responses(
+        (status = 200, description = "PNG image generated successfully", content_type = "image/png")
+    )
+)]
 pub async fn drivepng_handler() -> Response {
     // Create a 100x100 PNG with a solid color
     let imgx = 100;

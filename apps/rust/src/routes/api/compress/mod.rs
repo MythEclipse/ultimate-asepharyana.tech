@@ -33,6 +33,19 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
 }
 
 /// Handler for compressing images or videos from a URL.
+#[utoipa::path(
+    get,
+    path = "/api/compress",
+    params(
+        ("url" = String, Query, description = "URL of the file to compress"),
+        ("size" = String, Query, description = "Target size for compression (e.g., '100kb' or '50%')")
+    ),
+    responses(
+        (status = 200, description = "File compressed successfully", body = serde_json::Value),
+        (status = 400, description = "Bad request", body = serde_json::Value),
+        (status = 500, description = "Internal server error", body = serde_json::Value)
+    )
+)]
 pub async fn compress_handler(
     Query(params): Query<CompressParams>,
     State(_state): State<Arc<ChatState>>,

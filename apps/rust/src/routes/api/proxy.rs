@@ -22,6 +22,18 @@ pub fn router() -> Router {
     Router::new().route("/api/proxy", get(proxy_get))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/proxy",
+    params(
+        ("url" = Option<String>, Query, description = "Remote URL to proxy")
+    ),
+    responses(
+        (status = 200, description = "Proxied response, may be JSON or base64-encoded content"),
+        (status = 400, description = "Bad request", body = serde_json::Value),
+        (status = 502, description = "Bad gateway", body = serde_json::Value)
+    )
+)]
 async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
     let Some(target_url) = params.url else {
         return (

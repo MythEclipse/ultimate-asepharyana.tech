@@ -16,7 +16,8 @@ pub struct ChapterParams {
     pub chapter_url: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct MangaChapter {
     pub title: String,
     pub next_chapter_id: String,
@@ -25,6 +26,16 @@ pub struct MangaChapter {
     pub list_chapter: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/chapter",
+    params(
+        ("chapter_url" = Option<String>, Query, description = "Chapter URL to fetch")
+    ),
+    responses(
+        (status = 200, description = "Manga chapter details", body = MangaChapter)
+    )
+)]
 pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
     let chapter_url = match &params.chapter_url {
         Some(url) if !url.is_empty() => url.clone(),

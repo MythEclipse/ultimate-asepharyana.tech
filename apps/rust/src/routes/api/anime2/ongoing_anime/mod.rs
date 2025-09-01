@@ -10,7 +10,7 @@ use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeEntry {
     title: String,
     slug: String,
@@ -19,7 +19,7 @@ struct AnimeEntry {
     anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct Pagination {
     current_page: usize,
     last_visible_page: usize,
@@ -29,13 +29,23 @@ struct Pagination {
     previous_page: Option<usize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct OngoingAnimeResponse {
     status: &'static str,
     data: Vec<AnimeEntry>,
     pagination: Pagination,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime2/ongoing-anime/{slug}",
+    params(
+        ("slug" = String, Path, description = "Page number or slug for ongoing anime")
+    ),
+    responses(
+        (status = 200, description = "List of ongoing anime", body = OngoingAnimeResponse)
+    )
+)]
 pub async fn ongoing_anime_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!(

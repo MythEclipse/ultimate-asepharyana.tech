@@ -17,7 +17,7 @@ pub struct SearchParams {
     pub page: Option<u32>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct MangaData {
     pub title: String,
     pub poster: String,
@@ -28,7 +28,7 @@ pub struct MangaData {
     pub slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct Pagination {
     pub current_page: u32,
     pub last_visible_page: u32,
@@ -38,12 +38,23 @@ pub struct Pagination {
     pub previous_page: Option<u32>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct SearchResponse {
     pub data: Vec<MangaData>,
     pub pagination: Pagination,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/search",
+    params(
+        ("query" = Option<String>, Query, description = "Search query"),
+        ("page" = Option<u32>, Query, description = "Page number")
+    ),
+    responses(
+        (status = 200, description = "Manga search results", body = SearchResponse)
+    )
+)]
 pub async fn handler(Query(params): Query<SearchParams>) -> impl IntoResponse {
     let query = params.query.unwrap_or_default();
     let page = params.page.unwrap_or(1);

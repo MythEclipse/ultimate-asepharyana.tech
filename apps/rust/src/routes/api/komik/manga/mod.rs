@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
 
 #[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct MangaData {
     title: String,
     poster: String,
@@ -18,6 +19,7 @@ struct MangaData {
 }
 
 #[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct Pagination {
     current_page: u32,
     last_visible_page: u32,
