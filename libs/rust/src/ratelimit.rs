@@ -3,7 +3,7 @@
 use redis::{Commands, Connection};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::utils::error::AppError;
-use tracing::{info, debug, warn, error};
+use tracing::{info, debug, error};
 
 pub struct RateLimiter {
     conn: Connection,

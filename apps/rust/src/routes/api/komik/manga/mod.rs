@@ -5,7 +5,6 @@
 use axum::{extract::Query, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
-use std::collections::HashMap;
 
 #[derive(Serialize)]
 struct MangaData {

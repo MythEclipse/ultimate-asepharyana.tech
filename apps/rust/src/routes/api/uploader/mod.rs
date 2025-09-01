@@ -10,7 +10,6 @@ use axum::{
 use serde_json::json;
 use std::env;
 use reqwest::Client;
-use tokio::io::AsyncReadExt;
 
 const MAX_FILE_SIZE: u64 = 1 * 1024 * 1024 * 1024; // 1GB
 
@@ -18,7 +17,6 @@ pub fn router() -> Router {
     Router::new().route("/api/uploader", post(uploader_post))
 }
 
-pub use uploader_post as uploader_post_handler;
 #[utoipa::path(
     post,
     path = "/api/uploader",

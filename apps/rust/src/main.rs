@@ -25,7 +25,7 @@ mod routes;
     paths(
         crate::routes::api::anime::complete_anime::complete_anime_handler,
         crate::routes::api::anime::ongoing_anime::ongoing_anime_handler,
-        crate::routes::api::uploader::uploader_post_handler,
+        crate::routes::api::uploader::uploader_post,
         crate::routes::health_check,
         crate::routes::status_handler
     ),

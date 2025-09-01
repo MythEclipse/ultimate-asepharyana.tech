@@ -4,7 +4,6 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;

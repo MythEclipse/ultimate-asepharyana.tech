@@ -69,16 +69,18 @@ async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
                 let json_result = serde_json::from_slice::<serde_json::Value>(&bytes);
                 match json_result {
                     Ok(json_val) => {
-                        return (StatusCode::OK, headers, Json(json_val)).into_response();
+                        return (StatusCode::OK, Json(json_val));
                     }
                     Err(_) => {
                         // Fallback: return as text
+                        // Fallback: return as base64-encoded string in JSON
                         return (
                             StatusCode::OK,
-                            headers,
-                            bytes,
-                        )
-                            .into_response();
+                            Json(json!({
+                                "content_type": content_type,
+                                "data": base64::encode(&bytes),
+                            })),
+                        );
                     }
                 }
             }
@@ -96,7 +98,13 @@ async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
     } else {
         // For other content types, return as bytes
         match resp.bytes().await {
-            Ok(bytes) => (StatusCode::OK, headers, bytes).into_response(),
+            Ok(bytes) => (
+                StatusCode::OK,
+                Json(json!({
+                    "content_type": content_type,
+                    "data": base64::encode(&bytes),
+                })),
+            ),
             Err(e) => (
                 StatusCode::BAD_GATEWAY,
                 Json(json!({
@@ -104,8 +112,7 @@ async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
                     "details": e.to_string(),
                     "status": 502,
                 })),
-            )
-                .into_response(),
+            ),
         }
     }
 }

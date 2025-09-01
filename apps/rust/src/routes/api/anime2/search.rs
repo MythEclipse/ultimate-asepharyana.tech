@@ -154,14 +154,14 @@ fn parse_anime_data(html: &str) -> (Vec<AnimeSearchItem>, Pagination) {
     let last_visible_page = pagination_root
         .as_ref()
         .and_then(|p| {
-            let mut pages = p.select(&page_numbers_selector).collect::<Vec<_>>();
+            let pages = p.select(&page_numbers_selector).collect::<Vec<_>>();
             if pages.len() >= 2 {
-                pages.get(pages.len() - 2)
+                let text = pages[pages.len() - 2].text().collect::<String>();
+                text.parse::<usize>().ok()
             } else {
                 None
             }
         })
-        .and_then(|n| n.text().collect::<String>().parse::<usize>().ok())
         .unwrap_or(1);
 
     let has_next_page = pagination_root
