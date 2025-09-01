@@ -59,8 +59,20 @@ pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/anime/{}", slug);
 
-    let html = match client.get(&url).send().await.and_then(|r| r.text().await) {
-        Ok(html) => html,
+    let html = match client.get(&url).send().await {
+        Ok(resp) => match resp.text().await {
+            Ok(html) => html,
+            Err(e) => {
+                return (
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({
+                        "message": "Failed to read anime detail response body",
+                        "error": e.to_string()
+                    })),
+                )
+                    .into_response();
+            }
+        },
         Err(e) => {
             return (
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,

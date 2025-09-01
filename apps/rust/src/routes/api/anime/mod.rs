@@ -12,10 +12,12 @@ pub mod complete_anime;
 pub use complete_anime::complete_anime_handler;
 pub mod ongoing_anime;
 pub use ongoing_anime::ongoing_anime_handler;
-mod full;
+pub mod full;
 pub use full::full_handler;
-mod search;
+pub mod search;
 pub use search::search_handler;
+pub mod detail;
+pub use detail::detail_handler;
 
 pub async fn anime_handler() -> Response {
     let client = Client::new();
