@@ -55,6 +55,16 @@ pub struct AnimeDetailResponse {
     data: AnimeDetail,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/detail/{slug}",
+    params(
+        ("slug" = String, Path, description = "Slug for anime detail")
+    ),
+    responses(
+        (status = 200, description = "Anime detail response", body = AnimeDetailResponse)
+    )
+)]
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/anime/{}", slug);

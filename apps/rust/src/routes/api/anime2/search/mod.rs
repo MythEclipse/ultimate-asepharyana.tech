@@ -41,6 +41,16 @@ pub struct AnimeSearchResponse {
     pub pagination: Pagination,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime2/search",
+    params(
+        ("q" = String, Query, description = "Search query for anime title")
+    ),
+    responses(
+        (status = 200, description = "Anime search response", body = AnimeSearchResponse)
+    )
+)]
 pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let slug = params.get("q").map(|s| s.as_str()).unwrap_or("log");
     let url = format!("https://alqanime.net/?s={}", slug);

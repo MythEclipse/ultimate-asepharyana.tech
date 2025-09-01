@@ -16,6 +16,7 @@ pub mod full;
 pub mod search;
 pub mod detail;
 
+
 /// Aggregates OpenAPI docs for all anime endpoints.
 #[derive(OpenApi)]
 #[openapi(
