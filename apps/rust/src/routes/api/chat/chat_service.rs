@@ -42,6 +42,24 @@ pub async fn load_messages(pool: &MySqlPool, limit: u32) -> Result<Vec<ChatMessa
 use axum::Router;
 use std::sync::Arc;
 use crate::routes::ChatState;
+use utoipa::ToSchema;
+
+/// Returns the router for chat endpoints (currently empty).
+#[utoipa::path(
+    post,
+    path = "/api/chat/message",
+    summary = "Save chat message",
+    description = "Saves a chat message to the database.",
+    request_body = ChatMessage,
+    responses(
+        (status = 200, description = "Message saved", body = ChatMessage),
+        (status = 500, description = "Failed to save message", body = String)
+    ),
+    tag = "Chat"
+)]
+pub async fn save_message_api(pool: &MySqlPool, message: &ChatMessage) -> Result<ChatMessage> {
+    save_message(pool, message).await
+}
 
 /// Returns the router for chat endpoints (currently empty).
 pub fn create_routes() -> Router<Arc<ChatState>> {

@@ -11,7 +11,7 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeItem {
     title: String,
     slug: String,
@@ -23,7 +23,7 @@ struct AnimeItem {
     rating: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct Pagination {
     current_page: usize,
     last_visible_page: usize,
@@ -33,13 +33,27 @@ struct Pagination {
     previous_page: Option<usize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct SearchResponse {
     status: &'static str,
     data: Vec<AnimeItem>,
     pagination: Pagination,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/search",
+    summary = "Search anime",
+    description = "Searches for anime on otakudesu.cloud using the provided query string.",
+    params(
+        ("q" = String, Query, description = "Search query for anime title")
+    ),
+    responses(
+        (status = 200, description = "Successfully retrieved anime search results", body = SearchResponse),
+        (status = 500, description = "Internal server error", body = String)
+    ),
+    tag = "Anime"
+)]
 pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let q = params.get("q").map(|s| s.as_str()).unwrap_or("one");
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", q);

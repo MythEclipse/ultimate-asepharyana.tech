@@ -6,7 +6,6 @@ use axum::{extract::Query, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
 
-#[derive(Serialize)]
 #[derive(Serialize, utoipa::ToSchema)]
 struct MangaData {
     title: String,
@@ -18,7 +17,6 @@ struct MangaData {
     slug: String,
 }
 
-#[derive(Serialize)]
 #[derive(Serialize, utoipa::ToSchema)]
 struct Pagination {
     current_page: u32,
@@ -29,7 +27,7 @@ struct Pagination {
     previous_page: Option<u32>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct MangaListResponse {
     data: Vec<MangaData>,
     pagination: Pagination,
@@ -40,6 +38,20 @@ pub struct Params {
     page: Option<u32>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/manga",
+    summary = "Get manga list",
+    description = "Fetches a list of manga from komikcast.site with pagination.",
+    params(
+        ("page" = u32, Query, description = "Page number for pagination")
+    ),
+    responses(
+        (status = 200, description = "Successfully retrieved manga list", body = MangaListResponse),
+        (status = 502, description = "Bad gateway", body = String)
+    ),
+    tag = "Komik"
+)]
 pub async fn get_manga_list(Query(params): Query<Params>) -> impl IntoResponse {
     let page = params.page.unwrap_or(1);
     let url = format!("https://komikcast.site/manga/page/{}/", page);

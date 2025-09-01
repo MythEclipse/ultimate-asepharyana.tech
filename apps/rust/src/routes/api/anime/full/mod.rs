@@ -11,17 +11,17 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeInfo {
     slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct EpisodeInfo {
     slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeData {
     episode: String,
     episode_number: String,
@@ -35,18 +35,32 @@ struct AnimeData {
     image_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct DownloadLink {
     server: String,
     url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 struct AnimeResponse {
     status: &'static str,
     data: AnimeData,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/anime/full/{slug}",
+    summary = "Get full anime episode details",
+    description = "Fetches and parses the full anime episode page details from otakudesu.cloud based on the provided slug.",
+    params(
+        ("slug" = String, Path, description = "Slug of the anime episode (e.g., 'jujutsu-kaisen-s2-episode-1-subtitle-indonesia')")
+    ),
+    responses(
+        (status = 200, description = "Successfully retrieved anime episode details", body = AnimeResponse),
+        (status = 500, description = "Internal server error", body = String)
+    ),
+    tag = "Anime"
+)]
 pub async fn full_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);
