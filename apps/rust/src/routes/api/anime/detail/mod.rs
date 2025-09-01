@@ -11,20 +11,20 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 
 #[derive(Serialize)]
-struct Genre {
+pub struct Genre {
     name: String,
     slug: String,
     anime_url: String,
 }
 
 #[derive(Serialize)]
-struct Episode {
+pub struct Episode {
     episode: String,
     slug: String,
 }
 
 #[derive(Serialize)]
-struct Recommendation {
+pub struct Recommendation {
     title: String,
     slug: String,
     poster: String,
@@ -33,7 +33,7 @@ struct Recommendation {
 }
 
 #[derive(Serialize)]
-struct AnimeDetail {
+pub struct AnimeDetail {
     title: String,
     alternative_title: String,
     poster: String,
@@ -50,7 +50,7 @@ struct AnimeDetail {
 }
 
 #[derive(Serialize)]
-struct AnimeDetailResponse {
+pub struct AnimeDetailResponse {
     status: &'static str,
     data: AnimeDetail,
 }

@@ -17,7 +17,6 @@ pub struct ChapterParams {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-#[derive(Serialize, utoipa::ToSchema)]
 pub struct MangaChapter {
     pub title: String,
     pub next_chapter_id: String,

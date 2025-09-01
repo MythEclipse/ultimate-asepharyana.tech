@@ -12,7 +12,7 @@ use scraper::{Html, Selector};
 use std::collections::HashMap;
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeItem {
+pub struct AnimeItem {
     title: String,
     slug: String,
     poster: String,
@@ -21,7 +21,7 @@ struct AnimeItem {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct Pagination {
+pub struct Pagination {
     current_page: usize,
     last_visible_page: usize,
     has_next_page: bool,
@@ -31,7 +31,7 @@ struct Pagination {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeListResponse {
+pub struct AnimeListResponse {
     status: &'static str,
     data: Vec<AnimeItem>,
     pagination: Pagination,

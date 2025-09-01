@@ -52,7 +52,7 @@ pub struct Params {
     ),
     tag = "Komik"
 )]
-pub async fn get_manga_list(Query(params): Query<Params>) -> impl IntoResponse {
+pub async fn handler(Query(params): Query<Params>) -> impl IntoResponse {
     let page = params.page.unwrap_or(1);
     let url = format!("https://komikcast.site/manga/page/{}/", page);
 

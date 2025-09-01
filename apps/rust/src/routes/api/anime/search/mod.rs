@@ -12,7 +12,7 @@ use scraper::{Html, Selector};
 use std::collections::HashMap;
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeItem {
+pub struct AnimeItem {
     title: String,
     slug: String,
     poster: String,
@@ -24,7 +24,7 @@ struct AnimeItem {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct Pagination {
+pub struct Pagination {
     current_page: usize,
     last_visible_page: usize,
     has_next_page: bool,
@@ -34,7 +34,7 @@ struct Pagination {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct SearchResponse {
+pub struct SearchResponse {
     status: &'static str,
     data: Vec<AnimeItem>,
     pagination: Pagination,
@@ -54,7 +54,7 @@ struct SearchResponse {
     ),
     tag = "Anime"
 )]
-pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
+pub async fn handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let q = params.get("q").map(|s| s.as_str()).unwrap_or("one");
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", q);
 

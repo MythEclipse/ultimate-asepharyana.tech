@@ -14,12 +14,12 @@ pub mod search;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        chapter::chapter_handler,
-        detail::detail_handler,
-        manga::manga_handler,
-        manhua::manhua_handler,
-        manhwa::manhwa_handler,
-        search::search_handler
+        chapter::handler,
+        detail::handler,
+        manga::handler,
+        manhua::handler,
+        manhwa::handler,
+        search::handler
     ),
     tags(
         (name = "komik", description = "Komik API endpoints")

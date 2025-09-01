@@ -16,7 +16,6 @@ pub struct DetailParams {
     pub komik_id: Option<String>,
 }
 
-#[derive(Serialize)]
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct MangaDetail {
     pub title: String,
@@ -34,7 +33,6 @@ pub struct MangaDetail {
     pub chapters: Vec<ChapterInfo>,
 }
 
-#[derive(Serialize)]
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct ChapterInfo {
     pub chapter: String,

@@ -61,7 +61,7 @@ fn save_to_cache(cache_key: &str, buf: &[u8]) -> Result<()> {
     summary = "Compress image from URL",
     description = "Compresses an image from a given URL to a target size (in KB or %) and returns a CDN link.",
     request_body(
-        content = CompressImageRequest,
+        content = String,
         description = "Image URL and target size parameter"
     ),
     responses(
@@ -121,7 +121,7 @@ pub async fn compress_image_from_url(url: &str, size_param: &str) -> Result<Stri
     summary = "Compress video from URL",
     description = "Compresses a video from a given URL to a target size (in MB or %) and returns a CDN link.",
     request_body(
-        content = CompressVideoRequest,
+        content = String,
         description = "Video URL and target size parameter"
     ),
     responses(

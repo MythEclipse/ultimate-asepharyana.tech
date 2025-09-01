@@ -48,7 +48,7 @@ pub struct Params {
         (status = 200, description = "Manhua list response", body = ManhuaListResponse)
     )
 )]
-pub async fn get_manhua_list(Query(params): Query<Params>) -> impl IntoResponse {
+pub async fn handler(Query(params): Query<Params>) -> impl IntoResponse {
     let page = params.page.unwrap_or(1);
     let url = format!("https://komikcast.site/manhua/page/{}/", page);
 

@@ -12,17 +12,17 @@ use scraper::{Html, Selector};
 use std::collections::HashMap;
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeInfo {
+pub struct AnimeInfo {
     slug: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct EpisodeInfo {
+pub struct EpisodeInfo {
     slug: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeData {
+pub struct AnimeData {
     episode: String,
     episode_number: String,
     anime: AnimeInfo,
@@ -36,13 +36,13 @@ struct AnimeData {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct DownloadLink {
+pub struct DownloadLink {
     server: String,
     url: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeResponse {
+pub struct AnimeResponse {
     status: &'static str,
     data: AnimeData,
 }
@@ -61,7 +61,7 @@ struct AnimeResponse {
     ),
     tag = "Anime"
 )]
-pub async fn full_handler(Path(slug): Path<String>) -> Response {
+pub async fn handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);
 

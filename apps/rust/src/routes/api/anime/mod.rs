@@ -22,12 +22,12 @@ pub mod detail;
     paths(
         complete_anime::complete_anime_handler,
         ongoing_anime::ongoing_anime_handler,
-        full::full_handler,
-        search::search_handler,
+        full::handler,
+        search::handler,
         detail::detail_handler
     ),
     components(
-        schemas(complete_anime::AnimeItem, ongoing_anime::AnimeItem, full::FullAnime, search::SearchResult, detail::AnimeDetail)
+        schemas(complete_anime::AnimeItem, ongoing_anime::AnimeItem, full::AnimeResponse, search::SearchResponse, detail::AnimeDetail),
     ),
     tags(
         (name = "anime", description = "Anime API endpoints")

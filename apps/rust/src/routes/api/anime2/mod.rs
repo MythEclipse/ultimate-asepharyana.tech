@@ -20,47 +20,47 @@ use detail::detail_handler;
 mod search;
 mod ongoing_anime;
 
-#[derive(Serialize)]
-struct OngoingAnime {
-    title: String,
-    slug: String,
-    poster: String,
-    current_episode: String,
-    anime_url: String,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct OngoingAnime {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub current_episode: String,
+    pub anime_url: String,
 }
 
-#[derive(Serialize)]
-struct CompleteAnime {
-    title: String,
-    slug: String,
-    poster: String,
-    episode_count: String,
-    anime_url: String,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct CompleteAnime {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub episode_count: String,
+    pub anime_url: String,
 }
 
-#[derive(Serialize)]
-struct Anime2Response {
-    status: &'static str,
-    data: Anime2Data,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct Anime2Response {
+    pub status: &'static str,
+    pub data: Anime2Data,
 }
 
-#[derive(Serialize)]
-struct Anime2Data {
-    ongoing_anime: Vec<OngoingAnime>,
-    complete_anime: Vec<CompleteAnime>,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct Anime2Data {
+    pub ongoing_anime: Vec<OngoingAnime>,
+    pub complete_anime: Vec<CompleteAnime>,
 }
 
 /// Aggregates OpenAPI docs for all anime2 endpoints.
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        complete_anime::complete_anime_handler,
-        ongoing_anime::ongoing_anime_handler,
-        detail::detail_handler,
-        search::search_handler
+        complete_anime::handler,
+        ongoing_anime::handler,
+        detail::handler,
+        search::handler
     ),
     components(
-        schemas(OngoingAnime, CompleteAnime, Anime2Response, Anime2Data)
+        schemas(OngoingAnime, CompleteAnime, Anime2Response, Anime2Data),
     ),
     tags(
         (name = "anime2", description = "Anime2 API endpoints")
