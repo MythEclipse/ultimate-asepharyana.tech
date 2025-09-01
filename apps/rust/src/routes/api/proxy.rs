@@ -4,13 +4,14 @@
 use axum::{
     extract::Query,
     http::{HeaderMap, HeaderValue, StatusCode},
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     routing::get,
     Json, Router,
 };
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::json;
+use base64::{engine::general_purpose, Engine as _};
 
 #[derive(Deserialize)]
 struct ProxyParams {
@@ -44,7 +45,7 @@ async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
         }
     };
 
-    let status = resp.status();
+    let _status = resp.status();
     let content_type = resp
         .headers()
         .get("content-type")
@@ -78,7 +79,7 @@ async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
                             StatusCode::OK,
                             Json(json!({
                                 "content_type": content_type,
-                                "data": base64::encode(&bytes),
+                                "data": general_purpose::STANDARD.encode(&bytes),
                             })),
                         );
                     }
@@ -102,7 +103,7 @@ async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
                 StatusCode::OK,
                 Json(json!({
                     "content_type": content_type,
-                    "data": base64::encode(&bytes),
+                    "data": general_purpose::STANDARD.encode(&bytes),
                 })),
             ),
             Err(e) => (

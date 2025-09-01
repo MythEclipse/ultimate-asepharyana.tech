@@ -91,7 +91,7 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Building application routes...");
 
-    use axum::{routing::get, Router, Json};
+    use axum::{Router, Json};
 
     async fn openapi_json() -> Json<utoipa::openapi::OpenApi> {
         Json(ApiDoc::openapi())

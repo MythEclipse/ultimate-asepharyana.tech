@@ -195,8 +195,8 @@ fn parse_anime_detail(html: &str) -> AnimeDetail {
         }
     }
 
-    let mut batch = Vec::new();
-    let mut ova = Vec::new();
+    let batch = Vec::new();
+    let ova = Vec::new();
     let mut downloads = Vec::new();
 
     if let Ok(soraurl_sel) = Selector::parse(".soraddl.dlone .soraurl") {

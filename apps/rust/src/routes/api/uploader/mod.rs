@@ -106,7 +106,7 @@ async fn upload_to_pomf2(
         .await
         .map_err(|e| format!("HTTP error: {}", e))?;
 
-    let status = res.status();
+    let _status = res.status();
     let json: serde_json::Value = res
         .json()
         .await

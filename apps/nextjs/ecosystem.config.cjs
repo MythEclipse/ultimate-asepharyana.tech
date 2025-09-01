@@ -2,13 +2,13 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: 'node',
-      args: '-r dotenv/config start', // <-- ini load .env otomatis
+      script: 'pnpm',
+      args: 'start', // cukup jalankan start saja
       interpreter: 'none',
-      cwd: __dirname,
+      node_args: '-r dotenv/config', // <-- preload dotenv disini
       env: {
         NODE_ENV: 'production',
-        DOTENV_CONFIG_PATH: './.env', // path ke file .env
+        DOTENV_CONFIG_PATH: './.env', // custom path kalau perlu
       },
     },
   ],

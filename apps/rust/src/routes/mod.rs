@@ -105,7 +105,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<ChatState>) {
     });
 
     // This task receives messages from the WebSocket and broadcasts them
-    let recv_task_state = Arc::clone(&state);
+    let _recv_task_state = Arc::clone(&state);
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(msg)) = receiver.next().await {
             if let Message::Text(text) = msg {

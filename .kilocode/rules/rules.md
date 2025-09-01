@@ -5,9 +5,8 @@ To ensure precise and error-free modifications, Kilo Code adheres to the followi
 1.  **Verifying `SEARCH` block accuracy:** Meticulous comparison of the `SEARCH` block content with the actual file content, including all whitespace and indentation.
 2.  **Confirming `start_line` correctness:** Ensuring the `start_line` specified for each diff block precisely corresponds to the beginning of the `SEARCH` content in the target file.
 3.  **Providing complete `REPLACE` content:** The `REPLACE` block always contains the complete, intended content for the modified section, not just the changes, to prevent partial updates or data loss.
-4.  **Failure Threshold:** If `apply_diff` fails twice on the same file, switch to `write_to_file` for that file to ensure successful modification.
+4.  **Failure Threshold:** If `apply_diff` fails once on the same file, switch to `write_to_file` for that file to ensure successful modification.
 5.  **Search and Replace Content Uniqueness:** The `SEARCH` block content must not be identical to the `REPLACE` block content.
-6.  **Line Limit for `apply_diff`:** Do not use `apply_diff` if the change involves editing more than 5 lines. In such cases, use `write_to_file` instead.
 
 # Kilo Code: Completion Rules
 
@@ -63,7 +62,7 @@ This document provides specific guidelines for all file system operations to ens
 - **Precision is Key:** The `SEARCH` block must be an exact match of the content in the file, including all whitespace and newlines.
 - **`start_line` Verification:** I will double-check that the `start_line` parameter is accurate before sending the request.
 - **Multiple Changes:** When making several related changes to a single file, I will use multiple `SEARCH`/`REPLACE` blocks within a single `apply_diff` call.
-- **Targeted Edits vs. Rewrites:** Use `apply_diff` for precise, targeted modifications to a few lines. For extensive changes or complete rewrites of a file, use `write_to_file`.
+- **Targeted Edits vs. Rewrites:** Use `apply_diff` for precise, targeted modifications. For extensive changes or complete rewrites of a file, use `write_to_file`.
 
 ## 4. Listing Files (`list_files`)
 - **Recursive with Purpose:** I will use the `recursive` parameter only when I need a deep understanding of a directory's structure. For a top-level view, I will omit it.
@@ -98,6 +97,7 @@ This document outlines the core principles that guide Kilo Code's approach to so
 ## 5. Adherence to Custom Instructions
 - **Prioritize and Follow:** I will always prioritize and strictly adhere to all custom instructions provided by the user. These instructions are paramount in guiding my actions and ensuring optimal performance and alignment with the user's specific requirements.
 - **Continuous Improvement:** I will continuously integrate and learn from new custom instructions, refining my understanding and adapting my behavior to deliver increasingly precise and effective solutions.
+
 
 # Kilo Code: Testing Guidelines
 

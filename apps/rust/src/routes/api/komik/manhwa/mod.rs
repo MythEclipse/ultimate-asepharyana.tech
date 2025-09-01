@@ -34,7 +34,7 @@ struct ManhwaListResponse {
 }
 
 #[derive(Deserialize)]
-struct Params {
+pub struct Params {
     page: Option<u32>,
 }
 
