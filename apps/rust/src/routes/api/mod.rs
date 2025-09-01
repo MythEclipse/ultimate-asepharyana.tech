@@ -18,25 +18,13 @@ pub mod drivepng;
         (name = "api", description = "Root API module")
     ),
     nest(
-        path = "/api/komik", api = komik::KomikApiDoc
-    ),
-    nest(
-        path = "/api/anime", api = anime::AnimeApiDoc
-    ),
-    nest(
-        path = "/api/anime2", api = anime2::Anime2ApiDoc
-    ),
-    nest(
-        path = "/api/uploader", api = uploader::UploaderApiDoc
-    ),
-    nest(
-        path = "/api/proxy", api = proxy::ProxyApiDoc
-    ),
-    nest(
-        path = "/api/compress", api = compress::CompressApiDoc
-    ),
-    nest(
-        path = "/api/drivepng", api = drivepng::DrivePngApiDoc
+        (path = "/api/komik", api = komik::KomikApiDoc),
+        (path = "/api/anime", api = anime::AnimeApiDoc),
+        (path = "/api/anime2", api = anime2::Anime2ApiDoc),
+        (path = "/api/uploader", api = uploader::UploaderApiDoc),
+        (path = "/api/proxy", api = proxy::ProxyApiDoc),
+        (path = "/api/compress", api = compress::CompressApiDoc),
+        (path = "/api/drivepng", api = drivepng::DrivePngApiDoc)
     )
 )]
 pub struct ApiDoc;

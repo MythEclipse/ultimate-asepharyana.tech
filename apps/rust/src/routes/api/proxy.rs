@@ -11,6 +11,7 @@ use axum::{
 };
 use reqwest::Client;
 use serde::Deserialize;
+use serde_json::json;
 use std::collections::HashMap;
 use http::HeaderValue;
 use crate::routes::ChatState;
@@ -72,7 +73,7 @@ pub async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
                 axum_response = axum_response.header(http::header::CONTENT_TYPE, HeaderValue::from_str(&ct).unwrap());
             }
 
-            axum_response.body(body.into()).unwrap().into_response()
+            axum_response.body(axum::body::Body::from(body)).unwrap().into_response()
         }
         Err(e) => {
             (

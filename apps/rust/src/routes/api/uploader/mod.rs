@@ -26,14 +26,14 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
         .route("/:file_name", get(uploader_get)) // Example route for retrieving uploaded files
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 struct UploadResponse {
     success: bool,
     files: Option<Vec<UploadedFile>>,
     message: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 struct UploadedFile {
     url: String,
     name: String,

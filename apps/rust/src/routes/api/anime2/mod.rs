@@ -245,13 +245,13 @@ fn parse_complete_anime(html: &str) -> Vec<CompleteAnime> {
             .map(|n| n.text().collect::<String>().trim().to_string())
             .unwrap_or("N/A".to_string());
 
-        anime.insert("title".to_string(), title);
-        anime.insert("slug".to_string(), slug);
-        anime.insert("poster".to_string(), poster);
-        anime.insert("episode_count".to_string(), episode_count);
-        anime.insert("anime_url".to_string(), anime_url);
-
-        result.push(anime);
+        result.push(CompleteAnime {
+            title,
+            slug,
+            poster,
+            episode_count,
+            anime_url,
+        });
     }
 
     result
