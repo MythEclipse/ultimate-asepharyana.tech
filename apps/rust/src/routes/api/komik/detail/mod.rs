@@ -42,6 +42,36 @@ pub struct ChapterInfo {
     pub chapter_id: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/detail",
+    params(
+        ("komik_id" = Option<String>, Query, description = "ID of the manga to fetch details for")
+    ),
+    responses(
+        (status = 200, description = "Manga detail response", body = MangaDetail, example = json!({
+            "title": "One Piece",
+            "alternative_title": "ワンピース",
+            "score": "9.0",
+            "poster": "https://example.com/poster.jpg",
+            "description": "A story about pirates.",
+            "status": "Ongoing",
+            "type": "Manga",
+            "release_date": "1997",
+            "author": "Eiichiro Oda",
+            "total_chapter": "1000",
+            "updated_on": "2025-09-01",
+            "genres": ["Action", "Adventure"],
+            "chapters": [
+                {
+                    "chapter": "1000",
+                    "date": "2025-09-01",
+                    "chapter_id": "1000"
+                }
+            ]
+        }))
+    )
+)]
 pub async fn handler(Query(params): Query<DetailParams>) -> impl IntoResponse {
     let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
     let base_url = "https://komikcast.site";
