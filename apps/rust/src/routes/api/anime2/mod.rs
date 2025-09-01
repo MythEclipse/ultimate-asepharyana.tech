@@ -13,12 +13,10 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use utoipa::OpenApi;
 
-mod complete_anime;
-use complete_anime::complete_anime_handler;
-mod detail;
-use detail::detail_handler;
-mod search;
-mod ongoing_anime;
+pub mod complete_anime;
+pub mod detail;
+pub mod search;
+pub mod ongoing_anime;
 
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct OngoingAnime {
@@ -54,13 +52,13 @@ pub struct Anime2Data {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        complete_anime::handler,
-        ongoing_anime::handler,
-        detail::handler,
-        search::handler
+        complete_anime::complete_anime_handler,
+        ongoing_anime::ongoing_anime_handler,
+        detail::detail_handler,
+        search::search_handler
     ),
     components(
-        schemas(OngoingAnime, CompleteAnime, Anime2Response, Anime2Data),
+        schemas(OngoingAnime, CompleteAnime, Anime2Response, Anime2Data, complete_anime::AnimeItem, complete_anime::Pagination, complete_anime::CompleteAnimeResponse, ongoing_anime::AnimeItem, ongoing_anime::Pagination, ongoing_anime::OngoingAnimeResponse, detail::Genre, detail::Recommendation, detail::Link, detail::DownloadGroup, detail::AnimeDetail, detail::AnimeDetailResponse, search::AnimeSearchItem, search::Pagination, search::AnimeSearchResponse),
     ),
     tags(
         (name = "anime2", description = "Anime2 API endpoints")
@@ -71,9 +69,9 @@ pub struct Anime2ApiDoc;
 // Main router for /api/anime2 endpoints
 pub fn router() -> Router {
     Router::new()
-        .route("/complete-anime/:slug", get(complete_anime_handler))
-        .route("/ongoing-anime/:slug", get(crate::routes::api::anime2::ongoing_anime::ongoing_anime_handler))
-        .route("/detail/:slug", get(detail_handler))
+        .route("/complete-anime/:slug", get(complete_anime::complete_anime_handler))
+        .route("/ongoing-anime/:slug", get(ongoing_anime::ongoing_anime_handler))
+        .route("/detail/:slug", get(detail::detail_handler))
         .route("/search", get(search::search_handler))
         // Add other routes here as needed
 }

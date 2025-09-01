@@ -11,56 +11,56 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct Genre {
-    name: String,
-    slug: String,
-    anime_url: String,
+pub struct Genre {
+    pub name: String,
+    pub slug: String,
+    pub anime_url: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct Recommendation {
-    title: String,
-    slug: String,
-    poster: String,
-    status: String,
-    r#type: String,
+pub struct Recommendation {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub status: String,
+    pub r#type: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct Link {
-    name: String,
-    url: String,
+pub struct Link {
+    pub name: String,
+    pub url: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct DownloadGroup {
-    resolution: String,
-    links: Vec<Link>,
+pub struct DownloadGroup {
+    pub resolution: String,
+    pub links: Vec<Link>,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeDetail {
-    title: String,
-    alternative_title: String,
-    poster: String,
-    poster2: String,
-    r#type: String,
-    release_date: String,
-    status: String,
-    synopsis: String,
-    studio: String,
-    genres: Vec<Genre>,
-    producers: Vec<String>,
-    recommendations: Vec<Recommendation>,
-    batch: Vec<DownloadGroup>,
-    ova: Vec<DownloadGroup>,
-    downloads: Vec<DownloadGroup>,
+pub struct AnimeDetail {
+    pub title: String,
+    pub alternative_title: String,
+    pub poster: String,
+    pub poster2: String,
+    pub r#type: String,
+    pub release_date: String,
+    pub status: String,
+    pub synopsis: String,
+    pub studio: String,
+    pub genres: Vec<Genre>,
+    pub producers: Vec<String>,
+    pub recommendations: Vec<Recommendation>,
+    pub batch: Vec<DownloadGroup>,
+    pub ova: Vec<DownloadGroup>,
+    pub downloads: Vec<DownloadGroup>,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeDetailResponse {
-    status: &'static str,
-    data: AnimeDetail,
+pub struct AnimeDetailResponse {
+    pub status: &'static str,
+    pub data: AnimeDetail,
 }
 
 #[utoipa::path(

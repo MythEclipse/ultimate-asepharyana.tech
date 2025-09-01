@@ -10,20 +10,20 @@ use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct Genre {
     name: String,
     slug: String,
     anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct Episode {
     episode: String,
     slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct Recommendation {
     title: String,
     slug: String,
@@ -32,7 +32,7 @@ pub struct Recommendation {
     r#type: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct AnimeDetail {
     title: String,
     alternative_title: String,
@@ -49,7 +49,7 @@ pub struct AnimeDetail {
     episode_lists: Vec<Episode>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct AnimeDetailResponse {
     status: &'static str,
     data: AnimeDetail,

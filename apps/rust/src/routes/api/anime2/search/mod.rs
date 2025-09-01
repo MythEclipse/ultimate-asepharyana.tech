@@ -11,34 +11,34 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Serialize)]
-struct AnimeSearchItem {
-    title: String,
-    slug: String,
-    poster: String,
-    description: String,
-    anime_url: String,
-    genres: Vec<String>,
-    rating: String,
-    r#type: String,
-    season: String,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct AnimeSearchItem {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub description: String,
+    pub anime_url: String,
+    pub genres: Vec<String>,
+    pub rating: String,
+    pub r#type: String,
+    pub season: String,
 }
 
-#[derive(Serialize)]
-struct Pagination {
-    current_page: usize,
-    last_visible_page: usize,
-    has_next_page: bool,
-    next_page: Option<String>,
-    has_previous_page: bool,
-    previous_page: Option<String>,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct Pagination {
+    pub current_page: usize,
+    pub last_visible_page: usize,
+    pub has_next_page: bool,
+    pub next_page: Option<String>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<String>,
 }
 
-#[derive(Serialize)]
-struct AnimeSearchResponse {
-    status: &'static str,
-    data: Vec<AnimeSearchItem>,
-    pagination: Pagination,
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct AnimeSearchResponse {
+    pub status: &'static str,
+    pub data: Vec<AnimeSearchItem>,
+    pub pagination: Pagination,
 }
 
 pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {

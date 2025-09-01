@@ -11,29 +11,29 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct AnimeEntry {
-    title: String,
-    slug: String,
-    poster: String,
-    score: String,
-    anime_url: String,
+pub struct AnimeItem {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub score: String,
+    pub anime_url: String,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct Pagination {
-    current_page: usize,
-    last_visible_page: usize,
-    has_next_page: bool,
-    next_page: Option<usize>,
-    has_previous_page: bool,
-    previous_page: Option<usize>,
+pub struct Pagination {
+    pub current_page: usize,
+    pub last_visible_page: usize,
+    pub has_next_page: bool,
+    pub next_page: Option<usize>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<usize>,
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct OngoingAnimeResponse {
-    status: &'static str,
-    data: Vec<AnimeEntry>,
-    pagination: Pagination,
+pub struct OngoingAnimeResponse {
+    pub status: &'static str,
+    pub data: Vec<AnimeItem>,
+    pub pagination: Pagination,
 }
 
 #[utoipa::path(
@@ -90,7 +90,7 @@ pub async fn ongoing_anime_handler(Path(slug): Path<String>) -> Response {
     Json(response).into_response()
 }
 
-fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeEntry>, Pagination) {
+fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
     let document = Html::parse_document(html);
     let bs_selector = Selector::parse(".listupd .bs").unwrap();
     let ntitle_selector = Selector::parse(".ntitle").unwrap();
@@ -129,7 +129,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeEntry>, Pagination) {
             .map(|n| n.text().collect::<String>().trim().to_string())
             .unwrap_or("N/A".to_string());
 
-        anime_list.push(AnimeEntry {
+        anime_list.push(AnimeItem {
             title,
             slug: slug_val,
             poster,
