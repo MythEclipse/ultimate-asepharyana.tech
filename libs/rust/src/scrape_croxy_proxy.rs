@@ -24,18 +24,15 @@ fn get_random_user_agent() -> String {
     let mut rng = rand::rngs::ThreadRng::default();
     let random_os = os[(rng.next_u32() as usize) % os.len()];
     let random_version = versions[(rng.next_u32() as usize) % versions.len()];
-    format!(
-        "Mozilla/5.0 ({}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{} Safari/537.36",
-        random_os, random_version
-    )
+    format!("Mozilla/5.0 ({random_os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{random_version} Safari/537.36")
 }
 
 pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
     let start_time = Instant::now();
     info!("Scraping {} with CroxyProxy", target_url);
 
-    let browser = Browser::default().map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
-    let tab = browser.new_tab().map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+    let browser = Browser::default().map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
+    let tab = browser.new_tab().map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
     let mut html_content = String::new();
 
@@ -44,21 +41,21 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
         match tab.navigate_to(CROXY_PROXY_URL) {
             Ok(_) => {
                 tab.wait_for_element(URL_INPUT_SELECTOR)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
                 let input = tab.find_element(URL_INPUT_SELECTOR)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 input.type_into(target_url)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
                 let submit_btn = tab.find_element(SUBMIT_BUTTON_SELECTOR)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 submit_btn.click()
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
                 // Wait for navigation after form submission
                 tab.wait_until_navigated()
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
                 let current_url = tab.get_url();
                 // Use wait_for_element("body")?.get_inner_html()? to get HTML content
@@ -96,7 +93,7 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
                             }
                         }
                     })
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 let page_text = page_content.to_lowercase();
 
                 let is_error_url = current_url.contains("/requests?fso=");
@@ -110,7 +107,7 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
                 if page_text.contains("proxy is launching") {
                     info!("Proxy launching page detected. Waiting for final redirect...");
                     tab.wait_until_navigated()
-                        .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                        .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                     info!("Redirected successfully to: {}", tab.get_url());
                 } else {
                     info!("Mapped directly to: {}", tab.get_url());
@@ -118,7 +115,7 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
 
                 info!("Waiting for CroxyProxy frame to render...");
                 tab.wait_for_element("#__cpsHeaderTab")
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 info!("CroxyProxy frame rendered.");
 
                 html_content = tab.wait_for_element("body")
@@ -155,14 +152,14 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
                             }
                         }
                     })
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{:?}", e)))?;
+                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 info!("Retrieved page content.");
                 break; // Success, break out of retry loop
             },
             Err(e) => {
                 error!("Attempt {} failed: {:?}", attempt, e);
                 if attempt == MAX_RETRIES {
-                    return Err(AppError::HeadlessChromeError(format!("{:?}", e)));
+                    return Err(AppError::HeadlessChromeError(format!("{e:?}")));
                 }
             }
         }
@@ -180,7 +177,7 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
 
 pub async fn scrape_croxy_proxy_cached(target_url: &str) -> Result<String, AppError> {
     let mut conn = get_redis_connection()?;
-    let cache_key = format!("scrapeCroxyProxy:{}", target_url);
+    let cache_key = format!("scrapeCroxyProxy:{target_url}");
 
     let cached: Option<String> = redis::cmd("GET").arg(&cache_key).query(&mut conn)?;
     if let Some(html) = cached {

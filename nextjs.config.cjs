@@ -3,12 +3,12 @@ module.exports = {
     {
       name: 'asepharyana.tech',
       script: 'pnpm',
-      args: 'start', // cukup jalankan start saja
+      args: 'run nextjs:start',
       interpreter: 'none',
-      node_args: '-r dotenv/config', // <-- preload dotenv disini
       env: {
         NODE_ENV: 'production',
-        DOTENV_CONFIG_PATH: './.env', // custom path kalau perlu
+        NODE_OPTIONS: '-r dotenv/config',
+        DOTENV_CONFIG_PATH: './.env',
       },
     },
   ],

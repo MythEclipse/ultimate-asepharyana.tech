@@ -1,28 +1,27 @@
-//! Chat API module. Exposes chat-related endpoints and router.
-// This module now exposes OpenAPI documentation for all chat endpoints.
-
-use axum::Router;
-use std::sync::Arc;
+use axum::{
+    routing::get,
+    Router,
+};
 use crate::routes::ChatState;
+use std::sync::Arc;
 use utoipa::OpenApi;
 
-pub mod chat_service;
-pub mod chat_message_dto;
-pub use self::chat_service as chat;
+pub mod chat_service; // Import the chat_service module
 
-/// Aggregates OpenAPI docs for all chat endpoints.
+/// OpenAPI doc for Chat API
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        chat_service::chat_handler
+        // Add paths for your chat API endpoints here if any
     ),
     tags(
-        (name = "chat", description = "Chat API endpoints")
+        (name = "Chat", description = "Chat API endpoints")
     )
 )]
 pub struct ChatApiDoc;
 
-/// Returns the router for chat endpoints.
+
 pub fn create_routes() -> Router<Arc<ChatState>> {
-    chat::create_routes()
+    Router::new()
+        .route("/test", get(|| async { "Hello from Chat API!" })) // Example route
 }

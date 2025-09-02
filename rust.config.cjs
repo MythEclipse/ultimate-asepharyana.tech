@@ -1,14 +1,14 @@
 module.exports = {
   apps: [
     {
-      name: 'asepharyana.tech',
+      name: 'RustExpress',
       script: 'pnpm',
-      args: 'rust:start', // cukup jalankan start saja
+      args: 'run rust:start',
       interpreter: 'none',
-      node_args: '-r dotenv/config', // <-- preload dotenv disini
       env: {
         NODE_ENV: 'production',
-        DOTENV_CONFIG_PATH: './.env', // custom path kalau perlu
+        NODE_OPTIONS: '-r dotenv/config',
+        DOTENV_CONFIG_PATH: './.env',
       },
     },
   ],

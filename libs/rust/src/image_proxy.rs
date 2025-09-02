@@ -40,7 +40,7 @@ pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, AppError> {
 async fn cdn_image(url: &str) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
     let encoded_url = urlencoding::encode(url);
-    let cdn_url = format!("https://imagecdn.app/v1/images/{}", encoded_url);
+    let cdn_url = format!("https://imagecdn.app/v1/images/{encoded_url}");
 
     match client.get(&cdn_url).send().await {
         Ok(response) => {
@@ -73,7 +73,7 @@ async fn cdn_image(url: &str) -> Result<ImageProxyResult, AppError> {
 async fn cdn_image_v2(url: &str) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
     let encoded_url = urlencoding::encode(url);
-    let cdn_url = format!("https://imagecdn.app/v2/images/{}", encoded_url);
+    let cdn_url = format!("https://imagecdn.app/v2/images/{encoded_url}");
 
     match client.get(&cdn_url).send().await {
         Ok(response) => {

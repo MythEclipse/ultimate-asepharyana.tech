@@ -1,67 +1,43 @@
-use sqlx::MySqlPool;
-use crate::routes::api::chat::chat_message_dto::ChatMessage;
-use anyhow::Result;
-
-pub async fn save_message(pool: &MySqlPool, message: &ChatMessage) -> Result<ChatMessage> {
-    // MySQL doesn't support RETURNING, so we do INSERT then SELECT
-    sqlx::query(
-        "INSERT INTO ChatMessage (id, userId, text, email, imageProfile, imageMessage, role, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    )
-    .bind(&message.id)
-    .bind(&message.user_id)
-    .bind(&message.text)
-    .bind(&message.email)
-    .bind(&message.image_profile)
-    .bind(&message.image_message)
-    .bind(&message.role)
-    .bind(&message.timestamp)
-    .execute(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("Failed to insert message: {}", e))?;
-
-    // Now fetch the inserted message
-    sqlx::query_as::<_, ChatMessage>(
-        "SELECT id, userId, text, email, imageProfile, imageMessage, role, timestamp FROM ChatMessage WHERE id = ?"
-    )
-    .bind(&message.id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("Failed to fetch saved message: {}", e))
-}
-
-pub async fn load_messages(pool: &MySqlPool, limit: u32) -> Result<Vec<ChatMessage>> {
-    sqlx::query_as::<_, ChatMessage>(
-        "SELECT id, userId, text, email, imageProfile, imageMessage, role, timestamp FROM ChatMessage ORDER BY timestamp DESC LIMIT ?"
-    )
-    .bind(limit)
-    .fetch_all(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("Failed to load messages: {}", e))
-}
-
-use axum::Router;
+use axum::extract::ws::Message;
+use serde::{Deserialize, Serialize};
+use sqlx::{MySqlPool, query, query_as};
+use tokio::sync::mpsc;
 use std::sync::Arc;
-use crate::routes::ChatState;
-use utoipa::ToSchema;
+use chrono::{Utc, DateTime};
 
-/// Returns the router for chat endpoints (currently empty).
-#[utoipa::path(
-    post,
-    path = "/api/chat/message",
-    summary = "Save chat message",
-    description = "Saves a chat message to the database.",
-    request_body = ChatMessage,
-    responses(
-        (status = 200, description = "Message saved", body = ChatMessage),
-        (status = 500, description = "Failed to save message", body = String)
-    ),
-    tag = "Chat"
-)]
-pub async fn save_message_api(pool: &MySqlPool, message: &ChatMessage) -> Result<ChatMessage> {
-    save_message(pool, message).await
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub id: Option<i64>,
+    pub username: String,
+    pub message: String,
+    pub timestamp: DateTime<Utc>,
 }
 
-/// Returns the router for chat endpoints (currently empty).
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    Router::new()
+pub async fn load_messages(pool: Arc<MySqlPool>) -> anyhow::Result<Vec<ChatMessage>> {
+    let messages = query_as!(ChatMessage, "SELECT id, username, message, timestamp FROM chat_messages ORDER BY timestamp ASC LIMIT 100")
+        .fetch_all(&*pool)
+        .await?;
+    Ok(messages)
+}
+
+pub async fn save_message(pool: Arc<MySqlPool>, message: &ChatMessage) -> anyhow::Result<()> {
+    query!(
+        "INSERT INTO chat_messages (username, message, timestamp) VALUES (?, ?, ?)",
+        message.username,
+        message.message,
+        message.timestamp
+    )
+    .execute(&*pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn broadcast_message(
+    message: ChatMessage,
+    clients: &mut Vec<mpsc::UnboundedSender<Message>>,
+) {
+    let json_message = serde_json::to_string(&message).expect("Failed to serialize chat message");
+    let msg = Message::Text(json_message.into());
+
+    clients.retain(|client_tx| client_tx.send(msg.clone()).is_ok());
 }

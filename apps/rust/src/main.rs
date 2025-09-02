@@ -12,7 +12,6 @@
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use std::net::SocketAddr;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use rust_lib::config::CONFIG_MAP;
 use crate::routes::{create_routes, ChatState};
 use sqlx::mysql::MySqlPoolOptions;
@@ -24,22 +23,6 @@ mod routes;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing::info!("RustExpress starting up...");
-
-    // .env is loaded by rust_lib::config, so no need to load again here
-
-    // Set default values for Rust-specific configs if not present
-    let rust_log = CONFIG_MAP
-        .get("RUST_LOG")
-        .cloned()
-        .unwrap_or_else(|| "info".to_string());
-    std::env::set_var("RUST_LOG", &rust_log);
-
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(rust_log))
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-
-    tracing::info!("Initializing configuration...");
 
     // Use CONFIG_MAP for JWT_SECRET
     let jwt_secret = CONFIG_MAP

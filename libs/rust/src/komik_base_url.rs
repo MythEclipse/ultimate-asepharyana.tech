@@ -90,18 +90,20 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
 
         let website_btn_selector = Selector::parse("a.elementskit-btn").unwrap();
         let mut org_link = String::new();
+        let re_komikindo_base = Regex::new(r"komikindo\.").unwrap(); // Match "komikindo."
 
         for element in document.select(&website_btn_selector) {
             let href = element.value().attr("href").unwrap_or_default();
             let cpo_original_value_of_href = element.value().attr("__cporiginalvalueofhref").unwrap_or_default();
 
-            let re_komikindo = Regex::new(r"komikindo\.(?!cz)").unwrap();
-            if re_komikindo.is_match(href) || re_komikindo.is_match(cpo_original_value_of_href) {
-                org_link = if !cpo_original_value_of_href.is_empty() {
-                    cpo_original_value_of_href.to_string()
-                } else {
-                    href.to_string()
-                };
+            let target_link = if !cpo_original_value_of_href.is_empty() {
+                &cpo_original_value_of_href
+            } else {
+                &href
+            };
+
+            if re_komikindo_base.is_match(target_link) && !target_link.contains(".cz") {
+                org_link = target_link.to_string();
                 break;
             }
         }

@@ -10,6 +10,7 @@ pub mod uploader;
 pub mod proxy;
 pub mod compress;
 pub mod drivepng;
+pub mod chat;
 
 /// Aggregates OpenAPI docs for all API groups.
 #[derive(OpenApi)]
@@ -24,7 +25,8 @@ pub mod drivepng;
         (path = "/api/uploader", api = uploader::UploaderApiDoc),
         (path = "/api/proxy", api = proxy::ProxyApiDoc),
         (path = "/api/compress", api = compress::CompressApiDoc),
-        (path = "/api/drivepng", api = drivepng::DrivePngApiDoc)
+        (path = "/api/drivepng", api = drivepng::DrivePngApiDoc),
+        (path = "/api/chat", api = chat::ChatApiDoc)
     )
 )]
 pub struct ApiDoc;
@@ -42,4 +44,5 @@ pub fn create_api_routes() -> Router<Arc<ChatState>> {
         .nest("/proxy", proxy::create_routes())
         .nest("/compress", compress::create_routes())
         .nest("/drivepng", drivepng::create_routes())
+        .nest("/chat", chat::create_routes())
 }

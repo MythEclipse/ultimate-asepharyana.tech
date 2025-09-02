@@ -42,14 +42,14 @@ fn parse_proxy_line(line: &str) -> Option<String> {
         return Some(trimmed.to_string());
     }
     if Regex::new(r"^[^:]+:\d+$").unwrap().is_match(trimmed) {
-        return Some(format!("https://{}", trimmed));
+        return Some(format!("https://{trimmed}"));
     }
     None
 }
 
 async fn get_proxies() -> Result<Vec<String>, AppError> {
     let client = Client::new();
-    let res = client.get(&get_proxy_list_url()).send().await?;
+    let res = client.get(get_proxy_list_url()).send().await?;
     if !res.status().is_success() {
         let error_msg = format!("Failed to fetch proxy list: {}", res.status());
         error!("Error fetching proxy list: {}", error_msg);
@@ -73,7 +73,7 @@ async fn get_cached_proxies() -> Result<Vec<String>, AppError> {
 
 // --- REDIS CACHE WRAPPER START ---
 fn get_fetch_cache_key(slug: &str) -> String {
-    format!("fetch:proxy:{}", slug)
+    format!("fetch:proxy:{slug}")
 }
 
 async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, AppError> {
@@ -174,7 +174,7 @@ async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
             Ok(proxy) => client_builder.proxy(proxy).build()?,
             Err(e) => {
                 warn!("Invalid proxy URL {}: {:?}", proxy_url_str, e);
-                last_error = Some(AppError::Other(format!("Invalid proxy URL: {:?}", e)));
+                last_error = Some(AppError::Other(format!("Invalid proxy URL: {e:?}")));
                 continue;
             }
         };

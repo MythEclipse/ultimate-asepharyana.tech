@@ -26,7 +26,6 @@ pub struct AnimeItem {
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct Pagination {
     current_page: usize,
-    last_visible_page: usize,
     has_next_page: bool,
     next_page: Option<usize>,
     has_previous_page: bool,
@@ -98,18 +97,18 @@ pub async fn handler(Query(params): Query<HashMap<String, String>>) -> Response 
 
 fn parse_anime_data(html: &str, q: &str) -> (Vec<AnimeItem>, Pagination) {
     let document = Html::parse_document(html);
-    let li_selector = Selector::parse("#venkonten .chivsrc li").unwrap();
+    let li_selector = Selector::parse("#venkonten .chivsrc li").expect("Failed to parse selector for anime list items");
     let mut anime_list = Vec::new();
 
     for li in document.select(&li_selector) {
         let title = li
-            .select(&Selector::parse("h2 a").unwrap())
+            .select(&Selector::parse("h2 a").expect("Failed to parse selector for anime title"))
             .next()
             .map(|n| n.text().collect::<String>().trim().to_string())
             .unwrap_or_default();
 
         let anime_url = li
-            .select(&Selector::parse("a").unwrap())
+            .select(&Selector::parse("a").expect("Failed to parse selector for anime URL"))
             .next()
             .and_then(|a| a.value().attr("href"))
             .unwrap_or("")
@@ -122,27 +121,27 @@ fn parse_anime_data(html: &str, q: &str) -> (Vec<AnimeItem>, Pagination) {
             .to_string();
 
         let poster = li
-            .select(&Selector::parse("img").unwrap())
+            .select(&Selector::parse("img").expect("Failed to parse selector for anime poster"))
             .next()
             .and_then(|img| img.value().attr("src"))
             .unwrap_or("")
             .to_string();
 
         let episode_text = li
-            .select(&Selector::parse("h2 a").unwrap())
+            .select(&Selector::parse("h2 a").expect("Failed to parse selector for episode text"))
             .next()
             .map(|n| n.text().collect::<String>())
             .unwrap_or_default();
 
         let episode = {
-            let re = regex::Regex::new(r"\(([^)]+)\)").unwrap();
+            let re = regex::Regex::new(r"\(([^)]+)\)").expect("Failed to compile regex for episode parsing");
             re.captures(&episode_text)
                 .and_then(|cap| cap.get(1).map(|m| m.as_str().to_string()))
                 .unwrap_or_else(|| "Ongoing".to_string())
         };
 
         let genres = li
-            .select(&Selector::parse(".set b").unwrap())
+            .select(&Selector::parse(".set b").expect("Failed to parse selector for genres"))
             .filter(|b| b.text().any(|t| t.contains("Genres")))
             .flat_map(|b| {
                 b.parent()
@@ -170,7 +169,7 @@ fn parse_anime_data(html: &str, q: &str) -> (Vec<AnimeItem>, Pagination) {
             .collect::<Vec<_>>();
 
         let status = li
-            .select(&Selector::parse(".set b").unwrap())
+            .select(&Selector::parse(".set b").expect("Failed to parse selector for status"))
             .filter(|b| b.text().any(|t| t.contains("Status")))
             .next()
             .and_then(|b| b.parent())
@@ -186,7 +185,7 @@ fn parse_anime_data(html: &str, q: &str) -> (Vec<AnimeItem>, Pagination) {
             .unwrap_or_default();
 
         let rating = li
-            .select(&Selector::parse(".set b").unwrap())
+            .select(&Selector::parse(".set b").expect("Failed to parse selector for rating"))
             .filter(|b| b.text().any(|t| t.contains("Rating")))
             .next()
             .and_then(|b| b.parent())
@@ -214,10 +213,9 @@ fn parse_anime_data(html: &str, q: &str) -> (Vec<AnimeItem>, Pagination) {
     }
 
     let page_num = q.parse::<usize>().unwrap_or(1);
-    let has_next_page = document.select(&Selector::parse(".hpage .r").unwrap()).next().is_some();
+    let has_next_page = document.select(&Selector::parse(".hpage .r").expect("Failed to parse selector for next page")).next().is_some();
     let pagination = Pagination {
         current_page: page_num,
-        last_visible_page: 57,
         has_next_page,
         next_page: if has_next_page { Some(page_num + 1) } else { None },
         has_previous_page: page_num > 1,

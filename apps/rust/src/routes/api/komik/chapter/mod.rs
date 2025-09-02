@@ -60,7 +60,7 @@ pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
 
     // Previous chapter ID
     let prev_chapter_id = {
-        let sel = Selector::parse(".nextprev a[rel=\"prev\"]").unwrap();
+        let sel = Selector::parse(".nextprev a[rel=\"prev\"]").expect("Failed to parse selector for previous chapter");
         document.select(&sel).next()
             .and_then(|e| e.value().attr("href"))
             .and_then(|href| href.split('/').nth(3))
@@ -70,7 +70,7 @@ pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
 
     // Next chapter ID
     let next_chapter_id = {
-        let sel = Selector::parse(".nextprev a[rel=\"next\"]").unwrap();
+        let sel = Selector::parse(".nextprev a[rel=\"next\"]").expect("Failed to parse selector for next chapter");
         document.select(&sel).next()
             .and_then(|e| e.value().attr("href"))
             .and_then(|href| href.split('/').nth(3))
@@ -80,7 +80,7 @@ pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
 
     // List chapter
     let list_chapter = {
-        let sel = Selector::parse(".nextprev a:has(.icol.daftarch)").unwrap();
+        let sel = Selector::parse(".nextprev a:has(.icol.daftarch)").expect("Failed to parse selector for list chapter");
         document.select(&sel).next()
             .and_then(|e| e.value().attr("href"))
             .and_then(|href| href.split('/').nth(4))
