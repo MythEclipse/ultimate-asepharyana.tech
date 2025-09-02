@@ -6,7 +6,7 @@ use std::time::Instant;
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
-use rand::RngCore;
+use rand::prelude::IndexedRandom; // For .choose() method
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -16,15 +16,31 @@ const MAX_RETRIES: u8 = 1;
 // Helper function to simulate getRandomUserAgent from TS
 #[allow(dead_code)]
 fn get_random_user_agent() -> String {
-    let versions = ["115.0.0.0", "116.0.0.0", "117.0.0.0", "118.0.0.0"];
-    let os = [
+    let mut rng = rand::rngs::ThreadRng::default();
+
+    // Expanded list of common operating systems
+    let os_options = [
         "Windows NT 10.0; Win64; x64",
         "Macintosh; Intel Mac OS X 10_15_7",
+        "X11; Linux x86_64",
+        "Android 10; Mobile",
+        "iPhone; CPU iPhone OS 14_0_1 like Mac OS X",
     ];
-    let mut rng = rand::rngs::ThreadRng::default();
-    let random_os = os[(rng.next_u32() as usize) % os.len()];
-    let random_version = versions[(rng.next_u32() as usize) % versions.len()];
-    format!("Mozilla/5.0 ({random_os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{random_version} Safari/537.36")
+
+    // Expanded list of Chrome versions (more recent and varied)
+    let chrome_versions = [
+        "119.0.0.0", "120.0.0.0", "121.0.0.0", "122.0.0.0", "123.0.0.0",
+        "124.0.0.0", "125.0.0.0", "126.0.0.0", "127.0.0.0", "128.0.0.0",
+    ];
+
+    // Common AppleWebKit/Safari versions
+    let webkit_versions = ["537.36", "605.1.15"];
+
+    let random_os = os_options.choose(&mut rng).unwrap_or(&"Windows NT 10.0; Win64; x64");
+    let random_chrome_version = chrome_versions.choose(&mut rng).unwrap_or(&"125.0.0.0");
+    let random_webkit_version = webkit_versions.choose(&mut rng).unwrap_or(&"537.36");
+
+    format!("Mozilla/5.0 ({random_os}) AppleWebKit/{random_webkit_version} (KHTML, like Gecko) Chrome/{random_chrome_version} Safari/{random_webkit_version}")
 }
 
 pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {

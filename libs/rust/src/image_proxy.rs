@@ -13,13 +13,13 @@ pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, AppError> {
     info!("Attempting to proxy image from: {}", url);
 
     // Try CDN image v1
-    let cdn_response = cdn_image(url).await?;
+    let cdn_response = fetch_cdn_image(url, 1).await?;
     if cdn_response.status == 200 {
         return Ok(cdn_response);
     }
 
     // Try CDN image v2 if v1 fails
-    let cdn_response_v2 = cdn_image_v2(url).await?;
+    let cdn_response_v2 = fetch_cdn_image(url, 2).await?;
     if cdn_response_v2.status == 200 {
         return Ok(cdn_response_v2);
     }
@@ -37,10 +37,10 @@ pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, AppError> {
     Err(AppError::Other("Failed to proxy image after all attempts".to_string()))
 }
 
-async fn cdn_image(url: &str) -> Result<ImageProxyResult, AppError> {
+async fn fetch_cdn_image(url: &str, version: u8) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
     let encoded_url = urlencoding::encode(url);
-    let cdn_url = format!("https://imagecdn.app/v1/images/{encoded_url}");
+    let cdn_url = format!("https://imagecdn.app/v{version}/images/{encoded_url}");
 
     match client.get(&cdn_url).send().await {
         Ok(response) => {
@@ -60,44 +60,11 @@ async fn cdn_image(url: &str) -> Result<ImageProxyResult, AppError> {
                     }
                 }
             }
-            error!("Failed to fetch image from CDN v1: {}, Status: {}", url, status);
+            error!("Failed to fetch image from CDN v{}: {}, Status: {}", version, url, status);
             Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status })
         },
         Err(e) => {
-            error!("Internal server error during CDN v1 fetch for {}: {}", url, e);
-            Err(AppError::ReqwestError(e))
-        }
-    }
-}
-
-async fn cdn_image_v2(url: &str) -> Result<ImageProxyResult, AppError> {
-    let client = Client::new();
-    let encoded_url = urlencoding::encode(url);
-    let cdn_url = format!("https://imagecdn.app/v2/images/{encoded_url}");
-
-    match client.get(&cdn_url).send().await {
-        Ok(response) => {
-            let status = response.status().as_u16();
-            let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
-                .and_then(|h| h.to_str().ok())
-                .map(|s| s.to_string());
-
-            if status == 200 {
-                if let Some(ct) = &content_type {
-                    if ct.starts_with("image/") {
-                        let data = response.bytes().await?;
-                        return Ok(ImageProxyResult { data, content_type, status });
-                    } else {
-                        error!("CDN URL does not point to an image: {}", url);
-                        return Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status: 400 });
-                    }
-                }
-            }
-            error!("Failed to fetch image from CDN v2: {}, Status: {}", url, status);
-            Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status })
-        },
-        Err(e) => {
-            error!("Internal server error during CDN v2 fetch for {}: {}", url, e);
+            error!("Internal server error during CDN v{} fetch for {}: {}", version, url, e);
             Err(AppError::ReqwestError(e))
         }
     }
