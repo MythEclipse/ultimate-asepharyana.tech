@@ -21,27 +21,28 @@ pub mod uploader;
     tags(
         (name = "api", description = "Root API module")
     ),
-    paths(
-        "/api/anime/",
-        "/api/anime/complete-anime/{slug}",
-        "/api/anime/ongoing-anime/{slug}",
-        "/api/anime/full/{slug}",
-        "/api/anime/search",
-        "/api/anime/detail/{slug}",
-        "/api/compress"
+    nest(
+        (path = "/anime", api = anime::AnimeApiDoc),
+        (path = "/anime2", api = anime2::Anime2ApiDoc),
+        (path = "/chat", api = chat::ChatApiDoc),
+        (path = "/compress", api = compress::CompressApiDoc),
+        (path = "/drivepng", api = drivepng::DrivepngApiDoc),
+        (path = "/komik", api = komik::KomikApiDoc),
+        (path = "/proxy", api = proxy::ProxyApiDoc),
+        (path = "/uploader", api = uploader::UploaderApiDoc)
     )
 )]
 pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<ChatState>> {
     let mut router = Router::new();
-    router = router.merge(anime::create_routes());
-    router = router.merge(anime2::create_routes());
-    router = router.merge(chat::create_routes());
-    router = router.merge(compress::create_routes());
-    router = router.merge(drivepng::create_routes());
-    router = router.merge(komik::create_routes());
-    router = router.merge(proxy::create_routes());
-    router = router.merge(uploader::create_routes());
+    router = router.nest("/anime", anime::create_routes());
+    router = router.nest("/anime2", anime2::create_routes());
+    router = router.nest("/chat", chat::create_routes());
+    router = router.nest("/compress", compress::create_routes());
+    router = router.nest("/drivepng", drivepng::create_routes());
+    router = router.nest("/komik", komik::create_routes());
+    router = router.nest("/proxy", proxy::create_routes());
+    router = router.nest("/uploader", uploader::create_routes());
     router
 }
