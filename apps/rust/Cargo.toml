@@ -38,7 +38,8 @@ infer = { workspace = true } # For file type detection
 ffmpeg-next = { workspace = true }
 once_cell = { workspace = true }
 rust_lib = { path = "../../libs/rust" }
-urlencoding.workspace = true
+urlencoding = { workspace = true }
+utoipa = { workspace = true }
 
 
 [dev-dependencies]
