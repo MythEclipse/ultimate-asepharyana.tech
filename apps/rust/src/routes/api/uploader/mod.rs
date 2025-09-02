@@ -6,12 +6,11 @@
 use axum::{
     routing::{post, get},
     Router,
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     Json,
-    extract::{Multipart, State, Path}, // Add Path import
+    extract::{Multipart, Path},
 };
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
 use reqwest::{Client, StatusCode};
 use rust_lib::config::CONFIG_MAP;
 use crate::routes::ChatState;
@@ -19,6 +18,22 @@ use std::sync::Arc;
 
 // Maximum file size allowed for uploads (1GB)
 const MAX_FILE_SIZE: u64 = 1 * 1024 * 1024 * 1024;
+
+/// OpenAPI doc for Uploader API
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    paths(
+        uploader_post,
+        uploader_get
+    ),
+    components(
+        schemas(UploadResponse, UploadedFile)
+    ),
+    tags(
+        (name = "Uploader", description = "File upload API")
+    )
+)]
+pub struct UploaderApiDoc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()

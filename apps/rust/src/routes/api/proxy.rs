@@ -22,6 +22,18 @@ struct ProxyParams {
     url: Option<String>,
 }
 
+/// OpenAPI doc for Proxy API
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    paths(
+        proxy_get
+    ),
+    tags(
+        (name = "Proxy", description = "Proxy API")
+    )
+)]
+pub struct ProxyApiDoc;
+
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(proxy_get))

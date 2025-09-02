@@ -16,6 +16,18 @@ use serde_json::json;
 
 pub mod compress_service;
 
+/// OpenAPI doc for Compression API
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    paths(
+        compress_handler
+    ),
+    tags(
+        (name = "Compression", description = "Image and video compression API")
+    )
+)]
+pub struct CompressApiDoc;
+
 #[derive(Debug, Deserialize)]
 pub struct CompressParams {
     url: String,

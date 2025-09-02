@@ -12,6 +12,18 @@ use serde_json::json;
 use crate::routes::ChatState;
 use std::sync::Arc;
 
+/// OpenAPI doc for DrivePNG API
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    paths(
+        drivepng_handler
+    ),
+    tags(
+        (name = "DrivePNG", description = "DrivePNG API")
+    )
+)]
+pub struct DrivePngApiDoc;
+
 #[utoipa::path(
     get,
     path = "/api/drivepng",

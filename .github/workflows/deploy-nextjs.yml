@@ -89,8 +89,7 @@ jobs:
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
-            cd apps/nextjs
             git pull
             pnpm install --prod --filter=@asepharyana/nextjs
-            pm2 startOrRestart ecosystem.config.cjs
+            pm2 startOrRestart nextjs.config.cjs
             echo "Next.js Deployment successful!"

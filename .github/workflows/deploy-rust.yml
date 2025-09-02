@@ -116,9 +116,8 @@ jobs:
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
-            cd apps/rust
             git pull
             bash scripts/2updateenv.sh
             # Check if the process is running and stop it
-            pm2 startOrRestart ecosystem.config.cjs
+            pm2 startOrRestart rust.config.cjs
             echo "Rust Deployment successful!"
