@@ -49,3 +49,7 @@ testcontainers-modules = { workspace = true, features = ["mysql"] }
 
 [build-dependencies]
 regex = "1.11"
+
+[[bin]]
+name = "scaffold"
+path = "src/bin/scaffold.rs"
