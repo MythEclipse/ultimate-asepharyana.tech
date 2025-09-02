@@ -70,6 +70,8 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
+/// Fetches and parses the anime episode page from otakudesu.cloud
+#[utoipa::path(get, path = "/api/anime/full/{slug}", tag = "anime", responses((status = 200, description = "Success", body = FullEpisodeResponse), (status = 500, description = "Internal Server Error")), params(("slug" = String, Path, description = "Slug for the anime episode (e.g., 'isekai-ojisan-episode-1').")))]
 pub async fn full_episode_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);

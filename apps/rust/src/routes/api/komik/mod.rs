@@ -16,10 +16,10 @@ pub mod search;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
-        .route("/chapter", get(chapter::handler))
-        .route("/detail", get(detail::handler))
-        .route("/manga", get(manga::handler))
-        .route("/manhua", get(manhua::handler))
-        .route("/manhwa", get(manhwa::handler))
-        .route("/search", get(search::handler))
+        .route("/chapter", get(chapter::chapter_handler))
+        .route("/detail", get(detail::detail_handler))
+        .route("/manga", get(manga::manga_handler))
+        .route("/manhua", get(manhua::manhua_handler))
+        .route("/manhwa", get(manhwa::manhwa_handler))
+        .route("/search", get(search::search_handler))
 }

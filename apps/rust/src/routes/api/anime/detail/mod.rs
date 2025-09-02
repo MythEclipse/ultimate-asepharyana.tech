@@ -78,6 +78,8 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
+/// Fetches and parses anime detail from otakudesu.cloud
+#[utoipa::path(get, path = "/api/anime/detail/{slug}", tag = "anime", responses((status = 200, description = "Success", body = DetailResponse), (status = 500, description = "Internal Server Error")), params(("slug" = String, Path, description = "Slug for the anime detail (e.g., 'isekai-ojisan-sub-indo').")))]
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/anime/{}", slug);

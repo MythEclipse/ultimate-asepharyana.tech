@@ -17,6 +17,10 @@ pub mod uploader;
 
 #[derive(OpenApi)]
 #[openapi(
+    nest(
+        (path = "/api/anime", api = anime::AnimeApiDoc),
+        (path = "/api/anime2", api = anime2::Anime2ApiDoc)
+    ),
     paths(),
     components(),
     tags((

@@ -63,6 +63,8 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
+/// Fetches search results from alqanime.net
+#[utoipa::path(get, path = "/api/anime2/search", tag = "anime2", responses((status = 200, description = "Success", body = AnimeSearchResponse), (status = 500, description = "Internal Server Error")))]
 pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let slug = params.get("q").map(|s| s.as_str()).unwrap_or("log");
     let url = format!("https://alqanime.net/?s={}", slug);

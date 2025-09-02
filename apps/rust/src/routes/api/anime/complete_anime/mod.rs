@@ -59,6 +59,8 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
+/// Fetches and parses the paginated complete anime list from otakudesu.cloud
+#[utoipa::path(get, path = "/api/anime/complete-anime/{slug}", tag = "anime", responses((status = 200, description = "Success", body = AnimeListResponse), (status = 500, description = "Internal Server Error")), params(("slug" = String, Path, description = "Slug for pagination (page number).")))]
 pub async fn complete_anime_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);

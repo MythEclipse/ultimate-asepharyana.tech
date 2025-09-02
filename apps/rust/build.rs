@@ -52,14 +52,24 @@ fn main() {
     sorted_schemas.sort();
 
     // Generate OpenAPI Doc Struct
-    let api_doc_struct = format!(
-      "#[derive(utoipa::OpenApi)]\n#[openapi(\n    paths({}),\n    components(schemas({})),\n    tags((\n        name = \"{}\", description = \"{} endpoints\"\n    ))\n)]\npub struct {}ApiDoc;",
-      all_module_handler_routes.iter().map(|info| info.full_handler_path.clone()).collect::<Vec<String>>().join(",\n        "),
-      sorted_schemas.join(", "),
-      module,
-      module,
-      pascal_case_module
-    );
+    let api_doc_struct = if sorted_handlers.is_empty() {
+        format!(
+            "#[derive(utoipa::OpenApi)]\n#[openapi(\n    components(schemas({})),\n    tags((\n        name = \"{}\", description = \"{} endpoints\"\n    ))\n)]\npub struct {}ApiDoc;",
+            sorted_schemas.join(", "),
+            module,
+            module,
+            pascal_case_module
+        )
+    } else {
+        format!(
+            "#[derive(utoipa::OpenApi)]\n#[openapi(\n    paths({}),\n    components(schemas({})),\n    tags((\n        name = \"{}\", description = \"{} endpoints\"\n    ))\n)]\npub struct {}ApiDoc;",
+            all_module_handler_routes.iter().map(|info| info.full_handler_path.clone()).collect::<Vec<String>>().join(",\n        "),
+            sorted_schemas.join(", "),
+            module,
+            module,
+            pascal_case_module
+        )
+    };
 
     all_api_docs.push((module.clone(), pascal_case_module.clone()));
 

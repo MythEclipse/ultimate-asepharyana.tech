@@ -86,6 +86,8 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
+/// Fetches anime detail from alqanime.net and parses the HTML into structured JSON.
+#[utoipa::path(get, path = "/api/anime2/detail/{slug}", tag = "anime2", responses((status = 200, description = "Success", body = DetailResponse), (status = 500, description = "Internal Server Error")), params(("slug" = String, Path, description = "Slug for the anime (e.g., 'isekai-ojisan').")))]
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://alqanime.net/{}/", slug);

@@ -58,6 +58,8 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
+/// Fetches a paginated list of completed anime from alqanime.net
+#[utoipa::path(get, path = "/api/anime2/complete-anime/{slug}", tag = "anime2", responses((status = 200, description = "Success", body = CompleteAnimeResponse), (status = 500, description = "Internal Server Error")), params(("slug" = String, Path, description = "Slug for pagination (page number).")))]
 pub async fn complete_anime_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!(
