@@ -82,6 +82,12 @@ pub struct CompressResponse {
     pub compressed_url: String,
 }
 
+impl IntoResponse for CompressResponse {
+    fn into_response(self) -> Response {
+        (axum::http::StatusCode::OK, Json(self)).into_response()
+    }
+}
+
 #[derive(Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {

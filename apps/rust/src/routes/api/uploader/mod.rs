@@ -36,6 +36,12 @@ pub struct UploadResponse {
     pub message: Option<String>,
 }
 
+impl IntoResponse for UploadResponse {
+    fn into_response(self) -> Response {
+        (axum::http::StatusCode::OK, Json(self)).into_response()
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadedFile {
