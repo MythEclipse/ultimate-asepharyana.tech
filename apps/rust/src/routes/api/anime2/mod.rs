@@ -72,9 +72,9 @@ pub struct Anime2ApiDoc;
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(anime2_handler))
-        .route("/complete-anime/:slug", get(complete_anime::complete_anime_handler))
-        .route("/ongoing-anime/:slug", get(ongoing_anime::ongoing_anime_handler))
-        .route("/detail/:slug", get(detail::detail_handler))
+        .route("/complete-anime/{slug}", get(complete_anime::complete_anime_handler))
+        .route("/ongoing-anime/{slug}", get(ongoing_anime::ongoing_anime_handler))
+        .route("/detail/{slug}", get(detail::detail_handler))
         .route("/search", get(search::search_handler))
 }
 

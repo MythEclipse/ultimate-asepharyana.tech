@@ -39,7 +39,7 @@ pub struct AnimeListResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/anime/ongoing-anime/{slug}",
+    path = "/ongoing-anime/{slug}",
     responses(
         (status = 200, description = "Ongoing anime list", body = AnimeListResponse)
     ),

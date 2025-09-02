@@ -43,7 +43,7 @@ pub struct AnimeSearchResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/anime2/search",
+    path = "/search",
     params(
         ("q" = String, Query, description = "Search query for anime title")
     ),

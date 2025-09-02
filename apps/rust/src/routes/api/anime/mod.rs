@@ -44,11 +44,11 @@ pub struct AnimeApiDoc;
 pub fn create_routes() -> Router<Arc<ChatState>> { // Define create_routes function
     Router::new()
         .route("/", get(anime_handler))
-        .route("/complete-anime/:slug", get(complete_anime::complete_anime_handler))
-        .route("/ongoing-anime/:slug", get(ongoing_anime::ongoing_anime_handler))
-        .route("/full/:slug", get(full::handler))
+        .route("/complete-anime/{slug}", get(complete_anime::complete_anime_handler))
+        .route("/ongoing-anime/{slug}", get(ongoing_anime::ongoing_anime_handler))
+        .route("/full/{slug}", get(full::handler))
         .route("/search", get(search::handler))
-        .route("/detail/:slug", get(detail::detail_handler))
+        .route("/detail/{slug}", get(detail::detail_handler))
 }
 
 pub async fn anime_handler() -> Response {

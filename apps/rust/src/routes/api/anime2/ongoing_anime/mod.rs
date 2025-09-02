@@ -38,7 +38,7 @@ pub struct OngoingAnimeResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/anime2/ongoing-anime/{slug}",
+    path = "/ongoing-anime/{slug}",
     params(
         ("slug" = String, Path, description = "Page number or slug for ongoing anime")
     ),

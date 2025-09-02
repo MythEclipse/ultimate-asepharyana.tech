@@ -41,7 +41,7 @@ pub struct SearchResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/anime/search",
+    path = "/search",
     summary = "Search anime",
     description = "Searches for anime on otakudesu.cloud using the provided query string.",
     params(

@@ -65,7 +65,7 @@ pub struct AnimeDetailResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/anime2/detail/{slug}",
+    path = "/detail/{slug}",
     params(
         ("slug" = String, Path, description = "Slug for anime detail")
     ),

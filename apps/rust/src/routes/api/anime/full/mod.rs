@@ -49,7 +49,7 @@ pub struct AnimeResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/anime/full/{slug}",
+    path = "/full/{slug}",
     summary = "Get full anime episode details",
     description = "Fetches and parses the full anime episode page details from otakudesu.cloud based on the provided slug.",
     params(

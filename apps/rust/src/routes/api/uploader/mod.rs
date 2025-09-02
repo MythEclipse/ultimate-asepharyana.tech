@@ -38,7 +38,7 @@ pub struct UploaderApiDoc;
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", post(uploader_post))
-        .route("/:file_name", get(uploader_get)) // Example route for retrieving uploaded files
+        .route("/{file_name}", get(uploader_get)) // Example route for retrieving uploaded files
 }
 
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
@@ -57,7 +57,7 @@ struct UploadedFile {
 
 #[utoipa::path(
     post,
-    path = "/api/uploader",
+    path = "/",
     request_body(content = Vec<u8>, description = "File to upload", content_type = "application/octet-stream"),
     responses(
         (status = 200, description = "File uploaded successfully", body = UploadResponse),
