@@ -2,7 +2,6 @@
 //!
 //! This module provides a proxy endpoint for fetching external URLs.
 
-use utoipa::OpenApi;
 use axum::{
     extract::Query,
     response::{IntoResponse, Response},
@@ -21,18 +20,6 @@ use std::sync::Arc;
 pub struct ProxyParams {
     url: Option<String>,
 }
-
-/// OpenAPI doc for Proxy API
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        proxy_get
-    ),
-    tags(
-        (name = "Proxy", description = "Proxy API")
-    )
-)]
-pub struct ProxyApiDoc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
