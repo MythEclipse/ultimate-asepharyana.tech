@@ -1,6 +1,7 @@
 //! # Image and Video Compression API
 //!
 //! This module provides API endpoints for compressing images and videos from URLs.
+// KILOKODE_OPENAPI_PATHS: /api/compress
 
 use axum::{
     extract::Query,

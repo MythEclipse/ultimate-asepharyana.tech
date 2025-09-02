@@ -1,5 +1,6 @@
 // Handler for /api/anime endpoints. Fetches anime data from otakudesu.cloud and returns as JSON.
 // This module now exposes OpenAPI documentation for all anime endpoints.
+// KILOKODE_OPENAPI_PATHS: /api/anime/, /api/anime/complete-anime/{slug}, /api/anime/ongoing-anime/{slug}, /api/anime/full/{slug}, /api/anime/search, /api/anime/detail/{slug}
 
 use axum::{
     response::{IntoResponse, Response},

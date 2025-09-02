@@ -34,8 +34,24 @@ fn main() {
     mod_content.push_str("use crate::routes::ChatState;\n");
     mod_content.push_str("use std::sync::Arc;\n\n");
 
+    let mut openapi_paths = Vec::new();
+
     for module in &modules {
         mod_content.push_str(&format!("pub mod {};\n", module));
+        let module_mod_path = api_routes_path.join(module).join("mod.rs");
+        if let Ok(content) = fs::read_to_string(&module_mod_path) {
+            for line in content.lines() {
+                if line.trim().starts_with("// KILOKODE_OPENAPI_PATHS:") {
+                    let paths_str = line.trim_start_matches("// KILOKODE_OPENAPI_PATHS:").trim();
+                    for path in paths_str.split(',') {
+                        let trimmed_path = path.trim();
+                        if !trimmed_path.is_empty() {
+                            openapi_paths.push(format!("        \"{}\"", trimmed_path));
+                        }
+                    }
+                }
+            }
+        }
     }
     mod_content.push_str("\n");
 
@@ -45,25 +61,8 @@ fn main() {
     mod_content.push_str("    tags(\n");
     mod_content.push_str("        (name = \"api\", description = \"Root API module\")\n");
     mod_content.push_str("    ),\n");
-    mod_content.push_str("    nest(\n");
-    let mut nest_entries = Vec::new();
-    for module in &modules {
-        let pascal_case_module = if module == "drivepng" {
-            "DrivePng".to_string()
-        } else {
-            module.split('_')
-                  .map(|s| {
-                      let mut c = s.chars();
-                      match c.next() {
-                          None => String::new(),
-                          Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-                      }
-                  })
-                  .collect::<String>()
-        };
-        nest_entries.push(format!("        (path = \"/{}\", api = {}::{}ApiDoc)", module, module, pascal_case_module));
-    }
-    mod_content.push_str(&nest_entries.join(",\n"));
+    mod_content.push_str("    paths(\n");
+    mod_content.push_str(&openapi_paths.join(",\n"));
     mod_content.push_str("\n");
     mod_content.push_str("    )\n");
     mod_content.push_str(")]\n");
@@ -72,7 +71,7 @@ fn main() {
     mod_content.push_str("pub fn create_api_routes() -> Router<Arc<ChatState>> {\n");
     mod_content.push_str("    let mut router = Router::new();\n");
     for module in &modules {
-        mod_content.push_str(&format!("    router = router.nest(\"/{}\", {}::create_routes());\n", module, module));
+        mod_content.push_str(&format!("    router = router.merge({}::create_routes());\n", module));
     }
     mod_content.push_str("    router\n");
     mod_content.push_str("}\n");
