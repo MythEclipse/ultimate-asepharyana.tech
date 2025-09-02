@@ -40,7 +40,7 @@ pub struct Params {
 
 #[utoipa::path(
     get,
-    path = "/api/komik/manhua",
+    path = "/manhua",
     params(
         ("page" = Option<u32>, Query, description = "Page number")
     ),
