@@ -2,12 +2,13 @@
 //!
 //! This module provides a proxy endpoint for fetching external URLs.
 
+use utoipa::OpenApi;
 use axum::{
     extract::Query,
     response::{IntoResponse, Response},
     Json,
-    Router, // Add Router import
-    routing::get, // Add get import
+    Router,
+    routing::get,
 };
 use reqwest::Client;
 use serde::Deserialize;
@@ -22,6 +23,16 @@ pub struct ProxyParams {
 }
 
 /// OpenAPI doc for Proxy API
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        proxy_get
+    ),
+    tags(
+        (name = "Proxy", description = "Proxy API")
+    )
+)]
+pub struct ProxyApiDoc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
