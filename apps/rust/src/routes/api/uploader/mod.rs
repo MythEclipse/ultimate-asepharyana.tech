@@ -19,21 +19,6 @@ use std::sync::Arc;
 // Maximum file size allowed for uploads (1GB)
 const MAX_FILE_SIZE: u64 = 1 * 1024 * 1024 * 1024;
 
-/// OpenAPI doc for Uploader API
-#[derive(utoipa::OpenApi)]
-#[openapi(
-    paths(
-        uploader_post,
-        uploader_get
-    ),
-    components(
-        schemas(UploadResponse, UploadedFile)
-    ),
-    tags(
-        (name = "Uploader", description = "File upload API")
-    )
-)]
-pub struct UploaderApiDoc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
@@ -41,31 +26,20 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
         .route("/{file_name}", get(uploader_get)) // Example route for retrieving uploaded files
 }
 
-#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Deserialize, Serialize)]
 struct UploadResponse {
     success: bool,
     files: Option<Vec<UploadedFile>>,
     message: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Deserialize, Serialize)]
 struct UploadedFile {
     url: String,
     name: String,
     size: u64,
 }
 
-#[utoipa::path(
-    post,
-    path = "/",
-    request_body(content = Vec<u8>, description = "File to upload", content_type = "application/octet-stream"),
-    responses(
-        (status = 200, description = "File uploaded successfully", body = UploadResponse),
-        (status = 400, description = "Bad request", body = UploadResponse),
-        (status = 500, description = "Internal server error", body = UploadResponse)
-    ),
-    tag = "Uploader"
-)]
 pub async fn uploader_post(mut multipart: Multipart) -> impl IntoResponse {
     let client = Client::new();
     let pomf2_url = CONFIG_MAP.get("POMF2_URL").expect("POMF2_URL not set");
@@ -126,18 +100,6 @@ pub async fn uploader_post(mut multipart: Multipart) -> impl IntoResponse {
     ).into_response()
 }
 
-#[utoipa::path(
-    get,
-    path = "/{file_name}",
-    responses(
-        (status = 200, description = "File retrieved successfully"),
-        (status = 404, description = "File not found")
-    ),
-    params(
-        ("file_name" = String, Path, description = "Name of the file to retrieve")
-    ),
-    tag = "Uploader"
-)]
 pub async fn uploader_get(Path(file_name): Path<String>) -> impl IntoResponse {
     // This is a placeholder. In a real application, you would retrieve the file
     // from storage (e.g., S3, local disk) and return it.

@@ -11,7 +11,6 @@ use axum::{
 use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
-use utoipa::OpenApi;
 use crate::routes::ChatState;
 use std::sync::Arc;
 
@@ -50,23 +49,6 @@ pub struct Anime2Data {
     pub complete_anime: Vec<CompleteAnime>,
 }
 
-/// Aggregates OpenAPI docs for all anime2 endpoints.
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        complete_anime::complete_anime_handler,
-        ongoing_anime::ongoing_anime_handler,
-        detail::detail_handler,
-        search::search_handler
-    ),
-    components(
-        schemas(OngoingAnime, CompleteAnime, Anime2Response, Anime2Data, complete_anime::AnimeItem, complete_anime::Pagination, complete_anime::CompleteAnimeResponse, ongoing_anime::AnimeItem, ongoing_anime::Pagination, ongoing_anime::OngoingAnimeResponse, detail::Genre, detail::Recommendation, detail::Link, detail::DownloadGroup, detail::AnimeDetail, detail::AnimeDetailResponse, search::AnimeSearchItem, search::Pagination, search::AnimeSearchResponse),
-    ),
-    tags(
-        (name = "anime2", description = "Anime2 API endpoints")
-    )
-)]
-pub struct Anime2ApiDoc;
 
 // Main router for /api/anime2 endpoints
 pub fn create_routes() -> Router<Arc<ChatState>> {

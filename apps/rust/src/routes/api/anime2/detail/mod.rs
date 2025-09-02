@@ -10,14 +10,14 @@ use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Genre {
     pub name: String,
     pub slug: String,
     pub anime_url: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Recommendation {
     pub title: String,
     pub slug: String,
@@ -26,19 +26,19 @@ pub struct Recommendation {
     pub r#type: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Link {
     pub name: String,
     pub url: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct DownloadGroup {
     pub resolution: String,
     pub links: Vec<Link>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeDetail {
     pub title: String,
     pub alternative_title: String,
@@ -57,22 +57,12 @@ pub struct AnimeDetail {
     pub downloads: Vec<DownloadGroup>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeDetailResponse {
     pub status: &'static str,
     pub data: AnimeDetail,
 }
 
-#[utoipa::path(
-    get,
-    path = "/detail/{slug}",
-    params(
-        ("slug" = String, Path, description = "Slug for anime detail")
-    ),
-    responses(
-        (status = 200, description = "Anime detail response", body = AnimeDetailResponse)
-    )
-)]
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://alqanime.net/{}/", slug);

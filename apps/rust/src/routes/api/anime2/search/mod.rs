@@ -11,7 +11,7 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeSearchItem {
     pub title: String,
     pub slug: String,
@@ -24,7 +24,7 @@ pub struct AnimeSearchItem {
     pub season: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Pagination {
     pub current_page: usize,
     pub last_visible_page: usize,
@@ -34,23 +34,13 @@ pub struct Pagination {
     pub previous_page: Option<String>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeSearchResponse {
     pub status: &'static str,
     pub data: Vec<AnimeSearchItem>,
     pub pagination: Pagination,
 }
 
-#[utoipa::path(
-    get,
-    path = "/search",
-    params(
-        ("q" = String, Query, description = "Search query for anime title")
-    ),
-    responses(
-        (status = 200, description = "Anime search response", body = AnimeSearchResponse)
-    )
-)]
 pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let slug = params.get("q").map(|s| s.as_str()).unwrap_or("log");
     let url = format!("https://alqanime.net/?s={}", slug);

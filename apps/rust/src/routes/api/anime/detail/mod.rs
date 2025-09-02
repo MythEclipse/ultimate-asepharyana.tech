@@ -10,20 +10,20 @@ use serde::Serialize;
 use reqwest::Client;
 use scraper::{Html, Selector};
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Genre {
     name: String,
     slug: String,
     anime_url: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Episode {
     episode: String,
     slug: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Recommendation {
     title: String,
     slug: String,
@@ -32,7 +32,7 @@ pub struct Recommendation {
     r#type: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeDetail {
     title: String,
     alternative_title: String,
@@ -49,22 +49,12 @@ pub struct AnimeDetail {
     episode_lists: Vec<Episode>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeDetailResponse {
     status: &'static str,
     data: AnimeDetail,
 }
 
-#[utoipa::path(
-    get,
-    path = "/detail/{slug}",
-    params(
-        ("slug" = String, Path, description = "Slug for anime detail")
-    ),
-    responses(
-        (status = 200, description = "Anime detail response", body = AnimeDetailResponse)
-    )
-)]
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/anime/{}", slug);

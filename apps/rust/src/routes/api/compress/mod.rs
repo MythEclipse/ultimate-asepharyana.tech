@@ -17,18 +17,6 @@ use std::str::FromStr;
 
 pub mod compress_service;
 
-/// OpenAPI doc for Compression API
-#[derive(utoipa::OpenApi)]
-#[openapi(
-    paths(
-        compress_handler
-    ),
-    tags(
-        (name = "Compression", description = "Image and video compression API")
-    )
-)]
-pub struct CompressApiDoc;
-
 #[derive(Debug, Deserialize)]
 pub enum CompressionSize {
     Kilobytes(u32),
@@ -80,20 +68,6 @@ where
     CompressionSize::from_str(&s).map_err(serde::de::Error::custom)
 }
 
-#[utoipa::path(
-    get,
-    path = "/",
-    responses(
-        (status = 200, description = "Compression successful", body = String),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    ),
-    params(
-        ("url" = String, Query, description = "URL of the image or video to compress"),
-        ("size" = String, Query, description = "Target size or percentage (e.g., '100kb', '50%')")
-    ),
-    tag = "Compression"
-)]
 pub async fn compress_handler(Query(params): Query<CompressParams>) -> impl IntoResponse {
     let url = params.url;
     let size = params.size;

@@ -22,35 +22,12 @@ pub struct ProxyParams {
 }
 
 /// OpenAPI doc for Proxy API
-#[derive(utoipa::OpenApi)]
-#[openapi(
-    paths(
-        proxy_get
-    ),
-    tags(
-        (name = "Proxy", description = "Proxy API")
-    )
-)]
-pub struct ProxyApiDoc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     Router::new()
         .route("/", get(proxy_get))
 }
 
-#[utoipa::path(
-    get,
-    path = "/",
-    responses(
-        (status = 200, description = "Proxy successful"),
-        (status = 400, description = "Bad request"),
-        (status = 500, description = "Internal server error")
-    ),
-    params(
-        ("url" = String, Query, description = "URL to proxy")
-    ),
-    tag = "Proxy"
-)]
 pub async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
     let url = match params.url {
         Some(u) => u,

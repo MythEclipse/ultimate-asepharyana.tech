@@ -9,8 +9,6 @@
 //! Logging is initialized with `tracing_subscriber::EnvFilter` for environment-based configuration.
 //! See the code below for details.
 
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 use std::net::SocketAddr;
 use rust_lib::config::CONFIG_MAP;
 use crate::routes::{create_routes, ChatState};
@@ -57,9 +55,6 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Building application routes...");
 
     let app = Router::new()
-        .merge(
-            SwaggerUi::new("/docs").url("/api-doc/openapi.json", crate::routes::api::ApiDoc::openapi())
-        )
         .merge(create_routes().with_state(chat_state));
 
     let port = CONFIG_MAP

@@ -6,7 +6,7 @@ use axum::{extract::Query, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 struct ManhwaData {
     title: String,
     poster: String,
@@ -17,7 +17,7 @@ struct ManhwaData {
     slug: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 struct Pagination {
     current_page: u32,
     last_visible_page: u32,
@@ -27,7 +27,7 @@ struct Pagination {
     previous_page: Option<u32>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 struct ManhwaListResponse {
     data: Vec<ManhwaData>,
     pagination: Pagination,
@@ -38,16 +38,6 @@ pub struct Params {
     page: Option<u32>,
 }
 
-#[utoipa::path(
-    get,
-    path = "/manhwa",
-    params(
-        ("page" = Option<u32>, Query, description = "Page number")
-    ),
-    responses(
-        (status = 200, description = "Manhwa list response", body = ManhwaListResponse)
-    )
-)]
 pub async fn handler(Query(params): Query<Params>) -> impl IntoResponse {
     let page = params.page.unwrap_or(1);
     let url = format!("https://komikcast.site/manhwa/page/{}/", page);

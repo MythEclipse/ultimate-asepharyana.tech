@@ -55,21 +55,6 @@ fn save_to_cache(cache_key: &str, buf: &[u8]) -> Result<()> {
     Ok(())
 }
 
-#[utoipa::path(
-    post,
-    path = "/api/compress/image",
-    summary = "Compress image from URL",
-    description = "Compresses an image from a given URL to a target size (in KB or %) and returns a CDN link.",
-    request_body(
-        content = String,
-        description = "Image URL and target size parameter"
-    ),
-    responses(
-        (status = 200, description = "Image compressed and uploaded", body = String),
-        (status = 500, description = "Compression or upload failed", body = String)
-    ),
-    tag = "Compress"
-)]
 /// Compress an image from a URL to a target size (in KB or %), return CDN link.
 pub async fn compress_image_from_url(url: &str, size_param: &str) -> Result<String> {
     let cache_key = generate_cache_key(url, size_param);
@@ -115,21 +100,6 @@ pub async fn compress_image_from_url(url: &str, size_param: &str) -> Result<Stri
     upload_to_cdn(tmp.path().to_str().unwrap()).await
 }
 
-#[utoipa::path(
-    post,
-    path = "/api/compress/video",
-    summary = "Compress video from URL",
-    description = "Compresses a video from a given URL to a target size (in MB or %) and returns a CDN link.",
-    request_body(
-        content = String,
-        description = "Video URL and target size parameter"
-    ),
-    responses(
-        (status = 200, description = "Video compressed and uploaded", body = String),
-        (status = 500, description = "Compression or upload failed", body = String)
-    ),
-    tag = "Compress"
-)]
 /// Compress a video from a URL to a target size (in MB or %), return CDN link.
 pub async fn compress_video_from_url(url: &str, size_param: &str) -> Result<String> {
     let cache_key = generate_cache_key(url, size_param);

@@ -11,7 +11,7 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeItem {
     title: String,
     slug: String,
@@ -20,7 +20,7 @@ pub struct AnimeItem {
     anime_url: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct Pagination {
     current_page: usize,
     last_visible_page: usize,
@@ -30,23 +30,13 @@ pub struct Pagination {
     previous_page: Option<usize>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize)]
 pub struct AnimeListResponse {
     status: &'static str,
     data: Vec<AnimeItem>,
     pagination: Pagination,
 }
 
-#[utoipa::path(
-    get,
-    path = "/complete-anime/{slug}",
-    responses(
-        (status = 200, description = "Complete anime list", body = AnimeListResponse)
-    ),
-    params(
-        ("slug" = String, Path, description = "Page slug")
-    )
-)]
 pub async fn complete_anime_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);

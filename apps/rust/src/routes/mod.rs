@@ -43,13 +43,6 @@ async fn root_handler() -> impl IntoResponse {
 }
 
 // Health check endpoint
-#[utoipa::path(
-    get,
-    path = "/api/health",
-    responses(
-        (status = 200, description = "Health check OK")
-    )
-)]
 async fn health_check() -> impl IntoResponse {
     Json(json!({
         "status": "healthy",
@@ -59,14 +52,6 @@ async fn health_check() -> impl IntoResponse {
     }))
 }
 
-// Status endpoint for monitoring
-#[utoipa::path(
-    get,
-    path = "/api/status",
-    responses(
-        (status = 200, description = "Status OK")
-    )
-)]
 async fn status_handler(State(state): State<Arc<ChatState>>) -> impl IntoResponse {
     // Check database connection
     let db_status = match sqlx::query("SELECT 1").execute(state.pool.as_ref()).await {
