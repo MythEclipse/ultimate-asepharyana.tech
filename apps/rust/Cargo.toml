@@ -46,3 +46,6 @@ utoipa = { workspace = true }
 tokio-test = { workspace = true }
 testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true, features = ["mysql"] }
+
+[build-dependencies]
+regex = "1.11"
