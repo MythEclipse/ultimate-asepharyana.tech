@@ -42,7 +42,7 @@ pub struct ChapterInfo {
 
 #[utoipa::path(
     get,
-    path = "/api/komik/detail",
+    path = "/detail",
     params(
         ("komik_id" = Option<String>, Query, description = "ID of the manga to fetch details for")
     ),

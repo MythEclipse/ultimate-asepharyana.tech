@@ -26,7 +26,7 @@ pub struct DrivePngApiDoc;
 
 #[utoipa::path(
     get,
-    path = "/api/drivepng",
+    path = "/",
     responses(
         (status = 200, description = "DrivePNG API response", body = String),
         (status = 500, description = "Internal server error")

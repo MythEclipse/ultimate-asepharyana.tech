@@ -19,14 +19,14 @@ pub mod chat;
         (name = "api", description = "Root API module")
     ),
     nest(
-        (path = "/api/komik", api = komik::KomikApiDoc),
-        (path = "/api/anime", api = anime::AnimeApiDoc),
-        (path = "/api/anime2", api = anime2::Anime2ApiDoc),
-        (path = "/api/uploader", api = uploader::UploaderApiDoc),
-        (path = "/api/proxy", api = proxy::ProxyApiDoc),
-        (path = "/api/compress", api = compress::CompressApiDoc),
-        (path = "/api/drivepng", api = drivepng::DrivePngApiDoc),
-        (path = "/api/chat", api = chat::ChatApiDoc)
+        (path = "/komik", api = komik::KomikApiDoc),
+        (path = "/anime", api = anime::AnimeApiDoc),
+        (path = "/anime2", api = anime2::Anime2ApiDoc),
+        (path = "/uploader", api = uploader::UploaderApiDoc),
+        (path = "/proxy", api = proxy::ProxyApiDoc),
+        (path = "/compress", api = compress::CompressApiDoc),
+        (path = "/drivepng", api = drivepng::DrivePngApiDoc),
+        (path = "/chat", api = chat::ChatApiDoc)
     )
 )]
 pub struct ApiDoc;

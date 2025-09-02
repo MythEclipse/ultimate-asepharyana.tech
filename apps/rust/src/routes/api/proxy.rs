@@ -40,7 +40,7 @@ pub fn create_routes() -> Router<Arc<ChatState>> {
 
 #[utoipa::path(
     get,
-    path = "/api/proxy",
+    path = "/",
     responses(
         (status = 200, description = "Proxy successful"),
         (status = 400, description = "Bad request"),
