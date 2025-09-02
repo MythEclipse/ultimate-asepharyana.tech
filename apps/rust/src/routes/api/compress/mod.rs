@@ -82,7 +82,7 @@ where
 
 #[utoipa::path(
     get,
-    path = "/api/compress",
+    path = "/compress",
     responses(
         (status = 200, description = "Compression successful", body = String),
         (status = 400, description = "Bad request"),

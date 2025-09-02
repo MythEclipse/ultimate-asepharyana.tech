@@ -128,7 +128,7 @@ pub async fn uploader_post(mut multipart: Multipart) -> impl IntoResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/uploader/{file_name}",
+    path = "/{file_name}",
     responses(
         (status = 200, description = "File retrieved successfully"),
         (status = 404, description = "File not found")

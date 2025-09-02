@@ -46,7 +46,7 @@ pub struct SearchResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/komik/search",
+    path = "/search",
     params(
         ("query" = Option<String>, Query, description = "Search query"),
         ("page" = Option<u32>, Query, description = "Page number")

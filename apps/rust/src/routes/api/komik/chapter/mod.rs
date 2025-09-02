@@ -27,7 +27,7 @@ pub struct MangaChapter {
 
 #[utoipa::path(
     get,
-    path = "/api/komik/chapter",
+    path = "/chapter",
     params(
         ("chapter_url" = Option<String>, Query, description = "Chapter URL to fetch")
     ),
