@@ -29,7 +29,7 @@ pub mod drivepng;
 )]
 pub struct ApiDoc;
 
-use axum::{routing::get, Router};
+use axum::Router;
 use crate::routes::ChatState;
 use std::sync::Arc;
 

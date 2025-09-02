@@ -151,7 +151,7 @@ fn parse_anime_data(html: &str, q: &str) -> (Vec<AnimeItem>, Pagination) {
                             parent
                                 .children()
                                 .filter_map(|child| {
-                                    if let Some(a) = child.value().as_element().filter(|e| e.name() == "a") {
+                                    if let Some(_a) = child.value().as_element().filter(|e| e.name() == "a") {
                                         Some(child.children()
                                             .filter_map(|c| c.value().as_text())
                                             .map(|t| t.as_ref() as &str)

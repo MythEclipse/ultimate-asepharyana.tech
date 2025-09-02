@@ -3,11 +3,11 @@
 //! This module provides API endpoints for compressing images and videos from URLs.
 
 use axum::{
-    extract::{Query, State},
-    response::{IntoResponse, Response},
+    extract::Query,
+    response::IntoResponse,
     Json,
     Router, // Add Router import
-    routing::get, // Add get import
+    routing::get,
 };
 use serde::Deserialize;
 use std::sync::Arc;

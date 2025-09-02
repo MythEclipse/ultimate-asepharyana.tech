@@ -3,7 +3,7 @@
 //! This module provides a proxy endpoint for fetching external URLs.
 
 use axum::{
-    extract::{Query, Path},
+    extract::Query,
     response::{IntoResponse, Response},
     Json,
     Router, // Add Router import
@@ -12,13 +12,12 @@ use axum::{
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::json;
-use std::collections::HashMap;
 use http::HeaderValue;
 use crate::routes::ChatState;
 use std::sync::Arc;
 
 #[derive(Debug, Deserialize)]
-struct ProxyParams {
+pub struct ProxyParams {
     url: Option<String>,
 }
 
