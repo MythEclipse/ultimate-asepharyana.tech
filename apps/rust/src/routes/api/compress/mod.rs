@@ -1,24 +1,31 @@
-//! # Image and Video Compression API
-//!
-//! This module provides API endpoints for compressing images and videos from URLs.
-// KILOKODE_OPENAPI_PATHS: /api/compress
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/compress";
+const ENDPOINT_DESCRIPTION: &str = "Image and Video Compression API";
+const ENDPOINT_TAG: &str = "compress";
+const SUCCESS_RESPONSE_BODY: &str = "CompressResponse";
+const URL_DESCRIPTION: &str = "URL of the image or video to compress.";
+const SIZE_DESCRIPTION: &str = "Compression size (e.g., '100kb' or '50%').";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Query,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     Json,
-    Router, // Add Router import
+    Router,
     routing::get,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use crate::routes::ChatState;
 use serde_json::json;
 use std::str::FromStr;
+use utoipa::ToSchema;
+use axum::http::StatusCode;
 
 pub mod compress_service;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub enum CompressionSize {
     Kilobytes(u32),
     Percentage(u8),
@@ -54,7 +61,7 @@ impl FromStr for CompressionSize {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CompressParams {
     url: String,
     #[serde(deserialize_with = "deserialize_compression_size")]
@@ -69,15 +76,34 @@ where
     CompressionSize::from_str(&s).map_err(serde::de::Error::custom)
 }
 
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct CompressResponse {
+    pub compressed_url: String,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
 pub async fn compress_handler(Query(params): Query<CompressParams>) -> impl IntoResponse {
     let url = params.url;
     let size = params.size;
 
     if url.is_empty() {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"message": "URL parameter is required"})),
-        ).into_response();
+        return ErrorResponse {
+            message: "URL parameter is required".to_string(),
+            error: "Empty URL".to_string(),
+        }.into_response();
     }
 
     // A more robust way to check content type would be to fetch headers or inspect content
@@ -99,16 +125,11 @@ pub async fn compress_handler(Query(params): Query<CompressParams>) -> impl Into
     };
 
     match result {
-        Ok(compressed_url) => (
-            axum::http::StatusCode::OK,
-            Json(json!({"compressed_url": compressed_url})),
-        )
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"message": format!("Compression failed: {}", e)})),
-        )
-            .into_response(),
+        Ok(compressed_url) => CompressResponse { compressed_url }.into_response(),
+        Err(e) => ErrorResponse {
+            message: format!("Compression failed: {}", e),
+            error: e.to_string(),
+        }.into_response(),
     }
 }
 

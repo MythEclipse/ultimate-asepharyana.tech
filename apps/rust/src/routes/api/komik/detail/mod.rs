@@ -1,23 +1,31 @@
-// Handler for GET /api/komik/detail
-// Fetches and parses manga detail, returning JSON with all fields.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/komik/detail/{komik_id}";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses manga detail, returning JSON with all fields.";
+const ENDPOINT_TAG: &str = "komik";
+const SUCCESS_RESPONSE_BODY: &str = "MangaDetailResponse";
+const KOMIK_ID_DESCRIPTION: &str = "ID of the manga to fetch details for (e.g., 'one-piece').";
+// --- AKHIR METADATA ---
 
 use axum::{
-    extract::Query,
-    response::IntoResponse,
+    extract::Path,
+    response::{IntoResponse, Response},
     Json,
 };
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use scraper::{Html, Selector};
-use std::collections::HashMap;
+use utoipa::ToSchema;
+use axum::http::StatusCode;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct DetailParams {
-    pub komik_id: Option<String>,
+    pub komik_id: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
-pub struct MangaDetail {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MangaDetailData {
     pub title: String,
     pub alternative_title: String,
     pub score: String,
@@ -33,56 +41,52 @@ pub struct MangaDetail {
     pub chapters: Vec<ChapterInfo>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ChapterInfo {
     pub chapter: String,
     pub date: String,
     pub chapter_id: String,
 }
 
-#[utoipa::path(
-    get,
-    path = "/detail",
-    params(
-        ("komik_id" = Option<String>, Query, description = "ID of the manga to fetch details for")
-    ),
-    responses(
-        (status = 200, description = "Manga detail response", body = MangaDetail, example = json!({
-            "title": "One Piece",
-            "alternative_title": "ワンピース",
-            "score": "9.0",
-            "poster": "https://example.com/poster.jpg",
-            "description": "A story about pirates.",
-            "status": "Ongoing",
-            "type": "Manga",
-            "release_date": "1997",
-            "author": "Eiichiro Oda",
-            "total_chapter": "1000",
-            "updated_on": "2025-09-01",
-            "genres": ["Action", "Adventure"],
-            "chapters": [
-                {
-                    "chapter": "1000",
-                    "date": "2025-09-01",
-                    "chapter_id": "1000"
-                }
-            ]
-        }))
-    )
-)]
-pub async fn handler(Query(params): Query<DetailParams>) -> impl IntoResponse {
-    let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MangaDetailResponse {
+    pub status: &'static str,
+    pub data: MangaDetailData,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn detail_handler(Path(komik_id): Path<String>) -> Response {
     let base_url = "https://komikcast.site";
     let url = format!("{}/komik/{}", base_url, komik_id);
 
     let client = Client::new();
     let resp = match client.get(&url).send().await {
         Ok(r) => r,
-        Err(_) => return Json(error_response("Failed to fetch data")).into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to fetch data".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
     let body = match resp.text().await {
         Ok(b) => b,
-        Err(_) => return Json(error_response("Failed to read response body")).into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to read response body".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
 
     let document = Html::parse_document(&body);
@@ -156,20 +160,23 @@ pub async fn handler(Query(params): Query<DetailParams>) -> impl IntoResponse {
         }
     }
 
-    Json(MangaDetail {
-        title,
-        alternative_title,
-        score,
-        poster,
-        description,
-        status,
-        r#type,
-        release_date,
-        author,
-        total_chapter,
-        updated_on,
-        genres,
-        chapters,
+    Json(MangaDetailResponse {
+        status: "Ok",
+        data: MangaDetailData {
+            title,
+            alternative_title,
+            score,
+            poster,
+            description,
+            status,
+            r#type,
+            release_date,
+            author,
+            total_chapter,
+            updated_on,
+            genres,
+            chapters,
+        },
     }).into_response()
 }
 
@@ -217,11 +224,4 @@ fn select_attr_el(element: &scraper::ElementRef, selector: &str, attr: &str) -> 
     } else {
         String::new()
     }
-}
-
-fn error_response(msg: &str) -> HashMap<&str, &str> {
-    let mut map = HashMap::new();
-    map.insert("status", "false");
-    map.insert("message", msg);
-    map
 }

@@ -1,6 +1,11 @@
-//! # Proxy API
-//!
-//! This module provides a proxy endpoint for fetching external URLs.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/proxy";
+const ENDPOINT_DESCRIPTION: &str = "Proxy endpoint for fetching external URLs.";
+const ENDPOINT_TAG: &str = "proxy";
+const SUCCESS_RESPONSE_BODY: &str = "BinaryDataResponse";
+const URL_DESCRIPTION: &str = "URL to proxy.";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Query,
@@ -10,15 +15,39 @@ use axum::{
     routing::get,
 };
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use http::HeaderValue;
 use crate::routes::ChatState;
 use std::sync::Arc;
+use utoipa::ToSchema;
+use axum::http::StatusCode;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct ProxyParams {
-    url: Option<String>,
+    pub url: Option<String>,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct BinaryDataResponse {
+    // This struct will not be directly serialized as JSON, but represents the binary data
+    // For OpenAPI, we might want to describe it as a file or stream.
+    // For now, it's a placeholder to satisfy the schema requirement.
+    pub message: String,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
 }
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
@@ -30,10 +59,10 @@ pub async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
     let url = match params.url {
         Some(u) => u,
         None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"message": "URL parameter is missing"})),
-            ).into_response();
+            return ErrorResponse {
+                message: "URL parameter is missing".to_string(),
+                error: "Missing parameter".to_string(),
+            }.into_response();
         }
     };
 
@@ -62,10 +91,10 @@ pub async fn proxy_get(Query(params): Query<ProxyParams>) -> impl IntoResponse {
             axum_response.body(axum::body::Body::from(body)).unwrap().into_response()
         }
         Err(e) => {
-            (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"message": format!("Failed to proxy URL: {}", e)})),
-            ).into_response()
+            ErrorResponse {
+                message: format!("Failed to proxy URL: {}", e),
+                error: e.to_string(),
+            }.into_response()
         }
     }
 }

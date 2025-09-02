@@ -1,22 +1,31 @@
-// Handler for GET /api/komik/chapter
-// Fetches and parses manga chapter, returning JSON with title, next/prev chapter IDs, images, and list_chapter.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/komik/chapter";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses manga chapter, returning JSON with title, next/prev chapter IDs, images, and list_chapter.";
+const ENDPOINT_TAG: &str = "komik";
+const SUCCESS_RESPONSE_BODY: &str = "MangaChapterResponse";
+const CHAPTER_URL_DESCRIPTION: &str = "Chapter URL to fetch (e.g., 'isekai-ojisan-chapter-1').";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Query,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     Json,
 };
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use utoipa::ToSchema;
+use axum::http::StatusCode;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct ChapterParams {
     pub chapter_url: Option<String>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct MangaChapter {
     pub title: String,
     pub next_chapter_id: String,
@@ -25,20 +34,33 @@ pub struct MangaChapter {
     pub list_chapter: String,
 }
 
-#[utoipa::path(
-    get,
-    path = "/chapter",
-    params(
-        ("chapter_url" = Option<String>, Query, description = "Chapter URL to fetch")
-    ),
-    responses(
-        (status = 200, description = "Manga chapter details", body = MangaChapter)
-    )
-)]
-pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MangaChapterResponse {
+    pub status: &'static str,
+    pub data: MangaChapter,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn chapter_handler(Query(params): Query<ChapterParams>) -> Response {
     let chapter_url = match &params.chapter_url {
         Some(url) if !url.is_empty() => url.clone(),
-        _ => return Json(error_response("Missing chapter_url parameter")).into_response(),
+        _ => return ErrorResponse {
+            message: "Missing chapter_url parameter".to_string(),
+            error: "Missing parameter".to_string(),
+        }.into_response(),
     };
     let base_url = "https://komikcast.site";
     let url = format!("{}/chapter/{}", base_url, chapter_url);
@@ -46,11 +68,17 @@ pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
     let client = Client::new();
     let resp = match client.get(&url).send().await {
         Ok(r) => r,
-        Err(_) => return Json(error_response("Failed to fetch data")).into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to fetch data".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
     let body = match resp.text().await {
         Ok(b) => b,
-        Err(_) => return Json(error_response("Failed to read response body")).into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to read response body".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
 
     let document = Html::parse_document(&body);
@@ -98,12 +126,15 @@ pub async fn handler(Query(params): Query<ChapterParams>) -> impl IntoResponse {
         }
     }
 
-    Json(MangaChapter {
-        title,
-        next_chapter_id,
-        prev_chapter_id,
-        images,
-        list_chapter,
+    Json(MangaChapterResponse {
+        status: "Ok",
+        data: MangaChapter {
+            title,
+            next_chapter_id,
+            prev_chapter_id,
+            images,
+            list_chapter,
+        },
     }).into_response()
 }
 
@@ -116,11 +147,4 @@ fn select_text(document: &Html, selector: &str) -> String {
     } else {
         String::new()
     }
-}
-
-fn error_response(msg: &str) -> HashMap<&str, &str> {
-    let mut map = HashMap::new();
-    map.insert("status", "false");
-    map.insert("message", msg);
-    map
 }

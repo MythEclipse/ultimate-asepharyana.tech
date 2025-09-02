@@ -1,17 +1,25 @@
-// Handler for GET /api/anime2/search. Fetches search results from alqanime.net and returns them as JSON.
-// Uses reqwest for HTTP requests and scraper for HTML parsing.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime2/search";
+const ENDPOINT_DESCRIPTION: &str = "Fetches search results from alqanime.net";
+const ENDPOINT_TAG: &str = "anime2";
+const SUCCESS_RESPONSE_BODY: &str = "AnimeSearchResponse";
+const SLUG_DESCRIPTION: &str = "Query parameter for anime search (q).";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Query,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AnimeSearchItem {
     pub title: String,
     pub slug: String,
@@ -24,7 +32,7 @@ pub struct AnimeSearchItem {
     pub season: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Pagination {
     pub current_page: usize,
     pub last_visible_page: usize,
@@ -34,11 +42,25 @@ pub struct Pagination {
     pub previous_page: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct AnimeSearchResponse {
     pub status: &'static str,
     pub data: Vec<AnimeSearchItem>,
     pub pagination: Pagination,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
 }
 
 pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
@@ -50,23 +72,17 @@ pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Re
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({
-                        "message": "Failed to fetch data",
-                        "error": e.to_string()
-                    })),
-                ).into_response();
+                return ErrorResponse {
+                    message: "Failed to fetch data".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "message": "Failed to fetch data",
-                    "error": e.to_string()
-                })),
-            ).into_response();
+            return ErrorResponse {
+                message: "Failed to fetch data".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 

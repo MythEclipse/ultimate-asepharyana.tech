@@ -1,43 +1,65 @@
-// Handler for GET /api/anime/ongoing-anime/{slug}.
-// Fetches and parses the paginated ongoing anime list from otakudesu.cloud using reqwest and scraper.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime/ongoing-anime/{slug}";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses the paginated ongoing anime list from otakudesu.cloud";
+const ENDPOINT_TAG: &str = "anime";
+const SUCCESS_RESPONSE_BODY: &str = "OngoingAnimeResponse";
+const SLUG_DESCRIPTION: &str = "Slug for pagination (page number).";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Path,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AnimeItem {
-    title: String,
-    slug: String,
-    poster: String,
-    episode: String,
-    anime_url: String,
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub episode: String,
+    pub anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Pagination {
-    current_page: usize,
-    last_visible_page: usize,
-    has_next_page: bool,
-    next_page: Option<usize>,
-    has_previous_page: bool,
-    previous_page: Option<usize>,
+    pub current_page: usize,
+    pub last_visible_page: usize,
+    pub has_next_page: bool,
+    pub next_page: Option<usize>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<usize>,
 }
 
-#[derive(Serialize)]
-pub struct AnimeListResponse {
-    status: &'static str,
-    data: Vec<AnimeItem>,
-    pagination: Pagination,
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct OngoingAnimeResponse {
+    pub status: &'static str,
+    pub data: Vec<AnimeItem>,
+    pub pagination: Pagination,
 }
 
-pub async fn ongoing_anime_handler(Path(slug): Path<String>) -> impl IntoResponse {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn ongoing_anime_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
 
@@ -45,31 +67,23 @@ pub async fn ongoing_anime_handler(Path(slug): Path<String>) -> impl IntoRespons
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(HashMap::from([
-                        ("message", "Failed to fetch data"),
-                        ("error", &e.to_string()),
-                    ])),
-                )
-                    .into_response();
+                return ErrorResponse {
+                    message: "Failed to fetch data".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(HashMap::from([
-                    ("message", "Failed to fetch data"),
-                    ("error", &e.to_string()),
-                ])),
-            )
-                .into_response();
+            return ErrorResponse {
+                message: "Failed to fetch data".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 
     let (anime_list, pagination) = parse_anime_page(&html, &slug);
 
-    let response = AnimeListResponse {
+    let response = OngoingAnimeResponse {
         status: "Ok",
         data: anime_list,
         pagination,
@@ -111,7 +125,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
             .select(&epz_selector)
             .next()
             .map(|n| n.text().collect::<String>().trim().to_string())
-            .unwrap_or("Ongoing".to_string());
+            .unwrap_or("N/A".to_string());
 
         anime_list.push(AnimeItem {
             title,

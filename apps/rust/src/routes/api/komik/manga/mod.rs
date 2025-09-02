@@ -1,67 +1,82 @@
-// Handler for GET /api/komik/manga
-// Fetches manga list, parses HTML, and returns JSON response.
-// Uses reqwest for HTTP and scraper for HTML parsing.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/komik/manga";
+const ENDPOINT_DESCRIPTION: &str = "Fetches a list of manga from komikcast.site with pagination.";
+const ENDPOINT_TAG: &str = "komik";
+const SUCCESS_RESPONSE_BODY: &str = "MangaListResponse";
+const PAGE_DESCRIPTION: &str = "Page number for pagination.";
+// --- AKHIR METADATA ---
 
-use axum::{extract::Query, response::IntoResponse, Json};
+use axum::{extract::Query, response::{IntoResponse, Response}, Json};
 use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
+use utoipa::ToSchema;
+use axum::http::StatusCode;
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 struct MangaData {
-    title: String,
-    poster: String,
-    chapter: String,
-    date: String,
-    score: String,
-    r#type: String,
-    slug: String,
+    pub title: String,
+    pub poster: String,
+    pub chapter: String,
+    pub date: String,
+    pub score: String,
+    pub r#type: String,
+    pub slug: String,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 struct Pagination {
-    current_page: u32,
-    last_visible_page: u32,
-    has_next_page: bool,
-    next_page: Option<u32>,
-    has_previous_page: bool,
-    previous_page: Option<u32>,
+    pub current_page: u32,
+    pub last_visible_page: u32,
+    pub has_next_page: bool,
+    pub next_page: Option<u32>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<u32>,
 }
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 struct MangaListResponse {
-    data: Vec<MangaData>,
-    pagination: Pagination,
+    pub data: Vec<MangaData>,
+    pub pagination: Pagination,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct Params {
-    page: Option<u32>,
+    pub page: Option<u32>,
 }
 
-#[utoipa::path(
-    get,
-    path = "/api/komik/manga",
-    summary = "Get manga list",
-    description = "Fetches a list of manga from komikcast.site with pagination.",
-    params(
-        ("page" = u32, Query, description = "Page number for pagination")
-    ),
-    responses(
-        (status = 200, description = "Successfully retrieved manga list", body = MangaListResponse),
-        (status = 502, description = "Bad gateway", body = String)
-    ),
-    tag = "Komik"
-)]
-pub async fn handler(Query(params): Query<Params>) -> impl IntoResponse {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn manga_handler(Query(params): Query<Params>) -> impl IntoResponse {
     let page = params.page.unwrap_or(1);
     let url = format!("https://komikcast.site/manga/page/{}/", page);
 
     let html = match reqwest::get(&url).await {
         Ok(resp) => match resp.text().await {
             Ok(text) => text,
-            Err(_) => return axum::http::StatusCode::BAD_GATEWAY.into_response(),
+            Err(e) => return ErrorResponse {
+                message: "Failed to read response body".to_string(),
+                error: e.to_string(),
+            }.into_response(),
         },
-        Err(_) => return axum::http::StatusCode::BAD_GATEWAY.into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to fetch data".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
 
     let document = Html::parse_document(&html);
@@ -87,7 +102,6 @@ pub async fn handler(Query(params): Query<Params>) -> impl IntoResponse {
         let date = item.select(&date_selector).next().map(|n| n.text().collect::<String>().trim().to_string()).unwrap_or_default();
         let r#type = item.select(&typeflag_selector).next().and_then(|n| n.value().attr("class")).map(|c| c.split_whitespace().nth(1).unwrap_or("").to_string()).unwrap_or_default();
         let slug = item.select(&a_selector).next().and_then(|n| n.value().attr("href")).map(|href| href.split('/').nth(4).unwrap_or("").to_string()).unwrap_or_default();
-
         data.push(MangaData {
             title,
             poster,

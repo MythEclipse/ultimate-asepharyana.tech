@@ -1,45 +1,67 @@
-// Handler for GET /api/anime/search. Fetches search results from otakudesu.cloud and returns them as JSON.
-// Uses reqwest for HTTP requests and scraper for HTML parsing.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime/search"; // The path doesn't have a slug
+const ENDPOINT_DESCRIPTION: &str = "Search for anime from otakudesu.cloud";
+const ENDPOINT_TAG: &str = "anime";
+const SUCCESS_RESPONSE_BODY: &str = "SearchResponse";
+const SLUG_DESCRIPTION: &str = "Query parameter for anime search (q).";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Query,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AnimeItem {
-    title: String,
-    slug: String,
-    poster: String,
-    episode: String,
-    anime_url: String,
-    genres: Vec<String>,
-    status: String,
-    rating: String,
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub episode: String,
+    pub anime_url: String,
+    pub genres: Vec<String>,
+    pub status: String,
+    pub rating: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Pagination {
-    current_page: usize,
-    has_next_page: bool,
-    next_page: Option<usize>,
-    has_previous_page: bool,
-    previous_page: Option<usize>,
+    pub current_page: usize,
+    pub has_next_page: bool,
+    pub next_page: Option<usize>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<usize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchResponse {
-    status: &'static str,
-    data: Vec<AnimeItem>,
-    pagination: Pagination,
+    pub status: &'static str,
+    pub data: Vec<AnimeItem>,
+    pub pagination: Pagination,
 }
 
-pub async fn handler(Query(params): Query<HashMap<String, String>>) -> Response {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn search_handler(Query(params): Query<HashMap<String, String>>) -> Response {
     let q = params.get("q").map(|s| s.as_str()).unwrap_or("one");
     let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", q);
 
@@ -48,25 +70,17 @@ pub async fn handler(Query(params): Query<HashMap<String, String>>) -> Response 
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({
-                        "message": "Failed to fetch data",
-                        "error": e.to_string()
-                    })),
-                )
-                    .into_response();
+                return ErrorResponse {
+                    message: "Failed to fetch data".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "message": "Failed to fetch data",
-                    "error": e.to_string()
-                })),
-            )
-                .into_response();
+            return ErrorResponse {
+                message: "Failed to fetch data".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 

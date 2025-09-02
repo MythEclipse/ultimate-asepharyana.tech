@@ -1,23 +1,31 @@
-// Handler for GET /api/anime2/detail/{slug}.
-// Fetches anime detail from alqanime.net and parses the HTML into structured JSON.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime2/detail/{slug}";
+const ENDPOINT_DESCRIPTION: &str = "Fetches anime detail from alqanime.net and parses the HTML into structured JSON.";
+const ENDPOINT_TAG: &str = "anime2";
+const SUCCESS_RESPONSE_BODY: &str = "DetailResponse";
+const SLUG_DESCRIPTION: &str = "Slug for the anime (e.g., 'isekai-ojisan').";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Path,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Genre {
     pub name: String,
     pub slug: String,
     pub anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Recommendation {
     pub title: String,
     pub slug: String,
@@ -26,20 +34,21 @@ pub struct Recommendation {
     pub r#type: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Link {
     pub name: String,
     pub url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct DownloadGroup {
     pub resolution: String,
     pub links: Vec<Link>,
 }
 
-#[derive(Serialize)]
-pub struct AnimeDetail {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AnimeDetailData {
     pub title: String,
     pub alternative_title: String,
     pub poster: String,
@@ -57,10 +66,24 @@ pub struct AnimeDetail {
     pub downloads: Vec<DownloadGroup>,
 }
 
-#[derive(Serialize)]
-pub struct AnimeDetailResponse {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailResponse {
     pub status: &'static str,
-    pub data: AnimeDetail,
+    pub data: AnimeDetailData,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
 }
 
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
@@ -71,31 +94,23 @@ pub async fn detail_handler(Path(slug): Path<String>) -> Response {
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({
-                        "message": "Failed to fetch anime detail data",
-                        "error": e.to_string()
-                    })),
-                )
-                    .into_response();
+                return ErrorResponse {
+                    message: "Failed to fetch anime detail data".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "message": "Failed to fetch anime detail data",
-                    "error": e.to_string()
-                })),
-            )
-                .into_response();
+            return ErrorResponse {
+                message: "Failed to fetch anime detail data".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 
     let data = parse_anime_detail(&html);
 
-    let response = AnimeDetailResponse {
+    let response = DetailResponse {
         status: "Ok",
         data,
     };
@@ -103,7 +118,7 @@ pub async fn detail_handler(Path(slug): Path<String>) -> Response {
     Json(response).into_response()
 }
 
-fn parse_anime_detail(html: &str) -> AnimeDetail {
+fn parse_anime_detail(html: &str) -> AnimeDetailData {
     let document = Html::parse_document(html);
 
     let extract_text = |selector: &str| {
@@ -270,7 +285,7 @@ fn parse_anime_detail(html: &str) -> AnimeDetail {
         }
     }
 
-    AnimeDetail {
+    AnimeDetailData {
         title,
         alternative_title,
         poster,

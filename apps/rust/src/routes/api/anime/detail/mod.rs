@@ -1,58 +1,81 @@
-// Handler for GET /api/anime/detail/{slug}.
-// Fetches and parses anime detail from otakudesu.cloud using reqwest and scraper.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime/detail/{slug}";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses anime detail from otakudesu.cloud";
+const ENDPOINT_TAG: &str = "anime";
+const SUCCESS_RESPONSE_BODY: &str = "DetailResponse";
+const SLUG_DESCRIPTION: &str = "Slug for the anime detail (e.g., 'isekai-ojisan-sub-indo').";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Path,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Genre {
-    name: String,
-    slug: String,
-    anime_url: String,
+    pub name: String,
+    pub slug: String,
+    pub anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Episode {
-    episode: String,
-    slug: String,
+    pub episode: String,
+    pub slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Recommendation {
-    title: String,
-    slug: String,
-    poster: String,
-    status: String,
-    r#type: String,
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub status: String,
+    pub r#type: String,
 }
 
-#[derive(Serialize)]
-pub struct AnimeDetail {
-    title: String,
-    alternative_title: String,
-    poster: String,
-    r#type: String,
-    release_date: String,
-    status: String,
-    synopsis: String,
-    studio: String,
-    genres: Vec<Genre>,
-    producers: Vec<String>,
-    recommendations: Vec<Recommendation>,
-    batch: Vec<Episode>,
-    episode_lists: Vec<Episode>,
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AnimeDetailData {
+    pub title: String,
+    pub alternative_title: String,
+    pub poster: String,
+    pub r#type: String,
+    pub release_date: String,
+    pub status: String,
+    pub synopsis: String,
+    pub studio: String,
+    pub genres: Vec<Genre>,
+    pub producers: Vec<String>,
+    pub recommendations: Vec<Recommendation>,
+    pub batch: Vec<Episode>,
+    pub episode_lists: Vec<Episode>,
 }
 
-#[derive(Serialize)]
-pub struct AnimeDetailResponse {
-    status: &'static str,
-    data: AnimeDetail,
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailResponse {
+    pub status: &'static str,
+    pub data: AnimeDetailData,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
 }
 
 pub async fn detail_handler(Path(slug): Path<String>) -> Response {
@@ -63,25 +86,17 @@ pub async fn detail_handler(Path(slug): Path<String>) -> Response {
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({
-                        "message": "Failed to read anime detail response body",
-                        "error": e.to_string()
-                    })),
-                )
-                    .into_response();
+                return ErrorResponse {
+                    message: "Failed to read anime detail response body".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "message": "Failed to fetch anime detail data",
-                    "error": e.to_string()
-                })),
-            )
-                .into_response();
+            return ErrorResponse {
+                message: "Failed to fetch anime detail data".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 
@@ -189,7 +204,7 @@ pub async fn detail_handler(Path(slug): Path<String>) -> Response {
         }
     }
 
-    let data = AnimeDetail {
+    let data = AnimeDetailData {
         title,
         alternative_title,
         poster,
@@ -205,7 +220,7 @@ pub async fn detail_handler(Path(slug): Path<String>) -> Response {
         episode_lists,
     };
 
-    let response = AnimeDetailResponse {
+    let response = DetailResponse {
         status: "Ok",
         data,
     };

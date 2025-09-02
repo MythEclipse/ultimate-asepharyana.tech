@@ -1,23 +1,33 @@
-// Handler for GET /api/komik/search
-// Fetches and parses manga search results, returning JSON with data and pagination.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/komik/search";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses manga search results, returning JSON with data and pagination.";
+const ENDPOINT_TAG: &str = "komik";
+const SUCCESS_RESPONSE_BODY: &str = "SearchResponse";
+const QUERY_DESCRIPTION: &str = "Query for manga search.";
+const PAGE_DESCRIPTION: &str = "Page number for pagination.";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Query,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     Json,
 };
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use utoipa::ToSchema;
+use axum::http::StatusCode;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct SearchParams {
     pub query: Option<String>,
     pub page: Option<u32>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct MangaData {
     pub title: String,
     pub poster: String,
@@ -28,7 +38,8 @@ pub struct MangaData {
     pub slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct Pagination {
     pub current_page: u32,
     pub last_visible_page: u32,
@@ -38,13 +49,27 @@ pub struct Pagination {
     pub previous_page: Option<u32>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchResponse {
     pub data: Vec<MangaData>,
     pub pagination: Pagination,
 }
 
-pub async fn handler(Query(params): Query<SearchParams>) -> impl IntoResponse {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn search_handler(Query(params): Query<SearchParams>) -> impl IntoResponse {
     let query = params.query.unwrap_or_default();
     let page = params.page.unwrap_or(1);
 
@@ -55,11 +80,17 @@ pub async fn handler(Query(params): Query<SearchParams>) -> impl IntoResponse {
     let client = Client::new();
     let resp = match client.get(&url).send().await {
         Ok(r) => r,
-        Err(_) => return Json(error_response("Failed to fetch data")).into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to fetch data".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
     let body = match resp.text().await {
         Ok(b) => b,
-        Err(_) => return Json(error_response("Failed to read response body")).into_response(),
+        Err(e) => return ErrorResponse {
+            message: "Failed to read response body".to_string(),
+            error: e.to_string(),
+        }.into_response(),
     };
 
     let document = Html::parse_document(&body);
@@ -163,11 +194,4 @@ fn extract_pagination(document: &Html, current_page: u32) -> Pagination {
         has_previous_page: has_prev,
         previous_page: if has_prev && current > 1 { Some(current - 1) } else { None },
     }
-}
-
-fn error_response(msg: &str) -> HashMap<&str, &str> {
-    let mut map = HashMap::new();
-    map.insert("status", "false");
-    map.insert("message", msg);
-    map
 }

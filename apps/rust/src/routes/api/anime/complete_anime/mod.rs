@@ -1,40 +1,62 @@
-// Handler for GET /api/anime/complete-anime/{slug}.
-// Fetches and parses the paginated complete anime list from otakudesu.cloud using reqwest and scraper.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime/complete-anime/{slug}";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses the paginated complete anime list from otakudesu.cloud";
+const ENDPOINT_TAG: &str = "anime";
+const SUCCESS_RESPONSE_BODY: &str = "AnimeListResponse";
+const SLUG_DESCRIPTION: &str = "Slug for pagination (page number).";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Path,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AnimeItem {
-    title: String,
-    slug: String,
-    poster: String,
-    episode: String,
-    anime_url: String,
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub episode: String,
+    pub anime_url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Pagination {
-    current_page: usize,
-    last_visible_page: usize,
-    has_next_page: bool,
-    next_page: Option<usize>,
-    has_previous_page: bool,
-    previous_page: Option<usize>,
+    pub current_page: usize,
+    pub last_visible_page: usize,
+    pub has_next_page: bool,
+    pub next_page: Option<usize>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<usize>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct AnimeListResponse {
-    status: &'static str,
-    data: Vec<AnimeItem>,
-    pagination: Pagination,
+    pub status: &'static str,
+    pub data: Vec<AnimeItem>,
+    pub pagination: Pagination,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
 }
 
 pub async fn complete_anime_handler(Path(slug): Path<String>) -> Response {
@@ -45,25 +67,17 @@ pub async fn complete_anime_handler(Path(slug): Path<String>) -> Response {
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(HashMap::from([
-                        ("message", "Failed to fetch data"),
-                        ("error", &e.to_string()),
-                    ])),
-                )
-                    .into_response();
+                return ErrorResponse {
+                    message: "Failed to fetch data".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(HashMap::from([
-                    ("message", "Failed to fetch data"),
-                    ("error", &e.to_string()),
-                ])),
-            )
-                .into_response();
+            return ErrorResponse {
+                message: "Failed to fetch data".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 

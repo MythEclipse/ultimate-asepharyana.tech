@@ -1,53 +1,76 @@
-// Handler for GET /api/anime/full/{slug}.
-// Fetches and parses the anime episode page from otakudesu.cloud using reqwest and scraper.
+// --- METADATA UNTUK BUILD.RS ---
+const ENDPOINT_METHOD: &str = "GET";
+const ENDPOINT_PATH: &str = "/api/anime/full/{slug}";
+const ENDPOINT_DESCRIPTION: &str = "Fetches and parses the anime episode page from otakudesu.cloud";
+const ENDPOINT_TAG: &str = "anime";
+const SUCCESS_RESPONSE_BODY: &str = "FullEpisodeResponse";
+const SLUG_DESCRIPTION: &str = "Slug for the anime episode (e.g., 'isekai-ojisan-episode-1').";
+// --- AKHIR METADATA ---
 
 use axum::{
     extract::Path,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use axum::http::StatusCode;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct AnimeInfo {
-    slug: String,
+    pub slug: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct EpisodeInfo {
-    slug: String,
+    pub slug: String,
 }
 
-#[derive(Serialize)]
-pub struct AnimeData {
-    episode: String,
-    episode_number: String,
-    anime: AnimeInfo,
-    has_next_episode: bool,
-    next_episode: Option<EpisodeInfo>,
-    has_previous_episode: bool,
-    previous_episode: Option<EpisodeInfo>,
-    stream_url: String,
-    download_urls: HashMap<String, Vec<DownloadLink>>,
-    image_url: String,
-}
-
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct DownloadLink {
-    server: String,
-    url: String,
+    pub server: String,
+    pub url: String,
 }
 
-#[derive(Serialize)]
-pub struct AnimeResponse {
-    status: &'static str,
-    data: AnimeData,
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FullEpisodeData {
+    pub episode: String,
+    pub episode_number: String,
+    pub anime: AnimeInfo,
+    pub has_next_episode: bool,
+    pub next_episode: Option<EpisodeInfo>,
+    pub has_previous_episode: bool,
+    pub previous_episode: Option<EpisodeInfo>,
+    pub stream_url: String,
+    pub download_urls: HashMap<String, Vec<DownloadLink>>,
+    pub image_url: String,
 }
 
-pub async fn handler(Path(slug): Path<String>) -> Response {
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FullEpisodeResponse {
+    pub status: &'static str,
+    pub data: FullEpisodeData,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorResponse {
+    pub message: String,
+    pub error: String,
+}
+
+impl IntoResponse for ErrorResponse {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self)).into_response()
+    }
+}
+
+pub async fn full_episode_handler(Path(slug): Path<String>) -> Response {
     let client = Client::new();
     let url = format!("https://otakudesu.cloud/episode/{}/", slug);
 
@@ -55,25 +78,17 @@ pub async fn handler(Path(slug): Path<String>) -> Response {
         Ok(resp) => match resp.text().await {
             Ok(html) => html,
             Err(e) => {
-                return (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({
-                        "message": "Failed to fetch episode page",
-                        "error": e.to_string()
-                    })),
-                )
-                    .into_response();
+                return ErrorResponse {
+                    message: "Failed to fetch episode page".to_string(),
+                    error: e.to_string(),
+                }.into_response();
             }
         },
         Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "message": "Failed to fetch episode page",
-                    "error": e.to_string()
-                })),
-            )
-                .into_response();
+            return ErrorResponse {
+                message: "Failed to fetch episode page".to_string(),
+                error: e.to_string(),
+            }.into_response();
         }
     };
 
@@ -174,7 +189,7 @@ pub async fn handler(Path(slug): Path<String>) -> Response {
     };
     let has_previous_episode = previous_episode.is_some();
 
-    let data = AnimeData {
+    let data = FullEpisodeData {
         episode,
         episode_number,
         anime: AnimeInfo { slug },
@@ -187,7 +202,7 @@ pub async fn handler(Path(slug): Path<String>) -> Response {
         image_url,
     };
 
-    let response = AnimeResponse {
+    let response = FullEpisodeResponse {
         status: "Ok",
         data,
     };
