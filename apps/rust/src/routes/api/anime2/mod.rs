@@ -6,32 +6,15 @@ pub mod detail;
 pub mod ongoing_anime;
 pub mod search;
 
-// START: UTOIPA DOCS
-#[derive(utoipa::OpenApi)]
-#[openapi(
-    paths(crate::routes::api::anime2::complete_anime::complete_anime_handler,
-        crate::routes::api::anime2::detail::detail_handler,
-        crate::routes::api::anime2::ongoing_anime::ongoing_anime_handler,
-        crate::routes::api::anime2::search::search_handler),
-    components(schemas()),
-    tags((
-        name = "anime2", description = "anime2 endpoints"
-    ))
-)]
-pub struct Anime2ApiDoc;
-// END: UTOIPA DOCS
 
-// START: API ROUTES
+
+
+
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
 use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
-    Router::new()
-        .route("/complete-anime/{slug}", get(complete_anime::complete_anime_handler))
-        .route("/detail/{slug}", get(detail::detail_handler))
-        .route("/ongoing-anime/{slug}", get(ongoing_anime::ongoing_anime_handler))
-        .route("/search", get(search::search_handler))
+    let router = Router::new();
+    router
 }
-
-// END: API ROUTES

@@ -17,12 +17,21 @@ pub mod uploader;
 
 #[derive(OpenApi)]
 #[openapi(
-    nest(
-        (path = "/api/anime", api = anime::AnimeApiDoc),
-        (path = "/api/anime2", api = anime2::Anime2ApiDoc)
+    paths(
+crate::routes::api::anime::complete_anime::COMPLETE_ANIME_HANDLER_UTOIPA,
+crate::routes::api::anime::detail::DETAIL_HANDLER_UTOIPA,
+crate::routes::api::anime::full::FULL_EPISODE_HANDLER_UTOIPA,
+crate::routes::api::anime::ongoing_anime::ONGOING_ANIME_HANDLER_UTOIPA,
+crate::routes::api::anime::search::SEARCH_HANDLER_UTOIPA,
+crate::routes::api::anime2::complete_anime::COMPLETE_ANIME_HANDLER_UTOIPA,
+crate::routes::api::anime2::detail::DETAIL_HANDLER_UTOIPA,
+crate::routes::api::anime2::ongoing_anime::ONGOING_ANIME_HANDLER_UTOIPA,
+crate::routes::api::anime2::search::SEARCH_HANDLER_UTOIPA,
+crate::routes::api::chat::LOAD_MESSAGES_UTOIPA,
+crate::routes::api::compress::COMPRESS_SERVICE_UTOIPA,
+crate::routes::api::drivepng::DRIVEPNG_SERVICE_UTOIPA
     ),
-    paths(),
-    components(),
+    components(schemas()),
     tags((
         name = "api", description = "Main API"
     ))

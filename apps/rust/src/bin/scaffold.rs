@@ -21,11 +21,13 @@ fn main() {
   dir_path.push(module_name);
   dir_path.push(endpoint_name);
 
-  let mut file_path = dir_path.clone();
-  file_path.push("mod.rs");
+  // Define paths for the handler file
+  let mut handler_file_path = dir_path.clone();
+  handler_file_path.push(format!("{}_handler.rs", endpoint_name));
 
-  if file_path.exists() {
-    println!("⚠️ File already exists at {:?}. No changes were made.", file_path);
+  // Check if handler file already exists
+  if handler_file_path.exists() {
+    println!("⚠️ Handler file already exists at {:?}. No changes were made.", handler_file_path);
     process::exit(0);
   }
 
@@ -36,7 +38,7 @@ fn main() {
 
   let pascal_endpoint = to_pascal_case(endpoint_name);
 
-  let template = format!(
+  let handler_template = format!(
     r#"// --- METADATA UNTUK BUILD.RS ---
 const ENDPOINT_METHOD: &str = "GET";
 const ENDPOINT_PATH: &str = "/api/{}/{}/{{slug}}";
@@ -54,20 +56,21 @@ use axum::{{
 use serde::{{Deserialize, Serialize}};
 use utoipa::ToSchema;
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct {}Data {{
     // TODO: Definisikan field data Anda di sini
     pub message: String,
 }}
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct {}Response {{
     pub status: &'static str,
     pub data: {}Data,
 }}
 
+/// {}
 pub async fn {}_handler(Path(slug): Path<String>) -> Response {{
     // TODO: Implementasikan logika handler Anda di sini
     let response_data = {}Data {{
@@ -91,24 +94,28 @@ pub async fn {}_handler(Path(slug): Path<String>) -> Response {{
     pascal_endpoint,
     pascal_endpoint,
     endpoint_name,
-    pascal_endpoint,
-    // Argumen terakhir yang berlebihan dihapus dari sini
-    pascal_endpoint
+    module_name,
+    endpoint_name,
+    module_name,
+    // No longer needed: pascal_endpoint,
+    // No longer needed: pascal_endpoint,
+    // No longer needed: pascal_endpoint,
+    // No longer needed: pascal_endpoint
   );
 
-  if let Err(e) = fs::write(&file_path, template) {
-    eprintln!("Failed to write to file {:?}: {}", file_path, e);
+  // Write the handler file
+  if let Err(e) = fs::write(&handler_file_path, handler_template) {
+    eprintln!("Failed to write to handler file {:?}: {}", handler_file_path, e);
     process::exit(1);
   }
 
-  println!("✅ Endpoint template created successfully at: {:?}", file_path);
+  println!("✅ Endpoint template created successfully at: {:?}", dir_path);
 }
 
 fn to_pascal_case(s: &str) -> String {
   s.split('_')
     .map(|word| {
       let mut chars = word.chars();
-      // PERBAIKAN: Menggunakan satu kurung kurawal
       match chars.next() {
         None => String::new(),
         Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),

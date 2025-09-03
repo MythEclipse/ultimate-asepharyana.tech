@@ -12,7 +12,6 @@
 use std::net::SocketAddr;
 use rust_lib::config::CONFIG_MAP;
 use crate::routes::{create_routes, ChatState};
-use sqlx::mysql::MySqlPoolOptions;
 use std::sync::Arc;
 use axum::Router;
 
@@ -28,27 +27,8 @@ async fn main() -> anyhow::Result<()> {
         .cloned()
         .expect("JWT_SECRET must be set in the environment");
 
-    // Use CONFIG_MAP for DATABASE_URL
-    let database_url = CONFIG_MAP
-        .get("DATABASE_URL")
-        .cloned()
-        .expect("DATABASE_URL must be set in the environment");
-
-    tracing::info!("Connecting to database...");
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await?;
-    tracing::info!("Database connection established.");
-
-    tracing::info!("Running database migrations...");
-    // sqlx::migrate!().run(&pool).await?;
-    tracing::info!("Database migrations complete.");
-
-    tracing::info!("Creating chat state...");
+    tracing::info!("Creating app state..."); // Changed from chat state
     let chat_state = Arc::new(ChatState {
-        pool: Arc::new(pool),
-        clients: Default::default(),
         jwt_secret,
     });
 

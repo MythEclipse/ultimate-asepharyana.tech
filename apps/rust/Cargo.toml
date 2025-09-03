@@ -40,6 +40,7 @@ once_cell = { workspace = true }
 rust_lib = { path = "../../libs/rust" }
 urlencoding = { workspace = true }
 utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 
 
 [dev-dependencies]
@@ -49,6 +50,8 @@ testcontainers-modules = { workspace = true, features = ["mysql"] }
 
 [build-dependencies]
 regex = "1.11"
+anyhow = { workspace = true }
+once_cell = { workspace = true }
 
 [[bin]]
 name = "scaffold"

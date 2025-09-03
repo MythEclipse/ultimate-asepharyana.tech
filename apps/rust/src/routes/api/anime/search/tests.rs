@@ -18,7 +18,7 @@ mod tests {
 
     #[test]
     async fn test_parse_anime_data_single_item() {
-        let html_content = r#"
+        let html_content = r##"
             <div id="venkonten">
                 <ul class="chivsrc">
                     <li>
@@ -32,7 +32,7 @@ mod tests {
                     </li>
                 </ul>
             </div>
-        "#;
+        "##;
         let q = "example";
         let (anime_list, pagination) = parse_anime_data(html_content, q);
 
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     async fn test_parse_anime_data_multiple_items() {
-        let html_content = r#"
+        let html_content = r##"
             <div id="venkonten">
                 <ul class="chivsrc">
                     <li>
@@ -80,7 +80,7 @@ mod tests {
                 </ul>
                 <div class="hpage"><span class="r">Next Page</span></div>
             </div>
-        "#;
+        "##;
         let q = "1";
         let (anime_list, pagination) = parse_anime_data(html_content, q);
 
@@ -97,11 +97,11 @@ mod tests {
 
     #[test]
     async fn test_parse_anime_data_no_items() {
-        let html_content = r#"
+        let html_content = r##"
             <div id="venkonten">
                 <ul class="chivsrc"></ul>
             </div>
-        "#;
+        "##;
         let q = "noresult";
         let (anime_list, pagination) = parse_anime_data(html_content, q);
 
