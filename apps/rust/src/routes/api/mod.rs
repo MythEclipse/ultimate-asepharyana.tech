@@ -11,9 +11,9 @@ pub mod test;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::api::test::helloworld::helloworld
+
     ),
-    components(schemas(crate::routes::api::test::helloworld::HelloworldResponse)),
+    components(schemas()),
     tags((
         name = "api", description = "Main API"
     ))

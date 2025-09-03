@@ -394,10 +394,29 @@ fn generate_root_api_mod(
 }
 
 fn main() -> Result<()> {
-  println!("cargo:rerun-if-changed=build.rs");
-  let api_routes_path = Path::new("src/routes/api");
-  fs::create_dir_all(api_routes_path)?;
-  println!("cargo:rerun-if-changed=src/routes/api/");
+    println!("cargo:rerun-if-changed=build.rs");
+    let api_routes_path = Path::new("src/routes/api");
+    fs::create_dir_all(api_routes_path)?;
+    println!("cargo:rerun-if-changed=src/routes/api/");
+
+    // Clean up old generated .rs files except mod.rs
+    fn clean_generated_rs_files(dir: &Path) -> Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                clean_generated_rs_files(&path)?;
+            } else if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    if ext == "rs" && path.file_name().unwrap() != "mod.rs" {
+                        fs::remove_file(&path)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+    clean_generated_rs_files(api_routes_path)?;
 
   let mut all_handlers = Vec::new();
   let mut all_schemas = HashSet::new();

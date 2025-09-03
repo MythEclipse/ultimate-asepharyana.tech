@@ -6,7 +6,7 @@ use std::time::Instant;
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
-use rand::prelude::IndexedRandom; // For .choose() method
+use rand::prelude::SliceRandom; // For .choose() method
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
