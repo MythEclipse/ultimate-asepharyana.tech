@@ -3,7 +3,7 @@
 1. **Verifying `SEARCH` block accuracy:** `SEARCH` block content must meticulously compare with the actual file content, including all whitespace and indentation.
 2. **Confirming `start_line` correctness:** The `start_line` specified for each diff block must precisely correspond to the beginning of the `SEARCH` content in the target file.
 3. **Providing complete `REPLACE` content:** The `REPLACE` block must contain the complete, intended content for the modified section, not just the changes.
-4. **Failure Threshold:** If `apply_diff` fails once on the same file, switch to `write_to_file` for that file. I will not assume failure and will only trust the latest build.
+4. **Failure Threshold:** If `apply_diff` fails on a file, the next attempt to modify that file should use `write_to_file`. If `write_to_file` also fails for that file, no further modifications should be attempted on that specific file for the current task, as both primary methods have been exhausted. I will not assume failure and will only trust the latest build.
 5. **Search and Replace Content Uniqueness:** The `SEARCH` block content must not be identical to the `REPLACE` block content.
 
 ## Kilo Code: Completion Rules
@@ -38,7 +38,7 @@
 ## Kilo Code: General Principles
 
 ### 1. Clarity and Precision
-- **Code with Intent:** All code should be clear, readable, and self-documenting wherever possible. I will not add any comments in code; instead, I will manage tasks using the `update_todo_list` tool.
+- **Code with Intent:** All code should be clear, readable, and self-documenting wherever possible. I will not add any comments in code; instead, I will manage tasks using the `update_todo_list` tool. If any comments are found, they should be removed.
 - **Precise Tool Usage:** Use tools for their intended purpose with accurate parameters.
 
 ### 2. Proactive Context Gathering
