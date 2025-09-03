@@ -18,11 +18,21 @@ pub struct HelloworldResponse {
     pub message: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "test/helloworld",
+    tag = "test",
+    responses(
+        (status = 200, description = "Description for the helloworld endpoint", body = Json<HelloworldResponse>),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
 pub async fn helloworld() -> impl IntoResponse {
     Json(HelloworldResponse {
         message: "Hello from helloworld!".to_string(),
     })
 }
+
 
 pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
     router.route(ENDPOINT_PATH, get(helloworld))

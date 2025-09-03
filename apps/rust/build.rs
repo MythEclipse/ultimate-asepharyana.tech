@@ -208,29 +208,28 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
     .unwrap_or_else(|| func_name.to_string());
 
   let new_utoipa_macro = generate_utoipa_macro(
-    &http_method,
-    &route_path,
-    &route_tag,
-    &response_body,
-    &route_description
+      &http_method,
+      &route_path,
+      &route_tag,
+      &response_body,
+      &route_description
+  );
+  let fn_signature = format!("pub async fn {}(", actual_func_name);
+  let new_content = content.replace(
+      &fn_signature,
+      &format!("{}\n{}", new_utoipa_macro, fn_signature)
   );
   let new_register_fn = format!(
-    "pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
-    http_method.to_lowercase(),
-    actual_func_name
+      "pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
+      http_method.to_lowercase(),
+      actual_func_name
   );
 
-  let utoipa_regex = Regex::new(
-    &format!(r"(?s)#\[utoipa::path\(.*?\)\s*\n*\]\s*\npub async fn\s+{}\s*\(", actual_func_name)
-  ).unwrap();
-  let fn_signature = format!("pub async fn {} (", actual_func_name);
-  let mut new_content = if utoipa_regex.is_match(&content) {
-    utoipa_regex
-      .replace(&content, format!("{}\npub async fn {} (", new_utoipa_macro, actual_func_name))
-      .to_string()
-  } else {
-    content.replace(&fn_signature, &format!("{}\n{}", new_utoipa_macro, fn_signature))
-  };
+  let fn_signature = format!("pub async fn {}(", actual_func_name);
+  let mut new_content = content.replace(
+      &fn_signature,
+      &format!("{}\n{}", new_utoipa_macro, fn_signature)
+  );
 
   let register_regex = Regex::new(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<ChatState>>\s*\{.*?\n\}\n*"
@@ -368,7 +367,7 @@ fn generate_root_api_mod(
 
   let all_paths: Vec<String> = all_handlers
     .iter()
-    .map(|h| format!("        {}", h.handler_module_path))
+    .map(|h| format!("        {}::{}", h.handler_module_path, h.func_name))
     .collect();
 
   let mut sorted_schemas: Vec<String> = schemas.iter().cloned().collect();
