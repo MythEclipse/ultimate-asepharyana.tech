@@ -3,11 +3,7 @@
 
 pub mod compress_service;
 pub mod tests;
-
-#[utoipa::path(get, path = "/api/compress", tag = "test", responses((status = 200, description = "Success", body = String), (status = 500, description = "Internal Server Error")))]
-pub fn COMPRESS_SERVICE_UTOIPA() {}
-
-use crate::routes::api::compress::compress_service::compress_service;
+pub mod compress_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
@@ -15,6 +11,6 @@ use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     let router = Router::new();
-    let router = router.route("/", get(compress_service));
+    let router = router.route("/", get(compress_handler::compress_handler));
     router
 }

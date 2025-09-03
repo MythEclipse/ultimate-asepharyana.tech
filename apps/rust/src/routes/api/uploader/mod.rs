@@ -12,6 +12,7 @@ use crate::routes::ChatState;
 use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new();
+    let router = Router::new()
+        .route("/", post(uploader_handler::uploader_handler));
     router
 }
