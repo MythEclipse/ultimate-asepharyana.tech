@@ -215,21 +215,27 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
       &route_description
   );
   let fn_signature = format!("pub async fn {}(", actual_func_name);
-  let new_content = content.replace(
-      &fn_signature,
-      &format!("{}\n{}", new_utoipa_macro, fn_signature)
-  );
   let new_register_fn = format!(
       "pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
       http_method.to_lowercase(),
       actual_func_name
   );
 
-  let fn_signature = format!("pub async fn {}(", actual_func_name);
   let mut new_content = content.replace(
       &fn_signature,
       &format!("{}\n{}", new_utoipa_macro, fn_signature)
   );
+
+  // Remove duplicate macro annotation if already present
+  let macro_regex = Regex::new(r"(?m)^#\[utoipa::path\([^\]]*\)\]\n").unwrap();
+  new_content = macro_regex.replace_all(&new_content, "").to_string();
+
+  // Insert macro annotation directly above the handler function, not at the top
+  if let Some(pos) = new_content.find(&fn_signature) {
+      let before = &new_content[..pos];
+      let after = &new_content[pos..];
+      new_content = format!("{}{}\n{}", before, new_utoipa_macro, after);
+  }
 
   let register_regex = Regex::new(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<ChatState>>\s*\{.*?\n\}\n*"
@@ -401,7 +407,7 @@ fn main() -> Result<()> {
     fs::create_dir_all(api_routes_path)?;
     println!("cargo:rerun-if-changed=src/routes/api/");
 
-    // No cleanup needed; mod.rs files are overwritten by fs::write
+  // No cleanup needed; mod.rs files are overwritten by fs::write
 
   let mut all_handlers = Vec::new();
   let mut all_schemas = HashSet::new();
