@@ -41,8 +41,5 @@ socks = { workspace = true }
 hyper = { workspace = true }
 rand = { workspace = true }
 urlencoding = { workspace = true }
-
+oxidize-pdf = { version = "1.2.0" }
 [dev-dependencies]
-tokio-test = { workspace = true }
-testcontainers = { workspace = true }
-testcontainers-modules = { workspace = true, features = ["mysql"] }

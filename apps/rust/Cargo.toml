@@ -3,56 +3,59 @@ name = "rust"
 version = "0.1.0"
 edition = "2021"
 
+# Dependensi yang dibutuhkan saat aplikasi berjalan
 [dependencies]
-axum = { workspace = true, features = ["ws", "multipart"] }
-tokio = { workspace = true, features = ["full"] }
-axum-extra = { workspace = true, features = ["cookie"] }
-serde = { workspace = true, features = ["derive"] }
+axum = { workspace = true }
+tokio = { workspace = true }
+axum-extra = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 dotenvy = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
-envy = { workspace = true }
+tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
-sqlx = { workspace = true, features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
-uuid = { workspace = true, features = ["v4", "serde"] }
-chrono = { workspace = true, features = ["serde"] }
+sqlx = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
 bytes = { workspace = true }
 futures = { workspace = true }
 bcrypt = { workspace = true }
 jsonwebtoken = { workspace = true }
-reqwest = { workspace = true, features = ["json", "stream"] } # For image proxy
-http = { workspace = true } # For http::StatusCode and HeaderMap
-image = { workspace = true, default-features = false, features = ["jpeg", "png"] } # For image compression
-sha1 = { workspace = true } # For cache key generation
-data-url = { workspace = true } # For data URL parsing
-base64 = { workspace = true } # For base64 encoding/decoding
-tokio-util = { workspace = true, features = ["codec"] } # For stream handling
-async-trait = { workspace = true } # For async traits
-tempfile = { workspace = true } # For temporary files
-serde_yaml = { workspace = true } # For parsing YAML files
-scraper = { workspace = true } # For HTML parsing (cheerio equivalent)
-regex = "1.11" # For regex matching in episode number extraction
-oxidize-pdf = { workspace = true } # For PDF compression
-infer = { workspace = true } # For file type detection
+reqwest = { workspace = true }
+http = { workspace = true }
+image = { workspace = true }
+sha1 = { workspace = true }
+data-url = { workspace = true }
+base64 = { workspace = true }
+tokio-util = { workspace = true }
+async-trait = { workspace = true }
+tempfile = { workspace = true }
+serde_yaml = { workspace = true }
+scraper = { workspace = true }
+regex = { workspace = true }
+oxidize-pdf = { version = "1.2.0" }
+infer = { workspace = true }
 ffmpeg-next = { workspace = true }
 once_cell = { workspace = true }
-rust_lib = { path = "../../libs/rust" }
+rust_lib = { workspace = true }
 urlencoding = { workspace = true }
 utoipa = { workspace = true }
-utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+utoipa-swagger-ui = { workspace = true }
+hyper = { workspace = true }
+redis = { workspace = true }
+url = { workspace = true }
+rand = { workspace = true }
 
-
-[dev-dependencies]
-tokio-test = { workspace = true }
-testcontainers = { workspace = true }
-testcontainers-modules = { workspace = true, features = ["mysql"] }
-
+# Dependensi yang hanya dibutuhkan untuk build script (build.rs)
 [build-dependencies]
-regex = "1.11"
+regex = { workspace = true }
 anyhow = { workspace = true }
 once_cell = { workspace = true }
 
+# Dependensi yang hanya dibutuhkan untuk tes
+[dev-dependencies]
+
+# Definisi binary untuk scaffolder
 [[bin]]
 name = "scaffold"
 path = "src/bin/scaffold.rs"

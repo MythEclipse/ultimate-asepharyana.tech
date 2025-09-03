@@ -29,8 +29,7 @@ pub struct HandlerRouteInfo {
   pub route_tag: String,
 }
 
-// In build.rs, replace the existing function with this one.
-
+// FIX: This function uses a 'match' statement for macro robustness.
 fn generate_utoipa_macro(
   http_method: &str,
   route_path: &str,
@@ -38,8 +37,6 @@ fn generate_utoipa_macro(
   response_body: &str,
   route_description: &str
 ) -> String {
-  // Use a match statement to ensure a literal identifier is passed to the macro.
-  // This is more reliable for macro expansion.
   let method_ident = match http_method.to_uppercase().as_str() {
     "POST" => "post",
     "PUT" => "put",
@@ -61,7 +58,7 @@ fn generate_utoipa_macro(
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]"#,
-    method_ident, // Use the result from the match statement
+    method_ident,
     route_path,
     route_tag,
     route_description,
@@ -263,6 +260,7 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
   )
 }
 
+// FIX: This function correctly constructs the module path.
 fn generate_mod_for_directory(
   current_dir: &Path,
   root_api_path: &Path,
