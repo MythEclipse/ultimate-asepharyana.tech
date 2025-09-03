@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{ HashMap, HashSet };
 use std::fs;
 use std::path::{ Path, PathBuf };
 
@@ -29,6 +29,8 @@ pub struct HandlerRouteInfo {
   pub route_tag: String,
 }
 
+// In build.rs, replace the existing function with this one.
+
 fn generate_utoipa_macro(
   http_method: &str,
   route_path: &str,
@@ -36,6 +38,19 @@ fn generate_utoipa_macro(
   response_body: &str,
   route_description: &str
 ) -> String {
+  // Use a match statement to ensure a literal identifier is passed to the macro.
+  // This is more reliable for macro expansion.
+  let method_ident = match http_method.to_uppercase().as_str() {
+    "POST" => "post",
+    "PUT" => "put",
+    "DELETE" => "delete",
+    "PATCH" => "patch",
+    "HEAD" => "head",
+    "OPTIONS" => "options",
+    "TRACE" => "trace",
+    _ => "get", // Default to GET
+  };
+
   format!(
     r#"#[utoipa::path(
     {},
@@ -46,7 +61,7 @@ fn generate_utoipa_macro(
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]"#,
-    http_method,
+    method_ident, // Use the result from the match statement
     route_path,
     route_tag,
     route_description,
@@ -81,11 +96,10 @@ fn update_handler_file(
     .file_stem()
     .and_then(|s| s.to_str())
     .ok_or_else(|| anyhow!("Could not get file stem from {:?}", path))?
-    .replace(['[', ']'], ""); // Bersihkan karakter kurung siku
+    .replace(['[', ']'], "");
 
   let func_name = &file_stem;
 
-  // Jika file kosong, generate template lengkap
   if content.trim().is_empty() {
     let relative_path = path.strip_prefix(root_api_path).unwrap();
     let mut route_path_str = relative_path
@@ -101,7 +115,6 @@ fn update_handler_file(
       }
     }
 
-    // Konversi [param] menjadi {param} untuk Axum
     let axum_path = Regex::new(r"\[(.*?)\]")
       .unwrap()
       .replace_all(&route_path_str, "{$1}")
@@ -121,35 +134,31 @@ fn update_handler_file(
 
     let template = format!(
       r#"//! Handler for the {} endpoint.
+#![allow(dead_code)]
+
 use axum::{{response::IntoResponse, routing::get, Json, Router}};
 use std::sync::Arc;
 use crate::routes::ChatState;
 use serde::{{Deserialize, Serialize}};
 use utoipa::ToSchema;
 
-// --- API METADATA ---
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/{}";
+pub const ENDPOINT_PATH: &str = "{}";
 pub const ENDPOINT_DESCRIPTION: &str = "Description for the {} endpoint";
 pub const ENDPOINT_TAG: &str = "{}";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<{}Response>";
 
-// --- RESPONSE STRUCTURE ---
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct {}Response {{
     pub message: String,
 }}
 
-// --- HANDLER FUNCTION ---
-// The Utoipa macro is automatically generated/updated by build.rs
 pub async fn {}() -> impl IntoResponse {{
     Json({}Response {{
         message: "Hello from {}!".to_string(),
     }})
 }}
 
-// --- ROUTE REGISTRATION ---
-// This function is automatically generated/updated by build.rs
 pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {{
     router.route(ENDPOINT_PATH, get({}))
 }}
@@ -168,12 +177,10 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
 
     fs::write(path, template)?;
     println!("cargo:warning=Generated new handler template for {:?}", path);
-    // Kembali lebih awal, biarkan proses build selanjutnya yang memprosesnya
     return Ok(None);
   }
 
-  // Ekstrak metadata dari konstanta
-  let mut metadata = std::collections::HashMap::new();
+  let mut metadata = HashMap::new();
   for cap in ENDPOINT_METADATA_REGEX.captures_iter(&content) {
     metadata.insert(cap[1].to_string(), cap[2].to_string());
   }
@@ -199,12 +206,10 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
     .cloned()
     .unwrap_or_else(|| format!("Handler for {}", func_name));
 
-  // Temukan nama fungsi handler aktual
   let actual_func_name = HANDLER_FN_REGEX.captures(&content)
     .map(|c| c[1].to_string())
     .unwrap_or_else(|| func_name.to_string());
 
-  // Generate makro Utoipa dan fungsi register_routes yang baru
   let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
     &route_path,
@@ -213,12 +218,11 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
     &route_description
   );
   let new_register_fn = format!(
-    "pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {{\n    router.route(ENDPOINT_PATH, axum::routing::{}({}))\n}}",
-    http_method,
+    "pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
+    http_method.to_lowercase(),
     actual_func_name
   );
 
-  // Ganti atau sisipkan makro Utoipa
   let utoipa_regex = Regex::new(
     &format!(r"(?s)#\[utoipa::path\(.*?\)\s*\n*\]\s*\npub async fn\s+{}\s*\(", actual_func_name)
   ).unwrap();
@@ -231,7 +235,6 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
     content.replace(&fn_signature, &format!("{}\n{}", new_utoipa_macro, fn_signature))
   };
 
-  // Ganti atau sisipkan fungsi register_routes
   let register_regex = Regex::new(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<ChatState>>\s*\{.*?\n\}\n*"
   ).unwrap();
@@ -242,7 +245,6 @@ pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>>
     new_content.push_str(&new_register_fn);
   }
 
-  // Tulis kembali ke file jika ada perubahan
   if content != new_content {
     fs::write(path, &new_content)?;
   }
@@ -271,12 +273,13 @@ fn generate_mod_for_directory(
   let mut route_registrations = Vec::new();
 
   let relative_path = current_dir.strip_prefix(root_api_path).unwrap_or(Path::new(""));
-  let module_path_prefix = format!(
-    "crate::routes::api{}",
-    relative_path.to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "::")
-  )
-    .trim_end_matches("::")
-    .to_string();
+  let relative_path_str = relative_path.to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "::");
+
+  let module_path_prefix = if relative_path_str.is_empty() {
+    "crate::routes::api".to_string()
+  } else {
+    format!("crate::routes::api::{}", relative_path_str)
+  };
 
   let mut entries: Vec<PathBuf> = fs
     ::read_dir(current_dir)?
@@ -344,10 +347,9 @@ pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatSta
   Ok(())
 }
 
-// GANTI FUNGSI INI DI build.rs
 fn generate_root_api_mod(
   api_routes_path: &Path,
-  modules: &[String], // Tambahkan parameter ini
+  modules: &[String],
   all_handlers: &[HandlerRouteInfo],
   schemas: &HashSet<String>
 ) -> Result<()> {
@@ -379,7 +381,6 @@ fn generate_root_api_mod(
     )
   );
 
-  // --- BAGIAN YANG DIPERBAIKI ---
   let router_registrations = modules
     .iter()
     .map(|m| format!("    router = {}::register_routes(router);", m))
@@ -389,13 +390,11 @@ fn generate_root_api_mod(
   content.push_str(
     &format!("pub fn create_api_routes() -> Router<Arc<ChatState>> {{\n    let mut router = Router::new();\n{}\n    router\n}}\n", router_registrations)
   );
-  // --- AKHIR BAGIAN YANG DIPERBAIKI ---
 
   fs::write(api_routes_path.join("mod.rs"), content)?;
   Ok(())
 }
 
-// GANTI FUNGSI INI DI build.rs
 fn main() -> Result<()> {
   println!("cargo:rerun-if-changed=build.rs");
   let api_routes_path = Path::new("src/routes/api");
@@ -405,7 +404,6 @@ fn main() -> Result<()> {
   let mut all_handlers = Vec::new();
   let mut all_schemas = HashSet::new();
 
-  // Jalankan generate untuk subdirektori terlebih dahulu
   generate_mod_for_directory(
     api_routes_path,
     api_routes_path,
@@ -413,7 +411,6 @@ fn main() -> Result<()> {
     &mut all_schemas
   )?;
 
-  // Dapatkan daftar modul level atas setelah subdirektori diproses
   let mut modules = Vec::new();
   for entry in fs::read_dir(api_routes_path)?.flatten() {
     if let Some(name) = entry.file_name().to_str() {
@@ -425,7 +422,6 @@ fn main() -> Result<()> {
   modules.sort();
   modules.dedup();
 
-  // Panggil generate untuk root mod dengan daftar modul
   generate_root_api_mod(api_routes_path, &modules, &all_handlers, &all_schemas)?;
 
   Ok(())
