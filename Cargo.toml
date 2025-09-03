@@ -70,7 +70,4 @@ socks = "0.3.4"
 rust_lib = { path = "libs/rust" }
 
 # --- DEVELOPMENT DEPENDENCIES ---
-[workspace.dev-dependencies]
-# Dev dependencies
-tokio-test = "0.4"
 
