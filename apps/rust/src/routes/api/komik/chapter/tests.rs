@@ -122,3 +122,8 @@ mod tests {
         assert_eq!(list_chapter, "");
     }
 }
+
+
+pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router.route(ENDPOINT_PATH, axum::routing::get(tests))
+}

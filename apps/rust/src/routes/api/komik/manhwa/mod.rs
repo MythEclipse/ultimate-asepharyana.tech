@@ -3,17 +3,11 @@
 
 pub mod manhwa_handler;
 
-#[utoipa::path(get, path = "/komik/manhwa/manhwa_handler", tag = "manhwa", responses((status = 200, description = "manhwa handler", body = String), (status = 500, description = "Internal Server Error")))]
-pub fn MANHWA_HANDLER_UTOIPA() {}
-
-use crate::routes::api::komik::manhwa::manhwa_handler;
-
-use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
-use crate::routes::ChatState;
+use axum::Router;
 use std::sync::Arc;
+use crate::routes::ChatState;
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new();
-    let router = router.route("/komik/manhwa/manhwa_handler", get(manhwa_handler::manhwa_handler));
+pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router = manhwa_handler::register_routes(router);
     router
 }

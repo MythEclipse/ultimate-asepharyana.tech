@@ -60,3 +60,8 @@ pub async fn proxy_handler(Path(slug): Path<String>) -> Response {
 
     Json(response).into_response()
 }
+
+
+pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router.route(ENDPOINT_PATH, axum::routing::GET(proxy_handler))
+}

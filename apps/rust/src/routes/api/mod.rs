@@ -12,35 +12,51 @@ pub mod chat;
 pub mod compress;
 pub mod drivepng;
 pub mod komik;
+pub mod products;
 pub mod proxy;
 pub mod uploader;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-crate::routes::api::anime::complete_anime::COMPLETE_ANIME_HANDLER_UTOIPA,
-crate::routes::api::anime::detail::DETAIL_HANDLER_UTOIPA,
-crate::routes::api::anime::full::FULL_EPISODE_HANDLER_UTOIPA,
-crate::routes::api::anime::ongoing_anime::ONGOING_ANIME_HANDLER_UTOIPA,
-crate::routes::api::anime::search::SEARCH_HANDLER_UTOIPA,
-crate::routes::api::anime2::complete_anime::COMPLETE_ANIME_HANDLER_UTOIPA,
-crate::routes::api::anime2::detail::DETAIL_HANDLER_UTOIPA,
-crate::routes::api::anime2::ongoing_anime::ONGOING_ANIME_HANDLER_UTOIPA,
-crate::routes::api::anime2::search::SEARCH_HANDLER_UTOIPA,
-crate::routes::api::chat::CHAT_HANDLER_UTOIPA,
-crate::routes::api::compress::COMPRESS_HANDLER_UTOIPA,
-crate::routes::api::compress::COMPRESS_IMAGE_FROM_URL_UTOIPA,
-crate::routes::api::drivepng::DRIVEPNG_HANDLER_UTOIPA,
-crate::routes::api::komik::chapter::CHAPTER_HANDLER_UTOIPA,
-crate::routes::api::komik::detail::DETAIL_HANDLER_UTOIPA,
-crate::routes::api::komik::manga::MANGA_HANDLER_UTOIPA,
-crate::routes::api::komik::manhua::MANHUA_HANDLER_UTOIPA,
-crate::routes::api::komik::manhwa::MANHWA_HANDLER_UTOIPA,
-crate::routes::api::komik::search::SEARCH_HANDLER_UTOIPA,
-crate::routes::api::proxy::PROXY_HANDLER_UTOIPA,
-crate::routes::api::uploader::UPLOADER_HANDLER_UTOIPA
+        crate::routes::apianime::complete_anime::complete::complete_handler,
+        crate::routes::apianime::complete_anime::complete_anime_handler::complete_anime_handler,
+        crate::routes::apianime::detail::detail::detail_handler,
+        crate::routes::apianime::detail::detail_handler::detail_handler,
+        crate::routes::apianime::full::full::full_handler,
+        crate::routes::apianime::full::full_episode_handler::full_episode_handler,
+        crate::routes::apianime::ongoing_anime::ongoing::ongoing_handler,
+        crate::routes::apianime::ongoing_anime::ongoing_anime_handler::ongoing_anime_handler,
+        crate::routes::apianime::search::search_handler::search_handler,
+        crate::routes::apianime::search::tests::tests,
+        crate::routes::apianime2::complete_anime::complete::complete_handler,
+        crate::routes::apianime2::complete_anime::complete_anime_handler::complete_anime_handler,
+        crate::routes::apianime2::detail::detail::detail_handler,
+        crate::routes::apianime2::detail::detail_handler::detail_handler,
+        crate::routes::apianime2::ongoing_anime::ongoing::ongoing_handler,
+        crate::routes::apianime2::ongoing_anime::ongoing_anime_handler::ongoing_anime_handler,
+        crate::routes::apianime2::search::search_handler::search_handler,
+        crate::routes::apichat::chat::chat_handler,
+        crate::routes::apichat::chat_handler::chat_handler,
+        crate::routes::apicompress::compress::compress_handler,
+        crate::routes::apicompress::compress_handler::compress_handler,
+        crate::routes::apicompress::tests::compress_image_from_url,
+        crate::routes::apidrivepng::drivepng::drivepng_handler,
+        crate::routes::apidrivepng::drivepng_handler::drivepng_handler,
+        crate::routes::apikomik::chapter::chapter_handler::chapter_handler,
+        crate::routes::apikomik::chapter::tests::tests,
+        crate::routes::apikomik::detail::detail_handler::detail_handler,
+        crate::routes::apikomik::manga::manga_handler::manga_handler,
+        crate::routes::apikomik::manhua::manhua_handler::manhua_handler,
+        crate::routes::apikomik::manhwa::manhwa_handler::manhwa_handler,
+        crate::routes::apikomik::search::slug::slug_handler,
+        crate::routes::apikomik::search::search_handler::search_handler,
+        crate::routes::apiproxy::proxy::proxy_handler,
+        crate::routes::apiproxy::proxy_handler::proxy_handler,
+        crate::routes::apiuploader::uploader::uploader_handler,
+        crate::routes::apiuploader::uploader_handler::uploader_handler
     ),
-    components(schemas(crate::routes::api::komik::chapter::ChapterData, crate::routes::api::komik::chapter::ChapterResponse, crate::routes::api::komik::detail::DetailData, crate::routes::api::komik::detail::DetailResponse, crate::routes::api::komik::manga::MangaData, crate::routes::api::komik::manga::MangaResponse, crate::routes::api::komik::manhua::ManhuaData, crate::routes::api::komik::manhua::ManhuaResponse, crate::routes::api::komik::manhwa::ManhwaData, crate::routes::api::komik::manhwa::ManhwaResponse, crate::routes::api::komik::search::SearchData, crate::routes::api::komik::search::SearchResponse, crate::routes::api::proxy::ProxyData, crate::routes::api::proxy::ProxyResponse, crate::routes::api::uploader::UploadData, crate::routes::api::uploader::UploadResponse)),
+    components(schemas(crate::routes::apikomik::chapter::chapter_handler::ChapterData, crate::routes::apikomik::chapter::chapter_handler::ChapterResponse, crate::routes::apikomik::detail::detail_handler::DetailData, crate::routes::apikomik::detail::detail_handler::DetailResponse, crate::routes::apikomik::manga::manga_handler::MangaData, crate::routes::apikomik::manga::manga_handler::MangaResponse, crate::routes::apikomik::manhua::manhua_handler::ManhuaData, crate::routes::apikomik::manhua::manhua_handler::ManhuaResponse, crate::routes::apikomik::manhwa::manhwa_handler::ManhwaData, crate::routes::apikomik::manhwa::manhwa_handler::ManhwaResponse, crate::routes::apikomik::search::search_handler::SearchData, crate::routes::apikomik::search::search_handler::SearchResponse, crate::routes::apikomik::search::slug::SearchData, crate::routes::apikomik::search::slug::SearchResponse, crate::routes::apiproxy::proxy_handler::ProxyData, crate::routes::apiproxy::proxy_handler::ProxyResponse, crate::routes::apiuploader::uploader_handler::UploadData, crate::routes::apiuploader::uploader_handler::UploadResponse)),
     tags((
         name = "api", description = "Main API"
     ))
@@ -48,13 +64,5 @@ crate::routes::api::uploader::UPLOADER_HANDLER_UTOIPA
 pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<ChatState>> {
-    Router::new()
-        .nest("/anime", anime::create_routes())
-        .nest("/anime2", anime2::create_routes())
-        .nest("/chat", chat::create_routes())
-        .nest("/compress", compress::create_routes())
-        .nest("/drivepng", drivepng::create_routes())
-        .nest("/komik", komik::create_routes())
-        .nest("/proxy", proxy::create_routes())
-        .nest("/uploader", uploader::create_routes())
+    register_routes(Router::new())
 }

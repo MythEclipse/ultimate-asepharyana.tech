@@ -7,15 +7,15 @@ pub mod full;
 pub mod ongoing_anime;
 pub mod search;
 
-
-
-
-
-use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
-use crate::routes::ChatState;
+use axum::Router;
 use std::sync::Arc;
+use crate::routes::ChatState;
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new();
+pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router = complete_anime::register_routes(router);
+    router = detail::register_routes(router);
+    router = full::register_routes(router);
+    router = ongoing_anime::register_routes(router);
+    router = search::register_routes(router);
     router
 }

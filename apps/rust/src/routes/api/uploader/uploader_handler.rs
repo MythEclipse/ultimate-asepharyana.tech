@@ -63,3 +63,8 @@ pub async fn uploader_handler(mut multipart: Multipart) -> Response {
 
     Json(response).into_response()
 }
+
+
+pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router.route(ENDPOINT_PATH, axum::routing::POST(uploader_handler))
+}

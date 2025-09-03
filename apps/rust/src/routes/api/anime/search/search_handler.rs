@@ -9,3 +9,8 @@ const SUCCESS_RESPONSE_BODY: &str = "String";
 pub async fn search_handler() -> String {
     "hello test".to_string()
 }
+
+
+pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router.route(ENDPOINT_PATH, axum::routing::GET(search_handler))
+}

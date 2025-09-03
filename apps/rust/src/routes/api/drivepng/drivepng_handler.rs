@@ -17,3 +17,8 @@ pub fn DRIVEPNG_SERVICE_UTOIPA() {}
 pub async fn drivepng_handler() -> String {
     drivepng_service().await
 }
+
+
+pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router.route(ENDPOINT_PATH, axum::routing::GET(drivepng_handler))
+}

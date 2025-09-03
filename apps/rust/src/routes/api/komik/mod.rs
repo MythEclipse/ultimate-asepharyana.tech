@@ -8,15 +8,16 @@ pub mod manhua;
 pub mod manhwa;
 pub mod search;
 
-
-
-
-
-use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
-use crate::routes::ChatState;
+use axum::Router;
 use std::sync::Arc;
+use crate::routes::ChatState;
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new();
+pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router = chapter::register_routes(router);
+    router = detail::register_routes(router);
+    router = manga::register_routes(router);
+    router = manhua::register_routes(router);
+    router = manhwa::register_routes(router);
+    router = search::register_routes(router);
     router
 }

@@ -3,17 +3,11 @@
 
 pub mod manhua_handler;
 
-#[utoipa::path(get, path = "/komik/manhua/manhua_handler", tag = "manhua", responses((status = 200, description = "manhua handler", body = String), (status = 500, description = "Internal Server Error")))]
-pub fn MANHUA_HANDLER_UTOIPA() {}
-
-use crate::routes::api::komik::manhua::manhua_handler;
-
-use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
-use crate::routes::ChatState;
+use axum::Router;
 use std::sync::Arc;
+use crate::routes::ChatState;
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new();
-    let router = router.route("/komik/manhua/manhua_handler", get(manhua_handler::manhua_handler));
+pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router = manhua_handler::register_routes(router);
     router
 }

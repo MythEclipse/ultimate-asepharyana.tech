@@ -4,17 +4,12 @@
 pub mod chapter_handler;
 pub mod tests;
 
-#[utoipa::path(get, path = "/komik/chapter/chapter_handler", tag = "chapter", responses((status = 200, description = "chapter handler", body = String), (status = 500, description = "Internal Server Error")))]
-pub fn CHAPTER_HANDLER_UTOIPA() {}
-
-use crate::routes::api::komik::chapter::chapter_handler;
-
-use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
-use crate::routes::ChatState;
+use axum::Router;
 use std::sync::Arc;
+use crate::routes::ChatState;
 
-pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new();
-    let router = router.route("/komik/chapter/chapter_handler", get(chapter_handler::chapter_handler));
+pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+    router = chapter_handler::register_routes(router);
+    router = tests::register_routes(router);
     router
 }
