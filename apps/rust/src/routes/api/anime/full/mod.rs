@@ -3,10 +3,10 @@
 
 pub mod full_episode_handler;
 
-#[utoipa::path(get, path = "/api/anime/full", tag = "test", responses((status = 200, description = "Success", body = String), (status = 500, description = "Internal Server Error")))]
+#[utoipa::path(get, path = "/anime/full/full_episode_handler", tag = "full", responses((status = 200, description = "full episode handler", body = String), (status = 500, description = "Internal Server Error")))]
 pub fn FULL_EPISODE_HANDLER_UTOIPA() {}
 
-use crate::routes::api::anime::full::full_episode_handler::full_episode_handler;
+use crate::routes::api::anime::full::full_episode_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
@@ -14,6 +14,6 @@ use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     let router = Router::new();
-    let router = router.route("/", get(full_episode_handler));
+    let router = router.route("/anime/full/full_episode_handler", get(full_episode_handler::full_episode_handler));
     router
 }

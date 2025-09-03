@@ -8,15 +8,13 @@ pub mod search;
 
 
 
+
+
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
 use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new()
-        .nest("/complete_anime", complete_anime::create_routes())
-        .nest("/detail", detail::create_routes())
-        .nest("/ongoing_anime", ongoing_anime::create_routes())
-        .nest("/search", search::create_routes());
+    let router = Router::new();
     router
 }

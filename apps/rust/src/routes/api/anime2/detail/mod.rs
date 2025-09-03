@@ -3,10 +3,10 @@
 
 pub mod detail_handler;
 
-#[utoipa::path(get, path = "api/anime2/detail", tag = "test", responses((status = 200, description = "Success", body = String), (status = 500, description = "Internal Server Error")))]
+#[utoipa::path(get, path = "/anime2/detail/detail_handler", tag = "detail", responses((status = 200, description = "detail handler", body = String), (status = 500, description = "Internal Server Error")))]
 pub fn DETAIL_HANDLER_UTOIPA() {}
 
-use crate::routes::api::anime2::detail::detail_handler::detail_handler;
+use crate::routes::api::anime2::detail::detail_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
@@ -14,6 +14,6 @@ use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     let router = Router::new();
-    let router = router.route("/api/anime2/detail", get(detail_handler));
+    let router = router.route("/anime2/detail/detail_handler", get(detail_handler::detail_handler));
     router
 }

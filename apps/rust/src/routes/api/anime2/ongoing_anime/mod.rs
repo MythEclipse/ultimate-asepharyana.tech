@@ -3,10 +3,10 @@
 
 pub mod ongoing_anime_handler;
 
-#[utoipa::path(get, path = "/api/anime2/ongoing_anime", tag = "test", responses((status = 200, description = "Success", body = String), (status = 500, description = "Internal Server Error")))]
+#[utoipa::path(get, path = "/anime2/ongoing_anime/ongoing_anime_handler", tag = "ongoing_anime", responses((status = 200, description = "ongoing anime handler", body = String), (status = 500, description = "Internal Server Error")))]
 pub fn ONGOING_ANIME_HANDLER_UTOIPA() {}
 
-use crate::routes::api::anime2::ongoing_anime::ongoing_anime_handler::ongoing_anime_handler;
+use crate::routes::api::anime2::ongoing_anime::ongoing_anime_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
@@ -14,6 +14,6 @@ use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     let router = Router::new();
-    let router = router.route("/", get(ongoing_anime_handler));
+    let router = router.route("/anime2/ongoing_anime/ongoing_anime_handler", get(ongoing_anime_handler::ongoing_anime_handler));
     router
 }

@@ -4,10 +4,10 @@
 pub mod search_handler;
 pub mod tests;
 
-#[utoipa::path(get, path = "/api/anime/search", tag = "test", responses((status = 200, description = "Success", body = String), (status = 500, description = "Internal Server Error")))]
+#[utoipa::path(get, path = "/anime/search/search_handler", tag = "search", responses((status = 200, description = "search handler", body = String), (status = 500, description = "Internal Server Error")))]
 pub fn SEARCH_HANDLER_UTOIPA() {}
 
-use crate::routes::api::anime::search::search_handler::search_handler;
+use crate::routes::api::anime::search::search_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
@@ -15,6 +15,6 @@ use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     let router = Router::new();
-    let router = router.route("/", get(search_handler));
+    let router = router.route("/anime/search/search_handler", get(search_handler::search_handler));
     router
 }

@@ -3,10 +3,10 @@
 
 pub mod complete_anime_handler;
 
-#[utoipa::path(get, path = "/api/anime2/complete_anime", tag = "test", responses((status = 200, description = "Success", body = String), (status = 500, description = "Internal Server Error")))]
+#[utoipa::path(get, path = "/anime2/complete_anime/complete_anime_handler", tag = "complete_anime", responses((status = 200, description = "complete anime handler", body = String), (status = 500, description = "Internal Server Error")))]
 pub fn COMPLETE_ANIME_HANDLER_UTOIPA() {}
 
-use crate::routes::api::anime2::complete_anime::complete_anime_handler::complete_anime_handler;
+use crate::routes::api::anime2::complete_anime::complete_anime_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
@@ -14,6 +14,6 @@ use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
     let router = Router::new();
-    let router = router.route("/", get(complete_anime_handler));
+    let router = router.route("/anime2/complete_anime/complete_anime_handler", get(complete_anime_handler::complete_anime_handler));
     router
 }

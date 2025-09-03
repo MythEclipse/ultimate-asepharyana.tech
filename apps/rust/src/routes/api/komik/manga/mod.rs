@@ -3,17 +3,17 @@
 
 pub mod manga_handler;
 
+#[utoipa::path(get, path = "/komik/manga/manga_handler", tag = "manga", responses((status = 200, description = "manga handler", body = String), (status = 500, description = "Internal Server Error")))]
+pub fn MANGA_HANDLER_UTOIPA() {}
 
-
-
-
+use crate::routes::api::komik::manga::manga_handler;
 
 use axum::{routing::{get, post, put, delete, patch, head, options}, Router};
 use crate::routes::ChatState;
 use std::sync::Arc;
 
 pub fn create_routes() -> Router<Arc<ChatState>> {
-    let router = Router::new()
-        .route("/:slug", get(manga_handler::manga_handler));
+    let router = Router::new();
+    let router = router.route("/komik/manga/manga_handler", get(manga_handler::manga_handler));
     router
 }
