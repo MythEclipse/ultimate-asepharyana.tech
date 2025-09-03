@@ -20,9 +20,6 @@ static STRUCT_REGEX: Lazy<Regex> = Lazy::new(||
   Regex::new(r"(?m)^pub struct (\w+?)(Data|Response)\s*\{").unwrap()
 );
 
-static ADDITIONAL_PARAMS_REGEX: Lazy<Regex> = Lazy::new(||
-  Regex::new(r#"const\s+([A-Z_]+)\s*:\s*&str\s*=\s*"([^"]*)";"#).unwrap()
-);
 
 static ALL_META_FIELDS_REGEX: Lazy<Regex> = Lazy::new(|| {
   Regex::new(r#"const\s+([A-Z_]+)\s*:\s*&str\s*=\s*"([^"]*)";"#).unwrap()
@@ -148,7 +145,7 @@ fn update_handler_file(
     .and_then(|s| s.to_str())
     .ok_or_else(|| anyhow!("Could not get file stem from {:?}", path))?;
 
-  let full_handler_path = module_path_prefix.to_string();
+  let _full_handler_path = module_path_prefix.to_string(); // Renamed to _full_handler_path
   let description = metadata
     .get("ENDPOINT_DESCRIPTION")
     .cloned()
@@ -226,7 +223,7 @@ fn generate_mod_for_directory(
     .file_name()
     .and_then(|s| s.to_str())
     .unwrap_or("api");
-  let pascal_case_module = to_pascal_case(current_module_name);
+  let _pascal_case_module = to_pascal_case(current_module_name);
 
   let mut utoipa_path_declarations = Vec::new();
   for handler in &current_level_handlers {
@@ -276,21 +273,22 @@ fn generate_mod_for_directory(
     };
 
     eprintln!("DEBUG: final_route: \"{}\", method: \"{}\", handler_module_path: \"{}\", func_name: \"{}\"", final_route, handler.method, handler.handler_module_path, handler.func_name);
-    mod_content.push_str(
-      &format!(
-        "\n    let router = router.route(\"{}\", {}({}::{}));",
-        final_route.replace("{{", "{").replace("}}", "}"),
-        handler.method,
-        handler.handler_module_path.split("::").last().unwrap(), // Get just the handler module name
-        handler.func_name
-      )
-    );
+    let mut route_line = String::new();
+    route_line.push_str("\n    let router = router.route(\"");
+    route_line.push_str(&final_route); // final_route is "/{slug}"
+    route_line.push_str("\", ");
+    route_line.push_str(&handler.method);
+    route_line.push_str("(");
+    route_line.push_str(handler.handler_module_path.split("::").last().unwrap());
+    route_line.push_str("::");
+    route_line.push_str(&handler.func_name);
+    route_line.push_str("));");
+    mod_content.push_str(&route_line);
   }
   mod_content.push_str("\n    router\n}\n");
 
-  // fs::write(current_dir.join("mod.rs"), mod_content)?; // Commented out for debugging
-  eprintln!("DEBUG: Generated mod.rs content would be:\n{}", mod_content);
-  panic!("Stopping build for debug purposes.");
+  fs::write(current_dir.join("mod.rs"), mod_content)?;
+  Ok(()) // Added Ok(()) here
 }
 
 fn generate_root_api_mod(
@@ -366,7 +364,7 @@ fn main() -> Result<()> {
     generate_mod_for_directory(&module_path, api_routes_path, &mut all_handlers, &mut all_schemas)?;
   }
 
-  let api_docs: Vec<(String, String)> = modules
+  let _api_docs: Vec<(String, String)> = modules // Renamed to _api_docs
     .iter()
     .map(|m| (m.clone(), to_pascal_case(m)))
     .collect();
