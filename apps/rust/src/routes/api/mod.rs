@@ -6,37 +6,13 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use crate::routes::ChatState;
 
-pub mod anime;
-pub mod anime2;
-pub mod chat;
-pub mod compress;
-pub mod drivepng;
-pub mod komik;
-pub mod products;
-pub mod proxy;
-pub mod uploader;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::apianime::complete_anime::complete::complete_handler,
-        crate::routes::apianime::detail::detail::detail_handler,
-        crate::routes::apianime::full::full::full_handler,
-        crate::routes::apianime::ongoing_anime::ongoing::ongoing_handler,
-        crate::routes::apianime::search::tests::tests,
-        crate::routes::apianime2::complete_anime::complete::complete_handler,
-        crate::routes::apianime2::detail::detail::detail_handler,
-        crate::routes::apianime2::ongoing_anime::ongoing::ongoing_handler,
-        crate::routes::apichat::chat::chat_handler,
-        crate::routes::apicompress::compress::compress_handler,
-        crate::routes::apicompress::tests::compress_image_from_url,
-        crate::routes::apidrivepng::drivepng::drivepng_handler,
-        crate::routes::apikomik::chapter::tests::tests,
-        crate::routes::apikomik::search::slug::slug_handler,
-        crate::routes::apiproxy::proxy::proxy_handler,
-        crate::routes::apiuploader::uploader::uploader_handler
+
     ),
-    components(schemas(crate::routes::apikomik::search::slug::SearchData, crate::routes::apikomik::search::slug::SearchResponse)),
+    components(schemas()),
     tags((
         name = "api", description = "Main API"
     ))
