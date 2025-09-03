@@ -7,7 +7,7 @@ use axum::Router;
 use std::sync::Arc;
 use crate::routes::ChatState;
 
-pub fn register_routes(mut router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
 
     router
 }
