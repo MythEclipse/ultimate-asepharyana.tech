@@ -6,7 +6,6 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use crate::routes::ChatState;
 
-pub mod test;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -22,6 +21,6 @@ pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<ChatState>> {
     let mut router = Router::new();
-    router = test::register_routes(router);
+
     router
 }
