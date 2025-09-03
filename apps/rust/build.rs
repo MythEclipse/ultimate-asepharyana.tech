@@ -108,7 +108,7 @@ fn generate_utoipa_macro(
     format!(
       r#"{}, path = "{}", tag = "{}", responses((status = 200, description = "Success", body = {}), (status = 500, description = "Internal Server Error")){}"#,
       method,
-      api_path,
+      api_path.replace("{", "{{").replace("}", "}}"),
       tag,
       success_body,
       params_block
@@ -246,7 +246,7 @@ fn generate_mod_for_directory(
 
   let mut handler_uses = Vec::new();
   for handler in &current_level_handlers {
-    handler_uses.push(format!("use {}::{};", handler.handler_module_path, handler.func_name));
+    handler_uses.push(format!("use {};", handler.handler_module_path));
   }
   mod_content.push_str(&handler_uses.join("\n"));
   mod_content.push_str("\n\n");
@@ -275,14 +275,22 @@ fn generate_mod_for_directory(
       route_segment.to_string()
     };
 
+    eprintln!("DEBUG: final_route: \"{}\", method: \"{}\", handler_module_path: \"{}\", func_name: \"{}\"", final_route, handler.method, handler.handler_module_path, handler.func_name);
     mod_content.push_str(
-      &format!("\n    let router = router.route(\"{}\", {}({}));", final_route, handler.method, handler.func_name)
+      &format!(
+        "\n    let router = router.route(\"{}\", {}({}::{}));",
+        final_route.replace("{{", "{").replace("}}", "}"),
+        handler.method,
+        handler.handler_module_path.split("::").last().unwrap(), // Get just the handler module name
+        handler.func_name
+      )
     );
   }
   mod_content.push_str("\n    router\n}\n");
 
-  fs::write(current_dir.join("mod.rs"), mod_content)?;
-  Ok(())
+  // fs::write(current_dir.join("mod.rs"), mod_content)?; // Commented out for debugging
+  eprintln!("DEBUG: Generated mod.rs content would be:\n{}", mod_content);
+  panic!("Stopping build for debug purposes.");
 }
 
 fn generate_root_api_mod(
