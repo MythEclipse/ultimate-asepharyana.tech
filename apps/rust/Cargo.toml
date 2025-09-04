@@ -33,7 +33,7 @@ tempfile = { workspace = true }
 serde_yaml = { workspace = true }
 scraper = { workspace = true }
 regex = { workspace = true }
-oxidize-pdf = { version = "1.2.0" }
+oxidize-pdf = { workspace = true }
 infer = { workspace = true }
 ffmpeg-next = { workspace = true }
 once_cell = { workspace = true }
