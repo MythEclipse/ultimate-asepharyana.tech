@@ -6,13 +6,43 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use crate::routes::AppState;
 
-pub mod test;
+pub mod anime;
+pub mod anime2;
+pub mod apiproxy;
+pub mod compress;
+pub mod docs;
+pub mod imageproxy;
+pub mod komik;
+pub mod proxy;
+pub mod register;
+pub mod sosmed;
+pub mod uploader;
+pub mod videoproxy;
 
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::api::test::helloworld::helloworld
+        crate::routes::api::anime::complete_anime::slug::slug,
+        crate::routes::api::anime::detail::slug::slug,
+        crate::routes::api::anime::full::slug::slug,
+        crate::routes::api::anime::ongoing_anime::slug::slug,
+        crate::routes::api::anime::search::search,
+        crate::routes::api::anime2::complete_anime::slug::slug,
+        crate::routes::api::anime2::detail::slug::slug,
+        crate::routes::api::anime2::ongoing_anime::slug::slug,
+        crate::routes::api::anime2::search::search,
+        crate::routes::api::apiproxy::apiproxy,
+        crate::routes::api::compress::compress,
+        crate::routes::api::docs::docs,
+        crate::routes::api::imageproxy::imageproxy,
+        crate::routes::api::komik::function::function,
+        crate::routes::api::proxy::proxy,
+        crate::routes::api::register::register,
+        crate::routes::api::sosmed::comments::comments,
+        crate::routes::api::sosmed::likes::likes,
+        crate::routes::api::sosmed::posts::posts,
+        crate::routes::api::videoproxy::videoproxy
     ),
     components(schemas()),
     tags((
@@ -23,6 +53,17 @@ pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();
-    router = test::register_routes(router);
+    router = anime::register_routes(router);
+    router = anime2::register_routes(router);
+    router = apiproxy::register_routes(router);
+    router = compress::register_routes(router);
+    router = docs::register_routes(router);
+    router = imageproxy::register_routes(router);
+    router = komik::register_routes(router);
+    router = proxy::register_routes(router);
+    router = register::register_routes(router);
+    router = sosmed::register_routes(router);
+    router = uploader::register_routes(router);
+    router = videoproxy::register_routes(router);
     router
 }

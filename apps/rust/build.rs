@@ -6,9 +6,9 @@ use anyhow::{ anyhow, Context, Result };
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-static HANDLER_FN_REGEX: Lazy<Regex> = Lazy::new(||
+static HANDLER_FN_REGEX: Lazy<Regex> = Lazy::new(|| {
   Regex::new(r"pub async fn\s+([a-zA-Z0-9_]+)\s*\(").unwrap()
-);
+});
 
 static ENDPOINT_METADATA_REGEX: Lazy<Regex> = Lazy::new(|| {
   Regex::new(
@@ -16,9 +16,9 @@ static ENDPOINT_METADATA_REGEX: Lazy<Regex> = Lazy::new(|| {
   ).unwrap()
 });
 
-static STRUCT_REGEX: Lazy<Regex> = Lazy::new(||
+static STRUCT_REGEX: Lazy<Regex> = Lazy::new(|| {
   Regex::new(r"(?m)^pub struct (\w+?)(Data|Response)\s*\{").unwrap()
-);
+});
 
 #[derive(Debug, Clone)]
 pub struct HandlerRouteInfo {
@@ -35,7 +35,8 @@ fn generate_utoipa_macro(
   route_path: &str,
   route_tag: &str,
   response_body: &str,
-  route_description: &str
+  route_description: &str,
+  operation_id: &str
 ) -> String {
   let method_ident = match http_method.to_uppercase().as_str() {
     "POST" => "post",
@@ -53,6 +54,7 @@ fn generate_utoipa_macro(
     {},
     path = "{}",
     tag = "{}",
+    operation_id = "{}",
     responses(
         (status = 200, description = "{}", body = {}),
         (status = 500, description = "Internal Server Error", body = String)
@@ -61,6 +63,7 @@ fn generate_utoipa_macro(
     method_ident,
     route_path,
     route_tag,
+    operation_id,
     route_description,
     response_body
   )
@@ -94,9 +97,36 @@ fn update_handler_file(
     .file_stem()
     .and_then(|s| s.to_str())
     .ok_or_else(|| anyhow!("Could not get file stem from {:?}", path))?
-    .replace(['[', ']'], "");
+    .replace(['[', ']'], "")
+    .replace('-', "_");
 
   let func_name = &file_stem;
+
+  let relative_path = path.strip_prefix(root_api_path).unwrap();
+  let tag_str = relative_path.with_extension("").to_str().unwrap().replace(std::path::MAIN_SEPARATOR, ".").replace('-', "_");
+  let default_tag = if tag_str.is_empty() { "api".to_string() } else { tag_str };
+
+  let operation_id = relative_path.with_extension("").to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "_").replace('-', "_").replace(['[', ']'], "");
+
+  let doc_comment = {
+    let register_pos = content.find("pub fn register_routes").unwrap_or(content.len());
+    let before = &content[..register_pos];
+    let lines: Vec<&str> = before.lines().rev().collect();
+    let mut doc_lines = Vec::new();
+    for line in lines {
+      if line.trim_start().starts_with("//!") {
+        doc_lines.push(line.trim_start().strip_prefix("//!").unwrap_or(line).trim());
+      } else if !line.trim().is_empty() {
+        break;
+      }
+    }
+    doc_lines.reverse();
+    if doc_lines.is_empty() {
+      None
+    } else {
+      Some(doc_lines.join(" "))
+    }
+  };
 
   if content.trim().is_empty() {
     let relative_path = path.strip_prefix(root_api_path).unwrap();
@@ -118,13 +148,6 @@ fn update_handler_file(
       .replace_all(&route_path_str, "{$1}")
       .to_string();
 
-    let default_tag = path
-      .parent()
-      .and_then(|p| p.file_name())
-      .and_then(|s| s.to_str())
-      .unwrap_or("api")
-      .to_string();
-
     let pascal_case_name = file_stem
       .split('_')
       .map(|s| s.chars().next().unwrap().to_uppercase().to_string() + &s[1..])
@@ -132,35 +155,35 @@ fn update_handler_file(
 
     let template = format!(
       r#"//! Handler for the {} endpoint.
- #![allow(dead_code)]
+  #![allow(dead_code)]
 
- use axum::{{response::IntoResponse, routing::get, Json, Router}};
- use std::sync::Arc;
- use crate::routes::AppState;
- use serde::{{Deserialize, Serialize}};
- use utoipa::ToSchema;
+  use axum::{{response::IntoResponse, routing::get, Json, Router}};
+  use std::sync::Arc;
+  use crate::routes::AppState;
+  use serde::{{Deserialize, Serialize}};
+  use utoipa::ToSchema;
 
- pub const ENDPOINT_METHOD: &str = "get";
- pub const ENDPOINT_PATH: &str = "/{}";
- pub const ENDPOINT_DESCRIPTION: &str = "Description for the {} endpoint";
- pub const ENDPOINT_TAG: &str = "{}";
- pub const SUCCESS_RESPONSE_BODY: &str = "Json<{}Response>";
+  pub const ENDPOINT_METHOD: &str = "get";
+  pub const ENDPOINT_PATH: &str = "/{}";
+  pub const ENDPOINT_DESCRIPTION: &str = "Handler for the {} endpoint";
+  pub const ENDPOINT_TAG: &str = "{}";
+  pub const SUCCESS_RESPONSE_BODY: &str = "Json<{}Response>";
 
- #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
- pub struct {}Response {{
-     pub message: String,
- }}
+  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+  pub struct {}Response {{
+      pub message: String,
+  }}
 
- pub async fn {}() -> impl IntoResponse {{
-     Json({}Response {{
-         message: "Hello from {}!".to_string(),
-     }})
- }}
+  pub async fn {}() -> impl IntoResponse {{
+      Json({}Response {{
+          message: "Hello from {}!".to_string(),
+      }})
+  }}
 
- pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-     router.route(ENDPOINT_PATH, get({}))
- }}
- "#,
+  pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
+      router.route(ENDPOINT_PATH, get({}))
+  }}
+  "#,
       func_name,
       axum_path,
       func_name,
@@ -194,7 +217,7 @@ fn update_handler_file(
   let route_tag = metadata
     .get("ENDPOINT_TAG")
     .cloned()
-    .unwrap_or_else(|| "api".to_string());
+    .unwrap_or_else(|| default_tag.clone());
   let response_body = metadata
     .get("SUCCESS_RESPONSE_BODY")
     .cloned()
@@ -202,7 +225,7 @@ fn update_handler_file(
   let route_description = metadata
     .get("ENDPOINT_DESCRIPTION")
     .cloned()
-    .unwrap_or_else(|| format!("Handler for {}", func_name));
+    .unwrap_or_else(|| doc_comment.unwrap_or_else(|| format!("Handler for {}", func_name)));
 
   let actual_func_name = HANDLER_FN_REGEX.captures(&content)
     .map(|c| c[1].to_string())
@@ -232,7 +255,8 @@ fn update_handler_file(
     &openapi_route_path,
     &route_tag,
     &sanitized_response,
-    &route_description
+    &route_description,
+    &operation_id
   );
   let fn_signature = format!("pub async fn {}(", actual_func_name);
   let new_register_fn = format!(
@@ -256,7 +280,7 @@ fn update_handler_file(
 
   // Remove existing register_routes and add new one
   let register_regex = Regex::new(
-    r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\n\}\n*"
+    r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\}\s*"
   ).unwrap();
   new_content = register_regex.replace_all(&new_content, "").to_string();
   new_content = new_content.trim_end().to_string();
@@ -292,7 +316,7 @@ fn generate_mod_for_directory(
   let mut route_registrations = Vec::new();
 
   let relative_path = current_dir.strip_prefix(root_api_path).unwrap_or(Path::new(""));
-  let relative_path_str = relative_path.to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "::");
+  let relative_path_str = relative_path.to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "::").replace('-', "_");
 
   let module_path_prefix = if relative_path_str.is_empty() {
     "crate::routes::api".to_string()
@@ -317,16 +341,22 @@ fn generate_mod_for_directory(
     }
 
     if path.is_dir() {
-      let mod_name = file_name;
+      let mod_name = file_name.replace('-', "_");
       pub_mods.push(format!("pub mod {};", mod_name));
       route_registrations.push(format!("{}", mod_name));
       generate_mod_for_directory(&path, root_api_path, all_handlers, all_schemas)?;
     } else if path.is_file() && path.extension().map_or(false, |e| e == "rs") {
-      let mod_name = path
+      let file_stem = path
         .file_stem()
         .and_then(|s| s.to_str())
-        .unwrap()
-        .replace(['[', ']'], "");
+        .unwrap();
+
+      // Skip files with invalid characters in their names
+      if file_stem.contains('[') || file_stem.contains(']') {
+        continue;
+      }
+
+      let mod_name = file_stem.replace(['[', ']'], "").replace('-', "_");
       pub_mods.push(format!("pub mod {};", mod_name));
       route_registrations.push(format!("{}", mod_name));
 
@@ -349,6 +379,7 @@ fn generate_mod_for_directory(
 
 {}
 
+/// Register routes for this directory
 use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
@@ -453,7 +484,11 @@ fn main() -> Result<()> {
   for entry in fs::read_dir(api_routes_path)?.flatten() {
     if let Some(name) = entry.file_name().to_str() {
       if name != "mod.rs" && !name.starts_with('.') {
-        modules.push(name.strip_suffix(".rs").unwrap_or(name).replace(['[', ']'], ""));
+        let file_stem = name.strip_suffix(".rs").unwrap_or(name);
+        // Skip files with invalid characters in their names
+        if !file_stem.contains('[') && !file_stem.contains(']') {
+          modules.push(file_stem.replace(['[', ']'], "").replace('-', "_"));
+        }
       }
     }
   }

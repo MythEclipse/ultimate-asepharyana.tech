@@ -35,7 +35,7 @@ scraper = { workspace = true }
 regex = { workspace = true }
 oxidize-pdf = { workspace = true }
 infer = { workspace = true }
-ffmpeg-next = { workspace = true }
+ffmpeg-next = { workspace = true, optional = true }
 once_cell = { workspace = true }
 rust_lib = { workspace = true }
 urlencoding = { workspace = true }
@@ -59,3 +59,7 @@ once_cell = { workspace = true }
 [[bin]]
 name = "scaffold"
 path = "src/bin/scaffold.rs"
+
+[features]
+default = []
+ffmpeg = ["ffmpeg-next"]

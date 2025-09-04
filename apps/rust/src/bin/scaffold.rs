@@ -34,7 +34,9 @@ fn main() -> std::io::Result<()> {
 
   // Build full file path, e.g. "<base_api_dir>/products/list.rs"
   let mut file_path = base_api_dir.clone();
-  file_path.push(route_path);
+  // Replace square brackets with valid characters for filename
+  let sanitized_route_path = route_path.replace(['[', ']'], "");
+  file_path.push(sanitized_route_path);
   file_path.set_extension("rs");
 
   // Check if file already exists
