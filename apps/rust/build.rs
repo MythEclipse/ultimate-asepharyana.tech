@@ -141,7 +141,7 @@ fn update_handler_file(
  use utoipa::ToSchema;
 
  pub const ENDPOINT_METHOD: &str = "get";
- pub const ENDPOINT_PATH: &str = "{}";
+ pub const ENDPOINT_PATH: &str = "/{}";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the {} endpoint";
  pub const ENDPOINT_TAG: &str = "{}";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<{}Response>";
@@ -259,6 +259,7 @@ fn update_handler_file(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\n\}\n*"
   ).unwrap();
   new_content = register_regex.replace_all(&new_content, "").to_string();
+  new_content = new_content.trim_end().to_string();
   new_content.push_str("\n\n");
   new_content.push_str(&new_register_fn);
 

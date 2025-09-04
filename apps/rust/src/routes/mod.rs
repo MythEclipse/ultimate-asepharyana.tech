@@ -29,7 +29,7 @@ pub fn create_routes() -> Router<Arc<AppState>> {
     .route("/api/health", get(health_check))
     .route("/api/status", get(status_handler))
     .nest("/api", api::create_api_routes())
-    .merge(SwaggerUi::new("/swagger-ui").url("/api-doc/openapi.json", ApiDoc::openapi()))
+    .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi()))
 }
 
 async fn root_handler() -> impl IntoResponse {

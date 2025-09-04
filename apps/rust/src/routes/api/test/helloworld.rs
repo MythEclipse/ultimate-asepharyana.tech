@@ -8,7 +8,7 @@
  use utoipa::ToSchema;
 
  pub const ENDPOINT_METHOD: &str = "get";
- pub const ENDPOINT_PATH: &str = "test/helloworld";
+ pub const ENDPOINT_PATH: &str = "/test/helloworld";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the helloworld endpoint";
  pub const ENDPOINT_TAG: &str = "test";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<HelloworldResponse>";
@@ -19,7 +19,7 @@
  }
 #[utoipa::path(
     get,
-    path = "/apitest/helloworld",
+    path = "/api/test/helloworld",
     tag = "test",
     responses(
         (status = 200, description = "Description for the helloworld endpoint", body = HelloworldResponse),
@@ -31,20 +31,6 @@ pub async fn helloworld() -> impl IntoResponse {
          message: "Hello from helloworld!".to_string(),
      })
  }
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router.route(ENDPOINT_PATH, get(helloworld))
