@@ -27,15 +27,6 @@
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-#[utoipa::path(
-    get,
-    path = "/apitest/helloworld",
-    tag = "test",
-    responses(
-        (status = 200, description = "Description for the helloworld endpoint", body = HelloworldResponse),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
-)]
 pub async fn helloworld() -> impl IntoResponse {
      Json(HelloworldResponse {
          message: "Hello from helloworld!".to_string(),
