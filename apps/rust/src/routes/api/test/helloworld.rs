@@ -3,7 +3,7 @@
 
 use axum::{ response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
-use crate::routes::ChatState;
+use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 
@@ -33,6 +33,6 @@ pub async fn helloworld() -> impl IntoResponse {
   })
 }
 
-pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
+pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router.route(ENDPOINT_PATH, get(helloworld))
 }

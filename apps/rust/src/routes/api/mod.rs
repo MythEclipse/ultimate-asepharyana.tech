@@ -4,7 +4,7 @@
 use axum::Router;
 use std::sync::Arc;
 use utoipa::OpenApi;
-use crate::routes::ChatState;
+use crate::routes::AppState;
 
 pub mod test;
 
@@ -21,7 +21,7 @@ use crate::routes::api::test::helloworld::HelloworldResponse;
 )]
 pub struct ApiDoc;
 
-pub fn create_api_routes() -> Router<Arc<ChatState>> {
+pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();
     router = test::register_routes(router);
     router

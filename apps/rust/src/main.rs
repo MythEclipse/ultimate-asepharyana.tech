@@ -1,53 +1,52 @@
-//! # Logging Setup
-//!
-//! This application uses [`tracing`](https://docs.rs/tracing) for structured logging.
-//! The log level is controlled by the `RUST_LOG` environment variable (e.g., `info`, `debug`, `warn`, `error`).
-//! Example usage in `.env`:
-//! ```env
-//! RUST_LOG=info
-//! ```
-//! Logging is initialized with `tracing_subscriber::EnvFilter` for environment-based configuration.
-//! See the code below for details.
+#![doc = "Logging Setup"]
+//
+// This application uses [`tracing`](https://docs.rs/tracing) for structured logging.
+// The log level is controlled by the `RUST_LOG` environment variable (e.g., `info`, `debug`, `warn`, `error`).
+// Example usage in `.env`:
+// RUST_LOG=info
+// Logging is initialized from the environment via `tracing_subscriber`.
 
 use std::net::SocketAddr;
 use rust_lib::config::CONFIG_MAP;
-use crate::routes::{create_routes, ChatState};
+use crate::routes::{ create_routes, AppState };
 use std::sync::Arc;
 use axum::Router;
+use tracing_subscriber::EnvFilter;
 
 mod routes;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing::info!("RustExpress starting up...");
+  // Initialize tracing from RUST_LOG (or defaults)
+  tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
-    // Use CONFIG_MAP for JWT_SECRET
-    let jwt_secret = CONFIG_MAP
-        .get("JWT_SECRET")
-        .cloned()
-        .expect("JWT_SECRET must be set in the environment");
+  tracing::info!("RustExpress starting up...");
 
-    tracing::info!("Creating app state..."); // Changed from chat state
-    let chat_state = Arc::new(ChatState {
-        jwt_secret,
-    });
+  // Use CONFIG_MAP for JWT_SECRET
+  let jwt_secret = CONFIG_MAP.get("JWT_SECRET")
+    .cloned()
+    .expect("JWT_SECRET must be set in the environment");
 
-    tracing::info!("Building application routes...");
+  tracing::info!("Creating app state...");
+  let app_state = Arc::new(AppState {
+    jwt_secret,
+  });
 
-    let app = Router::new()
-        .merge(create_routes().with_state(chat_state));
+  tracing::info!("Building application routes...");
+  let app = Router::new().merge(create_routes().with_state(app_state.clone()));
 
-    let port = CONFIG_MAP
-        .get("PORT")
-        .and_then(|s| s.parse::<u16>().ok())
-        .unwrap_or(3000);
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    tracing::info!("Binding server to address: {}", addr);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    tracing::info!("Server listening on {}", listener.local_addr()?);
+  let port = CONFIG_MAP.get("PORT")
+    .and_then(|s| s.parse::<u16>().ok())
+    .unwrap_or(3000);
+  let addr = SocketAddr::from(([0, 0, 0, 0], port));
+  tracing::info!("Binding server to address: {}", addr);
 
-    axum::serve(listener, app).await?;
-    tracing::info!("RustExpress shutting down.");
+  // Bind a TcpListener and use axum::serve (keeps compatibility with current axum version)
+  let listener = tokio::net::TcpListener::bind(&addr).await?;
+  tracing::info!("Server listening on {}", listener.local_addr()?);
 
-    Ok(())
+  axum::serve(listener, app).await?;
+  tracing::info!("RustExpress shutting down.");
+
+  Ok(())
 }
