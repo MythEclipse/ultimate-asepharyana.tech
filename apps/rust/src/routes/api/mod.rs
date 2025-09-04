@@ -6,15 +6,14 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use crate::routes::AppState;
 
-pub mod test;
 
-use crate::routes::api::test::helloworld::HelloworldResponse;
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::api::test::helloworld::helloworld
+
     ),
-    components(schemas(HelloworldResponse)),
+    components(schemas()),
     tags((
         name = "api", description = "Main API"
     ))
@@ -23,6 +22,6 @@ pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();
-    router = test::register_routes(router);
+
     router
 }
