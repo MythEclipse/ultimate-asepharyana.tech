@@ -560,7 +560,7 @@ fn update_handler_file(
   let mut new_content = content.clone();
 
   // Remove all existing utoipa::path macros
-  let macro_regex = Regex::new(r"(?m)^\s*#\[utoipa::path\([^\]]*\)\]\n").unwrap();
+  let macro_regex = Regex::new(r"(?s)#\[utoipa::path\(.*?\)\]\s*").unwrap();
   new_content = macro_regex.replace_all(&new_content, "").to_string();
 
   // Add the new macro before the function if function exists
@@ -611,7 +611,7 @@ fn generate_mod_for_directory(
   let mut route_registrations = Vec::new();
 
   let relative_path = current_dir.strip_prefix(root_api_path).unwrap_or(Path::new(""));
-  let relative_path_str = relative_path.to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "::").replace('-', "_");
+  let relative_path_str = relative_path.to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "::").replace('-', "_").replace("[", "").replace("]", "");
 
   let module_path_prefix = if relative_path_str.is_empty() {
     "crate::routes::api".to_string()

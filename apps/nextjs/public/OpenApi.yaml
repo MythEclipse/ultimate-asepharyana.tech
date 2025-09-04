@@ -1,12 +1,18 @@
 openapi: '3.0.2'
 paths:
-  /api/komik/manga:
+  /api/komik/manga/{slug}:
     get:
-      description: 'Mengambil daftar manga berdasarkan jenis manga dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
-      summary: 'Mengambil daftar manga'
+      description: 'Mengambil detail manga berdasarkan slug dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
+      summary: 'Mengambil detail manga berdasarkan slug'
       tags:
         - komik
       parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 'Slug untuk manga'
         - name: page
           in: query
           required: true
@@ -98,13 +104,19 @@ paths:
                     type: string
                 required:
                   - message
-  /api/komik/manhwa:
+  /api/komik/manhwa/{slug}:
     get:
-      description: 'Mengambil daftar manhwa berdasarkan jenis manhwa dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
-      summary: 'Mengambil daftar manhwa'
+      description: 'Mengambil detail manhwa berdasarkan slug dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
+      summary: 'Mengambil detail manhwa berdasarkan slug'
       tags:
         - komik
       parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 'Slug untuk manhwa'
         - name: page
           in: query
           required: true
@@ -173,7 +185,7 @@ paths:
                               nullable: true
                       required:
                         - data
-                        - pagination   
+                        - pagination
         '400':
           description: '400'
           content:
@@ -196,13 +208,19 @@ paths:
                     type: string
                 required:
                   - message
-  /api/komik/manhua:
+  /api/komik/manhua/{slug}:
     get:
-      description: 'Mengambil daftar manhua berdasarkan jenis manhua dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
-      summary: 'Mengambil daftar manhua'
+      description: 'Mengambil detail manhua berdasarkan slug dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
+      summary: 'Mengambil detail manhua berdasarkan slug'
       tags:
         - komik
       parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 'Slug untuk manhua'
         - name: page
           in: query
           required: true
@@ -271,7 +289,7 @@ paths:
                               nullable: true
                       required:
                         - data
-                        - pagination      
+                        - pagination
         '400':
           description: '400'
           content:
@@ -1027,7 +1045,7 @@ paths:
                   message:
                     type: string
                 required:
-                  - message 
+                  - message
   /api/anime2:
     get:
       summary: 'Mendapatkan anime yang sedang berlangsung dan selesai'
@@ -1157,7 +1175,7 @@ paths:
                     type: string
                 required:
                   - message
-  
+
   /api/anime2/ongoing-anime/{slug}:
     get:
       summary: 'Mendapatkan daftar anime yang sudah selesai'
@@ -1238,7 +1256,7 @@ paths:
                     type: string
                 required:
                   - message
-  
+
   /api/anime2/detail/{slug}:
     get:
       summary: 'Dapatkan Detail anime'
@@ -1429,7 +1447,7 @@ paths:
                 - file
               properties:
                 file:
-                  type: string 
+                  type: string
                   format: binary
                   description: The file to upload
       responses:
@@ -1467,7 +1485,7 @@ paths:
       tags:
         - tools
       description: 'Proxy request to multiple base URLs'
-      parameters: 
+      parameters:
         - name: url
           in: query
           required: true
@@ -1604,7 +1622,7 @@ paths:
                   error:
                     type: string
                     example: 'Failed to scrape drive downloader'
-                    
+
 info:
   title: Freefire
   version: '0.0.1'
