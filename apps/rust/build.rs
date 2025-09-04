@@ -241,31 +241,26 @@ fn update_handler_file(
     actual_func_name
   );
 
-  let mut new_content = content.replace(
-    &fn_signature,
-    &format!("{}\n{}", new_utoipa_macro, fn_signature)
-  );
+  let mut new_content = content.clone();
 
-  // Remove duplicate macro annotation if already present
-  let macro_regex = Regex::new(r"(?m)^#\[utoipa::path\([^\]]*\)\]\n").unwrap();
+  // Remove all existing utoipa::path macros
+  let macro_regex = Regex::new(r"(?m)^\s*#\[utoipa::path\([^\]]*\)\]\n").unwrap();
   new_content = macro_regex.replace_all(&new_content, "").to_string();
 
-  // Insert macro annotation directly above the handler function, not at the top
+  // Add the new macro before the function if function exists
   if let Some(pos) = new_content.find(&fn_signature) {
     let before = &new_content[..pos];
     let after = &new_content[pos..];
     new_content = format!("{}{}\n{}", before, new_utoipa_macro, after);
   }
 
+  // Remove existing register_routes and add new one
   let register_regex = Regex::new(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\n\}\n*"
   ).unwrap();
-  if register_regex.is_match(&new_content) {
-    new_content = register_regex.replace_all(&new_content, &new_register_fn).to_string();
-  } else {
-    new_content.push_str("\n\n");
-    new_content.push_str(&new_register_fn);
-  }
+  new_content = register_regex.replace_all(&new_content, "").to_string();
+  new_content.push_str("\n\n");
+  new_content.push_str(&new_register_fn);
 
   if content != new_content {
     fs::write(path, &new_content)?;
