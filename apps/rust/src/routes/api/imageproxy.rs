@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/imageproxy";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the imageproxy endpoint";
- pub const ENDPOINT_TAG: &str = "api";
+ pub const ENDPOINT_TAG: &str = "imageproxy";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<ImageproxyResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/imageproxy",
-    tag = "api",
+    tag = "imageproxy",
     operation_id = "imageproxy",
     responses(
         (status = 200, description = "Description for the imageproxy endpoint", body = ImageproxyResponse),

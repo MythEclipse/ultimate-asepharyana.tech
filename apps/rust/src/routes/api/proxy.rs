@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/proxy";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the proxy endpoint";
- pub const ENDPOINT_TAG: &str = "api";
+ pub const ENDPOINT_TAG: &str = "proxy";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<ProxyResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/proxy",
-    tag = "api",
+    tag = "proxy",
     operation_id = "proxy",
     responses(
         (status = 200, description = "Description for the proxy endpoint", body = ProxyResponse),

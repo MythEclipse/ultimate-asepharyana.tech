@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/anime/search";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the search endpoint";
- pub const ENDPOINT_TAG: &str = "anime";
+ pub const ENDPOINT_TAG: &str = "anime.search";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/anime/search",
-    tag = "anime",
+    tag = "anime.search",
     operation_id = "anime_search",
     responses(
         (status = 200, description = "Description for the search endpoint", body = SearchResponse),

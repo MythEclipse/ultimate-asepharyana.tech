@@ -11,10 +11,38 @@ static HANDLER_FN_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static ENDPOINT_METADATA_REGEX: Lazy<Regex> = Lazy::new(|| {
-  Regex::new(
-    r#"const\s+(ENDPOINT_METHOD|ENDPOINT_PATH|ENDPOINT_DESCRIPTION|ENDPOINT_TAG|SUCCESS_RESPONSE_BODY):\s*&\s*str\s*=\s*"([^"]*)";"#
-  ).unwrap()
-});
+   Regex::new(
+     r#"const\s+(ENDPOINT_METHOD|ENDPOINT_PATH|ENDPOINT_DESCRIPTION|ENDPOINT_TAG|OPERATION_ID|SUCCESS_RESPONSE_BODY):\s*&\s*str\s*=\s*"([^"]*)";"#
+   ).unwrap()
+ });
+
+static DYNAMIC_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([^\]]+)\]").unwrap());
+
+fn sanitize_operation_id(path_str: &str) -> String {
+    let s = path_str.replace(std::path::MAIN_SEPARATOR, "_").replace('-', "_");
+    let s = DYNAMIC_REGEX.replace_all(&s, |caps: &regex::Captures| {
+        let inner = &caps[1];
+        if inner.starts_with("...") {
+            "_catch_all".to_string()
+        } else {
+            format!("_{}", inner)
+        }
+    }).to_string();
+    s.trim_matches('_').replace("__", "_")
+}
+
+fn sanitize_tag(path_str: &str) -> String {
+    let s = path_str.replace(std::path::MAIN_SEPARATOR, ".").replace('-', "_");
+    let s = DYNAMIC_REGEX.replace_all(&s, |caps: &regex::Captures| {
+        let inner = &caps[1];
+        if inner.starts_with("...") {
+            ".catch_all".to_string()
+        } else {
+            format!(".{}", inner)
+        }
+    }).to_string();
+    s.trim_matches('.').to_string()
+}
 
 static STRUCT_REGEX: Lazy<Regex> = Lazy::new(|| {
   Regex::new(r"(?m)^pub struct (\w+?)(Data|Response)\s*\{").unwrap()
@@ -103,10 +131,12 @@ fn update_handler_file(
   let func_name = &file_stem;
 
   let relative_path = path.strip_prefix(root_api_path).unwrap();
-  let tag_str = relative_path.with_extension("").to_str().unwrap().replace(std::path::MAIN_SEPARATOR, ".").replace('-', "_");
+  let relative_path_no_ext = relative_path.with_extension("");
+  let relative_path_str = relative_path_no_ext.to_str().unwrap();
+  let tag_str = sanitize_tag(relative_path_str);
   let default_tag = if tag_str.is_empty() { "api".to_string() } else { tag_str };
 
-  let operation_id = relative_path.with_extension("").to_str().unwrap().replace(std::path::MAIN_SEPARATOR, "_").replace('-', "_").replace(['[', ']'], "");
+  let operation_id = sanitize_operation_id(relative_path_str);
 
   let doc_comment = {
     let register_pos = content.find("pub fn register_routes").unwrap_or(content.len());
@@ -167,6 +197,7 @@ fn update_handler_file(
   pub const ENDPOINT_PATH: &str = "/{}";
   pub const ENDPOINT_DESCRIPTION: &str = "Handler for the {} endpoint";
   pub const ENDPOINT_TAG: &str = "{}";
+  pub const OPERATION_ID: &str = "{}";
   pub const SUCCESS_RESPONSE_BODY: &str = "Json<{}Response>";
 
   #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -188,6 +219,7 @@ fn update_handler_file(
       axum_path,
       func_name,
       default_tag,
+      operation_id,
       pascal_case_name,
       pascal_case_name,
       func_name,
@@ -206,6 +238,14 @@ fn update_handler_file(
     metadata.insert(cap[1].to_string(), cap[2].to_string());
   }
 
+  // Overwrite ENDPOINT_TAG with hierarchical tag
+  let tag_regex = Regex::new(r#"const\s+ENDPOINT_TAG:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
+  let content = tag_regex.replace(&content, &format!(r#"const ENDPOINT_TAG: &str = "{}";"#, default_tag)).to_string();
+
+  // Overwrite OPERATION_ID with generated operation_id
+  let operation_id_regex = Regex::new(r#"const\s+OPERATION_ID:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
+  let content = operation_id_regex.replace(&content, &format!(r#"const OPERATION_ID: &str = "{}";"#, operation_id)).to_string();
+
   let http_method = metadata
     .get("ENDPOINT_METHOD")
     .cloned()
@@ -214,10 +254,7 @@ fn update_handler_file(
     .get("ENDPOINT_PATH")
     .cloned()
     .unwrap_or_else(|| format!("/{}", file_stem));
-  let route_tag = metadata
-    .get("ENDPOINT_TAG")
-    .cloned()
-    .unwrap_or_else(|| default_tag.clone());
+  let route_tag = default_tag.clone();
   let response_body = metadata
     .get("SUCCESS_RESPONSE_BODY")
     .cloned()
@@ -351,11 +388,6 @@ fn generate_mod_for_directory(
         .and_then(|s| s.to_str())
         .unwrap();
 
-      // Skip files with invalid characters in their names
-      if file_stem.contains('[') || file_stem.contains(']') {
-        continue;
-      }
-
       let mod_name = file_stem.replace(['[', ']'], "").replace('-', "_");
       pub_mods.push(format!("pub mod {};", mod_name));
       route_registrations.push(format!("{}", mod_name));
@@ -485,10 +517,7 @@ fn main() -> Result<()> {
     if let Some(name) = entry.file_name().to_str() {
       if name != "mod.rs" && !name.starts_with('.') {
         let file_stem = name.strip_suffix(".rs").unwrap_or(name);
-        // Skip files with invalid characters in their names
-        if !file_stem.contains('[') && !file_stem.contains(']') {
-          modules.push(file_stem.replace(['[', ']'], "").replace('-', "_"));
-        }
+        modules.push(file_stem.replace(['[', ']'], "").replace('-', "_"));
       }
     }
   }

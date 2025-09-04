@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/docs";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the docs endpoint";
- pub const ENDPOINT_TAG: &str = "api";
+ pub const ENDPOINT_TAG: &str = "docs";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<DocsResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/docs",
-    tag = "api",
+    tag = "docs",
     operation_id = "docs",
     responses(
         (status = 200, description = "Description for the docs endpoint", body = DocsResponse),

@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/sosmed/posts";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the posts endpoint";
- pub const ENDPOINT_TAG: &str = "sosmed";
+ pub const ENDPOINT_TAG: &str = "sosmed.posts";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<PostsResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/sosmed/posts",
-    tag = "sosmed",
+    tag = "sosmed.posts",
     operation_id = "sosmed_posts",
     responses(
         (status = 200, description = "Description for the posts endpoint", body = PostsResponse),

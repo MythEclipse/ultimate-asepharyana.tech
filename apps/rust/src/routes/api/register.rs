@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/register";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the register endpoint";
- pub const ENDPOINT_TAG: &str = "api";
+ pub const ENDPOINT_TAG: &str = "register";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<RegisterResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/register",
-    tag = "api",
+    tag = "register",
     operation_id = "register",
     responses(
         (status = 200, description = "Description for the register endpoint", body = RegisterResponse),

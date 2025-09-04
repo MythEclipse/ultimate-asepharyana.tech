@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/videoproxy";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the videoproxy endpoint";
- pub const ENDPOINT_TAG: &str = "api";
+ pub const ENDPOINT_TAG: &str = "videoproxy";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<VideoproxyResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/videoproxy",
-    tag = "api",
+    tag = "videoproxy",
     operation_id = "videoproxy",
     responses(
         (status = 200, description = "Description for the videoproxy endpoint", body = VideoproxyResponse),

@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/compress";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the compress endpoint";
- pub const ENDPOINT_TAG: &str = "api";
+ pub const ENDPOINT_TAG: &str = "compress";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<CompressResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/compress",
-    tag = "api",
+    tag = "compress",
     operation_id = "compress",
     responses(
         (status = 200, description = "Description for the compress endpoint", body = CompressResponse),

@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/anime/ongoing-anime/{slug}";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the slug endpoint";
- pub const ENDPOINT_TAG: &str = "ongoing-anime";
+ pub const ENDPOINT_TAG: &str = "anime.ongoing_anime.slug";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<SlugResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/anime/ongoing-anime/{slug}",
-    tag = "ongoing-anime",
+    tag = "anime.ongoing_anime.slug",
     operation_id = "anime_ongoing_anime_slug",
     responses(
         (status = 200, description = "Description for the slug endpoint", body = SlugResponse),

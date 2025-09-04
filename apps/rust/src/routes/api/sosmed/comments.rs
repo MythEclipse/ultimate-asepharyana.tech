@@ -10,7 +10,7 @@
  pub const ENDPOINT_METHOD: &str = "get";
  pub const ENDPOINT_PATH: &str = "/sosmed/comments";
  pub const ENDPOINT_DESCRIPTION: &str = "Description for the comments endpoint";
- pub const ENDPOINT_TAG: &str = "sosmed";
+ pub const ENDPOINT_TAG: &str = "sosmed.comments";
  pub const SUCCESS_RESPONSE_BODY: &str = "Json<CommentsResponse>";
 
  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -20,7 +20,7 @@
 #[utoipa::path(
     get,
     path = "/api/sosmed/comments",
-    tag = "sosmed",
+    tag = "sosmed.comments",
     operation_id = "sosmed_comments",
     responses(
         (status = 200, description = "Description for the comments endpoint", body = CommentsResponse),
