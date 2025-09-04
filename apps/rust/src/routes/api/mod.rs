@@ -19,7 +19,19 @@ pub mod sosmed;
 pub mod uploader;
 pub mod videoproxy;
 
-
+use crate::routes::api::anime2::search::SearchResponse;
+use crate::routes::api::anime::search::SearchResponse as searchresponse_1;
+use crate::routes::api::apiproxy::ApiproxyResponse;
+use crate::routes::api::compress::CompressResponse;
+use crate::routes::api::docs::DocsResponse;
+use crate::routes::api::imageproxy::ImageproxyResponse;
+use crate::routes::api::komik::function::FunctionResponse;
+use crate::routes::api::proxy::ProxyResponse;
+use crate::routes::api::register::RegisterResponse;
+use crate::routes::api::sosmed::comments::CommentsResponse;
+use crate::routes::api::sosmed::likes::LikesResponse;
+use crate::routes::api::sosmed::posts::PostsResponse;
+use crate::routes::api::videoproxy::VideoproxyResponse;
 #[derive(OpenApi)]
 #[openapi(
     paths(
@@ -44,7 +56,7 @@ pub mod videoproxy;
         crate::routes::api::sosmed::posts::posts,
         crate::routes::api::videoproxy::videoproxy
     ),
-    components(schemas()),
+    components(schemas(SearchResponse, searchresponse_1, ApiproxyResponse, CompressResponse, DocsResponse, ImageproxyResponse, FunctionResponse, ProxyResponse, RegisterResponse, CommentsResponse, LikesResponse, PostsResponse, VideoproxyResponse)),
     tags((
         name = "api", description = "Main API"
     ))

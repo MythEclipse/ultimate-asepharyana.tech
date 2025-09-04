@@ -11,12 +11,60 @@ static HANDLER_FN_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static ENDPOINT_METADATA_REGEX: Lazy<Regex> = Lazy::new(|| {
-   Regex::new(
-     r#"const\s+(ENDPOINT_METHOD|ENDPOINT_PATH|ENDPOINT_DESCRIPTION|ENDPOINT_TAG|OPERATION_ID|SUCCESS_RESPONSE_BODY):\s*&\s*str\s*=\s*"([^"]*)";"#
-   ).unwrap()
- });
+    Regex::new(
+      r#"const\s+(ENDPOINT_METHOD|ENDPOINT_PATH|ENDPOINT_DESCRIPTION|ENDPOINT_TAG|OPERATION_ID|SUCCESS_RESPONSE_BODY):\s*&\s*str\s*=\s*"([^"]*)";"#
+    ).unwrap()
+  });
 
 static DYNAMIC_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([^\]]+)\]").unwrap());
+
+fn extract_path_params(axum_path: &str) -> Vec<(String, String)> {
+    let re = Regex::new(r"\{([^}]+)\}").unwrap();
+    re.captures_iter(axum_path)
+        .map(|cap| {
+            let param = &cap[1];
+            if param.starts_with("...") {
+                (param.strip_prefix("...").unwrap().to_string(), "Vec<String>".to_string())
+            } else {
+                (param.to_string(), "String".to_string())
+            }
+        })
+        .collect()
+}
+
+fn parse_path_params_from_signature(content: &str) -> Vec<(String, String)> {
+    let fn_regex = Regex::new(r"pub async fn \w+\s*\(([^)]*)\)\s*->").unwrap();
+    if let Some(cap) = fn_regex.captures(content) {
+        let params = &cap[1];
+        let param_regex = Regex::new(r"Path\((\w+)\):\s*Path<([^>]+)>").unwrap();
+        param_regex.captures_iter(params).map(|cap| {
+            let name = cap[1].to_string();
+            let typ = cap[2].to_string();
+            (name, typ)
+        }).collect()
+    } else {
+        vec![]
+    }
+}
+
+fn generate_default_description(path_str: &str, method: &str) -> String {
+    let path_segments: Vec<&str> = path_str.trim_matches('/').split('/').collect();
+    let last_segment = path_segments.last().unwrap_or(&"");
+    let second_last_segment = if path_segments.len() > 1 {
+        path_segments[path_segments.len() - 2]
+    } else {
+        ""
+    };
+
+    match *last_segment {
+        "search" => format!("Searches for {} based on query parameters.", second_last_segment),
+        "detail" => format!("Retrieves details for a specific {} by ID.", second_last_segment),
+        "list" => format!("Retrieves a list of {}.", second_last_segment),
+        "[slug]" => format!("Retrieves details for a specific {} by slug.", second_last_segment),
+        "[[...file]]" => format!("Handles file operations (upload/download) for {}.", second_last_segment),
+        _ => format!("Handles {} requests for the {} endpoint.", method.to_uppercase(), path_str),
+    }
+}
 
 fn sanitize_operation_id(path_str: &str) -> String {
     let s = path_str.replace(std::path::MAIN_SEPARATOR, "_").replace('-', "_");
@@ -29,6 +77,58 @@ fn sanitize_operation_id(path_str: &str) -> String {
         }
     }).to_string();
     s.trim_matches('_').replace("__", "_")
+}
+
+fn enhance_response_struct(content: &str, axum_path: &str) -> String {
+    let struct_regex = Regex::new(r"(?ms)#\[derive\([^)]*\)\]\s*pub struct (\w+Response)\s*\{\s*pub message: String,\s*\}").unwrap();
+
+    if let Some(cap) = struct_regex.captures(content) {
+        let struct_name = &cap[1];
+        let enhanced_struct = if axum_path.contains("/search") {
+            format!(r#"/// Response structure for search endpoints.
+/// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct {} {{
+    /// Success message
+    pub message: String,
+    /// Search results - replace with actual Vec<T> where T implements ToSchema
+    pub data: Vec<serde_json::Value>,
+    /// Total number of results
+    pub total: Option<u64>,
+    /// Current page
+    pub page: Option<u32>,
+    /// Results per page
+    pub per_page: Option<u32>,
+}}"#, struct_name)
+        } else if axum_path.contains('{') || axum_path.contains("/detail") {
+            format!(r#"/// Response structure for detail endpoints.
+/// Replace `serde_json::Value` with your actual data type and implement `utoipa::ToSchema` for complex types.
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct {} {{
+    /// Success message
+    pub message: String,
+    /// Detailed data - replace with actual T where T implements ToSchema
+    pub data: serde_json::Value,
+}}"#, struct_name)
+        } else {
+            format!(r#"/// Response structure for list endpoints.
+/// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct {} {{
+    /// Success message
+    pub message: String,
+    /// List of items - replace with actual Vec<T> where T implements ToSchema
+    pub data: Vec<serde_json::Value>,
+    /// Total number of items
+    pub total: Option<u64>,
+}}"#, struct_name)
+        };
+
+        let old_struct_regex = Regex::new(r"(?ms)#\[derive\([^)]*\)\]\s*pub struct \w+Response\s*\{\s*pub message: String,\s*\}").unwrap();
+        old_struct_regex.replace(content, &enhanced_struct).to_string()
+    } else {
+        content.to_string()
+    }
 }
 
 fn sanitize_tag(path_str: &str) -> String {
@@ -64,7 +164,8 @@ fn generate_utoipa_macro(
   route_tag: &str,
   response_body: &str,
   route_description: &str,
-  operation_id: &str
+  operation_id: &str,
+  path_params: &[(String, String)]
 ) -> String {
   let method_ident = match http_method.to_uppercase().as_str() {
     "POST" => "post",
@@ -77,9 +178,18 @@ fn generate_utoipa_macro(
     _ => "get", // Default to GET
   };
 
+  let params_str = if path_params.is_empty() {
+    String::new()
+  } else {
+    let params: Vec<String> = path_params.iter()
+      .map(|(name, typ)| format!(r#"("{}" = {}, Path, description = "The {} identifier")"#, name, typ, name))
+      .collect();
+    format!(",\n    params(\n        {}\n    )", params.join(",\n        "))
+  };
+
   format!(
     r#"#[utoipa::path(
-    {},
+    {}{},
     path = "{}",
     tag = "{}",
     operation_id = "{}",
@@ -89,6 +199,7 @@ fn generate_utoipa_macro(
     )
 )]"#,
     method_ident,
+    params_str,
     route_path,
     route_tag,
     operation_id,
@@ -117,7 +228,7 @@ fn update_handler_file(
   module_path_prefix: &str,
   root_api_path: &Path
 ) -> Result<Option<HandlerRouteInfo>> {
-  let content = fs
+  let mut content = fs
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
@@ -183,50 +294,132 @@ fn update_handler_file(
       .map(|s| s.chars().next().unwrap().to_uppercase().to_string() + &s[1..])
       .collect::<String>();
 
+    let default_description = generate_default_description(&axum_path, "get");
+
+    let (response_struct_name, response_fields, success_response_body) = if axum_path.contains("/search") {
+        ("SearchResponse", r#"
+    /// Success message
+    pub message: String,
+    /// Search results - replace with actual Vec<T> where T implements ToSchema
+    pub data: Vec<serde_json::Value>,
+    /// Total number of results
+    pub total: Option<u64>,
+    /// Current page
+    pub page: Option<u32>,
+    /// Results per page
+    pub per_page: Option<u32>,"#, "Json<SearchResponse>")
+    } else if axum_path.contains('{') || axum_path.contains("/detail") {
+        ("DetailResponse", r#"
+    /// Success message
+    pub message: String,
+    /// Detailed data - replace with actual T where T implements ToSchema
+    pub data: serde_json::Value,"#, "Json<DetailResponse>")
+    } else {
+        ("ListResponse", r#"
+    /// Success message
+    pub message: String,
+    /// List of items - replace with actual Vec<T> where T implements ToSchema
+    pub data: Vec<serde_json::Value>,
+    /// Total number of items
+    pub total: Option<u64>,"#, "Json<ListResponse>")
+    };
+
+    // Extract dynamic parameters from route_path_str
+    let mut path_params = Vec::new();
+    for cap in DYNAMIC_REGEX.captures_iter(&route_path_str) {
+        let param = &cap[1];
+        if param.starts_with("...") {
+            // Catch-all parameter
+            let param_name = param.strip_prefix("...").unwrap_or(param);
+            path_params.push((param_name.to_string(), "Vec<String>"));
+        } else {
+            path_params.push((param.to_string(), "String"));
+        }
+    }
+
+    // Build function signature with Path extractors
+    let func_signature = if path_params.is_empty() {
+        format!("pub async fn {}() -> impl IntoResponse", func_name)
+    } else {
+        let params_str = path_params.iter()
+            .map(|(name, typ)| format!("Path({}): Path<{}>", name, typ))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("pub async fn {}({}) -> impl IntoResponse", func_name, params_str)
+    };
+
+    // Build imports with Path if needed
+    let imports = if path_params.is_empty() {
+        "use axum::{response::IntoResponse, routing::get, Json, Router};".to_string()
+    } else {
+        "use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};".to_string()
+    };
+
     let template = format!(
       r#"//! Handler for the {} endpoint.
-  #![allow(dead_code)]
+    #![allow(dead_code)]
 
-  use axum::{{response::IntoResponse, routing::get, Json, Router}};
-  use std::sync::Arc;
-  use crate::routes::AppState;
-  use serde::{{Deserialize, Serialize}};
-  use utoipa::ToSchema;
+    {}
+    use std::sync::Arc;
+    use crate::routes::AppState;
+    use serde::{{Deserialize, Serialize}};
+    use serde_json;
+    use utoipa::ToSchema;
 
-  pub const ENDPOINT_METHOD: &str = "get";
-  pub const ENDPOINT_PATH: &str = "/{}";
-  pub const ENDPOINT_DESCRIPTION: &str = "Handler for the {} endpoint";
-  pub const ENDPOINT_TAG: &str = "{}";
-  pub const OPERATION_ID: &str = "{}";
-  pub const SUCCESS_RESPONSE_BODY: &str = "Json<{}Response>";
+    pub const ENDPOINT_METHOD: &str = "get";
+    pub const ENDPOINT_PATH: &str = "/{}";
+    pub const ENDPOINT_DESCRIPTION: &str = "{}";
+    pub const ENDPOINT_TAG: &str = "{}";
+    pub const OPERATION_ID: &str = "{}";
+    pub const SUCCESS_RESPONSE_BODY: &str = "{}";
 
-  #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-  pub struct {}Response {{
-      pub message: String,
-  }}
+    /// Response structure for the {} endpoint.
+    /// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
+    #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+    pub struct {} {{{}
+    }}
 
-  pub async fn {}() -> impl IntoResponse {{
-      Json({}Response {{
-          message: "Hello from {}!".to_string(),
-      }})
-  }}
+    {} {{
+        Json({} {{
+            message: "Hello from {}!".to_string(),{}
+        }})
+    }}
 
-  pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-      router.route(ENDPOINT_PATH, get({}))
-  }}
-  "#,
-      func_name,
-      axum_path,
-      func_name,
-      default_tag,
-      operation_id,
-      pascal_case_name,
-      pascal_case_name,
-      func_name,
-      pascal_case_name,
-      func_name,
-      func_name
-    );
+    /// {}
+    pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
+        router.route(ENDPOINT_PATH, get({}))
+    }}
+    "#,
+        func_name,
+        imports,
+        axum_path,
+        default_description,
+        default_tag,
+        operation_id,
+        success_response_body,
+        pascal_case_name,
+        response_struct_name,
+        response_fields,
+        func_signature,
+        response_struct_name,
+        func_name,
+        if response_struct_name == "SearchResponse" {
+            r#"
+            data: vec![],
+            total: None,
+            page: None,
+            per_page: None,"#
+        } else if response_struct_name == "ListResponse" {
+            r#"
+            data: vec![],
+            total: None,"#
+        } else {
+            r#"
+            data: serde_json::json!(null),"#
+        },
+        default_description,
+        func_name
+      );
 
     fs::write(path, template)?;
     println!("cargo:warning=Generated new handler template for {:?}", path);
@@ -240,29 +433,57 @@ fn update_handler_file(
 
   // Overwrite ENDPOINT_TAG with hierarchical tag
   let tag_regex = Regex::new(r#"const\s+ENDPOINT_TAG:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  let content = tag_regex.replace(&content, &format!(r#"const ENDPOINT_TAG: &str = "{}";"#, default_tag)).to_string();
+  let mut content = tag_regex.replace(&content, &format!(r#"const ENDPOINT_TAG: &str = "{}";"#, default_tag)).to_string();
 
   // Overwrite OPERATION_ID with generated operation_id
   let operation_id_regex = Regex::new(r#"const\s+OPERATION_ID:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  let content = operation_id_regex.replace(&content, &format!(r#"const OPERATION_ID: &str = "{}";"#, operation_id)).to_string();
+  let mut content = operation_id_regex.replace(&content, &format!(r#"const OPERATION_ID: &str = "{}";"#, operation_id)).to_string();
 
   let http_method = metadata
     .get("ENDPOINT_METHOD")
     .cloned()
     .unwrap_or_else(|| "get".to_string());
-  let route_path = metadata
+  let mut route_path = metadata
     .get("ENDPOINT_PATH")
     .cloned()
     .unwrap_or_else(|| format!("/{}", file_stem));
+
+  // Parse path params from existing function signature
+  let parsed_path_params = parse_path_params_from_signature(&content);
+
+  // Update ENDPOINT_PATH if there are path params and route_path doesn't have {param}
+  if !parsed_path_params.is_empty() {
+    for (param_name, _) in &parsed_path_params {
+      if route_path.ends_with(&format!("/{}", param_name)) && !route_path.contains(&format!("{{{}}}", param_name)) {
+        let new_route_path = route_path.replace(&format!("/{}", param_name), &format!("/{{{}}}", param_name));
+        let endpoint_path_regex = Regex::new(r#"const\s+ENDPOINT_PATH:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
+        content = endpoint_path_regex.replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, new_route_path)).to_string();
+        route_path = new_route_path;
+        break; // Assume only one param for simplicity
+      }
+    }
+  }
+
   let route_tag = default_tag.clone();
   let response_body = metadata
     .get("SUCCESS_RESPONSE_BODY")
     .cloned()
     .unwrap_or_else(|| "String".to_string());
-  let route_description = metadata
-    .get("ENDPOINT_DESCRIPTION")
-    .cloned()
-    .unwrap_or_else(|| doc_comment.unwrap_or_else(|| format!("Handler for {}", func_name)));
+  let axum_path = Regex::new(r"\[(.*?)\]")
+    .unwrap()
+    .replace_all(&route_path, "{$1}")
+    .to_string();
+  let existing_description = metadata.get("ENDPOINT_DESCRIPTION").cloned();
+  let route_description = if let Some(desc) = &existing_description {
+    // Prefer doc comment over generic descriptions
+    if desc.starts_with("Description for the") || desc == "Description for the X endpoint" {
+      doc_comment.unwrap_or_else(|| generate_default_description(&axum_path, &http_method))
+    } else {
+      desc.clone()
+    }
+  } else {
+    doc_comment.unwrap_or_else(|| generate_default_description(&axum_path, &http_method))
+  };
 
   let actual_func_name = HANDLER_FN_REGEX.captures(&content)
     .map(|c| c[1].to_string())
@@ -287,14 +508,48 @@ fn update_handler_file(
     response_body.split("::").last().unwrap_or(&response_body).to_string()
   };
 
+  let path_params = if !parsed_path_params.is_empty() {
+    parsed_path_params
+  } else {
+    extract_path_params(&axum_path)
+  };
+  println!("cargo:warning=File: {:?}", path);
+  println!("cargo:warning=axum_path: {}", axum_path);
+  println!("cargo:warning=route_path: {}", route_path);
+  println!("cargo:warning=path_params: {:?}", path_params);
   let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
     &openapi_route_path,
     &route_tag,
     &sanitized_response,
     &route_description,
-    &operation_id
+    &operation_id,
+    &path_params
   );
+
+  // Update function signature if there are path params
+  if !path_params.is_empty() {
+    let fn_regex = Regex::new(r"(pub async fn \w+)\s*\([^)]*\)\s*->\s*impl IntoResponse").unwrap();
+    if let Some(cap) = fn_regex.captures(&content) {
+      let fn_start = &cap[1];
+      let params_str = path_params.iter()
+        .map(|(name, typ)| format!("Path({}): Path<{}>", name, typ))
+        .collect::<Vec<_>>()
+        .join(", ");
+      let new_fn = format!("{}({}) -> impl IntoResponse", fn_start, params_str);
+      content = fn_regex.replace(&content, &new_fn).to_string();
+    }
+
+    // Ensure Path import
+    if !content.contains("extract::Path") {
+      let import_regex = Regex::new(r"use axum::\{([^}]*)\};").unwrap();
+      if let Some(cap) = import_regex.captures(&content) {
+        let existing = &cap[1];
+        let new_import = format!("extract::Path, {}", existing);
+        content = import_regex.replace(&content, &format!("use axum::{{{}}};", new_import)).to_string();
+      }
+    }
+  }
   let fn_signature = format!("pub async fn {}(", actual_func_name);
   let new_register_fn = format!(
     "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
@@ -323,6 +578,9 @@ fn update_handler_file(
   new_content = new_content.trim_end().to_string();
   new_content.push_str("\n\n");
   new_content.push_str(&new_register_fn);
+
+  // Enhance response struct if it's basic
+  new_content = enhance_response_struct(&new_content, &axum_path);
 
   if content != new_content {
     fs::write(path, &new_content)?;
@@ -406,8 +664,8 @@ fn generate_mod_for_directory(
   }
 
   let mod_content = format!(
-    r#"//! THIS FILE IS AUTOMATICALLY GENERATED BY build.rs
-//! DO NOT EDIT THIS FILE MANUALLY
+    r#"/// THIS FILE IS AUTOMATICALLY GENERATED BY build.rs
+/// DO NOT EDIT THIS FILE MANUALLY
 
 {}
 
@@ -462,14 +720,26 @@ fn generate_root_api_mod(
   sorted_schemas.sort();
 
   // Generate `use` imports for each fully-qualified schema path and collect simple type names for components.
-  let use_lines: Vec<String> = sorted_schemas
-    .iter()
-    .map(|full| format!("use {};", full))
-    .collect();
-  let simple_names: Vec<String> = sorted_schemas
-    .iter()
-    .map(|full| full.split("::").last().unwrap().to_string())
-    .collect();
+  // Handle duplicate type names by using aliases
+  let mut type_name_count: HashMap<String, usize> = HashMap::new();
+  let mut use_lines: Vec<String> = Vec::new();
+  let mut simple_names: Vec<String> = Vec::new();
+
+  for full in &sorted_schemas {
+    let simple_name = full.split("::").last().unwrap().to_string();
+    let count = type_name_count.entry(simple_name.clone()).or_insert(0);
+    *count += 1;
+
+    if *count > 1 {
+      // Use alias for duplicates
+      let alias = format!("{} as {}_{}", full, simple_name.to_lowercase(), *count - 1);
+      use_lines.push(format!("use {};", alias));
+      simple_names.push(format!("{}_{}", simple_name.to_lowercase(), *count - 1));
+    } else {
+      use_lines.push(format!("use {};", full));
+      simple_names.push(simple_name);
+    }
+  }
 
   content.push_str(
     &format!(
