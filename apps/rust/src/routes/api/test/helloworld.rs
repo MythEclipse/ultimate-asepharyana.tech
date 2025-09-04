@@ -1,38 +1,37 @@
 //! Handler for the helloworld endpoint.
 #![allow(dead_code)]
 
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{ response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::ChatState;
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "test/helloworld";
+pub const ENDPOINT_PATH: &str = "/test/helloworld";
 pub const ENDPOINT_DESCRIPTION: &str = "Description for the helloworld endpoint";
 pub const ENDPOINT_TAG: &str = "test";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<HelloworldResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "crate::routes::api::test::helloworld::HelloworldResponse";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct HelloworldResponse {
-    pub message: String,
+  pub message: String,
 }
 
 #[utoipa::path(
     get,
-    path = "test/helloworld",
+    path = "/api/test/helloworld",
     tag = "test",
     responses(
-        (status = 200, description = "Description for the helloworld endpoint", body = Json<HelloworldResponse>),
+        (status = 200, description = "Description for the helloworld endpoint", body = HelloworldResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn helloworld() -> impl IntoResponse {
-    Json(HelloworldResponse {
-        message: "Hello from helloworld!".to_string(),
-    })
+  Json(HelloworldResponse {
+    message: "Hello from helloworld!".to_string(),
+  })
 }
-
 
 pub fn register_routes(router: Router<Arc<ChatState>>) -> Router<Arc<ChatState>> {
     router.route(ENDPOINT_PATH, get(helloworld))

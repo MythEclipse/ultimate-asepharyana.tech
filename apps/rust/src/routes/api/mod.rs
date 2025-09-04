@@ -8,12 +8,13 @@ use crate::routes::ChatState;
 
 pub mod test;
 
+use crate::routes::api::test::helloworld::HelloworldResponse;
 #[derive(OpenApi)]
 #[openapi(
     paths(
         crate::routes::api::test::helloworld::helloworld
     ),
-    components(schemas(crate::routes::api::test::helloworld::HelloworldResponse)),
+    components(schemas(HelloworldResponse)),
     tags((
         name = "api", description = "Main API"
     ))
