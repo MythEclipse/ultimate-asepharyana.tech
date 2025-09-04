@@ -16,30 +16,47 @@ fn main() -> std::io::Result<()> {
 
   let route_path = &args[1];
 
-  // Buat path file lengkap, contoh: "src/routes/api/products/list.rs"
-  let mut file_path = PathBuf::from("src/routes/api");
+  // Determine base API directory so this can be run from workspace root or from apps/rust
+  let cwd = env::current_dir()?;
+  let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
+  let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+
+  let base_api_dir = if candidate_a.exists() {
+    candidate_a
+  } else if candidate_b.exists() {
+    candidate_b
+  } else if cwd.join("apps").join("rust").exists() {
+    // workspace root but api dir not present yet -> prefer apps/rust path
+    cwd.join("apps").join("rust").join("src").join("routes").join("api")
+  } else {
+    // fallback to the local src path
+    cwd.join("src").join("routes").join("api")
+  };
+
+  // Build full file path, e.g. "<base_api_dir>/products/list.rs"
+  let mut file_path = base_api_dir.clone();
   file_path.push(route_path);
   file_path.set_extension("rs");
 
-  // Cek apakah file sudah ada
+  // Check if file already exists
   if file_path.exists() {
-    println!("⚠️ File already exists at {:?}. No changes were made.", file_path);
+    println!("⚠️ File already exists at {}. No changes were made.", file_path.display());
     process::exit(0);
   }
 
-  // Buat direktori parent jika belum ada
+  // Create parent directory if missing
   if let Some(parent_dir) = file_path.parent() {
     fs::create_dir_all(parent_dir)?;
   } else {
-    eprintln!("❌ Invalid file path specified.");
+    eprintln!("❌ Invalid file path specified: {}", file_path.display());
     process::exit(1);
   }
 
-  // Buat file kosong. `build.rs` akan mengisinya nanti.
+  // Create empty file. `build.rs` will populate it on cargo build.
   fs::write(&file_path, "")?;
 
-  println!("✅ Empty file created successfully at: {:?}", file_path);
-  println!("   Run `cargo build` to auto-populate the file with the handler template.");
+  println!("✅ Empty file created successfully at: {}", file_path.display());
+  println!("   Run `cargo build` (in the crate) to auto-populate the file with the handler template.");
 
   Ok(())
 }
