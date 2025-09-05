@@ -67,8 +67,14 @@ pub fn generate_root_api_mod(
     .collect::<Vec<_>>()
     .join("\n");
 
+  let router_declaration = if modules.is_empty() {
+    "    let router = Router::new();"
+  } else {
+    "    let mut router = Router::new();"
+  };
+
   content.push_str(
-    &format!("pub fn create_api_routes() -> Router<Arc<AppState>> {{\n    let mut router = Router::new();\n{}\n    router\n}}\n", router_registrations)
+    &format!("pub fn create_api_routes() -> Router<Arc<AppState>> {{\n{}\n{}\n    router\n}}\n", router_declaration, router_registrations)
   );
 
   fs::write(api_routes_path.join("mod.rs"), content)?;

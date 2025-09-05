@@ -22,7 +22,7 @@ use crate::routes::AppState;
 pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
-    let mut router = Router::new();
+    let router = Router::new();
 
     router
 }
