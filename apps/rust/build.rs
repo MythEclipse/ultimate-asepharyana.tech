@@ -15,23 +15,16 @@ fn main() -> Result<()> {
 
   let mut all_handlers = Vec::new();
   let mut all_schemas = HashSet::new();
+  let mut modules = Vec::new();
 
-  mod_generator::generate_mod_for_directory(
+  let _ = mod_generator::generate_mod_for_directory(
     api_routes_path,
     api_routes_path,
     &mut all_handlers,
-    &mut all_schemas
+    &mut all_schemas,
+    &mut modules
   )?;
 
-  let mut modules = Vec::new();
-  for entry in fs::read_dir(api_routes_path)?.flatten() {
-    if let Some(name) = entry.file_name().to_str() {
-      if name != "mod.rs" && !name.starts_with('.') {
-        let file_stem = name.strip_suffix(".rs").unwrap_or(name);
-        modules.push(file_stem.replace(['[', ']'], "").replace('-', "_"));
-      }
-    }
-  }
   modules.sort();
   modules.dedup();
 

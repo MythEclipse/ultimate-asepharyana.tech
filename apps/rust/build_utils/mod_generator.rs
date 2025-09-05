@@ -31,8 +31,9 @@ pub fn generate_mod_for_directory(
   current_dir: &Path,
   root_api_path: &Path,
   all_handlers: &mut Vec<HandlerRouteInfo>,
-  all_schemas: &mut HashSet<String>
-) -> Result<()> {
+  all_schemas: &mut HashSet<String>,
+  modules: &mut Vec<String>
+) -> Result<bool> {
   let mut pub_mods = Vec::new();
   let mut route_registrations = Vec::new();
 
@@ -78,16 +79,23 @@ pub fn generate_mod_for_directory(
         fs::write(path.join("mod.rs"), b"pub mod index;\n")?;
       }
 
-      pub_mods.push(format!("pub mod {};", mod_name_sanitized));
-
       // Recursively generate mod.rs for the subdirectory
-      generate_mod_for_directory(&path, root_api_path, all_handlers, all_schemas)?;
+      let has_routes = generate_mod_for_directory(&path, root_api_path, all_handlers, all_schemas, modules)?;
 
-      // Route registration for dynamic segments needs to point to the index.rs inside
-      if is_dynamic {
-        route_registrations.push(format!("{}::index", sanitize_module_name(&mod_name_sanitized)));
-      } else {
-        route_registrations.push(format!("{}", sanitize_module_name(&mod_name_sanitized)));
+      if has_routes {
+        pub_mods.push(format!("pub mod {};", mod_name_sanitized));
+
+        // Route registration for dynamic segments needs to point to the index.rs inside
+        if is_dynamic {
+          route_registrations.push(format!("{}::index", sanitize_module_name(&mod_name_sanitized)));
+        } else {
+          route_registrations.push(format!("{}", sanitize_module_name(&mod_name_sanitized)));
+        }
+
+        // If this is the root level, add to modules
+        if current_dir == root_api_path {
+          modules.push(mod_name_sanitized.clone());
+        }
       }
     } else if path.is_file() && path.extension().map_or(false, |e| e == "rs") {
       let file_stem = path
@@ -146,5 +154,13 @@ pub fn register_routes({}router: Router<Arc<AppState>>) -> Router<Arc<AppState>>
   );
 
   fs::write(current_dir.join("mod.rs"), mod_content)?;
-  Ok(())
+
+  let has_routes = !pub_mods.is_empty();
+
+  // If this directory has no routes and is not the root, delete it
+  if !has_routes && current_dir != root_api_path {
+    fs::remove_dir_all(current_dir)?;
+  }
+
+  Ok(has_routes)
 }

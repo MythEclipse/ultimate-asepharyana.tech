@@ -6,17 +6,12 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use crate::routes::AppState;
 
-pub mod test;
 
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::api::test::v1::list::list,
-        crate::routes::api::test::v1::search::search,
-        crate::routes::api::test::v1::users::list::list,
-        crate::routes::api::test::v2::products::detail::product_id::product_id,
-        crate::routes::api::test::v2::users::profile::user_slug::user_slug
+
     ),
     components(schemas()),
     tags((
@@ -28,6 +23,6 @@ pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();
-    router = test::register_routes(router);
+
     router
 }
