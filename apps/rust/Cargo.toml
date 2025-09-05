@@ -60,6 +60,10 @@ once_cell = { workspace = true }
 name = "scaffold"
 path = "src/bin/scaffold.rs"
 
+[[bin]]
+name = "test_scaffold"
+path = "src/bin/test_scaffold.rs"
+
 [features]
 default = []
 ffmpeg = ["ffmpeg-next"]

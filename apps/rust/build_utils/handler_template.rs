@@ -129,13 +129,18 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
             data: serde_json::json!(null),"#.to_string()
         }
     } else {
-        // Include path parameters in the response
         let param_assignments = path_params.iter()
             .map(|(name, _)| format!("\"{}\": \"{}\"", name, name))
             .collect::<Vec<_>>()
             .join(", ");
-        format!(r#"
+        if response_struct_name == "ListResponse" || response_struct_name == "SearchResponse" {
+            format!(r#"
+            data: vec![serde_json::json!({{{}}})],
+            total: Some(1),"#, param_assignments)
+        } else {
+            format!(r#"
             data: serde_json::json!({{{}}}),"#, param_assignments)
+        }
     };
 
     // Build message that includes path parameter info
