@@ -9,14 +9,13 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use std::time::SystemTime;
-use std::hash::{Hash, Hasher};
-use std::collections::hash_map::DefaultHasher;
 
 use anyhow::{Result, Context};
 use env_logger;
+use itertools::Itertools;
 
 mod build_utils;
-use build_utils::{mod_generator, openapi_generator};
+use build_utils::{hash_utils::compute_directory_hash, mod_generator, openapi_generator};
 
 /// Configuration for the build process
 #[derive(Debug)]
@@ -24,8 +23,6 @@ struct BuildConfig {
     api_routes_path: String,
     build_utils_path: String,
     enable_logging: bool,
-    #[allow(dead_code)]
-    enable_parallel: bool,
 }
 
 impl Default for BuildConfig {
@@ -34,7 +31,6 @@ impl Default for BuildConfig {
             api_routes_path: "src/routes/api".to_string(),
             build_utils_path: "build_utils/".to_string(),
             enable_logging: true,
-            enable_parallel: false, // Set to true if rayon is available
         }
     }
 }
@@ -42,11 +38,6 @@ impl Default for BuildConfig {
 /// Type alias for API handlers
 type ApiHandlers = Vec<build_utils::handler_updater::HandlerRouteInfo>;
 
-/// Type alias for OpenAPI schemas
-type OpenApiSchemas = HashSet<String>;
-
-/// Type alias for module names
-type ModuleNames = Vec<String>;
 
 /// Custom error types for build process
 #[derive(Debug, thiserror::Error)]
@@ -55,49 +46,10 @@ enum BuildError {
     Io(#[from] std::io::Error),
     #[error("Anyhow error: {0}")]
     Anyhow(#[from] anyhow::Error),
-    #[allow(dead_code)]
-    #[error("File hashing error: {0}")]
-    Hash(String),
 }
 
 /// Result type for build operations
 type BuildResult<T> = Result<T, BuildError>;
-
-/// Compute hash of all files in the API routes directory for conditional regeneration
-fn compute_directory_hash(dir: &Path) -> BuildResult<u64> {
-    fn collect_rs_files(dir: &Path, files: &mut Vec<std::path::PathBuf>) -> BuildResult<()> {
-        for entry in fs::read_dir(dir).with_context(|| format!("Failed to read directory for hashing: {:?}", dir))? {
-            let entry = entry.with_context(|| format!("Failed to read entry in directory: {:?}", dir))?;
-            let path = entry.path();
-            if path.is_dir() {
-                collect_rs_files(&path, files)?;
-            } else if path.extension().map_or(false, |e| e == "rs") {
-                files.push(path);
-            }
-        }
-        Ok(())
-    }
-
-    let mut hasher = DefaultHasher::new();
-    let mut paths = Vec::new();
-    collect_rs_files(dir, &mut paths)?;
-
-    // Sort for consistent hashing
-    paths.sort();
-
-    for path in paths {
-        let content = fs::read(&path).with_context(|| format!("Failed to read file for hashing: {:?}", path))?;
-        content.hash(&mut hasher);
-        // Also hash modification time
-        if let Ok(metadata) = fs::metadata(&path) {
-            if let Ok(modified) = metadata.modified() {
-                modified.hash(&mut hasher);
-            }
-        }
-    }
-
-    Ok(hasher.finish())
-}
 
 fn main() -> Result<()> {
     // Initialize logging if enabled
@@ -152,23 +104,14 @@ fn setup_build_environment(config: &BuildConfig) -> BuildResult<std::path::PathB
 }
 
 /// Collect API data: handlers, schemas, and modules
-fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> BuildResult<(ApiHandlers, OpenApiSchemas, ModuleNames)> {
+fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> BuildResult<(ApiHandlers, HashSet<String>, Vec<String>)> {
     log::debug!("Collecting API data");
 
-    // Check for conditional regeneration
-    let current_hash = compute_directory_hash(api_routes_path)?;
-    let hash_file = api_routes_path.with_file_name("api_routes.hash");
+    let should_regenerate_value = should_regenerate(api_routes_path)?;
 
-    if let Ok(previous_hash_str) = fs::read_to_string(&hash_file) {
-        if let Ok(previous_hash) = previous_hash_str.trim().parse::<u64>() {
-            if previous_hash == current_hash {
-                log::info!("API routes unchanged, skipping regeneration");
-                // Return empty collections to indicate no change
-                return Ok((Vec::new(), HashSet::new(), Vec::new()));
-            }
-        }
-    } else {
-        log::debug!("No previous hash file found, proceeding with regeneration");
+    if !should_regenerate_value {
+        // Return empty collections to indicate no change
+        return Ok((Vec::new(), HashSet::new(), Vec::new()));
     }
 
     // Initialize collections for handlers, schemas, and modules
@@ -189,19 +132,13 @@ fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> BuildResul
     )?;
 
     // Sort and deduplicate the modules list using functional style
-    let modules = modules.into_iter().collect::<std::collections::HashSet<_>>().into_iter().collect::<Vec<_>>();
-    let mut modules = modules;
-    modules.sort();
-
-    // Save the new hash
-    fs::write(&hash_file, current_hash.to_string())
-        .with_context(|| format!("Failed to save hash file: {:?}", hash_file))?;
+    let modules = modules.into_iter().collect::<HashSet<_>>().into_iter().sorted().collect();
 
     Ok((api_handlers, openapi_schemas, modules))
 }
 
 /// Generate the root API module with OpenAPI documentation
-fn generate_api_modules(api_routes_path: &Path, modules: &ModuleNames, api_handlers: &ApiHandlers, openapi_schemas: &OpenApiSchemas) -> BuildResult<()> {
+fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handlers: &ApiHandlers, openapi_schemas: &HashSet<String>) -> BuildResult<()> {
     log::debug!("Generating API modules");
 
     openapi_generator::generate_root_api_mod(
@@ -212,4 +149,43 @@ fn generate_api_modules(api_routes_path: &Path, modules: &ModuleNames, api_handl
     )?;
 
     Ok(())
+}
+
+fn should_regenerate(api_routes_path: &Path) -> Result<bool, BuildError> {
+    let hash_result = compute_directory_hash(api_routes_path);
+    let hash_file = api_routes_path.with_file_name("api_routes.hash");
+
+    let should_regenerate = match &hash_result {
+        Ok(current_hash) => {
+            if let Ok(previous_hash_str) = fs::read_to_string(&hash_file) {
+                if let Ok(previous_hash) = previous_hash_str.trim().parse::<u64>() {
+                    if previous_hash == *current_hash {
+                        log::info!("API routes unchanged, skipping regeneration");
+                        false
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                }
+            } else {
+                log::debug!("No previous hash file found, proceeding with regeneration");
+                true
+            }
+        }
+        Err(e) => {
+            log::error!("Failed to compute directory hash: {}", e);
+            true
+        }
+    };
+
+    // Save the new hash if computation was successful
+    if should_regenerate {
+        if let Ok(current_hash) = hash_result {
+            fs::write(&hash_file, current_hash.to_string())
+                .with_context(|| format!("Failed to save hash file: {:?}", hash_file))?;
+        }
+    }
+
+    Ok(should_regenerate)
 }
