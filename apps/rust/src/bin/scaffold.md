@@ -54,21 +54,45 @@ curl http://127.0.0.1:3000/api/products/list
 
   cargo build
 
-- Edit handler di [`src/routes/api/products/detail/[product_id].rs`](apps/rust/src/routes/api/products/detail/[product_id].rs:1)
+- Edit handler di [`src/routes/api/products/detail/product_id.rs`](apps/rust/src/routes/api/products/detail/product_id.rs:1)
 
-Contoh handler untuk mengekstrak Path (String):
+Contoh handler untuk endpoint statis (sesuai template yang dihasilkan):
 
 ```rust
-use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
-use serde::Serialize;
+use axum::{response::IntoResponse, routing::get, Json, Router};
+use std::sync::Arc;
+use crate::routes::AppState;
+use serde::{Deserialize, Serialize};
+use serde_json;
+use utoipa::ToSchema;
 
-#[derive(Serialize)]
-pub struct ProductResponse {
+pub const ENDPOINT_METHOD: &str = "get";
+pub const ENDPOINT_PATH: &str = "/products/detail/product_id";
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the products/detail/product_id endpoint.";
+pub const ENDPOINT_TAG: &str = "products/detail/product_id";
+pub const OPERATION_ID: &str = "products/detail/product_id";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
+
+/// Response structure for the ProductId endpoint.
+/// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct DetailResponse {
+    /// Success message
     pub message: String,
+    /// Detailed data - replace with actual T where T implements ToSchema
+    pub data: serde_json::Value,
 }
 
-pub async fn product_id(Path(product_id): Path<String>) -> impl IntoResponse {
-    Json(ProductResponse { message: format!("Details for {}", product_id) })
+pub async fn product_id() -> impl IntoResponse {
+    Json(DetailResponse {
+        message: "Hello from product_id!".to_string(),
+        data: serde_json::json!(null),
+    })
+}
+
+/// Handles GET requests for the products/detail/product_id endpoint.
+pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
+    router.route(ENDPOINT_PATH, get(product_id))
 }
 ```
 
@@ -180,7 +204,7 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 2. build:
 
    cargo build
-3. edit `src/routes/api/products/detail/[product_id].rs`
+3. edit `src/routes/api/products/detail/product_id.rs`
 4. run:
 
    cargo run
