@@ -6,96 +6,23 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use crate::routes::AppState;
 
-pub mod anime;
-pub mod anime2;
-pub mod apiproxy;
-pub mod compress;
-pub mod docs;
-pub mod imageproxy;
-pub mod komik;
-pub mod proxy;
-pub mod register;
-pub mod sosmed;
-pub mod uploader;
-pub mod videoproxy;
 
-use crate::routes::api::anime2::search::SearchResponse;
-use crate::routes::api::anime::search::SearchResponse as searchresponse_1;
-use crate::routes::api::apiproxy::ApiproxyResponse;
-use crate::routes::api::compress::CompressResponse;
-use crate::routes::api::docs::DocsResponse;
-use crate::routes::api::imageproxy::ImageproxyResponse;
-use crate::routes::api::komik::chapter::ChapterData;
-use crate::routes::api::komik::chapter::ChapterResponse;
-use crate::routes::api::komik::detail::DetailData;
-use crate::routes::api::komik::detail::DetailResponse;
-use crate::routes::api::komik::function::FunctionResponse;
-use crate::routes::api::komik::manga::MangaResponse;
-use crate::routes::api::komik::manga::slug::index::MangaResponse as mangaresponse_1;
-use crate::routes::api::komik::manhua::ManhuaResponse;
-use crate::routes::api::komik::manhua::slug::index::ManhuaResponse as manhuaresponse_1;
-use crate::routes::api::komik::manhwa::ManhwaResponse;
-use crate::routes::api::komik::manhwa::slug::index::ManhwaResponse as manhwaresponse_1;
-use crate::routes::api::komik::search::SearchResponse as searchresponse_2;
-use crate::routes::api::proxy::ProxyResponse;
-use crate::routes::api::register::RegisterResponse;
-use crate::routes::api::sosmed::comments::CommentsResponse;
-use crate::routes::api::sosmed::likes::LikesResponse;
-use crate::routes::api::sosmed::posts::PostsResponse;
-use crate::routes::api::videoproxy::VideoproxyResponse;
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        crate::routes::api::anime::complete_anime::slug::slug,
-        crate::routes::api::anime::detail::slug::slug,
-        crate::routes::api::anime::full::slug::slug,
-        crate::routes::api::anime::ongoing_anime::slug::slug,
-        crate::routes::api::anime::search::search,
-        crate::routes::api::anime2::complete_anime::slug::slug,
-        crate::routes::api::anime2::detail::slug::slug,
-        crate::routes::api::anime2::ongoing_anime::slug::slug,
-        crate::routes::api::anime2::search::search,
-        crate::routes::api::apiproxy::apiproxy,
-        crate::routes::api::compress::compress,
-        crate::routes::api::docs::docs,
-        crate::routes::api::imageproxy::imageproxy,
-        crate::routes::api::komik::chapter::chapter,
-        crate::routes::api::komik::detail::detail,
-        crate::routes::api::komik::function::function,
-        crate::routes::api::komik::manga::slug::index::manga,
-        crate::routes::api::komik::manga::manga,
-        crate::routes::api::komik::manhua::slug::index::manhua,
-        crate::routes::api::komik::manhua::manhua,
-        crate::routes::api::komik::manhwa::slug::index::manhwa,
-        crate::routes::api::komik::manhwa::manhwa,
-        crate::routes::api::komik::search::search,
-        crate::routes::api::proxy::proxy,
-        crate::routes::api::register::register,
-        crate::routes::api::sosmed::comments::comments,
-        crate::routes::api::sosmed::likes::likes,
-        crate::routes::api::sosmed::posts::posts,
-        crate::routes::api::videoproxy::videoproxy
+
     ),
-    components(schemas(SearchResponse, searchresponse_1, ApiproxyResponse, CompressResponse, DocsResponse, ImageproxyResponse, ChapterData, ChapterResponse, DetailData, DetailResponse, FunctionResponse, MangaResponse, mangaresponse_1, ManhuaResponse, manhuaresponse_1, ManhwaResponse, manhwaresponse_1, searchresponse_2, ProxyResponse, RegisterResponse, CommentsResponse, LikesResponse, PostsResponse, VideoproxyResponse)),
+    components(schemas()),
     tags((
         name = "api", description = "Main API"
     ))
 )]
+#[allow(dead_code)]
 pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
-    let mut router = Router::new();
-    router = anime::register_routes(router);
-    router = anime2::register_routes(router);
-    router = apiproxy::register_routes(router);
-    router = compress::register_routes(router);
-    router = docs::register_routes(router);
-    router = imageproxy::register_routes(router);
-    router = komik::register_routes(router);
-    router = proxy::register_routes(router);
-    router = register::register_routes(router);
-    router = sosmed::register_routes(router);
-    router = uploader::register_routes(router);
-    router = videoproxy::register_routes(router);
+    let router = Router::new();
+
     router
 }

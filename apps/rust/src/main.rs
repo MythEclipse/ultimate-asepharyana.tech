@@ -8,7 +8,8 @@
 
 use std::net::SocketAddr;
 use rust_lib::config::CONFIG_MAP;
-use crate::routes::{ create_routes, AppState };
+use crate::routes::api::create_api_routes;
+use crate::routes::AppState;
 use std::sync::Arc;
 use axum::Router;
 use tracing_subscriber::EnvFilter;
@@ -33,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
   });
 
   tracing::info!("Building application routes...");
-  let app = Router::new().merge(create_routes().with_state(app_state.clone()));
+  let app = Router::new().merge(create_api_routes().with_state(app_state.clone()));
 
   let port = CONFIG_MAP.get("PORT")
     .and_then(|s| s.parse::<u16>().ok())
