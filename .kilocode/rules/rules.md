@@ -6,4 +6,4 @@
 4. **Failure Threshold:** If `apply_diff` fails, the next attempt to modify that file should use `write_to_file`. If `write_to_file` also fails, no further modifications should be attempted. I will not assume failure and will only trust the latest build.
 5. **Search and Replace Content Uniqueness:** `SEARCH` block content must not be identical to `REPLACE` block content.
 6. **Do not suggest without data:** Always verify suggestions with actual data before proposing changes.
-7. **Never assume wrong cache:** Do not assume cache issues without evidence.
+7. **Avoid cache clearing:** Do not clear cache (e.g., `cargo clean`) unless explicitly instructed
