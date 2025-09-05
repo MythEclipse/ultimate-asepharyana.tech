@@ -7,8 +7,11 @@
 /// - Ensures rebuilds occur when build utilities or API routes change.
 use std::collections::HashSet;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::time::SystemTime;
+
+use tempfile::NamedTempFile;
 
 use anyhow::{Result, Context};
 use env_logger;
@@ -84,6 +87,8 @@ fn main() -> Result<()> {
 fn setup_build_environment(config: &BuildConfig) -> BuildResult<std::path::PathBuf> {
     log::debug!("Setting up build environment");
 
+    // Instruct Cargo to rerun the build script if the FORCE_API_REGEN environment variable changes
+    println!("cargo:rerun-if-env-changed=FORCE_API_REGEN");
     // Instruct Cargo to rerun the build script if this file changes
     println!("cargo:rerun-if-changed=build.rs");
 
@@ -158,22 +163,18 @@ fn should_regenerate(api_routes_path: &Path) -> Result<bool, BuildError> {
     let should_regenerate = match &hash_result {
         Ok(current_hash) => {
             if let Ok(previous_hash_str) = fs::read_to_string(&hash_file) {
-                if let Ok(previous_hash) = previous_hash_str.trim().parse::<u64>() {
-                    if previous_hash == *current_hash {
-                        log::info!("API routes unchanged, skipping regeneration");
-                        false
-                    } else {
-                        true
-                    }
+                if previous_hash_str.trim() == current_hash {
+                    log::info!("API routes unchanged, skipping regeneration");
+                    false
                 } else {
                     true
                 }
-            } else {
+            } else { // Failed to read previous hash, so regenerate
                 log::debug!("No previous hash file found, proceeding with regeneration");
                 true
             }
-        }
-        Err(e) => {
+        },
+        Err(e) => { // Failed to compute current hash, so regenerate
             log::error!("Failed to compute directory hash: {}", e);
             true
         }
@@ -182,8 +183,12 @@ fn should_regenerate(api_routes_path: &Path) -> Result<bool, BuildError> {
     // Save the new hash if computation was successful
     if should_regenerate {
         if let Ok(current_hash) = hash_result {
-            fs::write(&hash_file, current_hash.to_string())
-                .with_context(|| format!("Failed to save hash file: {:?}", hash_file))?;
+            let mut temp_file = NamedTempFile::new()
+                .with_context(|| format!("Failed to create temporary file for hash: {:?}", hash_file))?;
+            temp_file.write_all(current_hash.as_bytes())
+                .with_context(|| format!("Failed to write hash to temporary file: {:?}", hash_file))?;
+            temp_file.persist(&hash_file)
+                .with_context(|| format!("Failed to persist temporary hash file to: {:?}", hash_file))?;
         }
     }
 
