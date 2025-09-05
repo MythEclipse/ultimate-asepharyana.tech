@@ -48,16 +48,16 @@ rand = { workspace = true }
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
 [build-dependencies]
 tempfile = { workspace = true }
-blake3 = "1.5.0"
+blake3 = { workspace = true }
 regex = { workspace = true }
 anyhow = { workspace = true }
 once_cell = { workspace = true }
-env_logger = "0.11"
+env_logger = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
-itertools = "0.12"
-rayon = "1.8"
-walkdir = "2.3"
+itertools = { workspace = true }
+rayon = { workspace = true }
+walkdir = { workspace = true }
 
 # Dependensi yang hanya dibutuhkan untuk tes
 [dev-dependencies]
