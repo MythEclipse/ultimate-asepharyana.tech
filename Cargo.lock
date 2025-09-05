@@ -2653,6 +2653,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
+ "walkdir",
 ]
 
 [[package]]

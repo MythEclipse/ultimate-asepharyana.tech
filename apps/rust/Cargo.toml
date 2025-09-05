@@ -57,6 +57,7 @@ thiserror = { workspace = true }
 log = { workspace = true }
 itertools = "0.12"
 rayon = "1.8"
+walkdir = "2.3"
 
 # Dependensi yang hanya dibutuhkan untuk tes
 [dev-dependencies]

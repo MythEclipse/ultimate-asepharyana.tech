@@ -8,8 +8,9 @@
 use std::collections::HashSet;
 use std::fs;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use std::env;
 
 use tempfile::NamedTempFile;
 
@@ -23,16 +24,16 @@ use build_utils::{hash_utils::compute_directory_hash, mod_generator, openapi_gen
 /// Configuration for the build process
 #[derive(Debug)]
 struct BuildConfig {
-    api_routes_path: String,
-    build_utils_path: String,
+    api_routes_path: PathBuf,
+    build_utils_path: PathBuf,
     enable_logging: bool,
 }
 
 impl Default for BuildConfig {
     fn default() -> Self {
         Self {
-            api_routes_path: "src/routes/api".to_string(),
-            build_utils_path: "build_utils/".to_string(),
+            api_routes_path: "src/routes/api".into(),
+            build_utils_path: "build_utils/".into(),
             enable_logging: true,
         }
     }
@@ -40,19 +41,6 @@ impl Default for BuildConfig {
 
 /// Type alias for API handlers
 type ApiHandlers = Vec<build_utils::handler_updater::HandlerRouteInfo>;
-
-
-/// Custom error types for build process
-#[derive(Debug, thiserror::Error)]
-enum BuildError {
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Anyhow error: {0}")]
-    Anyhow(#[from] anyhow::Error),
-}
-
-/// Result type for build operations
-type BuildResult<T> = Result<T, BuildError>;
 
 fn main() -> Result<()> {
     // Initialize logging if enabled
@@ -84,7 +72,7 @@ fn main() -> Result<()> {
 }
 
 /// Setup the build environment: create directories and set Cargo rerun instructions
-fn setup_build_environment(config: &BuildConfig) -> BuildResult<std::path::PathBuf> {
+fn setup_build_environment(config: &BuildConfig) -> Result<PathBuf> {
     log::debug!("Setting up build environment");
 
     // Instruct Cargo to rerun the build script if the FORCE_API_REGEN environment variable changes
@@ -93,23 +81,23 @@ fn setup_build_environment(config: &BuildConfig) -> BuildResult<std::path::PathB
     println!("cargo:rerun-if-changed=build.rs");
 
     // Define the path to the API routes directory
-    let api_routes_path = Path::new(&config.api_routes_path);
+    let api_routes_path = &config.api_routes_path;
 
     // Create the API routes directory and its parents if they don't exist
     fs::create_dir_all(&api_routes_path)
         .with_context(|| format!("Failed to create API routes directory: {:?}", api_routes_path))?;
 
     // Instruct Cargo to rerun if the API routes directory changes
-    println!("cargo:rerun-if-changed={}/", config.api_routes_path);
+    println!("cargo:rerun-if-changed={}/", config.api_routes_path.display());
 
     // Instruct Cargo to rerun if the build utilities directory changes
-    println!("cargo:rerun-if-changed={}", config.build_utils_path);
+    println!("cargo:rerun-if-changed={}", config.build_utils_path.display());
 
-    Ok(api_routes_path.to_path_buf())
+    Ok(api_routes_path.clone())
 }
 
 /// Collect API data: handlers, schemas, and modules
-fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> BuildResult<(ApiHandlers, HashSet<String>, Vec<String>)> {
+fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
     log::debug!("Collecting API data");
 
     let should_regenerate_value = should_regenerate(api_routes_path)?;
@@ -143,7 +131,7 @@ fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> BuildResul
 }
 
 /// Generate the root API module with OpenAPI documentation
-fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handlers: &ApiHandlers, openapi_schemas: &HashSet<String>) -> BuildResult<()> {
+fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handlers: &ApiHandlers, openapi_schemas: &HashSet<String>) -> Result<()> {
     log::debug!("Generating API modules");
 
     openapi_generator::generate_root_api_mod(
@@ -156,9 +144,16 @@ fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handl
     Ok(())
 }
 
-fn should_regenerate(api_routes_path: &Path) -> Result<bool, BuildError> {
+fn should_regenerate(api_routes_path: &Path) -> Result<bool> {
+    // Check FORCE_API_REGEN environment variable first
+    if env::var("FORCE_API_REGEN").is_ok() {
+        log::info!("FORCE_API_REGEN environment variable is set, forcing regeneration.");
+        return Ok(true);
+    }
+
     let hash_result = compute_directory_hash(api_routes_path);
-    let hash_file = api_routes_path.with_file_name("api_routes.hash");
+    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR not set")?);
+    let hash_file = out_dir.join("api_routes.hash");
 
     let should_regenerate = match &hash_result {
         Ok(current_hash) => {
