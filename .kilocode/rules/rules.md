@@ -23,3 +23,11 @@ These rules ensure accurate and reliable use of the `apply_diff` tool for code m
 9. **Context preservation:** When making changes, preserve the surrounding context in the `SEARCH` block to uniquely identify the modification point.
 
 10. **Incremental changes:** Prefer multiple small, targeted diffs over large, complex replacements to minimize risk of errors.
+
+11. **Syntax and Linting Checks:** After applying changes, verify that the code compiles and passes linting checks to ensure no syntax errors were introduced.
+
+12. **Multi-File Operations:** When making changes across multiple files, apply diffs one file at a time and confirm each success before proceeding.
+
+13. **Regex Usage:** Use regex in SEARCH blocks only when necessary and ensure patterns are precise to avoid unintended matches.
+
+14. **Documentation Updates:** Update any related documentation if changes affect interfaces or behaviors.
