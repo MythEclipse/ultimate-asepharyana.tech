@@ -1,5 +1,6 @@
 use std::process::Command;
 use std::fs;
+use std::env;
 
 fn main() -> std::io::Result<()> {
     println!("🧪 Starting Scaffold System Test");
@@ -18,15 +19,19 @@ fn main() -> std::io::Result<()> {
     ])?;
 
     println!("\n📝 Test 1: Creating static routes...");
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v1/list"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v1/search"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v1/users/list"])?;
+    run_scaffold_batch(&[
+        "test/v1/list",
+        "test/v1/search",
+        "test/v1/users/list",
+    ])?;
 
     println!("\n📝 Test 2: Creating dynamic routes...");
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/products/detail/product_id"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/users/profile/user_slug"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/orders/detail/order_uuid"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/posts/detail/post_key"])?;
+    run_scaffold_batch(&[
+        "test/v2/products/detail/product_id",
+        "test/v2/users/profile/user_slug",
+        "test/v2/orders/detail/order_uuid",
+        "test/v2/posts/detail/post_key",
+    ])?;
 
     println!("\n✅ Test 3: Verifying generated files...");
     verify_file_exists("src/routes/api/test/v1/list.rs")?;
@@ -48,6 +53,9 @@ fn main() -> std::io::Result<()> {
         "src/routes/api/test/v2/posts/detail/post_key.rs",
     ])?;
 
+    println!("\n🔨 Final build after cleanup...");
+    run_command("cargo", &["build"])?;
+
     println!("\n🎉 All tests passed! Scaffold system is working correctly.");
     println!("=================================");
     println!("✅ Static routes: Created and deleted successfully");
@@ -55,6 +63,14 @@ fn main() -> std::io::Result<()> {
     println!("✅ File generation: Working correctly");
     println!("✅ Cleanup: Working correctly");
 
+    Ok(())
+}
+
+fn run_scaffold_batch(routes: &[&str]) -> std::io::Result<()> {
+    for route in routes {
+        println!("📝 Creating scaffold route: {}", route);
+        run_command("cargo", &["run", "--bin", "scaffold", "--", route])?;
+    }
     Ok(())
 }
 
@@ -79,8 +95,29 @@ fn run_command(command: &str, args: &[&str]) -> std::io::Result<()> {
 }
 
 fn verify_file_exists(path: &str) -> std::io::Result<()> {
-    let full_path = std::env::current_dir()?.join("apps").join("rust").join(path);
-    if fs::metadata(&full_path).is_ok() {
+    // Determine base API directory so this can be run from workspace root or from apps/rust
+    let cwd = env::current_dir()?;
+    let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
+    let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+
+    let base_api_dir = if candidate_a.exists() {
+        candidate_a
+    } else if candidate_b.exists() {
+        candidate_b
+    } else if cwd.join("apps").join("rust").exists() {
+        // workspace root but api dir not present yet -> prefer apps/rust path
+        cwd.join("apps").join("rust").join("src").join("routes").join("api")
+    } else {
+        // fallback to the local src path
+        cwd.join("src").join("routes").join("api")
+    };
+
+    // Build full file path
+    let mut file_path = base_api_dir.clone();
+    file_path.push(path.strip_prefix("src/routes/api/").unwrap_or(path));
+    file_path.set_extension("rs");
+
+    if fs::metadata(&file_path).is_ok() {
         println!("✅ File exists: {}", path);
         Ok(())
     } else {
@@ -90,10 +127,31 @@ fn verify_file_exists(path: &str) -> std::io::Result<()> {
 }
 
 fn cleanup_files(paths: &[&str]) -> std::io::Result<()> {
+    // Determine base API directory so this can be run from workspace root or from apps/rust
+    let cwd = env::current_dir()?;
+    let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
+    let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+
+    let base_api_dir = if candidate_a.exists() {
+        candidate_a
+    } else if candidate_b.exists() {
+        candidate_b
+    } else if cwd.join("apps").join("rust").exists() {
+        // workspace root but api dir not present yet -> prefer apps/rust path
+        cwd.join("apps").join("rust").join("src").join("routes").join("api")
+    } else {
+        // fallback to the local src path
+        cwd.join("src").join("routes").join("api")
+    };
+
     for path in paths {
-        let full_path = std::env::current_dir()?.join("apps").join("rust").join(path);
-        if fs::metadata(&full_path).is_ok() {
-            fs::remove_file(&full_path)?;
+        // Build full file path
+        let mut file_path = base_api_dir.clone();
+        file_path.push(path.strip_prefix("src/routes/api/").unwrap_or(path));
+        file_path.set_extension("rs");
+
+        if fs::metadata(&file_path).is_ok() {
+            fs::remove_file(&file_path)?;
             println!("🗑️  Deleted: {}", path);
         }
     }
