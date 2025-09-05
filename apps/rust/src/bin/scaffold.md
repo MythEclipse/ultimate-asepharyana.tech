@@ -5,16 +5,22 @@ File yang dihasilkan: src/routes/api/<path>.rs
 
 Prasyarat:
 - Pastikan env: PORT dan JWT_SECRET diset (lihat `.env.example` jika ada).
+- Scaffold dapat dijalankan dari workspace root atau dari direktori `apps/rust/`.
 - Setelah membuat file kosong, jalankan `cargo build` supaya [`apps/rust/build.rs`](apps/rust/build.rs:1) menghasilkan template handler.
 
 Ringkasan tipe endpoint:
 - Static: path tetap, contoh: /api/products/list
-- Slug (path param): path dinamis, contoh: /api/products/detail/{product_id}
+- Dynamic: path dinamis dengan parameter, contoh: /api/products/detail/product_id → /api/products/detail/{id}
 - Params (query): query string, contoh: /api/products/search?q=sepatu&sort=price_desc
+
+Pengenalan Dynamic Routes:
+Sistem secara otomatis mendeteksi segmen dinamis berdasarkan pola nama file:
+- Mengakhiri dengan `_id`, `id`, `slug`, `uuid`, atau `key`
+- Contoh: `product_id` → parameter `id`, `user_slug` → parameter `slug`
 
 1) Endpoint Static (tanpa parameter)
 ------------------------------------------------------------
-- Perintah scaffold:
+- Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
   cargo run --bin scaffold -- products/list
 
@@ -44,11 +50,16 @@ Tes endpoint:
 
 curl http://127.0.0.1:3000/api/products/list
 
-2) Endpoint Slug / Path Parameter
+2) Endpoint Dynamic / Path Parameter
 ------------------------------------------------------------
-- Gunakan kurung siku pada argumen scaffold untuk menandai segmen dinamis:
+- Untuk path dinamis, gunakan nama parameter langsung tanpa kurung siku:
 
-  cargo run --bin scaffold -- products/detail/[product_id]
+  cargo run --bin scaffold -- products/detail/product_id
+
+- Sistem akan otomatis mendeteksi pola dinamis dan mengkonversi:
+  - `product_id` → parameter path `id` dengan route `/products/detail/{id}`
+  - `user_slug` → parameter path `slug` dengan route `/users/profile/{slug}`
+  - `order_uuid` → parameter path `uuid` dengan route `/orders/detail/{uuid}`
 
 - Jalankan build:
 
@@ -56,7 +67,7 @@ curl http://127.0.0.1:3000/api/products/list
 
 - Edit handler di [`src/routes/api/products/detail/product_id.rs`](apps/rust/src/routes/api/products/detail/product_id.rs:1)
 
-Contoh handler untuk endpoint statis (sesuai template yang dihasilkan):
+Contoh handler untuk endpoint dinamis (sesuai template yang dihasilkan):
 
 ```rust
 use axum::{response::IntoResponse, routing::get, Json, Router};
@@ -83,10 +94,10 @@ pub struct DetailResponse {
     pub data: serde_json::Value,
 }
 
-pub async fn product_id() -> impl IntoResponse {
+pub async fn product_id(Path(id): Path<String>) -> impl IntoResponse {
     Json(DetailResponse {
-        message: "Hello from product_id!".to_string(),
-        data: serde_json::json!(null),
+        message: format!("Hello from product_id with parameters: id: {id}"),
+        data: serde_json::json!({"id": "id"}),
     })
 }
 
@@ -115,7 +126,7 @@ curl http://127.0.0.1:3000/api/products/detail/sepatu-lari-123
 
 3) Endpoint Query Params
 ------------------------------------------------------------
-- Scaffold path tanpa query:
+- Scaffold path tanpa query (dapat dijalankan dari workspace root atau apps/rust/):
 
   cargo run --bin scaffold -- products/search
 
@@ -157,10 +168,10 @@ curl "http://127.0.0.1:3000/api/products/search?q=sepatu&sort=price_desc&page=2"
 
 4) Kombinasi: Slug + Query Params
 ------------------------------------------------------------
-- Contoh path: products/[product_id]/reviews
-- Scaffold:
+- Contoh path: products/product_id/reviews
+- Scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
-  cargo run --bin scaffold -- products/[product_id]/reviews
+  cargo run --bin scaffold -- products/product_id/reviews
 
 - Build:
 
@@ -198,9 +209,9 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 
 6) Contoh lengkap alur
 ------------------------------------------------------------
-1. buat file kosong:
+1. buat file kosong (dapat dijalankan dari workspace root atau apps/rust/):
 
-   cargo run --bin scaffold -- products/detail/[product_id]
+   cargo run --bin scaffold -- products/detail/product_id
 2. build:
 
    cargo build
@@ -248,6 +259,7 @@ Restart terminal lalu jalankan `cargo build`.
 
 Dokumentasi scaffold telah diperbarui di [`apps/rust/src/bin/scaffold.md`](apps/rust/src/bin/scaffold.md:1). Setelah memperbaiki dependensi native, ulangi:
 ```powershell
+# Dari workspace root atau apps/rust/
 cargo run --bin scaffold -- test/helloworld
 cargo build
 ```

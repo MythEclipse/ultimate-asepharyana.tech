@@ -76,5 +76,12 @@ pub fn sanitize_tag(path_str: &str) -> String {
 }
 
 pub fn is_dynamic_segment(name: &str) -> bool {
-    name.starts_with('[') && name.ends_with(']')
+    // Check for bracket notation (legacy support)
+    if name.starts_with('[') && name.ends_with(']') {
+        return true;
+    }
+
+    // Check for common dynamic patterns without brackets
+    let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+    dynamic_patterns.iter().any(|pattern| name.ends_with(pattern))
 }

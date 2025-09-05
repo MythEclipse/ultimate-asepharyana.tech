@@ -9,7 +9,7 @@ fn main() -> std::io::Result<()> {
     eprintln!("❌ Usage: cargo run --bin scaffold -- <route_path>");
     eprintln!("   Example (static):  cargo run --bin scaffold -- products/list");
     eprintln!("   Example (index):   cargo run --bin scaffold -- products/index");
-    eprintln!("   Example (dynamic): cargo run --bin scaffold -- products/[id]");
+    eprintln!("   Example (dynamic): cargo run --bin scaffold -- products/id");
     process::exit(1);
   }
 
@@ -34,9 +34,7 @@ fn main() -> std::io::Result<()> {
 
   // Build full file path, e.g. "<base_api_dir>/products/list.rs"
   let mut file_path = base_api_dir.clone();
-  // Replace square brackets with valid characters for filename
-  let sanitized_route_path = route_path.replace(['[', ']'], "");
-  file_path.push(sanitized_route_path);
+  file_path.push(route_path);
   file_path.set_extension("rs");
 
   // Check if file already exists

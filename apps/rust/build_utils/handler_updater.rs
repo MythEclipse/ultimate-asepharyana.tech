@@ -258,7 +258,22 @@ pub fn update_handler_file(
     .get("SUCCESS_RESPONSE_BODY")
     .cloned()
     .unwrap_or_else(|| "String".to_string());
-  let axum_path = Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string();
+  let axum_path = if route_path.contains('[') && route_path.contains(']') {
+      // Legacy bracket notation
+      Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
+  } else {
+      // New pattern-based dynamic detection
+      let mut axum_path = route_path.clone();
+      let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+      for pattern in &dynamic_patterns {
+          if route_path.ends_with(pattern) {
+              let param_name = pattern.trim_start_matches('_');
+              axum_path = route_path.replace(pattern, &format!("{{{}}}", param_name));
+              break;
+          }
+      }
+      axum_path
+  };
   let existing_description = metadata.get("ENDPOINT_DESCRIPTION").cloned();
   let route_description = if let Some(desc) = &existing_description {
     // Prefer doc comment over generic descriptions

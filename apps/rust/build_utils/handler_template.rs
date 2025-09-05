@@ -76,6 +76,8 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
 
     // Extract dynamic parameters from route_path_str
     let mut path_params = Vec::new();
+
+    // Check for bracket notation first (legacy)
     for cap in DYNAMIC_REGEX.captures_iter(&route_path_str) {
         let param = &cap[1];
         if param.starts_with("...") {
@@ -84,6 +86,18 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
             path_params.push((param_name.to_string(), "Vec<String>"));
         } else {
             path_params.push((param.to_string(), "String"));
+        }
+    }
+
+    // If no bracket params found, check for dynamic patterns
+    if path_params.is_empty() {
+        let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+        for pattern in &dynamic_patterns {
+            if route_path_str.ends_with(pattern) {
+                let param_name = pattern.trim_start_matches('_');
+                path_params.push((param_name.to_string(), "String"));
+                break;
+            }
         }
     }
 
@@ -96,6 +110,43 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
             .collect::<Vec<_>>()
             .join(", ");
         format!("pub async fn {}({}) -> impl IntoResponse", func_name, params_str)
+    };
+
+    // Build response data that includes path parameters
+    let response_data = if path_params.is_empty() {
+        if response_struct_name == "SearchResponse" {
+            r#"
+            data: vec![],
+            total: None,
+            page: None,
+            per_page: None,"#.to_string()
+        } else if response_struct_name == "ListResponse" {
+            r#"
+            data: vec![],
+            total: None,"#.to_string()
+        } else {
+            r#"
+            data: serde_json::json!(null),"#.to_string()
+        }
+    } else {
+        // Include path parameters in the response
+        let param_assignments = path_params.iter()
+            .map(|(name, _)| format!("\"{}\": \"{}\"", name, name))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!(r#"
+            data: serde_json::json!({{{}}}),"#, param_assignments)
+    };
+
+    // Build message that includes path parameter info
+    let message_content = if path_params.is_empty() {
+        format!("\"Hello from {}!\".to_string()", func_name)
+    } else {
+        let param_info = path_params.iter()
+            .map(|(name, _)| format!("{}: {{{}}}", name, name))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("format!(\"Hello from {} with parameters: {}\")", func_name, param_info)
     };
 
     // Build imports with Path if needed
@@ -131,7 +182,7 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
 
     {} {{
         Json({} {{
-            message: "Hello from {}!".to_string(),{}
+            message: {},{}
         }})
     }}
 
@@ -152,21 +203,8 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
         response_fields,
         func_signature,
         response_struct_name,
-        func_name,
-        if response_struct_name == "SearchResponse" {
-            r#"
-            data: vec![],
-            total: None,
-            page: None,
-            per_page: None,"#
-        } else if response_struct_name == "ListResponse" {
-            r#"
-            data: vec![],
-            total: None,"#
-        } else {
-            r#"
-            data: serde_json::json!(null),"#
-        },
+        message_content,
+        response_data,
         default_description,
         func_name
       );

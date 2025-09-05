@@ -1,7 +1,7 @@
 //! Handler for the product_id endpoint.
     #![allow(dead_code)]
 
-    use axum::{response::IntoResponse, routing::get, Json, Router};
+    use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
     use std::sync::Arc;
     use crate::routes::AppState;
     use serde::{Deserialize, Serialize};
@@ -27,6 +27,9 @@
 
     #[utoipa::path(
     get,
+    params(
+        ("id" = String, Path, description = "The id identifier")
+    ),
     path = "/api/products/detail/product_id",
     tag = "products.detail.product_id",
     operation_id = "products_detail_product_id",
@@ -35,10 +38,10 @@
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn product_id() -> impl IntoResponse {
+pub async fn product_id(Path(id): Path<String>) -> impl IntoResponse {
         Json(DetailResponse {
-            message: "Hello from product_id!".to_string(),
-            data: serde_json::json!(null),
+            message: format!("Hello from product_id with parameters: id: {id}"),
+            data: serde_json::json!({"id": "id"}),
         })
     }
 
