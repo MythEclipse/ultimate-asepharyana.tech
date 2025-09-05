@@ -32,6 +32,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1.0"
 thiserror = "2.0.16"
+env_logger = "0.11"
+log = "0.4"
 
 # --- DATABASE & PERSISTENCE ---
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
@@ -73,4 +75,3 @@ socks = "0.3.4"
 rust_lib = { path = "libs/rust" }
 
 # --- DEVELOPMENT DEPENDENCIES ---
-

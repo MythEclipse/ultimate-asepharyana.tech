@@ -1,7 +1,5 @@
 # Kilo Code Custom Instructions for apply_diff
 
-These rules ensure accurate and reliable use of the `apply_diff` tool for code modifications.
-
 ## Core Rules
 
 1. **Verifying `SEARCH` block accuracy:** Always compare the `SEARCH` block with the actual file content, including all whitespace and indentation. Use the `read_file` tool to confirm before applying changes.
@@ -24,10 +22,12 @@ These rules ensure accurate and reliable use of the `apply_diff` tool for code m
 
 10. **Incremental changes:** Prefer multiple small, targeted diffs over large, complex replacements to minimize risk of errors.
 
-11. **Syntax and Linting Checks:** After applying changes, verify that the code compiles and passes linting checks to ensure no syntax errors were introduced.
+11. **Syntax and Linting Checks:** After applying changes, verify that the code compiles and passes linting checks to ensure no syntax errors or warnings are introduced.
 
 12. **Multi-File Operations:** When making changes across multiple files, apply diffs one file at a time and confirm each success before proceeding.
 
 13. **Regex Usage:** Use regex in SEARCH blocks only when necessary and ensure patterns are precise to avoid unintended matches.
 
 14. **Documentation Updates:** Update any related documentation if changes affect interfaces or behaviors.
+
+15. **Prohibit Comment Addition:** Do not add comments in the code to avoid unnecessary clutter.

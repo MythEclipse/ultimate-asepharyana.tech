@@ -51,6 +51,9 @@ rand = { workspace = true }
 regex = { workspace = true }
 anyhow = { workspace = true }
 once_cell = { workspace = true }
+env_logger = "0.11"
+thiserror = { workspace = true }
+log = { workspace = true }
 
 # Dependensi yang hanya dibutuhkan untuk tes
 [dev-dependencies]
