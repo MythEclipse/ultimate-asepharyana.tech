@@ -8,44 +8,44 @@ fn main() -> std::io::Result<()> {
     // Initial cleanup to ensure a clean slate for the test
     println!("\n🗑️  Initial cleanup of potential test routes...");
     cleanup_files(&[
-        "src/routes/api/test/static/list.rs",
-        "src/routes/api/test/static/search.rs",
-        "src/routes/api/test/static/users/list.rs",
-        "src/routes/api/test/dynamic/products/detail/product_id.rs",
-        "src/routes/api/test/dynamic/users/profile/user_slug.rs",
-        "src/routes/api/test/dynamic/orders/detail/order_uuid.rs",
-        "src/routes/api/test/dynamic/posts/detail/post_key.rs",
+        "src/routes/api/test/v1/list.rs",
+        "src/routes/api/test/v1/search.rs",
+        "src/routes/api/test/v1/users/list.rs",
+        "src/routes/api/test/v2/products/detail/product_id.rs",
+        "src/routes/api/test/v2/users/profile/user_slug.rs",
+        "src/routes/api/test/v2/orders/detail/order_uuid.rs",
+        "src/routes/api/test/v2/posts/detail/post_key.rs",
     ])?;
 
     println!("\n📝 Test 1: Creating static routes...");
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/static/list"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/static/search"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/static/users/list"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v1/list"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v1/search"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v1/users/list"])?;
 
     println!("\n📝 Test 2: Creating dynamic routes...");
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/dynamic/products/detail/product_id"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/dynamic/users/profile/user_slug"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/dynamic/orders/detail/order_uuid"])?;
-    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/dynamic/posts/detail/post_key"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/products/detail/product_id"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/users/profile/user_slug"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/orders/detail/order_uuid"])?;
+    run_command("cargo", &["run", "--bin", "scaffold", "--", "test/v2/posts/detail/post_key"])?;
 
     println!("\n✅ Test 3: Verifying generated files...");
-    verify_file_exists("src/routes/api/test/static/list.rs")?;
-    verify_file_exists("src/routes/api/test/static/search.rs")?;
-    verify_file_exists("src/routes/api/test/static/users/list.rs")?;
-    verify_file_exists("src/routes/api/test/dynamic/products/detail/product_id.rs")?;
-    verify_file_exists("src/routes/api/test/dynamic/users/profile/user_slug.rs")?;
-    verify_file_exists("src/routes/api/test/dynamic/orders/detail/order_uuid.rs")?;
-    verify_file_exists("src/routes/api/test/dynamic/posts/detail/post_key.rs")?;
+    verify_file_exists("src/routes/api/test/v1/list.rs")?;
+    verify_file_exists("src/routes/api/test/v1/search.rs")?;
+    verify_file_exists("src/routes/api/test/v1/users/list.rs")?;
+    verify_file_exists("src/routes/api/test/v2/products/detail/product_id.rs")?;
+    verify_file_exists("src/routes/api/test/v2/users/profile/user_slug.rs")?;
+    verify_file_exists("src/routes/api/test/v2/orders/detail/order_uuid.rs")?;
+    verify_file_exists("src/routes/api/test/v2/posts/detail/post_key.rs")?;
 
     println!("\n🗑️  Test 4: Cleaning up test routes...");
     cleanup_files(&[
-        "src/routes/api/test/static/list.rs",
-        "src/routes/api/test/static/search.rs",
-        "src/routes/api/test/static/users/list.rs",
-        "src/routes/api/test/dynamic/products/detail/product_id.rs",
-        "src/routes/api/test/dynamic/users/profile/user_slug.rs",
-        "src/routes/api/test/dynamic/orders/detail/order_uuid.rs",
-        "src/routes/api/test/dynamic/posts/detail/post_key.rs",
+        "src/routes/api/test/v1/list.rs",
+        "src/routes/api/test/v1/search.rs",
+        "src/routes/api/test/v1/users/list.rs",
+        "src/routes/api/test/v2/products/detail/product_id.rs",
+        "src/routes/api/test/v2/users/profile/user_slug.rs",
+        "src/routes/api/test/v2/orders/detail/order_uuid.rs",
+        "src/routes/api/test/v2/posts/detail/post_key.rs",
     ])?;
 
     println!("\n🎉 All tests passed! Scaffold system is working correctly.");

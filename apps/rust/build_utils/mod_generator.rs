@@ -6,6 +6,27 @@ use crate::build_utils::handler_updater::{ HandlerRouteInfo, update_handler_file
 use crate::build_utils::path_utils::is_dynamic_segment;
 // Removed generate_handler_template as it's no longer directly called here
 
+fn is_rust_keyword(s: &str) -> bool {
+    matches!(
+        s,
+        "as" | "break" | "const" | "continue" | "crate" | "else" | "enum" | "extern" | "false"
+            | "fn" | "for" | "if" | "impl" | "in" | "let" | "loop" | "match" | "mod" | "move"
+            | "mut" | "pub" | "ref" | "return" | "self" | "Self" | "static" | "struct" | "super"
+            | "trait" | "true" | "type" | "unsafe" | "use" | "where" | "while" | "async" | "await"
+            | "dyn" | "abstract" | "become" | "box" | "do" | "final" | "macro" | "override"
+            | "priv" | "typeof" | "unsized" | "virtual" | "yield"
+    )
+}
+
+fn sanitize_module_name(name: &str) -> String {
+    let sanitized = name.trim_matches(|c| (c == '[' || c == ']')).replace('-', "_");
+    if is_rust_keyword(&sanitized) {
+        format!("r#{}", sanitized)
+    } else {
+        sanitized
+    }
+}
+
 pub fn generate_mod_for_directory(
   current_dir: &Path,
   root_api_path: &Path,
@@ -25,7 +46,11 @@ pub fn generate_mod_for_directory(
   let module_path_prefix = if relative_path_str.is_empty() {
     "crate::routes::api".to_string()
   } else {
-    format!("crate::routes::api::{}", relative_path_str.replace("[", "").replace("]", ""))
+    let sanitized_segments: Vec<String> = relative_path_str
+        .split("::")
+        .map(|s| sanitize_module_name(&s.replace("[", "").replace("]", "")))
+        .collect();
+    format!("crate::routes::api::{}", sanitized_segments.join("::"))
   };
 
   let mut entries: Vec<PathBuf> = fs
@@ -45,7 +70,7 @@ pub fn generate_mod_for_directory(
     }
 
     let is_dynamic = is_dynamic_segment(file_name);
-    let mod_name_sanitized = file_name.trim_matches(|c| (c == '[' || c == ']')).replace('-', "_");
+    let mod_name_sanitized = sanitize_module_name(file_name);
 
     if path.is_dir() {
       // Create mod.rs inside the dynamic segment directory
@@ -60,9 +85,9 @@ pub fn generate_mod_for_directory(
 
       // Route registration for dynamic segments needs to point to the index.rs inside
       if is_dynamic {
-        route_registrations.push(format!("{}::index", mod_name_sanitized));
+        route_registrations.push(format!("{}::index", sanitize_module_name(&mod_name_sanitized)));
       } else {
-        route_registrations.push(format!("{}", mod_name_sanitized));
+        route_registrations.push(format!("{}", sanitize_module_name(&mod_name_sanitized)));
       }
     } else if path.is_file() && path.extension().map_or(false, |e| e == "rs") {
       let file_stem = path
@@ -70,9 +95,9 @@ pub fn generate_mod_for_directory(
         .and_then(|s| s.to_str())
         .unwrap();
 
-      let mod_name = file_stem.replace(['[', ']'], "").replace('-', "_");
+      let mod_name = sanitize_module_name(file_stem);
       pub_mods.push(format!("pub mod {};", mod_name));
-      route_registrations.push(format!("{}", mod_name));
+      route_registrations.push(format!("{}", sanitize_module_name(&mod_name)));
 
       if
         let Some(handler_info) = update_handler_file(
@@ -93,7 +118,10 @@ pub fn generate_mod_for_directory(
     route_registrations
       .iter()
       .rev()
-      .fold("router".to_string(), |acc, reg| { format!("{}::register_routes({})", reg, acc) })
+      .fold("router".to_string(), |acc, reg| {
+          let sanitized_reg_parts: Vec<String> = reg.split("::").map(|s| sanitize_module_name(s)).collect();
+          format!("{}::register_routes({})", sanitized_reg_parts.join("::"), acc)
+      })
   };
 
   let mut_param = "";
