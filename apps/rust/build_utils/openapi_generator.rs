@@ -68,7 +68,7 @@ pub fn generate_root_api_mod(
     .join("\n");
 
   content.push_str(
-    &format!("pub fn create_api_routes() -> Router<Arc<AppState>> {{\n    let router = Router::new();\n{}\n    router\n}}\n", router_registrations)
+    &format!("pub fn create_api_routes() -> Router<Arc<AppState>> {{\n    let mut router = Router::new();\n{}\n    router\n}}\n", router_registrations)
   );
 
   fs::write(api_routes_path.join("mod.rs"), content)?;

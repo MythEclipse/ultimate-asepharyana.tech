@@ -299,10 +299,10 @@ pub fn update_handler_file(
   } else {
     extract_path_params(&axum_path)
   };
-  println!("cargo:warning=File: {:?}", path);
-  println!("cargo:warning=axum_path: {}", axum_path);
-  println!("cargo:warning=route_path: {}", route_path);
-  println!("cargo:warning=path_params: {:?}", path_params);
+  println!("cargo:info=File: {:?}", path);
+  println!("cargo:info=axum_path: {}", axum_path);
+  println!("cargo:info=route_path: {}", route_path);
+  println!("cargo:info=path_params: {:?}", path_params);
   let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
     &openapi_route_path,
