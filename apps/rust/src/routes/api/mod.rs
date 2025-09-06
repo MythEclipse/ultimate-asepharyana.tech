@@ -10,23 +10,17 @@ pub mod test;
 
 use crate::routes::api::products::detail::product_id::DetailResponse;
 use crate::routes::api::test::hello::ListResponse;
-use crate::routes::api::test::v1::list::ListResponse as ListResponse_1;
-use crate::routes::api::test::v1::search::SearchResponse;
 
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
               crate::routes::api::products::detail::product_id::product_id,
-              crate::routes::api::test::hello::hello,
-              crate::routes::api::test::v1::list::list,
-              crate::routes::api::test::v1::search::search
+              crate::routes::api::test::hello::hello
           ),
 components(
               schemas(
                   DetailResponse,
-                  ListResponse,
-                  ListResponse_1,
-                  SearchResponse
+                  ListResponse
               )
           ),
 tags(
