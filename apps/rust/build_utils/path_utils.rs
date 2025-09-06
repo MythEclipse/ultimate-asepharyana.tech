@@ -16,18 +16,13 @@ pub fn extract_path_params(axum_path: &str) -> Vec<(String, String)> {
 }
 
 pub fn parse_path_params_from_signature(content: &str) -> Vec<(String, String)> {
-    let fn_regex = Regex::new(r"pub async fn \w+\s*\(([^)]*)\)\s*->").unwrap();
-    if let Some(cap) = fn_regex.captures(content) {
-        let params = &cap[1];
-        let param_regex = Regex::new(r"Path\((\w+)\):\s*Path<([^>]+)>").unwrap();
-        param_regex.captures_iter(params).map(|cap| {
-            let name = cap[1].to_string();
-            let typ = cap[2].to_string();
-            (name, typ)
-        }).collect()
-    } else {
-        vec![]
-    }
+    // Look for Path parameters directly
+    let param_regex = Regex::new(r"Path\((\w+)\):\s*Path<([^>]+)>").unwrap();
+    param_regex.captures_iter(content).map(|cap| {
+        let name = cap[1].to_string();
+        let typ = cap[2].to_string();
+        (name, typ)
+    }).collect()
 }
 
 pub fn generate_default_description(path_str: &str, method: &str) -> String {

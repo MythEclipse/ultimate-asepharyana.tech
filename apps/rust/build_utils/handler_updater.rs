@@ -234,11 +234,11 @@ pub fn update_handler_file(
   if !parsed_path_params.is_empty() {
     for (param_name, _) in &parsed_path_params {
       if
-        route_path.ends_with(&format!("/{}", param_name)) &&
+        route_path.ends_with(&format!("/{}", file_stem)) &&
         !route_path.contains(&format!("{{{}}}", param_name))
       {
         let new_route_path = route_path.replace(
-          &format!("/{}", param_name),
+          &format!("/{}", file_stem),
           &format!("/{{{}}}", param_name)
         );
         let endpoint_path_regex = Regex::new(
