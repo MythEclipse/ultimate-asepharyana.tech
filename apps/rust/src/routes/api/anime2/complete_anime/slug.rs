@@ -1,4 +1,4 @@
-use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router, http::StatusCode};
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{Deserialize, Serialize};
@@ -49,7 +49,7 @@ async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
 fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
     let document = Html::parse_document(html);
 
-    let item_selector = Selector::parse(".listupd .bs").unwrap();
+    let item_selector = Selector::parse(".listupd article.bs").unwrap();
     let title_selector = Selector::parse(".ntitle").unwrap();
     let link_selector = Selector::parse("a").unwrap();
     let img_selector = Selector::parse("img").unwrap();
@@ -94,15 +94,13 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
             .unwrap_or("")
             .to_string();
 
-        if !title.is_empty() {
-            anime_list.push(AnimeItem {
-                title,
-                slug,
-                poster,
-                episode,
-                anime_url,
-            });
-        }
+        anime_list.push(AnimeItem {
+            title,
+            slug,
+            poster,
+            episode,
+            anime_url,
+        });
     }
 
     let current_page = slug.parse::<u32>().unwrap_or(1);
@@ -152,18 +150,7 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
                 pagination,
             })
         }
-        Err(_) => Json(ListResponse {
-            status: "Error".to_string(),
-            data: vec![],
-            pagination: Pagination {
-                current_page: 1,
-                last_visible_page: 1,
-                has_next_page: false,
-                next_page: None,
-                has_previous_page: false,
-                previous_page: None,
-            },
-        }),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch HTML".to_string()),
     }
 }
 

@@ -6,9 +6,10 @@
     use crate::routes::AppState;
     use serde::{Deserialize, Serialize};
     use utoipa::ToSchema;
-    use reqwest;
     use scraper::{Html, Selector};
-    use rust_lib::config::CONFIG_MAP;
+    use rust_lib::fetch_with_proxy::fetch_with_proxy_only;
+    use rust_lib::komik_base_url::get_cached_komik_base_url;
+    use tracing::{info, error};
 
     pub const ENDPOINT_METHOD: &str = "get";
     pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
@@ -23,6 +24,7 @@
         pub next_chapter_id: String,
         pub prev_chapter_id: String,
         pub images: Vec<String>,
+        pub list_chapter: String,
     }
 
     #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -48,33 +50,54 @@
 )]
 pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
         let chapter_url = params.chapter_url.unwrap_or_default();
-        let base_url = CONFIG_MAP
-            .get("KOMIK_BASE_URL")
-            .cloned()
-            .unwrap_or_else(|| "https://komikindo.id".to_string());
 
-        match fetch_and_parse_chapter(&chapter_url, &base_url).await {
-            Ok(data) => Json(ChapterResponse {
-                message: "Chapter data retrieved successfully".to_string(),
-                data,
-            }),
-            Err(_) => Json(ChapterResponse {
-                message: "Failed to fetch chapter data".to_string(),
-                data: ChapterData {
-                    title: "".to_string(),
-                    next_chapter_id: "".to_string(),
-                    prev_chapter_id: "".to_string(),
-                    images: vec![],
-                },
-            }),
+        match get_cached_komik_base_url(false).await {
+            Ok(base_url) => {
+                match fetch_and_parse_chapter(&chapter_url, &base_url).await {
+                    Ok(data) => {
+                        info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
+                        Json(ChapterResponse {
+                            message: "Chapter data retrieved successfully".to_string(),
+                            data,
+                        })
+                    },
+                    Err(e) => {
+                        error!("[komik][chapter] Error parsing chapter for {}: {:?}", chapter_url, e);
+                        Json(ChapterResponse {
+                            message: "Failed to fetch chapter data".to_string(),
+                            data: ChapterData {
+                                title: "".to_string(),
+                                next_chapter_id: "".to_string(),
+                                prev_chapter_id: "".to_string(),
+                                images: vec![],
+                                list_chapter: "".to_string(),
+                            },
+                        })
+                    },
+                }
+            },
+            Err(e) => {
+                error!("[komik][chapter] Error getting base URL: {:?}", e);
+                Json(ChapterResponse {
+                    message: "Failed to get base URL".to_string(),
+                    data: ChapterData {
+                        title: "".to_string(),
+                        next_chapter_id: "".to_string(),
+                        prev_chapter_id: "".to_string(),
+                        images: vec![],
+                        list_chapter: "".to_string(),
+                    },
+                })
+            }
         }
     }
 
     async fn fetch_and_parse_chapter(chapter_url: &str, base_url: &str) -> Result<ChapterData, Box<dyn std::error::Error>> {
         let url = format!("{}/chapter/{}", base_url, chapter_url);
-        let client = reqwest::Client::new();
-        let response = client.get(&url).send().await?;
-        let html = response.text().await?;
+        info!("[fetch_and_parse_chapter] Fetching URL: {}", url);
+
+        let response = fetch_with_proxy_only(&url).await?;
+        let html = response.data;
         let document = Html::parse_document(&html);
 
         let title = document
@@ -107,6 +130,20 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
             "".to_string()
         };
 
+        let list_chapter_element = document
+            .select(&Selector::parse(".nextprev a").unwrap())
+            .find(|element| {
+                element.select(&Selector::parse(".icol.daftarch").unwrap()).next().is_some()
+            });
+        let list_chapter = if let Some(element) = list_chapter_element {
+            element.value().attr("href")
+                .and_then(|href| href.split('/').nth(4))
+                .unwrap_or("")
+                .to_string()
+        } else {
+            "".to_string()
+        };
+
         let mut images = Vec::new();
         for element in document.select(&Selector::parse("#chimg-auh img").unwrap()) {
             if let Some(src) = element.value().attr("src") {
@@ -114,11 +151,13 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
             }
         }
 
+        info!("[fetch_and_parse_chapter] Successfully parsed chapter for {}", chapter_url);
         Ok(ChapterData {
             title,
             next_chapter_id,
             prev_chapter_id,
             images,
+            list_chapter,
         })
     }
 

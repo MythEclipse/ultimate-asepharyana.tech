@@ -9,10 +9,11 @@ use reqwest;
 use scraper::{Html, Selector};
 use regex::Regex;
 use rust_lib::config::CONFIG_MAP;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/manhwa/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhwa/{slug} endpoint.";
+pub const ENDPOINT_PATH: &str = "/api/komik/manhwa";
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhwa endpoint.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_manhwa_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ManhwaResponse>";
@@ -20,12 +21,12 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<ManhwaResponse>";
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct ManhwaItem {
     pub title: String,
-    pub image: String,
+    pub poster: String,
     pub chapter: String,
     pub score: String,
     pub date: String,
     pub r#type: String,
-    pub komik_id: String,
+    pub slug: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -47,35 +48,29 @@ pub struct ManhwaResponse {
 #[derive(Deserialize)]
 pub struct QueryParams {
     pub page: u32,
-    pub order: Option<String>,
 }
 
 #[utoipa::path(
     get,
-    params(
-        ("slug" = String, Path, description = "The slug identifier")
-    ),
-    path = "/api/api/komik/manhwa/{slug}",
+    path = "/api/api/komik/manhwa",
     tag = "komik",
     operation_id = "komik_manhwa_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the komik/manhwa/{slug} endpoint.", body = ManhwaResponse),
+        (status = 200, description = "Handles GET requests for the komik/manhwa endpoint.", body = ManhwaResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn slug(
-    Path(slug): Path<String>,
     Query(params): Query<QueryParams>,
 ) -> impl IntoResponse {
     let page = params.page;
-    let order = params.order.unwrap_or_else(|| "update".to_string());
 
     let base_url = CONFIG_MAP
         .get("KOMIK_BASE_URL")
         .cloned()
         .unwrap_or_else(|| "https://komikindo.id".to_string());
 
-    let url = format!("{}/manhwa/{}/page/{}/?order={}", base_url, slug, page, order);
+    let url = format!("{}/manhwa/page/{}/", base_url, page);
 
     match fetch_and_parse_manhwa(&url).await {
         Ok(response) => Json(response),
@@ -94,9 +89,8 @@ pub async fn slug(
 }
 
 async fn fetch_and_parse_manhwa(url: &str) -> Result<ManhwaResponse, Box<dyn std::error::Error>> {
-    let client = reqwest::Client::new();
-    let response = client.get(url).send().await?;
-    let html = response.text().await?;
+    let response = fetch_with_proxy(url).await?;
+    let html = response.data;
     let document = Html::parse_document(&html);
 
     let animposx_selector = Selector::parse(".animposx").unwrap();
@@ -117,14 +111,14 @@ async fn fetch_and_parse_manhwa(url: &str) -> Result<ManhwaResponse, Box<dyn std
             .map(|e| e.text().collect::<String>().trim().to_string())
             .unwrap_or_default();
 
-        let mut image = element
+        let mut poster = element
             .select(&img_selector)
             .next()
             .and_then(|e| e.value().attr("src"))
             .unwrap_or("")
             .to_string();
-        if let Some(pos) = image.find('?') {
-            image = image[..pos].to_string();
+        if let Some(pos) = poster.find('?') {
+            poster = poster[..pos].to_string();
         }
 
         let chapter_text = element
@@ -158,7 +152,7 @@ async fn fetch_and_parse_manhwa(url: &str) -> Result<ManhwaResponse, Box<dyn std
             .unwrap_or("")
             .to_string();
 
-        let komik_id = element
+        let slug = element
             .select(&link_selector)
             .next()
             .and_then(|e| e.value().attr("href"))
@@ -169,12 +163,12 @@ async fn fetch_and_parse_manhwa(url: &str) -> Result<ManhwaResponse, Box<dyn std
         if !title.is_empty() {
             data.push(ManhwaItem {
                 title,
-                image,
+                poster,
                 chapter,
                 score,
                 date,
                 r#type,
-                komik_id,
+                slug,
             });
         }
     }

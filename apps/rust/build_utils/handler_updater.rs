@@ -158,6 +158,12 @@ pub fn update_handler_file(
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
+  // Check if the file has a comment indicating manual maintenance
+  if content.contains("// This register_routes is manually maintained") {
+    println!("cargo:warning=Skipping {:?} as it has manual register_routes", path);
+    return Ok(None);
+  }
+
   if content.trim().is_empty() {
     generate_handler_template(path, root_api_path)?;
     println!("cargo:warning=Generated new handler template for {:?}", path);
@@ -170,8 +176,6 @@ pub fn update_handler_file(
     .ok_or_else(|| anyhow!("Could not get file stem from {:?}", path))?
     .replace(['[', ']'], "")
     .replace('-', "_");
-
-  let func_name = &file_stem;
 
   let relative_path = path.strip_prefix(root_api_path).unwrap();
   let relative_path_no_ext = relative_path.with_extension("");
@@ -259,20 +263,20 @@ pub fn update_handler_file(
     .cloned()
     .unwrap_or_else(|| "String".to_string());
   let axum_path = if route_path.contains('[') && route_path.contains(']') {
-      // Legacy bracket notation
-      Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
+    // Legacy bracket notation
+    Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
   } else {
-      // New pattern-based dynamic detection
-      let mut axum_path = route_path.clone();
-      let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
-      for pattern in &dynamic_patterns {
-          if route_path.ends_with(pattern) {
-              let param_name = pattern.trim_start_matches('_');
-              axum_path = route_path.replace(pattern, &format!("{{{}}}", param_name));
-              break;
-          }
+    // New pattern-based dynamic detection
+    let mut axum_path = route_path.clone();
+    let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+    for pattern in &dynamic_patterns {
+      if route_path.ends_with(pattern) {
+        let param_name = pattern.trim_start_matches('_');
+        axum_path = route_path.replace(pattern, &format!("{{{}}}", param_name));
+        break;
       }
-      axum_path
+    }
+    axum_path
   };
   let existing_description = metadata.get("ENDPOINT_DESCRIPTION").cloned();
   let route_description = if let Some(desc) = &existing_description {
@@ -288,7 +292,7 @@ pub fn update_handler_file(
 
   let actual_func_name = HANDLER_FN_REGEX.captures(&content)
     .map(|c| c[1].to_string())
-    .unwrap_or_else(|| func_name.to_string());
+    .unwrap_or_else(|| file_stem.to_string());
 
   let openapi_route_path = if route_path == "/" {
     "/api/".to_string()
@@ -318,7 +322,7 @@ pub fn update_handler_file(
   println!("cargo:info=axum_path: {}", axum_path);
   println!("cargo:info=route_path: {}", route_path);
   println!("cargo:info=path_params: {:?}", path_params);
-  let new_utoipa_macro = generate_utoipa_macro(
+  let _new_utoipa_macro = generate_utoipa_macro(
     &http_method,
     &openapi_route_path,
     &route_tag,
@@ -354,7 +358,9 @@ pub fn update_handler_file(
       }
     }
   }
-  let fn_signature = format!("pub async fn {}(", actual_func_name);
+  let _fn_signature = format!("pub async fn {}(", actual_func_name);
+
+  // Simple approach: just generate for the first handler
   let new_register_fn = format!(
     "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
     http_method.to_lowercase(),
@@ -363,25 +369,31 @@ pub fn update_handler_file(
 
   let mut new_content = content.clone();
 
-  // Remove all existing utoipa::path macros
-  let macro_regex = Regex::new(r"(?s)#\[utoipa::path\(.*?\)\]\s*").unwrap();
-  new_content = macro_regex.replace_all(&new_content, "").to_string();
-
-  // Add the new macro before the function if function exists
-  if let Some(pos) = new_content.find(&fn_signature) {
-    let before = &new_content[..pos];
-    let after = &new_content[pos..];
-    new_content = format!("{}{}\n{}", before, new_utoipa_macro, after);
-  }
+  // Don't remove existing utoipa::path macros if we're parsing them
+  // Only update if there are no utoipa macros or if we need to regenerate them
 
   // Remove existing register_routes and add new one
   let register_regex = Regex::new(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\}\s*"
   ).unwrap();
-  new_content = register_regex.replace_all(&new_content, "").to_string();
-  new_content = new_content.trim_end().to_string();
-  new_content.push_str("\n\n");
-  new_content.push_str(&new_register_fn);
+
+  // Check if existing register_routes contains multiple routes
+  if let Some(existing_register) = register_regex.find(&content) {
+    let route_count = existing_register.as_str().matches(".route(").count();
+    if route_count > 1 {
+      // Skip updating if it already has multiple routes
+      new_content = content.clone();
+    } else {
+      new_content = register_regex.replace_all(&new_content, "").to_string();
+      new_content = new_content.trim_end().to_string();
+      new_content.push_str("\n\n");
+      new_content.push_str(&new_register_fn);
+    }
+  } else {
+    new_content = new_content.trim_end().to_string();
+    new_content.push_str("\n\n");
+    new_content.push_str(&new_register_fn);
+  }
 
   // Enhance response struct if it's basic
   new_content = enhance_response_struct(&new_content, &axum_path);
@@ -411,6 +423,69 @@ pub fn update_handler_file(
       route_path,
       handler_module_path: handler_full_module_path,
       route_tag,
+    })
+  )
+}
+
+fn update_uploader_file(
+  path: &Path,
+  schemas: &mut HashSet<String>,
+  module_path_prefix: &str,
+  _root_api_path: &Path
+) -> Result<Option<HandlerRouteInfo>> {
+  let content = fs
+    ::read_to_string(path)
+    .with_context(|| format!("Failed to read file: {:?}", path))?;
+
+  // Check if register_routes already exists and has multiple routes
+  let register_regex = Regex::new(
+    r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\}\s*"
+  ).unwrap();
+
+  if let Some(existing_register) = register_regex.find(&content) {
+    let route_count = existing_register.as_str().matches(".route(").count();
+    if route_count > 1 {
+      // Already has multiple routes, don't modify
+      inject_schemas(&content, &format!("{}::uploader", module_path_prefix), schemas)?;
+      return Ok(
+        Some(HandlerRouteInfo {
+          func_name: "upload_file".to_string(),
+          http_method: "post".to_string(),
+          route_path: "/uploader".to_string(),
+          handler_module_path: format!("{}::uploader", module_path_prefix),
+          route_tag: "uploader".to_string(),
+        })
+      );
+    }
+  }
+
+  // Generate register_routes for uploader with both routes
+  let new_register_fn =
+    r#"pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
+  router
+    .route("/uploader", post(upload_file))
+    .route("/{file_name}", get(download_file))
+}"#;
+
+  let mut new_content = content.clone();
+  new_content = register_regex.replace_all(&new_content, "").to_string();
+  new_content = new_content.trim_end().to_string();
+  new_content.push_str("\n\n");
+  new_content.push_str(new_register_fn);
+
+  if content != new_content {
+    fs::write(path, &new_content)?;
+  }
+
+  inject_schemas(&new_content, &format!("{}::uploader", module_path_prefix), schemas)?;
+
+  Ok(
+    Some(HandlerRouteInfo {
+      func_name: "upload_file".to_string(),
+      http_method: "post".to_string(),
+      route_path: "/uploader".to_string(),
+      handler_module_path: format!("{}::uploader", module_path_prefix),
+      route_tag: "uploader".to_string(),
     })
   )
 }

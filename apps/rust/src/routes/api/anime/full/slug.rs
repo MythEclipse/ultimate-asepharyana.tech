@@ -151,12 +151,12 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
     let next_episode_slug = next_episode_element
         .and_then(|e| e.value().attr("href"))
         .and_then(|href| href.split('/').nth(href.split('/').count().saturating_sub(2)))
-        .map(|s| s.to_string());
+        .map(|s| s.to_string() + "/");
 
     let previous_episode_slug = previous_episode_element
         .and_then(|e| e.value().attr("href"))
         .and_then(|href| href.split('/').nth(href.split('/').count().saturating_sub(2)))
-        .map(|s| s.to_string());
+        .map(|s| s.to_string() + "/");
 
     Ok(AnimeFullData {
         episode,

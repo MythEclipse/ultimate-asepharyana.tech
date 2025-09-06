@@ -11,8 +11,8 @@ use regex::Regex;
 use rust_lib::config::CONFIG_MAP;
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/manga/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manga/{slug} endpoint.";
+pub const ENDPOINT_PATH: &str = "/api/komik/manga";
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manga endpoint.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_manga_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<MangaResponse>";
@@ -20,12 +20,12 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<MangaResponse>";
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct MangaItem {
     pub title: String,
-    pub image: String,
+    pub poster: String,
     pub chapter: String,
     pub score: String,
     pub date: String,
     pub r#type: String,
-    pub komik_id: String,
+    pub slug: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -47,28 +47,22 @@ pub struct MangaResponse {
 #[derive(Deserialize)]
 pub struct QueryParams {
     pub page: Option<u32>,
-    pub order: Option<String>,
 }
 
 #[utoipa::path(
     get,
-    params(
-        ("_slug" = String, Path, description = "The _slug identifier")
-    ),
-    path = "/api/api/komik/manga/{slug}",
+    path = "/api/api/komik/manga",
     tag = "komik",
     operation_id = "komik_manga_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the komik/manga/{slug} endpoint.", body = MangaResponse),
+        (status = 200, description = "Handles GET requests for the komik/manga endpoint.", body = MangaResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn slug(
-    Path(_slug): Path<String>,
     Query(params): Query<QueryParams>,
 ) -> impl IntoResponse {
     let page = params.page.unwrap_or(1);
-    let _order = params.order.unwrap_or_else(|| "update".to_string());
 
     let base_url = CONFIG_MAP
         .get("KOMIK_BASE_URL")
@@ -117,14 +111,14 @@ async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::
             .map(|e| e.text().collect::<String>().trim().to_string())
             .unwrap_or_default();
 
-        let mut image = element
+        let mut poster = element
             .select(&img_selector)
             .next()
             .and_then(|e| e.value().attr("src"))
             .unwrap_or("")
             .to_string();
-        if let Some(pos) = image.find('?') {
-            image = image[..pos].to_string();
+        if let Some(pos) = poster.find('?') {
+            poster = poster[..pos].to_string();
         }
 
         let chapter_text = element
@@ -158,7 +152,7 @@ async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::
             .unwrap_or("")
             .to_string();
 
-        let komik_id = element
+        let slug = element
             .select(&link_selector)
             .next()
             .and_then(|e| e.value().attr("href"))
@@ -169,12 +163,12 @@ async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::
         if !title.is_empty() {
             data.push(MangaItem {
                 title,
-                image,
+                poster,
                 chapter,
                 score,
                 date,
                 r#type,
-                komik_id,
+                slug,
             });
         }
     }
@@ -229,7 +223,7 @@ fn parse_pagination(document: &Html) -> Pagination {
     }
 }
 
-/// Handles GET requests for the komik/manga/slug endpoint.
+/// Handles GET requests for the komik/manga endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router.route(ENDPOINT_PATH, get(slug))

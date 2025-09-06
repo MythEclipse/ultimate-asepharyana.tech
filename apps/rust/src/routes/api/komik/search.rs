@@ -3,10 +3,12 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use reqwest;
 use scraper::{Html, Selector};
 use regex::Regex;
-use rust_lib::config::CONFIG_MAP;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use rust_lib::komik_base_url::get_cached_komik_base_url;
+use tracing::{error, info, warn};
+use urlencoding;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/search";
@@ -18,24 +20,34 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct MangaItem {
     pub title: String,
-    pub image: String,
+    pub poster: String,
     pub chapter: String,
     pub score: String,
     pub date: String,
     pub r#type: String,
-    pub komik_id: String,
+    pub slug: String,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct Pagination {
+    pub current_page: u32,
+    pub last_visible_page: u32,
+    pub has_next_page: bool,
+    pub next_page: Option<u32>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct SearchResponse {
     pub data: Vec<MangaItem>,
-    pub prev_page: bool,
-    pub next_page: bool,
+    pub pagination: Pagination,
 }
 
 #[derive(Deserialize)]
 pub struct SearchQuery {
-    pub q: Option<String>,
+    pub query: Option<String>,
+    pub page: Option<u32>,
 }
 
 #[utoipa::path(
@@ -49,32 +61,73 @@ pub struct SearchQuery {
     )
 )]
 pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
-    let query = params.q.unwrap_or_default();
-    let base_url = CONFIG_MAP
-        .get("KOMIK_BASE_URL")
-        .cloned()
-        .unwrap_or_else(|| "https://komikindo.id".to_string());
+    let query = params.query.unwrap_or_default();
+    let page = params.page.unwrap_or(1);
 
-    let url = if query.is_empty() {
-        format!("{}/page/1/", base_url)
-    } else {
-        format!("{}/page/1/?s={}", base_url, urlencoding::encode(&query))
+    let base_url = match get_cached_komik_base_url(false).await {
+        Ok(url) => url,
+        Err(_) => {
+            warn!("[search] Failed to get cached base URL, trying refresh");
+            match get_cached_komik_base_url(true).await {
+                Ok(url) => url,
+                Err(e) => {
+                    error!("[search] Failed to get base URL: {:?}", e);
+                    return Json(SearchResponse {
+                        data: vec![],
+                        pagination: Pagination {
+                            current_page: page,
+                            last_visible_page: page,
+                            has_next_page: false,
+                            next_page: None,
+                            has_previous_page: false,
+                            previous_page: None,
+                        },
+                    });
+                }
+            }
+        }
     };
 
-    match fetch_and_parse_search(&url).await {
+    let url = if query.is_empty() {
+        format!("{}/page/{}/", base_url, page)
+    } else {
+        format!("{}/page/{}/?s={}", base_url, page, urlencoding::encode(&query))
+    };
+
+    match fetch_and_parse_search(&url, &query, page).await {
         Ok(response) => Json(response),
-        Err(_) => Json(SearchResponse {
-            data: vec![],
-            prev_page: false,
-            next_page: false,
-        }),
+        Err(e) => {
+            error!("[search] Failed to fetch and parse search: {:?}", e);
+            Json(SearchResponse {
+                data: vec![],
+                pagination: Pagination {
+                    current_page: page,
+                    last_visible_page: page,
+                    has_next_page: false,
+                    next_page: None,
+                    has_previous_page: false,
+                    previous_page: None,
+                },
+            })
+        }
     }
 }
 
-async fn fetch_and_parse_search(url: &str) -> Result<SearchResponse, Box<dyn std::error::Error>> {
-    let client = reqwest::Client::new();
-    let response = client.get(url).send().await?;
-    let html = response.text().await?;
+async fn fetch_and_parse_search(url: &str, _query: &str, page: u32) -> Result<SearchResponse, Box<dyn std::error::Error>> {
+    info!("[fetch_and_parse_search] Starting fetch for URL: {}", url);
+
+    // Use fetch_with_proxy which includes comprehensive retry logic
+    let html = match fetch_with_proxy(url).await {
+        Ok(result) => {
+            info!("[fetch_and_parse_search] fetch_with_proxy successful");
+            result.data
+        },
+        Err(e) => {
+            error!("[fetch_and_parse_search] All proxy attempts failed: {:?}", e);
+            return Err(Box::new(e));
+        }
+    };
+
     let document = Html::parse_document(&html);
 
     let animposx_selector = Selector::parse(".animposx").unwrap();
@@ -95,14 +148,14 @@ async fn fetch_and_parse_search(url: &str) -> Result<SearchResponse, Box<dyn std
             .map(|e| e.text().collect::<String>().trim().to_string())
             .unwrap_or_default();
 
-        let mut image = element
+        let mut poster = element
             .select(&img_selector)
             .next()
             .and_then(|e| e.value().attr("src"))
             .unwrap_or("")
             .to_string();
-        if let Some(pos) = image.find('?') {
-            image = image[..pos].to_string();
+        if let Some(pos) = poster.find('?') {
+            poster = poster[..pos].to_string();
         }
 
         let chapter_text = element
@@ -136,7 +189,7 @@ async fn fetch_and_parse_search(url: &str) -> Result<SearchResponse, Box<dyn std
             .unwrap_or("")
             .to_string();
 
-        let komik_id = element
+        let slug = element
             .select(&link_selector)
             .next()
             .and_then(|e| e.value().attr("href"))
@@ -147,36 +200,28 @@ async fn fetch_and_parse_search(url: &str) -> Result<SearchResponse, Box<dyn std
         if !title.is_empty() {
             data.push(MangaItem {
                 title,
-                image,
+                poster,
                 chapter,
                 score,
                 date,
                 r#type,
-                komik_id,
+                slug,
             });
         }
     }
 
-    let pagination = parse_pagination(&document);
+    let pagination = parse_pagination(&document, page);
 
     Ok(SearchResponse {
         data,
-        prev_page: pagination.has_previous_page,
-        next_page: pagination.has_next_page,
+        pagination,
     })
 }
 
-fn parse_pagination(document: &Html) -> Pagination {
-    let current_selector = Selector::parse(".pagination .current").unwrap();
+fn parse_pagination(document: &Html, current_page: u32) -> Pagination {
     let page_selectors = Selector::parse(".pagination a:not(.next)").unwrap();
     let next_selector = Selector::parse(".pagination .next").unwrap();
     let prev_selector = Selector::parse(".pagination .prev").unwrap();
-
-    let current_page = document
-        .select(&current_selector)
-        .next()
-        .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-        .unwrap_or(1);
 
     let mut last_visible_page = current_page;
     for element in document.select(&page_selectors) {
@@ -188,22 +233,27 @@ fn parse_pagination(document: &Html) -> Pagination {
     }
 
     let has_next_page = document.select(&next_selector).next().is_some();
+    let next_page = if has_next_page && current_page < last_visible_page {
+        Some(current_page + 1)
+    } else {
+        None
+    };
+
     let has_previous_page = document.select(&prev_selector).next().is_some();
+    let previous_page = if has_previous_page && current_page > 1 {
+        Some(current_page - 1)
+    } else {
+        None
+    };
 
     Pagination {
         current_page,
         last_visible_page,
         has_next_page,
+        next_page,
         has_previous_page,
+        previous_page,
     }
-}
-
-#[derive(Debug)]
-struct Pagination {
-    current_page: u32,
-    last_visible_page: u32,
-    has_next_page: bool,
-    has_previous_page: bool,
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

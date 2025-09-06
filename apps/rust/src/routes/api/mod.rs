@@ -14,26 +14,32 @@ pub mod proxy;
 pub mod uploader;
 
 use crate::routes::api::anime2::complete_anime::slug::ListResponse;
+use crate::routes::api::anime2::detail::slug::AnimeDetailData;
+use crate::routes::api::anime2::detail::slug::DetailResponse;
 use crate::routes::api::anime2::index::Anime2Data;
 use crate::routes::api::anime2::index::Anime2Response;
+use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeResponse;
+use crate::routes::api::anime2::search::SearchResponse;
 use crate::routes::api::anime::complete_anime::slug::ListResponse as ListResponse_1;
-use crate::routes::api::anime::detail::slug::AnimeDetailData;
-use crate::routes::api::anime::detail::slug::DetailResponse;
+use crate::routes::api::anime::detail::slug::AnimeDetailData as AnimeDetailData_1;
+use crate::routes::api::anime::detail::slug::DetailResponse as DetailResponse_1;
 use crate::routes::api::anime::full::slug::AnimeFullData;
 use crate::routes::api::anime::full::slug::FullResponse;
-use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeResponse;
-use crate::routes::api::anime::search::SearchResponse;
-use crate::routes::api::compress::ListResponse as ListResponse_2;
+use crate::routes::api::anime::index::AnimeData;
+use crate::routes::api::anime::index::AnimeResponse;
+use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeResponse as OngoingAnimeResponse_1;
+use crate::routes::api::anime::search::SearchResponse as SearchResponse_1;
+use crate::routes::api::compress::CompressResponse;
+use crate::routes::api::drivepng::ListResponse as ListResponse_2;
 use crate::routes::api::komik::chapter::ChapterData;
 use crate::routes::api::komik::chapter::ChapterResponse;
 use crate::routes::api::komik::detail::DetailData;
-use crate::routes::api::komik::detail::DetailResponse as DetailResponse_1;
+use crate::routes::api::komik::detail::DetailResponse as DetailResponse_2;
 use crate::routes::api::komik::manga::slug::MangaResponse;
 use crate::routes::api::komik::manhua::slug::ManhuaResponse;
 use crate::routes::api::komik::manhwa::slug::ManhwaResponse;
-use crate::routes::api::komik::search::SearchResponse as SearchResponse_1;
-use crate::routes::api::proxy::ListResponse as ListResponse_3;
-use crate::routes::api::uploader::ListResponse as ListResponse_4;
+use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
+use crate::routes::api::proxy::ErrorResponse;
 
 #[derive(utoipa::OpenApi)]
 #[openapi(
@@ -41,43 +47,53 @@ paths(
               crate::routes::api::anime::complete_anime::slug::slug,
               crate::routes::api::anime::detail::slug::slug,
               crate::routes::api::anime::full::slug::slug,
+              crate::routes::api::anime::index::anime,
               crate::routes::api::anime::ongoing_anime::slug::slug,
               crate::routes::api::anime::search::search,
               crate::routes::api::anime2::complete_anime::slug::slug,
+              crate::routes::api::anime2::detail::slug::slug,
               crate::routes::api::anime2::index::anime2,
+              crate::routes::api::anime2::ongoing_anime::slug::slug,
+              crate::routes::api::anime2::search::search,
               crate::routes::api::compress::compress,
+              crate::routes::api::drivepng::drivepng,
               crate::routes::api::komik::chapter::chapter,
               crate::routes::api::komik::detail::detail,
               crate::routes::api::komik::manga::slug::slug,
               crate::routes::api::komik::manhua::slug::slug,
               crate::routes::api::komik::manhwa::slug::slug,
               crate::routes::api::komik::search::search,
-              crate::routes::api::proxy::proxy,
-              crate::routes::api::uploader::uploader
+              crate::routes::api::proxy::proxy
           ),
 components(
               schemas(
                   ListResponse,
-                  Anime2Data,
-                  Anime2Response,
-                  ListResponse_1,
                   AnimeDetailData,
                   DetailResponse,
-                  AnimeFullData,
-                  FullResponse,
+                  Anime2Data,
+                  Anime2Response,
                   OngoingAnimeResponse,
                   SearchResponse,
+                  ListResponse_1,
+                  AnimeDetailData_1,
+                  DetailResponse_1,
+                  AnimeFullData,
+                  FullResponse,
+                  AnimeData,
+                  AnimeResponse,
+                  OngoingAnimeResponse_1,
+                  SearchResponse_1,
+                  CompressResponse,
                   ListResponse_2,
                   ChapterData,
                   ChapterResponse,
                   DetailData,
-                  DetailResponse_1,
+                  DetailResponse_2,
                   MangaResponse,
                   ManhuaResponse,
                   ManhwaResponse,
-                  SearchResponse_1,
-                  ListResponse_3,
-                  ListResponse_4
+                  SearchResponse_2,
+                  ErrorResponse
               )
           ),
 tags(

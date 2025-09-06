@@ -42,6 +42,9 @@ utoipa-swagger-ui = { workspace = true }
 hyper = { workspace = true }
 url = { workspace = true }
 rand = { workspace = true }
+tempfile = { workspace = true }
+mime_guess = { workspace = true }
+lazy_static = "1.4"
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
 [build-dependencies]
@@ -75,5 +78,5 @@ name = "test_scaffold"
 path = "src/bin/test_scaffold.rs"
 
 [features]
-default = []
+default = ["ffmpeg"]
 ffmpeg = ["ffmpeg-next"]

@@ -27,7 +27,17 @@
     pub total: Option<u64>,
     }
 
-    pub async fn drivepng() -> impl IntoResponse {
+    #[utoipa::path(
+    get,
+    path = "/api/drivepng",
+    tag = "drivepng",
+    operation_id = "drivepng",
+    responses(
+        (status = 200, description = "Handles GET requests for the drivepng endpoint.", body = ListResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
+pub async fn drivepng() -> impl IntoResponse {
         Json(ListResponse {
             message: "Hello from drivepng!".to_string(),
             data: vec![],
@@ -36,7 +46,7 @@
     }
 
     /// Handles GET requests for the drivepng endpoint.
-    pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-        router.route(ENDPOINT_PATH, get(drivepng))
-    }
-    
+
+pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
+    router.route(ENDPOINT_PATH, get(drivepng))
+}
