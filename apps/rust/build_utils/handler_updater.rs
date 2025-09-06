@@ -209,18 +209,29 @@ pub fn update_handler_file(
     metadata.insert(cap[1].to_string(), cap[2].to_string());
   }
 
-  // Overwrite ENDPOINT_TAG with hierarchical tag
+  // Only set ENDPOINT_TAG if it doesn't exist
   let tag_regex = Regex::new(r#"const\s+ENDPOINT_TAG:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  let mut content = tag_regex
-    .replace(&content, &format!(r#"const ENDPOINT_TAG: &str = "{}";"#, default_tag))
-    .to_string();
+  if !tag_regex.is_match(&content) {
+    content = tag_regex
+      .replace(&content, &format!(r#"const ENDPOINT_TAG: &str = "{}";"#, default_tag))
+      .to_string();
+  }
 
-  // Overwrite OPERATION_ID with generated operation_id
+  // Only set OPERATION_ID if it doesn't exist
   let operation_id_regex = Regex::new(r#"const\s+OPERATION_ID:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  content = operation_id_regex
-    .replace(&content, &format!(r#"const OPERATION_ID: &str = "{}";"#, operation_id))
-    .to_string();
+  if !operation_id_regex.is_match(&content) {
+    content = operation_id_regex
+      .replace(&content, &format!(r#"const OPERATION_ID: &str = "{}";"#, operation_id))
+      .to_string();
+  }
 
+  // Only set ENDPOINT_METHOD if it doesn't exist
+  let method_regex = Regex::new(r#"const\s+ENDPOINT_METHOD:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
+  if !method_regex.is_match(&content) {
+    content = method_regex
+      .replace(&content, &format!(r#"const ENDPOINT_METHOD: &str = "{}";"#, http_method))
+      .to_string();
+  }
   let http_method = metadata
     .get("ENDPOINT_METHOD")
     .cloned()
@@ -236,6 +247,10 @@ pub fn update_handler_file(
     .to_string();
 
   // Prepend "/api/" to ensure consistency, but avoid duplication
+  if route_path.contains("/api/api/") {
+    // Replace all duplicate /api/ patterns
+    route_path = route_path.replace("/api/api/", "/api/");
+  }
   if !route_path.starts_with("/api/") {
     route_path = format!("/api/{}", route_path);
   }
@@ -254,25 +269,30 @@ pub fn update_handler_file(
           &format!("/{}", file_stem),
           &format!("/{{{}}}", param_name)
         );
+        // Only update ENDPOINT_PATH for path params if it doesn't exist
         let endpoint_path_regex = Regex::new(
           r#"const\s+ENDPOINT_PATH:\s*&\s*str\s*=\s*"[^"]*";"#
         ).unwrap();
-        content = endpoint_path_regex
-          .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, new_route_path))
-          .to_string();
+        if !endpoint_path_regex.is_match(&content) {
+          content = endpoint_path_regex
+            .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, new_route_path))
+            .to_string();
+        }
         route_path = new_route_path;
         // Continue to apply the correct ENDPOINT_PATH below
       }
     }
   }
 
-  // Ensure ENDPOINT_PATH is correctly set in the file based on the computed route_path
+  // Only generate ENDPOINT_PATH if it doesn't exist
   let endpoint_path_regex = Regex::new(
     r#"const\s+ENDPOINT_PATH:\s*&\s*str\s*=\s*"[^"]*";"#
   ).unwrap();
-  content = endpoint_path_regex
-    .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, route_path))
-    .to_string();
+  if !endpoint_path_regex.is_match(&content) {
+    content = endpoint_path_regex
+      .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, route_path))
+      .to_string();
+  }
 
   let route_tag = default_tag.clone();
   let response_body = metadata
@@ -307,9 +327,21 @@ pub fn update_handler_file(
     doc_comment.unwrap_or_else(|| generate_default_description(&axum_path, &http_method))
   };
 
-  let actual_func_name = HANDLER_FN_REGEX.captures(&content)
-    .map(|c| c[1].to_string())
-    .unwrap_or_else(|| file_stem.to_string());
+  // Only set ENDPOINT_DESCRIPTION if it doesn't exist
+  let description_regex = Regex::new(
+    r#"const\s+ENDPOINT_DESCRIPTION:\s*&\s*str\s*=\s*"[^"]*";"#
+  ).unwrap();
+  if !description_regex.is_match(&content) {
+    content = description_regex
+      .replace(
+        &content,
+        &format!(
+          r#"const ENDPOINT_DESCRIPTION: &str = "{}";"#,
+          route_description.replace("\"", "\\\"")
+        )
+      )
+      .to_string();
+  }
 
   let openapi_route_path = route_path.clone();
 
@@ -370,6 +402,15 @@ pub fn update_handler_file(
           .to_string();
       }
     }
+  }
+  // Only set SUCCESS_RESPONSE_BODY if it doesn't exist
+  let response_body_regex = Regex::new(
+    r#"const\s+SUCCESS_RESPONSE_BODY:\s*&\s*str\s*=\s*"[^"]*";"#
+  ).unwrap();
+  if !response_body_regex.is_match(&content) {
+    content = response_body_regex
+      .replace(&content, &format!(r#"const SUCCESS_RESPONSE_BODY: &str = "{}";"#, response_body))
+      .to_string();
   }
   let _fn_signature = format!("pub async fn {}(", actual_func_name);
 
