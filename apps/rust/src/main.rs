@@ -8,11 +8,13 @@
 
 use std::net::SocketAddr;
 use rust_lib::config::CONFIG_MAP;
-use crate::routes::api::create_api_routes;
+use crate::routes::api::{create_api_routes, ApiDoc};
 use crate::routes::AppState;
 use std::sync::Arc;
 use axum::Router;
 use tracing_subscriber::EnvFilter;
+use utoipa_swagger_ui::SwaggerUi;
+use utoipa::OpenApi;
 
 mod routes;
 
@@ -34,7 +36,9 @@ async fn main() -> anyhow::Result<()> {
   });
 
   tracing::info!("Building application routes...");
-  let app = Router::new().merge(create_api_routes().with_state(app_state.clone()));
+  let app = Router::new()
+    .nest("/api", create_api_routes().with_state(app_state.clone()))
+    .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()));
 
   let port = CONFIG_MAP.get("PORT")
     .and_then(|s| s.parse::<u16>().ok())

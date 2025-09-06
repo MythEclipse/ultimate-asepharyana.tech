@@ -3,26 +3,29 @@
 
 use axum::Router;
 use std::sync::Arc;
-use utoipa::OpenApi;
 use crate::routes::AppState;
 
+pub mod test;
 
-
-#[derive(OpenApi)]
+#[derive(utoipa::OpenApi)]
 #[openapi(
-    paths(
+paths(
+              crate::routes::api::test::hello::hello
+          ),
+components(
+              schemas(
 
-    ),
-    components(schemas()),
-    tags((
-        name = "api", description = "Main API"
-    ))
+              )
+          ),
+tags(
+              (name = "api", description = "Main API")
+          )
 )]
 #[allow(dead_code)]
 pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
-    let router = Router::new();
-
+    let mut router = Router::new();
+    router = test::register_routes(router);
     router
 }

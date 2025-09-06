@@ -17,9 +17,13 @@ use tempfile::NamedTempFile;
 use anyhow::{Result, Context};
 use env_logger;
 use itertools::Itertools;
+use utoipa::openapi::OpenApi;
+use serde_json::Value;
+use reqwest;
 
 mod build_utils;
 use build_utils::{hash_utils::compute_directory_hash, mod_generator, openapi_generator};
+
 
 /// Configuration for the build process
 #[derive(Debug)]
@@ -58,8 +62,18 @@ fn main() -> Result<()> {
     // Collect API data
     let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path, &config)?;
 
-    // Generate API modules
-    generate_api_modules(&api_routes_path, &modules, &api_handlers, &openapi_schemas)?;
+    // Generate API modules and get the OpenAPI spec
+    let openapi_doc = generate_api_modules(&api_routes_path, &modules, &api_handlers, &openapi_schemas)?;
+
+    // Serialize OpenAPI spec to a temporary JSON file
+    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR not set")?);
+    let openapi_spec_file_path = out_dir.join("openapi_spec.json");
+    let mut openapi_spec_file = NamedTempFile::new_in(&out_dir)
+        .context("Failed to create temporary OpenAPI spec file")?;
+    serde_json::to_writer_pretty(&mut openapi_spec_file, &openapi_doc)
+        .context("Failed to serialize OpenAPI spec to file")?;
+    openapi_spec_file.persist(&openapi_spec_file_path)
+        .map_err(|e| anyhow::anyhow!("Failed to persist OpenAPI spec file: {:?}", e))?;
 
     // Output metrics
     if let Ok(elapsed) = start_time.elapsed() {
@@ -131,17 +145,17 @@ fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> Result<(Ap
 }
 
 /// Generate the root API module with OpenAPI documentation
-fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handlers: &ApiHandlers, openapi_schemas: &HashSet<String>) -> Result<()> {
+fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handlers: &ApiHandlers, openapi_schemas: &HashSet<String>) -> Result<OpenApi> {
     log::debug!("Generating API modules");
 
-    openapi_generator::generate_root_api_mod(
+    let openapi_doc = openapi_generator::generate_root_api_mod(
         api_routes_path,
         modules,
         api_handlers,
         openapi_schemas,
     )?;
 
-    Ok(())
+    Ok(openapi_doc)
 }
 
 fn should_regenerate(api_routes_path: &Path) -> Result<bool> {

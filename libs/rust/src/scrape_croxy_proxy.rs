@@ -93,7 +93,7 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
                                     },
                                     Some(ref v) => {
                                         info!("Debug: Matched Some(non-String): {:?}", v);
-                                        v.to_string()
+                                        serde_json::Value::to_string(v)
                                     },
                                     None => {
                                         info!("Debug: Matched None");

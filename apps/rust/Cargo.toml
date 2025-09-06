@@ -29,7 +29,6 @@ data-url = { workspace = true }
 base64 = { workspace = true }
 tokio-util = { workspace = true }
 async-trait = { workspace = true }
-serde_yaml = { workspace = true }
 scraper = { workspace = true }
 regex = { workspace = true }
 oxidize-pdf = { workspace = true }
@@ -41,7 +40,6 @@ urlencoding = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 hyper = { workspace = true }
-redis = { workspace = true }
 url = { workspace = true }
 rand = { workspace = true }
 
@@ -58,6 +56,11 @@ log = { workspace = true }
 itertools = { workspace = true }
 rayon = { workspace = true }
 walkdir = { workspace = true }
+openapiv3 = "2.2.0"
+jsonschema = "0.33.0"
+utoipa = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
 
 # Dependensi yang hanya dibutuhkan untuk tes
 [dev-dependencies]
