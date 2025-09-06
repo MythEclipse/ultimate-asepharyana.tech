@@ -7,9 +7,7 @@
 /// - Ensures rebuilds occur when build utilities or API routes change.
 use std::collections::HashSet;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 use std::env;
 
 use tempfile::NamedTempFile;
@@ -18,11 +16,9 @@ use anyhow::{Result, Context};
 use env_logger;
 use itertools::Itertools;
 use utoipa::openapi::OpenApi;
-use serde_json::Value;
-use reqwest;
 
 mod build_utils;
-use build_utils::{hash_utils::compute_directory_hash, mod_generator, openapi_generator};
+use build_utils::{mod_generator, openapi_generator};
 
 
 /// Configuration for the build process
@@ -54,7 +50,6 @@ fn main() -> Result<()> {
         log::info!("Starting build process");
     }
 
-    let start_time = SystemTime::now();
 
     // Setup build environment
     let api_routes_path = setup_build_environment(&config)?;
@@ -76,10 +71,8 @@ fn main() -> Result<()> {
         .map_err(|e| anyhow::anyhow!("Failed to persist OpenAPI spec file: {:?}", e))?;
 
     // Output metrics
-    if let Ok(elapsed) = start_time.elapsed() {
-        println!("cargo:warning=Build completed in {:.2}s, {} handlers, {} schemas, {} modules",
-                 elapsed.as_secs_f64(), api_handlers.len(), openapi_schemas.len(), modules.len());
-    }
+    println!("cargo:warning=Build completed, {} handlers, {} schemas, {} modules",
+             api_handlers.len(), openapi_schemas.len(), modules.len());
 
     log::info!("Build process completed successfully");
     Ok(())
@@ -158,48 +151,13 @@ fn generate_api_modules(api_routes_path: &Path, modules: &Vec<String>, api_handl
     Ok(openapi_doc)
 }
 
-fn should_regenerate(api_routes_path: &Path) -> Result<bool> {
+fn should_regenerate(_api_routes_path: &Path) -> Result<bool> {
     // Check FORCE_API_REGEN environment variable first
     if env::var("FORCE_API_REGEN").is_ok() {
         log::info!("FORCE_API_REGEN environment variable is set, forcing regeneration.");
         return Ok(true);
     }
 
-    let hash_result = compute_directory_hash(api_routes_path);
-    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR not set")?);
-    let hash_file = out_dir.join("api_routes.hash");
-
-    let should_regenerate = match &hash_result {
-        Ok(current_hash) => {
-            if let Ok(previous_hash_str) = fs::read_to_string(&hash_file) {
-                if previous_hash_str.trim() == current_hash {
-                    log::info!("API routes unchanged, skipping regeneration");
-                    false
-                } else {
-                    true
-                }
-            } else { // Failed to read previous hash, so regenerate
-                log::debug!("No previous hash file found, proceeding with regeneration");
-                true
-            }
-        },
-        Err(e) => { // Failed to compute current hash, so regenerate
-            log::error!("Failed to compute directory hash: {}", e);
-            true
-        }
-    };
-
-    // Save the new hash if computation was successful
-    if should_regenerate {
-        if let Ok(current_hash) = hash_result {
-            let mut temp_file = NamedTempFile::new()
-                .with_context(|| format!("Failed to create temporary file for hash: {:?}", hash_file))?;
-            temp_file.write_all(current_hash.as_bytes())
-                .with_context(|| format!("Failed to write hash to temporary file: {:?}", hash_file))?;
-            temp_file.persist(&hash_file)
-                .with_context(|| format!("Failed to persist temporary hash file to: {:?}", hash_file))?;
-        }
-    }
-
-    Ok(should_regenerate)
+    // Always regenerate since hash checking is disabled
+    Ok(true)
 }
