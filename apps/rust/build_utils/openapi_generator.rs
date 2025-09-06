@@ -49,11 +49,20 @@ pub fn generate_root_api_mod(
 
   // Generate `use` imports for each fully-qualified schema path and collect simple type names for components.
   let mut simple_names: Vec<String> = Vec::new();
+  let mut use_imports = Vec::new();
   // We no longer need schema_objects: HashMap<String, Schema>
   for full in &sorted_schemas {
     let simple_name = full.split("::").last().unwrap().to_string();
     simple_names.push(simple_name.clone());
+    use_imports.push(format!("use {};", full));
   }
+
+  // Add use imports to the content
+  for import in use_imports {
+    content.push_str(&import);
+    content.push('\n');
+  }
+  content.push('\n');
 
   // Generate the OpenAPI spec using the utoipa macro
   #[derive(utoipa::OpenApi)]

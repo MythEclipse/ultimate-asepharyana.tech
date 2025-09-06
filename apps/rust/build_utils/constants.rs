@@ -14,5 +14,5 @@ pub static ENDPOINT_METADATA_REGEX: Lazy<Regex> = Lazy::new(|| {
 pub static DYNAMIC_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([^\]]+)\]").unwrap());
 
 pub static STRUCT_REGEX: Lazy<Regex> = Lazy::new(|| {
-  Regex::new(r"(?m)^pub struct (\w+?)(Data|Response)\s*\{").unwrap()
+  Regex::new(r"(?m)^\s*pub struct (\w+?)(Data|Response)\s*\{").unwrap()
 });

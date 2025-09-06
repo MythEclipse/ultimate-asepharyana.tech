@@ -8,6 +8,9 @@ use crate::routes::AppState;
 pub mod products;
 pub mod test;
 
+use crate::routes::api::products::detail::product_id::DetailResponse;
+use crate::routes::api::test::hello::ListResponse;
+
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -16,7 +19,8 @@ paths(
           ),
 components(
               schemas(
-
+                  DetailResponse,
+                  ListResponse
               )
           ),
 tags(
