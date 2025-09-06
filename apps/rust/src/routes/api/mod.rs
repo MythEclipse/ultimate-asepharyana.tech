@@ -10,17 +10,20 @@ pub mod test;
 
 use crate::routes::api::products::detail::product_id::DetailResponse;
 use crate::routes::api::test::hello2::ListResponse;
+use crate::routes::api::test::hello::ListResponse as ListResponse_1;
 
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
               crate::routes::api::products::detail::product_id::product_id,
+              crate::routes::api::test::hello::hello,
               crate::routes::api::test::hello2::hello2
           ),
 components(
               schemas(
                   DetailResponse,
-                  ListResponse
+                  ListResponse,
+                  ListResponse_1
               )
           ),
 tags(

@@ -161,10 +161,6 @@ fn process_directory_entries(
         .and_then(|s| s.to_str())
         .ok_or_else(|| anyhow::anyhow!("Invalid file stem for: {:?}", path))?;
 
-      // Filter out hello.rs from test module, only keep hello2.rs
-      if file_stem == "hello" && current_dir.ends_with("test") {
-        continue;
-      }
 
       let mod_name = sanitize_module_name(file_stem);
       pub_mods.push(format!("pub mod {};", mod_name));
