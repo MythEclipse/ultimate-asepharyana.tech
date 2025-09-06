@@ -96,6 +96,11 @@ components(
                   ErrorResponse
               )
           ),
+info(
+              title = "Freefire",
+              version = "0.0.1",
+              description = "api gratis"
+          ),
 tags(
               (name = "api", description = "Main API")
           )

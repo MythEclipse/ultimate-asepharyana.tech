@@ -24,7 +24,6 @@
         pub next_chapter_id: String,
         pub prev_chapter_id: String,
         pub images: Vec<String>,
-        pub list_chapter: String,
     }
 
     #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -70,7 +69,6 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
                                 next_chapter_id: "".to_string(),
                                 prev_chapter_id: "".to_string(),
                                 images: vec![],
-                                list_chapter: "".to_string(),
                             },
                         })
                     },
@@ -85,7 +83,6 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
                         next_chapter_id: "".to_string(),
                         prev_chapter_id: "".to_string(),
                         images: vec![],
-                        list_chapter: "".to_string(),
                     },
                 })
             }
@@ -130,20 +127,6 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
             "".to_string()
         };
 
-        let list_chapter_element = document
-            .select(&Selector::parse(".nextprev a").unwrap())
-            .find(|element| {
-                element.select(&Selector::parse(".icol.daftarch").unwrap()).next().is_some()
-            });
-        let list_chapter = if let Some(element) = list_chapter_element {
-            element.value().attr("href")
-                .and_then(|href| href.split('/').nth(4))
-                .unwrap_or("")
-                .to_string()
-        } else {
-            "".to_string()
-        };
-
         let mut images = Vec::new();
         for element in document.select(&Selector::parse("#chimg-auh img").unwrap()) {
             if let Some(src) = element.value().attr("src") {
@@ -157,7 +140,6 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
             next_chapter_id,
             prev_chapter_id,
             images,
-            list_chapter,
         })
     }
 

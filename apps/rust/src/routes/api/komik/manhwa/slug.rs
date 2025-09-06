@@ -1,6 +1,6 @@
 //! Handler for the komik manhwa slug endpoint.
 
-use axum::{ extract::Query, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::{Path, Query}, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -13,7 +13,7 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/komik/manhwa";
+pub const ENDPOINT_PATH: &str = "/komik/manhwa/{slug}";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhwa endpoint.";
 #[allow(dead_code)]

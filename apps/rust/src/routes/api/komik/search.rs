@@ -13,7 +13,7 @@ use urlencoding;
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/komik/search";
+pub const ENDPOINT_PATH: &str = "/komik/search";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for komik based on query parameters.";
 #[allow(dead_code)]
@@ -58,15 +58,20 @@ pub struct SearchQuery {
 
 #[utoipa::path(
   get,
-  path = "/api/api/komik/search",
+  path = "/api/komik/search",
   tag = "komik",
   operation_id = "komik_search",
+  params(
+    ("query" = Option<String>, Query, description = "Search query for komik"),
+    ("page" = Option<u32>, Query, description = "Page number for pagination")
+  ),
   responses(
     (
       status = 200,
       description = "Searches for komik based on query parameters.",
       body = SearchResponse,
     ),
+    (status = 400, description = "Bad Request", body = String),
     (status = 500, description = "Internal Server Error", body = String)
   )
 )]

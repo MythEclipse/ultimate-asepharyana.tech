@@ -12,7 +12,7 @@ use scraper::{ Html, Selector };
 use tracing::{ info, error };
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/detail";
+pub const ENDPOINT_PATH: &str = "/komik/detail";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves details for a specific komik by ID.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_detail";
@@ -293,5 +293,5 @@ async fn fetch_and_parse_detail(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(detail))
+    router.route(ENDPOINT_PATH, get(detail))
 }
