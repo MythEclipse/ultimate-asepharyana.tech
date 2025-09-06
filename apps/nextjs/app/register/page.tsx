@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { APIURL } from '../../lib/url';
+
 function RegisterForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,7 +26,7 @@ function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      const registerResponse = await fetch('/api/register', {
+      const registerResponse = await fetch(`${APIURL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,7 +41,9 @@ function RegisterForm() {
       const registerData = await registerResponse.json();
 
       if (!registerResponse.ok) {
-        setError(registerData.message || 'Registration failed. Please try again.');
+        setError(
+          registerData.message || 'Registration failed. Please try again.',
+        );
         setIsSubmitting(false);
         return;
       }
@@ -49,17 +53,23 @@ function RegisterForm() {
       setTimeout(() => {
         router.push('/login');
       }, 2000);
-
     } catch (error) {
       console.error('Registration error:', error);
-      setError('An error occurred. Please check your connection and try again.');
+      setError(
+        'An error occurred. Please check your connection and try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleRegister} className="space-y-4" role="form" aria-label="Register form">
+    <form
+      onSubmit={handleRegister}
+      className="space-y-4"
+      role="form"
+      aria-label="Register form"
+    >
       {error && (
         <p
           className="text-red-500 text-center bg-red-100 p-2 rounded-md"
@@ -72,7 +82,12 @@ function RegisterForm() {
         </p>
       )}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Name
+        </label>
         <input
           type="text"
           id="name"
@@ -85,7 +100,12 @@ function RegisterForm() {
         />
       </div>
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+        <label
+          htmlFor="email"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Email
+        </label>
         <input
           type="email"
           id="email"
@@ -98,7 +118,12 @@ function RegisterForm() {
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+        <label
+          htmlFor="password"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Password
+        </label>
         <input
           type="password"
           id="password"
@@ -114,7 +139,7 @@ function RegisterForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400'
+        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
         aria-label="Register"
       >
         {isSubmitting ? 'Registering...' : 'Register'}
@@ -130,9 +155,9 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <div className='min-h-screen flex flex-col justify-center items-center'>
-      <div className='p-10 rounded-lg shadow-lg'>
-        <h1 className='mb-6 text-3xl font-bold text-center text-green-600'>
+    <div className="min-h-screen flex flex-col justify-center items-center">
+      <div className="p-10 rounded-lg shadow-lg">
+        <h1 className="mb-6 text-3xl font-bold text-center text-green-600">
           Register
         </h1>
         <RegisterForm />

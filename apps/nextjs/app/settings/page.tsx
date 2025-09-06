@@ -4,6 +4,7 @@ import Button from '../../components/ui/BaseButton';
 import { Card } from '../../components/ui/ComponentCard';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
+import { APIURL } from '../../lib/url';
 
 export default function Settings() {
   const { data: session, status } = useSession();
@@ -28,7 +29,7 @@ export default function Settings() {
       const formData = new FormData();
       formData.append('file', image);
 
-      const response = await fetch('/api/uploader', {
+      const response = await fetch(`${APIURL}/api/uploader`, {
         method: 'POST',
         body: formData,
       });

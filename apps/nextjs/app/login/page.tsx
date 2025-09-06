@@ -4,6 +4,7 @@ import React, { useState, memo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
+import { APIURL } from '../../lib/url';
 
 function LoginButton() {
   const [email, setEmail] = useState('');
@@ -23,7 +24,7 @@ function LoginButton() {
     e.preventDefault();
     setError('');
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch(`${APIURL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +38,9 @@ function LoginButton() {
         router.push('/');
         router.refresh(); // Refresh the page to update session status
       } else {
-        setError(data.message || 'Login failed. Please check your credentials.');
+        setError(
+          data.message || 'Login failed. Please check your credentials.',
+        );
       }
     } catch (error) {
       console.error('Login error:', error);

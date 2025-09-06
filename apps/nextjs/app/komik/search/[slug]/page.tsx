@@ -25,10 +25,12 @@ interface SearchDetailData {
   status: string;
   data: Anime[];
 }
+import { APIURL } from '../../../../lib/url';
+
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
   try {
     const response = await fetch(
-      `/api/komik/search?query=${encodeURIComponent(query)}&page=1`,
+      `${APIURL}/api/komik/search?query=${encodeURIComponent(query)}&page=1`,
     );
     if (!response.ok) {
       throw new Error('Network response was not ok');

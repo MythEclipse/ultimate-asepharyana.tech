@@ -8,7 +8,10 @@ interface Payload {
   action?: '2a3505c93b0035d3f455df82bf976b84';
 }
 
+import { APIURL } from '../lib/url';
+
 export const useFetch = async (url: string, method = 'GET', pyld?: Payload) => {
+  const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
   try {
     if (method === 'POST') {
       const from = new FormData();
@@ -19,7 +22,7 @@ export const useFetch = async (url: string, method = 'GET', pyld?: Payload) => {
       from.append('action', '2a3505c93b0035d3f455df82bf976b84');
 
       // console.log(JSON.stringify(from));
-      const response = await axios.post(url, from, {
+      const response = await axios.post(fullUrl, from, {
         headers: {
           'Content-Type': 'multipart/form-data', // Important for sending FormData
         },
@@ -30,7 +33,7 @@ export const useFetch = async (url: string, method = 'GET', pyld?: Payload) => {
       };
     }
 
-    const response = await fetch(url, { method, next: { revalidate: 10 } });
+    const response = await fetch(fullUrl, { method, next: { revalidate: 10 } });
 
     const data = await response.text();
     return {
