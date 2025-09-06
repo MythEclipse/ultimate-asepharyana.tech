@@ -26,7 +26,7 @@ pub fn generate_root_api_mod(
   }
   content.push_str("\n");
 
-  let all_paths: BTreeMap<String, PathItem> = all_handlers
+  let _all_paths: BTreeMap<String, PathItem> = all_handlers
     .iter()
     .map(|h| {
         let path = h.route_path.clone();
