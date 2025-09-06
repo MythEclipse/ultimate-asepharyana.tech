@@ -57,7 +57,7 @@ pub struct QueryParams {
 
 #[utoipa::path(
   get,
-  path = "/api/api/komik/manga",
+  path = "/api/komik/manga",
   tag = "komik",
   operation_id = "komik_manga_slug",
   responses(
@@ -234,5 +234,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manga endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

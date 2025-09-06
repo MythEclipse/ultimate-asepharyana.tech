@@ -1,6 +1,6 @@
 //! Handler for the komik manhua endpoint.
 
-use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::Query, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -57,7 +57,7 @@ pub struct QueryParams {
 
 #[utoipa::path(
   get,
-  path = "/api/api/komik/manhua",
+  path = "/api/komik/manhua",
   tag = "komik",
   operation_id = "komik_manhua_slug",
   responses(
@@ -241,5 +241,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manhua endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

@@ -58,7 +58,7 @@ pub struct FullResponse {
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
-  path = "/api/api/anime/full/{slug}",
+  path = "/api/anime/full/{slug}",
   tag = "anime",
   operation_id = "anime_full_slug",
   responses(
@@ -183,5 +183,5 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

@@ -8,7 +8,9 @@ export const fetchData = async (
   pyld?: Record<string, unknown>,
   formDataObj?: FormData,
 ) => {
-  const fullUrl = url.startsWith('/') ? `${APIURL}${url.endsWith('/') ? url.slice(0, -1) : url}` : url;
+  const fullUrl = url.startsWith('/')
+    ? `${APIURL}${url.endsWith('/') ? url.slice(0, -1) : url}`
+    : url;
   try {
     const options: RequestInit = {
       method,
@@ -21,7 +23,8 @@ export const fetchData = async (
         // Content-Type header is automatically set for FormData by fetch
       } else if (pyld) {
         options.body = JSON.stringify(pyld);
-        (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
+        (options.headers as Record<string, string>)['Content-Type'] =
+          'application/json';
       }
     }
 

@@ -67,7 +67,7 @@ pub struct DetailQuery {
 
 #[utoipa::path(
   get,
-  path = "/api/api/komik/detail",
+  path = "/api/komik/detail",
   tag = "komik",
   operation_id = "komik_detail",
   responses(
@@ -293,5 +293,5 @@ async fn fetch_and_parse_detail(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(detail))
+  router.route(ENDPOINT_PATH, get(detail))
 }

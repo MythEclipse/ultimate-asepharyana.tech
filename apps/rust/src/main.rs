@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
     .allow_headers(Any);
 
   let app = Router::new()
-    .nest("/api", create_api_routes().with_state(app_state.clone()))
+    .merge(create_api_routes().with_state(app_state.clone()))
     .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
     .layer(cors);
 

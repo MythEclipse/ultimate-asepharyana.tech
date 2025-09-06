@@ -56,7 +56,7 @@ pub struct SearchQuery {
 
 #[utoipa::path(
   get,
-  path = "/api/api/anime/search",
+  path = "/api/anime/search",
   tag = "anime",
   operation_id = "anime_search",
   responses(
@@ -223,5 +223,5 @@ fn parse_pagination(document: &Html, _query: &str) -> Pagination {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(search))
+  router.route(ENDPOINT_PATH, get(search))
 }

@@ -228,7 +228,15 @@ pub fn update_handler_file(
   let mut route_path = metadata
     .get("ENDPOINT_PATH")
     .cloned()
-    .unwrap_or_else(|| format!("/{}", file_stem));
+    .unwrap_or_else(|| {
+      let relative_path_no_ext = path.strip_prefix(root_api_path).unwrap().with_extension("");
+      relative_path_no_ext.to_str().unwrap().replace("\\", "/")
+    })
+    .trim_start_matches('/') // Strip all leading slashes from current path
+    .to_string();
+
+  // Prepend "/api/" to ensure consistency
+  route_path = format!("/api/{}", route_path);
 
   // Parse path params from existing function signature
   let parsed_path_params = parse_path_params_from_signature(&content);
@@ -251,10 +259,18 @@ pub fn update_handler_file(
           .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, new_route_path))
           .to_string();
         route_path = new_route_path;
-        break; // Assume only one param for simplicity
+        // Continue to apply the correct ENDPOINT_PATH below
       }
     }
   }
+
+  // Ensure ENDPOINT_PATH is correctly set in the file based on the computed route_path
+  let endpoint_path_regex = Regex::new(
+    r#"const\s+ENDPOINT_PATH:\s*&\s*str\s*=\s*"[^"]*";"#
+  ).unwrap();
+  content = endpoint_path_regex
+    .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, route_path))
+    .to_string();
 
   let route_tag = default_tag.clone();
   let response_body = metadata
@@ -293,11 +309,7 @@ pub fn update_handler_file(
     .map(|c| c[1].to_string())
     .unwrap_or_else(|| file_stem.to_string());
 
-  let openapi_route_path = if route_path == "/" {
-    "/api/".to_string()
-  } else {
-    format!("/api{}", route_path)
-  };
+  let openapi_route_path = route_path.clone();
 
   // Sanitize response body for utoipa: strip Json<> wrapper and module path, keep only the type name.
   let sanitized_response = if response_body.starts_with("Json<") {

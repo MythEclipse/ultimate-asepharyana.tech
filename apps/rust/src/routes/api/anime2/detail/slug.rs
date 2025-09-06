@@ -9,7 +9,7 @@ use scraper::{ Html, Selector };
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/anime2/detail/{slug}";
+pub const ENDPOINT_PATH: &str = "/api/api/anime2/detail/{slug}";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str =
   "Handles GET requests for the anime2/detail/{slug} endpoint.";
@@ -76,7 +76,7 @@ pub struct DetailResponse {
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
-  path = "/api/api/anime2/detail/{slug}",
+  path = "/api/anime2/detail/{slug}",
   tag = "anime2",
   operation_id = "anime2_detail_slug",
   responses(
@@ -309,5 +309,5 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

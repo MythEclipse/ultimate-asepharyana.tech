@@ -49,7 +49,7 @@ pub struct OngoingAnimeResponse {
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
-  path = "/api/api/anime/ongoing-anime/{slug}",
+  path = "/api/anime/ongoing-anime/{slug}",
   tag = "anime",
   operation_id = "anime_ongoing_anime_slug",
   responses(
@@ -187,5 +187,5 @@ async fn fetch_ongoing_anime_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

@@ -9,7 +9,7 @@ use scraper::{ Html, Selector };
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/anime2/search";
+pub const ENDPOINT_PATH: &str = "/api/api/anime2/search";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for anime2 based on query parameters.";
 #[allow(dead_code)]
@@ -56,7 +56,7 @@ pub struct SearchQuery {
 
 #[utoipa::path(
   get,
-  path = "/api/api/anime2/search",
+  path = "/api/anime2/search",
   tag = "anime2",
   operation_id = "anime2_search",
   responses(
@@ -232,5 +232,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(search))
+  router.route(ENDPOINT_PATH, get(search))
 }
