@@ -238,5 +238,7 @@ struct UploadResult {
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
   // This register_routes is manually maintained for multiple handlers
   // build.rs doesn't handle multiple handlers in one file yet
-  router.route(ENDPOINT_PATH, post(upload_file)).route("/{file_name}", get(download_file))
+  router
+    .route(ENDPOINT_PATH, post(upload_file))
+    .route("/api/uploader/{file_name}", get(download_file))
 }

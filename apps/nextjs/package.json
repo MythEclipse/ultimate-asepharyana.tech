@@ -92,6 +92,7 @@
   },
   "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "start": "next start --port 4090"
+    "start": "next start --port 4090",
+    "dev": "next dev -p 4090"
   }
 }

@@ -9,7 +9,7 @@ use scraper::{ Html, Selector };
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/anime";
+pub const ENDPOINT_PATH: &str = "/anime";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime endpoint.";
 #[allow(dead_code)]

@@ -1,3 +1,5 @@
+'use client';
+
 import { APIURL } from '../lib/url';
 
 export const fetchData = async (
@@ -10,7 +12,6 @@ export const fetchData = async (
   try {
     const options: RequestInit = {
       method,
-      next: { revalidate: 10 },
       headers: {},
     };
 

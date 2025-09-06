@@ -15,6 +15,7 @@ use axum::Router;
 use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
+use tower_http::cors::{Any, CorsLayer};
 
 mod routes;
 
@@ -36,9 +37,15 @@ async fn main() -> anyhow::Result<()> {
   });
 
   tracing::info!("Building application routes...");
+  let cors = CorsLayer::new()
+    .allow_origin(Any)
+    .allow_methods(Any)
+    .allow_headers(Any);
+
   let app = Router::new()
     .nest("/api", create_api_routes().with_state(app_state.clone()))
-    .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()));
+    .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
+    .layer(cors);
 
   let port = CONFIG_MAP.get("PORT")
     .and_then(|s| s.parse::<u16>().ok())
