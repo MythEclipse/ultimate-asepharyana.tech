@@ -61,7 +61,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
   let link_selector = Selector::parse("a").unwrap();
   let img_selector = Selector::parse("img").unwrap();
   let episode_selector = Selector::parse(".epx").unwrap();
-  let pagination_selector = Selector::parse(".pagination .page-numbers:not(.next):last").unwrap();
+  let pagination_selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
   let next_selector = Selector::parse(".pagination .next.page-numbers").unwrap();
 
   let mut anime_list = Vec::new();
@@ -113,7 +113,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
   let current_page = slug.parse::<u32>().unwrap_or(1);
   let last_visible_page = document
     .select(&pagination_selector)
-    .next()
+    .last()
     .and_then(|e| e.text().collect::<String>().parse::<u32>().ok())
     .unwrap_or(1);
 

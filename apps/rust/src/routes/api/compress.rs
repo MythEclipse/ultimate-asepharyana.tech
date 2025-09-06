@@ -118,7 +118,8 @@ async fn compress_image(
       best_buffer = output_vec;
     } else {
       fs::write(&cache_path, &output_vec)?;
-      let size_reduction = (((buffer.len() - output_vec.len()) as f64) / (buffer.len() as f64)) * 100.0;
+      let size_reduction =
+        (((buffer.len() - output_vec.len()) as f64) / (buffer.len() as f64)) * 100.0;
       return Ok((output_vec, size_reduction));
     }
   }
@@ -221,14 +222,14 @@ async fn compress_video(
 }
 
 #[utoipa::path(
-    get,
-    path = "/api/compress",
-    tag = "compress",
-    operation_id = "compress",
-    responses(
-        (status = 200, description = "Compress images and videos from URL", body = CompressResponse),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
+  get,
+  path = "/api/compress",
+  tag = "compress",
+  operation_id = "compress",
+  responses(
+    (status = 200, description = "Compress images and videos from URL", body = CompressResponse),
+    (status = 500, description = "Internal Server Error", body = String)
+  )
 )]
 pub async fn compress(Query(params): Query<CompressQuery>) -> impl IntoResponse {
   // Validate parameters

@@ -152,21 +152,24 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
     .unwrap_or("")
     .to_string();
 
+  let spe_selector = Selector::parse(".info-content .spe span").unwrap();
+
   let r#type = document
-    .select(&Selector::parse(".info-content .spe span:contains(\"Tipe:\") a").unwrap())
-    .next()
+    .select(&spe_selector)
+    .find(|e| e.text().collect::<String>().contains("Tipe:"))
+    .and_then(|span| span.select(&Selector::parse("a").unwrap()).next())
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let release_date = document
-    .select(&Selector::parse(".info-content .spe span:contains(\"Dirilis:\")").unwrap())
-    .next()
+    .select(&spe_selector)
+    .find(|e| e.text().collect::<String>().contains("Dirilis:"))
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let status = document
-    .select(&Selector::parse(".info-content .spe span:contains(\"Status:\")").unwrap())
-    .next()
+    .select(&spe_selector)
+    .find(|e| e.text().collect::<String>().contains("Status:"))
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
@@ -177,8 +180,9 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
     .unwrap_or_default();
 
   let studio = document
-    .select(&Selector::parse(".info-content .spe span:contains(\"Studio:\") a").unwrap())
-    .next()
+    .select(&spe_selector)
+    .find(|e| e.text().collect::<String>().contains("Studio:"))
+    .and_then(|span| span.select(&Selector::parse("a").unwrap()).next())
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 

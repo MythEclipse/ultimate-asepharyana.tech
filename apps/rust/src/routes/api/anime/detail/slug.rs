@@ -115,15 +115,17 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   let html = response.text().await?;
   let document = Html::parse_document(&html);
 
+  let info_selector = Selector::parse(".infozingle p").unwrap();
+
   let title = document
-    .select(&Selector::parse(".infozingle p:contains('Judul')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Judul"))
     .map(|e| e.text().collect::<String>().replace("Judul: ", "").trim().to_string())
     .unwrap_or_default();
 
   let alternative_title = document
-    .select(&Selector::parse(".infozingle p:contains('Japanese')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Japanese"))
     .map(|e| e.text().collect::<String>().replace("Japanese: ", "").trim().to_string())
     .unwrap_or_default();
 
@@ -135,20 +137,20 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
     .to_string();
 
   let r#type = document
-    .select(&Selector::parse(".infozingle p:contains('Tipe')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Tipe"))
     .map(|e| e.text().collect::<String>().replace("Tipe: ", "").trim().to_string())
     .unwrap_or_default();
 
   let release_date = document
-    .select(&Selector::parse(".infozingle p:contains('Tanggal Rilis')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Tanggal Rilis"))
     .map(|e| e.text().collect::<String>().replace("Tanggal Rilis: ", "").trim().to_string())
     .unwrap_or_default();
 
   let status = document
-    .select(&Selector::parse(".infozingle p:contains('Status')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Status"))
     .map(|e| e.text().collect::<String>().replace("Status: ", "").trim().to_string())
     .unwrap_or_default();
 
@@ -159,22 +161,28 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
     .unwrap_or_default();
 
   let studio = document
-    .select(&Selector::parse(".infozingle p:contains('Studio')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Studio"))
     .map(|e| e.text().collect::<String>().replace("Studio: ", "").trim().to_string())
     .unwrap_or_default();
 
   let mut genres = Vec::new();
-  for element in document.select(&Selector::parse(".infozingle p:contains('Genre') a").unwrap()) {
-    let name = element.text().collect::<String>().trim().to_string();
-    let genre_slug = element
-      .value()
-      .attr("href")
-      .and_then(|href| href.split('/').nth(4))
-      .unwrap_or("")
-      .to_string();
-    let anime_url = element.value().attr("href").unwrap_or("").to_string();
-    genres.push(Genre { name, slug: genre_slug, anime_url });
+  if
+    let Some(genre_paragraph) = document
+      .select(&info_selector)
+      .find(|e| e.text().collect::<String>().contains("Genre"))
+  {
+    for element in genre_paragraph.select(&Selector::parse("a").unwrap()) {
+      let name = element.text().collect::<String>().trim().to_string();
+      let genre_slug = element
+        .value()
+        .attr("href")
+        .and_then(|href| href.split('/').nth(4))
+        .unwrap_or("")
+        .to_string();
+      let anime_url = element.value().attr("href").unwrap_or("").to_string();
+      genres.push(Genre { name, slug: genre_slug, anime_url });
+    }
   }
 
   let mut episode_lists = Vec::new();
@@ -192,8 +200,8 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   }
 
   let producers_text = document
-    .select(&Selector::parse(".infozingle p:contains('Produser')").unwrap())
-    .next()
+    .select(&info_selector)
+    .find(|e| e.text().collect::<String>().contains("Produser"))
     .map(|e| e.text().collect::<String>().replace("Produser: ", "").trim().to_string())
     .unwrap_or_default();
   let producers = producers_text

@@ -159,8 +159,8 @@ async fn fetch_ongoing_anime_page(
   let current_page = slug.parse::<u32>().unwrap_or(1);
 
   let last_visible_page = document
-    .select(&Selector::parse(".pagination .page-numbers:not(.next):last").unwrap())
-    .next()
+    .select(&Selector::parse(".pagination .page-numbers:not(.next)").unwrap())
+    .last()
     .map(|e| e.text().collect::<String>().trim().parse::<u32>().unwrap_or(1))
     .unwrap_or(1);
 

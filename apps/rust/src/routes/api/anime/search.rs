@@ -103,7 +103,7 @@ async fn fetch_and_parse_search(
   let title_selector = Selector::parse("h2 a").unwrap();
   let img_selector = Selector::parse("img").unwrap();
   let link_selector = Selector::parse("a").unwrap();
-  let genre_selector = Selector::parse(".set:has(b:contains(\"Genres\")) a").unwrap();
+  let genre_selector = Selector::parse(".set a").unwrap();
   let status_selector = Selector::parse(".set").unwrap();
 
   let mut data = Vec::new();
@@ -151,9 +151,15 @@ async fn fetch_and_parse_search(
       .to_string();
 
     let genres: Vec<String> = element
-      .select(&genre_selector)
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .collect();
+      .select(&Selector::parse(".set").unwrap())
+      .find(|e| e.text().collect::<String>().contains("Genres"))
+      .map(|set|
+        set
+          .select(&genre_selector)
+          .map(|e| e.text().collect::<String>().trim().to_string())
+          .collect()
+      )
+      .unwrap_or_default();
 
     let status = element
       .select(&status_selector)
