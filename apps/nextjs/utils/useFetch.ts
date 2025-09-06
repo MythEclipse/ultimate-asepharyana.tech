@@ -8,7 +8,7 @@ export const fetchData = async (
   pyld?: Record<string, unknown>,
   formDataObj?: FormData,
 ) => {
-  const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
+  const fullUrl = url.startsWith('/') ? `${APIURL}${url.endsWith('/') ? url.slice(0, -1) : url}` : url;
   try {
     const options: RequestInit = {
       method,

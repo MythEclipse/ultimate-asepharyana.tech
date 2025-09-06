@@ -9,7 +9,7 @@ use scraper::{ Html, Selector };
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/anime/detail/{slug}";
+pub const ENDPOINT_PATH: &str = "/anime/detail/{slug}";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime/detail/{slug} endpoint.";
 #[allow(dead_code)]
@@ -67,7 +67,7 @@ pub struct DetailResponse {
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
-  path = "/api/api/anime/detail/{slug}",
+  path = "/api/anime/detail/{slug}",
   tag = "anime",
   operation_id = "anime_detail_slug",
   responses(
