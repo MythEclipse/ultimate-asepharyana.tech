@@ -147,7 +147,7 @@ use serde::Serialize;
 pub struct SearchParams {
     pub q: String,
     pub sort: Option<String>,
-    pub page: Option<u32>,
+    pub page: Option<u34>,
 }
 
 #[derive(Serialize)]
@@ -185,7 +185,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct ReviewQuery {
-    pub limit: Option<u32>,
+    pub limit: Option<u34>,
 }
 
 #[derive(Serialize)]
@@ -224,18 +224,6 @@ Catatan tambahan:
 - Jika handler diinginkan menerima JSON body (POST/PUT), gunakan `axum::Json<T>` dan `serde::Deserialize`.
 - Jika butuh validasi, gunakan crate seperti `validator` atau lakukan pemeriksaan manual.
 - Jika ingin mengubah template generator, modifikasi [`apps/rust/build.rs`](apps/rust/build.rs:1).
-
-
-2) Pasang library dev FFmpeg secara manual
-- Pasang paket dev yang menyediakan file `libavutil.pc`.
-- Set environment variable PKG_CONFIG_PATH ke direktori yang berisi `libavutil.pc`.
-- Contoh (PowerShell):
-```powershell
-setx PKG_CONFIG_PATH "C:\path\to\ffmpeg\lib\pkgconfig"
-```
-Restart terminal lalu jalankan `cargo build`.
-
-3) Jika Anda tidak memerlukan fitur ffmpeg di lingkungan pengembangan, pertimbangkan menonaktifkan/menjadikan dependensi `ffmpeg-next` opsional di `Cargo.toml` sementara (tidak direkomendasikan untuk produksi).
 
 Dokumentasi scaffold telah diperbarui di [`apps/rust/src/bin/scaffold.md`](apps/rust/src/bin/scaffold.md:1). Setelah memperbaiki dependensi native, ulangi:
 ```powershell
