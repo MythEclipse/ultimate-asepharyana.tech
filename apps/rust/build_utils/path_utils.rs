@@ -58,16 +58,18 @@ pub fn sanitize_operation_id(path_str: &str) -> String {
 }
 
 pub fn sanitize_tag(path_str: &str) -> String {
-    let s = path_str.replace(std::path::MAIN_SEPARATOR, ".").replace('-', "_");
+    // Only take the first part of the path before any separator
+    let first_part = path_str.split(std::path::MAIN_SEPARATOR).next().unwrap_or("");
+    let s = first_part.replace('-', "_");
     let s = DYNAMIC_REGEX.replace_all(&s, |caps: &regex::Captures| {
         let inner = &caps[1];
         if inner.starts_with("...") {
-            ".catch_all".to_string()
+            "_catch_all".to_string()
         } else {
-            format!(".{}", inner)
+            format!("_{}", inner)
         }
     }).to_string();
-    s.trim_matches('.').to_string()
+    s.trim_matches('_').to_string()
 }
 
 pub fn is_dynamic_segment(name: &str) -> bool {

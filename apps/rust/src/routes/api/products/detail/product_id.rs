@@ -11,7 +11,7 @@
     pub const ENDPOINT_METHOD: &str = "get";
     pub const ENDPOINT_PATH: &str = "/products/detail/{id}";
     pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the products/detail/product_id endpoint.";
-    pub const ENDPOINT_TAG: &str = "products.detail.product_id";
+    pub const ENDPOINT_TAG: &str = "products";
     pub const OPERATION_ID: &str = "products_detail_product_id";
     pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
 
@@ -31,7 +31,7 @@
         ("id" = String, Path, description = "The id identifier")
     ),
     path = "/api/products/detail/{id}",
-    tag = "products.detail.product_id",
+    tag = "products",
     operation_id = "products_detail_product_id",
     responses(
         (status = 200, description = "Handles GET requests for the products/detail/product_id endpoint.", body = DetailResponse),

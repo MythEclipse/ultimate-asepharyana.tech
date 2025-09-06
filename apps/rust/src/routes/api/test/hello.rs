@@ -11,7 +11,7 @@
     pub const ENDPOINT_METHOD: &str = "get";
     pub const ENDPOINT_PATH: &str = "/test/hello";
     pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the test/hello endpoint.";
-    pub const ENDPOINT_TAG: &str = "test.hello";
+    pub const ENDPOINT_TAG: &str = "test";
     pub const OPERATION_ID: &str = "test_hello";
     pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
@@ -30,7 +30,7 @@
     #[utoipa::path(
     get,
     path = "/api/test/hello",
-    tag = "test.hello",
+    tag = "test",
     operation_id = "test_hello",
     responses(
         (status = 200, description = "Handles GET requests for the test/hello endpoint.", body = ListResponse),
