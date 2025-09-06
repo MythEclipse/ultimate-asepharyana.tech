@@ -1,14 +1,16 @@
 # Panduan Lengkap Scaffold
 
 Panduan lengkap untuk membuat handler API menggunakan scaffolder di proyek ini.
-File yang dihasilkan: src/routes/api/<path>.rs
+File yang dihasilkan: src/routes/api/\<path\>.rs
 
 Prasyarat:
+
 - Pastikan env: PORT dan JWT_SECRET diset (lihat `.env.example` jika ada).
 - Scaffold dapat dijalankan dari workspace root atau dari direktori `apps/rust/`.
 - Setelah membuat file kosong, jalankan `cargo build` supaya [`apps/rust/build.rs`](apps/rust/build.rs:1) menghasilkan template handler.
 
 Ringkasan tipe endpoint:
+
 - Static: path tetap, contoh: /api/products/list
 - Dynamic: path dinamis dengan parameter, contoh: /api/products/detail/product_id → /api/products/detail/{id}
 - Params (query): query string, contoh: /api/products/search?q=sepatu&sort=price_desc
@@ -17,8 +19,10 @@ Pengenalan Dynamic Routes:
 Sistem secara otomatis mendeteksi segmen dinamis berdasarkan pola nama file (misalnya, `slug.rs` untuk parameter `{slug}`).
 Contoh: `anime/detail/slug` akan menghasilkan `anime/detail/slug.rs`.
 
-1) Endpoint Static (tanpa parameter)
+## 1. Endpoint Static (tanpa parameter)
+
 ------------------------------------------------------------
+
 - Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
   cargo run --bin scaffold -- products/list
@@ -47,10 +51,12 @@ pub async fn list() -> impl IntoResponse {
 
 Tes endpoint:
 
-curl http://127.0.0.1:3000/api/products/list
+`curl http://127.0.0.1:3000/api/products/list`
 
-2) Endpoint Dynamic / Path Parameter
+## 2. Endpoint Dynamic / Path Parameter
+
 ------------------------------------------------------------
+
 - Untuk path dinamis, gunakan nama file yang sesuai dengan parameter:
 
   cargo run --bin scaffold -- anime/detail/slug
@@ -122,10 +128,12 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
 
 Tes:
 
-curl http://127.0.0.1:3000/api/anime/detail/log-horizon
+`curl http://127.0.0.1:3000/api/anime/detail/log-horizon`
 
-3) Endpoint Query Params
+## 3. Endpoint Query Params
+
 ------------------------------------------------------------
+
 - Scaffold path tanpa query (dapat dijalankan dari workspace root atau apps/rust/):
 
   cargo run --bin scaffold -- products/search
@@ -164,10 +172,12 @@ pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
 
 Tes:
 
-curl "http://127.0.0.1:3000/api/products/search?q=sepatu&sort=price_desc&page=2"
+`curl "http://127.0.0.1:3000/api/products/search?q=sepatu&sort=price_desc&page=2"`
 
-4) Kombinasi: Slug + Query Params
+## 4. Kombinasi: Slug + Query Params
+
 ------------------------------------------------------------
+
 - Contoh path: anime/slug/reviews
 - Scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -199,16 +209,20 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 }
 ```
 
-5) Petunjuk Operasional & Best Practices
+## 5. Petunjuk Operasional & Best Practices
+
 ------------------------------------------------------------
+
 - State aplikasi dinamai `AppState`. Untuk mengaksesnya, gunakan `Arc<AppState>` dan parameter `State` di handler.
 - Jangan edit `mod.rs` di `src/routes/api` karena dihasilkan oleh [`apps/rust/build.rs`](apps/rust/build.rs:1).
 - Setelah membuat route baru: jalankan `cargo build` untuk menghasilkan template, lalu edit file handler.
 - Jalankan server: `cargo run` (dijalankan dari `apps/rust`).
 - Tes health: `curl http://127.0.0.1:3000/api/health`
 
-6) Contoh lengkap alur
+## 6. Contoh lengkap alur
+
 ------------------------------------------------------------
+
 1. buat file kosong (dapat dijalankan dari workspace root atau apps/rust/):
 
    cargo run --bin scaffold -- anime/detail/slug
@@ -221,11 +235,13 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
    cargo run
 
 Catatan tambahan:
+
 - Jika handler diinginkan menerima JSON body (POST/PUT), gunakan `axum::Json<T>` dan `serde::Deserialize`.
 - Jika butuh validasi, gunakan crate seperti `validator` atau lakukan pemeriksaan manual.
 - Jika ingin mengubah template generator, modifikasi [`apps/rust/build.rs`](apps/rust/build.rs:1).
 
 Dokumentasi scaffold telah diperbarui di [`apps/rust/src/bin/scaffold.md`](apps/rust/src/bin/scaffold.md:1). Setelah memperbaiki dependensi native, ulangi:
+
 ```powershell
 # Dari workspace root atau apps/rust/
 cargo run --bin scaffold -- test/helloworld
