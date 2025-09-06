@@ -50,11 +50,21 @@ pub fn generate_root_api_mod(
   // Generate `use` imports for each fully-qualified schema path and collect simple type names for components.
   let mut simple_names: Vec<String> = Vec::new();
   let mut use_imports = Vec::new();
+  let mut name_count: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
   // We no longer need schema_objects: HashMap<String, Schema>
   for full in &sorted_schemas {
     let simple_name = full.split("::").last().unwrap().to_string();
-    simple_names.push(simple_name.clone());
-    use_imports.push(format!("use {};", full));
+    let count = name_count.entry(simple_name.clone()).or_insert(0);
+    *count += 1;
+    if *count > 1 {
+      // Alias the duplicate
+      let alias = format!("{} as {}_{}", full, simple_name, *count - 1);
+      use_imports.push(format!("use {};", alias));
+      simple_names.push(format!("{}_{}", simple_name, *count - 1));
+    } else {
+      use_imports.push(format!("use {};", full));
+      simple_names.push(simple_name.clone());
+    }
   }
 
   // Add use imports to the content

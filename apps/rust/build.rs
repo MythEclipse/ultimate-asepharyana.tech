@@ -16,6 +16,7 @@ use anyhow::{Result, Context};
 use env_logger;
 use itertools::Itertools;
 use utoipa::openapi::OpenApi;
+use openapiv3;
 
 mod build_utils;
 use build_utils::{mod_generator, openapi_generator};
@@ -59,6 +60,9 @@ fn main() -> Result<()> {
 
     // Generate API modules and get the OpenAPI spec
     let openapi_doc = generate_api_modules(&api_routes_path, &modules, &api_handlers, &openapi_schemas)?;
+
+    // Validate the generated OpenAPI specification
+    validate_openapi_spec(&openapi_doc)?;
 
     // Serialize OpenAPI spec to a temporary JSON file
     let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR not set")?);
@@ -160,4 +164,17 @@ fn should_regenerate(_api_routes_path: &Path) -> Result<bool> {
 
     // Always regenerate since hash checking is disabled
     Ok(true)
+}
+
+fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
+    log::debug!("Validating OpenAPI specification");
+
+    let json = serde_json::to_string(openapi)
+        .context("Failed to serialize OpenAPI spec to JSON for validation")?;
+
+    let _: openapiv3::OpenAPI = serde_json::from_str(&json)
+        .context("OpenAPI specification validation failed")?;
+
+    log::info!("OpenAPI specification validation passed");
+    Ok(())
 }
