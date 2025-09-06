@@ -1,6 +1,6 @@
 //! Handler for the komik manhua endpoint.
 
-use axum::{ extract::Query, response::IntoResponse, routing::get, Json, Router };
+use axum::{extract::Path,  extract::Query, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -13,7 +13,7 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/komik/manhua/{slug}";
+pub const ENDPOINT_PATH: &str = "/api/komik/manhua/{slug}";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhua endpoint.";
 #[allow(dead_code)]
@@ -241,5 +241,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manhua endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(slug))
 }

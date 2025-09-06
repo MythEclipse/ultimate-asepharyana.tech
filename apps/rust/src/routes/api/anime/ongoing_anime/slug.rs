@@ -9,7 +9,7 @@ use scraper::{ Html, Selector };
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/anime/ongoing-anime/{slug}";
+pub const ENDPOINT_PATH: &str = "/api/api/anime/ongoing-anime/{slug}";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str =
   "Handles GET requests for the anime/ongoing-anime/{slug} endpoint.";
@@ -187,5 +187,5 @@ async fn fetch_ongoing_anime_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(slug))
 }

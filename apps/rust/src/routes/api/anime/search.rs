@@ -10,7 +10,7 @@ use regex::Regex;
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/anime/search";
+pub const ENDPOINT_PATH: &str = "/api/api/anime/search";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for anime based on query parameters.";
 #[allow(dead_code)]
@@ -223,5 +223,5 @@ fn parse_pagination(document: &Html, _query: &str) -> Pagination {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(search))
+    router.route(ENDPOINT_PATH, get(search))
 }
