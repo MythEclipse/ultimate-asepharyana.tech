@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 import { APIURL } from '../lib/url';
 
 export const fetchData = async (
@@ -10,31 +8,25 @@ export const fetchData = async (
 ) => {
   const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
   try {
+    const options: RequestInit = {
+      method,
+      next: { revalidate: 10 },
+      headers: {},
+    };
+
     if (method === 'POST') {
-      let dataToSend: FormData | Record<string, unknown>;
-      const headers: Record<string, string> = {};
-
       if (formDataObj) {
-        dataToSend = formDataObj;
-        headers['Content-Type'] = 'multipart/form-data';
+        options.body = formDataObj;
+        // Content-Type header is automatically set for FormData by fetch
       } else if (pyld) {
-        dataToSend = pyld;
-        headers['Content-Type'] = 'application/json';
-      } else {
-        dataToSend = {};
+        options.body = JSON.stringify(pyld);
+        (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
       }
-
-      const response = await axios.post(fullUrl, dataToSend, { headers });
-
-      return {
-        data: response.data,
-        status: response.status,
-      };
     }
 
-    const response = await fetch(fullUrl, { method, next: { revalidate: 10 } });
+    const response = await fetch(fullUrl, options);
 
-    const data = await response.json(); // Assuming JSON response for GET
+    const data = await response.json();
     return {
       data,
       status: response.status,
