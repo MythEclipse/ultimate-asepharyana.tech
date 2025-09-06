@@ -8,6 +8,7 @@ import { Textarea } from '../../components/ui/textarea';
 import Button from '../../components/ui/BaseButton';
 import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
+import { fetchData } from '../../utils/useFetch';
 
 type RawChatMessage = {
   id: string; // Required in RustExpress
@@ -167,11 +168,8 @@ export default function ChatClient() {
         setStatus((prev) => ({ ...prev, uploading: true }));
         const formData = new FormData();
         formData.append('file', file);
-        const response = await fetch('/api/uploader', {
-          method: 'POST',
-          body: formData,
-        });
-        const { url } = await response.json();
+        const response = await fetchData('/api/uploader', 'POST', undefined, formData);
+        const url = response.data.url;
         newMessage.image_message = url;
         setFile(null);
         setStatus((prev) => ({ ...prev, uploading: false }));
@@ -247,8 +245,8 @@ export default function ChatClient() {
               <div className='relative flex-1'>
                 <Textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       sendMessage();

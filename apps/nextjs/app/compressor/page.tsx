@@ -13,6 +13,7 @@ import {
   HiDownload,
 } from 'react-icons/hi';
 import stringify from 'safe-json-stringify';
+import { fetchData } from '../../utils/useFetch';
 
 export default function Compressor() {
   const [url, setUrl] = useState('');
@@ -73,13 +74,13 @@ export default function Compressor() {
 
     try {
       setLoading(true);
-      const res = await fetch(
+      const response = await fetchData(
         `/api/compress?url=${encodeURIComponent(url)}&size=${size}`
       );
-      const data = await res.json();
+      const data = response.data;
 
       console.log(stringify(data));
-      if (data.status === 'success' && typeof data.data === 'object') {
+      if (response.status && response.status >= 200 && response.status < 300 && data.status === 'success' && typeof data.data === 'object') {
         setResult(JSON.parse(JSON.stringify(data.data)));
       } else {
         setError('Compression failed');

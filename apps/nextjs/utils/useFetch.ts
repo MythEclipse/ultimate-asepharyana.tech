@@ -1,41 +1,40 @@
 import axios from 'axios';
 
-interface Payload {
-  id: number;
-  i: number;
-  q: string;
-  nonce?: 'b27b5f0c46';
-  action?: '2a3505c93b0035d3f455df82bf976b84';
-}
-
 import { APIURL } from '../lib/url';
 
-export const useFetch = async (url: string, method = 'GET', pyld?: Payload) => {
+export const fetchData = async (
+  url: string,
+  method = 'GET',
+  pyld?: Record<string, unknown>,
+  formDataObj?: FormData,
+) => {
   const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
   try {
     if (method === 'POST') {
-      const from = new FormData();
-      from.append('id', String(pyld?.id));
-      from.append('i', String(pyld?.i));
-      from.append('q', String(pyld?.q));
-      from.append('nonce', 'b27b5f0c46');
-      from.append('action', '2a3505c93b0035d3f455df82bf976b84');
+      let dataToSend: FormData | Record<string, unknown>;
+      const headers: Record<string, string> = {};
 
-      // console.log(JSON.stringify(from));
-      const response = await axios.post(fullUrl, from, {
-        headers: {
-          'Content-Type': 'multipart/form-data', // Important for sending FormData
-        },
-      });
+      if (formDataObj) {
+        dataToSend = formDataObj;
+        headers['Content-Type'] = 'multipart/form-data';
+      } else if (pyld) {
+        dataToSend = pyld;
+        headers['Content-Type'] = 'application/json';
+      } else {
+        dataToSend = {};
+      }
+
+      const response = await axios.post(fullUrl, dataToSend, { headers });
 
       return {
         data: response.data,
+        status: response.status,
       };
     }
 
     const response = await fetch(fullUrl, { method, next: { revalidate: 10 } });
 
-    const data = await response.text();
+    const data = await response.json(); // Assuming JSON response for GET
     return {
       data,
       status: response.status,

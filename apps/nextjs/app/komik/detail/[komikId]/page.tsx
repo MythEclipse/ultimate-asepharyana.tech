@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { PRODUCTION } from '../../../../lib/url';
+import { fetchData } from '../../../../utils/useFetch';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
 import MediaCard from '../../../../components/anime/MediaCard'; // Changed to default import
@@ -66,7 +67,10 @@ interface MangaData {
   recommendations: Recommendation[];
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 // --- SKELETON COMPONENT ---
 const DetailPageSkeleton = () => (

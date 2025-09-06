@@ -40,8 +40,12 @@ interface Pagination {
   previous_page: number | null;
 }
 
-const fetcher = (url: string) =>
-  fetch(url, { cache: 'no-store' }).then((res) => res.json());
+import { fetchData } from '../../../../utils/useFetch';
+
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 export default function AnimePage() {
   const params = useParams();

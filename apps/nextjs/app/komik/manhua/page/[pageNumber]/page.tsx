@@ -36,9 +36,12 @@ export interface Komik {
   slug: string; // Added the missing 'slug' property
 }
 
-import { APIURL } from '../../../../../lib/url';
+import { fetchData } from '../../../../../utils/useFetch';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 export default function Page() {
   const params = useParams();
@@ -50,7 +53,7 @@ export default function Page() {
     error,
     isLoading,
   } = useSWR<KomikData>(
-    `${APIURL}/api/komik/manhua?page=${pageNumber}&order=update`,
+    `/api/komik/manhua?page=${pageNumber}&order=update`,
     fetcher,
     {
       revalidateIfStale: true,

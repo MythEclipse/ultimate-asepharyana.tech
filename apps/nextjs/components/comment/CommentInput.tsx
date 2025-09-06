@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import { useSession } from "next-auth/react";
+import { fetchData } from '../../utils/useFetch';
 
 export default function CommentPage() {
   const { push } = useRouter();
@@ -22,12 +23,8 @@ const user = session?.user;
       return;
     }
 
-    const res = await fetch('/api/comment', {
-      method: 'POST',
-      body: JSON.stringify({
-        content: (e.target as HTMLFormElement).content.value,
-        // The email is not directly sent from client anymore, but derived from JWT on server
-      }),
+    const res = await fetchData('/api/comment', 'POST', {
+      content: (e.target as HTMLFormElement).content.value,
     });
 
     if (res.status === 200) {

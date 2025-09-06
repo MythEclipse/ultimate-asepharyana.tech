@@ -16,20 +16,23 @@ export interface Komik {
   slug: string;
 }
 
-import { APIURL } from '../../lib/url';
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetchData } from '../../utils/useFetch';
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 function HomePage() {
   const { data: manga, error: mangaError } = useSWR(
-    `${APIURL}/api/komik/manga?page=1&order=update`,
+    `/api/komik/manga?page=1&order=update`,
     fetcher,
   );
   const { data: manhua, error: manhuaError } = useSWR(
-    `${APIURL}/api/komik/manhua?page=1&order=update`,
+    `/api/komik/manhua?page=1&order=update`,
     fetcher,
   );
   const { data: manhwa, error: manhwaError } = useSWR(
-    `${APIURL}/api/komik/manhwa?page=1&order=update`,
+    `/api/komik/manhwa?page=1&order=update`,
     fetcher,
   );
 

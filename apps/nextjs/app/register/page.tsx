@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { APIURL } from '../../lib/url';
+import { fetchData } from '../../utils/useFetch';
 
 function RegisterForm() {
   const [name, setName] = useState('');
@@ -26,21 +26,15 @@ function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      const registerResponse = await fetch(`${APIURL}/api/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
+      const registerResponse = await fetchData('/api/register', 'POST', {
+        name,
+        email,
+        password,
       });
 
-      const registerData = await registerResponse.json();
+      const registerData = registerResponse.data;
 
-      if (!registerResponse.ok) {
+      if (registerResponse.status && registerResponse.status >= 400) {
         setError(
           registerData.message || 'Registration failed. Please try again.',
         );

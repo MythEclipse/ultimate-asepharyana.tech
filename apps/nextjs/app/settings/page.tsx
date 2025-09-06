@@ -4,7 +4,7 @@ import Button from '../../components/ui/BaseButton';
 import { Card } from '../../components/ui/ComponentCard';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
-import { APIURL } from '../../lib/url';
+import { fetchData } from '../../utils/useFetch';
 
 export default function Settings() {
   const { data: session, status } = useSession();
@@ -29,15 +29,16 @@ export default function Settings() {
       const formData = new FormData();
       formData.append('file', image);
 
-      const response = await fetch(`${APIURL}/api/uploader`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetchData(
+        '/api/uploader',
+        'POST',
+        undefined,
+        formData,
+      );
 
-      if (!response.ok) {
+      if (response.status && response.status >= 400) {
         throw new Error('Upload failed');
       }
-
 
       setSaving(false);
     } catch (err) {
@@ -48,41 +49,39 @@ export default function Settings() {
   };
 
   return (
-    <div className='container mx-auto py-8 px-4 max-w-2xl'>
-      <h1 className='text-4xl font-bold text-gray-800 dark:text-gray-100 mb-8 text-center'>
+    <div className="container mx-auto py-8 px-4 max-w-2xl">
+      <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-8 text-center">
         Edit Profile
       </h1>
 
       <Card>
-        <div className='p-4 space-y-4'>
+        <div className="p-4 space-y-4">
           <div>
-            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Profile Image
             </label>
             <input
-              type='file'
-              accept='image/*'
+              type="file"
+              accept="image/*"
               onChange={(e) => setImage(e.target.files?.[0] || null)}
-              className='mt-1 block w-full'
+              className="mt-1 block w-full"
             />
           </div>
 
           <Button
             onClick={handleSave}
             disabled={saving || status === 'loading'}
-            className='w-full'
+            className="w-full"
           >
             {saving ? (
-              <Loader2 className='w-4 h-4 animate-spin' />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               'Save Changes'
             )}
           </Button>
 
           {error && (
-            <div className='text-red-500 text-sm mt-2 text-center'>
-              {error}
-            </div>
+            <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
           )}
         </div>
       </Card>

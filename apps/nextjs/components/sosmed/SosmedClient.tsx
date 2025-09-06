@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { Loader2, UploadCloud, Lock } from 'lucide-react';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 import useSWR, { mutate } from 'swr';
+import { fetchData } from '../../utils/useFetch';
 
 // Define missing types locally with corrected field names to match API response
 interface Posts {
@@ -51,7 +52,10 @@ interface ClientUser {
   role: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 export default function SosmedClient() {
   const { data: session } = useSession();
@@ -97,12 +101,8 @@ export default function SosmedClient() {
         content,
         imageUrl,
       };
-      const response = await fetch(`/api/sosmed/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-      if (!response.ok) {
+      const response = await fetchData(`/api/sosmed/posts`, 'POST', request);
+      if (response.status && response.status >= 400) {
         throw new Error('Failed to create post');
       }
       setContent('');
@@ -123,13 +123,9 @@ export default function SosmedClient() {
       setIsUploading(true);
       const formData = new FormData();
       formData.append('file', file);
-      fetch(`/api/uploader`, {
-        method: 'POST',
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setImageUrl(data.url);
+      fetchData(`/api/uploader`, 'POST', undefined, formData)
+        .then((response) => {
+          setImageUrl(response.data.url);
           setIsUploading(false);
         })
         .catch((err) => {
@@ -146,11 +142,7 @@ export default function SosmedClient() {
     }
     setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/likes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      });
+      await fetchData(`/api/sosmed/likes`, 'POST', { postId });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error liking post:', error);
@@ -166,11 +158,7 @@ export default function SosmedClient() {
     }
     setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/likes`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      });
+      await fetchData(`/api/sosmed/likes`, 'DELETE', { postId });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error unliking post:', error);
@@ -187,11 +175,7 @@ export default function SosmedClient() {
     }
     setIsCommenting((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: comment, postId }),
-      });
+      await fetchData(`/api/sosmed/comments`, 'POST', { content: comment, postId });
       mutate(`/api/sosmed/posts`);
       setNewComment(postId, '');
     } catch (error) {
@@ -208,11 +192,7 @@ export default function SosmedClient() {
     }
     setIsEditing((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/posts`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: postId, content }),
-      });
+      await fetchData(`/api/sosmed/posts`, 'PUT', { id: postId, content });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing post:', error);
@@ -228,11 +208,7 @@ export default function SosmedClient() {
     }
     setIsDeleting((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/posts`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: postId }),
-      });
+      await fetchData(`/api/sosmed/posts`, 'DELETE', { id: postId });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting post:', error);
@@ -248,11 +224,7 @@ export default function SosmedClient() {
     }
     setIsEditing((prev) => ({ ...prev, [commentId]: true }));
     try {
-      await fetch(`/api/sosmed/comments`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: commentId, content }),
-      });
+      await fetchData(`/api/sosmed/comments`, 'PUT', { id: commentId, content });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing comment:', error);
@@ -268,11 +240,7 @@ export default function SosmedClient() {
     }
     setIsDeleting((prev) => ({ ...prev, [commentId]: true }));
     try {
-      await fetch(`/api/sosmed/comments`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: commentId }),
-      });
+      await fetchData(`/api/sosmed/comments`, 'DELETE', { id: commentId });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error deleting comment:', error);

@@ -1,5 +1,7 @@
 import { FC } from 'react';
 import React from 'react';
+import { fetchData } from '../../utils/useFetch';
+
 interface Comment {
   id: string;
   email: string;
@@ -11,15 +13,13 @@ interface Comment {
 }
 
 async function fetchComments(): Promise<Comment[]> {
-  const res = await fetch('http://localhost:3090/api/comment', {
-    next: { revalidate: 5 }, // Optional: revalidate every 5 seconds
-  });
+  const response = await fetchData('/api/comment', 'GET', undefined, undefined);
 
-  if (!res.ok) {
+  if (response.status && response.status >= 400) {
     throw new Error('Failed to fetch data');
   }
 
-  return res.json();
+  return response.data;
 }
 
 const formatDate = (seconds: number) => {

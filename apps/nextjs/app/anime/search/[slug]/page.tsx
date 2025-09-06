@@ -21,19 +21,21 @@ interface Anime {
   last_release_date?: string;
   url?: string;
 }
+import { fetchData } from '../../../../utils/useFetch';
+
 interface SearchDetailData {
   status: string;
   data: Anime[];
 }
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
   try {
-    const response = await fetch(
+    const response = await fetchData(
       `/api/anime/search?q=${encodeURIComponent(query)}`,
     );
-    if (!response.ok) {
+    if (response.status && response.status >= 400) {
       throw new Error('Network response was not ok');
     }
-    const result: SearchDetailData = await response.json();
+    const result: SearchDetailData = response.data;
     return result;
   } catch (error) {
     console.error('Error fetching search results:', error);

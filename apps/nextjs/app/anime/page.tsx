@@ -31,7 +31,12 @@ interface CompleteAnime {
   current_episode: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetchData } from '../../utils/useFetch';
+
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 function AnimePage() {
   const { data, error } = useSWR<HomeData>(`/api/anime/`, fetcher, {

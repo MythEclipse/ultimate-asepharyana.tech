@@ -10,7 +10,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetchData } from '../../utils/useFetch';
+
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 interface HomeData {
   status: string;

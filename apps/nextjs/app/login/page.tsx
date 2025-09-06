@@ -4,7 +4,7 @@ import React, { useState, memo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
-import { APIURL } from '../../lib/url';
+import { fetchData } from '../../utils/useFetch';
 
 function LoginButton() {
   const [email, setEmail] = useState('');
@@ -24,17 +24,14 @@ function LoginButton() {
     e.preventDefault();
     setError('');
     try {
-      const response = await fetch(`${APIURL}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await fetchData('/api/login', 'POST', {
+        email,
+        password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok) {
+      if (response.status && response.status >= 200 && response.status < 300) {
         router.push('/');
         router.refresh(); // Refresh the page to update session status
       } else {

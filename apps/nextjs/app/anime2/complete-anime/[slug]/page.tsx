@@ -42,6 +42,8 @@ interface CompleteAnimeData {
 }
 
 
+import { fetchData } from '../../../../utils/useFetch';
+
 export default function AnimePage() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -49,9 +51,9 @@ export default function AnimePage() {
   const { data, error, isLoading } = useSWR<CompleteAnimeData | null>(
     slug ? `/api/anime2/complete-anime/${slug}` : null,
     async (url: string | URL | Request) => {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Gagal memuat data');
-      return res.json();
+      const response = await fetchData(url as string);
+      if (response.status && response.status >= 400) throw new Error('Gagal memuat data');
+      return response.data;
     },
   );
 

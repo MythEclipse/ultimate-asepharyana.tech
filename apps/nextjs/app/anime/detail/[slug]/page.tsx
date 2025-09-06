@@ -72,7 +72,12 @@ interface AnimeData {
   };
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetchData } from '../../../../utils/useFetch';
+
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 const DetailPageSkeleton = () => (
   <main className='p-4 md:p-8 min-h-screen'>

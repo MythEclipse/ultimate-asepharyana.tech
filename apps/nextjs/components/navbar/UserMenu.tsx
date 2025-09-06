@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { fetchData } from '../../utils/useFetch';
 
 // UserMenu component to display user information and provide a dropdown menu for navigation and sign-out.
 const UserMenu = () => {
@@ -14,14 +15,12 @@ const UserMenu = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-      });
-      if (response.ok) {
+      const response = await fetchData('/api/logout', 'POST');
+      if (response.status && response.status >= 200 && response.status < 300) {
         router.push('/login');
         router.refresh(); // Refresh the page to clear any cached data
       } else {
-        console.error('Logout failed:', await response.json());
+        console.error('Logout failed:', response.data);
       }
     } catch (error) {
       console.error('Logout error:', error);

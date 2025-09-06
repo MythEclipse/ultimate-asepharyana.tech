@@ -41,9 +41,12 @@ interface OngoingAnimeData {
   pagination: Pagination;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const fetcher = (url: string) =>
-  fetch(url, { cache: 'no-store' }).then((res) => res.json());
+import { fetchData } from '../../../../utils/useFetch';
+
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 export default function AnimePage() {
   const params = useParams();
@@ -51,11 +54,7 @@ export default function AnimePage() {
 
   const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
     slug ? `/api/anime2/ongoing-anime/${slug}` : null,
-    async (url: string | URL | Request) => {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Gagal memuat data');
-      return res.json();
-    },
+    fetcher,
   );
 
   if (!slug) {

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import Image from 'next/image';
 import { PRODUCTION } from '../../../../lib/url';
+import { fetchData } from '../../../../utils/useFetch';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
 import MediaCard from '../../../../components/anime/MediaCard'; // Changed to default import
@@ -89,7 +90,10 @@ const processDownloads = (downloads: DownloadResolution[] = []) => {
   return episodes;
 };
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 // --- SKELETON (Tidak berubah) ---
 const DetailPageSkeleton = () => (

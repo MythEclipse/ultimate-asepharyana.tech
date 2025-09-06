@@ -44,7 +44,12 @@ interface EpisodeInfo {
   slug: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetchData } from '../../../../utils/useFetch';
+
+const fetcher = async (url: string) => {
+  const response = await fetchData(url);
+  return response.data;
+};
 
 // --- SKELETON COMPONENT ---
 const PlayerPageSkeleton = () => (
