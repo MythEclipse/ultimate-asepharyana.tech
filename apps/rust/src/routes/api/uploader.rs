@@ -15,6 +15,7 @@ use crate::routes::AppState;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_PATH: &str = "/{file_name}";
+#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "uploader";
 
 const PRODUCTION_URL: &str = "https://asepharyana.tech";
@@ -229,6 +230,7 @@ async fn upload_to_pomf2(
 
 #[derive(Debug)]
 struct UploadResult {
+  #[allow(dead_code)]
   url: String,
   file_name: String,
 }

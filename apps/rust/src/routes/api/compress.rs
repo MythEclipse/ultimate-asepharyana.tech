@@ -164,7 +164,7 @@ async fn compress_video(
   let max_size_mb = final_target_mb + 0.5;
 
   loop {
-    let ratio = (final_target_mb / original_mb).max(0.6);
+    let _ratio = (final_target_mb / original_mb).max(0.6);
     let crf = (24.0 - (original_mb - final_target_mb) * 0.5).max(18.0).min(32.0) as u32;
 
     // Use ffmpeg to compress

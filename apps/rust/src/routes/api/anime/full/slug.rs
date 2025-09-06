@@ -6,11 +6,17 @@ use utoipa::ToSchema;
 use reqwest;
 use scraper::{ Html, Selector };
 
+#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
+#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/anime/full/{slug}";
+#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime/full/{slug} endpoint.";
+#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime";
+#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime_full_slug";
+#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<FullResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -177,5 +183,5 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(slug))
 }

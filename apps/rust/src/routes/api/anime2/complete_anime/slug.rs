@@ -1,4 +1,4 @@
-use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router, http::StatusCode };
+use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -6,12 +6,18 @@ use utoipa::ToSchema;
 use reqwest;
 use scraper::{ Html, Selector };
 
+#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
+#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/anime2/complete-anime/{slug}";
+#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str =
   "Handles GET requests for the anime2/complete-anime/slug endpoint.";
+#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime2";
+#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime2_complete_anime_slug";
+#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -174,5 +180,5 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(slug))
 }

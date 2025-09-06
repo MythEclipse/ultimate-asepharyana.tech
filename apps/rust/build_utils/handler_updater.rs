@@ -427,6 +427,7 @@ pub fn update_handler_file(
   )
 }
 
+#[allow(dead_code)]
 fn update_uploader_file(
   path: &Path,
   schemas: &mut HashSet<String>,
