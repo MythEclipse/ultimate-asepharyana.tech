@@ -17,7 +17,7 @@
     use tracing::{error, info};
 
     pub const ENDPOINT_METHOD: &str = "get";
-    pub const ENDPOINT_PATH: &str = "/proxy";
+    pub const ENDPOINT_PATH: &str = "/api/proxy";
     pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the proxy endpoint.";
     pub const ENDPOINT_TAG: &str = "proxy";
     pub const OPERATION_ID: &str = "proxy";

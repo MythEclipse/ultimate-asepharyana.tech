@@ -13,7 +13,7 @@ use urlencoding;
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/komik/search";
+pub const ENDPOINT_PATH: &str = "/api/komik/search";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for komik based on query parameters.";
 #[allow(dead_code)]

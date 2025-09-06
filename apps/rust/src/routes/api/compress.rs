@@ -18,7 +18,7 @@ use std::io::Cursor;
 use image::ImageFormat;
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/compress";
+pub const ENDPOINT_PATH: &str = "/api/compress";
 pub const ENDPOINT_DESCRIPTION: &str = "Compress images and videos from URL";
 pub const ENDPOINT_TAG: &str = "compress";
 pub const OPERATION_ID: &str = "compress";

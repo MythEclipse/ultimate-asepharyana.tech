@@ -12,7 +12,7 @@ use rust_lib::komik_base_url::get_cached_komik_base_url;
 use tracing::{ info, error };
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/api/komik/chapter";
+pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves chapter data for a specific komik chapter.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_chapter";

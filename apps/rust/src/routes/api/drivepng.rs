@@ -9,7 +9,7 @@
     use utoipa::ToSchema;
 
     pub const ENDPOINT_METHOD: &str = "get";
-    pub const ENDPOINT_PATH: &str = "/drivepng";
+    pub const ENDPOINT_PATH: &str = "/api/drivepng";
     pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the drivepng endpoint.";
     pub const ENDPOINT_TAG: &str = "drivepng";
     pub const OPERATION_ID: &str = "drivepng";
