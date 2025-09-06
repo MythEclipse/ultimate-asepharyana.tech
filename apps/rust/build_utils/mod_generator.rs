@@ -161,7 +161,6 @@ fn process_directory_entries(
         .and_then(|s| s.to_str())
         .ok_or_else(|| anyhow::anyhow!("Invalid file stem for: {:?}", path))?;
 
-
       let mod_name = sanitize_module_name(file_stem);
       pub_mods.push(format!("pub mod {};", mod_name));
       route_registrations.push(format!("{}", sanitize_module_name(&mod_name)));
@@ -175,6 +174,11 @@ fn process_directory_entries(
         ).with_context(|| format!("Failed to update handler file: {:?}", path))?
       {
         all_handlers.push(handler_info);
+      }
+
+      // If this is the root level, add to modules
+      if current_dir == root_api_path {
+        modules.push(mod_name.clone());
       }
     }
   }
