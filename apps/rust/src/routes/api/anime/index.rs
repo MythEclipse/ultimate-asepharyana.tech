@@ -223,5 +223,5 @@ fn parse_complete_anime(html: &str) -> Vec<CompleteAnimeItem> {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(anime))
+    router.route(ENDPOINT_PATH, get(anime))
 }

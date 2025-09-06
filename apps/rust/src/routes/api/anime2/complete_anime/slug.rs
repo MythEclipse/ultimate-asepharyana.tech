@@ -180,5 +180,5 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(slug))
 }

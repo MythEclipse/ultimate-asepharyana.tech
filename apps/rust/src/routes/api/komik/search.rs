@@ -276,5 +276,5 @@ fn parse_pagination(document: &Html, current_page: u32) -> Pagination {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(search))
+    router.route(ENDPOINT_PATH, get(search))
 }

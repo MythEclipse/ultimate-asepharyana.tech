@@ -52,5 +52,5 @@ pub async fn drivepng() -> impl IntoResponse {
 /// Handles GET requests for the drivepng endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(drivepng))
+    router.route(ENDPOINT_PATH, get(drivepng))
 }

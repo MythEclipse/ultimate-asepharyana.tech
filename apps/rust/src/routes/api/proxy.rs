@@ -114,5 +114,5 @@ pub async fn proxy(Query(params): Query<ProxyQuery>) -> Result<
 /// Handles GET requests for the proxy endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(proxy))
+    router.route(ENDPOINT_PATH, get(proxy))
 }

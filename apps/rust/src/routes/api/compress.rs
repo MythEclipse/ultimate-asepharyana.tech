@@ -320,5 +320,5 @@ async fn process_compression(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(compress))
+    router.route(ENDPOINT_PATH, get(compress))
 }

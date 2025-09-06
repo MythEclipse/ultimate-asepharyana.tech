@@ -153,7 +153,7 @@ pub fn update_handler_file(
   module_path_prefix: &str,
   root_api_path: &Path
 ) -> Result<Option<HandlerRouteInfo>> {
-  let content = fs
+  let mut content = fs
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
@@ -225,13 +225,6 @@ pub fn update_handler_file(
       .to_string();
   }
 
-  // Only set ENDPOINT_METHOD if it doesn't exist
-  let method_regex = Regex::new(r#"const\s+ENDPOINT_METHOD:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  if !method_regex.is_match(&content) {
-    content = method_regex
-      .replace(&content, &format!(r#"const ENDPOINT_METHOD: &str = "{}";"#, http_method))
-      .to_string();
-  }
   let http_method = metadata
     .get("ENDPOINT_METHOD")
     .cloned()
@@ -412,6 +405,9 @@ pub fn update_handler_file(
       .replace(&content, &format!(r#"const SUCCESS_RESPONSE_BODY: &str = "{}";"#, response_body))
       .to_string();
   }
+  let actual_func_name = HANDLER_FN_REGEX.captures(&content)
+    .map(|c| c[1].to_string())
+    .unwrap_or_else(|| file_stem.to_string());
   let _fn_signature = format!("pub async fn {}(", actual_func_name);
 
   // Simple approach: just generate for the first handler
@@ -476,7 +472,7 @@ fn update_uploader_file(
   module_path_prefix: &str,
   _root_api_path: &Path
 ) -> Result<Option<HandlerRouteInfo>> {
-  let content = fs
+  let mut content = fs
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
