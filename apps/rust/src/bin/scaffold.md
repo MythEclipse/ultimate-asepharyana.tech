@@ -14,8 +14,8 @@ Ringkasan tipe endpoint:
 - Params (query): query string, contoh: /api/products/search?q=sepatu&sort=price_desc
 
 Pengenalan Dynamic Routes:
-Sistem secara otomatis mendeteksi segmen dinamis berdasarkan keberadaan `//! DYNAMIC_ROUTE` di awal file handler, dan nama filenya (misalnya, `id.rs` untuk parameter `id`).
-Contoh: `products/detail/id` akan menghasilkan `products/detail/id.rs` dengan `//! DYNAMIC_ROUTE` di dalamnya.
+Sistem secara otomatis mendeteksi segmen dinamis berdasarkan pola nama file (misalnya, `slug.rs` untuk parameter `{slug}`).
+Contoh: `anime/detail/slug` akan menghasilkan `anime/detail/slug.rs`.
 
 1) Endpoint Static (tanpa parameter)
 ------------------------------------------------------------
@@ -51,25 +51,26 @@ curl http://127.0.0.1:3000/api/products/list
 
 2) Endpoint Dynamic / Path Parameter
 ------------------------------------------------------------
-- Untuk path dinamis, gunakan nama parameter langsung tanpa kurung siku:
+- Untuk path dinamis, gunakan nama file yang sesuai dengan parameter:
 
-  cargo run --bin scaffold -- products/detail/product_id
+  cargo run --bin scaffold -- anime/detail/slug
 
 - Sistem akan otomatis mendeteksi pola dinamis dan mengkonversi:
-  - `product_id` → parameter path `id` dengan route `/products/detail/{id}`
-  - `user_slug` → parameter path `slug` dengan route `/users/profile/{slug}`
-  - `order_uuid` → parameter path `uuid` dengan route `/orders/detail/{uuid}`
+  - `slug` (dari `anime/detail/slug.rs`) → parameter path `{slug}` dengan route `/anime/detail/{slug}`
+  - `id` (dari `products/detail/id.rs`) → parameter path `{id}` dengan route `/products/detail/{id}`
+  - `key` (dari `posts/detail/key.rs`) → parameter path `{key}` dengan route `/posts/detail/{key}`
 
 - Jalankan build:
 
   cargo build
 
-- Edit handler di [`src/routes/api/products/detail/product_id.rs`](apps/rust/src/routes/api/products/detail/product_id.rs:1)
+- Edit handler di [`src/routes/api/anime/detail/slug.rs`](apps/rust/src/routes/api/anime/detail/slug.rs:1)
 
 Contoh handler untuk endpoint dinamis (sesuai template yang dihasilkan):
 
 ```rust
-use axum::{response::IntoResponse, routing::get, Json, Router};
+//! DYNAMIC_ROUTE
+use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{Deserialize, Serialize};
@@ -77,14 +78,14 @@ use serde_json;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/products/detail/product_id";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the products/detail/product_id endpoint.";
-pub const ENDPOINT_TAG: &str = "products/detail/product_id";
-pub const OPERATION_ID: &str = "products/detail/product_id";
+pub const ENDPOINT_PATH: &str = "/anime/detail/{slug}";
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime/detail/{slug} endpoint.";
+pub const ENDPOINT_TAG: &str = "anime";
+pub const OPERATION_ID: &str = "anime_detail_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
 
-/// Response structure for the ProductId endpoint.
-/// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
+/// Response structure for the Detail endpoint.
+/// Replace `serde_json::Value` with your actual data type and implement `utoipa::ToSchema` for complex types.
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct DetailResponse {
     /// Success message
@@ -93,16 +94,16 @@ pub struct DetailResponse {
     pub data: serde_json::Value,
 }
 
-pub async fn product_id(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
     Json(DetailResponse {
-        message: format!("Hello from product_id with parameters: id: {id}"),
-        data: serde_json::json!({"id": "id"}),
+        message: format!("Hello from slug with parameters: slug: {slug}"),
+        data: serde_json::json!({"slug": slug}),
     })
 }
 
-/// Handles GET requests for the products/detail/product_id endpoint.
+/// Handles GET requests for the anime/detail/{slug} endpoint.
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(product_id))
+    router.route(ENDPOINT_PATH, get(slug))
 }
 ```
 
@@ -113,15 +114,15 @@ use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
 use serde::Serialize;
 use uuid::Uuid;
 
-pub async fn product_id(Path(id): Path<String>) -> impl IntoResponse {
-    let parsed = Uuid::parse_str(&id).ok();
+pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+    let parsed = Uuid::parse_str(&slug).ok();
     Json(ProductResponse { message: format!("Parsed UUID: {:?}", parsed) })
 }
 ```
 
 Tes:
 
-curl http://127.0.0.1:3000/api/products/detail/sepatu-lari-123
+curl http://127.0.0.1:3000/api/anime/detail/log-horizon
 
 3) Endpoint Query Params
 ------------------------------------------------------------
@@ -167,10 +168,10 @@ curl "http://127.0.0.1:3000/api/products/search?q=sepatu&sort=price_desc&page=2"
 
 4) Kombinasi: Slug + Query Params
 ------------------------------------------------------------
-- Contoh path: products/product_id/reviews
+- Contoh path: anime/slug/reviews
 - Scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
-  cargo run --bin scaffold -- products/product_id/reviews
+  cargo run --bin scaffold -- anime/slug/reviews
 
 - Build:
 
@@ -210,11 +211,11 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 ------------------------------------------------------------
 1. buat file kosong (dapat dijalankan dari workspace root atau apps/rust/):
 
-   cargo run --bin scaffold -- products/detail/product_id
+   cargo run --bin scaffold -- anime/detail/slug
 2. build:
 
    cargo build
-3. edit `src/routes/api/products/detail/product_id.rs`
+3. edit `src/routes/api/anime/detail/slug.rs`
 4. run:
 
    cargo run
@@ -224,26 +225,6 @@ Catatan tambahan:
 - Jika butuh validasi, gunakan crate seperti `validator` atau lakukan pemeriksaan manual.
 - Jika ingin mengubah template generator, modifikasi [`apps/rust/build.rs`](apps/rust/build.rs:1).
 
-## Troubleshooting: Native FFmpeg dependency (Windows)
-
-Jika `cargo build` atau `cargo run --bin scaffold` gagal dengan pesan tentang `libavutil` / `ffmpeg-sys-next`, lakukan salah satu opsi berikut:
-
-1) (Direkomendasikan) Pasang MSYS2 dan paket FFmpeg
-- Unduh dan pasang MSYS2: https://www.msys2.org/  
-- Buka *MSYS2 MinGW 64-bit* shell, lalu jalankan:
-```powershell
-# update system
-pacman -Syu
-
-# setelah restart shell, pasang pkg-config dan ffmpeg dev
-pacman -S mingw-w64-x86_64-pkg-config mingw-w64-x86_64-ffmpeg
-```
-- Tambahkan ke PATH dan set PKG_CONFIG_PATH (PowerShell):
-```powershell
-setx PATH "$env:PATH;C:\msys64\mingw64\bin"
-setx PKG_CONFIG_PATH "C:\msys64\mingw64\lib\pkgconfig"
-```
-- Tutup dan buka kembali terminal VSCode lalu jalankan `cargo build` kembali.
 
 2) Pasang library dev FFmpeg secara manual
 - Pasang paket dev yang menyediakan file `libavutil.pc`.
@@ -261,4 +242,3 @@ Dokumentasi scaffold telah diperbarui di [`apps/rust/src/bin/scaffold.md`](apps/
 # Dari workspace root atau apps/rust/
 cargo run --bin scaffold -- test/helloworld
 cargo build
-```

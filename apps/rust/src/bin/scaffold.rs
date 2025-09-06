@@ -17,10 +17,10 @@ fn main() -> std::io::Result<()> {
   let last_part = parts.last().unwrap_or(&"");
 
   let is_dynamic_route =
-    last_part.contains("id") ||
-    last_part.contains("slug") ||
-    last_part.contains("uuid") ||
-    last_part.contains("key");
+    *last_part == "id" ||
+    *last_part == "slug" ||
+    *last_part == "uuid" ||
+    *last_part == "key";
 
   let base_api_dir = get_base_api_dir()?;
   let mut file_path = base_api_dir.join(&full_route_path);
