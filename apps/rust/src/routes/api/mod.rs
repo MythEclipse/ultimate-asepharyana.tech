@@ -5,25 +5,79 @@ use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
 
-pub mod products;
-pub mod test;
+pub mod anime;
+pub mod anime2;
+pub mod compress;
+pub mod drivepng;
+pub mod komik;
+pub mod proxy;
+pub mod uploader;
 
-use crate::routes::api::products::detail::product_id::DetailResponse;
-use crate::routes::api::test::hello2::ListResponse;
-use crate::routes::api::test::hello::ListResponse as ListResponse_1;
+use crate::routes::api::anime2::complete_anime::slug::ListResponse;
+use crate::routes::api::anime2::index::Anime2Data;
+use crate::routes::api::anime2::index::Anime2Response;
+use crate::routes::api::anime::complete_anime::slug::ListResponse as ListResponse_1;
+use crate::routes::api::anime::detail::slug::AnimeDetailData;
+use crate::routes::api::anime::detail::slug::DetailResponse;
+use crate::routes::api::anime::full::slug::AnimeFullData;
+use crate::routes::api::anime::full::slug::FullResponse;
+use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeResponse;
+use crate::routes::api::anime::search::SearchResponse;
+use crate::routes::api::compress::ListResponse as ListResponse_2;
+use crate::routes::api::komik::chapter::ChapterData;
+use crate::routes::api::komik::chapter::ChapterResponse;
+use crate::routes::api::komik::detail::DetailData;
+use crate::routes::api::komik::detail::DetailResponse as DetailResponse_1;
+use crate::routes::api::komik::manga::slug::MangaResponse;
+use crate::routes::api::komik::manhua::slug::ManhuaResponse;
+use crate::routes::api::komik::manhwa::slug::ManhwaResponse;
+use crate::routes::api::komik::search::SearchResponse as SearchResponse_1;
+use crate::routes::api::proxy::ListResponse as ListResponse_3;
+use crate::routes::api::uploader::ListResponse as ListResponse_4;
 
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
-              crate::routes::api::products::detail::product_id::product_id,
-              crate::routes::api::test::hello::hello,
-              crate::routes::api::test::hello2::hello2
+              crate::routes::api::anime::complete_anime::slug::slug,
+              crate::routes::api::anime::detail::slug::slug,
+              crate::routes::api::anime::full::slug::slug,
+              crate::routes::api::anime::ongoing_anime::slug::slug,
+              crate::routes::api::anime::search::search,
+              crate::routes::api::anime2::complete_anime::slug::slug,
+              crate::routes::api::anime2::index::anime2,
+              crate::routes::api::compress::compress,
+              crate::routes::api::komik::chapter::chapter,
+              crate::routes::api::komik::detail::detail,
+              crate::routes::api::komik::manga::slug::slug,
+              crate::routes::api::komik::manhua::slug::slug,
+              crate::routes::api::komik::manhwa::slug::slug,
+              crate::routes::api::komik::search::search,
+              crate::routes::api::proxy::proxy,
+              crate::routes::api::uploader::uploader
           ),
 components(
               schemas(
-                  DetailResponse,
                   ListResponse,
-                  ListResponse_1
+                  Anime2Data,
+                  Anime2Response,
+                  ListResponse_1,
+                  AnimeDetailData,
+                  DetailResponse,
+                  AnimeFullData,
+                  FullResponse,
+                  OngoingAnimeResponse,
+                  SearchResponse,
+                  ListResponse_2,
+                  ChapterData,
+                  ChapterResponse,
+                  DetailData,
+                  DetailResponse_1,
+                  MangaResponse,
+                  ManhuaResponse,
+                  ManhwaResponse,
+                  SearchResponse_1,
+                  ListResponse_3,
+                  ListResponse_4
               )
           ),
 tags(
@@ -35,7 +89,12 @@ pub struct ApiDoc;
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();
-    router = products::register_routes(router);
-    router = test::register_routes(router);
+    router = anime::register_routes(router);
+    router = anime2::register_routes(router);
+    router = compress::register_routes(router);
+    router = drivepng::register_routes(router);
+    router = komik::register_routes(router);
+    router = proxy::register_routes(router);
+    router = uploader::register_routes(router);
     router
 }
