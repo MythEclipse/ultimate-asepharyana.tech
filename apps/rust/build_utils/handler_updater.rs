@@ -235,8 +235,10 @@ pub fn update_handler_file(
     .trim_start_matches('/') // Strip all leading slashes from current path
     .to_string();
 
-  // Prepend "/api/" to ensure consistency
-  route_path = format!("/api/{}", route_path);
+  // Prepend "/api/" to ensure consistency, but avoid duplication
+  if !route_path.starts_with("/api/") {
+    route_path = format!("/api/{}", route_path);
+  }
 
   // Parse path params from existing function signature
   let parsed_path_params = parse_path_params_from_signature(&content);

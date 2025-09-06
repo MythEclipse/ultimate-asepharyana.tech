@@ -183,5 +183,5 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

@@ -157,5 +157,5 @@ async fn fetch_and_parse_chapter(
 /// Handles GET requests for the komik/chapter endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(chapter))
+  router.route(ENDPOINT_PATH, get(chapter))
 }
