@@ -8,54 +8,60 @@ fn main() -> std::io::Result<()> {
   if args.len() != 2 {
     eprintln!("❌ Usage: cargo run --bin scaffold -- <route_path>");
     eprintln!("   Example (static):  cargo run --bin scaffold -- products/list");
-    eprintln!("   Example (index):   cargo run --bin scaffold -- products/index");
-    eprintln!("   Example (dynamic): cargo run --bin scaffold -- products/id");
+    eprintln!("   Example (dynamic): cargo run --bin scaffold -- products/detail/id");
     process::exit(1);
   }
 
-  let route_path = &args[1];
+  let full_route_path = args[1].clone();
+  let parts: Vec<&str> = full_route_path.split('/').collect();
+  let last_part = parts.last().unwrap_or(&"");
 
-  // Determine base API directory so this can be run from workspace root or from apps/rust
-  let cwd = env::current_dir()?;
-  let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
-  let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+  let is_dynamic_route =
+    last_part.contains("id") ||
+    last_part.contains("slug") ||
+    last_part.contains("uuid") ||
+    last_part.contains("key");
 
-  let base_api_dir = if candidate_a.exists() {
-    candidate_a
-  } else if candidate_b.exists() {
-    candidate_b
-  } else if cwd.join("apps").join("rust").exists() {
-    // workspace root but api dir not present yet -> prefer apps/rust path
-    cwd.join("apps").join("rust").join("src").join("routes").join("api")
-  } else {
-    // fallback to the local src path
-    cwd.join("src").join("routes").join("api")
-  };
-
-  // Build full file path, e.g. "<base_api_dir>/products/list.rs"
-  let mut file_path = base_api_dir.clone();
-  file_path.push(route_path);
+  let base_api_dir = get_base_api_dir()?;
+  let mut file_path = base_api_dir.join(&full_route_path);
   file_path.set_extension("rs");
 
-  // Check if file already exists
   if file_path.exists() {
     println!("⚠️ File already exists at {}. No changes were made.", file_path.display());
     process::exit(0);
   }
 
-  // Create parent directory if missing
-  if let Some(parent_dir) = file_path.parent() {
-    fs::create_dir_all(parent_dir)?;
-  } else {
-    eprintln!("❌ Invalid file path specified: {}", file_path.display());
-    process::exit(1);
-  }
+  let parent_dir = file_path.parent().unwrap();
+  fs::create_dir_all(parent_dir)?;
 
-  // Create empty file. `build.rs` will populate it on cargo build.
-  fs::write(&file_path, "")?;
+  let initial_content = if is_dynamic_route {
+    "//! DYNAMIC_ROUTE\n".to_string()
+  } else {
+    "".to_string()
+  };
+
+  fs::write(&file_path, initial_content)?;
 
   println!("✅ Empty file created successfully at: {}", file_path.display());
-  println!("   Run `cargo build` (in the crate) to auto-populate the file with the handler template.");
+  println!(
+    "   Run `cargo build` (in the crate) to auto-populate the file with the handler template."
+  );
 
   Ok(())
+}
+
+fn get_base_api_dir() -> std::io::Result<std::path::PathBuf> {
+  let cwd = env::current_dir()?;
+  let candidate_a = cwd.join("src").join("routes").join("api");
+  let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api");
+
+  if candidate_a.exists() {
+    Ok(candidate_a)
+  } else if candidate_b.exists() {
+    Ok(candidate_b)
+  } else if cwd.join("apps").join("rust").exists() {
+    Ok(cwd.join("apps").join("rust").join("src").join("routes").join("api"))
+  } else {
+    Ok(cwd.join("src").join("routes").join("api"))
+  }
 }

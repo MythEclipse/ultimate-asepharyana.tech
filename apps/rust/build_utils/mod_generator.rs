@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{ Path, PathBuf };
 use anyhow::{ Result, Context };
 use crate::build_utils::handler_updater::{ HandlerRouteInfo, update_handler_file };
-use crate::build_utils::path_utils::is_dynamic_segment;
+use crate::build_utils::path_utils::is_dynamic_route_content;
 
 // Removed generate_handler_template as it's no longer directly called here
 
@@ -116,21 +116,13 @@ fn process_directory_entries(
       .file_name()
       .and_then(|s| s.to_str())
       .unwrap_or("");
-    if file_name.starts_with('.') || file_name == "mod.rs" {
+    if file_name.starts_with('.') || file_name == "mod.rs" || file_name == "test" {
       continue;
     }
 
-    let is_dynamic = is_dynamic_segment(file_name);
     let mod_name_sanitized = sanitize_module_name(file_name);
 
     if path.is_dir() {
-      // Create mod.rs inside the dynamic segment directory
-      if is_dynamic {
-        fs
-          ::write(path.join("mod.rs"), b"pub mod index;\n")
-          .with_context(|| format!("Failed to write mod.rs for dynamic segment in: {:?}", path))?;
-      }
-
       // Recursively generate mod.rs for the subdirectory
       let has_routes = generate_mod_for_directory(
         &path,
@@ -142,13 +134,7 @@ fn process_directory_entries(
 
       if has_routes {
         pub_mods.push(format!("pub mod {};", mod_name_sanitized));
-
-        // Route registration for dynamic segments needs to point to the index.rs inside
-        if is_dynamic {
-          route_registrations.push(format!("{}::index", sanitize_module_name(&mod_name_sanitized)));
-        } else {
-          route_registrations.push(format!("{}", sanitize_module_name(&mod_name_sanitized)));
-        }
+        route_registrations.push(mod_name_sanitized.clone());
 
         // If this is the root level, add to modules
         if current_dir == root_api_path {
@@ -156,6 +142,9 @@ fn process_directory_entries(
         }
       }
     } else if path.is_file() && path.extension().map_or(false, |e| e == "rs") {
+      let file_content = fs::read_to_string(&path)?;
+      let is_dynamic = is_dynamic_route_content(&file_content);
+
       let file_stem = path
         .file_stem()
         .and_then(|s| s.to_str())
@@ -163,7 +152,14 @@ fn process_directory_entries(
 
       let mod_name = sanitize_module_name(file_stem);
       pub_mods.push(format!("pub mod {};", mod_name));
-      route_registrations.push(format!("{}", sanitize_module_name(&mod_name)));
+
+      // For dynamic routes, register the route using the dynamic segment
+      if is_dynamic {
+        // Assuming dynamic routes are always in the format "some_name.rs" where "some_name" is the parameter
+        route_registrations.push(format!("{}/{{{}}}", current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/"), file_stem));
+      } else {
+        route_registrations.push(mod_name.clone());
+      }
 
       if
         let Some(handler_info) = update_handler_file(
@@ -194,11 +190,7 @@ fn build_route_registration_body(route_registrations: &[String]) -> String {
       .iter()
       .rev()
       .fold("router".to_string(), |acc, reg| {
-        let sanitized_reg_parts: Vec<String> = reg
-          .split("::")
-          .map(|s| sanitize_module_name(s))
-          .collect();
-        format!("{}::register_routes({})", sanitized_reg_parts.join("::"), acc)
+        format!("{}::register_routes({})", reg, acc)
       })
   }
 }

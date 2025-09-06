@@ -12,10 +12,10 @@ fn main() -> std::io::Result<()> {
         "src/routes/api/test/v1/list.rs",
         "src/routes/api/test/v1/search.rs",
         "src/routes/api/test/v1/users/list.rs",
-        "src/routes/api/test/v2/products/detail/product_id.rs",
-        "src/routes/api/test/v2/users/profile/user_slug.rs",
-        "src/routes/api/test/v2/orders/detail/order_uuid.rs",
-        "src/routes/api/test/v2/posts/detail/post_key.rs",
+        "src/routes/api/test/v2/products/detail/id.rs",
+        "src/routes/api/test/v2/users/profile/slug.rs",
+        "src/routes/api/test/v2/orders/detail/uuid.rs",
+        "src/routes/api/test/v2/posts/detail/key.rs",
     ])?;
 
     println!("\n📝 Test 1: Creating static routes...");
@@ -25,32 +25,32 @@ fn main() -> std::io::Result<()> {
         "test/v1/users/list",
     ])?;
 
-    println!("\n📝 Test 2: Creating dynamic routes...");
+    println!("\n📝 Test 2: Creating dynamic routes... (using new single-file dynamic routing)");
     run_scaffold_batch(&[
-        "test/v2/products/detail/product_id",
-        "test/v2/users/profile/user_slug",
-        "test/v2/orders/detail/order_uuid",
-        "test/v2/posts/detail/post_key",
+        "test/v2/products/detail/id",
+        "test/v2/users/profile/slug",
+        "test/v2/orders/detail/uuid",
+        "test/v2/posts/detail/key",
     ])?;
 
     println!("\n✅ Test 3: Verifying generated files...");
     verify_file_exists("src/routes/api/test/v1/list.rs")?;
     verify_file_exists("src/routes/api/test/v1/search.rs")?;
     verify_file_exists("src/routes/api/test/v1/users/list.rs")?;
-    verify_file_exists("src/routes/api/test/v2/products/detail/product_id.rs")?;
-    verify_file_exists("src/routes/api/test/v2/users/profile/user_slug.rs")?;
-    verify_file_exists("src/routes/api/test/v2/orders/detail/order_uuid.rs")?;
-    verify_file_exists("src/routes/api/test/v2/posts/detail/post_key.rs")?;
+    verify_file_exists("src/routes/api/test/v2/products/detail/id.rs")?;
+    verify_file_exists("src/routes/api/test/v2/users/profile/slug.rs")?;
+    verify_file_exists("src/routes/api/test/v2/orders/detail/uuid.rs")?;
+    verify_file_exists("src/routes/api/test/v2/posts/detail/key.rs")?;
 
     println!("\n🗑️  Test 4: Cleaning up test routes...");
     cleanup_files(&[
         "src/routes/api/test/v1/list.rs",
         "src/routes/api/test/v1/search.rs",
         "src/routes/api/test/v1/users/list.rs",
-        "src/routes/api/test/v2/products/detail/product_id.rs",
-        "src/routes/api/test/v2/users/profile/user_slug.rs",
-        "src/routes/api/test/v2/orders/detail/order_uuid.rs",
-        "src/routes/api/test/v2/posts/detail/post_key.rs",
+        "src/routes/api/test/v2/products/detail/id.rs",
+        "src/routes/api/test/v2/users/profile/slug.rs",
+        "src/routes/api/test/v2/orders/detail/uuid.rs",
+        "src/routes/api/test/v2/posts/detail/key.rs",
     ])?;
 
     println!("\n🔨 Final build after cleanup...");
@@ -120,7 +120,12 @@ fn verify_file_exists(path: &str) -> std::io::Result<()> {
     // Build full file path
     let mut file_path = base_api_dir.clone();
     file_path.push(path.strip_prefix("src/routes/api/").unwrap_or(path));
-    file_path.set_extension("rs");
+
+    // For dynamic routes, the path already includes the file name (e.g., id.rs), so no need to set extension
+    // For static routes, set the extension
+    if !path.ends_with(".rs") {
+        file_path.set_extension("rs");
+    }
 
     if fs::metadata(&file_path).is_ok() {
         println!("✅ File exists: {}", path);
@@ -153,7 +158,12 @@ fn cleanup_files(paths: &[&str]) -> std::io::Result<()> {
         // Build full file path
         let mut file_path = base_api_dir.clone();
         file_path.push(path.strip_prefix("src/routes/api/").unwrap_or(path));
-        file_path.set_extension("rs");
+
+        // For dynamic routes, the path already includes the file name (e.g., id.rs), so no need to set extension
+        // For static routes, set the extension
+        if !path.ends_with(".rs") {
+            file_path.set_extension("rs");
+        }
 
         if fs::metadata(&file_path).is_ok() {
             fs::remove_file(&file_path)?;

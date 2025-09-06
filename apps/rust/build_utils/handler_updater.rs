@@ -10,7 +10,6 @@ use crate::build_utils::path_utils::{
   parse_path_params_from_signature,
   sanitize_operation_id,
   sanitize_tag,
-  is_dynamic_segment,
 };
 use crate::build_utils::handler_template::generate_handler_template;
 
@@ -404,24 +403,12 @@ pub fn update_handler_file(
 
   inject_schemas(&new_content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
 
-  let handler_full_module_path = if
-    file_stem == "index" &&
-    path.parent().map_or(false, |p| is_dynamic_segment(p.file_name().unwrap().to_str().unwrap()))
-  {
-    let parent_dir_name = path.parent().unwrap().file_name().unwrap().to_str().unwrap();
-    let sanitized_parent_mod_name = parent_dir_name
-      .trim_matches(|c| (c == '[' || c == ']'))
-      .replace('-', "_");
-    format!("{}::{}::index", module_path_prefix, sanitized_parent_mod_name)
-  } else {
-    format!("{}::{}", module_path_prefix, file_stem)
-  };
   Ok(
     Some(HandlerRouteInfo {
       func_name: actual_func_name,
       http_method,
       route_path,
-      handler_module_path: handler_full_module_path,
+      handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
       route_tag,
     })
   )

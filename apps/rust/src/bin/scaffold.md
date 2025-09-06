@@ -14,9 +14,8 @@ Ringkasan tipe endpoint:
 - Params (query): query string, contoh: /api/products/search?q=sepatu&sort=price_desc
 
 Pengenalan Dynamic Routes:
-Sistem secara otomatis mendeteksi segmen dinamis berdasarkan pola nama file:
-- Mengakhiri dengan `_id`, `id`, `slug`, `uuid`, atau `key`
-- Contoh: `product_id` → parameter `id`, `user_slug` → parameter `slug`
+Sistem secara otomatis mendeteksi segmen dinamis berdasarkan keberadaan `//! DYNAMIC_ROUTE` di awal file handler, dan nama filenya (misalnya, `id.rs` untuk parameter `id`).
+Contoh: `products/detail/id` akan menghasilkan `products/detail/id.rs` dengan `//! DYNAMIC_ROUTE` di dalamnya.
 
 1) Endpoint Static (tanpa parameter)
 ------------------------------------------------------------
