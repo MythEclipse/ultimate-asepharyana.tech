@@ -186,7 +186,7 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
 
   let mut episode_lists = Vec::new();
   let mut batch = Vec::new();
-  for element in document.select(&Selector::parse(".episodelist ul li span a").unwrap()) {
+  for element in document.select(&Selector::parse(".episodelist ul li a").unwrap()) {
     let episode = element.text().collect::<String>().trim().to_string();
     let href = element.value().attr("href").unwrap_or("");
     let episode_slug = href.split('/').last().unwrap_or("").to_string();
