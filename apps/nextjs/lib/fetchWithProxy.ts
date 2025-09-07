@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import logger from '../utils/logger';
 import { DEFAULT_HEADERS } from '../utils/DHead';
 import { scrapeCroxyProxy } from './scrapeCroxyProxy';
-import { redis, testRedisConnection } from './redis';
+import { redis } from './redis';
 // --- CroxyProxyOnly Export (moved to top to fix hoisting issue) ---
 export async function CroxyProxyOnly(
   slug: string,
@@ -48,6 +48,7 @@ async function getCachedFetch(
         // ignore parse error, fallback to fetch
       }
     }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (redisError: any) {
     logger.warn(`[fetchWithProxy] Redis get failed for ${slug}:`, {
       message: redisError?.message,
@@ -55,7 +56,7 @@ async function getCachedFetch(
       stack: redisError?.stack,
       url: process.env.UPSTASH_REDIS_REST_URL,
       hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length
+      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
     });
     // ignore Redis error, fallback to fetch
   }
@@ -74,7 +75,7 @@ async function setCachedFetch(
       error: redisError,
       url: process.env.UPSTASH_REDIS_REST_URL,
       hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length
+      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
     });
     // ignore Redis error, continue without caching
   }
@@ -99,8 +100,11 @@ export async function fetchWithProxy(
       headers: res.headers,
     });
     if (res.status >= 200 && res.status < 300) {
-      logger.info(`[fetchWithProxy] Direct axios fetch successful for ${slug}, status: ${res.status}`);
-      const contentType = res.headers['content-type'] || res.headers['Content-Type'];
+      logger.info(
+        `[fetchWithProxy] Direct axios fetch successful for ${slug}, status: ${res.status}`,
+      );
+      const contentType =
+        res.headers['content-type'] || res.headers['Content-Type'];
       if (contentType?.includes('application/json')) {
         const jsonData = res.data;
         if (isInternetBaikBlockPage(JSON.stringify(jsonData))) {
@@ -128,7 +132,9 @@ export async function fetchWithProxy(
       await setCachedFetch(slug, result);
       return result;
     }
-    const error = new Error(`Direct axios fetch failed with status ${res.status}`);
+    const error = new Error(
+      `Direct axios fetch failed with status ${res.status}`,
+    );
     logger.error(
       `Direct axios fetch failed for ${slug}: Status ${res.status}`,
       error,
@@ -140,7 +146,9 @@ export async function fetchWithProxy(
       return croxyResult;
     } catch (croxyError) {
       logger.error(`ScrapeCroxyProxy also failed for ${slug}:`, croxyError);
-      throw new Error(`Both direct axios fetch and proxy failed for ${slug}. Direct error: ${(error as Error).message}. Proxy error: ${(croxyError as Error).message}`);
+      throw new Error(
+        `Both direct axios fetch and proxy failed for ${slug}. Direct error: ${(error as Error).message}. Proxy error: ${(croxyError as Error).message}`,
+      );
     }
   } catch (error) {
     logger.warn(`Direct axios fetch failed for ${slug}:`, error);
@@ -151,7 +159,9 @@ export async function fetchWithProxy(
       return croxyResult;
     } catch (croxyError) {
       logger.error(`ScrapeCroxyProxy also failed for ${slug}:`, croxyError);
-      throw new Error(`Both direct axios fetch and proxy failed for ${slug}. Direct error: ${(error as Error).message}. Proxy error: ${(croxyError as Error).message}`);
+      throw new Error(
+        `Both direct axios fetch and proxy failed for ${slug}. Direct error: ${(error as Error).message}. Proxy error: ${(croxyError as Error).message}`,
+      );
     }
   }
 }
@@ -176,13 +186,16 @@ export async function fetchWithProxyOnly(
     });
     // Try direct axios fetch as final fallback
     try {
-      logger.warn('Trying direct axios fetch as final fallback...', { url: slug });
+      logger.warn('Trying direct axios fetch as final fallback...', {
+        url: slug,
+      });
       const finalRes: AxiosResponse = await axios.get(slug, {
         headers: DEFAULT_HEADERS,
         timeout: 10000, // 10 second timeout
       });
       if (finalRes.status >= 200 && finalRes.status < 300) {
-        const contentType = finalRes.headers['content-type'] || finalRes.headers['Content-Type'];
+        const contentType =
+          finalRes.headers['content-type'] || finalRes.headers['Content-Type'];
         if (contentType?.includes('application/json')) {
           const jsonData = finalRes.data;
           const result = { data: jsonData, contentType };
@@ -208,4 +221,3 @@ export async function fetchWithProxyOnly(
     }
   }
 }
-
