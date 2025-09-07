@@ -87,5 +87,8 @@
   "packageManager": "pnpm@10.15.0",
   "scripts": {
     "start": "next start"
+  },
+  "devDependencies": {
+    "nx": "^21.4.1"
   }
 }

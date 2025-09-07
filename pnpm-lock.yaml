@@ -495,9 +495,6 @@ importers:
 
   apps/nextjs:
     dependencies:
-      '@auth/core':
-        specifier: 0.40.0
-        version: 0.40.0
       '@radix-ui/react-accordion':
         specifier: 1.2.12
         version: 1.2.12(@types/react-dom@19.1.8(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -582,9 +579,6 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.12
         version: 4.1.12
-      '@types/jsonwebtoken':
-        specifier: 9.0.10
-        version: 9.0.10
       '@types/prettier':
         specifier: 3.0.0
         version: 3.0.0
@@ -597,12 +591,6 @@ importers:
       axios:
         specifier: 1.11.0
         version: 1.11.0
-      bcrypt:
-        specifier: 6.0.0
-        version: 6.0.0
-      bcryptjs:
-        specifier: 3.0.2
-        version: 3.0.2
       cheerio:
         specifier: 1.1.2
         version: 1.1.2
@@ -648,15 +636,9 @@ importers:
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@24.3.0)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@swc/core@1.13.5(@swc/helpers@0.5.17))(@types/node@24.3.0)(typescript@5.9.2))
-      jose:
-        specifier: 6.1.0
-        version: 6.1.0
       js-yaml:
         specifier: 4.1.0
         version: 4.1.0
-      jsonwebtoken:
-        specifier: 9.0.2
-        version: 9.0.2
       kysely:
         specifier: 0.28.5
         version: 0.28.5
@@ -753,6 +735,10 @@ importers:
       zustand:
         specifier: 5.0.8
         version: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
+    devDependencies:
+      nx:
+        specifier: ^21.4.1
+        version: 21.4.1(@swc-node/register@1.11.1(@swc/core@1.13.5(@swc/helpers@0.5.17))(@swc/types@0.1.24)(typescript@5.9.2))(@swc/core@1.13.5(@swc/helpers@0.5.17))
 
   apps/nextjs-e2e: {}
 
@@ -4476,9 +4462,6 @@ packages:
 
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
-
-  '@types/jsonwebtoken@9.0.10':
-    resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
 
   '@types/marked@4.3.2':
     resolution: {integrity: sha512-a79Yc3TOk6dGdituy8hmTTJXjOkZ7zsFYV10L337ttq/rec8lRMDBpV7fL3uLx6TgbFCa5DU/h8FmIBQPSbU0w==}
@@ -9868,7 +9851,7 @@ packages:
   puppeteer@23.11.1:
     resolution: {integrity: sha512-53uIX3KR5en8l7Vd8n5DUv90Ae9QDQsyIthaUFVzwV6yU750RjqRznEtNMBT20VthqAdemnJN+hxVdmMHKt7Zw==}
     engines: {node: '>=18'}
-    deprecated: < 24.9.0 is no longer supported
+    deprecated: < 24.10.2 is no longer supported
     hasBin: true
 
   puppeteer@24.17.0:
@@ -16465,11 +16448,6 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
-
-  '@types/jsonwebtoken@9.0.10':
-    dependencies:
-      '@types/ms': 2.1.0
-      '@types/node': 24.3.0
 
   '@types/marked@4.3.2': {}
 
