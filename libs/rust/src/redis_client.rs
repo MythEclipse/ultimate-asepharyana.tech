@@ -16,11 +16,15 @@ pub fn get_redis_connection() -> Result<Connection, AppError> {
 
     let password = CONFIG_MAP.get("REDIS_PASSWORD")
         .cloned()
-        .unwrap_or_else(|| "mysecretpassword".to_string());
+        .unwrap_or_else(|| "".to_string());
 
-    // Construct Redis URL with password
-    // Format: redis://:password@host:port
-    let redis_url = format!("redis://:{}@{}:{}", password, host, port);
+    // Construct Redis URL conditionally with password
+    // Format: redis://host:port or redis://:password@host:port
+    let redis_url = if password.is_empty() {
+        format!("redis://{}:{}", host, port)
+    } else {
+        format!("redis://:{}@{}:{}", password, host, port)
+    };
 
     debug!("Attempting to connect to Redis at URL: {}", redis_url);
 
