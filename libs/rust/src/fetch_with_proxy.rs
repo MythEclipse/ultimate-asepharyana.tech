@@ -1,16 +1,12 @@
 // Proxy fetch logic with Redis cache, updated for sync Redis API and reqwest API changes.
 
-use reqwest::{Client, Proxy};
-use std::time::Duration;
+use reqwest::Client;
 use tracing::{info, warn, error};
-use regex::Regex;
 
 use crate::redis_client::get_redis_connection;
 use crate::scrape_croxy_proxy::scrape_croxy_proxy_cached;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
-
-const DEFAULT_PROXY_LIST_URL: &str = "https://www.proxy-list.download/api/v1/get?type=https";
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {
@@ -27,48 +23,6 @@ impl std::fmt::Display for FetchResult {
             self.content_type.as_deref().unwrap_or("None")
         )
     }
-}
-
-fn get_proxy_list_url() -> String {
-    std::env::var("PROXY_LIST_URL").unwrap_or_else(|_| DEFAULT_PROXY_LIST_URL.to_string())
-}
-
-fn parse_proxy_line(line: &str) -> Option<String> {
-    let trimmed = line.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') {
-        return None;
-    }
-    if Regex::new(r"^(http|https|socks4|socks5)://").unwrap().is_match(trimmed) {
-        return Some(trimmed.to_string());
-    }
-    if Regex::new(r"^[^:]+:\d+$").unwrap().is_match(trimmed) {
-        return Some(format!("https://{trimmed}"));
-    }
-    None
-}
-
-async fn get_proxies() -> Result<Vec<String>, AppError> {
-    let client = Client::new();
-    let res = client.get(get_proxy_list_url()).send().await?;
-    if !res.status().is_success() {
-        let error_msg = format!("Failed to fetch proxy list: {}", res.status());
-        error!("Error fetching proxy list: {}", error_msg);
-        return Err(AppError::Other(error_msg));
-    }
-    let data = res.text().await?;
-    let proxies = data
-        .lines()
-        .filter_map(parse_proxy_line)
-        .take(10)
-        .collect();
-    Ok(proxies)
-}
-
-// Remove static mut cache for thread safety and correctness.
-
-async fn get_cached_proxies() -> Result<Vec<String>, AppError> {
-    // For simplicity, always fetch fresh proxies (could use a runtime cache if needed)
-    get_proxies().await
 }
 
 // --- REDIS CACHE WRAPPER START ---
@@ -163,64 +117,17 @@ pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, AppError> 
 }
 
 async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
-    let mut last_error: Option<AppError> = None;
-    let proxies = get_cached_proxies().await?;
+    info!("Using only croxy proxy for {}", slug);
 
-    for proxy_url_str in proxies {
-        info!("[DEBUG] Proxy loop: Trying proxy {}", proxy_url_str);
-        let client_builder = Client::builder();
-
-        let client = match Proxy::all(&proxy_url_str) {
-            Ok(proxy) => client_builder.proxy(proxy).build()?,
-            Err(e) => {
-                warn!("Invalid proxy URL {}: {:?}", proxy_url_str, e);
-                last_error = Some(AppError::Other(format!("Invalid proxy URL: {e:?}")));
-                continue;
-            }
-        };
-
-        let mut headers = reqwest::header::HeaderMap::new();
-        headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"));
-
-        match tokio::time::timeout(Duration::from_secs(6), client.get(slug).headers(headers).send()).await {
-            Ok(Ok(res)) => {
-                info!("[ProxyListOnly] Proxy fetch response: url={}, proxy={}, status={}", slug, proxy_url_str, res.status());
-                if res.status().is_success() {
-                    let content_type = res.headers().get(reqwest::header::CONTENT_TYPE)
-                        .and_then(|h| h.to_str().ok())
-                        .map(|s| s.to_string());
-                    let text_data = res.text().await?;
-
-                    if is_internet_baik_block_page(&text_data) {
-                        warn!("[ProxyListOnly] Blocked by internetbaik (proxy {}), trying next proxy", proxy_url_str);
-                        continue;
-                    }
-                    return Ok(FetchResult { data: text_data, content_type });
-                }
-            },
-            Ok(Err(e)) => {
-                last_error = Some(AppError::ReqwestError(e));
-                warn!("[ProxyListOnly] Proxy fetch failed for {} via {}: {:?}", slug, proxy_url_str, last_error);
-            },
-            Err(_) => {
-                last_error = Some(AppError::TimeoutError("Proxy request timed out".to_string()));
-                warn!("[ProxyListOnly] Proxy fetch timed out for {} via {}", slug, proxy_url_str);
-            }
-        }
-    }
-
-    error!("Failed to fetch from all proxies for {}: {:?}", slug, last_error);
-
-    // Fallback: try scrapeCroxyProxy as last resort
-    info!("Trying scrapeCroxyProxy fallback...");
+    // Only use scrapeCroxyProxy
     match scrape_croxy_proxy_cached(slug).await {
         Ok(html) => {
-            info!("scrapeCroxyProxy fallback successful.");
+            info!("scrapeCroxyProxy successful for {}", slug);
             Ok(FetchResult { data: html, content_type: Some("text/html".to_string()) })
         },
         Err(e) => {
-            error!("scrapeCroxyProxy fallback failed: {:?}", e);
-            Err(last_error.unwrap_or_else(|| AppError::Other("Failed to fetch from all proxies and scrapeCroxyProxy".to_string())))
+            error!("scrapeCroxyProxy failed for {}: {:?}", slug, e);
+            Err(AppError::Other(format!("Failed to fetch using croxy proxy: {:?}", e)))
         }
     }
 }
