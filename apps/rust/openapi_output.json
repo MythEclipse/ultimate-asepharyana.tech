@@ -213,6 +213,18 @@
           "anime"
         ],
         "operationId": "anime_search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search parameter for filtering results",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Searches for anime based on query parameters.",
@@ -399,6 +411,18 @@
           "anime2"
         ],
         "operationId": "anime2_search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search parameter for filtering results",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Searches for anime2 based on query parameters.",
@@ -429,6 +453,28 @@
           "compress"
         ],
         "operationId": "compress",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "description": "Parameter for resource identification",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Parameter for resource identification",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Compress images and videos from URL",
@@ -489,6 +535,18 @@
           "komik"
         ],
         "operationId": "komik_chapter",
+        "parameters": [
+          {
+            "name": "chapter_url",
+            "in": "query",
+            "description": "Chapter-specific identifier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Retrieves chapter data for a specific komik chapter.",
@@ -519,6 +577,18 @@
           "komik"
         ],
         "operationId": "komik_detail",
+        "parameters": [
+          {
+            "name": "komik_id",
+            "in": "query",
+            "description": "Comic/manga identifier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Retrieves details for a specific komik by ID.",
@@ -549,6 +619,20 @@
           "komik"
         ],
         "operationId": "komik_manga_slug",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination (starts from 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 1
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the komik/manga endpoint.",
@@ -579,6 +663,20 @@
           "komik"
         ],
         "operationId": "komik_manhua_slug",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination (starts from 1)",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 1
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the komik/manhua endpoint.",
@@ -609,6 +707,20 @@
           "komik"
         ],
         "operationId": "komik_manhwa_slug",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination (starts from 1)",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 1
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the komik/manhwa endpoint.",
@@ -639,6 +751,30 @@
           "komik"
         ],
         "operationId": "komik_search",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "Search parameter for filtering results",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination (starts from 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 1
+          }
+        ],
         "responses": {
           "200": {
             "description": "Searches for komik based on query parameters.",
@@ -669,6 +805,18 @@
           "proxy"
         ],
         "operationId": "proxy",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "description": "Parameter for resource identification",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "sample_value"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the proxy endpoint.",

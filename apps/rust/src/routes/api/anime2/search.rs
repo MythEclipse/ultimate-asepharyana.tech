@@ -56,6 +56,9 @@ pub struct SearchQuery {
 
 #[utoipa::path(
     get,
+    params(
+        ("q" = Option<String>, Query, description = "Search parameter for filtering results", example = "sample_value")
+    ),
     path = "/api/anime2/search",
     tag = "anime2",
     operation_id = "anime2_search",

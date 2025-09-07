@@ -78,12 +78,12 @@ async fn fetch_with_retry(
 
 #[utoipa::path(
     get,
+    params(
+        ("chapter_url" = Option<String>, Query, description = "Chapter-specific identifier", example = "sample_value")
+    ),
     path = "/api/komik/chapter",
     tag = "komik",
     operation_id = "komik_chapter",
-    params(
-        ("chapter_url" = Option<String>, Query, description = "URL-friendly identifier for the chapter (typically the chapter slug or URL path)")
-    ),
     responses(
         (status = 200, description = "Retrieves chapter data for a specific komik chapter.", body = ChapterResponse),
         (status = 500, description = "Internal Server Error", body = String)
@@ -197,5 +197,5 @@ async fn fetch_and_parse_chapter(
 /// Handles GET requests for the komik/chapter endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(chapter))
+    router.route(ENDPOINT_PATH, get(chapter))
 }

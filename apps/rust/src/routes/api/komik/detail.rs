@@ -119,12 +119,12 @@ async fn fetch_with_retry(
 
 #[utoipa::path(
     get,
+    params(
+        ("komik_id" = Option<String>, Query, description = "Comic/manga identifier", example = "sample_value")
+    ),
     path = "/api/komik/detail",
     tag = "komik",
     operation_id = "komik_detail",
-    params(
-        ("komik_id" = Option<String>, Query, description = "The unique identifier for the komik (typically the slug or URL path)")
-    ),
     responses(
         (status = 200, description = "Retrieves details for a specific komik by ID.", body = DetailData),
         (status = 500, description = "Internal Server Error", body = String)
@@ -337,5 +337,5 @@ async fn fetch_and_parse_detail(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(detail))
+    router.route(ENDPOINT_PATH, get(detail))
 }

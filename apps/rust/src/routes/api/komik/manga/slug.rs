@@ -105,12 +105,12 @@ async fn fetch_with_retry(
 
 #[utoipa::path(
     get,
+    params(
+        ("page" = Option<u32>, Query, description = "Page number for pagination (starts from 1)", example = 1, minimum = 1)
+    ),
     path = "/api/komik/manga",
     tag = "komik",
     operation_id = "komik_manga_slug",
-    params(
-        ("page" = Option<u32>, Query, description = "Page number for pagination (defaults to 1)")
-    ),
     responses(
         (status = 200, description = "Handles GET requests for the komik/manga endpoint.", body = MangaResponse),
         (status = 500, description = "Internal Server Error", body = String)
@@ -286,5 +286,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manga endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(list))
+    router.route(ENDPOINT_PATH, get(list))
 }

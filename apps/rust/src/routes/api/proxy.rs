@@ -39,6 +39,9 @@ pub struct ErrorResponse {
 
 #[utoipa::path(
     get,
+    params(
+        ("url" = Option<String>, Query, description = "Parameter for resource identification", example = "sample_value")
+    ),
     path = "/api/proxy",
     tag = "proxy",
     operation_id = "proxy",

@@ -102,13 +102,13 @@ async fn fetch_with_retry(
 
 #[utoipa::path(
     get,
+    params(
+        ("query" = Option<String>, Query, description = "Search parameter for filtering results", example = "sample_value"),
+        ("page" = Option<u32>, Query, description = "Page number for pagination (starts from 1)", example = 1, minimum = 1)
+    ),
     path = "/api/komik/search",
     tag = "komik",
     operation_id = "komik_search",
-    params(
-        ("query" = Option<String>, Query, description = "Search query string to filter komik results"),
-        ("page" = Option<u32>, Query, description = "Page number for pagination (defaults to 1)")
-    ),
     responses(
         (status = 200, description = "Searches for komik based on query parameters.", body = SearchResponse),
         (status = 500, description = "Internal Server Error", body = String)
@@ -323,5 +323,5 @@ fn parse_pagination(document: &Html, current_page: u32) -> Pagination {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(search))
+    router.route(ENDPOINT_PATH, get(search))
 }

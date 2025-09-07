@@ -223,6 +223,10 @@ async fn compress_video(
 
 #[utoipa::path(
     get,
+    params(
+        ("url" = String, Query, description = "Parameter for resource identification", example = "sample_value"),
+        ("size" = String, Query, description = "Parameter for resource identification", example = "sample_value")
+    ),
     path = "/api/compress",
     tag = "compress",
     operation_id = "compress",

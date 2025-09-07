@@ -12,6 +12,37 @@ use crate::build_utils::path_utils::{
   sanitize_tag,
 };
 use crate::build_utils::handler_template::generate_handler_template;
+// Function to parse Query struct and extract query parameters
+fn parse_query_params(content: &str) -> Vec<(String, String)> {
+    let mut query_params = Vec::new();
+
+    // Find Query struct usage in function signature
+    let query_regex = Regex::new(r"Query\((\w+)\):\s*Query<(\w+)>").unwrap();
+    if let Some(cap) = query_regex.captures(content) {
+        let param_name = &cap[1];
+        let struct_name = &cap[2];
+
+        // Find the struct definition line
+        let struct_line_pattern = format!("struct {} {{", struct_name);
+        if let Some(start_pos) = content.find(&struct_line_pattern) {
+            // Find the end of the struct
+            let struct_content = &content[start_pos..];
+            if let Some(end_pos) = struct_content.find('}') {
+                let struct_body = &struct_content[struct_line_pattern.len()..end_pos];
+
+                // Parse fields from struct body
+                let field_regex = Regex::new(r"pub\s+(\w+):\s*([^,]+),?").unwrap();
+                for field_cap in field_regex.captures_iter(struct_body) {
+                    let field_name = field_cap[1].to_string();
+                    let field_type = field_cap[2].trim().to_string();
+                    query_params.push((field_name, field_type));
+                }
+            }
+        }
+    }
+
+    query_params
+}
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -80,7 +111,12 @@ pub struct {} {{
 }
 
 // Generate detailed parameter documentation based on parameter name and context
-fn generate_detailed_param_doc(name: &str, typ: &str, route_path: &str) -> String {
+fn generate_detailed_param_doc(
+  name: &str,
+  typ: &str,
+  route_path: &str,
+  param_type: &str
+) -> String {
   let description = match name {
     "id" => format!("Unique identifier for the resource (UUID format recommended)"),
     "slug" =>
@@ -127,7 +163,7 @@ fn generate_detailed_param_doc(name: &str, typ: &str, route_path: &str) -> Strin
       } else {
         r#"example = "naruto-shippuden-episode-1""#
       }
-    },
+    }
     "page" => r#"example = 1, minimum = 1"#,
     "limit" => r#"example = 20, minimum = 1, maximum = 100"#,
     "offset" => r#"example = 0, minimum = 0"#,
@@ -138,7 +174,7 @@ fn generate_detailed_param_doc(name: &str, typ: &str, route_path: &str) -> Strin
     _ => r#"example = "sample_value""#,
   };
 
-  format!(r#"("{}" = {}, Path, description = "{}", {})"#, name, typ, description, example)
+  format!(r#"("{}" = {}, {}, description = "{}", {})"#, name, typ, param_type, description, example)
 }
 
 // Enhanced function to generate detailed utoipa macro with comprehensive parameter documentation
@@ -149,7 +185,8 @@ fn generate_utoipa_macro(
   response_body: &str,
   route_description: &str,
   operation_id: &str,
-  path_params: &[(String, String)]
+  path_params: &[(String, String)],
+  query_params: &[(String, String)]
 ) -> String {
   let method_ident = match http_method.to_uppercase().as_str() {
     "POST" => "post",
@@ -162,14 +199,26 @@ fn generate_utoipa_macro(
     _ => "get", // Default to GET
   };
 
-  let params_str = if path_params.is_empty() {
+  let params_str = if path_params.is_empty() && query_params.is_empty() {
     String::new()
   } else {
-    let params: Vec<String> = path_params
-      .iter()
-      .map(|(name, typ)| generate_detailed_param_doc(name, typ, route_path))
-      .collect();
-    format!(",\n    params(\n        {}\n    )", params.join(",\n        "))
+    let mut params: Vec<String> = Vec::new();
+
+    // Add path parameters
+    for (name, typ) in path_params {
+      params.push(generate_detailed_param_doc(name, typ, route_path, "Path"));
+    }
+
+    // Add query parameters
+    for (name, typ) in query_params {
+      params.push(generate_detailed_param_doc(name, typ, route_path, "Query"));
+    }
+
+    if params.is_empty() {
+      String::new()
+    } else {
+      format!(",\n    params(\n        {}\n    )", params.join(",\n        "))
+    }
   };
 
   format!(
@@ -420,10 +469,15 @@ pub fn update_handler_file(
   } else {
     extract_path_params(&axum_path)
   };
+
+  // Parse query parameters from the handler content
+  let query_params = parse_query_params(&content);
+
   println!("cargo:warning=File: {:?}", path);
   println!("cargo:warning=axum_path: {}", axum_path);
   println!("cargo:warning=route_path: {}", route_path);
   println!("cargo:warning=path_params: {:?}", path_params);
+  println!("cargo:warning=query_params: {:?}", query_params);
 
   let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
@@ -432,7 +486,8 @@ pub fn update_handler_file(
     &sanitized_response,
     &route_description,
     &operation_id,
-    &path_params
+    &path_params,
+    &query_params
   );
 
   println!("cargo:warning=Generated utoipa macro:");
@@ -450,7 +505,11 @@ pub fn update_handler_file(
     // Find the end by looking for the closing )] pattern
     if let Some(end_marker_pos) = content[start_pos..].find(")]") {
       let end_pos = start_pos + end_marker_pos + 2; // +2 to include the )]
-      println!("cargo:warning=Found closing )] at position {}, end_pos = {}", start_pos + end_marker_pos, end_pos);
+      println!(
+        "cargo:warning=Found closing )] at position {}, end_pos = {}",
+        start_pos + end_marker_pos,
+        end_pos
+      );
       println!("cargo:warning=Replacing utoipa macro from {} to {}", start_pos, end_pos);
       let before = &content[..start_pos];
       let after = &content[end_pos..];

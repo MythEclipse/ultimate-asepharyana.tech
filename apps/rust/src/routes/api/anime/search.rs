@@ -73,6 +73,9 @@ lazy_static! {
 
 #[utoipa::path(
     get,
+    params(
+        ("q" = Option<String>, Query, description = "Search parameter for filtering results", example = "sample_value")
+    ),
     path = "/api/anime/search",
     tag = "anime",
     operation_id = "anime_search",
