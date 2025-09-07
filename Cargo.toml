@@ -37,7 +37,7 @@ log = "0.4"
 
 # --- DATABASE & PERSISTENCE ---
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
-redis = { version = "0.32.5", features = ["tokio-comp"] }
+redis = { version = "0.32.5", features = ["tokio-native-tls-comp", "tls"] }
 
 # --- OPENAPI DOCUMENTATION (FIXED VERSIONS) ---
 # Menggunakan versi 4.x dengan fitur 'axum_extras' yang benar untuk axum v0.7

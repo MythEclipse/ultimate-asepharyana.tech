@@ -3,8 +3,8 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use reqwest;
 use scraper::{ Html, Selector };
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -89,23 +89,8 @@ async fn fetch_ongoing_anime_page(
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
-  let mut client_builder = reqwest::Client
-    ::builder()
-    .user_agent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    );
-
-  // Add proxy support if PROXY_URL environment variable is set
-  if let Ok(proxy_url) = std::env::var("PROXY_URL") {
-    if !proxy_url.is_empty() {
-      let proxy = reqwest::Proxy::all(&proxy_url)?;
-      client_builder = client_builder.proxy(proxy);
-    }
-  }
-
-  let client = client_builder.build()?;
-  let response = client.get(&url).send().await?;
-  let html = response.text().await?;
+  let response = fetch_with_proxy(&url).await?;
+  let html = response.data;
   let document = Html::parse_document(&html);
 
   let venz_selector = Selector::parse(".venz ul li").unwrap();

@@ -3,8 +3,8 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use reqwest;
 use scraper::{ Html, Selector };
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -47,10 +47,8 @@ pub struct ListResponse {
 }
 
 async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
-  let client = reqwest::Client::new();
-  let response = client.get(url).send().await?;
-  let html = response.text().await?;
-  Ok(html)
+  let response = fetch_with_proxy(url).await?;
+  Ok(response.data)
 }
 
 fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {

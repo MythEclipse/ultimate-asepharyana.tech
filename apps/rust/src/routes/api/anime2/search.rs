@@ -3,8 +3,8 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use reqwest;
 use scraper::{ Html, Selector };
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -91,9 +91,8 @@ pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
 }
 
 async fn fetch_and_parse_search(url: &str) -> Result<SearchResponse, Box<dyn std::error::Error>> {
-  let client = reqwest::Client::new();
-  let response = client.get(url).send().await?;
-  let html = response.text().await?;
+  let response = fetch_with_proxy(url).await?;
+  let html = response.data;
   let document = Html::parse_document(&html);
 
   let item_selector = Selector::parse(".listupd article.bs").unwrap();

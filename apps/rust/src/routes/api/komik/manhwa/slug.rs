@@ -1,6 +1,6 @@
-//! Handler for the komik manhwa slug endpoint.
+//use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manhwa slug endpoint.
 
-use axum::{extract::Path,  extract::Query, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::Path, extract::Query, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -13,7 +13,7 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/komik/manhwa/{slug}";
+pub const ENDPOINT_PATH: &str = "/api/komik/manhwa";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhwa endpoint.";
 #[allow(dead_code)]
@@ -59,7 +59,8 @@ pub struct QueryParams {
   get,
   path = "/api/komik/manhwa",
   tag = "komik",
-  operation_id = "komik_manhwa_slug",
+  operation_id = "komik_manhwa_list",
+  params(("page" = u32, Query, description = "Page number")),
   responses(
     (
       status = 200,
@@ -69,7 +70,7 @@ pub struct QueryParams {
     (status = 500, description = "Internal Server Error", body = String)
   )
 )]
-pub async fn slug(Query(params): Query<QueryParams>) -> impl IntoResponse {
+pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
   let page = params.page;
 
   let base_url = CONFIG_MAP.get("KOMIK_BASE_URL")
@@ -233,5 +234,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manhwa/slug endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(list))
 }

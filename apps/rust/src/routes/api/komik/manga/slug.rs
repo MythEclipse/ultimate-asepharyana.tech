@@ -1,19 +1,19 @@
-//! Handler for the komik manga slug endpoint.
+//use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manga slug endpoint.
 
-use axum::{extract::Path,  extract::Query, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::Path, extract::Query, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use reqwest;
 use scraper::{ Html, Selector };
 use regex::Regex;
 use rust_lib::config::CONFIG_MAP;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
 #[allow(dead_code)]
-pub const ENDPOINT_PATH: &str = "/api/komik/manga/{slug}";
+pub const ENDPOINT_PATH: &str = "/api/komik/manga";
 #[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manga endpoint.";
 #[allow(dead_code)]
@@ -59,7 +59,10 @@ pub struct QueryParams {
   get,
   path = "/api/komik/manga",
   tag = "komik",
-  operation_id = "komik_manga_slug",
+  operation_id = "komik_manga_list",
+  params(
+    ("page" = Option<u32>, Query, description = "Page number")
+  ),
   responses(
     (
       status = 200,
@@ -69,7 +72,7 @@ pub struct QueryParams {
     (status = 500, description = "Internal Server Error", body = String)
   )
 )]
-pub async fn slug(Query(params): Query<QueryParams>) -> impl IntoResponse {
+pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
   let page = params.page.unwrap_or(1);
 
   let base_url = CONFIG_MAP.get("KOMIK_BASE_URL")
@@ -96,9 +99,8 @@ pub async fn slug(Query(params): Query<QueryParams>) -> impl IntoResponse {
 }
 
 async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::error::Error>> {
-  let client = reqwest::Client::new();
-  let response = client.get(url).send().await?;
-  let html = response.text().await?;
+  let response = fetch_with_proxy(url).await?;
+  let html = response.data;
   let document = Html::parse_document(&html);
 
   let animposx_selector = Selector::parse(".animposx").unwrap();
@@ -234,5 +236,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manga endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router.route(ENDPOINT_PATH, get(list))
 }

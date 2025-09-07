@@ -59,9 +59,9 @@ paths(
               crate::routes::api::drivepng::drivepng,
               crate::routes::api::komik::chapter::chapter,
               crate::routes::api::komik::detail::detail,
-              crate::routes::api::komik::manga::slug::slug,
-              crate::routes::api::komik::manhua::slug::slug,
-              crate::routes::api::komik::manhwa::slug::slug,
+              crate::routes::api::komik::manga::slug::list,
+              crate::routes::api::komik::manhua::slug::list,
+              crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::search::search,
               crate::routes::api::proxy::proxy
           ),
