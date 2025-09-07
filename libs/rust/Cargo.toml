@@ -39,4 +39,5 @@ urlencoding = { workspace = true }
 oxidize-pdf = { workspace = true }
 mime_guess = { workspace = true }
 headless_chrome = "1.0"
+chromiumoxide = { version = "0.5", features = ["tokio-runtime"] }
 [dev-dependencies]
