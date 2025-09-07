@@ -16,7 +16,7 @@ pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves chapter data for a specific komik chapter.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_chapter";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<ChapterResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<ChapterData>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct ChapterData {
@@ -46,9 +46,9 @@ pub struct ChapterQuery {
     (
       status = 200,
       description = "Retrieves chapter data for a specific komik chapter.",
-      body = ChapterResponse,
+      body = ChapterData,
     ),
-    (status = 500, description = "Internal Server Error", body = String)
+    (status = 500, description = "Internal Server Error", body = ChapterData)
   )
 )]
 pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
@@ -57,37 +57,28 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
   match get_cached_komik_base_url(false).await {
     Ok(base_url) => {
       match fetch_and_parse_chapter(&chapter_url, &base_url).await {
-        Ok(data) => {
-          info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
-          Json(ChapterResponse {
-            message: "Chapter data retrieved successfully".to_string(),
-            data,
-          })
-        }
-        Err(e) => {
-          error!("[komik][chapter] Error parsing chapter for {}: {:?}", chapter_url, e);
-          Json(ChapterResponse {
-            message: "Failed to fetch chapter data".to_string(),
-            data: ChapterData {
-              title: "".to_string(),
-              next_chapter_id: "".to_string(),
-              prev_chapter_id: "".to_string(),
-              images: vec![],
-            },
-          })
-        }
+       Ok(data) => {
+         info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
+         Json(data)
+       }
+       Err(e) => {
+         error!("[komik][chapter] Error parsing chapter for {}: {:?}", chapter_url, e);
+         Json(ChapterData {
+           title: "".to_string(),
+           next_chapter_id: "".to_string(),
+           prev_chapter_id: "".to_string(),
+           images: vec![],
+         })
+       }
       }
     }
     Err(e) => {
       error!("[komik][chapter] Error getting base URL: {:?}", e);
-      Json(ChapterResponse {
-        message: "Failed to get base URL".to_string(),
-        data: ChapterData {
-          title: "".to_string(),
-          next_chapter_id: "".to_string(),
-          prev_chapter_id: "".to_string(),
-          images: vec![],
-        },
+      Json(ChapterData {
+        title: "".to_string(),
+        next_chapter_id: "".to_string(),
+        prev_chapter_id: "".to_string(),
+        images: vec![],
       })
     }
   }
