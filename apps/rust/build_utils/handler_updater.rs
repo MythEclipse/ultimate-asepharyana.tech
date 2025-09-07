@@ -409,10 +409,11 @@ pub fn update_handler_file(
   } else {
     extract_path_params(&axum_path)
   };
-  println!("cargo:info=File: {:?}", path);
-  println!("cargo:info=axum_path: {}", axum_path);
-  println!("cargo:info=route_path: {}", route_path);
-  println!("cargo:info=path_params: {:?}", path_params);
+  println!("cargo:warning=File: {:?}", path);
+  println!("cargo:warning=axum_path: {}", axum_path);
+  println!("cargo:warning=route_path: {}", route_path);
+  println!("cargo:warning=path_params: {:?}", path_params);
+
   let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
     &openapi_route_path,
@@ -423,36 +424,26 @@ pub fn update_handler_file(
     &path_params
   );
 
-  // Update or add utoipa macro - use a more robust approach
-  let utoipa_start = content.find("#[utoipa::path(");
-  let utoipa_end = if let Some(start) = utoipa_start {
-    // Find the closing bracket by counting parentheses
-    let mut paren_count = 0;
-    let mut end_pos = start;
-    for (i, ch) in content[start..].chars().enumerate() {
-      match ch {
-        '(' => paren_count += 1,
-        ')' => {
-          paren_count -= 1;
-          if paren_count == 0 {
-            end_pos = start + i + 1;
-            break;
-          }
-        }
-        _ => {}
-      }
-    }
-    Some(end_pos)
-  } else {
-    None
-  };
+  println!("cargo:warning=Generated utoipa macro:");
+  println!("cargo:warning={}", new_utoipa_macro);
 
-  if let (Some(start), Some(end)) = (utoipa_start, utoipa_end) {
-    // Replace existing utoipa macro
-    let before = &content[..start];
-    let after = &content[end..];
-    content = format!("{}{}{}", before, new_utoipa_macro, after);
+  // Find and replace utoipa macro manually
+  if let Some(start_pos) = content.find("#[utoipa::path(") {
+    println!("cargo:warning=Found utoipa macro at position {}", start_pos);
+
+    // Find the end by looking for the closing )] pattern
+    if let Some(end_marker_pos) = content[start_pos..].find(")]") {
+      let end_pos = start_pos + end_marker_pos + 2; // +2 to include the )]
+      println!("cargo:warning=Found closing )] at position {}, end_pos = {}", start_pos + end_marker_pos, end_pos);
+      println!("cargo:warning=Replacing utoipa macro from {} to {}", start_pos, end_pos);
+      let before = &content[..start_pos];
+      let after = &content[end_pos..];
+      content = format!("{}{}{}", before, new_utoipa_macro, after);
+    } else {
+      println!("cargo:warning=Could not find closing )] pattern");
+    }
   } else {
+    println!("cargo:warning=No utoipa macro found, adding new one");
     // Add new utoipa macro before the function
     let fn_regex = Regex::new(r"(pub async fn \w+)").unwrap();
     if let Some(cap) = fn_regex.find(&content) {
