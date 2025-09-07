@@ -31,7 +31,7 @@ pub struct BrowserConfig {
 impl Default for BrowserConfig {
     fn default() -> Self {
         Self {
-            browser_instances: 2,
+            browser_instances: 1,
             max_concurrent_tabs: 10,
             max_tabs_per_browser: 5,
             chrome_args: vec![

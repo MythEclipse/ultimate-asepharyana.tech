@@ -1,12 +1,11 @@
-// CroxyProxy scraping and caching logic using headless_chrome and Redis.
-// Updated for latest headless_chrome API.
+// CroxyProxy scraping and caching logic using shared headless_chrome library and Redis.
+// Updated to use shared browser instance.
 
-use headless_chrome::Browser;
-use std::time::Instant;
+use crate::headless_chrome::{BrowserConfig, HeadlessChrome};
+use std::time::{Duration, Instant};
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
-use rand::prelude::IndexedRandom;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";

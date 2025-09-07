@@ -8,9 +8,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
     tracing_subscriber::fmt::init();
 
-    // Create browser configuration
+    // Create browser configuration with single shared browser instance
     let config = BrowserConfig {
-        browser_instances: 2,
+        browser_instances: 1, // Single shared browser instance
         max_concurrent_tabs: 10,
         max_tabs_per_browser: 5,
         chrome_args: vec![
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Create headless Chrome instance
-    let chrome = HeadlessChrome::new(config).await?;
+    let chrome = HeadlessChrome::new(config.clone()).await?;
     tracing::info!("Headless Chrome initialized");
 
     // Example 1: Simple navigation and content retrieval
@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let json_data = tab2.evaluate_script("JSON.stringify(document.body.innerText)").await?;
     tracing::info!("JSON data: {}", json_data);
 
-    // Example 3: Concurrent operations
+    // Example 3: Concurrent operations using shared global browser
     let urls = vec![
         "https://httpbin.org/get",
         "https://httpbin.org/user-agent",
@@ -56,9 +56,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut handles = vec![];
 
     for url in urls {
-        let chrome_clone = &chrome;
+        let config_clone = config.clone();
         let handle = tokio::spawn(async move {
-            let tab = chrome_clone.get_tab_manager().await?;
+            // Create a new HeadlessChrome instance that shares the global browser
+            let chrome_instance = HeadlessChrome::new(config_clone).await?;
+            let tab = chrome_instance.get_tab_manager().await?;
             tab.navigate(url).await?;
             let content = tab.get_content().await?;
             Ok::<_, Box<dyn std::error::Error + Send + Sync>>((url.to_string(), content.len()))
@@ -81,9 +83,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Get pool statistics
-    let stats = chrome.pool.get_stats().await;
-    tracing::info!("Pool stats: {:?}", stats);
+    // Get global shared browser statistics
+    let stats = chrome.get_stats().await;
+    tracing::info!("Global browser stats: {:?}", stats);
 
     tracing::info!("Example completed successfully");
     Ok(())

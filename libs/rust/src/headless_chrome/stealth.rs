@@ -54,11 +54,39 @@ pub struct ViewportConfig {
 #[derive(Clone)]
 pub struct StealthManager {
     config: StealthConfig,
+    selected_user_agent: Option<String>,
+    selected_viewport: Option<ViewportConfig>,
+    selected_delay: u64,
 }
 
 impl StealthManager {
     pub fn new(config: StealthConfig) -> Self {
-        Self { config }
+        // Pre-select random values to avoid Send issues in async contexts
+        let selected_user_agent = if config.user_agents.is_empty() {
+            None
+        } else {
+            let mut rng = rand::rng();
+            Some(config.user_agents[rng.random_range(0..config.user_agents.len())].clone())
+        };
+
+        let selected_viewport = if config.viewports.is_empty() {
+            None
+        } else {
+            let mut rng = rand::rng();
+            Some(config.viewports[rng.random_range(0..config.viewports.len())].clone())
+        };
+
+        let selected_delay = {
+            let mut rng = rand::rng();
+            rng.random_range(config.random_delay_range.0..=config.random_delay_range.1)
+        };
+
+        Self {
+            config,
+            selected_user_agent,
+            selected_viewport,
+            selected_delay,
+        }
     }
 
     /// Apply all stealth features to a page
@@ -72,40 +100,34 @@ impl StealthManager {
         Ok(())
     }
 
-    /// Set a random User-Agent
+    /// Set the pre-selected User-Agent
     async fn set_random_user_agent(&self, page: &Page) -> BrowserResult<()> {
-        if self.config.user_agents.is_empty() {
-            return Ok(());
+        if let Some(user_agent) = &self.selected_user_agent {
+            page.evaluate(format!(
+                "Object.defineProperty(navigator, 'userAgent', {{value: '{}'}})",
+                user_agent
+            )).await?;
+
+            tracing::debug!("Set User-Agent: {}", user_agent);
+            Ok(())
+        } else {
+            Ok(())
         }
-
-        let mut rng = rand::rng();
-        let user_agent = &self.config.user_agents[rng.random_range(0..self.config.user_agents.len())];
-
-        page.evaluate(format!(
-            "Object.defineProperty(navigator, 'userAgent', {{value: '{}'}})",
-            user_agent
-        )).await?;
-
-        tracing::debug!("Set User-Agent: {}", user_agent);
-        Ok(())
     }
 
-    /// Set a random viewport
+    /// Set the pre-selected viewport
     async fn set_random_viewport(&self, page: &Page) -> BrowserResult<()> {
-        if self.config.viewports.is_empty() {
-            return Ok(());
+        if let Some(viewport) = &self.selected_viewport {
+            page.evaluate(format!(
+                "Object.defineProperty(screen, 'width', {{value: {}}}); Object.defineProperty(screen, 'height', {{value: {}}})",
+                viewport.width, viewport.height
+            )).await?;
+
+            tracing::debug!("Set viewport: {}x{}", viewport.width, viewport.height);
+            Ok(())
+        } else {
+            Ok(())
         }
-
-        let mut rng = rand::rng();
-        let viewport = &self.config.viewports[rng.random_range(0..self.config.viewports.len())];
-
-        page.evaluate(format!(
-            "Object.defineProperty(screen, 'width', {{value: {}}}); Object.defineProperty(screen, 'height', {{value: {}}})",
-            viewport.width, viewport.height
-        )).await?;
-
-        tracing::debug!("Set viewport: {}x{}", viewport.width, viewport.height);
-        Ok(())
     }
 
     /// Disable WebRTC
@@ -172,11 +194,9 @@ impl StealthManager {
         Ok(())
     }
 
-    /// Add random delay
+    /// Add pre-selected delay
     async fn add_random_delay(&self) {
-        let mut rng = rand::rng();
-        let delay = rng.random_range(self.config.random_delay_range.0..=self.config.random_delay_range.1);
-        tokio::time::sleep(Duration::from_millis(delay)).await;
-        tracing::debug!("Added random delay: {}ms", delay);
+        tokio::time::sleep(Duration::from_millis(self.selected_delay)).await;
+        tracing::debug!("Added random delay: {}ms", self.selected_delay);
     }
 }

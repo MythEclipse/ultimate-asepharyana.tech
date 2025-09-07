@@ -1,11 +1,11 @@
 //! Headless Chrome Library
 //!
 //! A reusable, async, thread-safe headless Chrome library with:
-//! - Browser pool with round-robin load balancing
-//! - Reusable tabs with semaphore-based pooling
+//! - Global shared browser instance across all users
+//! - On-demand tab creation in the shared browser
 //! - Retry and timeout mechanisms for Cloudflare challenges
 //! - Stealth features (User-Agent, viewport, random delays)
-//! - Proxy support per browser instance
+//! - Proxy support for the shared browser instance
 //! - Comprehensive logging
 
 pub mod browser_pool;
@@ -15,7 +15,7 @@ pub mod stealth;
 pub mod tab_manager;
 
 pub use browser_pool::BrowserPool;
-pub use config::BrowserConfig;
+pub use config::{BrowserConfig, LogLevel};
 pub use error::BrowserError;
 pub use stealth::StealthConfig;
 pub use tab_manager::TabManager;
@@ -44,5 +44,10 @@ impl HeadlessChrome {
             .map_err(|e| BrowserError::SemaphoreError(e.to_string()))?;
 
         self.pool.get_tab_manager().await
+    }
+
+    /// Get statistics about the global shared browser
+    pub async fn get_stats(&self) -> browser_pool::PoolStats {
+        self.pool.get_stats().await
     }
 }
