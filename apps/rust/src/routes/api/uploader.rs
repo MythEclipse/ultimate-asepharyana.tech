@@ -126,7 +126,7 @@ pub async fn download_file(Path(file_name): Path<String>) -> Result<
 
   let response = client
     .get(&url)
-    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0")
     .send().await
     .map_err(|e| {
       (
@@ -205,7 +205,7 @@ async fn upload_to_pomf2(
     .multipart(form)
     .header("Accept", "*/*")
     .header("Origin", POMF2_URL)
-    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0")
     .timeout(std::time::Duration::from_secs(600))
     .send().await?;
 

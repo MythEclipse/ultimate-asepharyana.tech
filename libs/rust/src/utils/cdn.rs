@@ -29,7 +29,7 @@ pub async fn ryzen_cdn(buffer: &[u8], filename: Option<&str>) -> Result<String, 
     // Send request
     let response = client
         .post("https://api.ryzumi.vip/api/uploader/ryzencdn")
-        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0")
         .header("Accept", "application/json")
         .multipart(form)
         .send()
