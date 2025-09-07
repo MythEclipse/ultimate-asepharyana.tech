@@ -153,7 +153,7 @@ pub fn update_handler_file(
   module_path_prefix: &str,
   root_api_path: &Path
 ) -> Result<Option<HandlerRouteInfo>> {
-  let content = fs
+  let mut content = fs
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
