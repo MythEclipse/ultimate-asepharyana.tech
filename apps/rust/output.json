@@ -1,0 +1,1633 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Freefire",
+    "description": "api gratis",
+    "license": {
+      "name": ""
+    },
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/api/anime": {
+      "get": {
+        "tags": [
+          "anime"
+        ],
+        "operationId": "anime_index",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimeResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime/complete-anime/{slug}": {
+      "get": {
+        "tags": [
+          "anime"
+        ],
+        "operationId": "anime_complete_anime_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime/complete-anime/slug endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime/detail/{slug}": {
+      "get": {
+        "tags": [
+          "anime"
+        ],
+        "operationId": "anime_detail_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "naruto-shippuden-episode-1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime/detail/{slug} endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime/full/{slug}": {
+      "get": {
+        "tags": [
+          "anime"
+        ],
+        "operationId": "anime_full_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "naruto-shippuden-episode-1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime/full/{slug} endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FullResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime/ongoing-anime/{slug}": {
+      "get": {
+        "tags": [
+          "anime"
+        ],
+        "operationId": "anime_ongoing_anime_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime/ongoing-anime/{slug} endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngoingAnimeResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime/search": {
+      "get": {
+        "tags": [
+          "anime"
+        ],
+        "operationId": "anime_search",
+        "responses": {
+          "200": {
+            "description": "Searches for anime based on query parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime2": {
+      "get": {
+        "tags": [
+          "anime2"
+        ],
+        "operationId": "anime2_index",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime2 endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Anime2Response"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime2/complete-anime/{slug}": {
+      "get": {
+        "tags": [
+          "anime2"
+        ],
+        "operationId": "anime2_complete_anime_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime2/complete-anime/slug endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime2/detail/{slug}": {
+      "get": {
+        "tags": [
+          "anime2"
+        ],
+        "operationId": "anime2_detail_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "naruto-shippuden-episode-1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime2/detail/{slug} endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime2/ongoing-anime/{slug}": {
+      "get": {
+        "tags": [
+          "anime2"
+        ],
+        "operationId": "anime2_ongoing_anime_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the anime2/ongoing-anime/{slug} endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngoingAnimeResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime2/search": {
+      "get": {
+        "tags": [
+          "anime2"
+        ],
+        "operationId": "anime2_search",
+        "responses": {
+          "200": {
+            "description": "Searches for anime2 based on query parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compress": {
+      "get": {
+        "tags": [
+          "compress"
+        ],
+        "operationId": "compress",
+        "responses": {
+          "200": {
+            "description": "Compress images and videos from URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompressResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/drivepng": {
+      "get": {
+        "tags": [
+          "drivepng"
+        ],
+        "operationId": "drivepng",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the drivepng endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/komik/chapter": {
+      "get": {
+        "tags": [
+          "komik"
+        ],
+        "operationId": "komik_chapter",
+        "responses": {
+          "200": {
+            "description": "Retrieves chapter data for a specific komik chapter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/komik/detail": {
+      "get": {
+        "tags": [
+          "komik"
+        ],
+        "operationId": "komik_detail",
+        "responses": {
+          "200": {
+            "description": "Retrieves details for a specific komik by ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailData"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/komik/manga": {
+      "get": {
+        "tags": [
+          "komik"
+        ],
+        "operationId": "komik_manga_slug",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the komik/manga endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MangaResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/komik/manhua": {
+      "get": {
+        "tags": [
+          "komik"
+        ],
+        "operationId": "komik_manhua_slug",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the komik/manhua endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManhuaResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/komik/manhwa": {
+      "get": {
+        "tags": [
+          "komik"
+        ],
+        "operationId": "komik_manhwa_slug",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the komik/manhwa endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManhwaResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/komik/search": {
+      "get": {
+        "tags": [
+          "komik"
+        ],
+        "operationId": "komik_search",
+        "responses": {
+          "200": {
+            "description": "Searches for komik based on query parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proxy": {
+      "get": {
+        "tags": [
+          "proxy"
+        ],
+        "operationId": "proxy",
+        "responses": {
+          "200": {
+            "description": "Handles GET requests for the proxy endpoint.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Anime2Data": {
+        "type": "object",
+        "required": [
+          "ongoing_anime",
+          "complete_anime"
+        ],
+        "properties": {
+          "complete_anime": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompleteAnimeItem"
+            }
+          },
+          "ongoing_anime": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OngoingAnimeItem"
+            }
+          }
+        }
+      },
+      "Anime2Response": {
+        "type": "object",
+        "required": [
+          "status",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Anime2Data"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "AnimeData": {
+        "type": "object",
+        "required": [
+          "ongoing_anime",
+          "complete_anime"
+        ],
+        "properties": {
+          "complete_anime": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompleteAnimeItem"
+            }
+          },
+          "ongoing_anime": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OngoingAnimeItem"
+            }
+          }
+        }
+      },
+      "AnimeDetailData": {
+        "type": "object",
+        "required": [
+          "title",
+          "alternative_title",
+          "poster",
+          "poster2",
+          "type",
+          "release_date",
+          "status",
+          "synopsis",
+          "studio",
+          "genres",
+          "producers",
+          "recommendations",
+          "batch",
+          "ova",
+          "downloads"
+        ],
+        "properties": {
+          "alternative_title": {
+            "type": "string"
+          },
+          "batch": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DownloadItem"
+            }
+          },
+          "downloads": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DownloadItem"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "ova": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DownloadItem"
+            }
+          },
+          "poster": {
+            "type": "string"
+          },
+          "poster2": {
+            "type": "string"
+          },
+          "producers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            }
+          },
+          "release_date": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "studio": {
+            "type": "string"
+          },
+          "synopsis": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "AnimeFullData": {
+        "type": "object",
+        "required": [
+          "episode",
+          "episode_number",
+          "anime",
+          "has_next_episode",
+          "has_previous_episode",
+          "stream_url",
+          "download_urls",
+          "image_url"
+        ],
+        "properties": {
+          "anime": {
+            "$ref": "#/components/schemas/AnimeInfo"
+          },
+          "download_urls": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/DownloadLink"
+              }
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "episode": {
+            "type": "string"
+          },
+          "episode_number": {
+            "type": "string"
+          },
+          "has_next_episode": {
+            "type": "boolean"
+          },
+          "has_previous_episode": {
+            "type": "boolean"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "next_episode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EpisodeInfo"
+              }
+            ]
+          },
+          "previous_episode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EpisodeInfo"
+              }
+            ]
+          },
+          "stream_url": {
+            "type": "string"
+          }
+        }
+      },
+      "AnimeInfo": {
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "AnimeItem": {
+        "type": "object",
+        "required": [
+          "title",
+          "slug",
+          "poster",
+          "description",
+          "anime_url",
+          "genres",
+          "rating",
+          "type",
+          "season"
+        ],
+        "properties": {
+          "anime_url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "poster": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "AnimeResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnimeData"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Chapter": {
+        "type": "object",
+        "required": [
+          "chapter",
+          "date",
+          "chapter_id"
+        ],
+        "properties": {
+          "chapter": {
+            "type": "string"
+          },
+          "chapter_id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          }
+        }
+      },
+      "ChapterData": {
+        "type": "object",
+        "required": [
+          "title",
+          "next_chapter_id",
+          "prev_chapter_id",
+          "images"
+        ],
+        "properties": {
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "next_chapter_id": {
+            "type": "string"
+          },
+          "prev_chapter_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "ChapterResponse": {
+        "type": "object",
+        "required": [
+          "message",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ChapterData"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CompleteAnimeItem": {
+        "type": "object",
+        "required": [
+          "title",
+          "slug",
+          "poster",
+          "episode_count",
+          "anime_url"
+        ],
+        "properties": {
+          "anime_url": {
+            "type": "string"
+          },
+          "episode_count": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "CompressResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Error message if compression failed"
+          },
+          "link": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "CDN link to compressed file"
+          }
+        }
+      },
+      "DetailData": {
+        "type": "object",
+        "required": [
+          "title",
+          "alternative_title",
+          "score",
+          "poster",
+          "description",
+          "status",
+          "type",
+          "release_date",
+          "author",
+          "total_chapter",
+          "updated_on",
+          "genres",
+          "chapters"
+        ],
+        "properties": {
+          "alternative_title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Chapter"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "poster": {
+            "type": "string"
+          },
+          "release_date": {
+            "type": "string"
+          },
+          "score": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "total_chapter": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "updated_on": {
+            "type": "string"
+          }
+        }
+      },
+      "DetailResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnimeDetailData"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "DownloadItem": {
+        "type": "object",
+        "required": [
+          "resolution",
+          "links"
+        ],
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            }
+          },
+          "resolution": {
+            "type": "string"
+          }
+        }
+      },
+      "DownloadLink": {
+        "type": "object",
+        "required": [
+          "server",
+          "url"
+        ],
+        "properties": {
+          "server": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "EpisodeInfo": {
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "EpisodeList": {
+        "type": "object",
+        "required": [
+          "episode",
+          "slug"
+        ],
+        "properties": {
+          "episode": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Error response structure",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "details": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error": {
+            "type": "string"
+          },
+          "status": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "FullResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnimeFullData"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Genre": {
+        "type": "object",
+        "required": [
+          "name",
+          "slug",
+          "anime_url"
+        ],
+        "properties": {
+          "anime_url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "Link": {
+        "type": "object",
+        "required": [
+          "name",
+          "url"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ListResponse": {
+        "type": "object",
+        "description": "Response structure for the Drivepng endpoint.\nReplace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.",
+        "required": [
+          "message",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {},
+            "description": "List of items - replace with actual Vec<T> where T implements ToSchema"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          },
+          "total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Total number of items",
+            "minimum": 0
+          }
+        }
+      },
+      "MangaItem": {
+        "type": "object",
+        "required": [
+          "title",
+          "poster",
+          "chapter",
+          "score",
+          "date",
+          "type",
+          "slug"
+        ],
+        "properties": {
+          "chapter": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "score": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "MangaResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MangaItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "ManhuaItem": {
+        "type": "object",
+        "required": [
+          "title",
+          "poster",
+          "chapter",
+          "score",
+          "date",
+          "type",
+          "slug"
+        ],
+        "properties": {
+          "chapter": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "score": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "ManhuaResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManhuaItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "ManhwaItem": {
+        "type": "object",
+        "required": [
+          "title",
+          "poster",
+          "chapter",
+          "score",
+          "date",
+          "type",
+          "slug"
+        ],
+        "properties": {
+          "chapter": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "score": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "ManhwaResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManhwaItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "OngoingAnimeItem": {
+        "type": "object",
+        "required": [
+          "title",
+          "slug",
+          "poster",
+          "score",
+          "anime_url"
+        ],
+        "properties": {
+          "anime_url": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "score": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "OngoingAnimeResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OngoingAnimeItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "required": [
+          "current_page",
+          "last_visible_page",
+          "has_next_page",
+          "has_previous_page"
+        ],
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "has_next_page": {
+            "type": "boolean"
+          },
+          "has_previous_page": {
+            "type": "boolean"
+          },
+          "last_visible_page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "next_page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "previous_page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "Recommendation": {
+        "type": "object",
+        "required": [
+          "title",
+          "slug",
+          "poster",
+          "status",
+          "type"
+        ],
+        "properties": {
+          "poster": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MangaItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "api",
+      "description": "Main API"
+    }
+  ]
+}
