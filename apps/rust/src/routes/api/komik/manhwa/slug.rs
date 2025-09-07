@@ -54,8 +54,9 @@ pub struct ManhwaResponse {
   pub pagination: Pagination,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct QueryParams {
+  /// Page number for pagination (required, defaults to 1 if not provided)
   pub page: u32,
 }
 

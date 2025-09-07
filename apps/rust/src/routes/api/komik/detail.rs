@@ -63,8 +63,9 @@ pub struct DetailResponse {
   pub data: DetailData,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct DetailQuery {
+  /// The unique identifier for the komik (typically the slug or URL path)
   pub komik_id: Option<String>,
 }
 

@@ -28,11 +28,11 @@ pub const OPERATION_ID: &str = "anime2_complete_anime_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct AnimeItem {
+pub struct CompleteAnimeItem {
   pub title: String,
   pub slug: String,
   pub poster: String,
-  pub episode: String,
+  pub episode_count: String,
   pub anime_url: String,
 }
 
@@ -48,9 +48,9 @@ pub struct Pagination {
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct ListResponse {
-  pub status: String,
-  pub data: Vec<AnimeItem>,
-  pub pagination: Pagination,
+  pub message: String,
+  pub data: Vec<CompleteAnimeItem>,
+  pub total: Option<i64>,
 }
 
 // Pre-compiled CSS selectors for performance
@@ -60,7 +60,9 @@ lazy_static! {
   static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
   static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
   static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
-  static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
+  static ref PAGINATION_SELECTOR: Selector = Selector::parse(
+    ".pagination .page-numbers:not(.next)"
+  ).unwrap();
   static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next.page-numbers").unwrap();
 }
 
@@ -123,7 +125,7 @@ async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error + Sen
   }
 }
 
-fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
+fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Pagination) {
   let start_time = Instant::now();
   info!("Starting to parse anime page for slug: {}", slug);
 
@@ -141,7 +143,11 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
       .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
-      .and_then(|href| SLUG_REGEX.captures(href).and_then(|cap| cap.get(1)).map(|m| m.as_str()))
+      .and_then(|href|
+        SLUG_REGEX.captures(href)
+          .and_then(|cap| cap.get(1))
+          .map(|m| m.as_str())
+      )
       .unwrap_or("")
       .to_string();
 
@@ -152,7 +158,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
       .unwrap_or("")
       .to_string();
 
-    let episode = element
+    let episode_count = element
       .select(&EPISODE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
@@ -165,11 +171,11 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
       .unwrap_or("")
       .to_string();
 
-    anime_list.push(AnimeItem {
+    anime_list.push(CompleteAnimeItem {
       title,
       slug,
       poster,
-      episode,
+      episode_count,
       anime_url,
     });
   }
@@ -218,7 +224,8 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
   let start_time = Instant::now();
   info!("Handling request for complete_anime slug: {}", slug);
 
-  let url = format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
+  let url =
+    format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
 
   match fetch_html(&url).await {
     Ok(html) => {
@@ -226,25 +233,23 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
       Json(ListResponse {
-        status: "Ok".to_string(),
-        data: anime_list,
-        pagination,
+        message: "Success".to_string(),
+        data: anime_list.clone(),
+        total: Some(anime_list.len() as i64),
       })
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
-      error!("Failed to process request for slug: {} after {:?}, error: {:?}", slug, total_duration, e);
+      error!(
+        "Failed to process request for slug: {} after {:?}, error: {:?}",
+        slug,
+        total_duration,
+        e
+      );
       Json(ListResponse {
-        status: "Error".to_string(),
+        message: "Error".to_string(),
         data: vec![],
-        pagination: Pagination {
-          current_page: 1,
-          last_visible_page: 1,
-          has_next_page: false,
-          next_page: None,
-          has_previous_page: false,
-          previous_page: None,
-        },
+        total: Some(0),
       })
     }
   }

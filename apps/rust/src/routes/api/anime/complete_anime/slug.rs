@@ -6,9 +6,9 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{info, error};
+use tracing::{ info, error };
 use std::time::Instant;
 
 #[allow(dead_code)]
@@ -26,11 +26,11 @@ pub const OPERATION_ID: &str = "anime_complete_anime_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct AnimeItem {
+pub struct CompleteAnimeItem {
   pub title: String,
   pub slug: String,
   pub poster: String,
-  pub episode: String,
+  pub episode_count: String,
   pub anime_url: String,
 }
 
@@ -46,9 +46,9 @@ pub struct Pagination {
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct ListResponse {
-  pub status: String,
-  pub data: Vec<AnimeItem>,
-  pub pagination: Pagination,
+  pub message: String,
+  pub data: Vec<CompleteAnimeItem>,
+  pub total: Option<i64>,
 }
 
 lazy_static! {
@@ -59,7 +59,7 @@ lazy_static! {
   static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
   static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
   static ref NEXT_SELECTOR: Selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
-  static ref CACHE: DashMap<String, (Vec<AnimeItem>, Pagination)> = DashMap::new();
+  static ref CACHE: DashMap<String, (Vec<CompleteAnimeItem>, Pagination)> = DashMap::new();
 }
 
 async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -72,7 +72,7 @@ async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
   retry(backoff, operation).await.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
 }
 
-fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
+fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Pagination) {
   let document = Html::parse_document(html);
 
   let mut anime_list = Vec::new();
@@ -99,7 +99,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
       .unwrap_or("")
       .to_string();
 
-    let episode = element
+    let episode_count = element
       .select(&*EPISODE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
@@ -113,11 +113,11 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
       .to_string();
 
     if !title.is_empty() {
-      anime_list.push(AnimeItem {
+      anime_list.push(CompleteAnimeItem {
         title,
         slug,
         poster,
-        episode,
+        episode_count,
         anime_url,
       });
     }
@@ -169,9 +169,9 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
     let duration = start.elapsed();
     info!("Cache hit for slug: {}, duration: {:?}", slug, duration);
     return Json(ListResponse {
-      status: "Ok".to_string(),
+      message: "Success".to_string(),
       data: cached.0.clone(),
-      pagination: cached.1.clone(),
+      total: Some(cached.0.len() as i64),
     });
   }
 
@@ -183,25 +183,18 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
       let duration = start.elapsed();
       info!("Fetched and parsed for slug: {}, duration: {:?}", slug, duration);
       Json(ListResponse {
-        status: "Ok".to_string(),
-        data: anime_list,
-        pagination,
+        message: "Success".to_string(),
+        data: anime_list.clone(),
+        total: Some(anime_list.len() as i64),
       })
     }
     Err(e) => {
       let duration = start.elapsed();
       error!("Error fetching for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
       Json(ListResponse {
-        status: "Error".to_string(),
+        message: "Error".to_string(),
         data: vec![],
-        pagination: Pagination {
-          current_page: 1,
-          last_visible_page: 1,
-          has_next_page: false,
-          next_page: None,
-          has_previous_page: false,
-          previous_page: None,
-        },
+        total: Some(0),
       })
     }
   }

@@ -19,7 +19,7 @@ pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves chapter data for a specific komik chapter.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_chapter";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<ChapterData>";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<ChapterResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct ChapterData {
@@ -35,8 +35,9 @@ pub struct ChapterResponse {
   pub data: ChapterData,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct ChapterQuery {
+  /// URL-friendly identifier for the chapter (typically the chapter slug or URL path)
   pub chapter_url: Option<String>,
 }
 
@@ -72,7 +73,7 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
     tag = "komik",
     operation_id = "komik_chapter",
     responses(
-        (status = 200, description = "Retrieves chapter data for a specific komik chapter.", body = ChapterData),
+        (status = 200, description = "Retrieves chapter data for a specific komik chapter.", body = ChapterResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -87,30 +88,39 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
        Ok(data) => {
          info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
          info!("Chapter request completed in {:?}", start.elapsed());
-         Json(data)
+         Json(ChapterResponse {
+            message: "Success".to_string(),
+            data,
+          })
        }
        Err(e) => {
          error!("[komik][chapter] Error parsing chapter for {}: {:?}", chapter_url, e);
          info!("Chapter request completed in {:?}", start.elapsed());
-         Json(ChapterData {
-           title: "".to_string(),
-           next_chapter_id: "".to_string(),
-           prev_chapter_id: "".to_string(),
-           images: vec![],
-         })
+         Json(ChapterResponse {
+            message: "Error parsing chapter".to_string(),
+            data: ChapterData {
+              title: "".to_string(),
+              next_chapter_id: "".to_string(),
+              prev_chapter_id: "".to_string(),
+              images: vec![],
+            },
+          })
        }
-      }
-    }
-    Err(e) => {
-      error!("[komik][chapter] Error getting base URL: {:?}", e);
-      info!("Chapter request completed in {:?}", start.elapsed());
-      Json(ChapterData {
-        title: "".to_string(),
-        next_chapter_id: "".to_string(),
-        prev_chapter_id: "".to_string(),
-        images: vec![],
-      })
-    }
+     }
+   }
+   Err(e) => {
+     error!("[komik][chapter] Error getting base URL: {:?}", e);
+     info!("Chapter request completed in {:?}", start.elapsed());
+     Json(ChapterResponse {
+           message: "Error parsing chapter".to_string(),
+           data: ChapterData {
+             title: "".to_string(),
+             next_chapter_id: "".to_string(),
+             prev_chapter_id: "".to_string(),
+             images: vec![],
+           },
+         })
+   }
   }
 }
 

@@ -27,11 +27,11 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<OngoingAnimeResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct OngoingAnimeItem {
-  pub title: String,
-  pub slug: String,
-  pub poster: String,
-  pub episode: String,
-  pub anime_url: String,
+   pub title: String,
+   pub slug: String,
+   pub poster: String,
+   pub score: String,
+   pub anime_url: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -151,11 +151,11 @@ async fn fetch_ongoing_anime_page(
       .unwrap_or("")
       .to_string();
 
-    let episode = element
+    let score = element
       .select(&*EP_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or("Ongoing".to_string());
+      .unwrap_or("N/A".to_string());
 
     let anime_url = element
       .select(&*LINK_SELECTOR)
@@ -171,7 +171,7 @@ async fn fetch_ongoing_anime_page(
         title,
         slug,
         poster,
-        episode,
+        score,
         anime_url,
       });
     }

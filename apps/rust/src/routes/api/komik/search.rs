@@ -53,9 +53,11 @@ pub struct SearchResponse {
   pub pagination: Pagination,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct SearchQuery {
+  /// Search query string to filter komik results
   pub query: Option<String>,
+  /// Page number for pagination (defaults to 1)
   pub page: Option<u32>,
 }
 
