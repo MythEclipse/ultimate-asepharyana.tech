@@ -16,7 +16,7 @@ pub const ENDPOINT_PATH: &str = "/api/komik/detail";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves details for a specific komik by ID.";
 pub const ENDPOINT_TAG: &str = "komik";
 pub const OPERATION_ID: &str = "komik_detail";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailData>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct EpisodeList {
@@ -74,9 +74,9 @@ pub struct DetailQuery {
     (
       status = 200,
       description = "Retrieves details for a specific komik by ID.",
-      body = DetailResponse,
+      body = DetailData,
     ),
-    (status = 500, description = "Internal Server Error", body = String)
+    (status = 500, description = "Internal Server Error", body = DetailData)
   )
 )]
 pub async fn detail(Query(params): Query<DetailQuery>) -> impl IntoResponse {
@@ -85,55 +85,46 @@ pub async fn detail(Query(params): Query<DetailQuery>) -> impl IntoResponse {
   match get_cached_komik_base_url(false).await {
     Ok(base_url) => {
       match fetch_and_parse_detail(&komik_id, &base_url).await {
-        Ok(data) => {
-          info!("[komik][detail] Success for komik_id: {}", komik_id);
-          Json(DetailResponse {
-            status: true,
-            data,
-          })
-        }
-        Err(e) => {
-          error!("[komik][detail] Error parsing detail for {}: {:?}", komik_id, e);
-          Json(DetailResponse {
-            status: false,
-            data: DetailData {
-              title: "".to_string(),
-              alternative_title: "".to_string(),
-              score: "".to_string(),
-              poster: "".to_string(),
-              description: "".to_string(),
-              status: "".to_string(),
-              r#type: "".to_string(),
-              release_date: "".to_string(),
-              author: "".to_string(),
-              total_chapter: "".to_string(),
-              updated_on: "".to_string(),
-              genres: vec![],
-              chapters: vec![],
-            },
-          })
-        }
+       Ok(data) => {
+         info!("[komik][detail] Success for komik_id: {}", komik_id);
+         Json(data)
+       }
+       Err(e) => {
+         error!("[komik][detail] Error parsing detail for {}: {:?}", komik_id, e);
+         Json(DetailData {
+           title: "".to_string(),
+           alternative_title: "".to_string(),
+           score: "".to_string(),
+           poster: "".to_string(),
+           description: "".to_string(),
+           status: "".to_string(),
+           r#type: "".to_string(),
+           release_date: "".to_string(),
+           author: "".to_string(),
+           total_chapter: "".to_string(),
+           updated_on: "".to_string(),
+           genres: vec![],
+           chapters: vec![],
+         })
+       }
       }
     }
     Err(e) => {
       error!("[komik][detail] Error getting base URL: {:?}", e);
-      Json(DetailResponse {
-        status: false,
-        data: DetailData {
-          title: "".to_string(),
-          alternative_title: "".to_string(),
-          score: "".to_string(),
-          poster: "".to_string(),
-          description: "".to_string(),
-          status: "".to_string(),
-          r#type: "".to_string(),
-          release_date: "".to_string(),
-          author: "".to_string(),
-          total_chapter: "".to_string(),
-          updated_on: "".to_string(),
-          genres: vec![],
-          chapters: vec![],
-        },
+      Json(DetailData {
+        title: "".to_string(),
+        alternative_title: "".to_string(),
+        score: "".to_string(),
+        poster: "".to_string(),
+        description: "".to_string(),
+        status: "".to_string(),
+        r#type: "".to_string(),
+        release_date: "".to_string(),
+        author: "".to_string(),
+        total_chapter: "".to_string(),
+        updated_on: "".to_string(),
+        genres: vec![],
+        chapters: vec![],
       })
     }
   }
