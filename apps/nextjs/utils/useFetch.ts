@@ -1,15 +1,17 @@
 'use client';
 
-import { APIURL } from '../lib/url';
+import { APIURL, BaseUrl } from '../lib/url';
 
 export const fetchData = async (
   url: string,
   method = 'GET',
   pyld?: Record<string, unknown>,
   formDataObj?: FormData,
+  baseUrl?: string,
 ) => {
+  const base = baseUrl || APIURL;
   const fullUrl = url.startsWith('/')
-    ? `${APIURL}${url.endsWith('/') ? url.slice(0, -1) : url}`
+    ? `${base}${url.endsWith('/') ? url.slice(0, -1) : url}`
     : url;
   try {
     const options: RequestInit = {
@@ -37,5 +39,36 @@ export const fetchData = async (
     };
   } catch (error: unknown) {
     throw new Error(String(error));
+  }
+};
+
+export const fetchDataMultiple = async (
+  endpoints: Array<{ url: string; baseUrl?: string }>,
+  method = 'GET',
+  pyld?: Record<string, unknown>,
+  formDataObj?: FormData,
+) => {
+  if (endpoints.length === 0) {
+    throw new Error('No endpoints provided');
+  }
+
+  const fetchPromises = endpoints.map(({ url, baseUrl }, index) =>
+    fetchData(url, method, pyld, formDataObj, baseUrl).then((result) => {
+      console.log(`Fetch successful from endpoint ${index + 1}: ${url} (baseUrl: ${baseUrl || 'default'})`);
+      return result;
+    })
+  );
+
+  try {
+    // Use Promise.any to get the first successful response
+    const result = await Promise.any(fetchPromises);
+    return result;
+  } catch (errors: unknown) {
+    // If all fail, throw an error with details
+    const errorMessages = Array.isArray(errors)
+      ? errors.map((err) => String(err)).join('; ')
+      : String(errors);
+    console.error(`All fetch attempts failed: ${errorMessages}`);
+    throw new Error(`All fetch attempts failed: ${errorMessages}`);
   }
 };

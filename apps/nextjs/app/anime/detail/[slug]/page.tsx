@@ -319,8 +319,8 @@ export default function DetailAnimePage({
                     <CardContent>
                       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
                         {data.episode_lists?.length > 0 ? (
-                          data.episode_lists.map((episode) => (
-                            <Tooltip key={episode.slug}>
+                          data.episode_lists.map((episode, index) => (
+                            <Tooltip key={`${episode.slug}-${index}`}>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant='ghost'
@@ -359,9 +359,9 @@ export default function DetailAnimePage({
                     </h2>
                     <div className='flex overflow-x-auto pb-4 -mx-1 gap-4'>
                       {data.recommendations?.length > 0 ? (
-                        data.recommendations.map((rec) => (
+                        data.recommendations.map((rec, index) => (
                           <div
-                            key={rec.slug}
+                            key={`${rec.slug}-${index}`}
                             className='flex-shrink-0 w-40 md:w-48'
                           >
                             <MediaCard
