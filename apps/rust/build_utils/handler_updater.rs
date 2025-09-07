@@ -297,8 +297,12 @@ pub fn update_handler_file(
     // Replace all duplicate /api/ patterns
     route_path = route_path.replace("/api/api/", "/api/");
   }
-  if !route_path.starts_with("/api/") {
+  if !route_path.starts_with("/api/") && !route_path.starts_with("api/") {
     route_path = format!("/api/{}", route_path);
+  }
+  // Remove any leading "api/" without slash and replace with "/api/"
+  if route_path.starts_with("api/") {
+    route_path = format!("/{}", route_path);
   }
 
   // Parse path params from existing function signature

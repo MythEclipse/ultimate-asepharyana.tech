@@ -51,7 +51,7 @@ pub struct AnimeResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/api/anime",
+    path = "/api/anime",
     tag = "anime",
     operation_id = "anime_index",
     responses(

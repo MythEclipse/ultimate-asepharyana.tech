@@ -29,7 +29,7 @@ pub struct ListResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/api/drivepng",
+    path = "/api/drivepng",
     tag = "drivepng",
     operation_id = "drivepng",
     responses(

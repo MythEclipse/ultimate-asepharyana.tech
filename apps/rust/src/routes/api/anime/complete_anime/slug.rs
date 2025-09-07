@@ -152,7 +152,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
     params(
         ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "naruto-shippuden-episode-1")
     ),
-    path = "/api/api/anime/complete-anime/{slug}",
+    path = "/api/anime/complete-anime/{slug}",
     tag = "anime",
     operation_id = "anime_complete_anime_slug",
     responses(

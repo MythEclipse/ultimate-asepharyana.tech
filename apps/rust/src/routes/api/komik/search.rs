@@ -95,7 +95,7 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
 
 #[utoipa::path(
     get,
-    path = "/api/api/komik/search",
+    path = "/api/komik/search",
     tag = "komik",
     operation_id = "komik_search",
     responses(

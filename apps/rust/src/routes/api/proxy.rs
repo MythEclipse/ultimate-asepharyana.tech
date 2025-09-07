@@ -39,7 +39,7 @@ pub struct ErrorResponse {
 
 #[utoipa::path(
     get,
-    path = "/api/api/proxy",
+    path = "/api/proxy",
     tag = "proxy",
     operation_id = "proxy",
     responses(

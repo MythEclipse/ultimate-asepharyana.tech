@@ -223,7 +223,7 @@ async fn compress_video(
 
 #[utoipa::path(
     get,
-    path = "/api/api/compress",
+    path = "/api/compress",
     tag = "compress",
     operation_id = "compress",
     responses(

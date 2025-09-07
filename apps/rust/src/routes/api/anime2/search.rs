@@ -56,7 +56,7 @@ pub struct SearchQuery {
 
 #[utoipa::path(
     get,
-    path = "/api/api/anime2/search",
+    path = "/api/anime2/search",
     tag = "anime2",
     operation_id = "anime2_search",
     responses(

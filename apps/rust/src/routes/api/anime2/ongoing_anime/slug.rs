@@ -78,7 +78,7 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
     params(
         ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "naruto-shippuden-episode-1")
     ),
-    path = "/api/api/anime2/ongoing-anime/{slug}",
+    path = "/api/anime2/ongoing-anime/{slug}",
     tag = "anime2",
     operation_id = "anime2_ongoing_anime_slug",
     responses(

@@ -86,7 +86,7 @@ lazy_static! {
     params(
         ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "naruto-shippuden-episode-1")
     ),
-    path = "/api/api/anime/detail/{slug}",
+    path = "/api/anime/detail/{slug}",
     tag = "anime",
     operation_id = "anime_detail_slug",
     responses(

@@ -73,7 +73,7 @@ lazy_static! {
 
 #[utoipa::path(
     get,
-    path = "/api/api/anime/search",
+    path = "/api/anime/search",
     tag = "anime",
     operation_id = "anime_search",
     responses(
