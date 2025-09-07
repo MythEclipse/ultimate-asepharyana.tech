@@ -7,7 +7,7 @@ use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
-use rust_lib::fetch_with_proxy::fetch_with_proxy_only;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use rust_lib::komik_base_url::get_cached_komik_base_url;
 use tracing::{ info, error };
 
@@ -91,7 +91,7 @@ async fn fetch_and_parse_chapter(
   let url = format!("{}/chapter/{}", base_url, chapter_url);
   info!("[fetch_and_parse_chapter] Fetching URL: {}", url);
 
-  let response = fetch_with_proxy_only(&url).await?;
+  let response = fetch_with_proxy(&url).await?;
   let html = response.data;
   let document = Html::parse_document(&html);
 

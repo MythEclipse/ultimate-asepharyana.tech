@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use rust_lib::fetch_with_proxy::fetch_with_proxy_only;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use rust_lib::komik_base_url::get_cached_komik_base_url;
 use scraper::{ Html, Selector };
 use tracing::{ info, error };
@@ -137,7 +137,7 @@ async fn fetch_and_parse_detail(
   let url = format!("{}/komik/{}", base_url, komik_id);
   info!("[fetch_and_parse_detail] Fetching URL: {}", url);
 
-  let response = fetch_with_proxy_only(&url).await?;
+  let response = fetch_with_proxy(&url).await?;
   let html = response.data;
   let document = Html::parse_document(&html);
 

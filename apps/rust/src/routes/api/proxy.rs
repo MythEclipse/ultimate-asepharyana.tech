@@ -14,7 +14,7 @@ use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use serde_json;
 use utoipa::ToSchema;
-use rust_lib::fetch_with_proxy::fetch_with_proxy_only;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tracing::{ error, info };
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -62,7 +62,7 @@ pub async fn proxy(Query(params): Query<ProxyQuery>) -> Result<
 
   info!("Proxying request to: {}", url);
 
-  match fetch_with_proxy_only(&url).await {
+  match fetch_with_proxy(&url).await {
     Ok(result) => {
       let mut headers = HeaderMap::new();
       headers.insert("X-Proxy-Used", "fetchWithProxy".parse().unwrap());

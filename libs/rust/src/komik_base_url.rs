@@ -43,10 +43,10 @@ async fn sleep_ms(ms: u64) {
     tokio::time::sleep(tokio::time::Duration::from_millis(ms)).await;
 }
 
-async fn fetch_with_proxy_only_wrapper(url: &str) -> Result<String, AppError> {
-    debug!("[fetchWithProxyOnlyWrapper] Fetching {}", url);
+async fn fetch_with_proxy_wrapper(url: &str) -> Result<String, AppError> {
+    debug!("[fetchWithProxyWrapper] Fetching {}", url);
     let response = fetch_with_proxy(url).await?;
-    info!("[fetchWithProxyOnlyWrapper] Fetched {}", url);
+    info!("[fetchWithProxyWrapper] Fetched {}", url);
     Ok(response.data)
 }
 
@@ -85,7 +85,7 @@ pub async fn get_dynamic_komik_base_url() -> Result<String, AppError> {
 
     let result = (async {
         debug!("[getDynamicKomikBaseUrl] Fetching komik base URL");
-        let body = fetch_with_proxy_only_wrapper("https://komikindo.cz/").await?;
+        let body = fetch_with_proxy_wrapper("https://komikindo.cz/").await?;
         let document = Html::parse_document(&body);
 
         let website_btn_selector = Selector::parse("a.elementskit-btn").unwrap();
