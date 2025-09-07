@@ -2,7 +2,7 @@
 // Updated to use shared browser instance.
 
 use crate::headless_chrome::{BrowserConfig, HeadlessChrome};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tracing::{info, warn, error};
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
@@ -12,106 +12,51 @@ const URL_INPUT_SELECTOR: &str = "input#url";
 const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
 const MAX_RETRIES: u8 = 1;
 
-// Helper function to simulate getRandomUserAgent from TS
-#[allow(dead_code)]
-fn get_random_user_agent() -> String {
-    let mut rng = rand::rngs::ThreadRng::default();
-
-    // Expanded list of common operating systems
-    let os_options = [
-        "Windows NT 10.0; Win64; x64",
-        "Macintosh; Intel Mac OS X 10_15_7",
-        "X11; Linux x86_64",
-        "Android 10; Mobile",
-        "iPhone; CPU iPhone OS 14_0_1 like Mac OS X",
-    ];
-
-    // Expanded list of Chrome versions (more recent and varied)
-    let chrome_versions = [
-        "119.0.0.0", "120.0.0.0", "121.0.0.0", "122.0.0.0", "123.0.0.0",
-        "124.0.0.0", "125.0.0.0", "126.0.0.0", "127.0.0.0", "128.0.0.0",
-    ];
-
-    // Common AppleWebKit/Safari versions
-    let webkit_versions = ["537.36", "605.1.15"];
-
-    let random_os = os_options.choose(&mut rng).unwrap_or(&"Windows NT 10.0; Win64; x64");
-    let random_chrome_version = chrome_versions.choose(&mut rng).unwrap_or(&"125.0.0.0");
-    let random_webkit_version = webkit_versions.choose(&mut rng).unwrap_or(&"537.36");
-
-    format!("Mozilla/5.0 ({random_os}) AppleWebKit/{random_webkit_version} (KHTML, like Gecko) Chrome/{random_chrome_version} Safari/{random_webkit_version}")
-}
-
 pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
     let start_time = Instant::now();
     info!("Scraping {} with CroxyProxy", target_url);
 
-    let browser = Browser::default().map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
-    let tab = browser.new_tab().map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
+    let config = BrowserConfig::default();
+    let chrome = HeadlessChrome::new(config).await
+        .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
+    let tab = chrome.get_tab_manager().await
+        .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
     let mut html_content = String::new();
 
     for attempt in 1..=MAX_RETRIES {
         info!("Attempt {}/{}", attempt, MAX_RETRIES);
-        match tab.navigate_to(CROXY_PROXY_URL) {
+        match tab.navigate(CROXY_PROXY_URL).await {
             Ok(_) => {
-                tab.wait_for_element(URL_INPUT_SELECTOR)
+                tab.wait_for_element(URL_INPUT_SELECTOR).await
                     .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
-                let input = tab.find_element(URL_INPUT_SELECTOR)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
-                input.type_into(target_url)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
+                // There is no direct equivalent of find_element and type_into in the new API
+                // We will use evaluate_script to achieve the same
+                tab.evaluate_script(&format!(
+                    r#"document.querySelector('{}').value = '{}';"#,
+                    URL_INPUT_SELECTOR,
+                    target_url
+                )).await.map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
-                let submit_btn = tab.find_element(SUBMIT_BUTTON_SELECTOR)
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
-                submit_btn.click()
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
+                tab.evaluate_script(&format!(
+                    r#"document.querySelector('{}').click();"#,
+                    SUBMIT_BUTTON_SELECTOR
+                )).await.map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
 
                 // Wait for navigation after form submission
-                tab.wait_until_navigated()
-                    .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
-
-                let current_url = tab.get_url();
-                // Use wait_for_element("body")?.get_inner_html()? to get HTML content
-                let page_content = tab.wait_for_element("body")
-                    .and_then(|el| {
-                        let js_result = el.call_js_fn(
-                            "function() { return this.innerHTML; }",
-                            vec![],
-                            false
-                        );
-                        match js_result {
-                            Ok(val) => {
-                                // val.value is Option<serde_json::Value>, need to handle both Some(String) and fallback to to_string()
-                                info!("Debug: val.value type: {:?}", val.value);
-                                let html = match val.value {
-                                    Some(serde_json::Value::String(ref s)) => {
-                                        info!("Debug: Matched Some(String): {}", s);
-                                        s.clone()
-                                    },
-                                    Some(ref v) => {
-                                        info!("Debug: Matched Some(non-String): {:?}", v);
-                                        serde_json::Value::to_string(v)
-                                    },
-                                    None => {
-                                        info!("Debug: Matched None");
-                                        String::new()
-                                    }
-                                };
-                                info!("Debug: innerHTML extracted: {}", &html[..html.len().min(200)]);
-                                Ok(html)
-                            },
-                            Err(e) => {
-                                error!("Debug: call_js_fn failed: {:?}", e);
-                                Err(e)
-                            }
-                        }
-                    })
+                // The new API's navigate function already handles waiting for navigation
+                // We just need to get the content after the click
+                let page_content = tab.get_content().await
                     .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 let page_text = page_content.to_lowercase();
 
-                let is_error_url = current_url.contains("/requests?fso=");
+                let current_url = tab.page().url().await; // This returns Result<Option<String>, BrowserError>
+                let is_error_url = if let Ok(Some(url_string)) = current_url {
+                    url_string.contains("/requests?fso=")
+                } else {
+                    false
+                };
                 let has_error_text = page_text.contains("your session has outdated") || page_text.contains("something went wrong");
 
                 if is_error_url || has_error_text {
@@ -121,52 +66,19 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
 
                 if page_text.contains("proxy is launching") {
                     info!("Proxy launching page detected. Waiting for final redirect...");
-                    tab.wait_until_navigated()
-                        .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
-                    info!("Redirected successfully to: {}", tab.get_url());
+                    // The new API's navigate function already handles waiting for navigation, so
+                    // we just log the current URL.
+                    info!("Redirected successfully to: {:?}", tab.page().url().await);
                 } else {
-                    info!("Mapped directly to: {}", tab.get_url());
+                    info!("Mapped directly to: {:?}", tab.page().url().await);
                 }
 
                 info!("Waiting for CroxyProxy frame to render...");
-                tab.wait_for_element("#__cpsHeaderTab")
+                tab.wait_for_element("#__cpsHeaderTab").await
                     .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 info!("CroxyProxy frame rendered.");
 
-                html_content = tab.wait_for_element("body")
-                    .and_then(|el| {
-                        let js_result = el.call_js_fn(
-                            "function() { return this.innerHTML; }",
-                            vec![],
-                            false
-                        );
-                        match js_result {
-                            Ok(val) => {
-                                // val.value is Option<serde_json::Value>, need to handle both Some(String) and fallback to to_string()
-                                info!("Debug: val.value type: {:?}", val.value);
-                                let html = match val.value {
-                                    Some(serde_json::Value::String(ref s)) => {
-                                        info!("Debug: Matched Some(String): {}", s);
-                                        s.clone()
-                                    },
-                                    Some(ref v) => {
-                                        info!("Debug: Matched Some(non-String): {:?}", v);
-                                        v.to_string()
-                                    },
-                                    None => {
-                                        info!("Debug: Matched None");
-                                        String::new()
-                                    }
-                                };
-                                info!("Debug: innerHTML extracted: {}", &html[..html.len().min(200)]);
-                                Ok(html)
-                            },
-                            Err(e) => {
-                                error!("Debug: call_js_fn failed: {:?}", e);
-                                Err(e)
-                            }
-                        }
-                    })
+                html_content = tab.get_content().await
                     .map_err(|e| AppError::HeadlessChromeError(format!("{e:?}")))?;
                 info!("Retrieved page content.");
                 break; // Success, break out of retry loop
