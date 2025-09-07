@@ -14,7 +14,16 @@ pub static CONFIG_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {
     }
 
     let mut map = HashMap::new();
-    for (key, value) in env::vars() {
+    for (key_os, value_os) in env::vars_os() {
+        let key = key_os.to_string_lossy().to_string();
+        let value = value_os.to_string_lossy().to_string();
+
+        // Skip variables with control characters to avoid issues
+        if value.contains('\r') || value.contains('\n') || value.contains('\x1b') {
+            tracing::info!("{} = <skipped/control chars>", key);
+            continue;
+        }
+
         tracing::info!("{} = {}", key, value);
         map.insert(key, value);
     }

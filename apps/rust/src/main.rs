@@ -21,15 +21,22 @@ mod routes;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-  // Initialize tracing from RUST_LOG (or defaults)
-  tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+  // Initialize tracing from RUST_LOG (or defaults), handling invalid UTF-8 safely
+  // Force rebuild
+  let filter = std::env::var_os("RUST_LOG")
+    .and_then(|s| s.into_string().ok())
+    .unwrap_or_else(|| "info".to_string());
+  tracing_subscriber::fmt().with_env_filter(EnvFilter::new(&filter)).init();
 
   tracing::info!("RustExpress starting up...");
 
   // Use CONFIG_MAP for JWT_SECRET
   let jwt_secret = CONFIG_MAP.get("JWT_SECRET")
     .cloned()
-    .expect("JWT_SECRET must be set in the environment");
+    .unwrap_or_else(|| {
+      tracing::warn!("JWT_SECRET not set in environment, using default secret (not recommended for production)");
+      "default_secret".to_string()
+    });
 
   tracing::info!("Creating app state...");
   let app_state = Arc::new(AppState {
@@ -48,8 +55,18 @@ async fn main() -> anyhow::Result<()> {
     .layer(cors);
 
   let port = CONFIG_MAP.get("PORT")
-    .and_then(|s| s.parse::<u16>().ok())
-    .unwrap_or(3000);
+    .map(|s| {
+      // Trim whitespace and extract only numeric characters to handle shell prompt sequences
+      let cleaned = s.chars()
+        .take_while(|c| c.is_numeric())
+        .collect::<String>();
+      cleaned.parse::<u16>().ok()
+    })
+    .flatten()
+    .unwrap_or_else(|| {
+      tracing::warn!("Invalid PORT environment variable, using default port 3000");
+      3000
+    });
   let addr = SocketAddr::from(([0, 0, 0, 0], port));
   tracing::info!("Binding server to address: {}", addr);
 
