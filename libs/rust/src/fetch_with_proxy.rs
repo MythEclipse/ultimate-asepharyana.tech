@@ -81,7 +81,7 @@ pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, AppError> {
     headers.insert("upgrade-insecure-requests", reqwest::header::HeaderValue::from_static("1"));
     headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"));
 
-    match client.get(slug).headers(headers).send().await {
+    match client.get(slug).headers(headers).timeout(std::time::Duration::from_secs(10)).send().await {
         Ok(res) => {
             info!("[fetchWithProxy] Direct fetch response: url={}, status={}", slug, res.status());
             if res.status().is_success() {
