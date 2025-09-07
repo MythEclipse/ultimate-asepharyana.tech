@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import logger from '../utils/logger';
 import { DEFAULT_HEADERS } from '../utils/DHead';
 import { scrapeCroxyProxy } from './scrapeCroxyProxy';
-import { redis } from './redis';
+import { redis, testRedisConnection } from './redis';
 // --- CroxyProxyOnly Export (moved to top to fix hoisting issue) ---
 export async function CroxyProxyOnly(
   slug: string,
@@ -48,8 +48,15 @@ async function getCachedFetch(
         // ignore parse error, fallback to fetch
       }
     }
-  } catch (redisError) {
-    logger.warn(`[fetchWithProxy] Redis get failed for ${slug}:`, redisError);
+  } catch (redisError: any) {
+    logger.warn(`[fetchWithProxy] Redis get failed for ${slug}:`, {
+      message: redisError?.message,
+      code: redisError?.code,
+      stack: redisError?.stack,
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length
+    });
     // ignore Redis error, fallback to fetch
   }
   return null;
@@ -63,7 +70,12 @@ async function setCachedFetch(
     const key = getFetchCacheKey(slug);
     await redis.set(key, JSON.stringify(value), { ex: 120 });
   } catch (redisError) {
-    logger.warn(`[fetchWithProxy] Redis set failed for ${slug}:`, redisError);
+    logger.warn(`[fetchWithProxy] Redis set failed for ${slug}:`, {
+      error: redisError,
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length
+    });
     // ignore Redis error, continue without caching
   }
 }
