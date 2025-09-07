@@ -79,7 +79,62 @@ pub struct {} {{
   }
 }
 
-// FIX: This function uses a 'match' statement for macro robustness.
+// Generate detailed parameter documentation based on parameter name and context
+fn generate_detailed_param_doc(name: &str, typ: &str, route_path: &str) -> String {
+  let description = match name {
+    "id" => format!("Unique identifier for the resource (UUID format recommended)"),
+    "slug" =>
+      format!("URL-friendly identifier for the resource (typically lowercase with hyphens)"),
+    "uuid" => format!("Universally unique identifier for the resource"),
+    "user_id" => format!("User identifier (can be UUID, username, or numeric ID)"),
+    "chapter_id" => format!("Chapter identifier for manga/comic content"),
+    "komik_id" => format!("Comic/manga identifier"),
+    "anime_id" => format!("Anime series identifier"),
+    "page" => format!("Page number for pagination (starts from 1)"),
+    "limit" => format!("Maximum number of items to return (default: 20, max: 100)"),
+    "offset" => format!("Number of items to skip for pagination"),
+    "search" => format!("Search query string for filtering results"),
+    "category" => format!("Category filter for content organization"),
+    "status" => format!("Status filter (active, inactive, pending, etc.)"),
+    "type" | "r#type" => format!("Content type filter"),
+    "sort" => format!("Sort order (asc, desc, or field name)"),
+    "order" => format!("Sort direction (ascending or descending)"),
+    "file_name" => format!("Name of the file to access or download"),
+    "chapter" => format!("Chapter number for content navigation"),
+    "episode" => format!("Episode number for series content"),
+    _ => {
+      // Generate context-aware description based on route path
+      if route_path.contains("detail") {
+        format!("Identifier for the detailed resource view")
+      } else if route_path.contains("search") {
+        format!("Search parameter for filtering results")
+      } else if route_path.contains("chapter") {
+        format!("Chapter-specific identifier")
+      } else if route_path.contains("episode") {
+        format!("Episode-specific identifier")
+      } else {
+        format!("Parameter for resource identification")
+      }
+    }
+  };
+
+  let example = match name {
+    "id" | "uuid" => r#"example = "550e8400-e29b-41d4-a716-446655440000""#,
+    "slug" => r#"example = "naruto-shippuden-episode-1""#,
+    "page" => r#"example = 1, minimum = 1"#,
+    "limit" => r#"example = 20, minimum = 1, maximum = 100"#,
+    "offset" => r#"example = 0, minimum = 0"#,
+    "search" => r#"example = "naruto""#,
+    "chapter" => r#"example = "15""#,
+    "episode" => r#"example = "24""#,
+    "file_name" => r#"example = "document.pdf""#,
+    _ => r#"example = "sample_value""#,
+  };
+
+  format!(r#"("{}" = {}, Path, description = "{}", {})"#, name, typ, description, example)
+}
+
+// Enhanced function to generate detailed utoipa macro with comprehensive parameter documentation
 fn generate_utoipa_macro(
   http_method: &str,
   route_path: &str,
@@ -105,9 +160,7 @@ fn generate_utoipa_macro(
   } else {
     let params: Vec<String> = path_params
       .iter()
-      .map(|(name, typ)|
-        format!(r#"("{}" = {}, Path, description = "The {} identifier")"#, name, typ, name)
-      )
+      .map(|(name, typ)| generate_detailed_param_doc(name, typ, route_path))
       .collect();
     format!(",\n    params(\n        {}\n    )", params.join(",\n        "))
   };
@@ -360,7 +413,7 @@ pub fn update_handler_file(
   println!("cargo:info=axum_path: {}", axum_path);
   println!("cargo:info=route_path: {}", route_path);
   println!("cargo:info=path_params: {:?}", path_params);
-  let _new_utoipa_macro = generate_utoipa_macro(
+  let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
     &openapi_route_path,
     &route_tag,
@@ -369,6 +422,45 @@ pub fn update_handler_file(
     &operation_id,
     &path_params
   );
+
+  // Update or add utoipa macro - use a more robust approach
+  let utoipa_start = content.find("#[utoipa::path(");
+  let utoipa_end = if let Some(start) = utoipa_start {
+    // Find the closing bracket by counting parentheses
+    let mut paren_count = 0;
+    let mut end_pos = start;
+    for (i, ch) in content[start..].chars().enumerate() {
+      match ch {
+        '(' => paren_count += 1,
+        ')' => {
+          paren_count -= 1;
+          if paren_count == 0 {
+            end_pos = start + i + 1;
+            break;
+          }
+        }
+        _ => {}
+      }
+    }
+    Some(end_pos)
+  } else {
+    None
+  };
+
+  if let (Some(start), Some(end)) = (utoipa_start, utoipa_end) {
+    // Replace existing utoipa macro
+    let before = &content[..start];
+    let after = &content[end..];
+    content = format!("{}{}{}", before, new_utoipa_macro, after);
+  } else {
+    // Add new utoipa macro before the function
+    let fn_regex = Regex::new(r"(pub async fn \w+)").unwrap();
+    if let Some(cap) = fn_regex.find(&content) {
+      let before_fn = &content[..cap.start()];
+      let after_fn = &content[cap.start()..];
+      content = format!("{}{}\n{}", before_fn, new_utoipa_macro, after_fn);
+    }
+  }
 
   // Update function signature if there are path params
   if !path_params.is_empty() {

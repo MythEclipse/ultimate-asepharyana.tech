@@ -488,7 +488,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChapterResponse"
+                  "$ref": "#/components/schemas/ChapterData"
                 }
               }
             }
@@ -496,9 +496,9 @@
           "500": {
             "description": "Internal Server Error",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ChapterData"
                 }
               }
             }
@@ -518,7 +518,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DetailResponse"
+                  "$ref": "#/components/schemas/DetailData"
                 }
               }
             }
@@ -526,9 +526,9 @@
           "500": {
             "description": "Internal Server Error",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/DetailData"
                 }
               }
             }
@@ -541,7 +541,20 @@
         "tags": [
           "komik"
         ],
-        "operationId": "komik_manga_slug",
+        "operationId": "komik_manga_list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the komik/manga endpoint.",
@@ -571,7 +584,20 @@
         "tags": [
           "komik"
         ],
-        "operationId": "komik_manhua_slug",
+        "operationId": "komik_manhua_list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the komik/manhua endpoint.",
@@ -601,7 +627,20 @@
         "tags": [
           "komik"
         ],
-        "operationId": "komik_manhwa_slug",
+        "operationId": "komik_manhwa_list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Handles GET requests for the komik/manhwa endpoint.",
@@ -1182,10 +1221,10 @@
         ],
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/DetailData"
+            "$ref": "#/components/schemas/AnimeDetailData"
           },
           "status": {
-            "type": "boolean"
+            "type": "string"
           }
         }
       },
