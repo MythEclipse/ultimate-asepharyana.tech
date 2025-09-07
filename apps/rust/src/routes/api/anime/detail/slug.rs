@@ -189,7 +189,21 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   for element in document.select(&Selector::parse(".episodelist ul li a").unwrap()) {
     let episode = element.text().collect::<String>().trim().to_string();
     let href = element.value().attr("href").unwrap_or("");
-    let episode_slug = href.split('/').last().unwrap_or("").to_string();
+
+    // Generate slug from href or episode text if href is empty
+    let episode_slug = if !href.is_empty() {
+      // Try to extract slug from URL
+      href.split('/').filter(|s| !s.is_empty()).last().unwrap_or("").to_string()
+    } else {
+      // Generate slug from episode text
+      episode
+        .to_lowercase()
+        .replace("subtitle indonesia", "")
+        .replace("episode", "episode-")
+        .replace(" ", "-")
+        .trim_matches('-')
+        .to_string()
+    };
 
     if episode.to_lowercase().contains("batch") {
       batch.push(EpisodeList { episode, slug: episode_slug });
