@@ -9,7 +9,6 @@ import { Menu, X } from 'lucide-react';
 
 import { Button } from '../ui/button';
 import { navLinks } from '../../utils/constants';
-import UserMenu from './UserMenu';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 
 const Logo = memo(() => (
@@ -153,9 +152,6 @@ function MobileNav() {
                     </motion.li>
                   ))}
                 </motion.ul>
-                <div className='mt-6 pt-4 border-t flex justify-center sm:mt-8 sm:pt-6'>
-                  <UserMenu />
-                </div>
               </div>
             </motion.div>
           </motion.div>

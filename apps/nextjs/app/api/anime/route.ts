@@ -90,10 +90,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   try {
     const ongoingHtml = await fetchHtml(
-      'https://otakudesu.cloud/ongoing-anime/'
+      'https://otakudesu.best/ongoing-anime/'
     );
     const completeHtml = await fetchHtml(
-      'https://otakudesu.cloud/complete-anime/'
+      'https://otakudesu.best/complete-anime/'
     );
 
     const ongoingAnime = parseOngoingAnime(ongoingHtml);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../../utils/logger';
-import { verifyJwt } from '../../../../lib/jwt';
 import { getDb, Comments } from '@asepharyana/services';
 
 function getIp(req: NextRequest) {
@@ -14,28 +13,8 @@ function getIp(req: NextRequest) {
 async function postHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[POST /api/sosmed/comments] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(
-        `[POST /api/sosmed/comments] Invalid token or missing userId`,
-        { ip },
-      );
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { postId, content } = await req.json();
     logger.debug(`[POST /api/sosmed/comments] Payload`, { postId, content });
 
@@ -47,20 +26,23 @@ async function postHandler(req: NextRequest) {
       );
     }
 
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
+
     const comment = (await db
       .insertInto('Comments')
       .values({
         postId,
         content,
-        userId: userId,
-        authorId: userId,
+        userId: anonymousUserId,
+        authorId: anonymousUserId,
       })
       .returningAll()
       .executeTakeFirstOrThrow()) as Comments;
 
     logger.info(`[POST /api/sosmed/comments] Comment created`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       commentId: comment.id,
       durationMs: Date.now() - start,
     });
@@ -79,7 +61,6 @@ async function postHandler(req: NextRequest) {
   } catch (error) {
     logger.error(`[POST /api/sosmed/comments] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -143,28 +124,8 @@ async function getHandler(req: NextRequest) {
 async function putHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[PUT /api/sosmed/comments] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(
-        `[PUT /api/sosmed/comments] Invalid token or missing userId`,
-        { ip },
-      );
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/comments] Payload`, { id, content });
 
@@ -176,16 +137,19 @@ async function putHandler(req: NextRequest) {
       );
     }
 
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
+
     const comment = (await db
       .selectFrom('Comments')
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()) as Comments | undefined;
 
-    if (!comment || comment.userId !== userId) {
+    if (!comment || comment.userId !== anonymousUserId) {
       logger.warn(`[PUT /api/sosmed/comments] Not authorized to edit`, {
         ip,
-        userId: userId,
+        userId: anonymousUserId,
         commentId: id,
       });
       return NextResponse.json(
@@ -205,7 +169,7 @@ async function putHandler(req: NextRequest) {
 
     logger.info(`[PUT /api/sosmed/comments] Comment updated`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       commentId: id,
       durationMs: Date.now() - start,
     });
@@ -217,7 +181,6 @@ async function putHandler(req: NextRequest) {
   } catch (error) {
     logger.error(`[PUT /api/sosmed/comments] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -231,28 +194,8 @@ async function putHandler(req: NextRequest) {
 async function deleteHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[DELETE /api/sosmed/comments] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(
-        `[DELETE /api/sosmed/comments] Invalid token or missing userId`,
-        { ip },
-      );
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/comments] Payload`, { id });
 
@@ -264,16 +207,19 @@ async function deleteHandler(req: NextRequest) {
       );
     }
 
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
+
     const comment = (await db
       .selectFrom('Comments')
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()) as Comments | undefined;
 
-    if (!comment || comment.userId !== userId) {
+    if (!comment || comment.userId !== anonymousUserId) {
       logger.warn(`[DELETE /api/sosmed/comments] Not authorized to delete`, {
         ip,
-        userId: userId,
+        userId: anonymousUserId,
         commentId: id,
       });
       return NextResponse.json(
@@ -286,7 +232,7 @@ async function deleteHandler(req: NextRequest) {
 
     logger.info(`[DELETE /api/sosmed/comments] Comment deleted`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       commentId: id,
       durationMs: Date.now() - start,
     });
@@ -298,7 +244,6 @@ async function deleteHandler(req: NextRequest) {
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/comments] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -309,7 +254,7 @@ async function deleteHandler(req: NextRequest) {
   }
 }
 
-// Export with auth protection
+// Export with anonymous access
 export const POST = postHandler;
 export const GET = getHandler;
 export const PUT = putHandler;

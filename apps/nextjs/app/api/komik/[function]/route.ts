@@ -2,7 +2,7 @@
 
 import { NextResponse, NextRequest } from 'next/server';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy, ProxyListOnly, CroxyProxyOnly } from '../../../../lib/fetchWithProxy';
+import { fetchWithProxy, CroxyProxyOnly } from '../../../../lib/fetchWithProxy';
 import logger from '../../../../utils/logger';
 import { corsHeaders } from '../../../../lib/corsHeaders';
 import { getCachedKomikBaseUrl } from '../../../../lib/komikBaseUrl';
@@ -95,16 +95,28 @@ const fetchWithProxyOnlyWrapper = async (url: string): Promise<string> => {
       ? response.data
       : JSON.stringify(response.data);
   } catch (error) {
-    logger.error('[fetchWithProxyOnlyWrapper] Error', { url, error: (error as Error).message });
-    throw new Error('Failed to fetch data');
+    logger.error('[fetchWithProxyOnlyWrapper] Error', {
+      url,
+      error: (error as Error).message,
+      stack: (error as Error).stack,
+      name: (error as Error).name,
+    });
+    throw new Error(
+      `Failed to fetch data from ${url}: ${(error as Error).message}`,
+    );
   }
 };
 
 // Function to get manga detail
-const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail> => {
+const getDetail = async (
+  komik_id: string,
+  baseURL: string,
+): Promise<MangaDetail> => {
   try {
     logger.debug('[getDetail] Fetching detail', { komik_id, baseURL });
-    const body = await fetchWithProxyOnlyWrapper(`${baseURL}/komik/${komik_id}`);
+    const body = await fetchWithProxyOnlyWrapper(
+      `${baseURL}/komik/${komik_id}`,
+    );
     const $ = cheerio.load(body);
 
     // Title
@@ -126,7 +138,9 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
 
     // Description
     const description =
-      $('#sinopsis > section > div > div.entry-content.entry-content-single > p')
+      $(
+        '#sinopsis > section > div > div.entry-content.entry-content-single > p',
+      )
         .text()
         .trim() || '';
 
@@ -174,7 +188,9 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
     });
 
     if (chapters.length === 0) {
-      logger.error('[getDetail] Empty chapters parsed', { raw: body.slice(0, 500) });
+      logger.error('[getDetail] Empty chapters parsed', {
+        raw: body.slice(0, 500),
+      });
     }
 
     logger.info('[getDetail] Success', { komik_id, title });
@@ -194,17 +210,23 @@ const getDetail = async (komik_id: string, baseURL: string): Promise<MangaDetail
       chapters,
     };
   } catch (error) {
-    logger.error('[getDetail] Error', { komik_id, error: (error as Error).message });
+    logger.error('[getDetail] Error', {
+      komik_id,
+      error: (error as Error).message,
+    });
     throw new Error('Failed to fetch manga detail');
   }
 };
 
 // Function to get manga chapter
-const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaChapter> => {
+const getChapter = async (
+  chapter_url: string,
+  baseURL: string,
+): Promise<MangaChapter> => {
   try {
     logger.debug('[getChapter] Fetching chapter', { chapter_url, baseURL });
     const body = await fetchWithProxyOnlyWrapper(
-      `${baseURL}/chapter/${chapter_url}`
+      `${baseURL}/chapter/${chapter_url}`,
     );
     const $ = cheerio.load(body);
 
@@ -234,13 +256,22 @@ const getChapter = async (chapter_url: string, baseURL: string): Promise<MangaCh
     });
 
     if (images.length === 0) {
-      logger.error('[getChapter] Empty images parsed', { raw: body.slice(0, 500) });
+      logger.error('[getChapter] Empty images parsed', {
+        raw: body.slice(0, 500),
+      });
     }
 
-    logger.info('[getChapter] Success', { chapter_url, title, imagesCount: images.length });
+    logger.info('[getChapter] Success', {
+      chapter_url,
+      title,
+      imagesCount: images.length,
+    });
     return { title, next_chapter_id, prev_chapter_id, images, list_chapter };
   } catch (error) {
-    logger.error('[getChapter] Error', { chapter_url, error: (error as Error).message });
+    logger.error('[getChapter] Error', {
+      chapter_url,
+      error: (error as Error).message,
+    });
     throw new Error('Failed to fetch manga chapter');
   }
 };
@@ -260,7 +291,7 @@ const handleDetail = async (urlObj: URL, baseURL: string) => {
   const komik_id = urlObj.searchParams.get('komik_id') || 'one-piece';
   return {
     data: await getDetail(komik_id, baseURL),
-    params: { komik_id }
+    params: { komik_id },
   };
 };
 
@@ -268,11 +299,16 @@ const handleChapter = async (urlObj: URL, baseURL: string) => {
   const chapter_url = urlObj.searchParams.get('chapter_url') || '';
   return {
     data: await getChapter(chapter_url, baseURL),
-    params: { chapter_url }
+    params: { chapter_url },
   };
 };
 
-const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, page: string) => {
+const handleListOrSearch = async (
+  urlObj: URL,
+  baseURL: string,
+  type: string,
+  page: string,
+) => {
   let apiUrl = `${baseURL}/${type}/page/${page}/`;
   let params: Record<string, string> = {};
   if (type === 'search') {
@@ -285,13 +321,13 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
   let $ = cheerio.load(body);
   let parsedData = parseMangaData(body);
   if (parsedData.length === 0) {
-    logger.error('[handleListOrSearch] Empty data after parsing', { raw: body.slice(0, 500) });
+    logger.error('[handleListOrSearch] Empty data after parsing', {
+      raw: body.slice(0, 500),
+    });
   }
-  const currentPage =
-    parseInt($('.pagination .current').text().trim()) || 1;
+  const currentPage = parseInt($('.pagination .current').text().trim()) || 1;
   const totalPages =
-    parseInt($('.pagination a:not(.next):last').text().trim()) ||
-    currentPage;
+    parseInt($('.pagination a:not(.next):last').text().trim()) || currentPage;
 
   let pagination: Pagination = {
     current_page: currentPage,
@@ -310,12 +346,17 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
       const query = urlObj.searchParams.get('query') || '';
       retryApiUrl = `${refreshedBaseUrl}/page/${page}/?s=${query}`;
     }
-    const proxyResult = await ProxyListOnly(retryApiUrl, 10);
-    body = typeof proxyResult.data === 'string' ? proxyResult.data : JSON.stringify(proxyResult.data);
+    const proxyResult = await CroxyProxyOnly(retryApiUrl);
+    body =
+      typeof proxyResult.data === 'string'
+        ? proxyResult.data
+        : JSON.stringify(proxyResult.data);
     $ = cheerio.load(body);
     parsedData = parseMangaData(body);
     if (parsedData.length === 0) {
-      logger.error('[handleListOrSearch] Empty data after parsing (retry)', { raw: body.slice(0, 500) });
+      logger.error('[handleListOrSearch] Empty data after parsing (retry)', {
+        raw: body.slice(0, 500),
+      });
     }
     // Update pagination after retry
     const retryCurrentPage =
@@ -327,7 +368,8 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
       current_page: retryCurrentPage,
       last_visible_page: retryTotalPages,
       has_next_page: $('.pagination .next').length > 0,
-      next_page: retryCurrentPage < retryTotalPages ? retryCurrentPage + 1 : null,
+      next_page:
+        retryCurrentPage < retryTotalPages ? retryCurrentPage + 1 : null,
       has_previous_page: $('.pagination .prev').length > 0,
       previous_page: retryCurrentPage > 1 ? retryCurrentPage - 1 : null,
     };
@@ -343,7 +385,10 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
         $ = cheerio.load(croxyHtml);
         parsedData = parseMangaData(croxyHtml);
         if (parsedData.length === 0) {
-          logger.error('[handleListOrSearch] CroxyProxyOnly returned empty data after parsing', { raw: croxyHtml.slice(0, 500) });
+          logger.error(
+            '[handleListOrSearch] CroxyProxyOnly returned empty data after parsing',
+            { raw: croxyHtml.slice(0, 500) },
+          );
         }
         // Update pagination after CroxyProxyOnly
         const croxyCurrentPage =
@@ -355,13 +400,17 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
           current_page: croxyCurrentPage,
           last_visible_page: croxyTotalPages,
           has_next_page: $('.pagination .next').length > 0,
-          next_page: croxyCurrentPage < croxyTotalPages ? croxyCurrentPage + 1 : null,
+          next_page:
+            croxyCurrentPage < croxyTotalPages ? croxyCurrentPage + 1 : null,
           has_previous_page: $('.pagination .prev').length > 0,
           previous_page: croxyCurrentPage > 1 ? croxyCurrentPage - 1 : null,
         };
       }
     } catch (err) {
-      logger.error('[handleListOrSearch] CroxyProxyOnly failed', { err, raw: croxyHtml ? croxyHtml.slice(0, 500) : undefined });
+      logger.error('[handleListOrSearch] CroxyProxyOnly failed', {
+        err,
+        raw: croxyHtml ? croxyHtml.slice(0, 500) : undefined,
+      });
     }
   }
 
@@ -370,20 +419,19 @@ const handleListOrSearch = async (urlObj: URL, baseURL: string, type: string, pa
       data: parsedData,
       pagination,
     },
-    params
+    params,
   };
 };
 
 const handleExternalLink = async (baseURL: string) => {
   return {
     data: { link: baseURL },
-    params: {}
+    params: {},
   };
 };
 
 // Handler function for GET (dynamic route)
-export async function GET(
-  req: NextRequest) {
+export async function GET(req: NextRequest) {
   const start = Date.now();
   const ip =
     req.headers.get('x-forwarded-for') ||
@@ -407,9 +455,18 @@ export async function GET(
 
     logger.info('[API][komik] Incoming request', { ip, url, type, page });
 
-    let handlerResult: { data: unknown; params: Record<string, string> } | undefined;
+    let handlerResult:
+      | { data: unknown; params: Record<string, string> }
+      | undefined;
 
-    if (type === 'detail' || type === 'chapter' || type === 'manga' || type === 'manhwa' || type === 'manhua' || type === 'search') {
+    if (
+      type === 'detail' ||
+      type === 'chapter' ||
+      type === 'manga' ||
+      type === 'manhwa' ||
+      type === 'manhua' ||
+      type === 'search'
+    ) {
       const baseURL = await getBaseUrlWithRetry();
       if (type === 'detail') {
         handlerResult = await handleDetail(urlObj, baseURL);
@@ -431,31 +488,51 @@ export async function GET(
 
     // === EMPTY DATA CHECK FOR LIST/SEARCH ===
     if (
-      (type === 'manga' || type === 'manhwa' || type === 'manhua' || type === 'search') &&
+      (type === 'manga' ||
+        type === 'manhwa' ||
+        type === 'manhua' ||
+        type === 'search') &&
       typeof data === 'object' &&
       data !== null &&
       'data' in data &&
-      Array.isArray((data as { data: unknown } & Record<string, unknown>).data) &&
-      ((data as { data: unknown[] } & Record<string, unknown>).data.length === 0)
+      Array.isArray(
+        (data as { data: unknown } & Record<string, unknown>).data,
+      ) &&
+      (data as { data: unknown[] } & Record<string, unknown>).data.length === 0
     ) {
       const duration = Date.now() - start;
-      logger.warn('[API][komik] Empty data array after all proxy attempts', { ip, url, type, params, durationMs: duration });
+      logger.warn('[API][komik] Empty data array after all proxy attempts', {
+        ip,
+        url,
+        type,
+        params,
+        durationMs: duration,
+      });
       return NextResponse.json(
         {
           status: false,
           message: 'No data found',
           data: [],
-          pagination: typeof data === 'object' && data !== null && 'pagination' in data ? (data as { pagination?: unknown }).pagination ?? null : null,
+          pagination:
+            typeof data === 'object' && data !== null && 'pagination' in data
+              ? ((data as { pagination?: unknown }).pagination ?? null)
+              : null,
         },
         {
           status: 404,
           headers: corsHeaders,
-        }
+        },
       );
     }
 
     const duration = Date.now() - start;
-    logger.info('[API][komik] Success', { ip, url, type, params, durationMs: duration });
+    logger.info('[API][komik] Success', {
+      ip,
+      url,
+      type,
+      params,
+      durationMs: duration,
+    });
 
     return NextResponse.json(data, {
       status: 200,
@@ -479,7 +556,7 @@ export async function GET(
       {
         status: 500,
         headers: corsHeaders,
-      }
+      },
     );
   }
 }

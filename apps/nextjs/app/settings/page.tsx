@@ -2,12 +2,10 @@
 import React, { useState } from 'react';
 import Button from '../../components/ui/BaseButton';
 import { Card } from '../../components/ui/ComponentCard';
-import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import { fetchData } from '../../utils/useFetch';
 
 export default function Settings() {
-  const { data: session, status } = useSession();
   const [image, setImage] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,11 +13,6 @@ export default function Settings() {
   const handleSave = async () => {
     if (!image) {
       setError('Please select an image');
-      return;
-    }
-
-    if (status === 'loading' || !session?.user?.id) {
-      setError('User not authenticated');
       return;
     }
 
@@ -70,7 +63,7 @@ export default function Settings() {
 
           <Button
             onClick={handleSave}
-            disabled={saving || status === 'loading'}
+            disabled={saving}
             className="w-full"
           >
             {saving ? (

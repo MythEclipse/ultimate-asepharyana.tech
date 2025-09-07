@@ -1,18 +1,12 @@
 openapi: '3.0.2'
 paths:
-  /api/komik/manga/{slug}:
+  /api/komik/manga:
     get:
-      description: 'Mengambil detail manga berdasarkan slug dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
-      summary: 'Mengambil detail manga berdasarkan slug'
+      description: 'Mengambil daftar manga berdasarkan jenis manga dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
+      summary: 'Mengambil daftar manga'
       tags:
         - komik
       parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-          description: 'Slug untuk manga'
         - name: page
           in: query
           required: true
@@ -104,19 +98,13 @@ paths:
                     type: string
                 required:
                   - message
-  /api/komik/manhwa/{slug}:
+  /api/komik/manhwa:
     get:
-      description: 'Mengambil detail manhwa berdasarkan slug dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
-      summary: 'Mengambil detail manhwa berdasarkan slug'
+      description: 'Mengambil daftar manhwa berdasarkan jenis manhwa dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
+      summary: 'Mengambil daftar manhwa'
       tags:
         - komik
       parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-          description: 'Slug untuk manhwa'
         - name: page
           in: query
           required: true
@@ -208,19 +196,13 @@ paths:
                     type: string
                 required:
                   - message
-  /api/komik/manhua/{slug}:
+  /api/komik/manhua:
     get:
-      description: 'Mengambil detail manhua berdasarkan slug dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
-      summary: 'Mengambil detail manhua berdasarkan slug'
+      description: 'Mengambil daftar manhua berdasarkan jenis manhua dan parameter kueri lainnya. Mendukung pagination dan pengurutan.'
+      summary: 'Mengambil daftar manhua'
       tags:
         - komik
       parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-          description: 'Slug untuk manhua'
         - name: page
           in: query
           required: true

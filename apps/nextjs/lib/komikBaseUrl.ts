@@ -3,7 +3,7 @@
 import logger from '../utils/logger';
 import { redis } from './redis';
 import * as cheerio from 'cheerio';
-import { fetchWithProxy } from './fetchWithProxy';
+import { fetchWithProxyOnly } from './fetchWithProxy';
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 let komikBaseUrlPromise: Promise<string> | null = null;
@@ -25,14 +25,19 @@ function sleep(ms: number) {
 const fetchWithProxyOnlyWrapper = async (url: string): Promise<string> => {
   try {
     logger.debug('[fetchWithProxyOnlyWrapper] Fetching', { url });
-    const response = await fetchWithProxy(url);
+    const response = await fetchWithProxyOnly(url);
     logger.info('[fetchWithProxyOnlyWrapper] Fetched', { url });
     return typeof response.data === 'string'
       ? response.data
       : JSON.stringify(response.data);
   } catch (error) {
-    logger.error('[fetchWithProxyOnlyWrapper] Error', { url, error: (error as Error).message });
-    throw new Error('Failed to fetch data');
+    logger.error('[fetchWithProxyOnlyWrapper] Error', {
+      url,
+      error: (error as Error).message,
+      stack: (error as Error).stack,
+      name: (error as Error).name
+    });
+    throw new Error(`Failed to fetch data from ${url}: ${(error as Error).message}`);
   }
 };
 

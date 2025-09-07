@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../../utils/logger';
-import { verifyJwt } from '../../../../lib/jwt';
 import { getDb, Posts } from '@asepharyana/services';
 
 function getIp(req: NextRequest) {
@@ -14,28 +13,9 @@ function getIp(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
 
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[POST /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(`[POST /api/sosmed/posts] Invalid token or missing userId`, {
-        ip,
-      });
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { content, imageUrl } = await req.json();
     logger.debug(`[POST /api/sosmed/posts] Payload`, { content, imageUrl });
 
@@ -47,20 +27,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
+
     const newPost = (await db
       .insertInto('Posts')
       .values({
         content,
-        authorId: userId,
+        authorId: anonymousUserId,
         image_url: imageUrl || '',
-        userId: userId,
+        userId: anonymousUserId,
       })
       .returningAll()
       .executeTakeFirstOrThrow()) as Posts;
 
     logger.info(`[POST /api/sosmed/posts] Post created`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       postId: newPost.id,
       durationMs: Date.now() - start,
     });
@@ -72,7 +55,6 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     logger.error(`[POST /api/sosmed/posts] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -86,28 +68,9 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
 
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[GET /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(`[GET /api/sosmed/posts] Invalid token or missing userId`, {
-        ip,
-      });
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const posts = await db
       .selectFrom('Posts')
       .selectAll()
@@ -165,7 +128,6 @@ export async function GET(req: NextRequest) {
 
     logger.info(`[GET /api/sosmed/posts] Success`, {
       ip,
-      userId: userId,
       count: sanitizedPosts.length,
       durationMs: Date.now() - start,
     });
@@ -174,7 +136,6 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     logger.error(`[GET /api/sosmed/posts] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -188,28 +149,9 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
 
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[PUT /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(`[PUT /api/sosmed/posts] Invalid token or missing userId`, {
-        ip,
-      });
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { id, content } = await req.json();
     logger.debug(`[PUT /api/sosmed/posts] Payload`, { id, content });
 
@@ -221,16 +163,19 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
+
     const post = (await db
       .selectFrom('Posts')
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()) as Posts | undefined;
 
-    if (!post || post.userId !== userId) {
+    if (!post || post.userId !== anonymousUserId) {
       logger.warn(`[PUT /api/sosmed/posts] Not authorized to edit`, {
         ip,
-        userId: userId,
+        userId: anonymousUserId,
         postId: id,
       });
       return NextResponse.json(
@@ -250,7 +195,7 @@ export async function PUT(req: NextRequest) {
 
     logger.info(`[PUT /api/sosmed/posts] Post updated`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -262,7 +207,6 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     logger.error(`[PUT /api/sosmed/posts] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -276,29 +220,9 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
 
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[DELETE /api/sosmed/posts] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(
-        `[DELETE /api/sosmed/posts] Invalid token or missing userId`,
-        { ip },
-      );
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { id } = await req.json();
     logger.debug(`[DELETE /api/sosmed/posts] Payload`, { id });
 
@@ -309,6 +233,9 @@ export async function DELETE(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
 
     const post = (await db
       .selectFrom('Posts')
@@ -324,10 +251,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (post.userId !== userId) {
+    if (post.userId !== anonymousUserId) {
       logger.warn(`[DELETE /api/sosmed/posts] Not authorized to delete`, {
         ip,
-        userId: userId,
+        userId: anonymousUserId,
         postId: id,
       });
       return NextResponse.json(
@@ -340,7 +267,7 @@ export async function DELETE(req: NextRequest) {
 
     logger.info(`[DELETE /api/sosmed/posts] Post deleted`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       postId: id,
       durationMs: Date.now() - start,
     });
@@ -352,7 +279,6 @@ export async function DELETE(req: NextRequest) {
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/posts] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });

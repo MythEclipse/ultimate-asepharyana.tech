@@ -11,7 +11,8 @@
       "executor": "@nx/next:server",
       "options": {
         "buildTarget": "@asepharyana/nextjs:build",
-        "dev": true
+        "dev": true,
+        "port": 4090
       }
     },
     "build": {

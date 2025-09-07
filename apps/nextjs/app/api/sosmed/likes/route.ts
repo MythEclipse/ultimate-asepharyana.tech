@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import logger from '../../../../utils/logger';
-import { verifyJwt } from '../../../../lib/jwt';
 import { getDb, Likes } from '@asepharyana/services';
 
 function getIp(req: Request) {
@@ -14,42 +13,26 @@ function getIp(req: Request) {
 async function postHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
 
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[POST /api/sosmed/likes] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(`[POST /api/sosmed/likes] Invalid token or missing userId`, {
-        ip,
-      });
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { postId } = await req.json();
     logger.debug(`[POST /api/sosmed/likes] Payload`, { postId });
+
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
 
     const existingLike = (await db
       .selectFrom('Likes')
       .selectAll()
-      .where('userId', '=', userId)
+      .where('userId', '=', anonymousUserId)
       .where('postId', '=', postId)
       .executeTakeFirst()) as Likes | undefined;
 
     if (existingLike) {
       logger.warn(`[POST /api/sosmed/likes] Already liked`, {
         ip,
-        userId: userId,
+        userId: anonymousUserId,
         postId,
       });
       return NextResponse.json({ message: 'Already liked' }, { status: 409 });
@@ -59,14 +42,14 @@ async function postHandler(req: NextRequest) {
       .insertInto('Likes')
       .values({
         postId,
-        userId: userId,
+        userId: anonymousUserId,
       })
       .returningAll()
       .executeTakeFirstOrThrow()) as Likes;
 
     logger.info(`[POST /api/sosmed/likes] Like created`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       postId,
       durationMs: Date.now() - start,
     });
@@ -75,7 +58,6 @@ async function postHandler(req: NextRequest) {
   } catch (error) {
     logger.error(`[POST /api/sosmed/likes] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });
@@ -89,43 +71,26 @@ async function postHandler(req: NextRequest) {
 async function deleteHandler(req: NextRequest) {
   const start = Date.now();
   const ip = getIp(req);
-  let userId: string | undefined;
   const db = getDb();
 
   try {
-    const token = req.cookies.get('token')?.value;
-    if (!token) {
-      logger.warn(`[DELETE /api/sosmed/likes] No token provided`, { ip });
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 },
-      );
-    }
-
-    const decoded = await verifyJwt(token);
-    if (!decoded || !decoded.userId) {
-      logger.warn(
-        `[DELETE /api/sosmed/likes] Invalid token or missing userId`,
-        { ip },
-      );
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    userId = decoded.userId as string;
-
     const { postId } = await req.json();
     logger.debug(`[DELETE /api/sosmed/likes] Payload`, { postId });
+
+    // Use IP as anonymous user identifier
+    const anonymousUserId = `anonymous_${ip.replace(/\./g, '_')}`;
 
     const existingLike = (await db
       .selectFrom('Likes')
       .selectAll()
-      .where('userId', '=', userId)
+      .where('userId', '=', anonymousUserId)
       .where('postId', '=', postId)
       .executeTakeFirst()) as Likes | undefined;
 
     if (!existingLike) {
       logger.warn(`[DELETE /api/sosmed/likes] Like not found`, {
         ip,
-        userId: userId,
+        userId: anonymousUserId,
         postId,
       });
       return NextResponse.json({ message: 'Like not found' }, { status: 404 });
@@ -133,13 +98,13 @@ async function deleteHandler(req: NextRequest) {
 
     await db
       .deleteFrom('Likes')
-      .where('userId', '=', userId)
+      .where('userId', '=', anonymousUserId)
       .where('postId', '=', postId)
       .execute();
 
     logger.info(`[DELETE /api/sosmed/likes] Like removed`, {
       ip,
-      userId: userId,
+      userId: anonymousUserId,
       postId,
       durationMs: Date.now() - start,
     });
@@ -151,7 +116,6 @@ async function deleteHandler(req: NextRequest) {
   } catch (error) {
     logger.error(`[DELETE /api/sosmed/likes] Error`, {
       ip,
-      userId: userId,
       error,
       durationMs: Date.now() - start,
     });

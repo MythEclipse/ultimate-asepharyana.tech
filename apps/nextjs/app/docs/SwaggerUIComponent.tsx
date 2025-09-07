@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { OpenAPIV3 } from 'openapi-types';
 import { useTheme } from 'next-themes';
 import 'swagger-ui-dist/swagger-ui.css';
@@ -15,11 +15,16 @@ interface SwaggerUIComponentProps {
 export default function SwaggerUIComponent({ spec }: SwaggerUIComponentProps) {
   const swaggerUIRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let cleanupFn: (() => void) | undefined;
 
-    if (swaggerUIRef.current && spec) {
+    if (swaggerUIRef.current && spec && mounted) {
       const ui = SwaggerUIBundle({
         spec: spec,
         domNode: swaggerUIRef.current,
@@ -44,11 +49,11 @@ export default function SwaggerUIComponent({ spec }: SwaggerUIComponentProps) {
     }
 
     return cleanupFn;
-  }, [spec, resolvedTheme]);
+  }, [spec, resolvedTheme, mounted]);
 
   return (
     <div
-      className={resolvedTheme === 'dark' ? 'dark-theme' : ''}
+      className={mounted && resolvedTheme === 'dark' ? 'dark-theme' : ''}
       ref={swaggerUIRef}
     />
   );
