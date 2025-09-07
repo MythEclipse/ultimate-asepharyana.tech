@@ -5,6 +5,11 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use backoff::{retry, ExponentialBackoff};
+use dashmap::DashMap;
+use tracing::{info, error};
+use std::time::Instant;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -46,33 +51,41 @@ pub struct ListResponse {
   pub pagination: Pagination,
 }
 
+lazy_static! {
+  static ref ITEM_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
+  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
+  static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
+  static ref NEXT_SELECTOR: Selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
+  static ref CACHE: DashMap<String, (Vec<AnimeItem>, Pagination)> = DashMap::new();
+}
+
 async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url).await?;
-  Ok(response.data)
+  let operation = || async {
+    let response = fetch_with_proxy(url).await?;
+    Ok(response.data)
+  };
+
+  let backoff = ExponentialBackoff::default();
+  retry(backoff, operation).await
 }
 
 fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
   let document = Html::parse_document(html);
 
-  let item_selector = Selector::parse(".venz ul li").unwrap();
-  let title_selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let episode_selector = Selector::parse(".epz").unwrap();
-  let pagination_selector = Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
-  let next_selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
-
   let mut anime_list = Vec::new();
 
-  for element in document.select(&item_selector) {
+  for element in document.select(&*ITEM_SELECTOR) {
     let title = element
-      .select(&title_selector)
+      .select(&*TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let slug = element
-      .select(&link_selector)
+      .select(&*LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .and_then(|href| href.split('/').nth(4))
@@ -80,20 +93,20 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
       .to_string();
 
     let poster = element
-      .select(&img_selector)
+      .select(&*IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let episode = element
-      .select(&episode_selector)
+      .select(&*EPISODE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_else(|| "N/A".to_string());
 
     let anime_url = element
-      .select(&link_selector)
+      .select(&*LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
@@ -112,12 +125,12 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
 
   let current_page = slug.parse::<u32>().unwrap_or(1);
   let last_visible_page = document
-    .select(&pagination_selector)
+    .select(&*PAGINATION_SELECTOR)
     .last()
     .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
     .unwrap_or(1);
 
-  let has_next_page = document.select(&next_selector).next().is_some();
+  let has_next_page = document.select(&*NEXT_SELECTOR).next().is_some();
   let next_page = if has_next_page { Some(current_page + 1) } else { None };
   let has_previous_page = current_page > 1;
   let previous_page = if has_previous_page { Some(current_page - 1) } else { None };
@@ -150,16 +163,36 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
   )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+  let start = Instant::now();
+  info!("Starting request for complete_anime slug: {}", slug);
+
+  // Check cache first
+  if let Some(cached) = CACHE.get(&slug) {
+    let duration = start.elapsed();
+    info!("Cache hit for slug: {}, duration: {:?}", slug, duration);
+    return Json(ListResponse {
+      status: "Ok".to_string(),
+      data: cached.0.clone(),
+      pagination: cached.1.clone(),
+    });
+  }
+
   match fetch_html(&format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)).await {
     Ok(html) => {
       let (anime_list, pagination) = parse_anime_page(&html, &slug);
+      // Cache the result
+      CACHE.insert(slug.clone(), (anime_list.clone(), pagination.clone()));
+      let duration = start.elapsed();
+      info!("Fetched and parsed for slug: {}, duration: {:?}", slug, duration);
       Json(ListResponse {
         status: "Ok".to_string(),
         data: anime_list,
         pagination,
       })
     }
-    Err(_) =>
+    Err(e) => {
+      let duration = start.elapsed();
+      error!("Error fetching for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
       Json(ListResponse {
         status: "Error".to_string(),
         data: vec![],
@@ -171,7 +204,8 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
           has_previous_page: false,
           previous_page: None,
         },
-      }),
+      })
+    }
   }
 }
 

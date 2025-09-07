@@ -9,6 +9,9 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use rust_lib::komik_base_url::get_cached_komik_base_url;
 use tracing::{ error, info, warn };
 use urlencoding;
+use lazy_static::lazy_static;
+use std::time::Instant;
+use tokio::time::{sleep, Duration};
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -56,6 +59,40 @@ pub struct SearchQuery {
   pub page: Option<u32>,
 }
 
+lazy_static! {
+    static ref ANIMPOST_SELECTOR: Selector = Selector::parse(".animposx").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h4").unwrap();
+    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+    static ref CHAPTER_SELECTOR: Selector = Selector::parse(".lsch a").unwrap();
+    static ref SCORE_SELECTOR: Selector = Selector::parse("i").unwrap();
+    static ref DATE_SELECTOR: Selector = Selector::parse(".datech").unwrap();
+    static ref TYPE_SELECTOR: Selector = Selector::parse(".typeflag").unwrap();
+    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+    static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
+    static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
+    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
+    static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
+}
+
+async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn std::error::Error>> {
+    let mut attempt = 0;
+    loop {
+        match fetch_with_proxy(url).await {
+            Ok(response) => return Ok(response.data),
+            Err(e) => {
+                attempt += 1;
+                if attempt > max_retries {
+                    error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
+                    return Err(e);
+                }
+                let delay = Duration::from_millis(2u64.pow(attempt) * 100);
+                info!("Retrying fetch for {} in {:?}", url, delay);
+                sleep(delay).await;
+            }
+        }
+    }
+}
+
 #[utoipa::path(
   get,
   path = "/api/komik/search",
@@ -78,6 +115,8 @@ pub struct SearchQuery {
 pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
   let query = params.query.unwrap_or_default();
   let page = params.page.unwrap_or(1);
+  let start = Instant::now();
+  info!("Starting search request for query '{}' page {}", query, page);
 
   let base_url = match get_cached_komik_base_url(false).await {
     Ok(url) => url,
@@ -110,9 +149,13 @@ pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
   };
 
   match fetch_and_parse_search(&url, &query, page).await {
-    Ok(response) => Json(response),
+    Ok(response) => {
+      info!("Search request completed in {:?}", start.elapsed());
+      Json(response)
+    }
     Err(e) => {
       error!("[search] Failed to fetch and parse search: {:?}", e);
+      info!("Search request completed in {:?}", start.elapsed());
       Json(SearchResponse {
         data: vec![],
         pagination: Pagination {
@@ -133,30 +176,29 @@ async fn fetch_and_parse_search(
   _query: &str,
   page: u32
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
+  let start = Instant::now();
   info!("[fetch_and_parse_search] Starting fetch for URL: {}", url);
 
-  // Use fetch_with_proxy which includes comprehensive retry logic
-  let html = match fetch_with_proxy(url).await {
-    Ok(result) => {
-      info!("[fetch_and_parse_search] fetch_with_proxy successful");
-      result.data
-    }
+  let html = match fetch_with_retry(url, 3).await {
+    Ok(h) => h,
     Err(e) => {
-      error!("[fetch_and_parse_search] All proxy attempts failed: {:?}", e);
-      return Err(Box::new(e));
+      error!("[fetch_and_parse_search] Fetch failed in {:?}: {:?}", start.elapsed(), e);
+      return Err(e);
     }
   };
 
   let document = Html::parse_document(&html);
 
-  let animposx_selector = Selector::parse(".animposx").unwrap();
-  let title_selector = Selector::parse(".tt h4").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let chapter_selector = Selector::parse(".lsch a").unwrap();
-  let score_selector = Selector::parse("i").unwrap();
-  let date_selector = Selector::parse(".datech").unwrap();
-  let type_selector = Selector::parse(".typeflag").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
+  let animposx_selector = &*ANIMPOST_SELECTOR;
+  let title_selector = &*TITLE_SELECTOR;
+  let img_selector = &*IMG_SELECTOR;
+  let chapter_selector = &*CHAPTER_SELECTOR;
+  let score_selector = &*SCORE_SELECTOR;
+  let date_selector = &*DATE_SELECTOR;
+  let type_selector = &*TYPE_SELECTOR;
+  let link_selector = &*LINK_SELECTOR;
+
+  info!("[fetch_and_parse_search] Fetched and parsed search in {:?}", start.elapsed());
 
   let mut data = Vec::new();
 
@@ -182,8 +224,7 @@ async fn fetch_and_parse_search(
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
-    let chapter = Regex::new(r"\d+(\.\d+)?")
-      .unwrap()
+    let chapter = CHAPTER_REGEX
       .find(&chapter_text)
       .map(|m| m.as_str().to_string())
       .unwrap_or_default();
@@ -238,9 +279,12 @@ async fn fetch_and_parse_search(
 }
 
 fn parse_pagination(document: &Html, current_page: u32) -> Pagination {
-  let page_selectors = Selector::parse(".pagination a:not(.next)").unwrap();
-  let next_selector = Selector::parse(".pagination .next").unwrap();
-  let prev_selector = Selector::parse(".pagination .prev").unwrap();
+  let start = Instant::now();
+  info!("[parse_pagination] Starting pagination parsing");
+
+  let page_selectors = &*PAGE_SELECTORS;
+  let next_selector = &*NEXT_SELECTOR;
+  let prev_selector = &*PREV_SELECTOR;
 
   let mut last_visible_page = current_page;
   for element in document.select(&page_selectors) {
@@ -264,6 +308,8 @@ fn parse_pagination(document: &Html, current_page: u32) -> Pagination {
   } else {
     None
   };
+
+  info!("[parse_pagination] Parsed pagination in {:?}", start.elapsed());
 
   Pagination {
     current_page,

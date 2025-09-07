@@ -72,6 +72,8 @@ headless_chrome = "1.0.18"
 mime_guess = "2.0.5"
 lazy_static = "1.4"
 socks = "0.3.4"
+backoff = "0.4"
+dashmap = "5.5"
 
 # --- LIBS ---
 rust_lib = { path = "libs/rust" }

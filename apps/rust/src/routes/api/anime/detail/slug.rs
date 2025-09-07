@@ -5,6 +5,11 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use backoff::{retry, ExponentialBackoff};
+use dashmap::DashMap;
+use tracing::{info, error};
+use std::time::Instant;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -64,6 +69,18 @@ pub struct DetailResponse {
   pub data: AnimeDetailData,
 }
 
+lazy_static! {
+  static ref INFO_SELECTOR: Selector = Selector::parse(".infozingle p").unwrap();
+  static ref POSTER_SELECTOR: Selector = Selector::parse(".fotoanime img").unwrap();
+  static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".sinopc").unwrap();
+  static ref GENRE_LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref EPISODE_LIST_SELECTOR: Selector = Selector::parse(".episodelist ul li a").unwrap();
+  static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
+  static ref RECOMMENDATION_TITLE_SELECTOR: Selector = Selector::parse(".judul-anime a").unwrap();
+  static ref RECOMMENDATION_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  static ref CACHE: DashMap<String, AnimeDetailData> = DashMap::new();
+}
+
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
@@ -80,13 +97,33 @@ pub struct DetailResponse {
   )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+  let start = Instant::now();
+  info!("Starting request for detail slug: {}", slug);
+
+  // Check cache first
+  if let Some(cached) = CACHE.get(&slug) {
+    let duration = start.elapsed();
+    info!("Cache hit for detail slug: {}, duration: {:?}", slug, duration);
+    return Json(DetailResponse {
+      status: "Ok".to_string(),
+      data: cached.clone(),
+    });
+  }
+
   match fetch_anime_detail(&slug).await {
-    Ok(data) =>
+    Ok(data) => {
+      // Cache the result
+      CACHE.insert(slug.clone(), data.clone());
+      let duration = start.elapsed();
+      info!("Fetched and parsed detail for slug: {}, duration: {:?}", slug, duration);
       Json(DetailResponse {
         status: "Ok".to_string(),
         data,
-      }),
-    Err(_) =>
+      })
+    }
+    Err(e) => {
+      let duration = start.elapsed();
+      error!("Error fetching detail for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
       Json(DetailResponse {
         status: "Error".to_string(),
         data: AnimeDetailData {
@@ -104,63 +141,68 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
           producers: vec![],
           recommendations: vec![],
         },
-      }),
+      })
+    }
   }
 }
 
 async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
-  let response = fetch_with_proxy(&url).await?;
-  let html = response.data;
+
+  let operation = || async {
+    let response = fetch_with_proxy(&url).await?;
+    Ok(response.data)
+  };
+
+  let backoff = ExponentialBackoff::default();
+  let html = retry(backoff, operation).await?;
   let document = Html::parse_document(&html);
 
-  let info_selector = Selector::parse(".infozingle p").unwrap();
-
   let title = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Judul"))
     .map(|e| e.text().collect::<String>().replace("Judul: ", "").trim().to_string())
     .unwrap_or_default();
 
   let alternative_title = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Japanese"))
     .map(|e| e.text().collect::<String>().replace("Japanese: ", "").trim().to_string())
     .unwrap_or_default();
 
   let poster = document
-    .select(&Selector::parse(".fotoanime img").unwrap())
+    .select(&*POSTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("src"))
     .unwrap_or("")
     .to_string();
 
   let r#type = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Tipe"))
     .map(|e| e.text().collect::<String>().replace("Tipe: ", "").trim().to_string())
     .unwrap_or_default();
 
   let release_date = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Tanggal Rilis"))
     .map(|e| e.text().collect::<String>().replace("Tanggal Rilis: ", "").trim().to_string())
     .unwrap_or_default();
 
   let status = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Status"))
     .map(|e| e.text().collect::<String>().replace("Status: ", "").trim().to_string())
     .unwrap_or_default();
 
   let synopsis = document
-    .select(&Selector::parse(".sinopc").unwrap())
+    .select(&*SYNOPSIS_SELECTOR)
     .next()
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let studio = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Studio"))
     .map(|e| e.text().collect::<String>().replace("Studio: ", "").trim().to_string())
     .unwrap_or_default();
@@ -168,10 +210,10 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   let mut genres = Vec::new();
   if
     let Some(genre_paragraph) = document
-      .select(&info_selector)
+      .select(&*INFO_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Genre"))
   {
-    for element in genre_paragraph.select(&Selector::parse("a").unwrap()) {
+    for element in genre_paragraph.select(&*GENRE_LINK_SELECTOR) {
       let name = element.text().collect::<String>().trim().to_string();
       let genre_slug = element
         .value()
@@ -186,7 +228,7 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
 
   let mut episode_lists = Vec::new();
   let mut batch = Vec::new();
-  for element in document.select(&Selector::parse(".episodelist ul li a").unwrap()) {
+  for element in document.select(&*EPISODE_LIST_SELECTOR) {
     let episode = element.text().collect::<String>().trim().to_string();
     let href = element.value().attr("href").unwrap_or("");
 
@@ -213,7 +255,7 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   }
 
   let producers_text = document
-    .select(&info_selector)
+    .select(&*INFO_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Produser"))
     .map(|e| e.text().collect::<String>().replace("Produser: ", "").trim().to_string())
     .unwrap_or_default();
@@ -223,22 +265,22 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
     .collect();
 
   let mut recommendations = Vec::new();
-  for element in document.select(&Selector::parse("#recommend-anime-series .isi-anime").unwrap()) {
+  for element in document.select(&*RECOMMENDATION_SELECTOR) {
     let title = element
-      .select(&Selector::parse(".judul-anime a").unwrap())
+      .select(&*RECOMMENDATION_TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let url = element
-      .select(&Selector::parse("a").unwrap())
+      .select(&*GENRE_LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
       .to_string();
 
     let poster = element
-      .select(&Selector::parse("img").unwrap())
+      .select(&*RECOMMENDATION_IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")

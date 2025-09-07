@@ -6,6 +6,11 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use regex::Regex;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use backoff::{retry, ExponentialBackoff};
+use dashmap::DashMap;
+use tracing::{info, error};
+use std::time::Instant;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -54,6 +59,18 @@ pub struct SearchQuery {
   pub q: Option<String>,
 }
 
+lazy_static! {
+  static ref ITEM_SELECTOR: Selector = Selector::parse("#venkonten .chivsrc li").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse("h2 a").unwrap();
+  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref GENRE_SELECTOR: Selector = Selector::parse(".set a").unwrap();
+  static ref STATUS_SELECTOR: Selector = Selector::parse(".set").unwrap();
+  static ref NEXT_SELECTOR: Selector = Selector::parse(".hpage .r").unwrap();
+  static ref EPISODE_REGEX: Regex = Regex::new(r"\(([^)]+)\)").unwrap();
+  static ref CACHE: DashMap<String, SearchResponse> = DashMap::new();
+}
+
 #[utoipa::path(
   get,
   path = "/api/anime/search",
@@ -69,12 +86,30 @@ pub struct SearchQuery {
   )
 )]
 pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
+  let start = Instant::now();
   let query = params.q.unwrap_or_else(|| "one".to_string());
+  info!("Starting search for query: {}", query);
+
+  // Check cache first
+  if let Some(cached) = CACHE.get(&query) {
+    let duration = start.elapsed();
+    info!("Cache hit for search query: {}, duration: {:?}", query, duration);
+    return Json(cached.clone());
+  }
+
   let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", urlencoding::encode(&query));
 
   match fetch_and_parse_search(&url, &query).await {
-    Ok(response) => Json(response),
-    Err(_) =>
+    Ok(response) => {
+      // Cache the result
+      CACHE.insert(query.clone(), response.clone());
+      let duration = start.elapsed();
+      info!("Fetched and parsed search for query: {}, duration: {:?}", query, duration);
+      Json(response)
+    }
+    Err(e) => {
+      let duration = start.elapsed();
+      error!("Error searching for query: {}, error: {:?}, duration: {:?}", query, e, duration);
       Json(SearchResponse {
         status: "Error".to_string(),
         data: vec![],
@@ -86,7 +121,8 @@ pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
           has_previous_page: false,
           previous_page: None,
         },
-      }),
+      })
+    }
   }
 }
 
@@ -94,28 +130,26 @@ async fn fetch_and_parse_search(
   url: &str,
   query: &str
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url).await?;
-  let html = response.data;
-  let document = Html::parse_document(&html);
+  let operation = || async {
+    let response = fetch_with_proxy(url).await?;
+    Ok(response.data)
+  };
 
-  let item_selector = Selector::parse("#venkonten .chivsrc li").unwrap();
-  let title_selector = Selector::parse("h2 a").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
-  let genre_selector = Selector::parse(".set a").unwrap();
-  let status_selector = Selector::parse(".set").unwrap();
+  let backoff = ExponentialBackoff::default();
+  let html = retry(backoff, operation).await?;
+  let document = Html::parse_document(&html);
 
   let mut data = Vec::new();
 
-  for element in document.select(&item_selector) {
+  for element in document.select(&*ITEM_SELECTOR) {
     let title = element
-      .select(&title_selector)
+      .select(&*TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let slug = element
-      .select(&link_selector)
+      .select(&*LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .and_then(|href| href.split('/').nth(4))
@@ -123,51 +157,50 @@ async fn fetch_and_parse_search(
       .to_string();
 
     let poster = element
-      .select(&img_selector)
+      .select(&*IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let episode_text = element
-      .select(&title_selector)
+      .select(&*TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>())
       .unwrap_or_default();
 
-    let episode_regex = Regex::new(r"\(([^)]+)\)").unwrap();
-    let episode = episode_regex
+    let episode = EPISODE_REGEX
       .captures(&episode_text)
       .and_then(|cap| cap.get(1))
       .map(|m| m.as_str().to_string())
       .unwrap_or_else(|| "Ongoing".to_string());
 
     let anime_url = element
-      .select(&link_selector)
+      .select(&*LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
       .to_string();
 
     let genres: Vec<String> = element
-      .select(&Selector::parse(".set").unwrap())
+      .select(&*STATUS_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Genres"))
       .map(|set|
         set
-          .select(&genre_selector)
+          .select(&*GENRE_SELECTOR)
           .map(|e| e.text().collect::<String>().trim().to_string())
           .collect()
       )
       .unwrap_or_default();
 
     let status = element
-      .select(&status_selector)
+      .select(&*STATUS_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Status"))
       .map(|e| e.text().collect::<String>().replace("Status :", "").trim().to_string())
       .unwrap_or_default();
 
     let rating = element
-      .select(&status_selector)
+      .select(&*STATUS_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Rating"))
       .map(|e| e.text().collect::<String>().replace("Rating :", "").trim().to_string())
       .unwrap_or_default();
@@ -198,9 +231,8 @@ async fn fetch_and_parse_search(
 fn parse_pagination(document: &Html, _query: &str) -> Pagination {
   let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
   let last_visible_page = 57;
-  let next_selector = Selector::parse(".hpage .r").unwrap();
 
-  let has_next_page = document.select(&next_selector).next().is_some();
+  let has_next_page = document.select(&*NEXT_SELECTOR).next().is_some();
   let has_previous_page = page_num > 1;
 
   Pagination {

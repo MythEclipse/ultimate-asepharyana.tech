@@ -5,6 +5,11 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use backoff::{retry, ExponentialBackoff};
+use dashmap::DashMap;
+use tracing::{info, error};
+use std::time::Instant;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -55,6 +60,18 @@ pub struct FullResponse {
   pub data: AnimeFullData,
 }
 
+lazy_static! {
+  static ref EPISODE_TITLE_SELECTOR: Selector = Selector::parse("h1.posttl").unwrap();
+  static ref IMAGE_SELECTOR: Selector = Selector::parse(".cukder img").unwrap();
+  static ref STREAM_SELECTOR: Selector = Selector::parse("#embed_holder iframe").unwrap();
+  static ref DOWNLOAD_ITEM_SELECTOR: Selector = Selector::parse(".download ul li").unwrap();
+  static ref RESOLUTION_SELECTOR: Selector = Selector::parse("strong").unwrap();
+  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref NEXT_EPISODE_SELECTOR: Selector = Selector::parse(".flir a[title*='Episode Selanjutnya']").unwrap();
+  static ref PREVIOUS_EPISODE_SELECTOR: Selector = Selector::parse(".flir a[title*='Episode Sebelumnya']").unwrap();
+  static ref CACHE: DashMap<String, AnimeFullData> = DashMap::new();
+}
+
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
@@ -71,13 +88,33 @@ pub struct FullResponse {
   )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+  let start = Instant::now();
+  info!("Starting request for full slug: {}", slug);
+
+  // Check cache first
+  if let Some(cached) = CACHE.get(&slug) {
+    let duration = start.elapsed();
+    info!("Cache hit for full slug: {}, duration: {:?}", slug, duration);
+    return Json(FullResponse {
+      status: "Ok".to_string(),
+      data: cached.clone(),
+    });
+  }
+
   match fetch_anime_full(&slug).await {
-    Ok(data) =>
+    Ok(data) => {
+      // Cache the result
+      CACHE.insert(slug.clone(), data.clone());
+      let duration = start.elapsed();
+      info!("Fetched and parsed full for slug: {}, duration: {:?}", slug, duration);
       Json(FullResponse {
         status: "Ok".to_string(),
         data,
-      }),
-    Err(_) =>
+      })
+    }
+    Err(e) => {
+      let duration = start.elapsed();
+      error!("Error fetching full for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
       Json(FullResponse {
         status: "Error".to_string(),
         data: AnimeFullData {
@@ -92,18 +129,25 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
           download_urls: std::collections::HashMap::new(),
           image_url: "".to_string(),
         },
-      }),
+      })
+    }
   }
 }
 
 async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/episode/{}", slug);
-  let response = fetch_with_proxy(&url).await?;
-  let html = response.data;
+
+  let operation = || async {
+    let response = fetch_with_proxy(&url).await?;
+    Ok(response.data)
+  };
+
+  let backoff = ExponentialBackoff::default();
+  let html = retry(backoff, operation).await?;
   let document = Html::parse_document(&html);
 
   let episode = document
-    .select(&Selector::parse("h1.posttl").unwrap())
+    .select(&*EPISODE_TITLE_SELECTOR)
     .next()
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
@@ -115,14 +159,14 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
     .unwrap_or_default();
 
   let image_url = document
-    .select(&Selector::parse(".cukder img").unwrap())
+    .select(&*IMAGE_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("src"))
     .unwrap_or("")
     .to_string();
 
   let stream_url = document
-    .select(&Selector::parse("#embed_holder iframe").unwrap())
+    .select(&*STREAM_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("src"))
     .unwrap_or("")
@@ -130,15 +174,15 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
 
   let mut download_urls = std::collections::HashMap::new();
 
-  for element in document.select(&Selector::parse(".download ul li").unwrap()) {
+  for element in document.select(&*DOWNLOAD_ITEM_SELECTOR) {
     let resolution = element
-      .select(&Selector::parse("strong").unwrap())
+      .select(&*RESOLUTION_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let mut links = Vec::new();
-    for link_element in element.select(&Selector::parse("a").unwrap()) {
+    for link_element in element.select(&*LINK_SELECTOR) {
       let server = link_element.text().collect::<String>().trim().to_string();
       let url = link_element.value().attr("href").unwrap_or("").to_string();
       links.push(DownloadLink { server, url });
@@ -150,11 +194,11 @@ async fn fetch_anime_full(slug: &str) -> Result<AnimeFullData, Box<dyn std::erro
   }
 
   let next_episode_element = document
-    .select(&Selector::parse(".flir a[title*='Episode Selanjutnya']").unwrap())
+    .select(&*NEXT_EPISODE_SELECTOR)
     .next();
 
   let previous_episode_element = document
-    .select(&Selector::parse(".flir a[title*='Episode Sebelumnya']").unwrap())
+    .select(&*PREVIOUS_EPISODE_SELECTOR)
     .next();
 
   let next_episode_slug = next_episode_element

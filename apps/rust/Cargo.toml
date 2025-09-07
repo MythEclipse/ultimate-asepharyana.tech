@@ -46,6 +46,8 @@ tempfile = { workspace = true }
 mime_guess = { workspace = true }
 lazy_static = "1.4"
 tower-http = { version = "0.6.6", features = ["cors"] }
+backoff = { workspace = true, features = ["futures", "tokio"] }
+dashmap = { workspace = true }
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
 [build-dependencies]

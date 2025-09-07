@@ -5,6 +5,11 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use backoff::{retry, ExponentialBackoff};
+use dashmap::DashMap;
+use tracing::{info, error};
+use std::time::Instant;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -46,6 +51,17 @@ pub struct OngoingAnimeResponse {
   pub pagination: Pagination,
 }
 
+lazy_static! {
+  static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
+  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  static ref EP_SELECTOR: Selector = Selector::parse(".epz").unwrap();
+  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
+  static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
+  static ref CACHE: DashMap<String, (Vec<OngoingAnimeItem>, Pagination)> = DashMap::new();
+}
+
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
@@ -62,14 +78,35 @@ pub struct OngoingAnimeResponse {
   )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+  let start = Instant::now();
+  info!("Starting request for ongoing_anime slug: {}", slug);
+
+  // Check cache first
+  if let Some(cached) = CACHE.get(&slug) {
+    let duration = start.elapsed();
+    info!("Cache hit for ongoing_anime slug: {}, duration: {:?}", slug, duration);
+    return Json(OngoingAnimeResponse {
+      status: "Ok".to_string(),
+      data: cached.0.clone(),
+      pagination: cached.1.clone(),
+    });
+  }
+
   match fetch_ongoing_anime_page(&slug).await {
-    Ok((anime_list, pagination)) =>
+    Ok((anime_list, pagination)) => {
+      // Cache the result
+      CACHE.insert(slug.clone(), (anime_list.clone(), pagination.clone()));
+      let duration = start.elapsed();
+      info!("Fetched and parsed ongoing_anime for slug: {}, duration: {:?}", slug, duration);
       Json(OngoingAnimeResponse {
         status: "Ok".to_string(),
         data: anime_list,
         pagination,
-      }),
-    Err(_) =>
+      })
+    }
+    Err(e) => {
+      let duration = start.elapsed();
+      error!("Error fetching ongoing_anime for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
       Json(OngoingAnimeResponse {
         status: "Error".to_string(),
         data: vec![],
@@ -81,7 +118,8 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
           has_previous_page: false,
           previous_page: None,
         },
-      }),
+      })
+    }
   }
 }
 
@@ -89,40 +127,40 @@ async fn fetch_ongoing_anime_page(
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
-  let response = fetch_with_proxy(&url).await?;
-  let html = response.data;
-  let document = Html::parse_document(&html);
 
-  let venz_selector = Selector::parse(".venz ul li").unwrap();
-  let title_selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let ep_selector = Selector::parse(".epz").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
+  let operation = || async {
+    let response = fetch_with_proxy(&url).await?;
+    Ok(response.data)
+  };
+
+  let backoff = ExponentialBackoff::default();
+  let html = retry(backoff, operation).await?;
+  let document = Html::parse_document(&html);
 
   let mut anime_list = Vec::new();
 
-  for element in document.select(&venz_selector) {
+  for element in document.select(&*VENZ_SELECTOR) {
     let title = element
-      .select(&title_selector)
+      .select(&*TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let poster = element
-      .select(&img_selector)
+      .select(&*IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let episode = element
-      .select(&ep_selector)
+      .select(&*EP_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or("Ongoing".to_string());
 
     let anime_url = element
-      .select(&link_selector)
+      .select(&*LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
@@ -144,13 +182,13 @@ async fn fetch_ongoing_anime_page(
   let current_page = slug.parse::<u32>().unwrap_or(1);
 
   let last_visible_page = document
-    .select(&Selector::parse(".pagination .page-numbers:not(.next)").unwrap())
+    .select(&*PAGINATION_SELECTOR)
     .last()
     .map(|e| e.text().collect::<String>().trim().parse::<u32>().unwrap_or(1))
     .unwrap_or(1);
 
   let has_next_page = document
-    .select(&Selector::parse(".pagination .next").unwrap())
+    .select(&*NEXT_SELECTOR)
     .next()
     .is_some();
 

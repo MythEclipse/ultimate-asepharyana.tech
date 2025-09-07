@@ -5,6 +5,13 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use backoff::{ future::retry, ExponentialBackoff };
+use dashmap::DashMap;
+use std::time::{ Duration, Instant };
+use tracing::{ info, warn, error };
+use regex::Regex;
+use once_cell::sync::Lazy;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -73,6 +80,36 @@ pub struct DetailResponse {
   pub data: AnimeDetailData,
 }
 
+// Pre-compiled CSS selectors for performance
+lazy_static! {
+  static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
+  static ref ALT_TITLE_SELECTOR: Selector = Selector::parse(".alter").unwrap();
+  static ref POSTER_SELECTOR: Selector = Selector::parse(".thumb[itemprop=\"image\"] img.lazyload").unwrap();
+  static ref POSTER2_SELECTOR: Selector = Selector::parse(".bixbox.animefull .bigcover .ime img.lazyload").unwrap();
+  static ref SPE_SPAN_SELECTOR: Selector = Selector::parse(".info-content .spe span").unwrap();
+  static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".entry-content p").unwrap();
+  static ref GENRE_SELECTOR: Selector = Selector::parse(".genxed a").unwrap();
+  static ref DOWNLOAD_CONTAINER_SELECTOR: Selector = Selector::parse(".soraddl.dlone .soraurl").unwrap();
+  static ref RESOLUTION_SELECTOR: Selector = Selector::parse(".res").unwrap();
+  static ref LINK_SELECTOR: Selector = Selector::parse(".slink a").unwrap();
+  static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
+  static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
+  static ref REC_TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+  static ref REC_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  static ref STATUS_SELECTOR: Selector = Selector::parse(".status").unwrap();
+  static ref TYPE_SELECTOR: Selector = Selector::parse(".typez").unwrap();
+}
+
+// Pre-compiled regex for slug extraction
+static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
+
+// Cache for HTML responses with TTL (5 minutes)
+lazy_static! {
+  static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
+}
+const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
 #[utoipa::path(
   get,
   params(("slug" = String, Path, description = "The slug identifier")),
@@ -89,13 +126,21 @@ pub struct DetailResponse {
   )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+  let start_time = Instant::now();
+  info!("Handling request for anime detail slug: {}", slug);
+
   match fetch_anime_detail(&slug).await {
-    Ok(data) =>
+    Ok(data) => {
+      let total_duration = start_time.elapsed();
+      info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
       Json(DetailResponse {
         status: "Ok".to_string(),
         data,
-      }),
-    Err(_) =>
+      })
+    }
+    Err(e) => {
+      let total_duration = start_time.elapsed();
+      error!("Failed to process request for slug: {} after {:?}, error: {:?}", slug, total_duration, e);
       Json(DetailResponse {
         status: "Error".to_string(),
         data: AnimeDetailData {
@@ -115,86 +160,132 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
           ova: vec![],
           downloads: vec![],
         },
-      }),
+      })
+    }
   }
 }
 
-async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
+async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
+  let start_time = Instant::now();
   let url = format!("https://alqanime.net/{}/", slug);
-  let response = fetch_with_proxy(&url).await?;
-  let html = response.data;
-  let document = Html::parse_document(&html);
+
+  // Check cache first
+  if let Some(entry) = HTML_CACHE.get(&url) {
+    if entry.1.elapsed() < CACHE_TTL {
+      info!("Cache hit for URL: {}", url);
+      let document = Html::parse_document(&entry.0);
+      return parse_anime_detail_document(&document, slug);
+    } else {
+      HTML_CACHE.remove(&url);
+    }
+  }
+
+  // Retry logic with exponential backoff
+  let backoff = ExponentialBackoff {
+    initial_interval: Duration::from_millis(500),
+    max_interval: Duration::from_secs(10),
+    multiplier: 2.0,
+    max_elapsed_time: Some(Duration::from_secs(30)),
+    ..Default::default()
+  };
+
+  let fetch_operation = || async {
+    info!("Fetching URL: {}", url);
+    match fetch_with_proxy(&url).await {
+      Ok(response) => {
+        let duration = start_time.elapsed();
+        info!("Successfully fetched URL: {} in {:?}", url, duration);
+        Ok(response.data)
+      }
+      Err(e) => {
+        warn!("Failed to fetch URL: {}, error: {:?}", url, e);
+        Err(backoff::Error::transient(e))
+      }
+    }
+  };
+
+  match retry(backoff, fetch_operation).await {
+    Ok(html) => {
+      // Cache the result
+      HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
+
+      let document = Html::parse_document(&html);
+      parse_anime_detail_document(&document, slug)
+    }
+    Err(e) => {
+      error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
+      Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
+    }
+  }
+}
+
+fn parse_anime_detail_document(document: &Html, slug: &str) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
+  let start_time = Instant::now();
+  info!("Starting to parse anime detail document for slug: {}", slug);
 
   let title = document
-    .select(&Selector::parse(".entry-title").unwrap())
+    .select(&TITLE_SELECTOR)
     .next()
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let alternative_title = document
-    .select(&Selector::parse(".alter").unwrap())
+    .select(&ALT_TITLE_SELECTOR)
     .next()
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let poster = document
-    .select(&Selector::parse(".thumb[itemprop=\"image\"] img.lazyload").unwrap())
+    .select(&POSTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("data-src"))
     .unwrap_or("")
     .to_string();
 
   let poster2 = document
-    .select(&Selector::parse(".bixbox.animefull .bigcover .ime img.lazyload").unwrap())
+    .select(&POSTER2_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("data-src"))
     .unwrap_or("")
     .to_string();
 
-  let spe_selector = Selector::parse(".info-content .spe span").unwrap();
-
   let r#type = document
-    .select(&spe_selector)
+    .select(&SPE_SPAN_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Tipe:"))
-    .and_then(|span| span.select(&Selector::parse("a").unwrap()).next())
+    .and_then(|span| span.select(&A_SELECTOR).next())
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let release_date = document
-    .select(&spe_selector)
+    .select(&SPE_SPAN_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Dirilis:"))
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let status = document
-    .select(&spe_selector)
+    .select(&SPE_SPAN_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Status:"))
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let synopsis = document
-    .select(&Selector::parse(".entry-content p").unwrap())
+    .select(&SYNOPSIS_SELECTOR)
     .next()
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let studio = document
-    .select(&spe_selector)
+    .select(&SPE_SPAN_SELECTOR)
     .find(|e| e.text().collect::<String>().contains("Studio:"))
-    .and_then(|span| span.select(&Selector::parse("a").unwrap()).next())
+    .and_then(|span| span.select(&A_SELECTOR).next())
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
   let mut genres = Vec::new();
-  for element in document.select(&Selector::parse(".genxed a").unwrap()) {
+  for element in document.select(&GENRE_SELECTOR) {
     let name = element.text().collect::<String>().trim().to_string();
     let anime_url = element.value().attr("href").unwrap_or("").to_string();
-    let genre_slug = anime_url
-      .split('/')
-      .filter(|s| !s.is_empty())
-      .last()
-      .unwrap_or("")
-      .to_string();
+    let genre_slug = SLUG_REGEX.captures(&anime_url).and_then(|cap| cap.get(1)).map(|m| m.as_str()).unwrap_or("").to_string();
     genres.push(Genre { name, slug: genre_slug, anime_url });
   }
 
@@ -202,15 +293,15 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   let mut ova = Vec::new();
   let mut downloads = Vec::new();
 
-  for element in document.select(&Selector::parse(".soraddl.dlone .soraurl").unwrap()) {
+  for element in document.select(&DOWNLOAD_CONTAINER_SELECTOR) {
     let resolution = element
-      .select(&Selector::parse(".res").unwrap())
+      .select(&RESOLUTION_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let mut links = Vec::new();
-    for link_element in element.select(&Selector::parse(".slink a").unwrap()) {
+    for link_element in element.select(&LINK_SELECTOR) {
       let name = link_element.text().collect::<String>().trim().to_string();
       let url = link_element.value().attr("href").unwrap_or("").to_string();
       links.push(Link { name, url });
@@ -219,7 +310,7 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
     let download_item = DownloadItem { resolution, links };
 
     // Determine category based on parent h3 text
-    if let Some(h3) = element.select(&Selector::parse("h3").unwrap()).next() {
+    if let Some(h3) = element.select(&H3_SELECTOR).next() {
       let category = h3.text().collect::<String>().to_lowercase();
       if category.contains("batch") {
         batch.push(download_item);
@@ -234,29 +325,24 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
   }
 
   let mut recommendations = Vec::new();
-  for element in document.select(&Selector::parse(".listupd .bs").unwrap()) {
+  for element in document.select(&RECOMMENDATION_SELECTOR) {
     let title = element
-      .select(&Selector::parse(".ntitle").unwrap())
+      .select(&REC_TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let anime_url = element
-      .select(&Selector::parse("a").unwrap())
+      .select(&A_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
       .to_string();
 
-    let rec_slug = anime_url
-      .split('/')
-      .filter(|s| !s.is_empty())
-      .last()
-      .unwrap_or("")
-      .to_string();
+    let rec_slug = SLUG_REGEX.captures(&anime_url).and_then(|cap| cap.get(1)).map(|m| m.as_str()).unwrap_or("").to_string();
 
     let poster = element
-      .select(&Selector::parse("img").unwrap())
+      .select(&REC_IMG_SELECTOR)
       .next()
       .and_then(|e|
         e
@@ -268,13 +354,13 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
       .to_string();
 
     let status = element
-      .select(&Selector::parse(".status").unwrap())
+      .select(&STATUS_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let r#type = element
-      .select(&Selector::parse(".typez").unwrap())
+      .select(&TYPE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
@@ -287,6 +373,9 @@ async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::
       r#type,
     });
   }
+
+  let duration = start_time.elapsed();
+  info!("Parsed anime detail document for slug: {} in {:?}", slug, duration);
 
   Ok(AnimeDetailData {
     title,

@@ -9,6 +9,10 @@ use scraper::{ Html, Selector };
 use regex::Regex;
 use rust_lib::config::CONFIG_MAP;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use lazy_static::lazy_static;
+use std::time::Instant;
+use tokio::time::{sleep, Duration};
+use tracing::{info, error};
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -55,6 +59,42 @@ pub struct QueryParams {
   pub page: Option<u32>,
 }
 
+lazy_static! {
+    static ref BASE_URL: String = CONFIG_MAP.get("KOMIK_BASE_URL").cloned().unwrap_or_else(|| "https://komikindo.id".to_string());
+    static ref ANIMPOST_SELECTOR: Selector = Selector::parse(".animposx").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h4").unwrap();
+    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+    static ref CHAPTER_SELECTOR: Selector = Selector::parse(".lsch a").unwrap();
+    static ref SCORE_SELECTOR: Selector = Selector::parse("i").unwrap();
+    static ref DATE_SELECTOR: Selector = Selector::parse(".datech").unwrap();
+    static ref TYPE_SELECTOR: Selector = Selector::parse(".typeflag").unwrap();
+    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+    static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
+    static ref CURRENT_SELECTOR: Selector = Selector::parse(".pagination .current").unwrap();
+    static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
+    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
+    static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
+}
+
+async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn std::error::Error>> {
+    let mut attempt = 0;
+    loop {
+        match fetch_with_proxy(url).await {
+            Ok(response) => return Ok(response.data),
+            Err(e) => {
+                attempt += 1;
+                if attempt > max_retries {
+                    error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
+                    return Err(e);
+                }
+                let delay = Duration::from_millis(2u64.pow(attempt) * 100);
+                info!("Retrying fetch for {} in {:?}", url, delay);
+                sleep(delay).await;
+            }
+        }
+    }
+}
+
 #[utoipa::path(
   get,
   path = "/api/komik/manga",
@@ -75,13 +115,17 @@ pub struct QueryParams {
 pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
   let page = params.page.unwrap_or(1);
 
-  let base_url = CONFIG_MAP.get("KOMIK_BASE_URL")
-    .cloned()
-    .unwrap_or_else(|| "https://komikindo.id".to_string());
+  let base_url = &*BASE_URL;
 
   let url = format!("{}/manga/page/{}/", base_url, page);
 
-  match fetch_and_parse_manga(&url).await {
+  let start = Instant::now();
+  info!("Starting manga list request for page {}", page);
+
+  let result = fetch_and_parse_manga(&url).await;
+  info!("Manga list request completed in {:?}", start.elapsed());
+
+  match result {
     Ok(response) => Json(response),
     Err(_) =>
       Json(MangaResponse {
@@ -99,18 +143,19 @@ pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
 }
 
 async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url).await?;
-  let html = response.data;
+  let start = Instant::now();
+  info!("Fetching and parsing manga from {}", url);
+  let html = fetch_with_retry(url, 3).await?;
   let document = Html::parse_document(&html);
 
-  let animposx_selector = Selector::parse(".animposx").unwrap();
-  let title_selector = Selector::parse(".tt h4").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let chapter_selector = Selector::parse(".lsch a").unwrap();
-  let score_selector = Selector::parse("i").unwrap();
-  let date_selector = Selector::parse(".datech").unwrap();
-  let type_selector = Selector::parse(".typeflag").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
+  let animposx_selector = &*ANIMPOST_SELECTOR;
+  let title_selector = &*TITLE_SELECTOR;
+  let img_selector = &*IMG_SELECTOR;
+  let chapter_selector = &*CHAPTER_SELECTOR;
+  let score_selector = &*SCORE_SELECTOR;
+  let date_selector = &*DATE_SELECTOR;
+  let type_selector = &*TYPE_SELECTOR;
+  let link_selector = &*LINK_SELECTOR;
 
   let mut data = Vec::new();
 
@@ -136,9 +181,7 @@ async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
-    let chapter = Regex::new(r"\d+(\.\d+)?")
-      .unwrap()
-      .find(&chapter_text)
+    let chapter = (&*CHAPTER_REGEX).find(&chapter_text)
       .map(|m| m.as_str().to_string())
       .unwrap_or_default();
 
@@ -185,14 +228,16 @@ async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::
 
   let pagination = parse_pagination(&document);
 
+  info!("Fetched and parsed manga in {:?}", start.elapsed());
+
   Ok(MangaResponse { data, pagination })
 }
 
 fn parse_pagination(document: &Html) -> Pagination {
-  let current_selector = Selector::parse(".pagination .current").unwrap();
-  let page_selectors = Selector::parse(".pagination a:not(.next)").unwrap();
-  let next_selector = Selector::parse(".pagination .next").unwrap();
-  let prev_selector = Selector::parse(".pagination .prev").unwrap();
+  let current_selector = &*CURRENT_SELECTOR;
+  let page_selectors = &*PAGE_SELECTORS;
+  let next_selector = &*NEXT_SELECTOR;
+  let prev_selector = &*PREV_SELECTOR;
 
   let current_page = document
     .select(&current_selector)
