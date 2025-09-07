@@ -9,6 +9,7 @@ async-trait = { workspace = true }
 bcrypt = { workspace = true }
 base64 = { workspace = true }
 bytes = { workspace = true }
+flate2 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 data-url = { workspace = true }
 dotenvy = { workspace = true }

@@ -6,9 +6,19 @@ use crate::utils::error::AppError;
 use tracing::{info, error, debug};
 
 pub fn get_redis_connection() -> Result<Connection, AppError> {
-    let redis_url = CONFIG_MAP.get("UPSTASH_REDIS_REST_URL")
+    let rest_url = CONFIG_MAP.get("UPSTASH_REDIS_REST_URL")
         .cloned()
-        .unwrap_or_else(|| "redis://127.0.0.1/".to_string()); // Default to localhost if not set
+        .unwrap_or_else(|| "https://localhost:8080".to_string());
+
+    let token = CONFIG_MAP.get("UPSTASH_REDIS_REST_TOKEN")
+        .cloned()
+        .unwrap_or_else(|| "".to_string());
+
+    // Convert Upstash REST URL to Redis protocol URL
+    // REST URL: https://host
+    // Redis URL: rediss://default:token@host:6379
+    let host = rest_url.trim_start_matches("https://").trim_start_matches("http://");
+    let redis_url = format!("rediss://default:{}@{}:6379", token, host);
 
     debug!("Attempting to connect to Redis at URL: {}", redis_url);
 

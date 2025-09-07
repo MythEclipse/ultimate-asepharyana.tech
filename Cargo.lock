@@ -2899,6 +2899,7 @@ dependencies = [
  "chrono",
  "data-url",
  "dotenvy",
+ "flate2",
  "futures",
  "headless_chrome",
  "hyper",
