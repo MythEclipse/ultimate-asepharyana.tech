@@ -56,7 +56,7 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
                 attempt += 1;
                 if attempt > max_retries {
                     error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
-                    return Err(e);
+                    return Err(Box::new(e));
                 }
                 let delay = Duration::from_millis(2u64.pow(attempt) * 100);
                 info!("Retrying fetch for {} in {:?}", url, delay);

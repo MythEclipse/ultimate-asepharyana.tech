@@ -6,7 +6,7 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{retry, ExponentialBackoff};
+use backoff::{future::retry, ExponentialBackoff};
 use dashmap::DashMap;
 use tracing::{info, error};
 use std::time::Instant;

@@ -6,7 +6,7 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{retry, ExponentialBackoff};
+use backoff::{future::retry, ExponentialBackoff};
 use dashmap::DashMap;
 use tracing::{info, error};
 use std::time::Instant;
@@ -69,7 +69,7 @@ async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
   };
 
   let backoff = ExponentialBackoff::default();
-  retry(backoff, operation).await
+  retry(backoff, operation).await.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
 }
 
 fn parse_anime_page(html: &str, slug: &str) -> (Vec<AnimeItem>, Pagination) {
