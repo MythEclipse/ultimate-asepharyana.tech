@@ -1,6 +1,6 @@
 //use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manga slug endpoint.
 
-use axum::{ extract::Path, extract::Query, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::Query, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };

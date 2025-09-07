@@ -153,7 +153,7 @@ pub fn update_handler_file(
   module_path_prefix: &str,
   root_api_path: &Path
 ) -> Result<Option<HandlerRouteInfo>> {
-  let mut content = fs
+  let content = fs
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
@@ -472,7 +472,7 @@ fn update_uploader_file(
   module_path_prefix: &str,
   _root_api_path: &Path
 ) -> Result<Option<HandlerRouteInfo>> {
-  let mut content = fs
+  let content = fs
     ::read_to_string(path)
     .with_context(|| format!("Failed to read file: {:?}", path))?;
 
