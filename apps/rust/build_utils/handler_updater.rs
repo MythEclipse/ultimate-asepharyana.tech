@@ -120,7 +120,14 @@ fn generate_detailed_param_doc(name: &str, typ: &str, route_path: &str) -> Strin
 
   let example = match name {
     "id" | "uuid" => r#"example = "550e8400-e29b-41d4-a716-446655440000""#,
-    "slug" => r#"example = "naruto-shippuden-episode-1""#,
+    "slug" => {
+      // Use "1" as default for complete-anime and ongoing-anime slug parameters
+      if route_path.contains("complete-anime") || route_path.contains("ongoing-anime") {
+        r#"example = "1""#
+      } else {
+        r#"example = "naruto-shippuden-episode-1""#
+      }
+    },
     "page" => r#"example = 1, minimum = 1"#,
     "limit" => r#"example = 20, minimum = 1, maximum = 100"#,
     "offset" => r#"example = 0, minimum = 0"#,

@@ -76,7 +76,7 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 #[utoipa::path(
     get,
     params(
-        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "naruto-shippuden-episode-1")
+        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "1")
     ),
     path = "/api/anime2/ongoing-anime/{slug}",
     tag = "anime2",
