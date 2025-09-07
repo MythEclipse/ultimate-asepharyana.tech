@@ -104,18 +104,14 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/komik/detail",
-  tag = "komik",
-  operation_id = "komik_detail",
-  responses(
-    (
-      status = 200,
-      description = "Retrieves details for a specific komik by ID.",
-      body = DetailData,
-    ),
-    (status = 500, description = "Internal Server Error", body = DetailData)
-  )
+    get,
+    path = "/api/api/komik/detail",
+    tag = "komik",
+    operation_id = "komik_detail",
+    responses(
+        (status = 200, description = "Retrieves details for a specific komik by ID.", body = DetailData),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn detail(Query(params): Query<DetailQuery>) -> impl IntoResponse {
   let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());

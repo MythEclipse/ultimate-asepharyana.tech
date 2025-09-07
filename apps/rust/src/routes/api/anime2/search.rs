@@ -55,18 +55,14 @@ pub struct SearchQuery {
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/anime2/search",
-  tag = "anime2",
-  operation_id = "anime2_search",
-  responses(
-    (
-      status = 200,
-      description = "Searches for anime2 based on query parameters.",
-      body = SearchResponse,
-    ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/anime2/search",
+    tag = "anime2",
+    operation_id = "anime2_search",
+    responses(
+        (status = 200, description = "Searches for anime2 based on query parameters.", body = SearchResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
   let query = params.q.unwrap_or_else(|| "log".to_string());

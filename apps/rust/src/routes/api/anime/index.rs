@@ -50,18 +50,14 @@ pub struct AnimeResponse {
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/anime",
-  tag = "anime",
-  operation_id = "anime_index",
-  responses(
-    (
-      status = 200,
-      description = "Handles GET requests for the anime endpoint.",
-      body = AnimeResponse,
-    ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/anime",
+    tag = "anime",
+    operation_id = "anime_index",
+    responses(
+        (status = 200, description = "Handles GET requests for the anime endpoint.", body = AnimeResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn anime() -> impl IntoResponse {
   match fetch_anime_data().await {

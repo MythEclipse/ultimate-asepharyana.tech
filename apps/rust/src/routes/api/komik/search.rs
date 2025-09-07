@@ -94,23 +94,14 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/komik/search",
-  tag = "komik",
-  operation_id = "komik_search",
-  params(
-    ("query" = Option<String>, Query, description = "Search query for komik"),
-    ("page" = Option<u32>, Query, description = "Page number for pagination")
-  ),
-  responses(
-    (
-      status = 200,
-      description = "Searches for komik based on query parameters.",
-      body = SearchResponse,
-    ),
-    (status = 400, description = "Bad Request", body = String),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/komik/search",
+    tag = "komik",
+    operation_id = "komik_search",
+    responses(
+        (status = 200, description = "Searches for komik based on query parameters.", body = SearchResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
   let query = params.query.unwrap_or_default();

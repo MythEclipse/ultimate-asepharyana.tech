@@ -38,14 +38,14 @@ pub struct ErrorResponse {
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/proxy",
-  tag = "proxy",
-  operation_id = "proxy",
-  responses(
-    (status = 200, description = "Handles GET requests for the proxy endpoint.", body = String),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/proxy",
+    tag = "proxy",
+    operation_id = "proxy",
+    responses(
+        (status = 200, description = "Handles GET requests for the proxy endpoint.", body = String),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn proxy(Query(params): Query<ProxyQuery>) -> Result<
   Response,

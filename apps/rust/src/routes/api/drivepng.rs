@@ -28,18 +28,14 @@ pub struct ListResponse {
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/drivepng",
-  tag = "drivepng",
-  operation_id = "drivepng",
-  responses(
-    (
-      status = 200,
-      description = "Handles GET requests for the drivepng endpoint.",
-      body = ListResponse,
-    ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/drivepng",
+    tag = "drivepng",
+    operation_id = "drivepng",
+    responses(
+        (status = 200, description = "Handles GET requests for the drivepng endpoint.", body = ListResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn drivepng() -> impl IntoResponse {
   Json(ListResponse {

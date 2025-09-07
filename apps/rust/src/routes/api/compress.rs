@@ -222,14 +222,14 @@ async fn compress_video(
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/compress",
-  tag = "compress",
-  operation_id = "compress",
-  responses(
-    (status = 200, description = "Compress images and videos from URL", body = CompressResponse),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/compress",
+    tag = "compress",
+    operation_id = "compress",
+    responses(
+        (status = 200, description = "Compress images and videos from URL", body = CompressResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn compress(Query(params): Query<CompressQuery>) -> impl IntoResponse {
   // Validate parameters

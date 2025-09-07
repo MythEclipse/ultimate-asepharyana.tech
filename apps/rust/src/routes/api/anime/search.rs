@@ -72,18 +72,14 @@ lazy_static! {
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/anime/search",
-  tag = "anime",
-  operation_id = "anime_search",
-  responses(
-    (
-      status = 200,
-      description = "Searches for anime based on query parameters.",
-      body = SearchResponse,
-    ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/anime/search",
+    tag = "anime",
+    operation_id = "anime_search",
+    responses(
+        (status = 200, description = "Searches for anime based on query parameters.", body = SearchResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
   let start = Instant::now();

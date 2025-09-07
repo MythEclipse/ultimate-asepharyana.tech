@@ -96,19 +96,14 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/komik/manhua",
-  tag = "komik",
-  operation_id = "komik_manhua_list",
-  params(("page" = u32, Query, description = "Page number")),
-  responses(
-    (
-      status = 200,
-      description = "Handles GET requests for the komik/manhua endpoint.",
-      body = ManhuaResponse,
-    ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    get,
+    path = "/api/api/komik/manhua",
+    tag = "komik",
+    operation_id = "komik_manhua_slug",
+    responses(
+        (status = 200, description = "Handles GET requests for the komik/manhua endpoint.", body = ManhuaResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
   let page = params.page;

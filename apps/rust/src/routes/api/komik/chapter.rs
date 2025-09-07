@@ -67,18 +67,14 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
 }
 
 #[utoipa::path(
-  get,
-  path = "/api/komik/chapter",
-  tag = "komik",
-  operation_id = "komik_chapter",
-  responses(
-    (
-      status = 200,
-      description = "Retrieves chapter data for a specific komik chapter.",
-      body = ChapterData,
-    ),
-    (status = 500, description = "Internal Server Error", body = ChapterData)
-  )
+    get,
+    path = "/api/api/komik/chapter",
+    tag = "komik",
+    operation_id = "komik_chapter",
+    responses(
+        (status = 200, description = "Retrieves chapter data for a specific komik chapter.", body = ChapterData),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
   let chapter_url = params.chapter_url.unwrap_or_default();

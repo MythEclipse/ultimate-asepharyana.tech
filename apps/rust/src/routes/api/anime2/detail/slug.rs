@@ -111,19 +111,17 @@ lazy_static! {
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 #[utoipa::path(
-  get,
-  params(("slug" = String, Path, description = "The slug identifier")),
-  path = "/api/anime2/detail/{slug}",
-  tag = "anime2",
-  operation_id = "anime2_detail_slug",
-  responses(
-    (
-      status = 200,
-      description = "Handles GET requests for the anime2/detail/{slug} endpoint.",
-      body = DetailResponse,
+    get,
+    params(
+        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "naruto-shippuden-episode-1")
     ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    path = "/api/api/anime2/detail/{slug}",
+    tag = "anime2",
+    operation_id = "anime2_detail_slug",
+    responses(
+        (status = 200, description = "Handles GET requests for the anime2/detail/{slug} endpoint.", body = DetailResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
   let start_time = Instant::now();

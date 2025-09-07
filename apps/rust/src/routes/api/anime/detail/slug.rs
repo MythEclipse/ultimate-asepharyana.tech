@@ -82,19 +82,17 @@ lazy_static! {
 }
 
 #[utoipa::path(
-  get,
-  params(("slug" = String, Path, description = "The slug identifier")),
-  path = "/api/anime/detail/{slug}",
-  tag = "anime",
-  operation_id = "anime_detail_slug",
-  responses(
-    (
-      status = 200,
-      description = "Handles GET requests for the anime/detail/{slug} endpoint.",
-      body = DetailResponse,
+    get,
+    params(
+        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "naruto-shippuden-episode-1")
     ),
-    (status = 500, description = "Internal Server Error", body = String)
-  )
+    path = "/api/api/anime/detail/{slug}",
+    tag = "anime",
+    operation_id = "anime_detail_slug",
+    responses(
+        (status = 200, description = "Handles GET requests for the anime/detail/{slug} endpoint.", body = DetailResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
   let start = Instant::now();

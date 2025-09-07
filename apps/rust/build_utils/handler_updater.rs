@@ -427,7 +427,12 @@ pub fn update_handler_file(
   println!("cargo:warning=Generated utoipa macro:");
   println!("cargo:warning={}", new_utoipa_macro);
 
+  // Debug: Check if content will actually change
+  println!("cargo:warning=Content length before: {}", content.len());
+
   // Find and replace utoipa macro manually
+  let mut updated_content = content.clone();
+  let mut utoipa_replaced = false;
   if let Some(start_pos) = content.find("#[utoipa::path(") {
     println!("cargo:warning=Found utoipa macro at position {}", start_pos);
 
@@ -438,7 +443,10 @@ pub fn update_handler_file(
       println!("cargo:warning=Replacing utoipa macro from {} to {}", start_pos, end_pos);
       let before = &content[..start_pos];
       let after = &content[end_pos..];
-      content = format!("{}{}{}", before, new_utoipa_macro, after);
+      updated_content = format!("{}{}{}", before, new_utoipa_macro, after);
+      utoipa_replaced = content != updated_content;
+      println!("cargo:warning=Content length after replacement: {}", updated_content.len());
+      println!("cargo:warning=Utoipa macro replaced: {}", utoipa_replaced);
     } else {
       println!("cargo:warning=Could not find closing )] pattern");
     }
@@ -449,7 +457,9 @@ pub fn update_handler_file(
     if let Some(cap) = fn_regex.find(&content) {
       let before_fn = &content[..cap.start()];
       let after_fn = &content[cap.start()..];
-      content = format!("{}{}\n{}", before_fn, new_utoipa_macro, after_fn);
+      updated_content = format!("{}{}\n{}", before_fn, new_utoipa_macro, after_fn);
+      utoipa_replaced = true;
+      println!("cargo:warning=Added new utoipa macro");
     }
   }
 
@@ -500,7 +510,7 @@ pub fn update_handler_file(
     actual_func_name
   );
 
-  let mut new_content = content.clone();
+  let mut new_content = updated_content.clone();
 
   // Don't remove existing utoipa::path macros if we're parsing them
   // Only update if there are no utoipa macros or if we need to regenerate them
@@ -531,8 +541,12 @@ pub fn update_handler_file(
   // Enhance response struct if it's basic
   new_content = enhance_response_struct(&new_content, &axum_path);
 
-  if content != new_content {
+  if updated_content != new_content || utoipa_replaced {
+    println!("cargo:warning=Writing updated content to file: {:?}", path);
     fs::write(path, &new_content)?;
+    println!("cargo:warning=File write completed successfully");
+  } else {
+    println!("cargo:warning=No changes detected, file not written");
   }
 
   inject_schemas(&new_content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
