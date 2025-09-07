@@ -12,7 +12,7 @@ use scraper::{ Html, Selector };
 use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
-use tokio::time::{sleep, Duration};
+use tokio::time::{ sleep, Duration };
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/detail";
@@ -70,38 +70,51 @@ pub struct DetailQuery {
 }
 
 lazy_static! {
-    static ref TITLE_SELECTOR: Selector = Selector::parse("h1.entry-title").unwrap();
-    static ref SPE_SELECTOR: Selector = Selector::parse(".spe span").unwrap();
-    static ref SCORE_SELECTOR: Selector = Selector::parse(".rtg > div > i").unwrap();
-    static ref POSTER_SELECTOR: Selector = Selector::parse(".thumb img").unwrap();
-    static ref DESC_SELECTOR: Selector = Selector::parse("#sinopsis > section > div > div.entry-content.entry-content-single > p").unwrap();
-    static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref RELEASE_DATE_SELECTOR: Selector = Selector::parse("#chapter_list > ul > li > span.dt").unwrap();
-    static ref TOTAL_CHAPTER_SELECTOR: Selector = Selector::parse("#chapter_list > ul > li > span.lchx").unwrap();
-    static ref UPDATED_ON_SELECTOR: Selector = Selector::parse("#chapter_list > ul > li > span.dt").unwrap();
-    static ref GENRE_SELECTOR: Selector = Selector::parse(".genre-info a").unwrap();
-    static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse("#chapter_list ul li").unwrap();
-    static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse(".lchx a").unwrap();
-    static ref DATE_LINK_SELECTOR: Selector = Selector::parse(".dt a").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse("h1.entry-title").unwrap();
+  static ref SPE_SELECTOR: Selector = Selector::parse(".spe span").unwrap();
+  static ref SCORE_SELECTOR: Selector = Selector::parse(".rtg > div > i").unwrap();
+  static ref POSTER_SELECTOR: Selector = Selector::parse(".thumb img").unwrap();
+  static ref DESC_SELECTOR: Selector = Selector::parse(
+    "#sinopsis > section > div > div.entry-content.entry-content-single > p"
+  ).unwrap();
+  static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref RELEASE_DATE_SELECTOR: Selector = Selector::parse(
+    "#chapter_list > ul > li > span.dt"
+  ).unwrap();
+  static ref TOTAL_CHAPTER_SELECTOR: Selector = Selector::parse(
+    "#chapter_list > ul > li > span.lchx"
+  ).unwrap();
+  static ref UPDATED_ON_SELECTOR: Selector = Selector::parse(
+    "#chapter_list > ul > li > span.dt"
+  ).unwrap();
+  static ref GENRE_SELECTOR: Selector = Selector::parse(".genre-info a").unwrap();
+  static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse("#chapter_list ul li").unwrap();
+  static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse(".lchx a").unwrap();
+  static ref DATE_LINK_SELECTOR: Selector = Selector::parse(".dt a").unwrap();
 }
 
-async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn std::error::Error>> {
-    let mut attempt = 0;
-    loop {
-        match fetch_with_proxy(url).await {
-            Ok(response) => return Ok(response.data),
-            Err(e) => {
-                attempt += 1;
-                if attempt > max_retries {
-                    error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
-                    return Err(Box::new(e));
-                }
-                let delay = Duration::from_millis(2u64.pow(attempt) * 100);
-                info!("Retrying fetch for {} in {:?}", url, delay);
-                sleep(delay).await;
-            }
+async fn fetch_with_retry(
+  url: &str,
+  max_retries: u32
+) -> Result<String, Box<dyn std::error::Error>> {
+  let mut attempt = 0;
+  loop {
+    match fetch_with_proxy(url).await {
+      Ok(response) => {
+        return Ok(response.data);
+      }
+      Err(e) => {
+        attempt += 1;
+        if attempt > max_retries {
+          error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
+          return Err(Box::new(e));
         }
+        let delay = Duration::from_millis((2u64).pow(attempt) * 100);
+        info!("Retrying fetch for {} in {:?}", url, delay);
+        sleep(delay).await;
+      }
     }
+  }
 }
 
 #[utoipa::path(
@@ -109,6 +122,9 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
     path = "/api/komik/detail",
     tag = "komik",
     operation_id = "komik_detail",
+    params(
+        ("komik_id" = Option<String>, Query, description = "The unique identifier for the komik (typically the slug or URL path)")
+    ),
     responses(
         (status = 200, description = "Retrieves details for a specific komik by ID.", body = DetailData),
         (status = 500, description = "Internal Server Error", body = String)
@@ -122,30 +138,30 @@ pub async fn detail(Query(params): Query<DetailQuery>) -> impl IntoResponse {
   match get_cached_komik_base_url(false).await {
     Ok(base_url) => {
       match fetch_and_parse_detail(&komik_id, &base_url).await {
-       Ok(data) => {
-         info!("[komik][detail] Success for komik_id: {}", komik_id);
-         info!("Detail request completed in {:?}", start.elapsed());
-         Json(data)
-       }
-       Err(e) => {
-         error!("[komik][detail] Error parsing detail for {}: {:?}", komik_id, e);
-         info!("Detail request completed in {:?}", start.elapsed());
-         Json(DetailData {
-           title: "".to_string(),
-           alternative_title: "".to_string(),
-           score: "".to_string(),
-           poster: "".to_string(),
-           description: "".to_string(),
-           status: "".to_string(),
-           r#type: "".to_string(),
-           release_date: "".to_string(),
-           author: "".to_string(),
-           total_chapter: "".to_string(),
-           updated_on: "".to_string(),
-           genres: vec![],
-           chapters: vec![],
-         })
-       }
+        Ok(data) => {
+          info!("[komik][detail] Success for komik_id: {}", komik_id);
+          info!("Detail request completed in {:?}", start.elapsed());
+          Json(data)
+        }
+        Err(e) => {
+          error!("[komik][detail] Error parsing detail for {}: {:?}", komik_id, e);
+          info!("Detail request completed in {:?}", start.elapsed());
+          Json(DetailData {
+            title: "".to_string(),
+            alternative_title: "".to_string(),
+            score: "".to_string(),
+            poster: "".to_string(),
+            description: "".to_string(),
+            status: "".to_string(),
+            r#type: "".to_string(),
+            release_date: "".to_string(),
+            author: "".to_string(),
+            total_chapter: "".to_string(),
+            updated_on: "".to_string(),
+            genres: vec![],
+            chapters: vec![],
+          })
+        }
       }
     }
     Err(e) => {
@@ -321,5 +337,5 @@ async fn fetch_and_parse_detail(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(detail))
+  router.route(ENDPOINT_PATH, get(detail))
 }

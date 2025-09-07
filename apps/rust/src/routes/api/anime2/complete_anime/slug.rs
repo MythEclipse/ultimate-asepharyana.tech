@@ -208,17 +208,24 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
 }
 
 #[utoipa::path(
-    get,
-    params(
-        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "1")
+  get,
+  params((
+    "slug" = String,
+    Path,
+    description = "URL-friendly identifier for the resource (typically lowercase with hyphens)",
+    example = "1",
+  )),
+  path = "/api/anime2/complete-anime/{slug}",
+  tag = "anime2",
+  operation_id = "anime2_complete_anime_slug",
+  responses(
+    (
+      status = 200,
+      description = "Handles GET requests for the anime2/complete-anime/slug endpoint.",
+      body = ListResponse,
     ),
-    path = "/api/anime2/complete-anime/{slug}",
-    tag = "anime2",
-    operation_id = "anime2_complete_anime_slug",
-    responses(
-        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = ListResponse),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
+    (status = 500, description = "Internal Server Error", body = String)
+  )
 )]
 pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
   let start_time = Instant::now();
@@ -256,5 +263,5 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+  router.route(ENDPOINT_PATH, get(slug))
 }

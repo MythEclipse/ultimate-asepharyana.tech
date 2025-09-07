@@ -11,8 +11,8 @@ use rust_lib::config::CONFIG_MAP;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use std::time::Instant;
-use tokio::time::{sleep, Duration};
-use tracing::{info, error};
+use tokio::time::{ sleep, Duration };
+use tracing::{ info, error };
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -61,39 +61,46 @@ pub struct QueryParams {
 }
 
 lazy_static! {
-    static ref BASE_URL: String = CONFIG_MAP.get("KOMIK_BASE_URL").cloned().unwrap_or_else(|| "https://komikindo.id".to_string());
-    static ref ANIMPOST_SELECTOR: Selector = Selector::parse(".animposx").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h4").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref CHAPTER_SELECTOR: Selector = Selector::parse(".lsch a").unwrap();
-    static ref SCORE_SELECTOR: Selector = Selector::parse("i").unwrap();
-    static ref DATE_SELECTOR: Selector = Selector::parse(".datech").unwrap();
-    static ref TYPE_SELECTOR: Selector = Selector::parse(".typeflag").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
-    static ref CURRENT_SELECTOR: Selector = Selector::parse(".pagination .current").unwrap();
-    static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-    static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
+  static ref BASE_URL: String = CONFIG_MAP.get("KOMIK_BASE_URL")
+    .cloned()
+    .unwrap_or_else(|| "https://komikindo.id".to_string());
+  static ref ANIMPOST_SELECTOR: Selector = Selector::parse(".animposx").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h4").unwrap();
+  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  static ref CHAPTER_SELECTOR: Selector = Selector::parse(".lsch a").unwrap();
+  static ref SCORE_SELECTOR: Selector = Selector::parse("i").unwrap();
+  static ref DATE_SELECTOR: Selector = Selector::parse(".datech").unwrap();
+  static ref TYPE_SELECTOR: Selector = Selector::parse(".typeflag").unwrap();
+  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
+  static ref CURRENT_SELECTOR: Selector = Selector::parse(".pagination .current").unwrap();
+  static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
+  static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
+  static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn std::error::Error>> {
-    let mut attempt = 0;
-    loop {
-        match fetch_with_proxy(url).await {
-            Ok(response) => return Ok(response.data),
-            Err(e) => {
-                attempt += 1;
-                if attempt > max_retries {
-                    error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
-                    return Err(Box::new(e));
-                }
-                let delay = Duration::from_millis(2u64.pow(attempt) * 100);
-                info!("Retrying fetch for {} in {:?}", url, delay);
-                sleep(delay).await;
-            }
+async fn fetch_with_retry(
+  url: &str,
+  max_retries: u32
+) -> Result<String, Box<dyn std::error::Error>> {
+  let mut attempt = 0;
+  loop {
+    match fetch_with_proxy(url).await {
+      Ok(response) => {
+        return Ok(response.data);
+      }
+      Err(e) => {
+        attempt += 1;
+        if attempt > max_retries {
+          error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
+          return Err(Box::new(e));
         }
+        let delay = Duration::from_millis((2u64).pow(attempt) * 100);
+        info!("Retrying fetch for {} in {:?}", url, delay);
+        sleep(delay).await;
+      }
     }
+  }
 }
 
 #[utoipa::path(
@@ -101,6 +108,9 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
     path = "/api/komik/manga",
     tag = "komik",
     operation_id = "komik_manga_slug",
+    params(
+        ("page" = Option<u32>, Query, description = "Page number for pagination (defaults to 1)")
+    ),
     responses(
         (status = 200, description = "Handles GET requests for the komik/manga endpoint.", body = MangaResponse),
         (status = 500, description = "Internal Server Error", body = String)
@@ -175,7 +185,8 @@ async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
-    let chapter = (&*CHAPTER_REGEX).find(&chapter_text)
+    let chapter = (&*CHAPTER_REGEX)
+      .find(&chapter_text)
       .map(|m| m.as_str().to_string())
       .unwrap_or_default();
 
@@ -275,5 +286,5 @@ fn parse_pagination(document: &Html) -> Pagination {
 /// Handles GET requests for the komik/manga endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(list))
+  router.route(ENDPOINT_PATH, get(list))
 }

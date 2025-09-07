@@ -12,7 +12,7 @@ use rust_lib::komik_base_url::get_cached_komik_base_url;
 use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
-use tokio::time::{sleep, Duration};
+use tokio::time::{ sleep, Duration };
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
@@ -42,29 +42,38 @@ pub struct ChapterQuery {
 }
 
 lazy_static! {
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
-    static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(".nextprev a[rel=\"prev\"]").unwrap();
-    static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(".nextprev a[rel=\"next\"]").unwrap();
-    static ref IMAGE_SELECTOR: Selector = Selector::parse("#chimg-auh img").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
+  static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(
+    ".nextprev a[rel=\"prev\"]"
+  ).unwrap();
+  static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
+    ".nextprev a[rel=\"next\"]"
+  ).unwrap();
+  static ref IMAGE_SELECTOR: Selector = Selector::parse("#chimg-auh img").unwrap();
 }
 
-async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn std::error::Error>> {
-    let mut attempt = 0;
-    loop {
-        match fetch_with_proxy(url).await {
-            Ok(response) => return Ok(response.data),
-            Err(e) => {
-                attempt += 1;
-                if attempt > max_retries {
-                    error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
-                    return Err(Box::new(e));
-                }
-                let delay = Duration::from_millis(2u64.pow(attempt) * 100);
-                info!("Retrying fetch for {} in {:?}", url, delay);
-                sleep(delay).await;
-            }
+async fn fetch_with_retry(
+  url: &str,
+  max_retries: u32
+) -> Result<String, Box<dyn std::error::Error>> {
+  let mut attempt = 0;
+  loop {
+    match fetch_with_proxy(url).await {
+      Ok(response) => {
+        return Ok(response.data);
+      }
+      Err(e) => {
+        attempt += 1;
+        if attempt > max_retries {
+          error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
+          return Err(Box::new(e));
         }
+        let delay = Duration::from_millis((2u64).pow(attempt) * 100);
+        info!("Retrying fetch for {} in {:?}", url, delay);
+        sleep(delay).await;
+      }
     }
+  }
 }
 
 #[utoipa::path(
@@ -72,6 +81,9 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, Box<dyn
     path = "/api/komik/chapter",
     tag = "komik",
     operation_id = "komik_chapter",
+    params(
+        ("chapter_url" = Option<String>, Query, description = "URL-friendly identifier for the chapter (typically the chapter slug or URL path)")
+    ),
     responses(
         (status = 200, description = "Retrieves chapter data for a specific komik chapter.", body = ChapterResponse),
         (status = 500, description = "Internal Server Error", body = String)
@@ -85,18 +97,18 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
   match get_cached_komik_base_url(false).await {
     Ok(base_url) => {
       match fetch_and_parse_chapter(&chapter_url, &base_url).await {
-       Ok(data) => {
-         info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
-         info!("Chapter request completed in {:?}", start.elapsed());
-         Json(ChapterResponse {
+        Ok(data) => {
+          info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
+          info!("Chapter request completed in {:?}", start.elapsed());
+          Json(ChapterResponse {
             message: "Success".to_string(),
             data,
           })
-       }
-       Err(e) => {
-         error!("[komik][chapter] Error parsing chapter for {}: {:?}", chapter_url, e);
-         info!("Chapter request completed in {:?}", start.elapsed());
-         Json(ChapterResponse {
+        }
+        Err(e) => {
+          error!("[komik][chapter] Error parsing chapter for {}: {:?}", chapter_url, e);
+          info!("Chapter request completed in {:?}", start.elapsed());
+          Json(ChapterResponse {
             message: "Error parsing chapter".to_string(),
             data: ChapterData {
               title: "".to_string(),
@@ -105,22 +117,22 @@ pub async fn chapter(Query(params): Query<ChapterQuery>) -> impl IntoResponse {
               images: vec![],
             },
           })
-       }
-     }
-   }
-   Err(e) => {
-     error!("[komik][chapter] Error getting base URL: {:?}", e);
-     info!("Chapter request completed in {:?}", start.elapsed());
-     Json(ChapterResponse {
-           message: "Error parsing chapter".to_string(),
-           data: ChapterData {
-             title: "".to_string(),
-             next_chapter_id: "".to_string(),
-             prev_chapter_id: "".to_string(),
-             images: vec![],
-           },
-         })
-   }
+        }
+      }
+    }
+    Err(e) => {
+      error!("[komik][chapter] Error getting base URL: {:?}", e);
+      info!("Chapter request completed in {:?}", start.elapsed());
+      Json(ChapterResponse {
+        message: "Error parsing chapter".to_string(),
+        data: ChapterData {
+          title: "".to_string(),
+          next_chapter_id: "".to_string(),
+          prev_chapter_id: "".to_string(),
+          images: vec![],
+        },
+      })
+    }
   }
 }
 
@@ -141,9 +153,7 @@ async fn fetch_and_parse_chapter(
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
-  let prev_chapter_element = document
-    .select(&*PREV_CHAPTER_SELECTOR)
-    .next();
+  let prev_chapter_element = document.select(&*PREV_CHAPTER_SELECTOR).next();
   let prev_chapter_id = if let Some(element) = prev_chapter_element {
     element
       .value()
@@ -155,9 +165,7 @@ async fn fetch_and_parse_chapter(
     "".to_string()
   };
 
-  let next_chapter_element = document
-    .select(&*NEXT_CHAPTER_SELECTOR)
-    .next();
+  let next_chapter_element = document.select(&*NEXT_CHAPTER_SELECTOR).next();
   let next_chapter_id = if let Some(element) = next_chapter_element {
     element
       .value()
@@ -189,5 +197,5 @@ async fn fetch_and_parse_chapter(
 /// Handles GET requests for the komik/chapter endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(chapter))
+  router.route(ENDPOINT_PATH, get(chapter))
 }
