@@ -6,7 +6,6 @@ import './globals.css';
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '../components/providers/theme-provider';
-import SessionWrapper from '../components/providers/SessionWrapper';
 import Navbar from '../components/navbar/Navbar';
 import { Toaster } from 'sonner';
 
@@ -24,20 +23,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`antialiased`}>
-        <SessionWrapper>
-          <ThemeProvider
-            attribute='class'
-            defaultTheme='system'
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Navbar />
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </SessionWrapper>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Navbar />
+          {children}
+          <Toaster />
+        </ThemeProvider>
         {/* <Analytics /> */}
         {/* <SpeedInsights /> */}
       </body>

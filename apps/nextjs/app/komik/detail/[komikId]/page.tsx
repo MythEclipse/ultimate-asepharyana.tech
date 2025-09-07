@@ -233,7 +233,7 @@ export default function DetailMangaPage() {
                   <Card className='overflow-hidden'>
                     <Image
                       src={imageSources[currentIndex]}
-                      alt={manga.title}
+                      alt={"Poster image of " + (manga.title || 'manga')}
                       width={400}
                       height={600}
                       className='object-cover w-full aspect-[2/3]'

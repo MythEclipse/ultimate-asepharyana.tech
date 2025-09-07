@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react'; // Import useSession hook
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
 import Card from '../../components/ui/ThemedCard';
@@ -33,7 +32,7 @@ type NormalizedChatMessage = {
 };
 
 const normalizeChatMessage = (
-  message: RawChatMessage
+  message: RawChatMessage,
 ): NormalizedChatMessage => {
   const timestamp = message.timestamp
     ? Date.parse(message.timestamp)
@@ -52,10 +51,6 @@ const normalizeChatMessage = (
 };
 
 export default function ChatClient() {
-  const { data: session, status: sessionStatus } = useSession();
-  const user = session?.user;
-  const isLoading = sessionStatus === 'loading';
-
   const [messages, setMessages] = useState<NormalizedChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -68,23 +63,8 @@ export default function ChatClient() {
 
   const ws = useRef<ReconnectingWebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const userRef = useRef(user); // Use userRef for WebSocket context
 
   useEffect(() => {
-    userRef.current = user;
-  }, [user]);
-
-  useEffect(() => {
-    // Wait for loading to finish before checking user
-    if (isLoading) return;
-
-    // Only connect if user is authenticated
-    if (!userRef.current) {
-      setError('Please log in to join the chat.');
-      setStatus((prev) => ({ ...prev, connected: false }));
-      return;
-    }
-
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host =
       process.env.NODE_ENV === 'development'
@@ -105,9 +85,7 @@ export default function ChatClient() {
         if (wsMessage.type === 'history') {
           handleHistory(wsMessage);
         } else if (wsMessage.type === 'error') {
-          if (wsMessage.user === userRef.current?.email) {
-            setError(wsMessage.message || 'An error occurred');
-          }
+          setError(wsMessage.message || 'An error occurred');
         } else if (wsMessage.type === 'new_message') {
           const message = wsMessage.message;
           const normalizedMessage: NormalizedChatMessage =
@@ -130,13 +108,13 @@ export default function ChatClient() {
     ws.current.onclose = () =>
       setStatus((prev) => ({ ...prev, connected: false }));
     ws.current.onerror = () => {
-      if (userRef.current?.email) setError('Connection error');
+      setError('Connection error');
     };
 
     return () => {
       ws.current?.close();
     };
-  }, [userRef.current?.email, isLoading]);
+  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -144,17 +122,13 @@ export default function ChatClient() {
 
   const sendMessage = useCallback(async () => {
     if ((!input.trim() && !file) || status.sending) return;
-    if (!user) {
-      setError('You must be logged in to send messages.');
-      return;
-    }
 
     const newMessage: RawChatMessage = {
       id: crypto.randomUUID(),
-      user_id: user.id || 'Anonymous',
+      user_id: 'Anonymous',
       text: input,
-      email: user.email || '',
-      image_profile: user.image || '/profile-circle-svgrepo-com.svg',
+      email: 'anonymous@example.com',
+      image_profile: '/profile-circle-svgrepo-com.svg',
       image_message: '',
       role: 'user',
       timestamp: new Date().toISOString(),
@@ -168,7 +142,12 @@ export default function ChatClient() {
         setStatus((prev) => ({ ...prev, uploading: true }));
         const formData = new FormData();
         formData.append('file', file);
-        const response = await fetchData('/api/uploader', 'POST', undefined, formData);
+        const response = await fetchData(
+          '/api/uploader',
+          'POST',
+          undefined,
+          formData,
+        );
         const url = response.data.url;
         newMessage.image_message = url;
         setFile(null);
@@ -178,42 +157,33 @@ export default function ChatClient() {
       ws.current?.send(JSON.stringify(newMessage));
       setInput('');
     } catch {
-      if (userRef.current?.email) setError('Failed to send message');
+      setError('Failed to send message');
     } finally {
       setStatus((prev) => ({ ...prev, sending: false }));
     }
-  }, [input, file, status.sending, user]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin mr-2" />
-        <span className="text-lg">Checking authentication...</span>
-      </div>
-    );
-  }
+  }, [input, file, status.sending]);
 
   return (
-    <div className='mx-auto p-4 max-w-3xl h-screen flex flex-col'>
-      <div className='flex flex-col gap-4 flex-1'>
+    <div className="mx-auto p-4 max-w-3xl h-screen flex flex-col">
+      <div className="flex flex-col gap-4 flex-1">
         {/* Header */}
-        <div className='text-center space-y-2'>
-          <h1 className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Community Chat
           </h1>
 
           {/* Status Connection */}
-          <div className='flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800'>
+          <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
             <div
               className={`p-1.5 rounded-full ${status.connected ? 'bg-green-400' : 'bg-red-400'}`}
             >
               {status.connected ? (
-                <Wifi className='w-4 h-4 text-white' />
+                <Wifi className="w-4 h-4 text-white" />
               ) : (
-                <WifiOff className='w-4 h-4 text-white' />
+                <WifiOff className="w-4 h-4 text-white" />
               )}
             </div>
-            <span className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
               {status.connected ? 'Connected to chat' : 'Connecting...'}
             </span>
           </div>
@@ -221,52 +191,54 @@ export default function ChatClient() {
 
         {/* Chat Messages */}
         <Card>
-          <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}
-                isOwn={message.email === user?.email}
+                isOwn={message.email === 'anonymous@example.com'}
               />
             ))}
             <div ref={endRef} />
           </div>
 
           {/* Input Area */}
-          <div className='p-4 border-t border-gray-200 dark:border-gray-700 space-y-2'>
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
             {error && (
-              <div className='flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg'>
-                <AlertCircle className='w-5 h-5' />
-                <span className='text-sm'>{error}</span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm">{error}</span>
               </div>
             )}
 
-            <div className='flex flex-col md:flex-row gap-2 items-stretch'>
-              <div className='relative flex-1'>
+            <div className="flex flex-col md:flex-row gap-2 items-stretch">
+              <div className="relative flex-1">
                 <Textarea
                   value={input}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setInput(e.target.value)
+                  }
                   onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       sendMessage();
                     }
                   }}
-                  placeholder='Type your message...'
-                  className='min-h-[100px] md:min-h-[60px] pr-16 resize-none'
+                  placeholder="Type your message..."
+                  className="min-h-[100px] md:min-h-[60px] pr-16 resize-none"
                   rows={1}
-                  disabled={!status.connected || !user}
+                  disabled={!status.connected}
                 />
-                <div className='absolute right-2 bottom-2 flex items-center gap-1.5'>
+                <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
                   <input
-                    type='file'
+                    type="file"
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className='hidden'
-                    id='file-input'
-                    disabled={!status.connected || status.uploading || !user}
+                    className="hidden"
+                    id="file-input"
+                    disabled={!status.connected || status.uploading}
                   />
                   <label
-                    htmlFor='file-input'
+                    htmlFor="file-input"
                     className={`p-1.5 rounded-md cursor-pointer ${
                       status.uploading
                         ? 'text-gray-400'
@@ -274,9 +246,9 @@ export default function ChatClient() {
                     }`}
                   >
                     {status.uploading ? (
-                      <Loader2 className='w-5 h-5 animate-spin' />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Paperclip className='w-5 h-5' />
+                      <Paperclip className="w-5 h-5" />
                     )}
                   </label>
                 </div>
@@ -285,12 +257,14 @@ export default function ChatClient() {
               <Button
                 onClick={sendMessage}
                 disabled={
-                  !status.connected || status.sending || status.uploading || !user
+                  !status.connected ||
+                  status.sending ||
+                  status.uploading
                 }
-                className='h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg'
+                className="h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
               >
                 {status.sending ? (
-                  <Loader2 className='w-5 h-5 animate-spin' />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   'Send'
                 )}
@@ -317,27 +291,27 @@ function MessageBubble({
       <div
         className={`flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} items-start gap-3 max-w-[90%]`}
       >
-        <div className='relative'>
+        <div className="relative">
           <Image
             src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
             alt={message.user}
             width={40}
             height={40}
-            className='rounded-full border-2 border-white dark:border-gray-800 shadow-sm'
+            className="rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
           />
           {message.role === 'admin' && (
-            <div className='absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full'>
+            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full">
               <svg
-                className='w-4 h-4'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
                 <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   strokeWidth={2}
-                  d='M5 13l4 4L19 7'
+                  d="M5 13l4 4L19 7"
                 />
               </svg>
             </div>
@@ -351,8 +325,8 @@ function MessageBubble({
               : 'bg-gray-100 dark:bg-gray-800'
           }`}
         >
-          <div className='flex items-center gap-3 mb-2'>
-            <span className='font-medium text-sm'>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="font-medium text-sm">
               {isOwn ? 'You' : message.user}
             </span>
             <span
@@ -365,19 +339,19 @@ function MessageBubble({
           </div>
 
           {message.text && (
-            <p className='text-sm leading-relaxed break-words'>
+            <p className="text-sm leading-relaxed break-words">
               {message.text}
             </p>
           )}
 
           {message.imageMessage && (
-            <div className='mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700'>
+            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
               <Image
                 src={message.imageMessage}
-                alt='Attachment'
+                alt="Attachment"
                 width={240}
                 height={135}
-                className='w-full h-auto object-cover'
+                className="w-full h-auto object-cover"
               />
             </div>
           )}

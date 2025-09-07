@@ -10,7 +10,6 @@ const nextConfig = {
   experimental: {
     webpackMemoryOptimizations: true,
   },
-  serverExternalPackages: ['bcrypt'],
   images: {
     remotePatterns: [
       {
@@ -76,15 +75,6 @@ const nextConfig = {
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
   webpack: (config, { isServer, webpack }) => {
-    // Suppress warnings for Node.js APIs in Edge Runtime for bcrypt
-    config.plugins.push(
-      new webpack.DefinePlugin({
-        'process.versions.node': JSON.stringify(process.versions.node),
-        'process.config': JSON.stringify({}),
-        'process.execPath': JSON.stringify(process.execPath),
-      })
-    );
-
     return config;
   },
 };
