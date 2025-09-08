@@ -41,3 +41,7 @@
 19. **Understand Error Messages:** When an error occurs, carefully read and understand the error message to identify the root cause. Do not attempt fixes without comprehending the issue.
 
 20. **Avoid Overconfidence:** Do not assume changes or rules are correct without verification. Always validate and test modifications.
+
+21. **Skip Identical Edits:** Do not attempt to edit content that is already identical to the intended changes. If the edit would result in the same content, skip the operation to avoid unnecessary actions.
+
+22. **Failure Retry Policy:** If `apply_diff` fails twice on the same edit attempt, switch to a full rewrite using `write_to_file` instead of continuing to retry the diff operation.
