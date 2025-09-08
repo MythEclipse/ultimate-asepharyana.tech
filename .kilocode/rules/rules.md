@@ -45,3 +45,36 @@
 21. **Skip Identical Edits:** Do not attempt to edit content that is already identical to the intended changes. If the edit would result in the same content, skip the operation to avoid unnecessary actions.
 
 22. **Failure Retry Policy:** If `apply_diff` fails twice on the same edit attempt, switch to a full rewrite using `write_to_file` instead of continuing to retry the diff operation.
+
+23. **Mandatory SEARCH field:**
+
+    - All search-based operations (`search_and_replace`, `apply_diff`) **must** include a `SEARCH` block.
+    - If replacing the entire file, use `SEARCH: .*` and provide the complete file content in `REPLACE`.
+    - Never leave `SEARCH` empty.
+
+24. **Whitespace Sensitivity:**
+
+    - `SEARCH` must exactly match the file content, including whitespace, newlines, and indentation.
+    - If uncertain, first use `read_file` or `search_files` to extract the exact block.
+
+25. **Atomicity of operations:** Each modification should be atomic and self-contained. Avoid combining unrelated changes in a single operation to simplify rollback if necessary.
+
+26. **Preserve file encoding:** Always maintain the original file encoding (UTF-8, UTF-16, etc.) and line endings (LF/CRLF). Do not introduce inconsistencies.
+
+27. **Backup critical files:** If editing configuration or schema files, create a backup copy before applying modifications to ensure recovery in case of failure.
+
+28. **Test-driven changes:** For code edits, validate modifications against existing tests or create minimal tests to confirm correctness after changes.
+
+29. **Minimal regex scope:** When regex is used in `SEARCH`, scope it narrowly to avoid capturing unintended parts of the file.
+
+30. **Log meaningful failures:** If a modification fails, include the reason and relevant context (file name, line range, attempted `SEARCH`) in the error output for easier debugging.
+
+31. **Avoid destructive replacements:** Never delete large sections of code unless explicitly instructed. Instead, comment on the potential impact and ask for user confirmation.
+
+32. **Respect file permissions:** Ensure the file is writable before attempting modifications. Do not attempt to bypass file permission restrictions.
+
+33. **Do not reorder unless instructed:** Preserve the original order of functions, imports, or configuration entries unless the user explicitly requests reordering.
+
+34. **Consistency across files:** If making edits in multiple files (e.g., renaming a variable), ensure consistency of changes across all occurrences.
+
+35. **Safety over speed:** Prioritize correctness, validation, and safety over making fast changes. Never sacrifice reliability for speed.
