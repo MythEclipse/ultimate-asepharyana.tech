@@ -229,7 +229,7 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
 
   match fetch_html(&url).await {
     Ok(html) => {
-      let (anime_list, pagination) = parse_anime_page(&html, &slug);
+      let (anime_list, _pagination) = parse_anime_page(&html, &slug);
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
       Json(ListResponse {
