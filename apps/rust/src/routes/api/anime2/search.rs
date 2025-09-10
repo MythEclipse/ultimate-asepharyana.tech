@@ -49,8 +49,7 @@ pub struct SearchResponse {
   pub pagination: Pagination,
 }
 
-#[derive(Deserialize)]
-#[derive(ToSchema, PartialSchema)]
+#[derive(Deserialize, ToSchema)]
 pub struct SearchQuery {
   pub q: Option<String>,
 }

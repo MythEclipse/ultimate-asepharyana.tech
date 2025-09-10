@@ -45,8 +45,7 @@ pub struct CompressResponse {
   pub error: Option<String>,
 }
 
-#[derive(Deserialize)]
-#[derive(ToSchema, PartialSchema)]
+#[derive(Deserialize, ToSchema)]
 pub struct CompressQuery {
   pub url: String,
   pub size: String,

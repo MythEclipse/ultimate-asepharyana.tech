@@ -24,8 +24,7 @@ pub const ENDPOINT_TAG: &str = "proxy";
 pub const OPERATION_ID: &str = "proxy";
 pub const SUCCESS_RESPONSE_BODY: &str = "String";
 
-#[derive(Deserialize)]
-#[derive(ToSchema, PartialSchema)]
+#[derive(Deserialize, ToSchema)]
 pub struct ProxyQuery {
   pub url: Option<String>,
 }

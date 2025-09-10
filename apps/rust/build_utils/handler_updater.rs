@@ -14,10 +14,10 @@ use crate::build_utils::constants::{ ENDPOINT_METADATA_REGEX, HANDLER_FN_REGEX }
 use crate::build_utils::path_utils::{
   extract_path_params,
   generate_default_description,
+  parse_path_params_from_signature,
   sanitize_operation_id,
   sanitize_tag,
 };
-use crate::build_utils::path_utils::parse_path_params_from_signature;
 use crate::build_utils::handler_template::generate_handler_template;
 use crate::build_utils::handler_updater::param_parsing::parse_query_params;
 use crate::build_utils::handler_updater::utoipa_generation::generate_utoipa_macro as imported_generate_utoipa_macro;
