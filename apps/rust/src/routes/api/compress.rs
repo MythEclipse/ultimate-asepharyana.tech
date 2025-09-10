@@ -65,16 +65,43 @@ fn parse_size_param(
     size_param: &str
 ) -> Result<(f64, SizeUnit), Box<dyn std::error::Error + Send + Sync>> {
     let s = size_param.trim();
+    tracing::info!("parse_size_param: input '{}'", size_param);
+    tracing::info!("parse_size_param: trimmed input '{}'", s);
+
     if s.ends_with('%') {
-        let value = s.trim_end_matches('%').parse::<f64>()?;
+        let trimmed_s = s.trim_end_matches('%').trim();
+        tracing::info!("parse_size_param: percentage trimmed_s '{}'", trimmed_s);
+        if trimmed_s.is_empty() {
+            tracing::error!("parse_size_param: Numeric value missing for percentage for input '{}'", size_param);
+            return Err("Invalid size format. Numeric value missing for percentage.".into());
+        }
+        let value = trimmed_s.parse::<f64>()?;
+        tracing::info!("parse_size_param: parsed value {} for percentage", value);
         Ok((value, SizeUnit::Percentage))
     } else if s.to_lowercase().ends_with("mb") {
-        let value = s.trim_end_matches("mb").trim().parse::<f64>()?;
+        let lower_s = s.to_lowercase();
+        let trimmed_s = lower_s.trim_end_matches("mb").trim();
+        tracing::info!("parse_size_param: MB trimmed_s '{}'", trimmed_s);
+        if trimmed_s.is_empty() {
+            tracing::error!("parse_size_param: Numeric value missing for MB for input '{}'", size_param);
+            return Err("Invalid size format. Numeric value missing for MB.".into());
+        }
+        let value = trimmed_s.parse::<f64>()?;
+        tracing::info!("parse_size_param: parsed value {} for MB", value);
         Ok((value, SizeUnit::MB))
     } else if s.to_lowercase().ends_with("kb") {
-        let value = s.trim_end_matches("kb").trim().parse::<f64>()?;
+        let lower_s = s.to_lowercase();
+        let trimmed_s = lower_s.trim_end_matches("kb").trim();
+        tracing::info!("parse_size_param: KB trimmed_s '{}'", trimmed_s);
+        if trimmed_s.is_empty() {
+            tracing::error!("parse_size_param: Numeric value missing for KB for input '{}'", size_param);
+            return Err("Invalid size format. Numeric value missing for KB.".into());
+        }
+        let value = trimmed_s.parse::<f64>()?;
+        tracing::info!("parse_size_param: parsed value {} for KB", value);
         Ok((value, SizeUnit::KB))
     } else {
+        tracing::error!("parse_size_param: Invalid size format for input '{}'", size_param);
         Err("Invalid size format. Please specify percentage (e.g., '50%'), MB (e.g., '5MB'), or KB (e.g., '500KB').".into())
     }
 }
@@ -174,7 +201,7 @@ async fn compress_image(
 async fn compress_video(
   buffer: &[u8],
   target_bytes: f64,
-  original_bytes: f64,
+  _original_bytes: f64,
   cache_key: &str,
   ext: &str
 ) -> Result<(Vec<u8>, f64), Box<dyn std::error::Error + Send + Sync>> {
@@ -213,78 +240,144 @@ async fn compress_video(
   let output_filename = format!("ffmpeg_output_{}.{}", uuid::Uuid::new_v4(), ext);
   let temp_output_path = CACHE_DIR.join(&output_filename);
 
-  let final_target_bytes = target_bytes;
-  let original_mb = original_bytes / 1024.0 / 1024.0;
-  let final_target_mb = final_target_bytes / 1024.0 / 1024.0;
-  let mut attempts = 0;
-  let min_size_bytes = final_target_bytes - (3.5 * 1024.0 * 1024.0);
-  let max_size_bytes = final_target_bytes + (0.5 * 1024.0 * 1024.0);
+  // Get video duration
+  #[cfg(target_os = "windows")]
+  #[cfg(target_os = "windows")]
+  let duration_output = std::process::Command::new("cmd")
+      .arg("/C")
+      .arg("ffmpeg")
+      .arg("-i")
+      .arg(temp_input.path())
+      .current_dir(CACHE_DIR.as_path())
+      .output()?;
 
-  loop {
-    let _ratio = (final_target_mb / original_mb).max(0.6);
-    let crf = (24.0 - (original_mb - final_target_mb) * 0.5).max(18.0).min(32.0) as u32;
-    tracing::info!("Attempt {} for video compression, current CRF: {}", attempts + 1, crf);
+  #[cfg(not(target_os = "windows"))]
+  let duration_output = std::process::Command::new("ffmpeg")
+      .arg("-i")
+      .arg(temp_input.path())
+      .current_dir(CACHE_DIR.as_path())
+      .output()?;
+  let stderr = String::from_utf8_lossy(&duration_output.stderr);
+  let duration_regex = regex::Regex::new(r"Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})")?;
+  let caps = duration_regex.captures(&stderr).ok_or("Could not find duration in ffmpeg output")?;
+  let hours: f64 = caps[1].parse()?;
+  let minutes: f64 = caps[2].parse()?;
+  let seconds: f64 = caps[3].parse()?;
+  let centi_seconds: f64 = caps[4].parse()?;
+  let total_seconds = hours * 3600.0 + minutes * 60.0 + seconds + centi_seconds / 100.0;
 
-    // Use ffmpeg to compress
-    let mut command = std::process::Command::new("ffmpeg");
-    command
+  // Calculate target bitrate (bits per second)
+  // target_bytes is in bytes, convert to bits
+  let target_bits = target_bytes * 8.0;
+  let target_bitrate = target_bits / total_seconds; // bits per second
+
+  // First Pass
+  let log_file_path = CACHE_DIR.join(format!("{}_passlog", cache_key));
+  #[cfg(target_os = "windows")]
+  #[cfg(target_os = "windows")]
+  let status_pass1 = std::process::Command::new("cmd")
+      .arg("/C")
+      .arg("ffmpeg")
+      .arg("-y") // Overwrite output files without asking
       .arg("-i")
       .arg(temp_input.path())
       .arg("-c:v")
       .arg("libx264")
-      .arg("-crf")
-      .arg(crf.to_string())
+      .arg("-b:v")
+      .arg(format!("{:.0}", target_bitrate)) // Target bitrate for video
+      .arg("-pass")
+      .arg("1")
+      .arg("-preset")
+      .arg("medium")
+      .arg("-an") // No audio
+      .arg("-f")
+      .arg("mp4") // Output format for pass 1 (can be null or dummy)
+      .arg(format!("{}", log_file_path.display())) // Output to log file (dummy)
+      .current_dir(CACHE_DIR.as_path())
+      .output()?;
+
+  #[cfg(not(target_os = "windows"))]
+  let status_pass1 = std::process::Command::new("ffmpeg")
+      .arg("-y") // Overwrite output files without asking
+      .arg("-i")
+      .arg(temp_input.path())
+      .arg("-c:v")
+      .arg("libx264")
+      .arg("-b:v")
+      .arg(format!("{:.0}", target_bitrate)) // Target bitrate for video
+      .arg("-pass")
+      .arg("1")
+      .arg("-preset")
+      .arg("medium")
+      .arg("-an") // No audio
+      .arg("-f")
+      .arg("mp4") // Output format for pass 1 (can be null or dummy)
+      .arg(format!("{}", log_file_path.display())) // Output to log file (dummy)
+      .current_dir(CACHE_DIR.as_path())
+      .output()?;
+
+  if !status_pass1.status.success() {
+      return Err(format!("FFmpeg pass 1 failed: {}", String::from_utf8_lossy(&status_pass1.stderr)).into());
+  }
+
+  // Second Pass
+  #[cfg(target_os = "windows")]
+  #[cfg(target_os = "windows")]
+  let status_pass2 = std::process::Command::new("cmd")
+      .arg("/C")
+      .arg("ffmpeg")
+      .arg("-y") // Overwrite output files without asking
+      .arg("-i")
+      .arg(temp_input.path())
+      .arg("-c:v")
+      .arg("libx264")
+      .arg("-b:v")
+      .arg(format!("{:.0}", target_bitrate)) // Target bitrate for video
+      .arg("-pass")
+      .arg("2")
       .arg("-preset")
       .arg("medium")
       .arg("-c:a")
       .arg("aac")
-      .arg("-y")
-      .arg(&temp_output_path);
+      .arg(&temp_output_path)
+      .current_dir(CACHE_DIR.as_path())
+      .output()?;
 
-    let output = command.output()?;
+  #[cfg(not(target_os = "windows"))]
+  let status_pass2 = std::process::Command::new("ffmpeg")
+      .arg("-y") // Overwrite output files without asking
+      .arg("-i")
+      .arg(temp_input.path())
+      .arg("-c:v")
+      .arg("libx264")
+      .arg("-b:v")
+      .arg(format!("{:.0}", target_bitrate)) // Target bitrate for video
+      .arg("-pass")
+      .arg("2")
+      .arg("-preset")
+      .arg("medium")
+      .arg("-c:a")
+      .arg("aac")
+      .arg(&temp_output_path)
+      .current_dir(CACHE_DIR.as_path())
+      .output()?;
 
-    let result_buffer = fs::read(&temp_output_path).await?;
-    let actual_bytes = result_buffer.len() as f64;
-    let actual_mb = actual_bytes / 1024.0 / 1024.0;
-    tracing::info!("Video compression result size: {} MB", actual_mb);
-
-    if actual_bytes == 0.0 {
-      tracing::error!(
-        "FFmpeg produced 0-byte output. Stderr: {}",
-        String::from_utf8_lossy(&output.stderr)
-      );
-      fs::remove_file(&temp_output_path).await?; // Cleanup
-      return Err(format!(
-        "FFmpeg produced 0-byte output. Stderr: {}",
-        String::from_utf8_lossy(&output.stderr)
-      ).into());
-    }
-
-    if actual_bytes < min_size_bytes {
-      tracing::info!("Compressed video too small, increasing target.");
-      // Too small, increase target
-    } else if actual_bytes > max_size_bytes {
-      tracing::info!("Compressed video too large, decreasing target.");
-      // Too large, decrease target
-    } else {
-      fs::write(&cache_path, &result_buffer).await?;
-      let size_reduction =
-        (((buffer.len() - result_buffer.len()) as f64) / (buffer.len() as f64)) * 100.0;
-      tracing::info!("Video compressed successfully for cache key: {}", cache_key);
-      fs::remove_file(&temp_output_path).await?; // Cleanup
-      return Ok((result_buffer, size_reduction));
-    }
-
-    attempts += 1;
-    if attempts >= 5 {
-      fs::write(&cache_path, &result_buffer).await?;
-      let size_reduction =
-        (((buffer.len() - result_buffer.len()) as f64) / (buffer.len() as f64)) * 100.0;
-      tracing::warn!("Video compression finished after all attempts without reaching target size for cache key: {}", cache_key);
-      fs::remove_file(&temp_output_path).await?; // Cleanup
-      return Ok((result_buffer, size_reduction));
-    }
+  if !status_pass2.status.success() {
+      return Err(format!("FFmpeg pass 2 failed: {}", String::from_utf8_lossy(&status_pass2.stderr)).into());
   }
+
+  // Clean up log file
+  fs::remove_file(&log_file_path).await?;
+  fs::remove_file(CACHE_DIR.join("ffmpeg2pass-0.log")).await?; // ffmpeg creates this by default
+  fs::remove_file(CACHE_DIR.join("ffmpeg2pass-0.log.mbtree")).await?; // and this
+
+  let result_buffer = fs::read(&temp_output_path).await?;
+  let _actual_bytes = result_buffer.len() as f64;
+  let size_reduction =
+    (((buffer.len() - result_buffer.len()) as f64) / (buffer.len() as f64)) * 100.0;
+  tracing::info!("Video compressed successfully for cache key: {}", cache_key);
+  fs::remove_file(&temp_output_path).await?; // Cleanup
+  Ok((result_buffer, size_reduction))
 }
 
 #[cfg(not(feature = "ffmpeg"))]
