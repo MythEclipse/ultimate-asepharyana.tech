@@ -13,34 +13,80 @@ pub mod komik;
 pub mod proxy;
 pub mod uploader;
 
+use crate::routes::api::anime2::complete_anime::slug::CompleteAnimeItem;
 use crate::routes::api::anime2::complete_anime::slug::ListResponse;
+use crate::routes::api::anime2::complete_anime::slug::Pagination;
 use crate::routes::api::anime2::detail::slug::AnimeDetailData;
 use crate::routes::api::anime2::detail::slug::DetailResponse;
+use crate::routes::api::anime2::detail::slug::DownloadItem;
+use crate::routes::api::anime2::detail::slug::Genre;
+use crate::routes::api::anime2::detail::slug::Link;
+use crate::routes::api::anime2::detail::slug::Recommendation;
 use crate::routes::api::anime2::index::Anime2Data;
 use crate::routes::api::anime2::index::Anime2Response;
+use crate::routes::api::anime2::index::CompleteAnimeItem as CompleteAnimeItem_1;
+use crate::routes::api::anime2::index::OngoingAnimeItem;
+use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_1;
 use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeResponse;
+use crate::routes::api::anime2::ongoing_anime::slug::Pagination as Pagination_1;
+use crate::routes::api::anime2::search::AnimeItem;
+use crate::routes::api::anime2::search::Pagination as Pagination_2;
+use crate::routes::api::anime2::search::SearchQuery;
 use crate::routes::api::anime2::search::SearchResponse;
+use crate::routes::api::anime::complete_anime::slug::CompleteAnimeItem as CompleteAnimeItem_2;
 use crate::routes::api::anime::complete_anime::slug::ListResponse as ListResponse_1;
+use crate::routes::api::anime::complete_anime::slug::Pagination as Pagination_3;
 use crate::routes::api::anime::detail::slug::AnimeDetailData as AnimeDetailData_1;
 use crate::routes::api::anime::detail::slug::DetailResponse as DetailResponse_1;
+use crate::routes::api::anime::detail::slug::EpisodeList;
+use crate::routes::api::anime::detail::slug::Genre as Genre_1;
+use crate::routes::api::anime::detail::slug::Recommendation as Recommendation_1;
 use crate::routes::api::anime::full::slug::AnimeFullData;
+use crate::routes::api::anime::full::slug::AnimeInfo;
+use crate::routes::api::anime::full::slug::DownloadLink;
+use crate::routes::api::anime::full::slug::EpisodeInfo;
 use crate::routes::api::anime::full::slug::FullResponse;
 use crate::routes::api::anime::index::AnimeData;
 use crate::routes::api::anime::index::AnimeResponse;
+use crate::routes::api::anime::index::CompleteAnimeItem as CompleteAnimeItem_3;
+use crate::routes::api::anime::index::OngoingAnimeItem as OngoingAnimeItem_2;
+use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_3;
 use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeResponse as OngoingAnimeResponse_1;
+use crate::routes::api::anime::ongoing_anime::slug::Pagination as Pagination_4;
+use crate::routes::api::anime::search::AnimeItem as AnimeItem_1;
+use crate::routes::api::anime::search::Pagination as Pagination_5;
+use crate::routes::api::anime::search::SearchQuery as SearchQuery_1;
 use crate::routes::api::anime::search::SearchResponse as SearchResponse_1;
+use crate::routes::api::compress::CompressQuery;
 use crate::routes::api::compress::CompressResponse;
 use crate::routes::api::drivepng::ListResponse as ListResponse_2;
 use crate::routes::api::komik::chapter::ChapterData;
+use crate::routes::api::komik::chapter::ChapterQuery;
 use crate::routes::api::komik::chapter::ChapterResponse;
+use crate::routes::api::komik::detail::Chapter;
 use crate::routes::api::komik::detail::DetailData;
+use crate::routes::api::komik::detail::DetailQuery;
 use crate::routes::api::komik::detail::DetailResponse as DetailResponse_2;
+use crate::routes::api::komik::detail::EpisodeList as EpisodeList_1;
+use crate::routes::api::komik::detail::Recommendation as Recommendation_2;
+use crate::routes::api::komik::manga::slug::MangaItem;
 use crate::routes::api::komik::manga::slug::MangaResponse;
+use crate::routes::api::komik::manga::slug::Pagination as Pagination_6;
+use crate::routes::api::komik::manga::slug::QueryParams;
+use crate::routes::api::komik::manhua::slug::ManhuaItem;
 use crate::routes::api::komik::manhua::slug::ManhuaResponse;
+use crate::routes::api::komik::manhua::slug::Pagination as Pagination_7;
+use crate::routes::api::komik::manhua::slug::QueryParams as QueryParams_1;
+use crate::routes::api::komik::manhwa::slug::ManhwaItem;
 use crate::routes::api::komik::manhwa::slug::ManhwaResponse;
+use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_8;
+use crate::routes::api::komik::manhwa::slug::QueryParams as QueryParams_2;
+use crate::routes::api::komik::search::MangaItem as MangaItem_1;
+use crate::routes::api::komik::search::Pagination as Pagination_9;
+use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
 use crate::routes::api::proxy::ErrorResponse;
-
+use crate::routes::api::proxy::ProxyQuery;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -64,46 +110,93 @@ paths(
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::search::search,
               crate::routes::api::proxy::proxy
-          ),
+        ),
 components(
-              schemas(
+            schemas(
+                  CompleteAnimeItem,
                   ListResponse,
+                  Pagination,
                   AnimeDetailData,
                   DetailResponse,
+                  DownloadItem,
+                  Genre,
+                  Link,
+                  Recommendation,
                   Anime2Data,
                   Anime2Response,
+                  CompleteAnimeItem_1,
+                  OngoingAnimeItem,
+                  OngoingAnimeItem_1,
                   OngoingAnimeResponse,
+                  Pagination_1,
+                  AnimeItem,
+                  Pagination_2,
+                  SearchQuery,
                   SearchResponse,
+                  CompleteAnimeItem_2,
                   ListResponse_1,
+                  Pagination_3,
                   AnimeDetailData_1,
                   DetailResponse_1,
+                  EpisodeList,
+                  Genre_1,
+                  Recommendation_1,
                   AnimeFullData,
+                  AnimeInfo,
+                  DownloadLink,
+                  EpisodeInfo,
                   FullResponse,
                   AnimeData,
                   AnimeResponse,
+                  CompleteAnimeItem_3,
+                  OngoingAnimeItem_2,
+                  OngoingAnimeItem_3,
                   OngoingAnimeResponse_1,
+                  Pagination_4,
+                  AnimeItem_1,
+                  Pagination_5,
+                  SearchQuery_1,
                   SearchResponse_1,
+                  CompressQuery,
                   CompressResponse,
                   ListResponse_2,
                   ChapterData,
+                  ChapterQuery,
                   ChapterResponse,
+                  Chapter,
                   DetailData,
+                  DetailQuery,
                   DetailResponse_2,
+                  EpisodeList_1,
+                  Recommendation_2,
+                  MangaItem,
                   MangaResponse,
+                  Pagination_6,
+                  QueryParams,
+                  ManhuaItem,
                   ManhuaResponse,
+                  Pagination_7,
+                  QueryParams_1,
+                  ManhwaItem,
                   ManhwaResponse,
+                  Pagination_8,
+                  QueryParams_2,
+                  MangaItem_1,
+                  Pagination_9,
+                  SearchQuery_2,
                   SearchResponse_2,
-                  ErrorResponse
-              )
-          ),
+                  ErrorResponse,
+                  ProxyQuery
+            )
+        ),
 info(
-              title = "Freefire",
-              version = "0.0.1",
-              description = "api gratis"
-          ),
+            title = "Freefire",
+            version = "0.0.1",
+            description = "api gratis"
+        ),
 tags(
-              (name = "api", description = "Main API")
-          )
+            (name = "api", description = "Main API")
+        )
 )]
 #[allow(dead_code)]
 pub struct ApiDoc;

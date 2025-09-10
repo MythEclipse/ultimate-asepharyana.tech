@@ -3,6 +3,13 @@ use std::fs;
 use std::path::Path;
 use anyhow::{ anyhow, Context, Result };
 use regex::Regex;
+
+// Re-export modules for public API
+pub mod param_parsing;
+pub mod utoipa_generation;
+pub mod response_enhancement;
+pub mod schema_injection;
+
 use crate::build_utils::constants::{ ENDPOINT_METADATA_REGEX, HANDLER_FN_REGEX, STRUCT_REGEX };
 use crate::build_utils::path_utils::{
   extract_path_params,
@@ -12,37 +19,10 @@ use crate::build_utils::path_utils::{
   sanitize_tag,
 };
 use crate::build_utils::handler_template::generate_handler_template;
-// Function to parse Query struct and extract query parameters
-fn parse_query_params(content: &str) -> Vec<(String, String)> {
-    let mut query_params = Vec::new();
-
-    // Find Query struct usage in function signature
-    let query_regex = Regex::new(r"Query\((\w+)\):\s*Query<(\w+)>").unwrap();
-    if let Some(cap) = query_regex.captures(content) {
-        let param_name = &cap[1];
-        let struct_name = &cap[2];
-
-        // Find the struct definition line
-        let struct_line_pattern = format!("struct {} {{", struct_name);
-        if let Some(start_pos) = content.find(&struct_line_pattern) {
-            // Find the end of the struct
-            let struct_content = &content[start_pos..];
-            if let Some(end_pos) = struct_content.find('}') {
-                let struct_body = &struct_content[struct_line_pattern.len()..end_pos];
-
-                // Parse fields from struct body
-                let field_regex = Regex::new(r"pub\s+(\w+):\s*([^,]+),?").unwrap();
-                for field_cap in field_regex.captures_iter(struct_body) {
-                    let field_name = field_cap[1].to_string();
-                    let field_type = field_cap[2].trim().to_string();
-                    query_params.push((field_name, field_type));
-                }
-            }
-        }
-    }
-
-    query_params
-}
+use crate::build_utils::handler_updater::param_parsing::parse_query_params;
+use crate::build_utils::handler_updater::utoipa_generation::generate_utoipa_macro as imported_generate_utoipa_macro;
+use crate::build_utils::handler_updater::response_enhancement::enhance_response_struct;
+use crate::build_utils::handler_updater::schema_injection::inject_schemas;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -54,64 +34,8 @@ pub struct HandlerRouteInfo {
   pub route_tag: String,
 }
 
-fn enhance_response_struct(content: &str, axum_path: &str) -> String {
-  let struct_regex = Regex::new(
-    r"(?ms)#\[derive\([^)]*\)\]\s*pub struct (\w+Response)\s*\{\s*pub message: String,\s*\}"
-  ).unwrap();
-
-  if let Some(cap) = struct_regex.captures(content) {
-    let struct_name = &cap[1];
-    let enhanced_struct = if axum_path.contains("/search") {
-      format!(r#"/// Response structure for search endpoints.
-/// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct {} {{
-    /// Success message
-    pub message: String,
-    /// Search results - replace with actual Vec<T> where T implements ToSchema
-    pub data: Vec<serde_json::Value>,
-    /// Total number of results
-    pub total: Option<u64>,
-    /// Current page
-    pub page: Option<u32>,
-    /// Results per page
-    pub per_page: Option<u32>,
-}}"#, struct_name)
-    } else if axum_path.contains('{') || axum_path.contains("/detail") {
-      format!(r#"/// Response structure for detail endpoints.
-/// Replace `serde_json::Value` with your actual data type and implement `utoipa::ToSchema` for complex types.
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct {} {{
-    /// Success message
-    pub message: String,
-    /// Detailed data - replace with actual T where T implements ToSchema
-    pub data: serde_json::Value,
-}}"#, struct_name)
-    } else {
-      format!(r#"/// Response structure for list endpoints.
-/// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct {} {{
-    /// Success message
-    pub message: String,
-    /// List of items - replace with actual Vec<T> where T implements ToSchema
-    pub data: Vec<serde_json::Value>,
-    /// Total number of items
-    pub total: Option<u64>,
-}}"#, struct_name)
-    };
-
-    let old_struct_regex = Regex::new(
-      r"(?ms)#\[derive\([^)]*\)\]\s*pub struct \w+Response\s*\{\s*pub message: String,\s*\}"
-    ).unwrap();
-    old_struct_regex.replace(content, &enhanced_struct).to_string()
-  } else {
-    content.to_string()
-  }
-}
-
-// Generate detailed parameter documentation based on parameter name and context
-fn generate_detailed_param_doc(
+/// Generates detailed parameter documentation with context-aware descriptions and examples
+pub fn generate_detailed_param_doc(
   name: &str,
   typ: &str,
   route_path: &str,
@@ -177,84 +101,7 @@ fn generate_detailed_param_doc(
   format!(r#"("{}" = {}, {}, description = "{}", {})"#, name, typ, param_type, description, example)
 }
 
-// Enhanced function to generate detailed utoipa macro with comprehensive parameter documentation
-fn generate_utoipa_macro(
-  http_method: &str,
-  route_path: &str,
-  route_tag: &str,
-  response_body: &str,
-  route_description: &str,
-  operation_id: &str,
-  path_params: &[(String, String)],
-  query_params: &[(String, String)]
-) -> String {
-  let method_ident = match http_method.to_uppercase().as_str() {
-    "POST" => "post",
-    "PUT" => "put",
-    "DELETE" => "delete",
-    "PATCH" => "patch",
-    "HEAD" => "head",
-    "OPTIONS" => "options",
-    "TRACE" => "trace",
-    _ => "get", // Default to GET
-  };
 
-  let params_str = if path_params.is_empty() && query_params.is_empty() {
-    String::new()
-  } else {
-    let mut params: Vec<String> = Vec::new();
-
-    // Add path parameters
-    for (name, typ) in path_params {
-      params.push(generate_detailed_param_doc(name, typ, route_path, "Path"));
-    }
-
-    // Add query parameters
-    for (name, typ) in query_params {
-      params.push(generate_detailed_param_doc(name, typ, route_path, "Query"));
-    }
-
-    if params.is_empty() {
-      String::new()
-    } else {
-      format!(",\n    params(\n        {}\n    )", params.join(",\n        "))
-    }
-  };
-
-  format!(
-    r#"#[utoipa::path(
-    {}{},
-    path = "{}",
-    tag = "{}",
-    operation_id = "{}",
-    responses(
-        (status = 200, description = "{}", body = {}),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
-)]"#,
-    method_ident,
-    params_str,
-    route_path,
-    route_tag,
-    operation_id,
-    route_description,
-    response_body
-  )
-}
-
-fn inject_schemas(
-  content: &str,
-  handler_module_path: &str,
-  schemas: &mut HashSet<String>
-) -> Result<()> {
-  for cap in STRUCT_REGEX.captures_iter(content) {
-    let name_prefix = &cap[1];
-    let suffix = &cap[2];
-    // Register schema by its fully-qualified type path so we can import it in the generated mod.
-    schemas.insert(format!("{}::{}{}", handler_module_path, name_prefix, suffix));
-  }
-  Ok(())
-}
 
 pub fn update_handler_file(
   path: &Path,
@@ -471,7 +318,7 @@ pub fn update_handler_file(
   };
 
   // Parse query parameters from the handler content
-  let query_params = parse_query_params(&content);
+  let query_params = parse_query_params(&content)?;
 
   println!("cargo:warning=File: {:?}", path);
   println!("cargo:warning=axum_path: {}", axum_path);
@@ -479,15 +326,15 @@ pub fn update_handler_file(
   println!("cargo:warning=path_params: {:?}", path_params);
   println!("cargo:warning=query_params: {:?}", query_params);
 
-  let new_utoipa_macro = generate_utoipa_macro(
-    &http_method,
-    &openapi_route_path,
-    &route_tag,
-    &sanitized_response,
-    &route_description,
-    &operation_id,
-    &path_params,
-    &query_params
+  let new_utoipa_macro = imported_generate_utoipa_macro(
+      &http_method,
+      &openapi_route_path,
+      &route_tag,
+      &sanitized_response,
+      &route_description,
+      &operation_id,
+      &path_params,
+      &query_params
   );
 
   println!("cargo:warning=Generated utoipa macro:");
@@ -609,7 +456,7 @@ pub fn update_handler_file(
   }
 
   // Enhance response struct if it's basic
-  new_content = enhance_response_struct(&new_content, &axum_path);
+  new_content = enhance_response_struct(&new_content, &axum_path)?;
 
   if updated_content != new_content || utoipa_replaced {
     println!("cargo:warning=Writing updated content to file: {:?}", path);
