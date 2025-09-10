@@ -50,6 +50,7 @@ pub struct SearchResponse {
 }
 
 #[derive(Deserialize)]
+#[derive(ToSchema, PartialSchema)]
 pub struct SearchQuery {
   pub q: Option<String>,
 }

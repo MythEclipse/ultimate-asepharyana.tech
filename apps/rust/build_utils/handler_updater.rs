@@ -10,14 +10,14 @@ pub mod utoipa_generation;
 pub mod response_enhancement;
 pub mod schema_injection;
 
-use crate::build_utils::constants::{ ENDPOINT_METADATA_REGEX, HANDLER_FN_REGEX, STRUCT_REGEX };
+use crate::build_utils::constants::{ ENDPOINT_METADATA_REGEX, HANDLER_FN_REGEX };
 use crate::build_utils::path_utils::{
   extract_path_params,
   generate_default_description,
-  parse_path_params_from_signature,
   sanitize_operation_id,
   sanitize_tag,
 };
+use crate::build_utils::path_utils::parse_path_params_from_signature;
 use crate::build_utils::handler_template::generate_handler_template;
 use crate::build_utils::handler_updater::param_parsing::parse_query_params;
 use crate::build_utils::handler_updater::utoipa_generation::generate_utoipa_macro as imported_generate_utoipa_macro;
@@ -33,75 +33,6 @@ pub struct HandlerRouteInfo {
   pub handler_module_path: String,
   pub route_tag: String,
 }
-
-/// Generates detailed parameter documentation with context-aware descriptions and examples
-pub fn generate_detailed_param_doc(
-  name: &str,
-  typ: &str,
-  route_path: &str,
-  param_type: &str
-) -> String {
-  let description = match name {
-    "id" => format!("Unique identifier for the resource (UUID format recommended)"),
-    "slug" =>
-      format!("URL-friendly identifier for the resource (typically lowercase with hyphens)"),
-    "uuid" => format!("Universally unique identifier for the resource"),
-    "user_id" => format!("User identifier (can be UUID, username, or numeric ID)"),
-    "chapter_id" => format!("Chapter identifier for manga/comic content"),
-    "komik_id" => format!("Comic/manga identifier"),
-    "anime_id" => format!("Anime series identifier"),
-    "page" => format!("Page number for pagination (starts from 1)"),
-    "limit" => format!("Maximum number of items to return (default: 20, max: 100)"),
-    "offset" => format!("Number of items to skip for pagination"),
-    "search" => format!("Search query string for filtering results"),
-    "category" => format!("Category filter for content organization"),
-    "status" => format!("Status filter (active, inactive, pending, etc.)"),
-    "type" | "r#type" => format!("Content type filter"),
-    "sort" => format!("Sort order (asc, desc, or field name)"),
-    "order" => format!("Sort direction (ascending or descending)"),
-    "file_name" => format!("Name of the file to access or download"),
-    "chapter" => format!("Chapter number for content navigation"),
-    "episode" => format!("Episode number for series content"),
-    _ => {
-      // Generate context-aware description based on route path
-      if route_path.contains("detail") {
-        format!("Identifier for the detailed resource view")
-      } else if route_path.contains("search") {
-        format!("Search parameter for filtering results")
-      } else if route_path.contains("chapter") {
-        format!("Chapter-specific identifier")
-      } else if route_path.contains("episode") {
-        format!("Episode-specific identifier")
-      } else {
-        format!("Parameter for resource identification")
-      }
-    }
-  };
-
-  let example = match name {
-    "id" | "uuid" => r#"example = "550e8400-e29b-41d4-a716-446655440000""#,
-    "slug" => {
-      // Use "1" as default for complete-anime and ongoing-anime slug parameters
-      if route_path.contains("complete-anime") || route_path.contains("ongoing-anime") {
-        r#"example = "1""#
-      } else {
-        r#"example = "naruto-shippuden-episode-1""#
-      }
-    }
-    "page" => r#"example = 1, minimum = 1"#,
-    "limit" => r#"example = 20, minimum = 1, maximum = 100"#,
-    "offset" => r#"example = 0, minimum = 0"#,
-    "search" => r#"example = "naruto""#,
-    "chapter" => r#"example = "15""#,
-    "episode" => r#"example = "24""#,
-    "file_name" => r#"example = "document.pdf""#,
-    _ => r#"example = "sample_value""#,
-  };
-
-  format!(r#"("{}" = {}, {}, description = "{}", {})"#, name, typ, param_type, description, example)
-}
-
-
 
 pub fn update_handler_file(
   path: &Path,
@@ -209,7 +140,7 @@ pub fn update_handler_file(
   }
 
   // Parse path params from existing function signature
-  let parsed_path_params = parse_path_params_from_signature(&content);
+  let parsed_path_params = parse_path_params_from_signature(&content)?;
 
   // Update ENDPOINT_PATH if there are path params and route_path doesn't have {param}
   if !parsed_path_params.is_empty() {
@@ -327,14 +258,14 @@ pub fn update_handler_file(
   println!("cargo:warning=query_params: {:?}", query_params);
 
   let new_utoipa_macro = imported_generate_utoipa_macro(
-      &http_method,
-      &openapi_route_path,
-      &route_tag,
-      &sanitized_response,
-      &route_description,
-      &operation_id,
-      &path_params,
-      &query_params
+    &http_method,
+    &openapi_route_path,
+    &route_tag,
+    &sanitized_response,
+    &route_description,
+    &operation_id,
+    &path_params,
+    &query_params
   );
 
   println!("cargo:warning=Generated utoipa macro:");

@@ -106,20 +106,6 @@ pub fn generate_detailed_param_doc(
   format!(r#"("{}" = {}, {}, description = "{}", {})"#, name, typ, param_type, description, example)
 }
 
-// Parse path parameters from existing function signature
-pub fn parse_path_params_from_signature(content: &str) -> Result<Vec<(String, String)>> {
-  let mut path_params = Vec::new();
 
-  // Look for Path<...> patterns in function signatures
-  let path_regex = Regex::new(r"Path\((\w+)\):\s*Path<([^>]+)>").map_err(|e|
-    anyhow!("Invalid path regex pattern: {}", e)
-  )?;
 
-  for cap in path_regex.captures_iter(content) {
-    let param_name = cap[1].to_string();
-    let param_type = cap[2].to_string();
-    path_params.push((param_name, param_type));
-  }
 
-  Ok(path_params)
-}

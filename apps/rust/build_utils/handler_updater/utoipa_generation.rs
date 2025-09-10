@@ -1,6 +1,4 @@
-use regex::Regex;
-use anyhow::{ anyhow, Result };
-use crate::build_utils::handler_updater::param_parsing::generate_detailed_param_doc;
+use super::param_parsing::generate_detailed_param_doc;
 
 // Enhanced function to generate detailed utoipa macro with comprehensive parameter documentation
 pub fn generate_utoipa_macro(
@@ -31,15 +29,15 @@ pub fn generate_utoipa_macro(
 
     // Add path parameters
     for (name, typ) in path_params {
-          let param_doc = generate_detailed_param_doc(name, typ, route_path, "Path");
-          params.push(param_doc);
-        }
+      let param_doc = generate_detailed_param_doc(name, typ, route_path, "Path");
+      params.push(param_doc);
+    }
 
     // Add query parameters
     for (name, typ) in query_params {
-          let param_doc = generate_detailed_param_doc(name, typ, route_path, "Query");
-          params.push(param_doc);
-        }
+      let param_doc = generate_detailed_param_doc(name, typ, route_path, "Query");
+      params.push(param_doc);
+    }
 
     if params.is_empty() {
       String::new()

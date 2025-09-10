@@ -7,9 +7,9 @@ use scraper::{ Html, Selector };
 use regex::Regex;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{info, error};
+use tracing::{ info, error };
 use std::time::Instant;
 
 #[allow(dead_code)]
@@ -55,6 +55,7 @@ pub struct SearchResponse {
 }
 
 #[derive(Deserialize)]
+#[derive(ToSchema, PartialSchema)]
 pub struct SearchQuery {
   pub q: Option<String>,
 }
@@ -168,8 +169,7 @@ async fn fetch_and_parse_search(
       .map(|e| e.text().collect::<String>())
       .unwrap_or_default();
 
-    let episode = EPISODE_REGEX
-      .captures(&episode_text)
+    let episode = EPISODE_REGEX.captures(&episode_text)
       .and_then(|cap| cap.get(1))
       .map(|m| m.as_str().to_string())
       .unwrap_or_else(|| "Ongoing".to_string());

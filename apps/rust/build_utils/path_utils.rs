@@ -15,14 +15,16 @@ pub fn extract_path_params(axum_path: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-pub fn parse_path_params_from_signature(content: &str) -> Vec<(String, String)> {
+pub fn parse_path_params_from_signature(content: &str) -> Result<Vec<(String, String)>, anyhow::Error> {
     // Look for Path parameters directly
-    let param_regex = Regex::new(r"Path\((\w+)\):\s*Path<([^>]+)>").unwrap();
-    param_regex.captures_iter(content).map(|cap| {
+    let param_regex = Regex::new(r"Path\((\w+)\):\s*Path<([^>]+)>").map_err(|e|
+      anyhow::anyhow!("Invalid path regex pattern: {}", e)
+    )?;
+    Ok(param_regex.captures_iter(content).map(|cap| {
         let name = cap[1].to_string();
         let typ = cap[2].to_string();
         (name, typ)
-    }).collect()
+    }).collect())
 }
 
 pub fn generate_default_description(path_str: &str, method: &str) -> String {
