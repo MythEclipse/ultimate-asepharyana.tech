@@ -1,4 +1,4 @@
-import { Kysely, MysqlDialect } from 'kysely';
+import { Kysely, MysqlDialect, MysqlPool } from 'kysely';
 import { createPool } from 'mysql2';
 import { DB } from './types';
 
@@ -10,9 +10,12 @@ export function initializeDb(databaseUrl: string) {
   }
 
   const dialect = new MysqlDialect({
-    pool: createPool({
-      uri: databaseUrl,
-    }),
+    pool: async () =>
+      Promise.resolve(
+        createPool({
+          uri: databaseUrl,
+        }) as unknown as MysqlPool
+      ),
   });
 
   dbInstance = new Kysely<DB>({
