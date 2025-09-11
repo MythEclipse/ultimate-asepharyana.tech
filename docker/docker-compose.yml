@@ -1,0 +1,56 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    container_name: ultimate-asepharyana-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  mysql:
+    image: mysql:8.0
+    container_name: ultimate-asepharyana-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: mydatabase
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: always
+
+  nextjs:
+    build:
+      context: ../apps/nextjs
+      dockerfile: Dockerfile
+    container_name: ultimate-asepharyana-nextjs
+    ports:
+      - '4090:4090'
+    volumes:
+      - ../apps/nextjs:/app
+      - /app/node_modules
+    depends_on:
+      - redis
+      - mysql
+    restart: always
+
+  rust:
+    build:
+      context: ../apps/rust
+      dockerfile: Dockerfile
+    container_name: ultimate-asepharyana-rust
+    ports:
+      - '4091:4091'
+    volumes:
+      - ../apps/rust:/app
+      - /app/target
+    depends_on:
+      - redis
+      - mysql
+    restart: always
+
+volumes:
+  redis_data:
+  mysql_data:
