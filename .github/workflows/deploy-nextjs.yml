@@ -91,5 +91,5 @@ jobs:
             cd ${{ secrets.VPS_TARGET_DIR }}
             git pull
             pnpm install --prod --filter=@asepharyana/nextjs
-            pm2 startOrRestart nextjs.config.cjs
+            pm2 startOrRestart deploy/pm2/nextjs.config.cjs
             echo "Next.js Deployment successful!"

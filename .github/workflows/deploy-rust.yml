@@ -119,5 +119,5 @@ jobs:
             git pull
             bash scripts/2updateenv.sh
             # Check if the process is running and stop it
-            pm2 startOrRestart rust.config.cjs
+            pm2 startOrRestart deploy/pm2/rust.config.cjs
             echo "Rust Deployment successful!"
