@@ -1,7 +1,7 @@
 name: Deploy Next.js to VPS
 
 on:
-  workflow_dispatch: # Manual triggera
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - main
@@ -89,7 +89,7 @@ jobs:
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
-            git pull
+            git reset --hard origin/main
             pnpm install --prod --filter=@asepharyana/nextjs
             pm2 startOrRestart deploy/pm2/nextjs.config.cjs
             echo "Next.js Deployment successful!"

@@ -1,7 +1,7 @@
 name: Deploy Rust to VPS
 
 on:
-  workflow_dispatch: # Manual triggera
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - main
@@ -116,7 +116,7 @@ jobs:
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
             cd ${{ secrets.VPS_TARGET_DIR }}
-            git pull
+            git reset --hard origin/main
             bash scripts/2updateenv.sh
             # Check if the process is running and stop it
             pm2 startOrRestart deploy/pm2/rust.config.cjs
