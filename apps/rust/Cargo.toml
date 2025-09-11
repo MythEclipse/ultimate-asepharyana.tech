@@ -44,8 +44,8 @@ url = { workspace = true }
 rand = { workspace = true }
 tempfile = { workspace = true }
 mime_guess = { workspace = true }
-lazy_static = "1.4"
-tower-http = { version = "0.6.6", features = ["cors"] }
+lazy_static = { workspace = true }
+tower-http = { workspace = true }
 backoff = { workspace = true, features = ["futures", "tokio"] }
 dashmap = { workspace = true }
 
@@ -62,8 +62,8 @@ log = { workspace = true }
 itertools = { workspace = true }
 rayon = { workspace = true }
 walkdir = { workspace = true }
-openapiv3 = "2.2.0"
-jsonschema = "0.33.0"
+openapiv3 = { workspace = true }
+jsonschema = { workspace = true }
 utoipa = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }

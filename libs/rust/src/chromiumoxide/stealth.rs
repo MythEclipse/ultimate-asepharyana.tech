@@ -1,6 +1,6 @@
-//! Stealth features for headless Chrome
+//! Stealth features for Chromiumoxide
 
-use crate::headless_chrome::error::BrowserResult;
+use crate::chromiumoxide::error::BrowserResult;
 use chromiumoxide::Page;
 use rand::Rng;
 use std::time::Duration;
@@ -65,20 +65,20 @@ impl StealthManager {
         let selected_user_agent = if config.user_agents.is_empty() {
             None
         } else {
-            let mut rng = rand::rng();
-            Some(config.user_agents[rng.random_range(0..config.user_agents.len())].clone())
+            let mut rng = rand::rngs::ThreadRng::default();
+            Some(config.user_agents[rng.gen_range(0..config.user_agents.len())].clone())
         };
 
         let selected_viewport = if config.viewports.is_empty() {
             None
         } else {
-            let mut rng = rand::rng();
-            Some(config.viewports[rng.random_range(0..config.viewports.len())].clone())
+            let mut rng = rand::rngs::ThreadRng::default();
+            Some(config.viewports[rng.gen_range(0..config.viewports.len())].clone())
         };
 
         let selected_delay = {
-            let mut rng = rand::rng();
-            rng.random_range(config.random_delay_range.0..=config.random_delay_range.1)
+            let mut rng = rand::rngs::ThreadRng::default();
+            rng.gen_range(config.random_delay_range.0..=config.random_delay_range.1)
         };
 
         Self {

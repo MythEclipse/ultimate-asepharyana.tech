@@ -1,6 +1,6 @@
 //! Tab management with retry and timeout mechanisms
 
-use crate::headless_chrome::{
+use crate::chromiumoxide::{
   config::BrowserConfig,
   error::{ BrowserError, BrowserResult },
   stealth::StealthManager,

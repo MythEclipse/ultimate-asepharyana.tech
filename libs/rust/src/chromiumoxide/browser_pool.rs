@@ -1,6 +1,6 @@
 //! Browser pool management with shared global browser instance
 
-use crate::headless_chrome::{
+use crate::chromiumoxide::{
   config::{ BrowserConfig, ProxyConfig },
   error::{ BrowserError, BrowserResult },
   stealth::StealthManager,
@@ -84,16 +84,16 @@ impl BrowserPool {
       proxy: &ProxyConfig
   ) -> BrowserConfigBuilder {
       match proxy.proxy_type {
-          crate::headless_chrome::config::ProxyType::Http => {
+          crate::chromiumoxide::config::ProxyType::Http => {
               config_builder = config_builder.arg(&format!("--proxy-server={}", proxy.server));
           }
-          crate::headless_chrome::config::ProxyType::Https => {
+          crate::chromiumoxide::config::ProxyType::Https => {
               config_builder = config_builder.arg(&format!("--proxy-server={}", proxy.server));
           }
-          crate::headless_chrome::config::ProxyType::Socks4 => {
+          crate::chromiumoxide::config::ProxyType::Socks4 => {
               config_builder = config_builder.arg(&format!("--proxy-server=socks4://{}", proxy.server));
           }
-          crate::headless_chrome::config::ProxyType::Socks5 => {
+          crate::chromiumoxide::config::ProxyType::Socks5 => {
               config_builder = config_builder.arg(&format!("--proxy-server=socks5://{}", proxy.server));
           }
       }

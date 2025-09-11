@@ -4,6 +4,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LibError {
-    #[error("An unknown error occurred")]
-    Unknown,
+  #[error("An unknown error occurred")]
+  Unknown,
+  #[error("Chromiumoxide error: {0}")] ChromiumoxideError(String),
 }
