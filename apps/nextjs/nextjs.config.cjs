@@ -2,14 +2,13 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: 'npm',
+      script: 'pnpm',
       args: 'run start',
-      cwd: './apps/nextjs',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      error_file: 'logs/nextjs-error.log',
+      out_file: 'logs/nextjs-out.log',
       exec_mode: 'fork',
       max_memory_restart: '1G',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      out_file: './deploy/pm2/logs/nextjs-out.log',
-      error_file: './deploy/pm2/logs/nextjs-error.log',
       env: {
         NODE_ENV: 'production',
       },

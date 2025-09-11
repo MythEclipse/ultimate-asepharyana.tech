@@ -105,7 +105,7 @@ jobs:
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy Rust
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -119,5 +119,5 @@ jobs:
             git reset --hard origin/main
             bash scripts/2updateenv.sh
             # Check if the process is running and stop it
-            pm2 startOrRestart deploy/pm2/rust.config.cjs
+            pm2 startOrRestart apps/rust/rust.config.cjs
             echo "Rust Deployment successful!"

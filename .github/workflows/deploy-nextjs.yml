@@ -23,7 +23,7 @@ jobs:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 8
 
@@ -78,7 +78,7 @@ jobs:
           rm -f /tmp/deploy_key
 
       - name: SSH into VPS and Deploy
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -91,5 +91,5 @@ jobs:
             cd ${{ secrets.VPS_TARGET_DIR }}
             git reset --hard origin/main
             pnpm install --prod --filter=@asepharyana/nextjs
-            pm2 startOrRestart deploy/pm2/nextjs.config.cjs
+            pm2 startOrRestart apps/nextjs/nextjs.config.cjs
             echo "Next.js Deployment successful!"
