@@ -65,6 +65,7 @@ jobs:
           libavdevice-dev
           libswresample-dev
           libpostproc-dev
+
       - name: Prepare .env file for production
         env:
           ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
@@ -92,40 +93,44 @@ jobs:
       - name: Copy .env to all subprojects/packages
         run: bash scripts/2updateenv.sh
 
-      - name: Sync all .env files to VPS
+      - name: Sync Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+
+          # Sync all .env files
           find . -type f -name ".env" | while read file; do
             target="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/${file#./}"
             rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" "$file" "$target"
           done
+
+          # Sync Rust binary
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release"
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/rust/target/release/rust ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release/rust
+
           rm -f /tmp/deploy_key
 
-      - name: Sync Rust Build Artifacts to VPS
+      - name: Deploy on VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release"
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/rust/target/release/rust ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release/rust
-          rm -f /tmp/deploy_key
-
-      - name: SSH into VPS and Deploy Rust
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            # Set up the environment
             export PATH=$PATH:/root/.local/share/pnpm
             export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
             export PATH=$PATH:/home/asephs/.bun/bin/bun
             export PATH="$HOME/.cargo/bin:$PATH"
+
+            # Navigate to the app directory and update
             cd ${{ secrets.VPS_TARGET_DIR }}/apps/rust
             git reset --hard origin/main
             bash scripts/2updateenv.sh
-            # Check if the process is running and stop it
+
+            # Restart the application with PM2
             pm2 startOrRestart rust.config.cjs
+
             echo "Rust Deployment successful!"
+          '
+          rm -f /tmp/deploy_key
