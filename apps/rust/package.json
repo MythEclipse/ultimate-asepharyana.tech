@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "./target/release/RustExpress"
+    "start": "./target/release/rust"
   }
 }
