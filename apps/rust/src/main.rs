@@ -8,14 +8,14 @@
 
 use std::net::SocketAddr;
 use rust_lib::config::CONFIG_MAP;
-use crate::routes::api::{create_api_routes, ApiDoc};
+use crate::routes::api::{ create_api_routes, ApiDoc };
 use crate::routes::AppState;
 use std::sync::Arc;
 use axum::Router;
 use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{ Any, CorsLayer };
 
 mod routes;
 
@@ -23,7 +23,8 @@ mod routes;
 async fn main() -> anyhow::Result<()> {
   // Initialize tracing from RUST_LOG (or defaults), handling invalid UTF-8 safely
   // Force rebuild
-  let filter = std::env::var_os("RUST_LOG")
+  let filter = std::env
+    ::var_os("RUST_LOG")
     .and_then(|s| s.into_string().ok())
     .unwrap_or_else(|| "info".to_string());
   tracing_subscriber::fmt().with_env_filter(EnvFilter::new(&filter)).init();
@@ -34,7 +35,9 @@ async fn main() -> anyhow::Result<()> {
   let jwt_secret = CONFIG_MAP.get("JWT_SECRET")
     .cloned()
     .unwrap_or_else(|| {
-      tracing::warn!("JWT_SECRET not set in environment, using default secret (not recommended for production)");
+      tracing::warn!(
+        "JWT_SECRET not set in environment, using default secret (not recommended for production)"
+      );
       "default_secret".to_string()
     });
 
@@ -44,29 +47,14 @@ async fn main() -> anyhow::Result<()> {
   });
 
   tracing::info!("Building application routes...");
-  let cors = CorsLayer::new()
-    .allow_origin(Any)
-    .allow_methods(Any)
-    .allow_headers(Any);
+  let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
   let app = Router::new()
     .merge(create_api_routes().with_state(app_state.clone()))
     .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
     .layer(cors);
 
-  let port = CONFIG_MAP.get("PORT")
-    .map(|s| {
-      // Trim whitespace and extract only numeric characters to handle shell prompt sequences
-      let cleaned = s.chars()
-        .take_while(|c| c.is_numeric())
-        .collect::<String>();
-      cleaned.parse::<u16>().ok()
-    })
-    .flatten()
-    .unwrap_or_else(|| {
-      tracing::warn!("Invalid PORT environment variable, using default port 3000");
-      3000
-    });
+  let port = 4099;
   let addr = SocketAddr::from(([0, 0, 0, 0], port));
   tracing::info!("Binding server to address: {}", addr);
 
