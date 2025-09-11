@@ -463,11 +463,15 @@ async fn process_compression(
   let mut headers = reqwest::header::HeaderMap::new();
   headers.insert(
     reqwest::header::USER_AGENT,
-    reqwest::header::HeaderValue::from_static("Mozilla/5.0 (compatible; RustCompressor/1.0)")
+    reqwest::header::HeaderValue::from_static(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"
+    )
   );
   headers.insert(
     reqwest::header::ACCEPT,
-    reqwest::header::HeaderValue::from_static("*/*")
+    reqwest::header::HeaderValue::from_static(
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+    )
   );
 
   let response = client
