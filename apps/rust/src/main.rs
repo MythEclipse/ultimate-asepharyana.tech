@@ -46,7 +46,10 @@ async fn main() -> anyhow::Result<()> {
 
   tracing::info!("Creating app state...");
   static BROWSER_POOL_INSTANCE: OnceCell<Arc<BrowserPool>> = OnceCell::const_new();
-  let browser_config = BrowserConfig::builder().build().expect("Failed to build browser config");
+  let browser_config = BrowserConfig::builder()
+    .arg("--no-sandbox")
+    .build()
+    .expect("Failed to build browser config");
   let browser_pool = BROWSER_POOL_INSTANCE.get_or_init(|| async {
     let (browser, _handler) = BrowserPool::launch(browser_config).await.expect("Failed to create browser pool");
     Arc::new(browser)
