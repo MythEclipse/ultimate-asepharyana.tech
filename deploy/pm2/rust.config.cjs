@@ -9,9 +9,6 @@ module.exports = {
       instances: 'max',
       exec_mode: 'cluster',
       max_memory_restart: '1G',
-      error_file: 'logs/rust-error.log',
-      out_file: 'logs/rust-out.log',
-      combine_output: true,
       env: {
         NODE_ENV: 'production',
         NODE_OPTIONS: '-r dotenv/config',
