@@ -3,9 +3,9 @@ module.exports = {
     {
       name: 'RustExpress',
       script: 'bash',
-      args: '-c "./target/release/rust"',
+      args: '-c "../../apps/rust/target/release/rust"',
       interpreter: 'none',
-      cwd: 'apps/rust',
+      cwd: '../../apps/rust',
       instances: 'max',
       exec_mode: 'cluster',
       max_memory_restart: '1G',
