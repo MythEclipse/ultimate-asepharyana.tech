@@ -3,8 +3,8 @@ module.exports = {
     {
       name: 'RustExpress',
       script: 'bash',
-      args: '-c "../rust/target/release/rust"',
-      cwd: '../apps/rust',
+      args: '-c "target/release/rust"',
+      cwd: '../../apps/rust',
       interpreter: 'none',
       instances: 'max',
       exec_mode: 'cluster',
