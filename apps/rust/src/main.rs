@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
     .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
     .layer(cors);
 
-  let port = 4099;
+  let port = 4091;
   let addr = SocketAddr::from(([0, 0, 0, 0], port));
   tracing::info!("Binding server to address: {}", addr);
 

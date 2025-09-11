@@ -10,7 +10,7 @@ module.exports = {
       out_file: 'logs/rust-out.log',
       env: {
         NODE_ENV: 'production',
-        PORT: 4099,
+        PORT: 4091,
       },
     },
   ],
