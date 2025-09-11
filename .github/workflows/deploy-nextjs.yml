@@ -1,7 +1,7 @@
 name: Deploy Next.js to VPS
 
 on:
-  workflow_dispatch: # Manual triggera
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - main
