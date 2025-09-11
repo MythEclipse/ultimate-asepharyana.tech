@@ -12,6 +12,8 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -75,7 +77,10 @@ lazy_static! {
 }
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
-async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+async fn fetch_html(
+  browser_pool: &BrowserPool,
+  url: &str
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
 
   // Check cache first
@@ -99,7 +104,7 @@ async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error + Sen
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(url).await {
+    match fetch_with_proxy(url, browser_pool).await {
       Ok(response) => {
         let duration = start_time.elapsed();
         info!("Successfully fetched URL: {} in {:?}", url, duration);
@@ -220,14 +225,17 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+pub async fn slug(
+  State(app_state): State<Arc<AppState>>,
+  Path(slug): Path<String>
+) -> impl IntoResponse {
   let start_time = Instant::now();
   info!("Handling request for complete_anime slug: {}", slug);
 
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
 
-  match fetch_html(&url).await {
+  match fetch_html(&app_state.browser_pool, &url).await {
     Ok(html) => {
       let (anime_list, _pagination) = parse_anime_page(&html, &slug);
       let total_duration = start_time.elapsed();

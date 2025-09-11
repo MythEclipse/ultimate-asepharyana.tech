@@ -10,6 +10,8 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -62,9 +64,9 @@ lazy_static! {
   static ref CACHE: DashMap<String, (Vec<CompleteAnimeItem>, Pagination)> = DashMap::new();
 }
 
-async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn fetch_html(browser_pool: &BrowserPool, url: &str) -> Result<String, Box<dyn std::error::Error>> {
   let operation = || async {
-    let response = fetch_with_proxy(url).await?;
+    let response = fetch_with_proxy(url, browser_pool).await?;
     Ok(response.data)
   };
 
@@ -160,7 +162,10 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+pub async fn slug(
+  State(app_state): State<Arc<AppState>>,
+  Path(slug): Path<String>
+) -> impl IntoResponse {
   let start = Instant::now();
   info!("Starting request for complete_anime slug: {}", slug);
 
@@ -175,7 +180,7 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
     });
   }
 
-  match fetch_html(&format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)).await {
+  match fetch_html(&app_state.browser_pool, &format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)).await {
     Ok(html) => {
       let (anime_list, pagination) = parse_anime_page(&html, &slug);
       // Cache the result

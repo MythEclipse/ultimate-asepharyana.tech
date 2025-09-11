@@ -13,6 +13,8 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error };
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -80,12 +82,13 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
+  browser_pool: &BrowserPool,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
   let mut attempt = 0;
   loop {
-    match fetch_with_proxy(url).await {
+    match fetch_with_proxy(url, browser_pool).await {
       Ok(response) => {
         return Ok(response.data);
       }
@@ -116,7 +119,10 @@ async fn fetch_with_retry(
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
+pub async fn list(
+  State(app_state): State<Arc<AppState>>,
+  Query(params): Query<QueryParams>
+) -> impl IntoResponse {
   let page = params.page.unwrap_or(1);
 
   let base_url = &*BASE_URL;
@@ -126,7 +132,7 @@ pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
   let start = Instant::now();
   info!("Starting manga list request for page {}", page);
 
-  let result = fetch_and_parse_manga(&url).await;
+  let result = fetch_and_parse_manga(&app_state.browser_pool, &url).await;
   info!("Manga list request completed in {:?}", start.elapsed());
 
   match result {
@@ -146,10 +152,13 @@ pub async fn list(Query(params): Query<QueryParams>) -> impl IntoResponse {
   }
 }
 
-async fn fetch_and_parse_manga(url: &str) -> Result<MangaResponse, Box<dyn std::error::Error>> {
+async fn fetch_and_parse_manga(
+  browser_pool: &BrowserPool,
+  url: &str
+) -> Result<MangaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();
   info!("Fetching and parsing manga from {}", url);
-  let html = fetch_with_retry(url, 3).await?;
+  let html = fetch_with_retry(browser_pool, url, 3).await?;
   let document = Html::parse_document(&html);
 
   let animposx_selector = &*ANIMPOST_SELECTOR;

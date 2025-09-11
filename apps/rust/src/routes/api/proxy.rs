@@ -4,7 +4,7 @@
 use axum::{
   extract::Query,
   http::{ header, HeaderMap, StatusCode },
-  response::{ IntoResponse, Response },
+  response::{ IntoResponse },
   routing::get,
   Json,
   Router,
@@ -16,6 +16,7 @@ use serde_json;
 use utoipa::ToSchema;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tracing::{ error, info };
+use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/proxy";
@@ -50,22 +51,22 @@ pub struct ErrorResponse {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn proxy(Query(params): Query<ProxyQuery>) -> Result<
-  Response,
-  (StatusCode, Json<ErrorResponse>)
-> {
-  let url = params.url.ok_or((
+pub async fn proxy(
+  State(app_state): State<Arc<AppState>>,
+  Query(params): Query<ProxyQuery>
+) -> impl IntoResponse {
+  let url = params.url.ok_or_else(|| (
     StatusCode::BAD_REQUEST,
     Json(ErrorResponse {
       error: "Missing url parameter".to_string(),
       details: None,
       status: Some(400),
     }),
-  ))?;
+  )).unwrap(); // Unwrap here as the error is returned directly below
 
   info!("Proxying request to: {}", url);
 
-  match fetch_with_proxy(&url).await {
+  match fetch_with_proxy(&url, &app_state.browser_pool).await {
     Ok(result) => {
       let mut headers = HeaderMap::new();
       headers.insert("X-Proxy-Used", "fetchWithProxy".parse().unwrap());
@@ -77,12 +78,12 @@ pub async fn proxy(Query(params): Query<ProxyQuery>) -> Result<
           match serde_json::from_str::<serde_json::Value>(&result.data) {
             Ok(parsed) => {
               headers.insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
-              return Ok((StatusCode::OK, headers, Json(parsed)).into_response());
+              return (StatusCode::OK, headers, Json(parsed)).into_response();
             }
             Err(_) => {
               // Fallback to text response
               headers.insert(header::CONTENT_TYPE, content_type.parse().unwrap());
-              return Ok((StatusCode::OK, headers, result.data).into_response());
+              return (StatusCode::OK, headers, result.data).into_response();
             }
           }
         } else {
@@ -92,24 +93,24 @@ pub async fn proxy(Query(params): Query<ProxyQuery>) -> Result<
           } else {
             headers.insert(header::CONTENT_TYPE, "text/plain".parse().unwrap());
           }
-          return Ok((StatusCode::OK, headers, result.data).into_response());
+          return (StatusCode::OK, headers, result.data).into_response();
         }
       } else {
         // No content type specified
         headers.insert(header::CONTENT_TYPE, "text/plain".parse().unwrap());
-        return Ok((StatusCode::OK, headers, result.data).into_response());
+        return (StatusCode::OK, headers, result.data).into_response();
       }
     }
     Err(e) => {
       error!("Failed to fetch URL {}: {:?}", url, e);
-      Err((
+      (
         StatusCode::INTERNAL_SERVER_ERROR,
         Json(ErrorResponse {
           error: "Failed to fetch URL".to_string(),
           details: Some(format!("{:?}", e)),
           status: Some(500),
         }),
-      ))
+      ).into_response()
     }
   }
 }

@@ -10,6 +10,8 @@ use backoff::{future::retry, ExponentialBackoff};
 use dashmap::DashMap;
 use tracing::{info, error};
 use std::time::Instant;
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -94,7 +96,10 @@ lazy_static! {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
+pub async fn slug(
+  State(app_state): State<Arc<AppState>>,
+  Path(slug): Path<String>
+) -> impl IntoResponse {
   let start = Instant::now();
   info!("Starting request for detail slug: {}", slug);
 
@@ -108,7 +113,7 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
     });
   }
 
-  match fetch_anime_detail(&slug).await {
+  match fetch_anime_detail(&app_state.browser_pool, &slug).await {
     Ok(data) => {
       // Cache the result
       CACHE.insert(slug.clone(), data.clone());
@@ -144,11 +149,14 @@ pub async fn slug(Path(slug): Path<String>) -> impl IntoResponse {
   }
 }
 
-async fn fetch_anime_detail(slug: &str) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
+async fn fetch_anime_detail(
+  browser_pool: &BrowserPool,
+  slug: &str
+) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
 
   let operation = || async {
-    let response = fetch_with_proxy(&url).await?;
+    let response = fetch_with_proxy(&url, browser_pool).await?;
     Ok(response.data)
   };
 

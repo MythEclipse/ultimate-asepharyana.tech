@@ -11,6 +11,8 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -84,7 +86,10 @@ lazy_static! {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
+pub async fn search(
+  State(app_state): State<Arc<AppState>>,
+  Query(params): Query<SearchQuery>
+) -> impl IntoResponse {
   let start = Instant::now();
   let query = params.q.unwrap_or_else(|| "one".to_string());
   info!("Starting search for query: {}", query);
@@ -98,7 +103,7 @@ pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
 
   let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", urlencoding::encode(&query));
 
-  match fetch_and_parse_search(&url, &query).await {
+  match fetch_and_parse_search(&app_state.browser_pool, &url, &query).await {
     Ok(response) => {
       // Cache the result
       CACHE.insert(query.clone(), response.clone());
@@ -126,11 +131,12 @@ pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
 }
 
 async fn fetch_and_parse_search(
+  browser_pool: &BrowserPool,
   url: &str,
   query: &str
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
   let operation = || async {
-    let response = fetch_with_proxy(url).await?;
+    let response = fetch_with_proxy(url, browser_pool).await?;
     Ok(response.data)
   };
 

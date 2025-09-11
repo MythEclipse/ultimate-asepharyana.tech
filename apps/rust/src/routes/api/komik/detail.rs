@@ -13,6 +13,8 @@ use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/detail";
@@ -94,12 +96,13 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
+  browser_pool: &BrowserPool,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
   let mut attempt = 0;
   loop {
-    match fetch_with_proxy(url).await {
+    match fetch_with_proxy(url, browser_pool).await {
       Ok(response) => {
         return Ok(response.data);
       }
@@ -130,14 +133,17 @@ async fn fetch_with_retry(
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn detail(Query(params): Query<DetailQuery>) -> impl IntoResponse {
+pub async fn detail(
+  State(app_state): State<Arc<AppState>>,
+  Query(params): Query<DetailQuery>
+) -> impl IntoResponse {
   let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
   let start = Instant::now();
   info!("Starting detail request for komik_id {}", komik_id);
 
-  match get_cached_komik_base_url(false).await {
+  match get_cached_komik_base_url(&app_state.browser_pool, false).await {
     Ok(base_url) => {
-      match fetch_and_parse_detail(&komik_id, &base_url).await {
+      match fetch_and_parse_detail(&app_state.browser_pool, &komik_id, &base_url).await {
         Ok(data) => {
           info!("[komik][detail] Success for komik_id: {}", komik_id);
           info!("Detail request completed in {:?}", start.elapsed());
@@ -187,6 +193,7 @@ pub async fn detail(Query(params): Query<DetailQuery>) -> impl IntoResponse {
 }
 
 async fn fetch_and_parse_detail(
+  browser_pool: &BrowserPool,
   komik_id: &str,
   base_url: &str
 ) -> Result<DetailData, Box<dyn std::error::Error>> {
@@ -194,7 +201,7 @@ async fn fetch_and_parse_detail(
   let url = format!("{}/komik/{}", base_url, komik_id);
   info!("[fetch_and_parse_detail] Fetching URL: {}", url);
 
-  let html = fetch_with_retry(&url, 3).await?;
+  let html = fetch_with_retry(browser_pool, &url, 3).await?;
   let document = Html::parse_document(&html);
 
   // Title

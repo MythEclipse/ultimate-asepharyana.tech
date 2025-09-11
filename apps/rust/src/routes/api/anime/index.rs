@@ -5,6 +5,8 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -59,8 +61,8 @@ pub struct AnimeResponse {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn anime() -> impl IntoResponse {
-  match fetch_anime_data().await {
+pub async fn anime(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
+  match fetch_anime_data(&app_state.browser_pool).await {
     Ok(data) =>
       Json(AnimeResponse {
         status: "Ok".to_string(),
@@ -77,12 +79,12 @@ pub async fn anime() -> impl IntoResponse {
   }
 }
 
-async fn fetch_anime_data() -> Result<AnimeData, Box<dyn std::error::Error>> {
+async fn fetch_anime_data(browser_pool: &BrowserPool) -> Result<AnimeData, Box<dyn std::error::Error>> {
   let ongoing_url = "https://otakudesu.cloud/ongoing-anime/";
   let complete_url = "https://otakudesu.cloud/complete-anime/";
 
-  let ongoing_html = fetch_html(ongoing_url).await?;
-  let complete_html = fetch_html(complete_url).await?;
+  let ongoing_html = fetch_html(browser_pool, ongoing_url).await?;
+  let complete_html = fetch_html(browser_pool, complete_url).await?;
 
   let ongoing_anime = parse_ongoing_anime(&ongoing_html);
   let complete_anime = parse_complete_anime(&complete_html);
@@ -93,8 +95,8 @@ async fn fetch_anime_data() -> Result<AnimeData, Box<dyn std::error::Error>> {
   })
 }
 
-async fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url).await?;
+async fn fetch_html(browser_pool: &BrowserPool, url: &str) -> Result<String, Box<dyn std::error::Error>> {
+  let response = fetch_with_proxy(url, browser_pool).await?;
   Ok(response.data)
 }
 

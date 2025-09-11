@@ -1,7 +1,7 @@
 // CroxyProxy scraping and caching logic using shared chromiumoxide library and Redis.
 // Updated to use shared browser instance.
 
-use crate::chromiumoxide::{ BrowserConfig, BrowserPool };
+use crate::chromiumoxide::{ BrowserPool };
 use std::time::Instant;
 use tracing::{ info, warn, error };
 use crate::redis_client::get_redis_connection;
@@ -12,14 +12,13 @@ const URL_INPUT_SELECTOR: &str = "input#url";
 const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
 const MAX_RETRIES: u8 = 1;
 
-pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
+pub async fn scrape_croxy_proxy(
+  chrome: &BrowserPool,
+  target_url: &str
+) -> Result<String, AppError> {
   let start_time = Instant::now();
   info!("Scraping {} with CroxyProxy", target_url);
 
-  let config = BrowserConfig::default();
-  let chrome = BrowserPool::new(config).await.map_err(|e|
-    AppError::ChromiumoxideError(format!("{e:?}"))
-  )?;
   let tab = chrome
     .get_tab_manager().await
     .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
@@ -115,7 +114,10 @@ pub async fn scrape_croxy_proxy(target_url: &str) -> Result<String, AppError> {
   Ok(html_content)
 }
 
-pub async fn scrape_croxy_proxy_cached(target_url: &str) -> Result<String, AppError> {
+pub async fn scrape_croxy_proxy_cached(
+  browser_pool: &BrowserPool,
+  target_url: &str
+) -> Result<String, AppError> {
   let mut conn = get_redis_connection()?;
   let cache_key = format!("scrapeCroxyProxy:{target_url}");
 
@@ -125,7 +127,7 @@ pub async fn scrape_croxy_proxy_cached(target_url: &str) -> Result<String, AppEr
     return Ok(html);
   }
 
-  let html = scrape_croxy_proxy(target_url).await?;
+  let html = scrape_croxy_proxy(browser_pool, target_url).await?;
   redis::cmd("SET").arg(&cache_key).arg(&html).arg("EX").arg(3600).query::<()>(&mut conn)?;
   info!("[scrapeCroxyProxyCached] Cached result for {} (1 hour)", target_url);
 

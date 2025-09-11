@@ -5,6 +5,8 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use rust_lib::chromiumoxide::BrowserPool;
+use axum::extract::State;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -67,11 +69,14 @@ pub struct SearchQuery {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
+pub async fn search(
+  State(app_state): State<Arc<AppState>>,
+  Query(params): Query<SearchQuery>
+) -> impl IntoResponse {
   let query = params.q.unwrap_or_else(|| "log".to_string());
   let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
 
-  match fetch_and_parse_search(&url).await {
+  match fetch_and_parse_search(&app_state.browser_pool, &url).await {
     Ok(response) => Json(response),
     Err(_) =>
       Json(SearchResponse {
@@ -89,8 +94,11 @@ pub async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
   }
 }
 
-async fn fetch_and_parse_search(url: &str) -> Result<SearchResponse, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url).await?;
+async fn fetch_and_parse_search(
+  browser_pool: &BrowserPool,
+  url: &str
+) -> Result<SearchResponse, Box<dyn std::error::Error>> {
+  let response = fetch_with_proxy(url, browser_pool).await?;
   let html = response.data;
   let document = Html::parse_document(&html);
 
