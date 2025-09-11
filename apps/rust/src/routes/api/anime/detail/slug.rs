@@ -6,11 +6,11 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{info, error};
+use tracing::{ info, error };
 use std::time::Instant;
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -241,7 +241,12 @@ async fn fetch_anime_detail(
     // Generate slug from href or episode text if href is empty
     let episode_slug = if !href.is_empty() {
       // Try to extract slug from URL
-      href.split('/').filter(|s| !s.is_empty()).last().unwrap_or("").to_string()
+      href
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .last()
+        .unwrap_or("")
+        .to_string()
     } else {
       // Generate slug from episode text
       episode

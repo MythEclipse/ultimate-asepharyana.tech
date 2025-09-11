@@ -13,7 +13,7 @@ use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";

@@ -5,7 +5,7 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 #[allow(dead_code)]

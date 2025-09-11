@@ -76,7 +76,7 @@ lazy_static! {
   static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 async fn fetch_with_retry(

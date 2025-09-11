@@ -11,7 +11,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 #[allow(dead_code)]

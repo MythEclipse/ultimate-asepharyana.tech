@@ -10,7 +10,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -64,7 +64,10 @@ lazy_static! {
   static ref CACHE: DashMap<String, (Vec<CompleteAnimeItem>, Pagination)> = DashMap::new();
 }
 
-async fn fetch_html(browser_pool: &BrowserPool, url: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn fetch_html(
+  browser_pool: &BrowserPool,
+  url: &str
+) -> Result<String, Box<dyn std::error::Error>> {
   let operation = || async {
     let response = fetch_with_proxy(url, browser_pool).await?;
     Ok(response.data)
@@ -180,7 +183,12 @@ pub async fn slug(
     });
   }
 
-  match fetch_html(&app_state.browser_pool, &format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)).await {
+  match
+    fetch_html(
+      &app_state.browser_pool,
+      &format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)
+    ).await
+  {
     Ok(html) => {
       let (anime_list, pagination) = parse_anime_page(&html, &slug);
       // Cache the result

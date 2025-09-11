@@ -1,3 +1,4 @@
+// Temporary comment to force recompile
 #![doc = "Logging Setup"]
 //
 // This application uses [`tracing`](https://docs.rs/tracing) for structured logging.
@@ -16,7 +17,7 @@ use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
 use tower_http::cors::{ Any, CorsLayer };
-use rust_lib::chromiumoxide::{ BrowserConfig, BrowserPool };
+use rust_lib::headless_chrome::{ BrowserConfig, BrowserPool };
 use tokio::sync::OnceCell;
 
 mod routes;
@@ -45,11 +46,10 @@ async fn main() -> anyhow::Result<()> {
 
   tracing::info!("Creating app state...");
   static BROWSER_POOL_INSTANCE: OnceCell<Arc<BrowserPool>> = OnceCell::const_new();
-  let browser_config = BrowserConfig::default();
+  let browser_config = BrowserConfig::builder().build().expect("Failed to build browser config");
   let browser_pool = BROWSER_POOL_INSTANCE.get_or_init(|| async {
-      Arc::new(BrowserPool::new(browser_config)
-          .await
-          .expect("Failed to create browser pool"))
+    let (browser, _handler) = BrowserPool::launch(browser_config).await.expect("Failed to create browser pool");
+    Arc::new(browser)
   }).await;
 
   tracing::info!("Creating app state...");

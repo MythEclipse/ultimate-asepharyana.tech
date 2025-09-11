@@ -1,7 +1,7 @@
 // CroxyProxy scraping and caching logic using shared chromiumoxide library and Redis.
 // Updated to use shared browser instance.
 
-use crate::chromiumoxide::{ BrowserPool };
+use crate::headless_chrome::BrowserPool;
 use std::time::Instant;
 use tracing::{ info, warn, error };
 use crate::redis_client::get_redis_connection;
@@ -19,47 +19,42 @@ pub async fn scrape_croxy_proxy(
   let start_time = Instant::now();
   info!("Scraping {} with CroxyProxy", target_url);
 
-  let tab = chrome
-    .get_tab_manager().await
+  let page = chrome
+    .new_page("about:blank").await
     .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
   let mut html_content = String::new();
 
   for attempt in 1..=MAX_RETRIES {
     info!("Attempt {}/{}", attempt, MAX_RETRIES);
-    match tab.navigate(CROXY_PROXY_URL).await {
+    match page.goto(CROXY_PROXY_URL).await {
       Ok(_) => {
-        tab
-          .wait_for_element(URL_INPUT_SELECTOR).await
+        page
+          .find_element(URL_INPUT_SELECTOR).await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
-        // There is no direct equivalent of find_element and type_into in the new API
-        // We will use evaluate_script to achieve the same
-        tab
-          .evaluate_script(
-            &format!(
+        page
+          .evaluate(
+            format!(
               r#"document.querySelector('{}').value = '{}';"#,
               URL_INPUT_SELECTOR,
               target_url
-            )
+            ).as_str()
           ).await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
-        tab
-          .evaluate_script(
-            &format!(r#"document.querySelector('{}').click();"#, SUBMIT_BUTTON_SELECTOR)
+        page
+          .evaluate(
+            format!(r#"document.querySelector('{}').click();"#, SUBMIT_BUTTON_SELECTOR).as_str()
           ).await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
-        // Wait for navigation after form submission
-        // The new API's navigate function already handles waiting for navigation
-        // We just need to get the content after the click
-        let page_content = tab
-          .get_content().await
+        let page_content = page
+          .content().await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
         let page_text = page_content.to_lowercase();
 
-        let current_url = tab.page().url().await; // This returns Result<Option<String>, BrowserError>
+        let current_url = page.url().await;
         let is_error_url = if let Ok(Some(url_string)) = current_url {
           url_string.contains("/requests?fso=")
         } else {
@@ -76,21 +71,19 @@ pub async fn scrape_croxy_proxy(
 
         if page_text.contains("proxy is launching") {
           info!("Proxy launching page detected. Waiting for final redirect...");
-          // The new API's navigate function already handles waiting for navigation, so
-          // we just log the current URL.
-          info!("Redirected successfully to: {:?}", tab.page().url().await);
+          info!("Redirected successfully to: {:?}", page.url().await);
         } else {
-          info!("Mapped directly to: {:?}", tab.page().url().await);
+          info!("Mapped directly to: {:?}", page.url().await);
         }
 
         info!("Waiting for CroxyProxy frame to render...");
-        tab
-          .wait_for_element("#__cpsHeaderTab").await
+        page
+          .find_element("#__cpsHeaderTab").await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
         info!("CroxyProxy frame rendered.");
 
-        html_content = tab
-          .get_content().await
+        html_content = page
+          .content().await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
         info!("Retrieved page content.");
         break; // Success, break out of retry loop
@@ -102,7 +95,7 @@ pub async fn scrape_croxy_proxy(
         }
       }
     }
-  }
+  } // Closing brace for the for loop, correctly indented.
 
   if html_content.is_empty() {
     return Err(AppError::Other("Failed to retrieve HTML content after all retries.".to_string()));

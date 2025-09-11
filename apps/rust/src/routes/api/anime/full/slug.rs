@@ -6,11 +6,11 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{info, error};
+use tracing::{ info, error };
 use std::time::Instant;
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -199,13 +199,9 @@ async fn fetch_anime_full(
     }
   }
 
-  let next_episode_element = document
-    .select(&*NEXT_EPISODE_SELECTOR)
-    .next();
+  let next_episode_element = document.select(&*NEXT_EPISODE_SELECTOR).next();
 
-  let previous_episode_element = document
-    .select(&*PREVIOUS_EPISODE_SELECTOR)
-    .next();
+  let previous_episode_element = document.select(&*PREVIOUS_EPISODE_SELECTOR).next();
 
   let next_episode_slug = next_episode_element
     .and_then(|e| e.value().attr("href"))

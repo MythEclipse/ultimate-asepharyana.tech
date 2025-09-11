@@ -1,5 +1,5 @@
 pub mod api;
-use rust_lib::chromiumoxide::BrowserPool;
+use rust_lib::headless_chrome::BrowserPool;
 use std::sync::Arc;
 
 #[derive(Clone)]

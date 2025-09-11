@@ -7,7 +7,7 @@ use crate::redis_client::get_redis_connection;
 use crate::scrape_croxy_proxy::scrape_croxy_proxy_cached;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
-use crate::chromiumoxide::BrowserPool;
+use crate::headless_chrome::BrowserPool;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {
