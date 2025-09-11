@@ -75,7 +75,7 @@
   },
   "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "start": "next start"
+    "start": "next start -p 4090"
   },
   "devDependencies": {
     "nx": "^21.4.1"
