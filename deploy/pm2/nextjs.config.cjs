@@ -13,8 +13,6 @@ module.exports = {
       combine_output: true,
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '-r dotenv/config',
-        DOTENV_CONFIG_PATH: './.env',
       },
     },
   ],

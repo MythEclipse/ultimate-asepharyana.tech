@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'RustExpress',
-      script: './target/release/rust',
-      args: '',
+      script: 'bash',
+      args: '-c "./target/release/rust"',
       interpreter: 'none',
       cwd: 'apps/rust',
       instances: 'max',
