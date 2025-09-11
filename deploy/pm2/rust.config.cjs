@@ -3,16 +3,14 @@ module.exports = {
     {
       name: 'RustExpress',
       script: 'bash',
-      args: '-c "../../apps/rust/target/release/rust"',
+      args: '-c "../apps/rust/target/release/rust"',
+      cwd: '../apps/rust',
       interpreter: 'none',
-      cwd: '../../apps/rust',
       instances: 'max',
       exec_mode: 'cluster',
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '-r dotenv/config',
-        DOTENV_CONFIG_PATH: './.env',
       },
     },
   ],
