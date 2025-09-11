@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: '../node_modules/.bin/next',
+      script: '../nextjs/node_modules/.bin/next',
       args: 'start',
       cwd: '../apps/nextjs',
       instances: 'max',
