@@ -12,7 +12,7 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -78,7 +78,7 @@ lazy_static! {
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 async fn fetch_html(
-  browser_client: &FantocciniClient,
+  browser_client: &Browser,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
@@ -235,7 +235,7 @@ pub async fn slug(
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
 
-  match fetch_html(&app_state.browser_client, &url).await {
+  match fetch_html(&app_state.browser, &url).await {
     Ok(html) => {
       let (anime_list, _pagination) = parse_anime_page(&html, &slug);
       let total_duration = start_time.elapsed();

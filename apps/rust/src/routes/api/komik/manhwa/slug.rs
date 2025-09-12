@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error, warn };
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,7 +82,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -125,11 +125,11 @@ pub async fn list(
 ) -> impl IntoResponse {
   let page = params.page;
 
-  let base_url = match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser_client, false).await {
+  let base_url = match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser, false).await {
     Ok(url) => url,
     Err(_) => {
       warn!("[list] Failed to get cached base URL, trying refresh");
-      match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser_client, true).await {
+      match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser, true).await {
         Ok(url) => url,
         Err(e) => {
           error!("[list] Failed to get base URL: {:?}", e);
@@ -154,7 +154,7 @@ pub async fn list(
   let start = Instant::now();
   info!("Starting manhwa list request for page {}", page);
 
-  let result = fetch_and_parse_manhwa(&app_state.browser_client, &url).await;
+  let result = fetch_and_parse_manhwa(&app_state.browser, &url).await;
   info!("Manhwa list request completed in {:?}", start.elapsed());
 
   match result {
@@ -175,7 +175,7 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manhwa(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str
 ) -> Result<ManhwaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();

@@ -74,7 +74,7 @@ socks = "0.3.4"
 backoff = "0.4"
 dashmap = "6.1"
 
-fantoccini = { version = "0.22.0", features = ["native-tls"] }
+chromiumoxide = { version = "0.6", features = ["tokio-runtime"] }
 tokio-tungstenite = "0.23.0"
 tower-http = { version = "0.6.6", features = ["cors"] }
 openapiv3 = "2.2.0"

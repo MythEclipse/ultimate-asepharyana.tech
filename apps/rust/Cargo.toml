@@ -48,7 +48,7 @@ lazy_static = { workspace = true }
 tower-http = { workspace = true }
 backoff = { workspace = true, features = ["futures", "tokio"] }
 dashmap = { workspace = true }
-fantoccini = { workspace = true }
+chromiumoxide = { workspace = true }
 tokio-tungstenite = { workspace = true }
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)

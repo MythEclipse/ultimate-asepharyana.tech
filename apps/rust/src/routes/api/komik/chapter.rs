@@ -13,7 +13,7 @@ use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -55,7 +55,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -100,9 +100,9 @@ pub async fn chapter(
   let start = Instant::now();
   info!("Starting chapter request for chapter_url {}", chapter_url);
 
-  match get_cached_komik_base_url(&app_state.browser_client, false).await {
+  match get_cached_komik_base_url(&app_state.browser, false).await {
     Ok(base_url) => {
-      match fetch_and_parse_chapter(&app_state.browser_client, &chapter_url, &base_url).await {
+      match fetch_and_parse_chapter(&app_state.browser, &chapter_url, &base_url).await {
         Ok(data) => {
           info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
           info!("Chapter request completed in {:?}", start.elapsed());
@@ -143,7 +143,7 @@ pub async fn chapter(
 }
 
 async fn fetch_and_parse_chapter(
-  client: &FantocciniClient,
+  client: &Browser,
   chapter_url: &str,
   base_url: &str
 ) -> Result<ChapterData, Box<dyn std::error::Error>> {

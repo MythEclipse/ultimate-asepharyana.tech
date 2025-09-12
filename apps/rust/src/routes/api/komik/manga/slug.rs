@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error };
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,7 +82,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -132,7 +132,7 @@ pub async fn list(
   let start = Instant::now();
   info!("Starting manga list request for page {}", page);
 
-  let result = fetch_and_parse_manga(&app_state.browser_client, &url).await;
+  let result = fetch_and_parse_manga(&app_state.browser, &url).await;
   info!("Manga list request completed in {:?}", start.elapsed());
 
   match result {
@@ -153,7 +153,7 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manga(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str
 ) -> Result<MangaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();

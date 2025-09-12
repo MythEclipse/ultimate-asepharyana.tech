@@ -12,7 +12,7 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -132,7 +132,7 @@ pub async fn slug(
   let start_time = Instant::now();
   info!("Handling request for anime detail slug: {}", slug);
 
-  match fetch_anime_detail(&app_state.browser_client, &slug).await {
+  match fetch_anime_detail(&app_state.browser, &slug).await {
     Ok(data) => {
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
@@ -169,7 +169,7 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser_client: &FantocciniClient,
+  browser_client: &Browser,
   slug: &str
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();

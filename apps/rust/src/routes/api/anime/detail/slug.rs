@@ -10,7 +10,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -113,7 +113,7 @@ pub async fn slug(
     });
   }
 
-  match fetch_anime_detail(&app_state.browser_client, &slug).await {
+  match fetch_anime_detail(&app_state.browser, &slug).await {
     Ok(data) => {
       let detail_response = DetailResponse {
         status: "Ok".to_string(),
@@ -151,13 +151,13 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  client: &FantocciniClient,
+  browser: &Browser,
   slug: &str
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
 
   let operation = || async {
-    let response = fetch_with_proxy(&url, client).await?;
+    let response = fetch_with_proxy(&url, browser).await?;
     Ok(response.data)
   };
 

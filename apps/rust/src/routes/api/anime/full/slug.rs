@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{info, error};
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -103,7 +103,7 @@ pub async fn slug(
     });
   }
 
-  match fetch_anime_full(&app_state.browser_client, &slug).await {
+  match fetch_anime_full(&app_state.browser, &slug).await {
     Ok(data) => {
       let full_response = FullResponse {
         status: "Ok".to_string(),
@@ -138,7 +138,7 @@ pub async fn slug(
 }
 
 async fn fetch_anime_full(
-  client: &FantocciniClient,
+  client: &Browser,
   slug: &str
 ) -> Result<AnimeFullData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/episode/{}", slug);

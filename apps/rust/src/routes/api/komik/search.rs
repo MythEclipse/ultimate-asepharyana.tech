@@ -76,11 +76,11 @@ lazy_static! {
   static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 async fn fetch_with_retry(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -127,11 +127,11 @@ pub async fn search(
   let start = Instant::now();
   info!("Starting search request for query '{}' page {}", query, page);
 
-  let base_url = match get_cached_komik_base_url(&app_state.browser_client, false).await {
+  let base_url = match get_cached_komik_base_url(&app_state.browser, false).await {
     Ok(url) => url,
     Err(_) => {
       warn!("[search] Failed to get cached base URL, trying refresh");
-      match get_cached_komik_base_url(&app_state.browser_client, true).await {
+      match get_cached_komik_base_url(&app_state.browser, true).await {
         Ok(url) => url,
         Err(e) => {
           error!("[search] Failed to get base URL: {:?}", e);
@@ -157,7 +157,7 @@ pub async fn search(
     format!("{}/page/{}/?s={}", base_url, page, urlencoding::encode(&query))
   };
 
-  match fetch_and_parse_search(&app_state.browser_client, &url, &query, page).await {
+  match fetch_and_parse_search(&app_state.browser, &url, &query, page).await {
     Ok(response) => {
       info!("Search request completed in {:?}", start.elapsed());
       Json(response)
@@ -181,7 +181,7 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str,
   _query: &str,
   page: u32

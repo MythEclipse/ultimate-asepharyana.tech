@@ -1,43 +1,35 @@
-use fantoccini::{ Client, ClientBuilder };
-use fantoccini::wd::Capabilities;
-use serde_json::json;
-use tracing::{info, warn};
+use chromiumoxide::{Browser, BrowserConfig};
+use tracing::info;
 
 pub async fn launch_browser(
   headless: bool,
   proxy_addr: Option<String>
-) -> Result<Client, fantoccini::error::NewSessionError> {
-  let mut caps = Capabilities::new();
-  let chrome_args = if headless {
-    vec![
-      "--headless=new".to_string(),
-      "--no-sandbox".to_string(),
-      "--disable-gpu".to_string(),
-      "--disable-dev-shm-usage".to_string(),
-    ]
-  } else {
-    vec![]
-  };
+) -> Result<Browser, Box<dyn std::error::Error + Send + Sync>> {
+  let mut config = BrowserConfig::builder();
 
-  caps.insert("goog:chromeOptions".to_string(), json!({ "args": chrome_args }));
-
-  let mut client_builder = ClientBuilder::native();
-  if let Some(proxy) = proxy_addr {
-    let mut proxy_caps = Capabilities::new();
-    proxy_caps.insert("proxy".to_string(), json!({"proxyType": "manual", "httpProxy": proxy, "sslProxy": proxy}).into());
-    client_builder.capabilities(proxy_caps);
+  if headless {
+    config = config.with_head();
   }
 
-  match client_builder
-    .capabilities(caps)
-    .connect("http://localhost:4444").await {
-      Ok(client) => {
-        info!("Browser (Chrome) launched successfully.");
-        Ok(client)
-      }
-      Err(e) => {
-        warn!("Failed to launch Chrome: {:?}. Make sure Chrome and ChromeDriver are installed.", e);
-        Err(e)
-      }
-    }
+  // Set Chrome arguments for better stability
+  let mut chrome_args = vec![
+    "--no-sandbox".to_string(),
+    "--disable-gpu".to_string(),
+    "--disable-dev-shm-usage".to_string(),
+    "--disable-background-timer-throttling".to_string(),
+    "--disable-backgrounding-occluded-windows".to_string(),
+    "--disable-renderer-backgrounding".to_string(),
+  ];
+
+  // Set proxy if provided
+  if let Some(proxy) = proxy_addr {
+    chrome_args.push(format!("--proxy-server={}", proxy));
+  }
+
+  config = config.args(chrome_args);
+
+  let (browser, _) = Browser::launch(config.build()?).await
+    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", e))))?;
+  info!("Browser (Chrome) launched successfully.");
+  Ok(browser)
 }

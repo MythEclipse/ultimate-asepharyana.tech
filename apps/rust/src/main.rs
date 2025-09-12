@@ -53,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
 
   let app_state = Arc::new(AppState {
     jwt_secret,
-    browser_client: Arc::new(client),
+    browser: Arc::new(client),
   });
 
   tracing::info!("Building application routes...");

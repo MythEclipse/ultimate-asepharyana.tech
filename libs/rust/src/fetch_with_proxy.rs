@@ -7,7 +7,7 @@ use crate::redis_client::get_redis_connection;
 use crate::scrape_croxy_proxy::scrape_croxy_proxy_cached;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {
@@ -59,7 +59,7 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppErro
 
 pub async fn fetch_with_proxy(
   slug: &str,
-  fantoccini_client: &FantocciniClient
+  browser: &Browser
 ) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
@@ -138,7 +138,7 @@ pub async fn fetch_with_proxy(
 
         if is_internet_baik_block_page(&text_data) {
           warn!("Blocked by internetbaik (direct fetch), trying proxies");
-          let proxy_result = fetch_from_proxies(slug, fantoccini_client).await?;
+          let proxy_result = fetch_from_proxies(slug, browser).await?;
           set_cached_fetch(slug, &proxy_result).await?;
           Ok(proxy_result)
         } else {
@@ -150,7 +150,7 @@ pub async fn fetch_with_proxy(
         let error_msg = format!("Direct fetch failed with status {}", res.status());
         error!("Direct fetch failed for {}: {}", slug, error_msg);
         error!("Direct fetch failed, trying proxies");
-        let proxy_result = fetch_from_proxies(slug, fantoccini_client).await?;
+        let proxy_result = fetch_from_proxies(slug, browser).await?;
         set_cached_fetch(slug, &proxy_result).await?;
         Ok(proxy_result)
       }
@@ -158,7 +158,7 @@ pub async fn fetch_with_proxy(
     Err(e) => {
       warn!("Direct fetch failed for {}: {:?}", slug, e);
       error!("Direct fetch failed, trying proxies");
-      let proxy_result = fetch_from_proxies(slug, fantoccini_client).await?;
+      let proxy_result = fetch_from_proxies(slug, browser).await?;
       set_cached_fetch(slug, &proxy_result).await?;
       Ok(proxy_result)
     }
@@ -167,25 +167,25 @@ pub async fn fetch_with_proxy(
 
 pub async fn fetch_with_proxy_only(
   slug: &str,
-  fantoccini_client: &FantocciniClient
+  browser: &Browser
 ) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
   }
 
-  let proxy_result = fetch_from_proxies(slug, fantoccini_client).await?;
+  let proxy_result = fetch_from_proxies(slug, browser).await?;
   set_cached_fetch(slug, &proxy_result).await?;
   Ok(proxy_result)
 }
 
 async fn fetch_from_proxies(
   slug: &str,
-  fantoccini_client: &FantocciniClient
+  browser: &Browser
 ) -> Result<FetchResult, AppError> {
   info!("Using only croxy proxy for {}", slug);
 
   // Only use scrapeCroxyProxy
-  match scrape_croxy_proxy_cached(fantoccini_client, slug).await {
+  match scrape_croxy_proxy_cached(browser, slug).await {
     Ok(html) => {
       info!("scrapeCroxyProxy successful for {}", slug);
       Ok(FetchResult { data: html, content_type: Some("text/html".to_string()) })

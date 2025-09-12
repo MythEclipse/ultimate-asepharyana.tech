@@ -5,7 +5,7 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -62,7 +62,7 @@ pub struct Anime2Response {
     )
 )]
 pub async fn anime2(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
-  match fetch_anime_data(&app_state.browser_client).await {
+  match fetch_anime_data(&app_state.browser).await {
     Ok(data) =>
       Json(Anime2Response {
         status: "Ok".to_string(),
@@ -79,7 +79,7 @@ pub async fn anime2(State(app_state): State<Arc<AppState>>) -> impl IntoResponse
   }
 }
 
-async fn fetch_anime_data(client: &FantocciniClient) -> Result<Anime2Data, Box<dyn std::error::Error>> {
+async fn fetch_anime_data(client: &Browser) -> Result<Anime2Data, Box<dyn std::error::Error>> {
   let ongoing_url = "https://alqanime.net/advanced-search/?status=ongoing&order=update";
   let complete_url = "https://alqanime.net/advanced-search/?status=completed&order=update";
 
@@ -95,7 +95,7 @@ async fn fetch_anime_data(client: &FantocciniClient) -> Result<Anime2Data, Box<d
   })
 }
 
-async fn fetch_html(client: &FantocciniClient, url: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn fetch_html(client: &Browser, url: &str) -> Result<String, Box<dyn std::error::Error>> {
   let response = fetch_with_proxy(url, client).await?;
   Ok(response.data)
 }

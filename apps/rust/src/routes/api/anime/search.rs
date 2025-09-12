@@ -11,7 +11,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -103,7 +103,7 @@ pub async fn search(
 
   let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", urlencoding::encode(&query));
 
-  match fetch_and_parse_search(&app_state.browser_client, &url, &query).await {
+  match fetch_and_parse_search(&app_state.browser, &url, &query).await {
     Ok(response) => {
       // Cache the result
       CACHE.insert(query.clone(), response.clone());
@@ -131,12 +131,12 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  client: &FantocciniClient,
+  browser: &Browser,
   url: &str,
   query: &str
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
   let operation = || async {
-    let response = fetch_with_proxy(url, client).await?;
+    let response = fetch_with_proxy(url, browser).await?;
     Ok(response.data)
   };
 

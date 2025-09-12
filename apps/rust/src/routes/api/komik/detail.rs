@@ -13,7 +13,7 @@ use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -96,7 +96,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &FantocciniClient,
+  client: &Browser,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -141,9 +141,9 @@ pub async fn detail(
   let start = Instant::now();
   info!("Starting detail request for komik_id {}", komik_id);
 
-  match get_cached_komik_base_url(&app_state.browser_client, false).await {
+  match get_cached_komik_base_url(&app_state.browser, false).await {
     Ok(base_url) => {
-      match fetch_and_parse_detail(&app_state.browser_client, &komik_id, &base_url).await {
+      match fetch_and_parse_detail(&app_state.browser, &komik_id, &base_url).await {
         Ok(data) => {
           info!("[komik][detail] Success for komik_id: {}", komik_id);
           info!("Detail request completed in {:?}", start.elapsed());
@@ -193,7 +193,7 @@ pub async fn detail(
 }
 
 async fn fetch_and_parse_detail(
-  client: &FantocciniClient,
+  client: &Browser,
   komik_id: &str,
   base_url: &str
 ) -> Result<DetailData, Box<dyn std::error::Error>> {

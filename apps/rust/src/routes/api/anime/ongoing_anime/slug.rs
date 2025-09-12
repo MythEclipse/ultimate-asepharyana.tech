@@ -10,7 +10,7 @@ use backoff::{future::retry, ExponentialBackoff};
 use dashmap::DashMap;
 use tracing::{info, error};
 use std::time::Instant;
-use fantoccini::Client as FantocciniClient;
+use chromiumoxide::Browser;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -95,7 +95,7 @@ pub async fn slug(
     });
   }
 
-  match fetch_ongoing_anime_page(&app_state.browser_client, &slug).await {
+  match fetch_ongoing_anime_page(&app_state.browser, &slug).await {
     Ok((anime_list, pagination)) => {
       // Cache the result
       CACHE.insert(slug.clone(), (anime_list.clone(), pagination.clone()));
@@ -127,7 +127,7 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &FantocciniClient,
+  client: &Browser,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
