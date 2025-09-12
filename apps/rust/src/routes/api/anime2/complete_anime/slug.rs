@@ -12,7 +12,7 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -78,7 +78,7 @@ lazy_static! {
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 async fn fetch_html(
-  browser_pool: &BrowserPool,
+  browser_client: &FantocciniClient,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
@@ -104,7 +104,7 @@ async fn fetch_html(
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(url, browser_pool).await {
+    match fetch_with_proxy(url, browser_client).await {
       Ok(response) => {
         let duration = start_time.elapsed();
         info!("Successfully fetched URL: {} in {:?}", url, duration);
@@ -235,7 +235,7 @@ pub async fn slug(
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
 
-  match fetch_html(&app_state.browser_pool, &url).await {
+  match fetch_html(&app_state.browser_client, &url).await {
     Ok(html) => {
       let (anime_list, _pagination) = parse_anime_page(&html, &slug);
       let total_duration = start_time.elapsed();

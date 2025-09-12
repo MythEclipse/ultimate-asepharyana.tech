@@ -13,7 +13,7 @@ use tracing::{ info, error };
 use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -55,13 +55,13 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
   let mut attempt = 0;
   loop {
-    match fetch_with_proxy(url, browser_pool).await {
+    match fetch_with_proxy(url, client).await {
       Ok(response) => {
         return Ok(response.data);
       }
@@ -100,9 +100,9 @@ pub async fn chapter(
   let start = Instant::now();
   info!("Starting chapter request for chapter_url {}", chapter_url);
 
-  match get_cached_komik_base_url(&app_state.browser_pool, false).await {
+  match get_cached_komik_base_url(&app_state.browser_client, false).await {
     Ok(base_url) => {
-      match fetch_and_parse_chapter(&app_state.browser_pool, &chapter_url, &base_url).await {
+      match fetch_and_parse_chapter(&app_state.browser_client, &chapter_url, &base_url).await {
         Ok(data) => {
           info!("[komik][chapter] Success for chapter_url: {}", chapter_url);
           info!("Chapter request completed in {:?}", start.elapsed());
@@ -143,7 +143,7 @@ pub async fn chapter(
 }
 
 async fn fetch_and_parse_chapter(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   chapter_url: &str,
   base_url: &str
 ) -> Result<ChapterData, Box<dyn std::error::Error>> {
@@ -151,7 +151,7 @@ async fn fetch_and_parse_chapter(
   let url = format!("{}/chapter/{}", base_url, chapter_url);
   info!("[fetch_and_parse_chapter] Fetching URL: {}", url);
 
-  let html = fetch_with_retry(browser_pool, &url, 3).await?;
+  let html = fetch_with_retry(client, &url, 3).await?;
   let document = Html::parse_document(&html);
 
   let title = document

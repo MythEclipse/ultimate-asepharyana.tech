@@ -1,5 +1,6 @@
-use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::{Path, State}, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
+use std::time::Instant;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
@@ -8,10 +9,8 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{ info, error };
-use std::time::Instant;
-use rust_lib::headless_chrome::BrowserPool;
-use axum::extract::State;
+use tracing::{info, error};
+use fantoccini::Client as FantocciniClient;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -104,16 +103,17 @@ pub async fn slug(
     });
   }
 
-  match fetch_anime_full(&app_state.browser_pool, &slug).await {
+  match fetch_anime_full(&app_state.browser_client, &slug).await {
     Ok(data) => {
+      let full_response = FullResponse {
+        status: "Ok".to_string(),
+        data: data.clone(),
+      };
       // Cache the result
-      CACHE.insert(slug.clone(), data.clone());
+      CACHE.insert(slug.clone(), data);
       let duration = start.elapsed();
       info!("Fetched and parsed full for slug: {}, duration: {:?}", slug, duration);
-      Json(FullResponse {
-        status: "Ok".to_string(),
-        data,
-      })
+      Json(full_response)
     }
     Err(e) => {
       let duration = start.elapsed();
@@ -138,13 +138,13 @@ pub async fn slug(
 }
 
 async fn fetch_anime_full(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   slug: &str
 ) -> Result<AnimeFullData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/episode/{}", slug);
 
   let operation = || async {
-    let response = fetch_with_proxy(&url, browser_pool).await?;
+    let response = fetch_with_proxy(&url, client).await?;
     Ok(response.data)
   };
 

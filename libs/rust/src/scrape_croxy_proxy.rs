@@ -1,11 +1,11 @@
 // CroxyProxy scraping and caching logic using shared chromiumoxide library and Redis.
 // Updated to use shared browser instance.
 
-use crate::headless_chrome::BrowserPool;
 use std::time::Instant;
 use tracing::{ info, warn, error };
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
+use fantoccini::{ Client, Locator };
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -13,50 +13,40 @@ const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
 const MAX_RETRIES: u8 = 1;
 
 pub async fn scrape_croxy_proxy(
-  chrome: &BrowserPool,
+  client: &Client,
   target_url: &str
 ) -> Result<String, AppError> {
   let start_time = Instant::now();
   info!("Scraping {} with CroxyProxy", target_url);
 
-  let page = chrome
-    .new_page("about:blank").await
-    .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
-
   let mut html_content = String::new();
 
   for attempt in 1..=MAX_RETRIES {
     info!("Attempt {}/{}", attempt, MAX_RETRIES);
-    match page.goto(CROXY_PROXY_URL).await {
+    match client.goto(CROXY_PROXY_URL).await {
       Ok(_) => {
-        page
-          .find_element(URL_INPUT_SELECTOR).await
-          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        let url_input = client
+          .find(Locator::Css(URL_INPUT_SELECTOR)).await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
+        url_input
+          .send_keys(target_url).await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
 
-        page
-          .evaluate(
-            format!(
-              r#"document.querySelector('{}').value = '{}';"#,
-              URL_INPUT_SELECTOR,
-              target_url
-            ).as_str()
-          ).await
-          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        let submit_button = client
+          .find(Locator::Css(SUBMIT_BUTTON_SELECTOR)).await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
+        submit_button
+          .click().await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
 
-        page
-          .evaluate(
-            format!(r#"document.querySelector('{}').click();"#, SUBMIT_BUTTON_SELECTOR).as_str()
-          ).await
-          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
-
-        let page_content = page
-          .content().await
-          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        let page_content = client
+          .source().await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
         let page_text = page_content.to_lowercase();
 
-        let current_url = page.url().await;
-        let is_error_url = if let Ok(Some(url_string)) = current_url {
-          url_string.contains("/requests?fso=")
+        let current_url = client.current_url().await;
+        let is_error_url = if let Ok(url_string) = current_url {
+          url_string.as_str().contains("/requests?fso=")
         } else {
           false
         };
@@ -71,27 +61,27 @@ pub async fn scrape_croxy_proxy(
 
         if page_text.contains("proxy is launching") {
           info!("Proxy launching page detected. Waiting for final redirect...");
-          info!("Redirected successfully to: {:?}", page.url().await);
+          info!("Redirected successfully to: {:?}", client.current_url().await);
         } else {
-          info!("Mapped directly to: {:?}", page.url().await);
+          info!("Mapped directly to: {:?}", client.current_url().await);
         }
 
         info!("Waiting for CroxyProxy frame to render...");
-        page
-          .find_element("#__cpsHeaderTab").await
-          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        client
+          .find(Locator::Css("#__cpsHeaderTab")).await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
         info!("CroxyProxy frame rendered.");
 
-        html_content = page
-          .content().await
-          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        html_content = client
+          .source().await
+          .map_err(|e| AppError::FantocciniError(format!("{e:?}")))?;
         info!("Retrieved page content.");
-        break; // Success, break out of retry loop
+        // Success, break out of retry loop
       }
       Err(e) => {
         error!("Attempt {} failed: {:?}", attempt, e);
         if attempt == MAX_RETRIES {
-          return Err(AppError::ChromiumoxideError(format!("{e:?}")));
+          return Err(AppError::FantocciniError(format!("{e:?}")));
         }
       }
     }
@@ -108,7 +98,7 @@ pub async fn scrape_croxy_proxy(
 }
 
 pub async fn scrape_croxy_proxy_cached(
-  browser_pool: &BrowserPool,
+  client: &Client,
   target_url: &str
 ) -> Result<String, AppError> {
   let mut conn = get_redis_connection()?;
@@ -120,7 +110,7 @@ pub async fn scrape_croxy_proxy_cached(
     return Ok(html);
   }
 
-  let html = scrape_croxy_proxy(browser_pool, target_url).await?;
+  let html = scrape_croxy_proxy(client, target_url).await?;
   redis::cmd("SET").arg(&cache_key).arg(&html).arg("EX").arg(3600).query::<()>(&mut conn)?;
   info!("[scrapeCroxyProxyCached] Cached result for {} (1 hour)", target_url);
 

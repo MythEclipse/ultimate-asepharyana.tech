@@ -6,5 +6,5 @@ use thiserror::Error;
 pub enum LibError {
   #[error("An unknown error occurred")]
   Unknown,
-  #[error("Chromiumoxide error: {0}")] ChromiumoxideError(String),
+  #[error("Fantoccini error: {0}")] FantocciniError(String),
 }

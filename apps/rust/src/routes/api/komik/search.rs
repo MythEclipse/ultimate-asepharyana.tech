@@ -76,17 +76,17 @@ lazy_static! {
   static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 async fn fetch_with_retry(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
   let mut attempt = 0;
   loop {
-    match fetch_with_proxy(url, browser_pool).await {
+    match fetch_with_proxy(url, client).await {
       Ok(response) => {
         return Ok(response.data);
       }
@@ -127,11 +127,11 @@ pub async fn search(
   let start = Instant::now();
   info!("Starting search request for query '{}' page {}", query, page);
 
-  let base_url = match get_cached_komik_base_url(&app_state.browser_pool, false).await {
+  let base_url = match get_cached_komik_base_url(&app_state.browser_client, false).await {
     Ok(url) => url,
     Err(_) => {
       warn!("[search] Failed to get cached base URL, trying refresh");
-      match get_cached_komik_base_url(&app_state.browser_pool, true).await {
+      match get_cached_komik_base_url(&app_state.browser_client, true).await {
         Ok(url) => url,
         Err(e) => {
           error!("[search] Failed to get base URL: {:?}", e);
@@ -157,7 +157,7 @@ pub async fn search(
     format!("{}/page/{}/?s={}", base_url, page, urlencoding::encode(&query))
   };
 
-  match fetch_and_parse_search(&app_state.browser_pool, &url, &query, page).await {
+  match fetch_and_parse_search(&app_state.browser_client, &url, &query, page).await {
     Ok(response) => {
       info!("Search request completed in {:?}", start.elapsed());
       Json(response)
@@ -181,7 +181,7 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str,
   _query: &str,
   page: u32
@@ -189,7 +189,7 @@ async fn fetch_and_parse_search(
   let start = Instant::now();
   info!("[fetch_and_parse_search] Starting fetch for URL: {}", url);
 
-  let html = match fetch_with_retry(browser_pool, url, 3).await {
+  let html = match fetch_with_retry(client, url, 3).await {
     Ok(h) => h,
     Err(e) => {
       error!("[fetch_and_parse_search] Fetch failed in {:?}: {:?}", start.elapsed(), e);

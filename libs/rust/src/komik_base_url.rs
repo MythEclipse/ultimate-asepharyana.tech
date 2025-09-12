@@ -11,7 +11,7 @@ use url::Url;
 use crate::redis_client::get_redis_connection;
 use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::utils::error::AppError;
-use crate::headless_chrome::BrowserPool;
+use fantoccini::Client;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 // Using a static Mutex for single-flight promise simulation
@@ -47,16 +47,16 @@ async fn sleep_ms(ms: u64) {
 }
 
 async fn fetch_with_proxy_wrapper(
-  browser_pool: &BrowserPool,
+  client: &Client,
   url: &str
 ) -> Result<String, AppError> {
   debug!("[fetchWithProxyWrapper] Fetching {}", url);
-  let response = fetch_with_proxy(url, browser_pool).await?;
+  let response = fetch_with_proxy(url, client).await?;
   info!("[fetchWithProxyWrapper] Fetched {}", url);
   Ok(response.data)
 }
 
-pub async fn get_dynamic_komik_base_url(browser_pool: &BrowserPool) -> Result<String, AppError> {
+pub async fn get_dynamic_komik_base_url(client: &Client) -> Result<String, AppError> {
   let mut promise_guard = KOMIK_BASE_URL_PROMISE.lock().await;
   if let Some(url) = promise_guard.as_ref() {
     debug!("[getDynamicKomikBaseUrl] Returning in-flight promise");
@@ -91,7 +91,7 @@ pub async fn get_dynamic_komik_base_url(browser_pool: &BrowserPool) -> Result<St
 
   let result = (async {
     debug!("[getDynamicKomikBaseUrl] Fetching komik base URL");
-    let body = fetch_with_proxy_wrapper(browser_pool, "https://komikindo.cz/").await?;
+    let body = fetch_with_proxy_wrapper(client, "https://komikindo.cz/").await?;
     let document = Html::parse_document(&body);
 
     let website_btn_selector = Selector::parse("a.elementskit-btn").unwrap();
@@ -166,7 +166,7 @@ pub async fn get_dynamic_komik_base_url(browser_pool: &BrowserPool) -> Result<St
 }
 
 pub async fn get_cached_komik_base_url(
-  browser_pool: &BrowserPool,
+  client: &Client,
   force_refresh: bool
 ) -> Result<String, AppError> {
   if !force_refresh {
@@ -180,7 +180,7 @@ pub async fn get_cached_komik_base_url(
     }
   }
   // Fetch new value and cache it
-  let url = get_dynamic_komik_base_url(browser_pool).await?;
+  let url = get_dynamic_komik_base_url(client).await?;
   info!("[getCachedKomikBaseUrl] Refreshed and cached base URL: {}", url);
   Ok(url)
 }

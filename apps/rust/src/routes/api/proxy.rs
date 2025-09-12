@@ -66,7 +66,7 @@ pub async fn proxy(
 
   info!("Proxying request to: {}", url);
 
-  match fetch_with_proxy(&url, &app_state.browser_pool).await {
+  match fetch_with_proxy(&url, &app_state.browser_client).await {
     Ok(result) => {
       let mut headers = HeaderMap::new();
       headers.insert("X-Proxy-Used", "fetchWithProxy".parse().unwrap());

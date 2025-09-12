@@ -17,15 +17,12 @@ use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
 use tower_http::cors::{ Any, CorsLayer };
-use rust_lib::headless_chrome::{ BrowserConfig, BrowserPool };
-use tokio::sync::OnceCell;
+use rust_lib::headless_chrome::launch_browser;
 
 mod routes;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-  // Initialize tracing from RUST_LOG (or defaults), handling invalid UTF-8 safely
-  // Force rebuild
   let filter = std::env
     ::var_os("RUST_LOG")
     .and_then(|s| s.into_string().ok())
@@ -34,7 +31,6 @@ async fn main() -> anyhow::Result<()> {
 
   tracing::info!("RustExpress starting up...");
 
-  // Use CONFIG_MAP for JWT_SECRET
   let jwt_secret = CONFIG_MAP.get("JWT_SECRET")
     .cloned()
     .unwrap_or_else(|| {
@@ -44,21 +40,20 @@ async fn main() -> anyhow::Result<()> {
       "default_secret".to_string()
     });
 
-  tracing::info!("Creating app state...");
-  static BROWSER_POOL_INSTANCE: OnceCell<Arc<BrowserPool>> = OnceCell::const_new();
-  let browser_config = BrowserConfig::builder()
-    .arg("--no-sandbox")
-    .build()
-    .expect("Failed to build browser config");
-  let browser_pool = BROWSER_POOL_INSTANCE.get_or_init(|| async {
-    let (browser, _handler) = BrowserPool::launch(browser_config).await.expect("Failed to create browser pool");
-    Arc::new(browser)
-  }).await;
+  tracing::info!("Launching headless browser...");
+  let client = match launch_browser(true, None).await {
+      Ok(client) => client,
+      Err(e) => {
+          tracing::error!("Failed to launch browser: {:?}", e);
+          tracing::error!("Make sure Chrome and ChromeDriver are installed and WebDriver is running on localhost:4444");
+          tracing::error!("Install ChromeDriver: https://chromedriver.chromium.org/downloads");
+          std::process::exit(1);
+      }
+  };
 
-  tracing::info!("Creating app state...");
   let app_state = Arc::new(AppState {
     jwt_secret,
-    browser_pool: browser_pool.clone(),
+    browser_client: Arc::new(client),
   });
 
   tracing::info!("Building application routes...");

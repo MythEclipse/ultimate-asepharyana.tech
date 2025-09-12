@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error };
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,13 +82,13 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
   let mut attempt = 0;
   loop {
-    match fetch_with_proxy(url, browser_pool).await {
+    match fetch_with_proxy(url, client).await {
       Ok(response) => {
         return Ok(response.data);
       }
@@ -132,7 +132,7 @@ pub async fn list(
   let start = Instant::now();
   info!("Starting manhua list request for page {}", page);
 
-  let result = fetch_and_parse_manhua(&app_state.browser_pool, &url).await;
+  let result = fetch_and_parse_manhua(&app_state.browser_client, &url).await;
   info!("Manhua list request completed in {:?}", start.elapsed());
 
   match result {
@@ -161,12 +161,12 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manhua(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str
 ) -> Result<ManhuaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();
   info!("Fetching and parsing manhua from {}", url);
-  let html = fetch_with_retry(browser_pool, url, 3).await?;
+  let html = fetch_with_retry(client, url, 3).await?;
   let document = Html::parse_document(&html);
 
   let animposx_selector = &*ANIMPOST_SELECTOR;

@@ -5,7 +5,7 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -76,7 +76,7 @@ pub async fn search(
   let query = params.q.unwrap_or_else(|| "log".to_string());
   let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
 
-  match fetch_and_parse_search(&app_state.browser_pool, &url).await {
+  match fetch_and_parse_search(&app_state.browser_client, &url).await {
     Ok(response) => Json(response),
     Err(_) =>
       Json(SearchResponse {
@@ -95,10 +95,10 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url, browser_pool).await?;
+  let response = fetch_with_proxy(url, client).await?;
   let html = response.data;
   let document = Html::parse_document(&html);
 

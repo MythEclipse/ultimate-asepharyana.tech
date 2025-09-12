@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error, warn };
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,13 +82,13 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
   let mut attempt = 0;
   loop {
-    match fetch_with_proxy(url, browser_pool).await {
+    match fetch_with_proxy(url, client).await {
       Ok(response) => {
         return Ok(response.data);
       }
@@ -125,11 +125,11 @@ pub async fn list(
 ) -> impl IntoResponse {
   let page = params.page;
 
-  let base_url = match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser_pool, false).await {
+  let base_url = match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser_client, false).await {
     Ok(url) => url,
     Err(_) => {
       warn!("[list] Failed to get cached base URL, trying refresh");
-      match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser_pool, true).await {
+      match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser_client, true).await {
         Ok(url) => url,
         Err(e) => {
           error!("[list] Failed to get base URL: {:?}", e);
@@ -154,7 +154,7 @@ pub async fn list(
   let start = Instant::now();
   info!("Starting manhwa list request for page {}", page);
 
-  let result = fetch_and_parse_manhwa(&app_state.browser_pool, &url).await;
+  let result = fetch_and_parse_manhwa(&app_state.browser_client, &url).await;
   info!("Manhwa list request completed in {:?}", start.elapsed());
 
   match result {
@@ -175,12 +175,12 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manhwa(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str
 ) -> Result<ManhwaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();
   info!("Fetching and parsing manhwa from {}", url);
-  let html = fetch_with_retry(browser_pool, url, 3).await?;
+  let html = fetch_with_retry(client, url, 3).await?;
   let document = Html::parse_document(&html);
 
   let animposx_selector = &*ANIMPOST_SELECTOR;

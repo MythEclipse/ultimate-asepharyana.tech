@@ -10,7 +10,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -65,11 +65,11 @@ lazy_static! {
 }
 
 async fn fetch_html(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error>> {
   let operation = || async {
-    let response = fetch_with_proxy(url, browser_pool).await?;
+    let response = fetch_with_proxy(url, client).await?;
     Ok(response.data)
   };
 
@@ -185,7 +185,7 @@ pub async fn slug(
 
   match
     fetch_html(
-      &app_state.browser_pool,
+      &app_state.browser_client,
       &format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)
     ).await
   {

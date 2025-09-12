@@ -1,10 +1,10 @@
 pub mod api;
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use std::sync::Arc;
 
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct AppState {
   pub jwt_secret: String,
-  pub browser_pool: Arc<BrowserPool>,
+  pub browser_client: Arc<FantocciniClient>,
 }

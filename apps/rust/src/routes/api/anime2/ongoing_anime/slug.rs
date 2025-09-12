@@ -12,7 +12,7 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -95,7 +95,7 @@ pub async fn slug(
   let start_time = Instant::now();
   info!("Handling request for ongoing_anime slug: {}", slug);
 
-  match fetch_ongoing_anime_page(&app_state.browser_pool, &slug).await {
+  match fetch_ongoing_anime_page(&app_state.browser_client, &slug).await {
     Ok((anime_list, pagination)) => {
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
@@ -125,7 +125,7 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
@@ -153,7 +153,7 @@ async fn fetch_ongoing_anime_page(
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(&url, browser_pool).await {
+    match fetch_with_proxy(&url, client).await {
       Ok(response) => {
         let duration = start_time.elapsed();
         info!("Successfully fetched URL: {} in {:?}", url, duration);

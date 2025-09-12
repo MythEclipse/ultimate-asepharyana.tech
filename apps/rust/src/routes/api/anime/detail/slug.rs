@@ -10,7 +10,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use rust_lib::headless_chrome::BrowserPool;
+use fantoccini::Client as FantocciniClient;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -113,16 +113,17 @@ pub async fn slug(
     });
   }
 
-  match fetch_anime_detail(&app_state.browser_pool, &slug).await {
+  match fetch_anime_detail(&app_state.browser_client, &slug).await {
     Ok(data) => {
+      let detail_response = DetailResponse {
+        status: "Ok".to_string(),
+        data: data.clone(),
+      };
       // Cache the result
-      CACHE.insert(slug.clone(), data.clone());
+      CACHE.insert(slug.clone(), data);
       let duration = start.elapsed();
       info!("Fetched and parsed detail for slug: {}, duration: {:?}", slug, duration);
-      Json(DetailResponse {
-        status: "Ok".to_string(),
-        data,
-      })
+      Json(detail_response)
     }
     Err(e) => {
       let duration = start.elapsed();
@@ -150,13 +151,13 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser_pool: &BrowserPool,
+  client: &FantocciniClient,
   slug: &str
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
 
   let operation = || async {
-    let response = fetch_with_proxy(&url, browser_pool).await?;
+    let response = fetch_with_proxy(&url, client).await?;
     Ok(response.data)
   };
 

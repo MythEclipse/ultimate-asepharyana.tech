@@ -38,5 +38,5 @@ rand = { workspace = true }
 urlencoding = { workspace = true }
 oxidize-pdf = { workspace = true }
 mime_guess = { workspace = true }
-chromiumoxide = { workspace = true }
+fantoccini = { workspace = true }
 [dev-dependencies]
