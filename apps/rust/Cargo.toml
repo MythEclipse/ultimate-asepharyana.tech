@@ -50,6 +50,7 @@ backoff = { workspace = true, features = ["futures", "tokio"] }
 dashmap = { workspace = true }
 chromiumoxide = { workspace = true }
 tokio-tungstenite = { workspace = true }
+tower = { version = "0.4", features = ["make"] }
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
 [build-dependencies]

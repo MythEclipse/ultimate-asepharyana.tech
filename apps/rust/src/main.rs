@@ -77,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
   let listener = tokio::net::TcpListener::bind(&addr).await?;
   tracing::info!("Server listening on {}", listener.local_addr()?);
 
-  axum::serve(listener, app).await?;
+  axum::serve(listener, app.into_make_service()).await?;
   tracing::info!("RustExpress shutting down.");
 
   Ok(())
