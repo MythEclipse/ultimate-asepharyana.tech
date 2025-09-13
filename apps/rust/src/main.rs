@@ -8,17 +8,20 @@
 // Logging is initialized from the environment via `tracing_subscriber`.
 
 use std::net::SocketAddr;
+use std::sync::Arc;
+
+use axum::Router;
+use tokio::sync::Mutex as TokioMutex;
+use tower_http::cors::{ Any, CorsLayer };
+use tracing_subscriber::EnvFilter;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
 use rust_lib::config::CONFIG_MAP;
+use rust_lib::headless_chrome::launch_browser;
+
 use crate::routes::api::{ create_api_routes, ApiDoc };
 use crate::routes::AppState;
-use std::sync::Arc;
-use tokio::sync::Mutex as TokioMutex;
-use axum::Router;
-use tracing_subscriber::EnvFilter;
-use utoipa_swagger_ui::SwaggerUi;
-use utoipa::OpenApi;
-use tower_http::cors::{ Any, CorsLayer };
-use rust_lib::headless_chrome::launch_browser;
 
 mod routes;
 
@@ -43,14 +46,14 @@ async fn main() -> anyhow::Result<()> {
 
   tracing::info!("Launching headless browser...");
   let client = match launch_browser(true, None).await {
-      Ok(client) => client,
-      Err(e) => {
-          tracing::error!("Failed to launch browser: {:?}", e);
-          tracing::error!("Make sure Google Chrome or Chromium is installed.");
-          tracing::error!("Download Chrome: https://www.google.com/chrome/");
-          tracing::error!("Or install Chromium if preferred.");
-          std::process::exit(1);
-      }
+    Ok(client) => client,
+    Err(e) => {
+      tracing::error!("Failed to launch browser: {:?}", e);
+      tracing::error!("Make sure Google Chrome or Chromium is installed.");
+      tracing::error!("Download Chrome: https://www.google.com/chrome/");
+      tracing::error!("Or install Chromium if preferred.");
+      std::process::exit(1);
+    }
   };
 
   let app_state = Arc::new(AppState {

@@ -35,7 +35,7 @@ oxidize-pdf = { workspace = true }
 infer = { workspace = true }
 ffmpeg-next = { workspace = true, optional = true }
 once_cell = { workspace = true }
-rust_lib = { workspace = true }
+rust_lib = { path = "../../libs/rust" }
 urlencoding = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }

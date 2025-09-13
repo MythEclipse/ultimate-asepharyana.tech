@@ -85,8 +85,8 @@ use crate::routes::api::komik::search::MangaItem as MangaItem_1;
 use crate::routes::api::komik::search::Pagination as Pagination_9;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
-use crate::routes::api::proxy::ErrorResponse;
-use crate::routes::api::proxy::ProxyQuery;
+use crate::routes::api::proxy::croxy::ProxyParams;
+use crate::routes::api::proxy::croxy::ProxyResponse;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -109,7 +109,7 @@ paths(
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::search::search,
-              crate::routes::api::proxy::proxy
+              crate::routes::api::proxy::croxy::croxy
         ),
 components(
             schemas(
@@ -185,8 +185,8 @@ components(
                   Pagination_9,
                   SearchQuery_2,
                   SearchResponse_2,
-                  ErrorResponse,
-                  ProxyQuery
+                  ProxyParams,
+                  ProxyResponse
             )
         ),
 info(
