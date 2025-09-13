@@ -10,7 +10,11 @@ Always create and continuously update a todo list for complex tasks, prioritizin
 
 Always read the target file using `read_file` before applying any changes. This ensures you have the most up-to-date context, preventing unintended overwrites or conflicts. Compare any search content with actual file content, including whitespace and indentation, to guarantee precise modifications.
 
-### 2. Think Like a Programmer
+### 2. Expanded Search Area for Modifications
+
+When using `search_and_replace` or `apply_diff`, always expand the search area beyond the exact lines you intend to modify. For instance, if you plan to edit lines 10-15, set your search range from line 5 to line 20. This practice helps to capture surrounding context, prevent partial matches, and reduce the risk of unintended changes due to slight variations in whitespace or indentation that might not be immediately apparent.
+
+### 3. Think Like a Programmer
 
 Approach every task with a logical, structured, and problem-solving mindset, mirroring a seasoned human programmer. This involves:
 
