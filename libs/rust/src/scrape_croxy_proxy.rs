@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
 const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
-const MAX_RETRIES: u8 = 1;
+const MAX_RETRIES: u8 = 3;
 
 pub async fn scrape_croxy_proxy(
   browser: &Arc<Mutex<Browser>>,
@@ -26,11 +26,17 @@ pub async fn scrape_croxy_proxy(
   for attempt in 1..=MAX_RETRIES {
     info!("Attempt {}/{}", attempt, MAX_RETRIES);
 
+    // Add a small delay before creating a new page
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
     // Create a new page for this attempt
     let page = browser
       .lock().await
       .new_page("about:blank").await
-      .map_err(|e| AppError::Other(format!("Failed to create page: {:?}", e)))?;
+      .map_err(|e| {
+        error!("Failed to create page on attempt {}: {:?}", attempt, e);
+        AppError::Other(format!("Failed to create page: {:?}", e))
+      })?;
 
     let result = match page.goto(CROXY_PROXY_URL).await {
       Ok(_) => {

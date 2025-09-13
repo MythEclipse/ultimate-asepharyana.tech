@@ -174,7 +174,7 @@ pub async fn launch_browser(
     chrome_args.push(format!("--proxy-server={}", proxy));
   }
 
-  config = config.args(chrome_args);
+  config = config.args(chrome_args).with_launch_timeout(std::time::Duration::from_secs(60));
 
   let (browser, _) = Browser::launch(config.build()?).await.map_err(|e|
     Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", e)))
@@ -230,4 +230,3 @@ pub async fn reconnect_browser_if_needed(
     }
   }
 }
-
