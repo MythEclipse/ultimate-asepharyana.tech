@@ -1,4 +1,4 @@
-use axum::{ extract::Query, Json, Router, Extension, routing::get };
+use axum::{ extract::{ Query, State }, Json, Router, routing::get };
 use std::sync::Arc;
 use serde::{ Deserialize, Serialize };
 
@@ -41,7 +41,7 @@ pub struct ProxyResponse {
 #[axum::debug_handler]
 pub async fn croxy(
   Query(params): Query<ProxyParams>,
-  Extension(state): Extension<Arc<AppState>>
+  State(state): State<Arc<AppState>>
 ) -> Result<Json<ProxyResponse>, ErrorResponse> {
   let browser_arc = Arc::clone(&state.browser);
   let html = scrape_croxy_proxy(&browser_arc, &params.url).await?;
