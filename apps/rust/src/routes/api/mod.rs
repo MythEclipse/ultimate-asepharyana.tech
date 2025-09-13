@@ -86,7 +86,6 @@ use crate::routes::api::komik::search::Pagination as Pagination_9;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
 use crate::routes::api::proxy::croxy::ProxyParams;
-use crate::routes::api::proxy::croxy::ProxyResponse;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -185,8 +184,7 @@ components(
                   Pagination_9,
                   SearchQuery_2,
                   SearchResponse_2,
-                  ProxyParams,
-                  ProxyResponse
+                  ProxyParams
             )
         ),
 info(

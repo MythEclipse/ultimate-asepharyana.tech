@@ -12,6 +12,7 @@ pub enum AppError {
   #[error("JWT error: {0}")] JwtError(#[from] jsonwebtoken::errors::Error),
   #[error("Scraper error: {0}")] ScraperError(String), // Custom error for scraper issues
   #[error("Fantoccini error: {0}")] FantocciniError(String),
+  #[error("Chromiumoxide error: {0}")] ChromiumoxideError(String),
   #[error("IO error: {0}")] IoError(#[from] std::io::Error),
   #[error("Timeout error: {0}")] TimeoutError(String),
   #[error("Other error: {0}")] Other(String),

@@ -1,4 +1,4 @@
-use headless_chrome::{ Browser, LaunchOptionsBuilder };
+use headless_chrome::{ Browser, LaunchOptionsBuilder, Tab };
 use std::path::{ Path, PathBuf };
 use tracing::{ info, warn, error };
 use std::fs;
@@ -193,19 +193,21 @@ pub async fn is_browser_healthy(browser_arc: &Arc<TokioMutex<Browser>>) -> Resul
   let tab_result = browser_arc.lock().await.new_tab();
   match tab_result {
     Ok(tab) => {
-      let eval_result = tab.evaluate(r#"1 + 1"#, false);
+      let eval_result = tab.evaluate(r#"'healthy'"#, false);
       match eval_result {
         Ok(remote_object) => {
           // Check if the remote_object has a value and can be converted to a string
           if let Some(value) = remote_object.value {
-            if let Some(_s) = value.as_str() {
-              // Successfully evaluated, now close the tab
-              tab
-                .close(true)
-                .map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
-              return Ok(true);
+            if let Some(s) = value.as_str() {
+              if s == "healthy" {
+                // Successfully evaluated, now close the tab
+                tab
+                  .close(true)
+                  .map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
+                return Ok(true);
+              }
             }
-          }
+            }
           // If we reach here, evaluation failed or returned unexpected type
           warn!("Browser health check failed: Unexpected evaluation result.");
           tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
@@ -256,4 +258,68 @@ pub async fn reconnect_browser_if_needed(
       Err(e)
     }
   }
+}
+
+pub struct BrowserPool {
+    browser: Arc<TokioMutex<Browser>>,
+}
+
+impl BrowserPool {
+    pub fn new(browser: Browser) -> Self {
+        Self {
+            browser: Arc::new(TokioMutex::new(browser)),
+        }
+    }
+
+    pub fn from_arc(browser: Arc<TokioMutex<Browser>>) -> Self {
+        Self {
+            browser,
+        }
+    }
+
+    pub async fn new_page(&self, url: &str) -> Result<PageWrapper, AppError> {
+        let tab = self.browser.lock().await.new_tab()
+            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to create new tab: {:?}", e)))?;
+
+        if url != "about:blank" {
+            tab.navigate_to(url)
+                .map_err(|e| AppError::ChromiumoxideError(format!("Failed to navigate: {:?}", e)))?;
+        }
+
+        Ok(PageWrapper { tab })
+    }
+}
+
+pub struct PageWrapper {
+    tab: Arc<Tab>,
+}
+
+impl PageWrapper {
+    pub async fn goto(&self, url: &str) -> Result<(), AppError> {
+        self.tab.navigate_to(url)
+            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to navigate: {:?}", e)))?;
+        Ok(())
+    }
+
+    pub async fn find_element(&self, selector: &str) -> Result<(), AppError> {
+        self.tab.wait_for_element(selector)
+            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to find element: {:?}", e)))?;
+        Ok(())
+    }
+
+    pub async fn evaluate(&self, js: &str) -> Result<(), AppError> {
+        self.tab.evaluate(js, false)
+            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to evaluate JS: {:?}", e)))?;
+        Ok(())
+    }
+
+    pub async fn content(&self) -> Result<String, AppError> {
+        self.tab.get_content()
+            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to get content: {:?}", e)))
+    }
+
+    pub async fn url(&self) -> Result<Option<String>, AppError> {
+        let url = self.tab.get_url();
+        Ok(Some(url))
+    }
 }

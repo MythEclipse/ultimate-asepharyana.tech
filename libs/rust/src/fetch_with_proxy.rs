@@ -192,9 +192,11 @@ async fn fetch_from_proxies(
     info!("Browser reconnected during fetch_from_proxies.");
   }
 
+  // Create BrowserPool from Arc
+  let browser_pool = crate::headless_chrome::BrowserPool::from_arc(browser.clone());
+
   // Only use scrapeCroxyProxy
-  match scrape_croxy_proxy_cached(browser, slug).await {
-    // Pass Arc<TokioMutex<Browser>>
+  match scrape_croxy_proxy_cached(&browser_pool, slug).await {
     Ok(html) => {
       info!("scrapeCroxyProxy successful for {}", slug);
       Ok(FetchResult { data: html, content_type: Some("text/html".to_string()) })

@@ -1,8 +1,8 @@
-use axum::{ extract::{ Query, State }, Json, Router, routing::get };
+use axum::{ extract::{ Query, State }, Router, routing::get };
 use std::sync::Arc;
-use serde::{ Deserialize, Serialize };
+use serde::Deserialize; // Keep Deserialize for ProxyParams
 
-use utoipa::ToSchema;
+use utoipa::ToSchema; // Keep ToSchema for ProxyParams
 
 use rust_lib::scrape_croxy_proxy::scrape_croxy_proxy;
 use rust_lib::error::ErrorResponse;
@@ -15,14 +15,6 @@ pub const ENDPOINT_PATH: &str = "/api/proxy/croxy";
 pub struct ProxyParams {
   /// URL to proxy through CroxyProxy
   pub url: String,
-}
-
-#[derive(Serialize, ToSchema, Debug, Clone)]
-pub struct ProxyResponse {
-  /// Status message
-  pub message: String,
-  /// HTML content fetched through CroxyProxy
-  pub html: String,
 }
 
 #[utoipa::path(
@@ -42,16 +34,12 @@ pub struct ProxyResponse {
 pub async fn croxy(
   Query(params): Query<ProxyParams>,
   State(state): State<Arc<AppState>>
-) -> Result<Json<ProxyResponse>, ErrorResponse> {
+) -> Result<String, ErrorResponse> {
   let browser_arc = Arc::clone(&state.browser);
-  let html = scrape_croxy_proxy(&browser_arc, &params.url).await?;
+  let browser_pool = rust_lib::headless_chrome::BrowserPool::from_arc(browser_arc);
+  let html = scrape_croxy_proxy(&browser_pool, &params.url).await?;
 
-  Ok(
-    Json(ProxyResponse {
-      message: format!("Successfully proxied URL: {}", params.url),
-      html,
-    })
-  )
+  Ok(html)
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

@@ -1,127 +1,101 @@
 // CroxyProxy scraping and caching logic using shared chromiumoxide library and Redis.
 // Updated to use shared browser instance.
 
+use crate::headless_chrome::BrowserPool;
 use std::time::Instant;
 use tracing::{ info, warn, error };
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
-use headless_chrome::Browser;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
 const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
-const MAX_RETRIES: u8 = 3;
+const MAX_RETRIES: u8 = 1;
 
 pub async fn scrape_croxy_proxy(
-  browser: &Arc<Mutex<Browser>>,
+  chrome: &BrowserPool,
   target_url: &str
 ) -> Result<String, AppError> {
   let start_time = Instant::now();
   info!("Scraping {} with CroxyProxy", target_url);
 
+  let page = chrome
+    .new_page("about:blank").await
+    .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+
   let mut html_content = String::new();
 
   for attempt in 1..=MAX_RETRIES {
     info!("Attempt {}/{}", attempt, MAX_RETRIES);
-
-    // Add a small delay before creating a new page
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-
-    let browser_lock = browser.lock().await;
-    let tab = browser_lock.new_tab().map_err(|e| {
-      error!("Failed to create new tab on attempt {}: {:?}", attempt, e);
-      AppError::Other(format!("Failed to create new tab: {:?}", e))
-    })?;
-    info!("Successfully created new tab on attempt {}", attempt);
-
-    let result = match tab.navigate_to(CROXY_PROXY_URL) {
+    match page.goto(CROXY_PROXY_URL).await {
       Ok(_) => {
-        info!("Successfully navigated to CroxyProxy URL.");
-        info!("Waiting for initial navigation to complete.");
-        (&*tab).wait_until_navigated()?;
-        info!("Initial navigation completed.");
+        page
+          .find_element(URL_INPUT_SELECTOR).await
+          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
-        // Set URL input value
-        info!("Typing target URL '{}' into input field with selector '{}'", target_url, URL_INPUT_SELECTOR);
-        (&*tab).find_element(URL_INPUT_SELECTOR)?.type_into(target_url)?;
-        info!("Successfully typed target URL.");
+        page
+          .evaluate(
+            format!(
+              r#"document.querySelector('{}').value = '{}';"#,
+              URL_INPUT_SELECTOR,
+              target_url
+            ).as_str()
+          ).await
+          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
-        // Find submit button and click
-        info!("Clicking submit button with selector '{}'", SUBMIT_BUTTON_SELECTOR);
-        (&*tab).find_element(SUBMIT_BUTTON_SELECTOR)?.click()?;
-        info!("Successfully clicked submit button.");
+        page
+          .evaluate(
+            format!(r#"document.querySelector('{}').click();"#, SUBMIT_BUTTON_SELECTOR).as_str()
+          ).await
+          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
-        // Wait for navigation
-        info!("Waiting for navigation after submit button click.");
-        (&*tab).wait_until_navigated()?;
-        info!("Navigation after submit button click completed.");
-
-        info!("Getting page content.");
-        let page_content = (&*tab).get_content()?;
-        info!("Successfully retrieved page content.");
+        let page_content = page
+          .content().await
+          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
         let page_text = page_content.to_lowercase();
 
-        let current_url = tab.get_url().to_string();
-        let is_error_url = current_url.contains("/requests?fso=");
+        let current_url = page.url().await;
+        let is_error_url = if let Ok(Some(url_string)) = current_url {
+          url_string.contains("/requests?fso=")
+        } else {
+          false
+        };
         let has_error_text =
           page_text.contains("your session has outdated") ||
           page_text.contains("something went wrong");
 
-        let ok_result = if is_error_url || has_error_text {
+        if is_error_url || has_error_text {
           warn!("Error detected (URL: {}, Text: {}). Retrying...", is_error_url, has_error_text);
-          Err(AppError::Other("Error detected, retrying.".to_string())) // Indicate failure for retry
+          continue; // Retry
+        }
+
+        if page_text.contains("proxy is launching") {
+          info!("Proxy launching page detected. Waiting for final redirect...");
+          info!("Redirected successfully to: {:?}", page.url().await);
         } else {
-          if page_text.contains("proxy is launching") {
-            info!("Proxy launching page detected. Waiting for final redirect...");
-            info!("Redirected successfully to: {:?}", tab.get_url());
+          info!("Mapped directly to: {:?}", page.url().await);
+        }
 
-            let start_wait_time = Instant::now();
-            let max_wait_duration = std::time::Duration::from_secs(30); // 30 seconds
-            let poll_interval = std::time::Duration::from_millis(500); // 500ms
+        info!("Waiting for CroxyProxy frame to render...");
+        page
+          .find_element("#__cpsHeaderTab").await
+          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        info!("CroxyProxy frame rendered.");
 
-            loop {
-                tokio::time::sleep(poll_interval).await;
-                let current_page_content = (&*tab).get_content()?;
-                let current_page_text = current_page_content.to_lowercase();
-
-                if !current_page_text.contains("proxy is launching") {
-                    info!("Proxy launching page disappeared. Content loaded.");
-                    html_content = current_page_content;
-                    break;
-                }
-
-                if start_wait_time.elapsed() > max_wait_duration {
-                    warn!("Timeout waiting for CroxyProxy to load target page after {} seconds.", max_wait_duration.as_secs());
-                    html_content = current_page_content; // Get whatever content is available
-                    break;
-                }
-                info!("Still waiting for CroxyProxy to load target page...");
-            }
-          } else {
-            info!("Mapped directly to: {:?}", tab.get_url());
-            html_content = (&*tab).get_content()?;
-          }
-
-          info!("Retrieved page content.");
-          Ok(()) // Success
-        };
-        ok_result
-      },
+        html_content = page
+          .content().await
+          .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
+        info!("Retrieved page content.");
+        break; // Success, break out of retry loop
+      }
       Err(e) => {
         error!("Attempt {} failed: {:?}", attempt, e);
-        Err(AppError::Other(format!("Attempt failed: {:?}", e))) // Use specific AppError variant
-      },
-    };
-    // Close the tab after each attempt to prevent resource leaks
-    info!("Closing tab.");
-    (&*tab).close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
-    info!("Tab closed.");
-    if result.is_ok() {
-      break; // Break out of retry loop on success
+        if attempt == MAX_RETRIES {
+          return Err(AppError::ChromiumoxideError(format!("{e:?}")));
+        }
+      }
     }
-  }
+  } // Closing brace for the for loop, correctly indented.
 
   if html_content.is_empty() {
     return Err(AppError::Other("Failed to retrieve HTML content after all retries.".to_string()));
@@ -134,7 +108,7 @@ pub async fn scrape_croxy_proxy(
 }
 
 pub async fn scrape_croxy_proxy_cached(
-  browser: &Arc<Mutex<Browser>>,
+  browser_pool: &BrowserPool,
   target_url: &str
 ) -> Result<String, AppError> {
   let mut conn = get_redis_connection()?;
@@ -146,7 +120,7 @@ pub async fn scrape_croxy_proxy_cached(
     return Ok(html);
   }
 
-  let html = scrape_croxy_proxy(browser, target_url).await?;
+  let html = scrape_croxy_proxy(browser_pool, target_url).await?;
   redis::cmd("SET").arg(&cache_key).arg(&html).arg("EX").arg(3600).query::<()>(&mut conn)?;
   info!("[scrapeCroxyProxyCached] Cached result for {} (1 hour)", target_url);
 
