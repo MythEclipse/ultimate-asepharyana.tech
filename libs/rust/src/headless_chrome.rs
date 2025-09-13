@@ -142,10 +142,7 @@ pub async fn launch_browser(
   let temp_dir = TempDir::new()?;
   let user_data_dir = temp_dir.path().to_string_lossy().to_string();
 
-  // Set Chrome arguments for better stability
-  // Commented out to isolate the issue with options.args/command
-  /*
-  let mut chrome_args = vec![
+  let mut chrome_args_strings = vec![
     "--no-sandbox".to_string(),
     "--disable-setuid-sandbox".to_string(), // Added for robustness
     "--disable-gpu".to_string(),
@@ -166,17 +163,25 @@ pub async fn launch_browser(
     "--no-first-run".to_string(),
     "--safebrowsing-disable-auto-update".to_string(),
     "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36".to_string(),
-    "--remote-debugging-port=9222".to_string() // Added for debugging
-    // "--single-process".to_string(), // Can be enabled if other options fail, but generally not recommended
+    "--remote-debugging-port=9222".to_string(), // Added for debugging
+    "--enable-javascript".to_string() // Explicitly enable JavaScript
   ];
 
   // Set proxy if provided
   if let Some(proxy) = proxy_addr {
-    chrome_args.push(format!("--proxy-server={}", proxy));
+    chrome_args_strings.push(format!("--proxy-server={}", proxy));
   }
-  options.command(chrome_args);
-  */
-  options.idle_browser_timeout(std::time::Duration::from_secs(60));
+
+  let chrome_args_os: Vec<std::ffi::OsString> = chrome_args_strings
+    .into_iter()
+    .map(std::ffi::OsString::from)
+    .collect();
+  let chrome_args_refs: Vec<&std::ffi::OsStr> = chrome_args_os
+    .iter()
+    .map(|s| s.as_os_str())
+    .collect();
+  options.args(chrome_args_refs);
+  options.idle_browser_timeout(std::time::Duration::from_secs(180));
 
   let browser = Browser::new(options.build()?)?;
   info!("Browser (Chrome) launched successfully.");
@@ -193,16 +198,22 @@ pub async fn is_browser_healthy(browser_arc: &Arc<TokioMutex<Browser>>) -> Resul
         Ok(remote_object) => {
           // Check if the remote_object has a value and can be converted to a string
           if let Some(value) = remote_object.value {
-            if let Some(s) = value.as_str() {
+            if let Some(_s) = value.as_str() {
               // Successfully evaluated, now close the tab
-              tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
+              tab
+                .close(true)
+                .map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
               return Ok(true);
             }
           }
           // If we reach here, evaluation failed or returned unexpected type
           warn!("Browser health check failed: Unexpected evaluation result.");
           tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
-          Err(AppError::Other("Browser health check failed: Unexpected evaluation result.".to_string()))
+          Err(
+            AppError::Other(
+              "Browser health check failed: Unexpected evaluation result.".to_string()
+            )
+          )
         }
         Err(e) => {
           warn!("Browser health check failed during evaluation: {:?}", e);
@@ -229,6 +240,11 @@ pub async fn reconnect_browser_if_needed(
   }
 
   warn!("Browser is unhealthy, attempting to reconnect...");
+
+  // Add a delay to give the system time to release resources, especially debugging ports.
+  tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+  info!("Attempting to launch new browser instance after delay...");
+
   match launch_browser(headless, proxy_addr).await {
     Ok(new_browser) => {
       *browser_arc.lock().await = new_browser;

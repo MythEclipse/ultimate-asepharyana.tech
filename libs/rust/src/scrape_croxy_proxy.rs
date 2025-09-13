@@ -34,21 +34,33 @@ pub async fn scrape_croxy_proxy(
       error!("Failed to create new tab on attempt {}: {:?}", attempt, e);
       AppError::Other(format!("Failed to create new tab: {:?}", e))
     })?;
+    info!("Successfully created new tab on attempt {}", attempt);
 
     let result = match tab.navigate_to(CROXY_PROXY_URL) {
       Ok(_) => {
+        info!("Successfully navigated to CroxyProxy URL.");
+        info!("Waiting for initial navigation to complete.");
         (&*tab).wait_until_navigated()?;
+        info!("Initial navigation completed.");
 
         // Set URL input value
+        info!("Typing target URL '{}' into input field with selector '{}'", target_url, URL_INPUT_SELECTOR);
         (&*tab).find_element(URL_INPUT_SELECTOR)?.type_into(target_url)?;
+        info!("Successfully typed target URL.");
 
         // Find submit button and click
+        info!("Clicking submit button with selector '{}'", SUBMIT_BUTTON_SELECTOR);
         (&*tab).find_element(SUBMIT_BUTTON_SELECTOR)?.click()?;
+        info!("Successfully clicked submit button.");
 
         // Wait for navigation
+        info!("Waiting for navigation after submit button click.");
         (&*tab).wait_until_navigated()?;
+        info!("Navigation after submit button click completed.");
 
+        info!("Getting page content.");
         let page_content = (&*tab).get_content()?;
+        info!("Successfully retrieved page content.");
         let page_text = page_content.to_lowercase();
 
         let current_url = tab.get_url().to_string();
@@ -64,17 +76,34 @@ pub async fn scrape_croxy_proxy(
           if page_text.contains("proxy is launching") {
             info!("Proxy launching page detected. Waiting for final redirect...");
             info!("Redirected successfully to: {:?}", tab.get_url());
+
+            let start_wait_time = Instant::now();
+            let max_wait_duration = std::time::Duration::from_secs(30); // 30 seconds
+            let poll_interval = std::time::Duration::from_millis(500); // 500ms
+
+            loop {
+                tokio::time::sleep(poll_interval).await;
+                let current_page_content = (&*tab).get_content()?;
+                let current_page_text = current_page_content.to_lowercase();
+
+                if !current_page_text.contains("proxy is launching") {
+                    info!("Proxy launching page disappeared. Content loaded.");
+                    html_content = current_page_content;
+                    break;
+                }
+
+                if start_wait_time.elapsed() > max_wait_duration {
+                    warn!("Timeout waiting for CroxyProxy to load target page after {} seconds.", max_wait_duration.as_secs());
+                    html_content = current_page_content; // Get whatever content is available
+                    break;
+                }
+                info!("Still waiting for CroxyProxy to load target page...");
+            }
           } else {
             info!("Mapped directly to: {:?}", tab.get_url());
+            html_content = (&*tab).get_content()?;
           }
 
-          info!("Waiting for CroxyProxy frame to render...");
-          // headless_chrome automatically waits for content to load, so a fixed sleep might not be necessary
-          // but keeping a small one for complex pages if needed.
-          tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-          info!("CroxyProxy frame rendered.");
-
-          html_content = (&*tab).get_content()?;
           info!("Retrieved page content.");
           Ok(()) // Success
         };
@@ -86,7 +115,9 @@ pub async fn scrape_croxy_proxy(
       },
     };
     // Close the tab after each attempt to prevent resource leaks
+    info!("Closing tab.");
     (&*tab).close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
+    info!("Tab closed.");
     if result.is_ok() {
       break; // Break out of retry loop on success
     }
