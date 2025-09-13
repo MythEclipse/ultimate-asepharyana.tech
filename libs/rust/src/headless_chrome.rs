@@ -146,6 +146,7 @@ pub async fn launch_browser(
   // Set Chrome arguments for better stability
   let mut chrome_args = vec![
     "--no-sandbox".to_string(),
+    "--disable-setuid-sandbox".to_string(), // Added for robustness
     "--disable-gpu".to_string(),
     "--disable-dev-shm-usage".to_string(),
     "--disable-background-timer-throttling".to_string(),
@@ -163,7 +164,9 @@ pub async fn launch_browser(
     "--mute-audio".to_string(),
     "--no-first-run".to_string(),
     "--safebrowsing-disable-auto-update".to_string(),
-    "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36".to_string()
+    "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36".to_string(),
+    "--remote-debugging-port=9222".to_string(), // Added for debugging
+    // "--single-process".to_string(), // Can be enabled if other options fail, but generally not recommended
   ];
 
   // Set proxy if provided
