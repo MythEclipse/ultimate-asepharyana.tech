@@ -116,10 +116,10 @@ pub async fn scrape_croxy_proxy(
           .map_err(|e| AppError::ChromiumoxideError(format!("Typing into input failed: {:?}", e)))?;
 
         // Small delay to let page process input events triggered by typing
-        time::sleep(std::time::Duration::from_millis(100)).await;
+        time::sleep(std::time::Duration::from_millis(10)).await;
 
         // Wait for the input to be processed
-        time::sleep(std::time::Duration::from_millis(200)).await;
+        time::sleep(std::time::Duration::from_millis(20)).await;
 
         // Small delay to let page process input events triggered by typing
         time::sleep(std::time::Duration::from_millis(100)).await;
