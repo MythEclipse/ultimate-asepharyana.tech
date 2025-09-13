@@ -11,6 +11,7 @@ use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -65,7 +66,7 @@ lazy_static! {
 }
 
 async fn fetch_html(
-  browser: &Browser,
+  browser: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error>> {
   let operation = || async {

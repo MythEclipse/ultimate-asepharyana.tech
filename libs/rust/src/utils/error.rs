@@ -22,3 +22,10 @@ impl From<&str> for AppError {
     AppError::Other(s.to_string())
   }
 }
+
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
+    fn from(err: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        AppError::Other(err.to_string())
+    }
+}

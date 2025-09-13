@@ -13,6 +13,7 @@ use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -86,13 +87,18 @@ pub struct DetailResponse {
 lazy_static! {
   static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
   static ref ALT_TITLE_SELECTOR: Selector = Selector::parse(".alter").unwrap();
-  static ref POSTER_SELECTOR: Selector = Selector::parse(".thumb[itemprop=\"image\"] img.lazyload").unwrap();
-  static ref POSTER2_SELECTOR: Selector = Selector::parse(".bixbox.animefull .bigcover .ime img.lazyload").unwrap();
+  static ref POSTER_SELECTOR: Selector = Selector::parse(
+    ".thumb[itemprop=\"image\"] img.lazyload"
+  ).unwrap();
+  static ref POSTER2_SELECTOR: Selector = Selector::parse(
+    ".bixbox.animefull .bigcover .ime img.lazyload"
+  ).unwrap();
   static ref SPE_SPAN_SELECTOR: Selector = Selector::parse(".info-content .spe span").unwrap();
   static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
   static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".entry-content p").unwrap();
   static ref GENRE_SELECTOR: Selector = Selector::parse(".genxed a").unwrap();
-  static ref DOWNLOAD_CONTAINER_SELECTOR: Selector = Selector::parse(".soraddl.dlone .soraurl").unwrap();
+  static ref DOWNLOAD_CONTAINER_SELECTOR: Selector =
+    Selector::parse(".soraddl.dlone .soraurl").unwrap();
   static ref RESOLUTION_SELECTOR: Selector = Selector::parse(".res").unwrap();
   static ref LINK_SELECTOR: Selector = Selector::parse(".slink a").unwrap();
   static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
@@ -143,7 +149,12 @@ pub async fn slug(
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
-      error!("Failed to process request for slug: {} after {:?}, error: {:?}", slug, total_duration, e);
+      error!(
+        "Failed to process request for slug: {} after {:?}, error: {:?}",
+        slug,
+        total_duration,
+        e
+      );
       Json(DetailResponse {
         status: "Error".to_string(),
         data: AnimeDetailData {
@@ -169,7 +180,7 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser_client: &Browser,
+  browser_client: &Arc<TokioMutex<Browser>>,
   slug: &str
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
@@ -225,7 +236,10 @@ async fn fetch_anime_detail(
   }
 }
 
-fn parse_anime_detail_document(document: &Html, slug: &str) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
+fn parse_anime_detail_document(
+  document: &Html,
+  slug: &str
+) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
   info!("Starting to parse anime detail document for slug: {}", slug);
 
@@ -291,7 +305,11 @@ fn parse_anime_detail_document(document: &Html, slug: &str) -> Result<AnimeDetai
   for element in document.select(&GENRE_SELECTOR) {
     let name = element.text().collect::<String>().trim().to_string();
     let anime_url = element.value().attr("href").unwrap_or("").to_string();
-    let genre_slug = SLUG_REGEX.captures(&anime_url).and_then(|cap| cap.get(1)).map(|m| m.as_str()).unwrap_or("").to_string();
+    let genre_slug = SLUG_REGEX.captures(&anime_url)
+      .and_then(|cap| cap.get(1))
+      .map(|m| m.as_str())
+      .unwrap_or("")
+      .to_string();
     genres.push(Genre { name, slug: genre_slug, anime_url });
   }
 
@@ -345,7 +363,11 @@ fn parse_anime_detail_document(document: &Html, slug: &str) -> Result<AnimeDetai
       .unwrap_or("")
       .to_string();
 
-    let rec_slug = SLUG_REGEX.captures(&anime_url).and_then(|cap| cap.get(1)).map(|m| m.as_str()).unwrap_or("").to_string();
+    let rec_slug = SLUG_REGEX.captures(&anime_url)
+      .and_then(|cap| cap.get(1))
+      .map(|m| m.as_str())
+      .unwrap_or("")
+      .to_string();
 
     let poster = element
       .select(&REC_IMG_SELECTOR)

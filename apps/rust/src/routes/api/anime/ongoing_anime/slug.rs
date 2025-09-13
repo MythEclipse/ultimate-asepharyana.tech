@@ -6,11 +6,12 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{info, error};
+use tracing::{ info, error };
 use std::time::Instant;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -29,11 +30,11 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<OngoingAnimeResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct OngoingAnimeItem {
-   pub title: String,
-   pub slug: String,
-   pub poster: String,
-   pub score: String,
-   pub anime_url: String,
+  pub title: String,
+  pub slug: String,
+  pub poster: String,
+  pub score: String,
+  pub anime_url: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -109,7 +110,12 @@ pub async fn slug(
     }
     Err(e) => {
       let duration = start.elapsed();
-      error!("Error fetching ongoing_anime for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
+      error!(
+        "Error fetching ongoing_anime for slug: {}, error: {:?}, duration: {:?}",
+        slug,
+        e,
+        duration
+      );
       Json(OngoingAnimeResponse {
         status: "Error".to_string(),
         data: vec![],
@@ -127,7 +133,7 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
@@ -191,10 +197,7 @@ async fn fetch_ongoing_anime_page(
     .map(|e| e.text().collect::<String>().trim().parse::<u32>().unwrap_or(1))
     .unwrap_or(1);
 
-  let has_next_page = document
-    .select(&*NEXT_SELECTOR)
-    .next()
-    .is_some();
+  let has_next_page = document.select(&*NEXT_SELECTOR).next().is_some();
 
   let next_page = if has_next_page { Some(current_page + 1) } else { None };
 

@@ -1,4 +1,4 @@
-use axum::{ extract::{Path, State}, response::IntoResponse, routing::get, Json, Router };
+use axum::{ extract::{ Path, State }, response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use std::time::Instant;
 use crate::routes::AppState;
@@ -9,8 +9,9 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
-use tracing::{info, error};
+use tracing::{ info, error };
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -138,7 +139,7 @@ pub async fn slug(
 }
 
 async fn fetch_anime_full(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   slug: &str
 ) -> Result<AnimeFullData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/episode/{}", slug);

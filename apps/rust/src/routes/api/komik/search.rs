@@ -77,10 +77,11 @@ lazy_static! {
 }
 
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 async fn fetch_with_retry(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -181,7 +182,7 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str,
   _query: &str,
   page: u32

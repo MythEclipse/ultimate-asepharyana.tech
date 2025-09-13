@@ -1,7 +1,7 @@
 // Komik base URL logic with Redis lock, updated for sync Redis API and correct imports.
 
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::Mutex as TokioMutex; // Use Tokio Mutex for async operations
 use tracing::{ info, debug, warn, error };
 use scraper::{ Html, Selector };
 use regex::Regex;
@@ -15,8 +15,8 @@ use chromiumoxide::Browser;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 // Using a static Mutex for single-flight promise simulation
-static KOMIK_BASE_URL_PROMISE: once_cell::sync::Lazy<Arc<Mutex<Option<String>>>> = once_cell::sync::Lazy::new(
-  || Arc::new(Mutex::new(None))
+static KOMIK_BASE_URL_PROMISE: once_cell::sync::Lazy<Arc<TokioMutex<Option<String>>>> = once_cell::sync::Lazy::new(
+  || Arc::new(TokioMutex::new(None))
 );
 
 const KOMIK_BASE_URL_LOCK_KEY: &str = "komik:baseurl:lock";
@@ -47,7 +47,7 @@ async fn sleep_ms(ms: u64) {
 }
 
 async fn fetch_with_proxy_wrapper(
-  browser: &Browser,
+  browser: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<String, AppError> {
   debug!("[fetchWithProxyWrapper] Fetching {}", url);
@@ -56,7 +56,9 @@ async fn fetch_with_proxy_wrapper(
   Ok(response.data)
 }
 
-pub async fn get_dynamic_komik_base_url(browser: &Browser) -> Result<String, AppError> {
+pub async fn get_dynamic_komik_base_url(
+  browser: &Arc<TokioMutex<Browser>>
+) -> Result<String, AppError> {
   let mut promise_guard = KOMIK_BASE_URL_PROMISE.lock().await;
   if let Some(url) = promise_guard.as_ref() {
     debug!("[getDynamicKomikBaseUrl] Returning in-flight promise");
@@ -166,7 +168,7 @@ pub async fn get_dynamic_komik_base_url(browser: &Browser) -> Result<String, App
 }
 
 pub async fn get_cached_komik_base_url(
-  browser: &Browser,
+  browser: &Arc<TokioMutex<Browser>>,
   force_refresh: bool
 ) -> Result<String, AppError> {
   if !force_refresh {

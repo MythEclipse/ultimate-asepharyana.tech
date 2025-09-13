@@ -14,6 +14,7 @@ use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error };
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,7 +83,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -161,7 +162,7 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manhua(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<ManhuaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();

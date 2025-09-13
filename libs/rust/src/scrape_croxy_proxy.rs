@@ -6,6 +6,8 @@ use tracing::{ info, warn, error };
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
 use chromiumoxide::Browser;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input#url";
@@ -13,7 +15,7 @@ const SUBMIT_BUTTON_SELECTOR: &str = "#requestSubmit";
 const MAX_RETRIES: u8 = 1;
 
 pub async fn scrape_croxy_proxy(
-  browser: &Browser,
+  browser: &Arc<Mutex<Browser>>,
   target_url: &str
 ) -> Result<String, AppError> {
   let start_time = Instant::now();
@@ -25,17 +27,25 @@ pub async fn scrape_croxy_proxy(
     info!("Attempt {}/{}", attempt, MAX_RETRIES);
 
     // Create a new page for this attempt
-    let page = browser.new_page("about:blank").await
+    let page = browser
+      .lock().await
+      .new_page("about:blank").await
       .map_err(|e| AppError::Other(format!("Failed to create page: {:?}", e)))?;
 
-    match page.goto(CROXY_PROXY_URL).await {
+    let result = match page.goto(CROXY_PROXY_URL).await {
       Ok(_) => {
         // Wait for page to load
         tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
 
         // Set URL input value using JavaScript
         page
-          .evaluate(format!("document.querySelector('{}').value = '{}'", URL_INPUT_SELECTOR, target_url.replace("'", "\\'"))).await
+          .evaluate(
+            format!(
+              "document.querySelector('{}').value = '{}'",
+              URL_INPUT_SELECTOR,
+              target_url.replace("'", "\\'")
+            )
+          ).await
           .map_err(|e| AppError::Other(format!("Failed to set URL input value: {:?}", e)))?;
 
         // Find submit button and click
@@ -55,7 +65,8 @@ pub async fn scrape_croxy_proxy(
           .map_err(|e| AppError::Other(format!("Failed to get page content: {:?}", e)))?;
         let page_text = page_content.to_lowercase();
 
-        let current_url = page.url().await
+        let current_url = page
+          .url().await
           .map_err(|e| AppError::Other(format!("Failed to get current URL: {:?}", e)))?;
         let is_error_url = current_url.as_ref().map_or(false, |url| url.contains("/requests?fso="));
         let has_error_text =
@@ -64,35 +75,40 @@ pub async fn scrape_croxy_proxy(
 
         if is_error_url || has_error_text {
           warn!("Error detected (URL: {}, Text: {}). Retrying...", is_error_url, has_error_text);
-          continue; // Retry
-        }
-
-        if page_text.contains("proxy is launching") {
-          info!("Proxy launching page detected. Waiting for final redirect...");
-          info!("Redirected successfully to: {:?}", page.url().await);
+          Err(AppError::Other("Error detected, retrying.".to_string())) // Indicate failure for retry
         } else {
-          info!("Mapped directly to: {:?}", page.url().await);
+          if page_text.contains("proxy is launching") {
+            info!("Proxy launching page detected. Waiting for final redirect...");
+            info!("Redirected successfully to: {:?}", page.url().await);
+          } else {
+            info!("Mapped directly to: {:?}", page.url().await);
+          }
+
+          info!("Waiting for CroxyProxy frame to render...");
+          // Wait for the frame to appear
+          tokio::time::sleep(tokio::time::Duration::from_millis(3000)).await;
+          info!("CroxyProxy frame rendered.");
+
+          html_content = page
+            .content().await
+            .map_err(|e| AppError::Other(format!("Failed to get final content: {:?}", e)))?;
+          info!("Retrieved page content.");
+          Ok(()) // Success
         }
-
-        info!("Waiting for CroxyProxy frame to render...");
-        // Wait for the frame to appear
-        tokio::time::sleep(tokio::time::Duration::from_millis(3000)).await;
-        info!("CroxyProxy frame rendered.");
-
-        html_content = page
-          .content().await
-          .map_err(|e| AppError::Other(format!("Failed to get final content: {:?}", e)))?;
-        info!("Retrieved page content.");
-        // Success, break out of retry loop
       }
       Err(e) => {
         error!("Attempt {} failed: {:?}", attempt, e);
-        if attempt == MAX_RETRIES {
-          return Err(AppError::Other(format!("All attempts failed: {:?}", e)));
-        }
+        Err(AppError::Other(format!("Attempt failed: {:?}", e))) // Indicate failure for retry
       }
+    }; // This closes the match statement, aligned with 'let result = match'
+
+    // Close the page after each attempt to prevent resource leaks
+    let _ = page.close().await;
+
+    if result.is_ok() {
+      break; // Break out of retry loop on success
     }
-  }
+  } // This closes the for loop
 
   if html_content.is_empty() {
     return Err(AppError::Other("Failed to retrieve HTML content after all retries.".to_string()));
@@ -105,7 +121,7 @@ pub async fn scrape_croxy_proxy(
 }
 
 pub async fn scrape_croxy_proxy_cached(
-  browser: &Browser,
+  browser: &Arc<Mutex<Browser>>,
   target_url: &str
 ) -> Result<String, AppError> {
   let mut conn = get_redis_connection()?;

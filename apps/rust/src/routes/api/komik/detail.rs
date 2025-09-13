@@ -14,6 +14,7 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -96,7 +97,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -193,7 +194,7 @@ pub async fn detail(
 }
 
 async fn fetch_and_parse_detail(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   komik_id: &str,
   base_url: &str
 ) -> Result<DetailData, Box<dyn std::error::Error>> {

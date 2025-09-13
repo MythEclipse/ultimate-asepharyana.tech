@@ -13,6 +13,7 @@ use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -62,7 +63,9 @@ lazy_static! {
   static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
   static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
   static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-  static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
+  static ref PAGINATION_SELECTOR: Selector = Selector::parse(
+    ".pagination .page-numbers:not(.next)"
+  ).unwrap();
   static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
 }
 
@@ -107,7 +110,12 @@ pub async fn slug(
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
-      error!("Failed to process request for slug: {} after {:?}, error: {:?}", slug, total_duration, e);
+      error!(
+        "Failed to process request for slug: {} after {:?}, error: {:?}",
+        slug,
+        total_duration,
+        e
+      );
       Json(OngoingAnimeResponse {
         status: "Error".to_string(),
         data: vec![],
@@ -125,11 +133,12 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
-  let url = format!("https://alqanime.net/advanced-search/page/{}/?status=ongoing&order=update", slug);
+  let url =
+    format!("https://alqanime.net/advanced-search/page/{}/?status=ongoing&order=update", slug);
 
   // Check cache first
   if let Some(entry) = HTML_CACHE.get(&url) {
@@ -217,7 +226,11 @@ fn parse_ongoing_anime_document(
       .unwrap_or("")
       .to_string();
 
-    let slug = SLUG_REGEX.captures(&anime_url).and_then(|cap| cap.get(1)).map(|m| m.as_str()).unwrap_or("").to_string();
+    let slug = SLUG_REGEX.captures(&anime_url)
+      .and_then(|cap| cap.get(1))
+      .map(|m| m.as_str())
+      .unwrap_or("")
+      .to_string();
 
     if !title.is_empty() {
       anime_list.push(OngoingAnimeItem {
@@ -238,10 +251,7 @@ fn parse_ongoing_anime_document(
     .map(|e| e.text().collect::<String>().trim().parse::<u32>().unwrap_or(1))
     .unwrap_or(1);
 
-  let has_next_page = document
-    .select(&NEXT_SELECTOR)
-    .next()
-    .is_some();
+  let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
 
   let next_page = if has_next_page { Some(current_page + 1) } else { None };
 

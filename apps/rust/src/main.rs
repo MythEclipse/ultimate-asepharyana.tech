@@ -12,6 +12,7 @@ use rust_lib::config::CONFIG_MAP;
 use crate::routes::api::{ create_api_routes, ApiDoc };
 use crate::routes::AppState;
 use std::sync::Arc;
+use tokio::sync::Mutex as TokioMutex;
 use axum::Router;
 use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
@@ -54,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
 
   let app_state = Arc::new(AppState {
     jwt_secret,
-    browser: Arc::new(client),
+    browser: Arc::new(TokioMutex::new(client)),
   });
 
   tracing::info!("Building application routes...");

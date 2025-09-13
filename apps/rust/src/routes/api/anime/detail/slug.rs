@@ -11,6 +11,7 @@ use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -151,7 +152,7 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser: &Browser,
+  browser: &Arc<TokioMutex<Browser>>,
   slug: &str
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/anime/{}", slug);

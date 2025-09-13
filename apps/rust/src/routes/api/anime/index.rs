@@ -6,6 +6,7 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -80,7 +81,7 @@ pub async fn anime(State(app_state): State<Arc<AppState>>) -> impl IntoResponse 
 }
 
 async fn fetch_anime_data(
-  browser: &Browser
+  browser: &Arc<TokioMutex<Browser>>
 ) -> Result<AnimeData, Box<dyn std::error::Error>> {
   let ongoing_url = "https://otakudesu.cloud/ongoing-anime/";
   let complete_url = "https://otakudesu.cloud/complete-anime/";
@@ -98,7 +99,7 @@ async fn fetch_anime_data(
 }
 
 async fn fetch_html(
-  browser: &Browser,
+  browser: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error>> {
   let response = fetch_with_proxy(url, browser).await?;

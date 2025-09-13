@@ -14,6 +14,7 @@ use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error, warn };
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,7 +83,7 @@ lazy_static! {
 }
 
 async fn fetch_with_retry(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str,
   max_retries: u32
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -125,7 +126,9 @@ pub async fn list(
 ) -> impl IntoResponse {
   let page = params.page;
 
-  let base_url = match rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser, false).await {
+  let base_url = match
+    rust_lib::komik_base_url::get_cached_komik_base_url(&app_state.browser, false).await
+  {
     Ok(url) => url,
     Err(_) => {
       warn!("[list] Failed to get cached base URL, trying refresh");
@@ -175,7 +178,7 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manhwa(
-  client: &Browser,
+  client: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<ManhwaResponse, Box<dyn std::error::Error>> {
   let start = Instant::now();

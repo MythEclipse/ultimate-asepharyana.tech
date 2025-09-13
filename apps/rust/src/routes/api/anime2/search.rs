@@ -6,6 +6,7 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -95,7 +96,7 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  browser: &Browser,
+  browser: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
   let response = fetch_with_proxy(url, browser).await?;

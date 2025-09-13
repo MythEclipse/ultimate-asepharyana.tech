@@ -1,74 +1,81 @@
 use chromiumoxide::{ Browser, BrowserConfig };
 use std::path::Path;
-use tracing::info;
+use tracing::{ info, warn, error };
 use std::fs;
+use std::sync::Arc;
+use tokio::sync::Mutex as TokioMutex;
 
 use tempfile::TempDir;
 
 fn find_puppeteer_chrome() -> Option<String> {
-    // Get user home directory (cross-platform)
-    let home = if cfg!(target_os = "windows") {
-        std::env::var("USERPROFILE").ok()?
-    } else {
-        std::env::var("HOME").ok()?
-    };
+  // Get user home directory (cross-platform)
+  let home = if cfg!(target_os = "windows") {
+    std::env::var("USERPROFILE").ok()?
+  } else {
+    std::env::var("HOME").ok()?
+  };
 
-    let puppeteer_cache = Path::new(&home).join(".cache").join("puppeteer").join("chrome");
+  let puppeteer_cache = Path::new(&home).join(".cache").join("puppeteer").join("chrome");
 
-    if !puppeteer_cache.exists() {
-        return None;
+  if !puppeteer_cache.exists() {
+    return None;
+  }
+
+  // Find the latest version directory
+  let entries = fs::read_dir(&puppeteer_cache).ok()?;
+  let mut versions = Vec::new();
+
+  // Platform-specific directory patterns
+  let platform_prefix = if cfg!(target_os = "windows") {
+    "win64-"
+  } else if cfg!(target_os = "linux") {
+    "linux64-"
+  } else if cfg!(target_os = "macos") {
+    "mac-"
+  } else {
+    return None; // Unsupported platform
+  };
+
+  for entry in entries {
+    if let Ok(entry) = entry {
+      if let Some(name) = entry.file_name().to_str() {
+        if name.starts_with(platform_prefix) {
+          versions.push(entry.path());
+        }
+      }
     }
+  }
 
-    // Find the latest version directory
-    let entries = fs::read_dir(&puppeteer_cache).ok()?;
-    let mut versions = Vec::new();
+  // Sort by version (assuming semantic versioning)
+  versions.sort_by(|a, b| {
+    let a_name = a.file_name().unwrap().to_str().unwrap();
+    let b_name = b.file_name().unwrap().to_str().unwrap();
+    b_name.cmp(a_name) // Reverse sort to get latest first
+  });
 
-    // Platform-specific directory patterns
-    let platform_prefix = if cfg!(target_os = "windows") {
-        "win64-"
+  if let Some(latest_version) = versions.first() {
+    // Platform-specific executable path
+    let chrome_exe = if cfg!(target_os = "windows") {
+      latest_version.join("chrome-win64").join("chrome.exe")
     } else if cfg!(target_os = "linux") {
-        "linux64-"
+      latest_version.join("chrome-linux64").join("chrome")
     } else if cfg!(target_os = "macos") {
-        "mac-"
+      latest_version
+        .join("chrome-mac")
+        .join("Chromium.app")
+        .join("Contents")
+        .join("MacOS")
+        .join("Chromium")
     } else {
-        return None; // Unsupported platform
+      return None;
     };
 
-    for entry in entries {
-        if let Ok(entry) = entry {
-            if let Some(name) = entry.file_name().to_str() {
-                if name.starts_with(platform_prefix) {
-                    versions.push(entry.path());
-                }
-            }
-        }
+    if chrome_exe.exists() {
+      return chrome_exe.to_str().map(|s| s.to_string());
     }
+  }
 
-    // Sort by version (assuming semantic versioning)
-    versions.sort_by(|a, b| {
-        let a_name = a.file_name().unwrap().to_str().unwrap();
-        let b_name = b.file_name().unwrap().to_str().unwrap();
-        b_name.cmp(a_name) // Reverse sort to get latest first
-    });
-
-    if let Some(latest_version) = versions.first() {
-        // Platform-specific executable path
-        let chrome_exe = if cfg!(target_os = "windows") {
-            latest_version.join("chrome-win64").join("chrome.exe")
-        } else if cfg!(target_os = "linux") {
-            latest_version.join("chrome-linux64").join("chrome")
-        } else if cfg!(target_os = "macos") {
-            latest_version.join("chrome-mac").join("Chromium.app").join("Contents").join("MacOS").join("Chromium")
-        } else {
-            return None;
-        };
-
-        if chrome_exe.exists() {
-            return chrome_exe.to_str().map(|s| s.to_string());
-        }
-    }
-
-    None
+  None
 }
 
 pub async fn launch_browser(
@@ -100,19 +107,19 @@ pub async fn launch_browser(
       let chrome_paths = if cfg!(target_os = "windows") {
         vec![
           r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-          r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+          r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
         ]
       } else if cfg!(target_os = "linux") {
         vec![
           "/usr/bin/google-chrome",
           "/usr/bin/google-chrome-stable",
           "/usr/bin/chromium",
-          "/usr/bin/chromium-browser",
+          "/usr/bin/chromium-browser"
         ]
       } else if cfg!(target_os = "macos") {
         vec![
           "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          "/Applications/Chromium.app/Contents/MacOS/Chromium",
+          "/Applications/Chromium.app/Contents/MacOS/Chromium"
         ]
       } else {
         vec![]
@@ -172,3 +179,52 @@ pub async fn launch_browser(
   info!("Browser (Chrome) launched successfully.");
   Ok(browser)
 }
+
+/// Check if the browser is still connected and healthy
+pub async fn is_browser_healthy(browser_arc: &Arc<TokioMutex<Browser>>) -> bool {
+  match browser_arc.lock().await.new_page("about:blank").await {
+    Ok(page) => {
+      // Try to get a simple property to verify connection
+      match page.evaluate("1 + 1").await {
+        Ok(_) => {
+          // Clean up the test page
+          let _ = page.close().await;
+          true
+        }
+        Err(e) => {
+          warn!("Browser health check failed during evaluation: {:?}", e);
+          false
+        }
+      }
+    }
+    Err(e) => {
+      warn!("Browser health check failed during page creation: {:?}", e);
+      false
+    }
+  }
+}
+
+/// Attempt to reconnect the browser if it's unhealthy
+pub async fn reconnect_browser_if_needed(
+  browser_arc: &Arc<TokioMutex<Browser>>,
+  headless: bool,
+  proxy_addr: Option<String>
+) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+  if is_browser_healthy(browser_arc).await {
+    return Ok(false); // No reconnection needed
+  }
+
+  warn!("Browser is unhealthy, attempting to reconnect...");
+  match launch_browser(headless, proxy_addr).await {
+    Ok(new_browser) => {
+      *browser_arc.lock().await = new_browser;
+      info!("Browser reconnected successfully");
+      Ok(true)
+    }
+    Err(e) => {
+      error!("Failed to reconnect browser: {:?}", e);
+      Err(e)
+    }
+  }
+}
+

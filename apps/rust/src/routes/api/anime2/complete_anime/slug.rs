@@ -13,6 +13,7 @@ use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
 use chromiumoxide::Browser;
+use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -78,7 +79,7 @@ lazy_static! {
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 async fn fetch_html(
-  browser_client: &Browser,
+  browser_client: &Arc<TokioMutex<Browser>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
