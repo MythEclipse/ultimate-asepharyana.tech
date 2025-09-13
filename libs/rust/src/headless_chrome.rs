@@ -1,11 +1,12 @@
-use chromiumoxide::{ Browser, BrowserConfig };
-use std::path::Path;
+use headless_chrome::{ Browser, LaunchOptionsBuilder };
+use std::path::{ Path, PathBuf };
 use tracing::{ info, warn, error };
 use std::fs;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use tempfile::TempDir;
+use crate::utils::error::AppError; // Import AppError
 
 fn find_puppeteer_chrome() -> Option<String> {
   // Get user home directory (cross-platform)
@@ -82,11 +83,9 @@ pub async fn launch_browser(
   headless: bool,
   proxy_addr: Option<String>
 ) -> Result<Browser, Box<dyn std::error::Error + Send + Sync>> {
-  let mut config = BrowserConfig::builder();
+  let mut options = LaunchOptionsBuilder::default();
 
-  if headless {
-    config = config.with_head();
-  }
+  options.headless(headless);
 
   // Try to find Chrome executable on Windows, Linux, and macOS
   #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
@@ -96,7 +95,7 @@ pub async fn launch_browser(
     // First try to find Puppeteer Chromium
     if let Some(puppeteer_path) = find_puppeteer_chrome() {
       if Path::new(&puppeteer_path).exists() {
-        config = config.chrome_executable(&puppeteer_path);
+        options.path(Some(PathBuf::from(puppeteer_path.clone())));
         info!("Found Puppeteer Chrome at: {}", puppeteer_path);
         found = true;
       }
@@ -127,7 +126,7 @@ pub async fn launch_browser(
 
       for path in &chrome_paths {
         if Path::new(path).exists() {
-          config = config.chrome_executable(path);
+          options.path(Some(PathBuf::from(path.to_string())));
           info!("Found Chrome at: {}", path);
           found = true;
           break;
@@ -144,6 +143,8 @@ pub async fn launch_browser(
   let user_data_dir = temp_dir.path().to_string_lossy().to_string();
 
   // Set Chrome arguments for better stability
+  // Commented out to isolate the issue with options.args/command
+  /*
   let mut chrome_args = vec![
     "--no-sandbox".to_string(),
     "--disable-setuid-sandbox".to_string(), // Added for robustness
@@ -173,36 +174,46 @@ pub async fn launch_browser(
   if let Some(proxy) = proxy_addr {
     chrome_args.push(format!("--proxy-server={}", proxy));
   }
+  options.command(chrome_args);
+  */
+  options.idle_browser_timeout(std::time::Duration::from_secs(60));
 
-  config = config.args(chrome_args).launch_timeout(std::time::Duration::from_secs(60));
-
-  let (browser, _) = Browser::launch(config.build()?).await.map_err(|e|
-    Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", e)))
-  )?;
+  let browser = Browser::new(options.build()?)?;
   info!("Browser (Chrome) launched successfully.");
   Ok(browser)
 }
 
 /// Check if the browser is still connected and healthy
-pub async fn is_browser_healthy(browser_arc: &Arc<TokioMutex<Browser>>) -> bool {
-  match browser_arc.lock().await.new_page("about:blank").await {
-    Ok(page) => {
-      // Try to get a simple property to verify connection
-      match page.evaluate("1 + 1").await {
-        Ok(_) => {
-          // Clean up the test page
-          let _ = page.close().await;
-          true
+pub async fn is_browser_healthy(browser_arc: &Arc<TokioMutex<Browser>>) -> Result<bool, AppError> {
+  let tab_result = browser_arc.lock().await.new_tab();
+  match tab_result {
+    Ok(tab) => {
+      let eval_result = tab.evaluate(r#"1 + 1"#, false);
+      match eval_result {
+        Ok(remote_object) => {
+          // Check if the remote_object has a value and can be converted to a string
+          if let Some(value) = remote_object.value {
+            if let Some(s) = value.as_str() {
+              // Successfully evaluated, now close the tab
+              tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
+              return Ok(true);
+            }
+          }
+          // If we reach here, evaluation failed or returned unexpected type
+          warn!("Browser health check failed: Unexpected evaluation result.");
+          tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
+          Err(AppError::Other("Browser health check failed: Unexpected evaluation result.".to_string()))
         }
         Err(e) => {
           warn!("Browser health check failed during evaluation: {:?}", e);
-          false
+          tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
+          Err(AppError::Other(format!("Browser health check failed during evaluation: {:?}", e)))
         }
       }
     }
     Err(e) => {
-      warn!("Browser health check failed during page creation: {:?}", e);
-      false
+      warn!("Browser health check failed during tab creation: {:?}", e);
+      Err(AppError::Other(format!("Browser health check failed during tab creation: {:?}", e)))
     }
   }
 }
@@ -213,7 +224,7 @@ pub async fn reconnect_browser_if_needed(
   headless: bool,
   proxy_addr: Option<String>
 ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-  if is_browser_healthy(browser_arc).await {
+  if is_browser_healthy(browser_arc).await? {
     return Ok(false); // No reconnection needed
   }
 

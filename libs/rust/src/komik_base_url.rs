@@ -11,7 +11,7 @@ use url::Url;
 use crate::redis_client::get_redis_connection;
 use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::utils::error::AppError;
-use chromiumoxide::Browser;
+use headless_chrome::Browser;
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 // Using a static Mutex for single-flight promise simulation

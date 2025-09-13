@@ -1,5 +1,5 @@
 pub mod api;
-use chromiumoxide::Browser;
+use headless_chrome::browser::Browser;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex; // Use Tokio Mutex for async operations
 

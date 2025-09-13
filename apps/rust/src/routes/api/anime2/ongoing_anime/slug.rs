@@ -12,7 +12,7 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use chromiumoxide::Browser;
+use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 

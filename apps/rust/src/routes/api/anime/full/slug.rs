@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
-use chromiumoxide::Browser;
+use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 
 #[allow(dead_code)]

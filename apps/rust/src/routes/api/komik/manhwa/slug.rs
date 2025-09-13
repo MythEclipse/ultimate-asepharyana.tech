@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use std::time::Instant;
 use tokio::time::{ sleep, Duration };
 use tracing::{ info, error, warn };
-use chromiumoxide::Browser;
+use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 

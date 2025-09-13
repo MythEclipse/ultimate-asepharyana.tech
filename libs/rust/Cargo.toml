@@ -38,7 +38,8 @@ rand = { workspace = true }
 urlencoding = { workspace = true }
 oxidize-pdf = { workspace = true }
 mime_guess = { workspace = true }
-chromiumoxide = { workspace = true }
+failure = { workspace = true } # Added for headless_chrome compatibility
+headless_chrome = { workspace = true } # Use the latest version or a compatible one
 tempfile = { workspace = true }
 axum = { workspace = true }
 http = { workspace = true }

@@ -17,6 +17,12 @@ pub enum AppError {
   #[error("Other error: {0}")] Other(String),
 }
 
+impl From<failure::Error> for AppError {
+    fn from(err: failure::Error) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
 impl From<&str> for AppError {
   fn from(s: &str) -> Self {
     AppError::Other(s.to_string())
@@ -28,3 +34,10 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
         AppError::Other(err.to_string())
     }
 }
+
+impl From<anyhow::Error> for AppError {
+    fn from(err: anyhow::Error) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+

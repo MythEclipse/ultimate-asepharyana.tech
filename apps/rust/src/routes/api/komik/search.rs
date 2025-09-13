@@ -76,7 +76,7 @@ lazy_static! {
   static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-use chromiumoxide::Browser;
+use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 

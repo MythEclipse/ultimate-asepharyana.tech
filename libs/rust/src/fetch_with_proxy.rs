@@ -10,7 +10,7 @@ use crate::utils::error::AppError;
 use crate::headless_chrome::reconnect_browser_if_needed;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex; // Use Tokio Mutex for async operations
-use chromiumoxide::Browser;
+use headless_chrome::Browser;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {

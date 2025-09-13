@@ -5,7 +5,7 @@ use std::time::Instant;
 use tracing::{ info, warn, error };
 use crate::redis_client::get_redis_connection;
 use crate::utils::error::AppError;
-use chromiumoxide::Browser;
+use headless_chrome::Browser;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -29,92 +29,68 @@ pub async fn scrape_croxy_proxy(
     // Add a small delay before creating a new page
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
-    // Create a new page for this attempt
-    let page = browser
-      .lock().await
-      .new_page("about:blank").await
-      .map_err(|e| {
-        error!("Failed to create page on attempt {}: {:?}", attempt, e);
-        AppError::Other(format!("Failed to create page: {:?}", e))
-      })?;
+    let browser_lock = browser.lock().await;
+    let tab = browser_lock.new_tab().map_err(|e| {
+      error!("Failed to create new tab on attempt {}: {:?}", attempt, e);
+      AppError::Other(format!("Failed to create new tab: {:?}", e))
+    })?;
 
-    let result = match page.goto(CROXY_PROXY_URL).await {
+    let result = match tab.navigate_to(CROXY_PROXY_URL) {
       Ok(_) => {
-        // Wait for page to load
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        (&*tab).wait_until_navigated()?;
 
-        // Set URL input value using JavaScript
-        page
-          .evaluate(
-            format!(
-              "document.querySelector('{}').value = '{}'",
-              URL_INPUT_SELECTOR,
-              target_url.replace("'", "\\'")
-            )
-          ).await
-          .map_err(|e| AppError::Other(format!("Failed to set URL input value: {:?}", e)))?;
+        // Set URL input value
+        (&*tab).find_element(URL_INPUT_SELECTOR)?.type_into(target_url)?;
 
         // Find submit button and click
-        let submit_button = page
-          .find_element(SUBMIT_BUTTON_SELECTOR).await
-          .map_err(|e| AppError::Other(format!("Failed to find submit button: {:?}", e)))?;
-
-        submit_button
-          .click().await
-          .map_err(|e| AppError::Other(format!("Failed to click submit: {:?}", e)))?;
+        (&*tab).find_element(SUBMIT_BUTTON_SELECTOR)?.click()?;
 
         // Wait for navigation
-        tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
+        (&*tab).wait_until_navigated()?;
 
-        let page_content = page
-          .content().await
-          .map_err(|e| AppError::Other(format!("Failed to get page content: {:?}", e)))?;
+        let page_content = (&*tab).get_content()?;
         let page_text = page_content.to_lowercase();
 
-        let current_url = page
-          .url().await
-          .map_err(|e| AppError::Other(format!("Failed to get current URL: {:?}", e)))?;
-        let is_error_url = current_url.as_ref().map_or(false, |url| url.contains("/requests?fso="));
+        let current_url = tab.get_url().to_string();
+        let is_error_url = current_url.contains("/requests?fso=");
         let has_error_text =
           page_text.contains("your session has outdated") ||
           page_text.contains("something went wrong");
 
-        if is_error_url || has_error_text {
+        let ok_result = if is_error_url || has_error_text {
           warn!("Error detected (URL: {}, Text: {}). Retrying...", is_error_url, has_error_text);
           Err(AppError::Other("Error detected, retrying.".to_string())) // Indicate failure for retry
         } else {
           if page_text.contains("proxy is launching") {
             info!("Proxy launching page detected. Waiting for final redirect...");
-            info!("Redirected successfully to: {:?}", page.url().await);
+            info!("Redirected successfully to: {:?}", tab.get_url());
           } else {
-            info!("Mapped directly to: {:?}", page.url().await);
+            info!("Mapped directly to: {:?}", tab.get_url());
           }
 
           info!("Waiting for CroxyProxy frame to render...");
-          // Wait for the frame to appear
-          tokio::time::sleep(tokio::time::Duration::from_millis(3000)).await;
+          // headless_chrome automatically waits for content to load, so a fixed sleep might not be necessary
+          // but keeping a small one for complex pages if needed.
+          tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
           info!("CroxyProxy frame rendered.");
 
-          html_content = page
-            .content().await
-            .map_err(|e| AppError::Other(format!("Failed to get final content: {:?}", e)))?;
+          html_content = (&*tab).get_content()?;
           info!("Retrieved page content.");
           Ok(()) // Success
-        }
-      }
+        };
+        ok_result
+      },
       Err(e) => {
         error!("Attempt {} failed: {:?}", attempt, e);
-        Err(AppError::Other(format!("Attempt failed: {:?}", e))) // Indicate failure for retry
-      }
-    }; // This closes the match statement, aligned with 'let result = match'
-
-    // Close the page after each attempt to prevent resource leaks
-    let _ = page.close().await;
-
+        Err(AppError::Other(format!("Attempt failed: {:?}", e))) // Use specific AppError variant
+      },
+    };
+    // Close the tab after each attempt to prevent resource leaks
+    (&*tab).close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
     if result.is_ok() {
       break; // Break out of retry loop on success
     }
-  } // This closes the for loop
+  }
 
   if html_content.is_empty() {
     return Err(AppError::Other("Failed to retrieve HTML content after all retries.".to_string()));

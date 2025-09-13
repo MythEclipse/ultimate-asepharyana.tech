@@ -36,6 +36,7 @@ infer = { workspace = true }
 ffmpeg-next = { workspace = true, optional = true }
 once_cell = { workspace = true }
 rust_lib = { path = "../../libs/rust" }
+headless_chrome = { workspace = true } # Added direct dependency
 urlencoding = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
@@ -47,10 +48,10 @@ mime_guess = { workspace = true }
 lazy_static = { workspace = true }
 tower-http = { workspace = true }
 backoff = { workspace = true, features = ["futures", "tokio"] }
-dashmap = { workspace = true }
-chromiumoxide = { workspace = true }
-tokio-tungstenite = { workspace = true }
-tower = { version = "0.4", features = ["make"] }
+dashmap =  { workspace = true }
+
+tower = { workspace = true }
+
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
 [build-dependencies]
@@ -86,3 +87,4 @@ path = "src/bin/test_scaffold.rs"
 [features]
 default = ["ffmpeg"]
 ffmpeg = ["ffmpeg-next"]
+
