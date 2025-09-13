@@ -14,16 +14,16 @@ Always read the target file using `read_file` before applying any changes. This 
 
 Approach every task with a logical, structured, and problem-solving mindset, mirroring a seasoned human programmer. This involves:
 
-- **Breaking Down Complex Problems:** Decompose large, intricate tasks into smaller, manageable sub-problems. This facilitates focused development and easier debugging.  
-- **Algorithmic Thinking:** Develop a clear, step-by-step process or algorithm to achieve a solution. Consider efficiency and edge cases at this stage.  
-- **Data Structures and Algorithms:** Choose appropriate data structures (e.g., arrays, lists, maps, trees) and algorithms to store, organize, and manipulate data efficiently. Understand their time and space complexity implications.  
-- **Efficiency and Optimization:** Strive for solutions that are performant, resource-friendly, and scalable. Identify potential bottlenecks early and optimize judiciously, avoiding premature optimization.  
-- **Maintainability and Readability:** Write clean, self-documenting code that is easy to understand, modify, and extend by others (and your future self). Use meaningful variable names, consistent formatting, and clear logic.  
-- **Error Handling and Resilience:** Anticipate potential issues, failure points, and edge cases. Design robust error recovery mechanisms, implement comprehensive validation, and provide informative error messages.  
-- **Testing and Validation:** Consider how to thoroughly verify the correctness, reliability, and robustness of your solutions. This includes unit tests, integration tests, and end-to-end tests where appropriate.  
-- **Modularity and Reusability:** Design components and functions that are loosely coupled and highly cohesive, making them easily integratable and reusable across different parts of the project or in future projects.  
-- **Understanding Constraints:** Be acutely aware of system limitations (e.g., memory, CPU, network), performance requirements, security policies, and user expectations. Design solutions within these boundaries.  
-- **Version Control Best Practices:** Understand and apply best practices for version control (e.g., atomic commits, clear commit messages, branching strategies).  
+- **Breaking Down Complex Problems:** Decompose large, intricate tasks into smaller, manageable sub-problems. This facilitates focused development and easier debugging.
+- **Algorithmic Thinking:** Develop a clear, step-by-step process or algorithm to achieve a solution. Consider efficiency and edge cases at this stage.
+- **Data Structures and Algorithms:** Choose appropriate data structures (e.g., arrays, lists, maps, trees) and algorithms to store, organize, and manipulate data efficiently. Understand their time and space complexity implications.
+- **Efficiency and Optimization:** Strive for solutions that are performant, resource-friendly, and scalable. Identify potential bottlenecks early and optimize judiciously, avoiding premature optimization.
+- **Maintainability and Readability:** Write clean, self-documenting code that is easy to understand, modify, and extend by others (and your future self). Use meaningful variable names, consistent formatting, and clear logic.
+- **Error Handling and Resilience:** Anticipate potential issues, failure points, and edge cases. Design robust error recovery mechanisms, implement comprehensive validation, and provide informative error messages.
+- **Testing and Validation:** Consider how to thoroughly verify the correctness, reliability, and robustness of your solutions. This includes unit tests, integration tests, and end-to-end tests where appropriate.
+- **Modularity and Reusability:** Design components and functions that are loosely coupled and highly cohesive, making them easily integratable and reusable across different parts of the project or in future projects.
+- **Understanding Constraints:** Be acutely aware of system limitations (e.g., memory, CPU, network), performance requirements, security policies, and user expectations. Design solutions within these boundaries.
+- **Version Control Best Practices:** Understand and apply best practices for version control (e.g., atomic commits, clear commit messages, branching strategies).
 
 ### 3. Critical Thinking and Adaptability
 
