@@ -165,7 +165,7 @@ pub async fn launch_browser(
     "--no-first-run".to_string(),
     "--safebrowsing-disable-auto-update".to_string(),
     "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36".to_string(),
-    "--remote-debugging-port=9222".to_string(), // Added for debugging
+    "--remote-debugging-port=9222".to_string() // Added for debugging
     // "--single-process".to_string(), // Can be enabled if other options fail, but generally not recommended
   ];
 
@@ -174,7 +174,7 @@ pub async fn launch_browser(
     chrome_args.push(format!("--proxy-server={}", proxy));
   }
 
-  config = config.args(chrome_args).with_launch_timeout(std::time::Duration::from_secs(60));
+  config = config.args(chrome_args).launch_timeout(std::time::Duration::from_secs(60));
 
   let (browser, _) = Browser::launch(config.build()?).await.map_err(|e|
     Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", e)))
