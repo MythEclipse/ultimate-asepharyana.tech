@@ -376,12 +376,29 @@ impl PageWrapper {
   }
 
   pub async fn type_text(&self, selector: &str, text: &str) -> Result<(), AppError> {
-    let element = self.tab
+    // Wait for the element to be present
+    self.tab
       .wait_for_element(selector)
       .map_err(|e| AppError::ChromiumoxideError(format!("Failed to find element: {:?}", e)))?;
-    element
-      .type_into(text)
-      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to type: {:?}", e)))?;
+
+    // Set the value directly using JavaScript and dispatch events to simulate typing
+    let escaped_selector = selector.replace("'", "\\'").replace("\"", "\\\"");
+    let escaped_text = text.replace("'", "\\'").replace("\"", "\\\"");
+    let js = format!(
+      r#"
+      let element = document.querySelector('{}');
+      if (element) {{
+        element.focus();
+        element.value = '{}';
+        element.dispatchEvent(new Event('focus', {{ bubbles: true }}));
+        element.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        element.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        element.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+      }}
+      "#,
+      escaped_selector, escaped_text
+    );
+    self.evaluate(&js).await?;
     Ok(())
   }
 
