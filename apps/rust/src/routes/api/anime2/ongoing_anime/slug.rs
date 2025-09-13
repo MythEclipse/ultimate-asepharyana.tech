@@ -246,7 +246,7 @@ fn parse_ongoing_anime_document(
 
   let last_visible_page = document
     .select(&PAGINATION_SELECTOR)
-    .last()
+    .next_back()
     .map(|e| e.text().collect::<String>().trim().parse::<u32>().unwrap_or(1))
     .unwrap_or(1);
 

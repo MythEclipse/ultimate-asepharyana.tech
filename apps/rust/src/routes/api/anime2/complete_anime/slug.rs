@@ -188,7 +188,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
   let current_page = slug.parse::<u32>().unwrap_or(1);
   let last_visible_page = document
     .select(&PAGINATION_SELECTOR)
-    .last()
+    .next_back()
     .and_then(|e| e.text().collect::<String>().parse::<u32>().ok())
     .unwrap_or(1);
 

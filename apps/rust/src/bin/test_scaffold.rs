@@ -85,10 +85,9 @@ fn run_command(command: &str, args: &[&str]) -> std::io::Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Command failed: {}", stderr)
-        ));
+        return Err(std::io::Error::other(
+          format!("Command failed: {}", stderr)
+      ));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);

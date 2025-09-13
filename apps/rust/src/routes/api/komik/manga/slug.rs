@@ -77,7 +77,6 @@ lazy_static! {
   static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-
 #[utoipa::path(
     get,
     params(
@@ -110,7 +109,6 @@ pub async fn list(
     },
   })
 }
-
 
 /// Handles GET requests for the komik/manga endpoint.
 

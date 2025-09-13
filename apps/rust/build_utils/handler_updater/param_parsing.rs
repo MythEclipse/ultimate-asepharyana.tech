@@ -47,38 +47,38 @@ pub fn generate_detailed_param_doc(
   param_type: &str
 ) -> String {
   let description = match name {
-    "id" => format!("Unique identifier for the resource (UUID format recommended)"),
+    "id" => "Unique identifier for the resource (UUID format recommended)".to_string(),
     "slug" =>
-      format!("URL-friendly identifier for the resource (typically lowercase with hyphens)"),
-    "uuid" => format!("Universally unique identifier for the resource"),
-    "user_id" => format!("User identifier (can be UUID, username, or numeric ID)"),
-    "chapter_id" => format!("Chapter identifier for manga/comic content"),
-    "komik_id" => format!("Comic/manga identifier"),
-    "anime_id" => format!("Anime series identifier"),
-    "page" => format!("Page number for pagination (starts from 1)"),
-    "limit" => format!("Maximum number of items to return (default: 20, max: 100)"),
-    "offset" => format!("Number of items to skip for pagination"),
-    "search" => format!("Search query string for filtering results"),
-    "category" => format!("Category filter for content organization"),
-    "status" => format!("Status filter (active, inactive, pending, etc.)"),
-    "type" | "r#type" => format!("Content type filter"),
-    "sort" => format!("Sort order (asc, desc, or field name)"),
-    "order" => format!("Sort direction (ascending or descending)"),
-    "file_name" => format!("Name of the file to access or download"),
-    "chapter" => format!("Chapter number for content navigation"),
-    "episode" => format!("Episode number for series content"),
+      "URL-friendly identifier for the resource (typically lowercase with hyphens)".to_string(),
+    "uuid" => "Universally unique identifier for the resource".to_string(),
+    "user_id" => "User identifier (can be UUID, username, or numeric ID)".to_string(),
+    "chapter_id" => "Chapter identifier for manga/comic content".to_string(),
+    "komik_id" => "Comic/manga identifier".to_string(),
+    "anime_id" => "Anime series identifier".to_string(),
+    "page" => "Page number for pagination (starts from 1)".to_string(),
+    "limit" => "Maximum number of items to return (default: 20, max: 100)".to_string(),
+    "offset" => "Number of items to skip for pagination".to_string(),
+    "search" => "Search query string for filtering results".to_string(),
+    "category" => "Category filter for content organization".to_string(),
+    "status" => "Status filter (active, inactive, pending, etc.)".to_string(),
+    "type" | "r#type" => "Content type filter".to_string(),
+    "sort" => "Sort order (asc, desc, or field name)".to_string(),
+    "order" => "Sort direction (ascending or descending)".to_string(),
+    "file_name" => "Name of the file to access or download".to_string(),
+    "chapter" => "Chapter number for content navigation".to_string(),
+    "episode" => "Episode number for series content".to_string(),
     _ => {
       // Generate context-aware description based on route path
       if route_path.contains("detail") {
-        format!("Identifier for the detailed resource view")
+        "Identifier for the detailed resource view".to_string()
       } else if route_path.contains("search") {
-        format!("Search parameter for filtering results")
+        "Search parameter for filtering results".to_string()
       } else if route_path.contains("chapter") {
-        format!("Chapter-specific identifier")
+        "Chapter-specific identifier".to_string()
       } else if route_path.contains("episode") {
-        format!("Episode-specific identifier")
+        "Episode-specific identifier".to_string()
       } else {
-        format!("Parameter for resource identification")
+        "Parameter for resource identification".to_string()
       }
     }
   };

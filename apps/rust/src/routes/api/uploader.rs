@@ -19,7 +19,7 @@ pub const ENDPOINT_PATH: &str = "/{file_name}";
 pub const ENDPOINT_TAG: &str = "uploader";
 
 const PRODUCTION_URL: &str = "https://asepharyana.tech";
-const MAX_FILE_SIZE: u64 = 1 * 1024 * 1024 * 1024; // 1GB
+const MAX_FILE_SIZE: u64 = 1024 * 1024 * 1024; // 1GB
 const POMF2_URL: &str = "https://pomf2.lain.la";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug)]
@@ -201,7 +201,7 @@ async fn upload_to_pomf2(
     );
 
   let response = client
-    .post(&format!("{}/upload.php", POMF2_URL))
+    .post(format!("{}/upload.php", POMF2_URL))
     .multipart(form)
     .header("Accept", "*/*")
     .header("Origin", POMF2_URL)
@@ -219,7 +219,7 @@ async fn upload_to_pomf2(
 
   let uploaded_file_name = json["files"][0]["url"]
     .as_str()
-    .and_then(|url| url.split('/').last())
+    .and_then(|url| url.split('/').next_back())
     .unwrap_or(&file_name);
 
   Ok(UploadResult {

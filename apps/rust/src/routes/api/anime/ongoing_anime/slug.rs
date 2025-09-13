@@ -148,28 +148,28 @@ async fn fetch_ongoing_anime_page(
 
   let mut anime_list = Vec::new();
 
-  for element in document.select(&*VENZ_SELECTOR) {
+  for element in document.select(&VENZ_SELECTOR) {
     let title = element
-      .select(&*TITLE_SELECTOR)
+      .select(&TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let poster = element
-      .select(&*IMG_SELECTOR)
+      .select(&IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let score = element
-      .select(&*EP_SELECTOR)
+      .select(&EP_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or("N/A".to_string());
 
     let anime_url = element
-      .select(&*LINK_SELECTOR)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
@@ -191,12 +191,12 @@ async fn fetch_ongoing_anime_page(
   let current_page = slug.parse::<u32>().unwrap_or(1);
 
   let last_visible_page = document
-    .select(&*PAGINATION_SELECTOR)
-    .last()
+    .select(&PAGINATION_SELECTOR)
+    .next_back()
     .map(|e| e.text().collect::<String>().trim().parse::<u32>().unwrap_or(1))
     .unwrap_or(1);
 
-  let has_next_page = document.select(&*NEXT_SELECTOR).next().is_some();
+  let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
 
   let next_page = if has_next_page { Some(current_page + 1) } else { None };
 

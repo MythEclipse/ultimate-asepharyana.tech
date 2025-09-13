@@ -146,15 +146,15 @@ async fn fetch_and_parse_search(
 
   let mut data = Vec::new();
 
-  for element in document.select(&*ITEM_SELECTOR) {
+  for element in document.select(&ITEM_SELECTOR) {
     let title = element
-      .select(&*TITLE_SELECTOR)
+      .select(&TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let slug = element
-      .select(&*LINK_SELECTOR)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .and_then(|href| href.split('/').nth(4))
@@ -162,14 +162,14 @@ async fn fetch_and_parse_search(
       .to_string();
 
     let poster = element
-      .select(&*IMG_SELECTOR)
+      .select(&IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let episode_text = element
-      .select(&*TITLE_SELECTOR)
+      .select(&TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>())
       .unwrap_or_default();
@@ -180,31 +180,31 @@ async fn fetch_and_parse_search(
       .unwrap_or_else(|| "Ongoing".to_string());
 
     let anime_url = element
-      .select(&*LINK_SELECTOR)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
       .to_string();
 
     let genres: Vec<String> = element
-      .select(&*STATUS_SELECTOR)
+      .select(&STATUS_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Genres"))
       .map(|set|
         set
-          .select(&*GENRE_SELECTOR)
+          .select(&GENRE_SELECTOR)
           .map(|e| e.text().collect::<String>().trim().to_string())
           .collect()
       )
       .unwrap_or_default();
 
     let status = element
-      .select(&*STATUS_SELECTOR)
+      .select(&STATUS_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Status"))
       .map(|e| e.text().collect::<String>().replace("Status :", "").trim().to_string())
       .unwrap_or_default();
 
     let rating = element
-      .select(&*STATUS_SELECTOR)
+      .select(&STATUS_SELECTOR)
       .find(|e| e.text().collect::<String>().contains("Rating"))
       .map(|e| e.text().collect::<String>().replace("Rating :", "").trim().to_string())
       .unwrap_or_default();
@@ -236,7 +236,7 @@ fn parse_pagination(document: &Html, _query: &str) -> Pagination {
   let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
   let last_visible_page = 57;
 
-  let has_next_page = document.select(&*NEXT_SELECTOR).next().is_some();
+  let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
   let has_previous_page = page_num > 1;
 
   Pagination {

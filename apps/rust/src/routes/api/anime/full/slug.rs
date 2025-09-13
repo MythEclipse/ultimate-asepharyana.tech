@@ -153,7 +153,7 @@ async fn fetch_anime_full(
   let document = Html::parse_document(&html);
 
   let episode = document
-    .select(&*EPISODE_TITLE_SELECTOR)
+    .select(&EPISODE_TITLE_SELECTOR)
     .next()
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
@@ -165,14 +165,14 @@ async fn fetch_anime_full(
     .unwrap_or_default();
 
   let image_url = document
-    .select(&*IMAGE_SELECTOR)
+    .select(&IMAGE_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("src"))
     .unwrap_or("")
     .to_string();
 
   let stream_url = document
-    .select(&*STREAM_SELECTOR)
+    .select(&STREAM_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("src"))
     .unwrap_or("")
@@ -180,15 +180,15 @@ async fn fetch_anime_full(
 
   let mut download_urls = std::collections::HashMap::new();
 
-  for element in document.select(&*DOWNLOAD_ITEM_SELECTOR) {
+  for element in document.select(&DOWNLOAD_ITEM_SELECTOR) {
     let resolution = element
-      .select(&*RESOLUTION_SELECTOR)
+      .select(&RESOLUTION_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let mut links = Vec::new();
-    for link_element in element.select(&*LINK_SELECTOR) {
+    for link_element in element.select(&LINK_SELECTOR) {
       let server = link_element.text().collect::<String>().trim().to_string();
       let url = link_element.value().attr("href").unwrap_or("").to_string();
       links.push(DownloadLink { server, url });
@@ -199,9 +199,9 @@ async fn fetch_anime_full(
     }
   }
 
-  let next_episode_element = document.select(&*NEXT_EPISODE_SELECTOR).next();
+  let next_episode_element = document.select(&NEXT_EPISODE_SELECTOR).next();
 
-  let previous_episode_element = document.select(&*PREVIOUS_EPISODE_SELECTOR).next();
+  let previous_episode_element = document.select(&PREVIOUS_EPISODE_SELECTOR).next();
 
   let next_episode_slug = next_episode_element
     .and_then(|e| e.value().attr("href"))
