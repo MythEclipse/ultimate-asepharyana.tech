@@ -2,48 +2,57 @@
 
 ## Core Rules
 
-1. **Pre-modification verification:**  
-   Always read the target file using `read_file` before applying any changes to ensure context accuracy and prevent errors. Compare any search content with actual file content, including whitespace and indentation.
+### 0. Task Management and Prioritization
 
-2. **Think like a programmer:**  
-   Approach tasks with a logical, structured, and problem-solving mindset, similar to how a human programmer would. This involves:  
-   - **Breaking down complex problems:** Decompose large tasks into smaller, manageable sub-problems.  
-   - **Algorithmic thinking:** Consider the step-by-step process required to achieve a solution.  
-   - **Data structures:** Think about how data should be organized and manipulated efficiently.  
-   - **Efficiency and optimization:** Strive for solutions that are performant and resource-friendly.  
-   - **Maintainability and readability:** Write code that is easy to understand, modify, and extend by others (or your future self).  
-   - **Error handling:** Anticipate potential issues and design robust error recovery mechanisms.  
-   - **Testing:** Consider how to verify the correctness and reliability of your solutions.  
-   - **Modularity and reusability:** Design components that can be easily integrated and reused in different contexts.  
-   - **Understanding constraints:** Be aware of system limitations, performance requirements, and user expectations.  
+Always create and continuously update a todo list for complex tasks, prioritizing it first. User commands and explicit instructions are prioritized second, ensuring that the task remains aligned with user intent while maintaining structured progress.
 
-3. **Critical Thinking and Adaptability:**  
-   Always critically evaluate solutions and be open to new approaches. Do not be stubborn; continuously learn and adapt to new syntax, frameworks, and dependencies, especially considering that training data might be outdated. Prioritize understanding the underlying mechanisms of new technologies.
+### 1. Pre-modification Verification
 
-4. **Consistent Coding Standards:**  
-   - Use consistent code style (indentation, variable naming, comments).  
-   - Follow established linting/formatting tools (e.g., ESLint, Prettier, rustfmt).  
+Always read the target file using `read_file` before applying any changes. This ensures you have the most up-to-date context, preventing unintended overwrites or conflicts. Compare any search content with actual file content, including whitespace and indentation, to guarantee precise modifications.
 
-5. **Documentation:**  
-   - Add comments only where necessary to clarify complex logic.  
-   - When writing functions or libraries, include documentation for inputs, outputs, and usage examples.  
+### 2. Think Like a Programmer
 
-6. **Version Control Awareness:**  
-   - Treat every modification as if it will be part of a commit.  
-   - Ensure changes are clear, minimal, and do not break unrelated functionality.  
+Approach every task with a logical, structured, and problem-solving mindset, mirroring a seasoned human programmer. This involves:
 
-7. **Security Mindset:**  
-   - Always consider security implications (e.g., SQL injection, XSS, CSRF, race conditions, memory safety).  
-   - Never hardcode sensitive information like credentials, tokens, or API keys.  
+- **Breaking Down Complex Problems:** Decompose large, intricate tasks into smaller, manageable sub-problems. This facilitates focused development and easier debugging.  
+- **Algorithmic Thinking:** Develop a clear, step-by-step process or algorithm to achieve a solution. Consider efficiency and edge cases at this stage.  
+- **Data Structures and Algorithms:** Choose appropriate data structures (e.g., arrays, lists, maps, trees) and algorithms to store, organize, and manipulate data efficiently. Understand their time and space complexity implications.  
+- **Efficiency and Optimization:** Strive for solutions that are performant, resource-friendly, and scalable. Identify potential bottlenecks early and optimize judiciously, avoiding premature optimization.  
+- **Maintainability and Readability:** Write clean, self-documenting code that is easy to understand, modify, and extend by others (and your future self). Use meaningful variable names, consistent formatting, and clear logic.  
+- **Error Handling and Resilience:** Anticipate potential issues, failure points, and edge cases. Design robust error recovery mechanisms, implement comprehensive validation, and provide informative error messages.  
+- **Testing and Validation:** Consider how to thoroughly verify the correctness, reliability, and robustness of your solutions. This includes unit tests, integration tests, and end-to-end tests where appropriate.  
+- **Modularity and Reusability:** Design components and functions that are loosely coupled and highly cohesive, making them easily integratable and reusable across different parts of the project or in future projects.  
+- **Understanding Constraints:** Be acutely aware of system limitations (e.g., memory, CPU, network), performance requirements, security policies, and user expectations. Design solutions within these boundaries.  
+- **Version Control Best Practices:** Understand and apply best practices for version control (e.g., atomic commits, clear commit messages, branching strategies).  
 
-8. **Scalability and Extensibility:**  
-   - Design solutions that can evolve without requiring massive rewrites.  
-   - Keep future growth and adaptability in mind.  
+### 3. Critical Thinking and Adaptability
 
-9. **Minimalism First:**  
-   - Start with the simplest working solution (*make it work, then make it better*).  
-   - Avoid premature optimization unless performance is a clear bottleneck.  
+Always critically evaluate proposed solutions and remain open to new approaches. Do not be stubborn; continuously learn and adapt to new syntax, frameworks, libraries, and dependencies. Recognize that training data can become outdated, so prioritize understanding the underlying mechanisms of new technologies and consulting official documentation.
 
-10. **Traceability and Debugging:**  
-    - Include logging or debug information where it helps identify problems.  
-    - Ensure error messages are descriptive, actionable, and useful for troubleshooting.  
+### 4. Consistent Coding Standards
+
+Adhere strictly to consistent code style, including indentation, variable naming conventions (e.g., camelCase, snake_case, PascalCase), and commenting practices. Utilize established linting and formatting tools (e.g., ESLint, Prettier, rustfmt) to automate and enforce these standards.
+
+### 5. Documentation
+
+Add comments judiciously—only where necessary to clarify complex logic, explain non-obvious design choices, or provide context for tricky sections of code. For functions, modules, or libraries, include comprehensive documentation detailing their purpose, inputs, outputs, side effects, and usage examples.
+
+### 6. Version Control Awareness
+
+Treat every modification as if it will be part of a formal commit. Ensure that changes are clear, minimal, logically grouped, and do not introduce regressions or break unrelated functionality. Before applying changes, consider the impact on the codebase's history.
+
+### 7. Security Mindset
+
+Always consider the security implications of your code. Proactively guard against common vulnerabilities (e.g., SQL injection, Cross-Site Scripting (XSS), Cross-Site Request Forgery (CSRF), race conditions, memory safety issues in languages like Rust). Never hardcode sensitive information like credentials, API keys, or tokens; use secure configuration management.
+
+### 8. Scalability and Extensibility
+
+Design solutions with future growth and adaptability in mind. Aim for architectures that can scale horizontally and vertically without requiring massive rewrites. Ensure the system can be easily extended with new features or integrated with other services.
+
+### 9. Minimalism First
+
+Start with the simplest possible solution that meets the core requirements ("make it work, then make it better"). Avoid premature optimization or over-engineering. Introduce complexity only when genuinely necessary and justified by clear performance bottlenecks or architectural needs.
+
+### 10. Traceability and Debugging
+
+Integrate effective logging and debugging mechanisms. Ensure that log messages are informative, context-rich, and categorized appropriately (e.g., INFO, WARN, ERROR). Design error messages to be descriptive, actionable, and useful for efficient troubleshooting and diagnosis.
