@@ -45,8 +45,9 @@ async fn main() -> anyhow::Result<()> {
       Ok(client) => client,
       Err(e) => {
           tracing::error!("Failed to launch browser: {:?}", e);
-          tracing::error!("Make sure Chrome and ChromeDriver are installed and WebDriver is running on localhost:4444");
-          tracing::error!("Install ChromeDriver: https://chromedriver.chromium.org/downloads");
+          tracing::error!("Make sure Google Chrome or Chromium is installed.");
+          tracing::error!("Download Chrome: https://www.google.com/chrome/");
+          tracing::error!("Or install Chromium if preferred.");
           std::process::exit(1);
       }
   };
