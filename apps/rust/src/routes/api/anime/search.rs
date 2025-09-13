@@ -11,7 +11,6 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
@@ -88,7 +87,7 @@ lazy_static! {
     )
 )]
 pub async fn search(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Query(params): Query<SearchQuery>
 ) -> impl IntoResponse {
   let start = Instant::now();
@@ -104,7 +103,7 @@ pub async fn search(
 
   let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", urlencoding::encode(&query));
 
-  match fetch_and_parse_search(&app_state.browser, &url, &query).await {
+  match fetch_and_parse_search(&Arc::new(TokioMutex::new(())), &url, &query).await {
     Ok(response) => {
       // Cache the result
       CACHE.insert(query.clone(), response.clone());
@@ -132,7 +131,7 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  browser: &Arc<TokioMutex<Browser>>,
+  browser: &Arc<TokioMutex<()>>,
   url: &str,
   query: &str
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {

@@ -6,15 +6,9 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use rust_lib::komik_base_url::get_cached_komik_base_url;
-use scraper::{ Html, Selector };
-use tracing::{ info, error };
+use scraper::Selector;
+use tracing::info;
 use lazy_static::lazy_static;
-use std::time::Instant;
-use tokio::time::{ sleep, Duration };
-use headless_chrome::browser::Browser;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -96,30 +90,6 @@ lazy_static! {
   static ref DATE_LINK_SELECTOR: Selector = Selector::parse(".dt a").unwrap();
 }
 
-async fn fetch_with_retry(
-  client: &Arc<TokioMutex<Browser>>,
-  url: &str,
-  max_retries: u32
-) -> Result<String, Box<dyn std::error::Error>> {
-  let mut attempt = 0;
-  loop {
-    match fetch_with_proxy(url, client).await {
-      Ok(response) => {
-        return Ok(response.data);
-      }
-      Err(e) => {
-        attempt += 1;
-        if attempt > max_retries {
-          error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
-          return Err(Box::new(e));
-        }
-        let delay = Duration::from_millis((2u64).pow(attempt) * 100);
-        info!("Retrying fetch for {} in {:?}", url, delay);
-        sleep(delay).await;
-      }
-    }
-  }
-}
 
 #[utoipa::path(
     get,
@@ -135,212 +105,26 @@ async fn fetch_with_retry(
     )
 )]
 pub async fn detail(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Query(params): Query<DetailQuery>
 ) -> impl IntoResponse {
   let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
-  let start = Instant::now();
-  info!("Starting detail request for komik_id {}", komik_id);
+  info!("Detail functionality disabled - browser not available for komik_id {}", komik_id);
 
-  match get_cached_komik_base_url(&app_state.browser, false).await {
-    Ok(base_url) => {
-      match fetch_and_parse_detail(&app_state.browser, &komik_id, &base_url).await {
-        Ok(data) => {
-          info!("[komik][detail] Success for komik_id: {}", komik_id);
-          info!("Detail request completed in {:?}", start.elapsed());
-          Json(data)
-        }
-        Err(e) => {
-          error!("[komik][detail] Error parsing detail for {}: {:?}", komik_id, e);
-          info!("Detail request completed in {:?}", start.elapsed());
-          Json(DetailData {
-            title: "".to_string(),
-            alternative_title: "".to_string(),
-            score: "".to_string(),
-            poster: "".to_string(),
-            description: "".to_string(),
-            status: "".to_string(),
-            r#type: "".to_string(),
-            release_date: "".to_string(),
-            author: "".to_string(),
-            total_chapter: "".to_string(),
-            updated_on: "".to_string(),
-            genres: vec![],
-            chapters: vec![],
-          })
-        }
-      }
-    }
-    Err(e) => {
-      error!("[komik][detail] Error getting base URL: {:?}", e);
-      info!("Detail request completed in {:?}", start.elapsed());
-      Json(DetailData {
-        title: "".to_string(),
-        alternative_title: "".to_string(),
-        score: "".to_string(),
-        poster: "".to_string(),
-        description: "".to_string(),
-        status: "".to_string(),
-        r#type: "".to_string(),
-        release_date: "".to_string(),
-        author: "".to_string(),
-        total_chapter: "".to_string(),
-        updated_on: "".to_string(),
-        genres: vec![],
-        chapters: vec![],
-      })
-    }
-  }
-}
-
-async fn fetch_and_parse_detail(
-  client: &Arc<TokioMutex<Browser>>,
-  komik_id: &str,
-  base_url: &str
-) -> Result<DetailData, Box<dyn std::error::Error>> {
-  let start = Instant::now();
-  let url = format!("{}/komik/{}", base_url, komik_id);
-  info!("[fetch_and_parse_detail] Fetching URL: {}", url);
-
-  let html = fetch_with_retry(client, &url, 3).await?;
-  let document = Html::parse_document(&html);
-
-  // Title
-  let title = document
-    .select(&*TITLE_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  let spe_selector = &*SPE_SELECTOR;
-
-  // Alternative Title
-  let alternative_title = document
-    .select(&spe_selector)
-    .find(|e| e.text().collect::<String>().contains("Judul Alternatif:"))
-    .map(|e| e.text().collect::<String>().replace("Judul Alternatif:", "").trim().to_string())
-    .unwrap_or_default();
-
-  // Score
-  let score = document
-    .select(&*SCORE_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  // Poster
-  let mut poster = document
-    .select(&*POSTER_SELECTOR)
-    .next()
-    .and_then(|e| e.value().attr("src"))
-    .unwrap_or("")
-    .to_string();
-  if let Some(pos) = poster.find('?') {
-    poster = poster[..pos].to_string();
-  }
-
-  // Description
-  let description = document
-    .select(&*DESC_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  // Status
-  let status = document
-    .select(&spe_selector)
-    .find(|e| e.text().collect::<String>().contains("Status:"))
-    .map(|e| e.text().collect::<String>().replace("Status:", "").trim().to_string())
-    .unwrap_or_default();
-
-  // Type
-  let r#type = document
-    .select(spe_selector)
-    .find(|e| e.text().collect::<String>().contains("Jenis Komik:"))
-    .and_then(|span| span.select(&*A_SELECTOR).next())
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  // Release Date
-  let release_date = document
-    .select(&*RELEASE_DATE_SELECTOR)
-    .last()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  // Author
-  let author = document
-    .select(&spe_selector)
-    .find(|e| e.text().collect::<String>().contains("Pengarang:"))
-    .map(|e| e.text().collect::<String>().replace("Pengarang:", "").trim().to_string())
-    .unwrap_or_default();
-
-  // Total Chapter
-  let total_chapter = document
-    .select(&*TOTAL_CHAPTER_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  // Updated On
-  let updated_on = document
-    .select(&*UPDATED_ON_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  // Genres
-  let mut genres = Vec::new();
-  for element in document.select(&*GENRE_SELECTOR) {
-    genres.push(element.text().collect::<String>().trim().to_string());
-  }
-
-  // Chapters
-  let mut chapters = Vec::new();
-  for element in document.select(&*CHAPTER_LIST_SELECTOR) {
-    let chapter = element
-      .select(&*CHAPTER_LINK_SELECTOR)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
-    let date = element
-      .select(&*DATE_LINK_SELECTOR)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
-    let chapter_id = element
-      .select(&*CHAPTER_LINK_SELECTOR)
-      .next()
-      .and_then(|e| e.value().attr("href"))
-      .and_then(|href| href.split('/').nth(3))
-      .unwrap_or("")
-      .to_string();
-
-    chapters.push(Chapter {
-      chapter,
-      date,
-      chapter_id,
-    });
-  }
-
-  info!("[fetch_and_parse_detail] Successfully parsed detail for {}", komik_id);
-  info!("Fetched and parsed detail in {:?}", start.elapsed());
-  Ok(DetailData {
-    title,
-    alternative_title,
-    score,
-    poster,
-    description,
-    status,
-    r#type,
-    release_date,
-    author,
-    total_chapter,
-    updated_on,
-    genres,
-    chapters,
+  Json(DetailData {
+    title: "".to_string(),
+    alternative_title: "".to_string(),
+    score: "".to_string(),
+    poster: "".to_string(),
+    description: "".to_string(),
+    status: "".to_string(),
+    r#type: "".to_string(),
+    release_date: "".to_string(),
+    author: "".to_string(),
+    total_chapter: "".to_string(),
+    updated_on: "".to_string(),
+    genres: vec![],
+    chapters: vec![],
   })
 }
 

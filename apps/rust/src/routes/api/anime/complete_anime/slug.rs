@@ -4,14 +4,10 @@ use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
-use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use headless_chrome::browser::Browser;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -66,16 +62,9 @@ lazy_static! {
 }
 
 async fn fetch_html(
-  browser: &Arc<TokioMutex<Browser>>,
-  url: &str
+  _url: &str
 ) -> Result<String, Box<dyn std::error::Error>> {
-  let operation = || async {
-    let response = fetch_with_proxy(url, browser).await?;
-    Ok(response.data)
-  };
-
-  let backoff = ExponentialBackoff::default();
-  retry(backoff, operation).await.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+  Err("Browser functionality has been removed".into())
 }
 
 fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Pagination) {
@@ -167,7 +156,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
     )
 )]
 pub async fn slug(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> impl IntoResponse {
   let start = Instant::now();
@@ -186,7 +175,6 @@ pub async fn slug(
 
   match
     fetch_html(
-      &app_state.browser,
       &format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)
     ).await
   {

@@ -5,7 +5,6 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
@@ -62,8 +61,8 @@ pub struct AnimeResponse {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn anime(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
-  match fetch_anime_data(&app_state.browser).await {
+pub async fn anime(State(_app_state): State<Arc<AppState>>) -> impl IntoResponse {
+  match fetch_anime_data(&Arc::new(TokioMutex::new(()))).await {
     Ok(data) =>
       Json(AnimeResponse {
         status: "Ok".to_string(),
@@ -81,7 +80,7 @@ pub async fn anime(State(app_state): State<Arc<AppState>>) -> impl IntoResponse 
 }
 
 async fn fetch_anime_data(
-  browser: &Arc<TokioMutex<Browser>>
+  browser: &Arc<TokioMutex<()>>
 ) -> Result<AnimeData, Box<dyn std::error::Error>> {
   let ongoing_url = "https://otakudesu.cloud/ongoing-anime/";
   let complete_url = "https://otakudesu.cloud/complete-anime/";
@@ -99,7 +98,7 @@ async fn fetch_anime_data(
 }
 
 async fn fetch_html(
-  browser: &Arc<TokioMutex<Browser>>,
+  browser: &Arc<TokioMutex<()>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error>> {
   let response = fetch_with_proxy(url, browser).await?;

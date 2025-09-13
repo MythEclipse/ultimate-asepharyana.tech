@@ -5,16 +5,12 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use scraper::{ Html, Selector };
+use scraper::Selector;
 use regex::Regex;
 use rust_lib::config::CONFIG_MAP;
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
+use tracing::info;
 use std::time::Instant;
-use tokio::time::{ sleep, Duration };
-use tracing::{ info, error };
-use headless_chrome::browser::Browser;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -82,30 +78,6 @@ lazy_static! {
   static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
 }
 
-async fn fetch_with_retry(
-  client: &Arc<TokioMutex<Browser>>,
-  url: &str,
-  max_retries: u32
-) -> Result<String, Box<dyn std::error::Error>> {
-  let mut attempt = 0;
-  loop {
-    match fetch_with_proxy(url, client).await {
-      Ok(response) => {
-        return Ok(response.data);
-      }
-      Err(e) => {
-        attempt += 1;
-        if attempt > max_retries {
-          error!("Failed to fetch {} after {} attempts: {:?}", url, max_retries, e);
-          return Err(Box::new(e));
-        }
-        let delay = Duration::from_millis((2u64).pow(attempt) * 100);
-        info!("Retrying fetch for {} in {:?}", url, delay);
-        sleep(delay).await;
-      }
-    }
-  }
-}
 
 #[utoipa::path(
     get,
@@ -121,185 +93,34 @@ async fn fetch_with_retry(
     )
 )]
 pub async fn list(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Query(params): Query<QueryParams>
 ) -> impl IntoResponse {
   let page = params.page;
 
   let base_url = &*BASE_URL;
 
-  let url = format!("{}/manhua/page/{}/", base_url, page);
+  let _url = format!("{}/manhua/page/{}/", base_url, page);
 
   let start = Instant::now();
   info!("Starting manhua list request for page {}", page);
 
-  let result = fetch_and_parse_manhua(&app_state.browser, &url).await;
+  info!("Manhua list functionality disabled - browser not available for page {}", page);
   info!("Manhua list request completed in {:?}", start.elapsed());
 
-  match result {
-    Ok(response) => {
-      // If data is empty, try with a different approach or retry
-      if response.data.is_empty() {
-        // Could implement additional retry logic here
-        Json(response)
-      } else {
-        Json(response)
-      }
-    }
-    Err(_) =>
-      Json(ManhuaResponse {
-        data: vec![],
-        pagination: Pagination {
-          current_page: page,
-          last_visible_page: page,
-          has_next_page: false,
-          next_page: None,
-          has_previous_page: false,
-          previous_page: None,
-        },
-      }),
-  }
+  Json(ManhuaResponse {
+    data: vec![],
+    pagination: Pagination {
+      current_page: page,
+      last_visible_page: page,
+      has_next_page: false,
+      next_page: None,
+      has_previous_page: false,
+      previous_page: None,
+    },
+  })
 }
 
-async fn fetch_and_parse_manhua(
-  client: &Arc<TokioMutex<Browser>>,
-  url: &str
-) -> Result<ManhuaResponse, Box<dyn std::error::Error>> {
-  let start = Instant::now();
-  info!("Fetching and parsing manhua from {}", url);
-  let html = fetch_with_retry(client, url, 3).await?;
-  let document = Html::parse_document(&html);
-
-  let animposx_selector = &*ANIMPOST_SELECTOR;
-  let title_selector = &*TITLE_SELECTOR;
-  let img_selector = &*IMG_SELECTOR;
-  let chapter_selector = &*CHAPTER_SELECTOR;
-  let score_selector = &*SCORE_SELECTOR;
-  let date_selector = &*DATE_SELECTOR;
-  let type_selector = &*TYPE_SELECTOR;
-  let link_selector = &*LINK_SELECTOR;
-
-  let mut data = Vec::new();
-
-  for element in document.select(&animposx_selector) {
-    let title = element
-      .select(&title_selector)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
-    let mut poster = element
-      .select(&img_selector)
-      .next()
-      .and_then(|e| e.value().attr("src"))
-      .unwrap_or("")
-      .to_string();
-    if let Some(pos) = poster.find('?') {
-      poster = poster[..pos].to_string();
-    }
-
-    let chapter_text = element
-      .select(&chapter_selector)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-    let chapter = (&*CHAPTER_REGEX)
-      .find(&chapter_text)
-      .map(|m| m.as_str().to_string())
-      .unwrap_or_default();
-
-    let score = element
-      .select(&score_selector)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
-    let date = element
-      .select(&date_selector)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
-    let r#type = element
-      .select(&type_selector)
-      .next()
-      .and_then(|e| e.value().attr("class"))
-      .and_then(|class| class.split_whitespace().nth(1))
-      .unwrap_or("")
-      .to_string();
-
-    let slug = element
-      .select(&link_selector)
-      .next()
-      .and_then(|e| e.value().attr("href"))
-      .and_then(|href| href.split('/').nth(4))
-      .unwrap_or("")
-      .to_string();
-
-    if !title.is_empty() {
-      data.push(ManhuaItem {
-        title,
-        poster,
-        chapter,
-        score,
-        date,
-        r#type,
-        slug,
-      });
-    }
-  }
-
-  let pagination = parse_pagination(&document);
-
-  info!("Fetched and parsed manhua in {:?}", start.elapsed());
-
-  Ok(ManhuaResponse { data, pagination })
-}
-
-fn parse_pagination(document: &Html) -> Pagination {
-  let current_selector = &*CURRENT_SELECTOR;
-  let page_selectors = &*PAGE_SELECTORS;
-  let next_selector = &*NEXT_SELECTOR;
-  let prev_selector = &*PREV_SELECTOR;
-
-  let current_page = document
-    .select(&current_selector)
-    .next()
-    .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-    .unwrap_or(1);
-
-  let mut last_visible_page = current_page;
-  for element in document.select(&page_selectors) {
-    if let Ok(page) = element.text().collect::<String>().trim().parse::<u32>() {
-      if page > last_visible_page {
-        last_visible_page = page;
-      }
-    }
-  }
-
-  let has_next_page = document.select(&next_selector).next().is_some();
-  let next_page = if has_next_page && current_page < last_visible_page {
-    Some(current_page + 1)
-  } else {
-    None
-  };
-
-  let has_previous_page = document.select(&prev_selector).next().is_some();
-  let previous_page = if has_previous_page && current_page > 1 {
-    Some(current_page - 1)
-  } else {
-    None
-  };
-
-  Pagination {
-    current_page,
-    last_visible_page,
-    has_next_page,
-    next_page,
-    has_previous_page,
-    previous_page,
-  }
-}
 
 /// Handles GET requests for the komik/manhua endpoint.
 

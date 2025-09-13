@@ -12,7 +12,6 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
@@ -92,13 +91,13 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
     )
 )]
 pub async fn slug(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> impl IntoResponse {
   let start_time = Instant::now();
   info!("Handling request for ongoing_anime slug: {}", slug);
 
-  match fetch_ongoing_anime_page(&app_state.browser, &slug).await {
+  match fetch_ongoing_anime_page(&Arc::new(TokioMutex::new(())), &slug).await {
     Ok((anime_list, pagination)) => {
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
@@ -133,7 +132,7 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &Arc<TokioMutex<Browser>>,
+  client: &Arc<TokioMutex<()>>,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();

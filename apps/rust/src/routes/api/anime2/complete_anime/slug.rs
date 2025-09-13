@@ -12,7 +12,6 @@ use std::time::{ Duration, Instant };
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
@@ -79,7 +78,7 @@ lazy_static! {
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 async fn fetch_html(
-  browser_client: &Arc<TokioMutex<Browser>>,
+  browser_client: &Arc<TokioMutex<()>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
@@ -227,7 +226,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
     )
 )]
 pub async fn slug(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> impl IntoResponse {
   let start_time = Instant::now();
@@ -236,7 +235,7 @@ pub async fn slug(
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
 
-  match fetch_html(&app_state.browser, &url).await {
+  match fetch_html(&Arc::new(TokioMutex::new(())), &url).await {
     Ok(html) => {
       let (anime_list, _pagination) = parse_anime_page(&html, &slug);
       let total_duration = start_time.elapsed();

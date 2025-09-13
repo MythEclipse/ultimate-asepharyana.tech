@@ -10,7 +10,6 @@ use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
-use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 
 #[allow(dead_code)]
@@ -88,7 +87,7 @@ lazy_static! {
     )
 )]
 pub async fn slug(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> impl IntoResponse {
   let start = Instant::now();
@@ -104,7 +103,7 @@ pub async fn slug(
     });
   }
 
-  match fetch_anime_full(&app_state.browser, &slug).await {
+  match fetch_anime_full(&Arc::new(TokioMutex::new(())), &slug).await {
     Ok(data) => {
       let full_response = FullResponse {
         status: "Ok".to_string(),
@@ -139,7 +138,7 @@ pub async fn slug(
 }
 
 async fn fetch_anime_full(
-  client: &Arc<TokioMutex<Browser>>,
+  client: &Arc<TokioMutex<()>>,
   slug: &str
 ) -> Result<AnimeFullData, Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/episode/{}", slug);

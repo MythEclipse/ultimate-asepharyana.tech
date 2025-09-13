@@ -3,15 +3,11 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use scraper::{ Html, Selector };
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use scraper::Selector;
 use lazy_static::lazy_static;
-use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use headless_chrome::browser::Browser;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
 #[allow(dead_code)]
@@ -98,7 +94,7 @@ lazy_static! {
     )
 )]
 pub async fn slug(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> impl IntoResponse {
   let start = Instant::now();
@@ -114,7 +110,7 @@ pub async fn slug(
     });
   }
 
-  match fetch_anime_detail(&app_state.browser, &slug).await {
+  match fetch_anime_detail(&slug).await {
     Ok(data) => {
       let detail_response = DetailResponse {
         status: "Ok".to_string(),
@@ -152,179 +148,9 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser: &Arc<TokioMutex<Browser>>,
-  slug: &str
+  _slug: &str
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
-  let url = format!("https://otakudesu.cloud/anime/{}", slug);
-
-  let operation = || async {
-    let response = fetch_with_proxy(&url, browser).await?;
-    Ok(response.data)
-  };
-
-  let backoff = ExponentialBackoff::default();
-  let html = retry(backoff, operation).await?;
-  let document = Html::parse_document(&html);
-
-  let title = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Judul"))
-    .map(|e| e.text().collect::<String>().replace("Judul: ", "").trim().to_string())
-    .unwrap_or_default();
-
-  let alternative_title = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Japanese"))
-    .map(|e| e.text().collect::<String>().replace("Japanese: ", "").trim().to_string())
-    .unwrap_or_default();
-
-  let poster = document
-    .select(&*POSTER_SELECTOR)
-    .next()
-    .and_then(|e| e.value().attr("src"))
-    .unwrap_or("")
-    .to_string();
-
-  let r#type = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Tipe"))
-    .map(|e| e.text().collect::<String>().replace("Tipe: ", "").trim().to_string())
-    .unwrap_or_default();
-
-  let release_date = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Tanggal Rilis"))
-    .map(|e| e.text().collect::<String>().replace("Tanggal Rilis: ", "").trim().to_string())
-    .unwrap_or_default();
-
-  let status = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Status"))
-    .map(|e| e.text().collect::<String>().replace("Status: ", "").trim().to_string())
-    .unwrap_or_default();
-
-  let synopsis = document
-    .select(&*SYNOPSIS_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  let studio = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Studio"))
-    .map(|e| e.text().collect::<String>().replace("Studio: ", "").trim().to_string())
-    .unwrap_or_default();
-
-  let mut genres = Vec::new();
-  if
-    let Some(genre_paragraph) = document
-      .select(&*INFO_SELECTOR)
-      .find(|e| e.text().collect::<String>().contains("Genre"))
-  {
-    for element in genre_paragraph.select(&*GENRE_LINK_SELECTOR) {
-      let name = element.text().collect::<String>().trim().to_string();
-      let genre_slug = element
-        .value()
-        .attr("href")
-        .and_then(|href| href.split('/').nth(4))
-        .unwrap_or("")
-        .to_string();
-      let anime_url = element.value().attr("href").unwrap_or("").to_string();
-      genres.push(Genre { name, slug: genre_slug, anime_url });
-    }
-  }
-
-  let mut episode_lists = Vec::new();
-  let mut batch = Vec::new();
-  for element in document.select(&*EPISODE_LIST_SELECTOR) {
-    let episode = element.text().collect::<String>().trim().to_string();
-    let href = element.value().attr("href").unwrap_or("");
-
-    // Generate slug from href or episode text if href is empty
-    let episode_slug = if !href.is_empty() {
-      // Try to extract slug from URL
-      href
-        .split('/')
-        .filter(|s| !s.is_empty())
-        .last()
-        .unwrap_or("")
-        .to_string()
-    } else {
-      // Generate slug from episode text
-      episode
-        .to_lowercase()
-        .replace("subtitle indonesia", "")
-        .replace("episode", "episode-")
-        .replace(" ", "-")
-        .trim_matches('-')
-        .to_string()
-    };
-
-    if episode.to_lowercase().contains("batch") {
-      batch.push(EpisodeList { episode, slug: episode_slug });
-    } else {
-      episode_lists.push(EpisodeList { episode, slug: episode_slug });
-    }
-  }
-
-  let producers_text = document
-    .select(&*INFO_SELECTOR)
-    .find(|e| e.text().collect::<String>().contains("Produser"))
-    .map(|e| e.text().collect::<String>().replace("Produser: ", "").trim().to_string())
-    .unwrap_or_default();
-  let producers = producers_text
-    .split(',')
-    .map(|s| s.trim().to_string())
-    .collect();
-
-  let mut recommendations = Vec::new();
-  for element in document.select(&*RECOMMENDATION_SELECTOR) {
-    let title = element
-      .select(&*RECOMMENDATION_TITLE_SELECTOR)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
-    let url = element
-      .select(&*GENRE_LINK_SELECTOR)
-      .next()
-      .and_then(|e| e.value().attr("href"))
-      .unwrap_or("")
-      .to_string();
-
-    let poster = element
-      .select(&*RECOMMENDATION_IMG_SELECTOR)
-      .next()
-      .and_then(|e| e.value().attr("src"))
-      .unwrap_or("")
-      .to_string();
-
-    let slug = url.split('/').nth(4).unwrap_or("").to_string();
-
-    recommendations.push(Recommendation {
-      title,
-      slug,
-      poster,
-      status: "".to_string(),
-      r#type: "".to_string(),
-    });
-  }
-
-  Ok(AnimeDetailData {
-    title,
-    alternative_title,
-    poster,
-    r#type,
-    status,
-    release_date,
-    studio,
-    genres,
-    synopsis,
-    episode_lists,
-    batch,
-    producers,
-    recommendations,
-  })
+  Err("Browser functionality has been removed".into())
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

@@ -36,7 +36,6 @@ infer = { workspace = true }
 ffmpeg-next = { workspace = true, optional = true }
 once_cell = { workspace = true }
 rust_lib = { path = "../../libs/rust" }
-headless_chrome = { workspace = true } # Added direct dependency
 urlencoding = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
@@ -83,10 +82,6 @@ path = "src/bin/scaffold.rs"
 [[bin]]
 name = "test_scaffold"
 path = "src/bin/test_scaffold.rs"
-
-[[bin]]
-name = "scrape_croxy_proxy"
-path = "src/bin/scrape_croxy_proxy.rs"
 
 [features]
 default = ["ffmpeg"]

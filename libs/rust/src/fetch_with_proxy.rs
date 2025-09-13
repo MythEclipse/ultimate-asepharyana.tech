@@ -4,13 +4,10 @@ use reqwest::Client;
 use tracing::{ info, warn, error };
 
 use crate::redis_client::get_redis_connection;
-use crate::scrape_croxy_proxy::scrape_croxy_proxy_cached;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
-use crate::headless_chrome::reconnect_browser_if_needed;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex; // Use Tokio Mutex for async operations
-use headless_chrome::Browser;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {
@@ -62,7 +59,7 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppErro
 
 pub async fn fetch_with_proxy(
   slug: &str,
-  browser: &Arc<TokioMutex<Browser>>
+  browser: &Arc<TokioMutex<()>>
 ) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
@@ -170,7 +167,7 @@ pub async fn fetch_with_proxy(
 
 pub async fn fetch_with_proxy_only(
   slug: &str,
-  browser: &Arc<TokioMutex<Browser>>
+  browser: &Arc<TokioMutex<()>>
 ) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
@@ -183,27 +180,8 @@ pub async fn fetch_with_proxy_only(
 
 async fn fetch_from_proxies(
   slug: &str,
-  browser: &Arc<TokioMutex<Browser>>
+  _browser: &Arc<TokioMutex<()>>
 ) -> Result<FetchResult, AppError> {
-  info!("Using only croxy proxy for {}", slug);
-
-  // Reconnect browser if needed (headless: true, no proxy for internal chromiumoxide)
-  if reconnect_browser_if_needed(browser, true, None).await? {
-    info!("Browser reconnected during fetch_from_proxies.");
-  }
-
-  // Create BrowserPool from Arc
-  let browser_pool = crate::headless_chrome::BrowserPool::from_arc(browser.clone());
-
-  // Only use scrapeCroxyProxy
-  match scrape_croxy_proxy_cached(&browser_pool, slug).await {
-    Ok(html) => {
-      info!("scrapeCroxyProxy successful for {}", slug);
-      Ok(FetchResult { data: html, content_type: Some("text/html".to_string()) })
-    }
-    Err(e) => {
-      error!("scrapeCroxyProxy failed for {}: {:?}", slug, e);
-      Err(AppError::Other(format!("Failed to fetch using croxy proxy: {:?}", e)))
-    }
-  }
+  error!("Proxy functionality has been removed for {}", slug);
+  Err(AppError::Other("Proxy functionality has been removed".to_string()))
 }

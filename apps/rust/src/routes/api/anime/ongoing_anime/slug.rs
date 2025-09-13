@@ -10,7 +10,6 @@ use backoff::{ future::retry, ExponentialBackoff };
 use dashmap::DashMap;
 use tracing::{ info, error };
 use std::time::Instant;
-use headless_chrome::browser::Browser;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 
@@ -79,7 +78,7 @@ lazy_static! {
     )
 )]
 pub async fn slug(
-  State(app_state): State<Arc<AppState>>,
+  State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> impl IntoResponse {
   let start = Instant::now();
@@ -96,7 +95,7 @@ pub async fn slug(
     });
   }
 
-  match fetch_ongoing_anime_page(&app_state.browser, &slug).await {
+  match fetch_ongoing_anime_page(&Arc::new(TokioMutex::new(())), &slug).await {
     Ok((anime_list, pagination)) => {
       // Cache the result
       CACHE.insert(slug.clone(), (anime_list.clone(), pagination.clone()));
@@ -133,7 +132,7 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &Arc<TokioMutex<Browser>>,
+  client: &Arc<TokioMutex<()>>,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error>> {
   let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
