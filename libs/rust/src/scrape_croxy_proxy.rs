@@ -9,6 +9,7 @@ use crate::utils::error::AppError;
 use rand::Rng;
 use tokio::time;
 use url::Url;
+use serde_json;
 
 const CROXY_PROXY_URL: &str = "https://www.croxyproxy.com/";
 const URL_INPUT_SELECTOR: &str = "input[name='url']";
@@ -115,10 +116,16 @@ pub async fn scrape_croxy_proxy(
           .map_err(|e| AppError::ChromiumoxideError(format!("Typing into input failed: {:?}", e)))?;
 
         // Small delay to let page process input events triggered by typing
-        time::sleep(std::time::Duration::from_millis(random_delay())).await;
+        time::sleep(std::time::Duration::from_millis(100)).await;
 
         // Wait for the input to be processed
-        time::sleep(std::time::Duration::from_millis(random_delay())).await;
+        time::sleep(std::time::Duration::from_millis(200)).await;
+
+        // Small delay to let page process input events triggered by typing
+        time::sleep(std::time::Duration::from_millis(100)).await;
+
+        // Wait for the input to be processed
+        time::sleep(std::time::Duration::from_millis(200)).await;
 
         // Verify that input field has the correct value
         let input_value_v = page
@@ -130,8 +137,12 @@ pub async fn scrape_croxy_proxy(
           ).await
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
         let input_value = match input_value_v {
-          Some(v) => v.as_str().map(|s| s.to_string()).unwrap_or_default(),
-          None => "".to_string()
+          Some(v) =>
+            v
+              .as_str()
+              .map(|s| s.to_string())
+              .unwrap_or_default(),
+          None => "".to_string(),
         };
         info!("Input field value: {:?}", input_value);
 
@@ -147,9 +158,7 @@ pub async fn scrape_croxy_proxy(
 
         info!("Clicking submit button (using element.click fallback to JS dispatch if needed)...");
         // Try high-level click first
-        let click_res = page
-          .click(SUBMIT_BUTTON_SELECTOR)
-          .await;
+        let click_res = page.click(SUBMIT_BUTTON_SELECTOR).await;
         if let Err(e) = click_res {
           warn!("High-level click failed: {:?}, falling back to dispatching click event via JS", e);
           // Fallback: dispatch click via JS
@@ -183,14 +192,15 @@ pub async fn scrape_croxy_proxy(
         info!("Waiting for proxy launching page to redirect...");
         let proxy_launch_wait = tokio::time::timeout(std::time::Duration::from_secs(10), async {
           loop {
-            let title_result = page
-              .evaluate("document.title")
-              .await
-              ;
+            let title_result = page.evaluate("document.title").await;
 
             let title = match title_result {
-              Ok(Some(v)) => v.as_str().map(|s| s.to_string()).unwrap_or_default(),
-              _ => "".to_string()
+              Ok(Some(v)) =>
+                v
+                  .as_str()
+                  .map(|s| s.to_string())
+                  .unwrap_or_default(),
+              _ => "".to_string(),
             };
 
             info!("Current page title: '{}'", title);
