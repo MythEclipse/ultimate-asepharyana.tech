@@ -26,7 +26,7 @@ dotenvy = "0.15"
 envy = "0.4"
 url = "2.5.7"
 urlencoding = "2.1"
-headless_chrome = { version = "1.0.18" }
+headless_chrome = {git = "https://github.com/rust-headless-chrome/rust-headless-chrome", features = ["fetch"]}
 tower = { version = "0.5", features = ["make"] }
 # --- LOGGING & ERROR HANDLING ---
 tracing = "0.1"

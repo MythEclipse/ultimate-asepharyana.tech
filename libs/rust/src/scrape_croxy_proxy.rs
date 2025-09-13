@@ -109,10 +109,8 @@ pub async fn scrape_croxy_proxy(
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
         info!("Debug elements: {:?}", debug_result);
 
-        // Type into the input using chromiumoxide's type helper (more reliable)
         page
-          .type_text(URL_INPUT_SELECTOR, target_url)
-          .await
+          .type_text(URL_INPUT_SELECTOR, target_url).await
           .map_err(|e| AppError::ChromiumoxideError(format!("Typing into input failed: {:?}", e)))?;
 
         // Small delay to let page process input events triggered by typing
