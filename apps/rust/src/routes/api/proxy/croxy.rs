@@ -9,7 +9,7 @@ use rust_lib::error::ErrorResponse;
 
 use crate::routes::AppState;
 
-pub const ENDPOINT_PATH: &str = "/proxy/croxy";
+pub const ENDPOINT_PATH: &str = "/api/proxy/croxy";
 
 #[derive(Deserialize, ToSchema, Debug)]
 pub struct ProxyParams {
