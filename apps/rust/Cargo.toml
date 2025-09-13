@@ -84,6 +84,10 @@ path = "src/bin/scaffold.rs"
 name = "test_scaffold"
 path = "src/bin/test_scaffold.rs"
 
+[[bin]]
+name = "scrape_croxy_proxy"
+path = "src/bin/scrape_croxy_proxy.rs"
+
 [features]
 default = ["ffmpeg"]
 ffmpeg = ["ffmpeg-next"]

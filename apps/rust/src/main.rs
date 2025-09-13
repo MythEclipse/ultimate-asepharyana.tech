@@ -8,6 +8,7 @@
 // Logging is initialized from the environment via `tracing_subscriber`.
 
 use std::net::SocketAddr;
+
 use std::sync::Arc;
 
 use axum::Router;

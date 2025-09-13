@@ -4,9 +4,12 @@ use tracing::{ info, warn, error };
 use std::fs;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
+use tokio::time;
 
+use std::process::Command;
 use tempfile::TempDir;
 use crate::utils::error::AppError; // Import AppError
+use serde_json::Value;
 
 fn find_puppeteer_chrome() -> Option<String> {
   // Get user home directory (cross-platform)
@@ -79,10 +82,41 @@ fn find_puppeteer_chrome() -> Option<String> {
   None
 }
 
+/// Kill existing Chrome processes before launching a new browser
+fn kill_existing_chrome_processes() {
+  info!("Checking for existing Chrome processes to terminate...");
+
+  let result = if cfg!(target_os = "windows") {
+    Command::new("taskkill").args(&["/F", "/IM", "chrome.exe"]).output()
+  } else {
+    Command::new("pkill").args(&["-f", "chrome"]).output()
+  };
+
+  match result {
+    Ok(output) => {
+      if output.status.success() {
+        info!("Successfully terminated existing Chrome processes");
+      } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        warn!("Failed to terminate Chrome processes: {}", stderr);
+      }
+    }
+    Err(e) => {
+      warn!("Error executing process termination command: {:?}", e);
+    }
+  }
+
+  // Small delay to ensure processes are fully terminated
+  std::thread::sleep(std::time::Duration::from_millis(500));
+}
+
 pub async fn launch_browser(
   headless: bool,
   proxy_addr: Option<String>
 ) -> Result<Browser, Box<dyn std::error::Error + Send + Sync>> {
+  // Kill existing Chrome processes before launching new browser
+  kill_existing_chrome_processes();
+
   let mut options = LaunchOptionsBuilder::default();
 
   options.headless(headless);
@@ -144,27 +178,10 @@ pub async fn launch_browser(
 
   let mut chrome_args_strings = vec![
     "--no-sandbox".to_string(),
-    "--disable-setuid-sandbox".to_string(), // Added for robustness
-    "--disable-gpu".to_string(),
-    "--disable-dev-shm-usage".to_string(),
-    "--disable-background-timer-throttling".to_string(),
-    "--disable-backgrounding-occluded-windows".to_string(),
-    "--disable-renderer-backgrounding".to_string(),
-    "--disable-software-rasterizer".to_string(),
-    "--disable-extensions".to_string(),
-    "--disable-plugins".to_string(),
-    "--disable-default-apps".to_string(),
-    "--disable-sync".to_string(),
-    "--disable-translate".to_string(),
-    "--hide-scrollbars".to_string(),
     format!("--user-data-dir={}", user_data_dir),
-    "--metrics-recording-only".to_string(),
-    "--mute-audio".to_string(),
-    "--no-first-run".to_string(),
     "--safebrowsing-disable-auto-update".to_string(),
     "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36".to_string(),
-    "--remote-debugging-port=9222".to_string(), // Added for debugging
-    "--enable-javascript".to_string() // Explicitly enable JavaScript
+    "--remote-debugging-port=9222".to_string() // Added for debugging
   ];
 
   // Set proxy if provided
@@ -207,7 +224,7 @@ pub async fn is_browser_healthy(browser_arc: &Arc<TokioMutex<Browser>>) -> Resul
                 return Ok(true);
               }
             }
-            }
+          }
           // If we reach here, evaluation failed or returned unexpected type
           warn!("Browser health check failed: Unexpected evaluation result.");
           tab.close(true).map_err(|e| AppError::Other(format!("Failed to close tab: {:?}", e)))?;
@@ -244,7 +261,7 @@ pub async fn reconnect_browser_if_needed(
   warn!("Browser is unhealthy, attempting to reconnect...");
 
   // Add a delay to give the system time to release resources, especially debugging ports.
-  tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+  time::sleep(std::time::Duration::from_secs(2)).await;
   info!("Attempting to launch new browser instance after delay...");
 
   match launch_browser(headless, proxy_addr).await {
@@ -261,65 +278,123 @@ pub async fn reconnect_browser_if_needed(
 }
 
 pub struct BrowserPool {
-    browser: Arc<TokioMutex<Browser>>,
+  browser: Arc<TokioMutex<Browser>>,
 }
 
 impl BrowserPool {
-    pub fn new(browser: Browser) -> Self {
-        Self {
-            browser: Arc::new(TokioMutex::new(browser)),
-        }
+  pub fn new(browser: Browser) -> Self {
+    Self {
+      browser: Arc::new(TokioMutex::new(browser)),
+    }
+  }
+
+  pub fn from_arc(browser: Arc<TokioMutex<Browser>>) -> Self {
+    Self {
+      browser,
+    }
+  }
+
+  pub async fn new_page(&self, url: &str) -> Result<PageWrapper, AppError> {
+    let tab = self.browser
+      .lock().await
+      .new_tab()
+      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to create new tab: {:?}", e)))?;
+
+    if url != "about:blank" {
+      tab
+        .navigate_to(url)
+        .map_err(|e| AppError::ChromiumoxideError(format!("Failed to navigate: {:?}", e)))?;
     }
 
-    pub fn from_arc(browser: Arc<TokioMutex<Browser>>) -> Self {
-        Self {
-            browser,
-        }
-    }
-
-    pub async fn new_page(&self, url: &str) -> Result<PageWrapper, AppError> {
-        let tab = self.browser.lock().await.new_tab()
-            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to create new tab: {:?}", e)))?;
-
-        if url != "about:blank" {
-            tab.navigate_to(url)
-                .map_err(|e| AppError::ChromiumoxideError(format!("Failed to navigate: {:?}", e)))?;
-        }
-
-        Ok(PageWrapper { tab })
-    }
+    Ok(PageWrapper { tab })
+  }
 }
 
 pub struct PageWrapper {
-    tab: Arc<Tab>,
+  pub tab: Arc<Tab>,
 }
 
 impl PageWrapper {
-    pub async fn goto(&self, url: &str) -> Result<(), AppError> {
-        self.tab.navigate_to(url)
-            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to navigate: {:?}", e)))?;
-        Ok(())
-    }
+  pub async fn goto(&self, url: &str) -> Result<(), AppError> {
+    self.tab
+      .navigate_to(url)
+      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to navigate: {:?}", e)))?;
+    Ok(())
+  }
 
-    pub async fn find_element(&self, selector: &str) -> Result<(), AppError> {
-        self.tab.wait_for_element(selector)
-            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to find element: {:?}", e)))?;
-        Ok(())
-    }
+  pub async fn find_element(&self, selector: &str) -> Result<(), AppError> {
+    // Add a small delay to ensure page is ready
+    time::sleep(std::time::Duration::from_millis(500)).await;
 
-    pub async fn evaluate(&self, js: &str) -> Result<(), AppError> {
-        self.tab.evaluate(js, false)
-            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to evaluate JS: {:?}", e)))?;
-        Ok(())
+    match self.tab.wait_for_element(selector) {
+      Ok(_) => Ok(()),
+      Err(e) => {
+        // On timeout, get the current page content for debugging
+        let content = self.tab
+          .get_content()
+          .unwrap_or_else(|_| "Failed to get content".to_string());
+        Err(
+          AppError::ChromiumoxideError(
+            format!(
+              "Failed to find element '{}': {:?}\nCurrent page HTML:\n{}",
+              selector,
+              e,
+              content
+            )
+          )
+        )
+      }
     }
+  }
 
-    pub async fn content(&self) -> Result<String, AppError> {
-        self.tab.get_content()
-            .map_err(|e| AppError::ChromiumoxideError(format!("Failed to get content: {:?}", e)))
+  pub async fn evaluate(&self, js: &str) -> Result<Option<Value>, AppError> {
+    // Use await_promise = true so async IIFEs return their resolved values
+    match self.tab.evaluate(js, true) {
+      Ok(remote_object) => Ok(remote_object.value),
+      Err(e) => Err(AppError::ChromiumoxideError(format!("Failed to evaluate JS: {:?}", e))),
     }
+  }
 
-    pub async fn url(&self) -> Result<Option<String>, AppError> {
-        let url = self.tab.get_url();
-        Ok(Some(url))
+  pub async fn content(&self) -> Result<String, AppError> {
+    self.tab
+      .get_content()
+      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to get content: {:?}", e)))
+  }
+
+  pub async fn url(&self) -> Result<Option<String>, AppError> {
+    let url = self.tab.get_url();
+    Ok(Some(url))
+  }
+
+  pub async fn wait_for_navigation(&self) -> Result<(), AppError> {
+    // Wait for navigation to complete using the tab's wait_until_navigated method
+    match self.tab.wait_until_navigated() {
+      Ok(_) => Ok(()),
+      Err(e) =>
+        Err(AppError::ChromiumoxideError(format!("Failed to wait for navigation: {:?}", e))),
     }
+  }
+
+  pub async fn type_text(&self, selector: &str, text: &str) -> Result<(), AppError> {
+    let element = self.tab
+      .wait_for_element(selector)
+      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to find element: {:?}", e)))?;
+    element
+      .type_into(text)
+      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to type: {:?}", e)))?;
+    Ok(())
+  }
+
+  pub async fn click(&self, selector: &str) -> Result<(), AppError> {
+    // Wait for the element to appear
+    let element = self.tab
+      .wait_for_element(selector)
+      .map_err(|e|
+        AppError::ChromiumoxideError(format!("Failed to find element for click: {:?}", e))
+      )?;
+    element
+      .click()
+      .map_err(|e| AppError::ChromiumoxideError(format!("Failed to click element: {:?}", e)))?;
+    Ok(())
+  }
 }
