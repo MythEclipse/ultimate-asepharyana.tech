@@ -175,6 +175,36 @@ pub async fn scrape_croxy_proxy(
         // Wait briefly for the submit to process
         time::sleep(std::time::Duration::from_millis(500)).await;
 
+        // Wait for "Proxy is launching..." page to redirect
+        info!("Waiting for proxy launching page to redirect...");
+        let proxy_launch_wait = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+          loop {
+            let title_result = page
+              .evaluate("document.title")
+              .await
+              ;
+
+            let title = match title_result {
+              Ok(Some(v)) => v.as_str().map(|s| s.to_string()).unwrap_or_default(),
+              _ => "".to_string()
+            };
+
+            info!("Current page title: '{}'", title);
+
+            if !title.to_lowercase().contains("proxy is launching") && !title.is_empty() {
+              info!("Proxy launching page redirected, title changed to: '{}'", title);
+              break;
+            }
+
+            time::sleep(std::time::Duration::from_millis(200)).await;
+          }
+        }).await;
+
+        match proxy_launch_wait {
+          Ok(_) => info!("Successfully waited for proxy launch redirect"),
+          Err(_) => warn!("Timeout waiting for proxy launch redirect - continuing anyway"),
+        }
+
         // Use wait_for_navigation with timeout instead of manual polling
         info!("Waiting for navigation...");
         let navigation_result = tokio::time::timeout(std::time::Duration::from_secs(15), async {
