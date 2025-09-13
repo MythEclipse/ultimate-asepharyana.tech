@@ -41,6 +41,10 @@ fn is_ipv4(s: &str) -> bool {
   true
 }
 
+fn random_delay() -> u64 {
+  rand::thread_rng().gen_range(50..=1000)
+}
+
 pub async fn scrape_croxy_proxy(
   chrome: &BrowserPool,
   target_url: &str
@@ -66,7 +70,7 @@ pub async fn scrape_croxy_proxy(
     .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
   // Small delay to ensure user agent is set
-  time::sleep(std::time::Duration::from_millis(200)).await;
+  time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
   let mut html_content = String::new();
 
@@ -94,7 +98,7 @@ pub async fn scrape_croxy_proxy(
           .map_err(|e| AppError::ChromiumoxideError(format!("{e:?}")))?;
 
         // Additional wait to ensure page is stable and interactive
-        time::sleep(std::time::Duration::from_millis(2000)).await;
+        time::sleep(std::time::Duration::from_millis(random_delay())).await;
         info!("Page should now be ready for interaction");
         // Debug: Check if elements exist
         let debug_result = page
@@ -111,10 +115,10 @@ pub async fn scrape_croxy_proxy(
           .map_err(|e| AppError::ChromiumoxideError(format!("Typing into input failed: {:?}", e)))?;
 
         // Small delay to let page process input events triggered by typing
-        time::sleep(std::time::Duration::from_millis(300)).await;
+        time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
         // Wait for the input to be processed
-        time::sleep(std::time::Duration::from_millis(500)).await;
+        time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
         // Verify that input field has the correct value
         let input_value_v = page
@@ -139,7 +143,7 @@ pub async fn scrape_croxy_proxy(
           )?;
 
         // Additional delay to ensure everything is ready
-        time::sleep(std::time::Duration::from_millis(500)).await;
+        time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
         info!("Clicking submit button (using element.click fallback to JS dispatch if needed)...");
         // Try high-level click first
@@ -173,7 +177,7 @@ pub async fn scrape_croxy_proxy(
         }
 
         // Wait briefly for the submit to process
-        time::sleep(std::time::Duration::from_millis(500)).await;
+        time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
         // Wait for "Proxy is launching..." page to redirect
         info!("Waiting for proxy launching page to redirect...");
@@ -196,7 +200,7 @@ pub async fn scrape_croxy_proxy(
               break;
             }
 
-            time::sleep(std::time::Duration::from_millis(200)).await;
+            time::sleep(std::time::Duration::from_millis(random_delay())).await;
           }
         }).await;
 
@@ -297,7 +301,7 @@ pub async fn scrape_croxy_proxy(
                 }
               }
             }
-            time::sleep(std::time::Duration::from_millis(200)).await;
+            time::sleep(std::time::Duration::from_millis(random_delay())).await;
           }
         }).await;
 
@@ -315,7 +319,7 @@ pub async fn scrape_croxy_proxy(
 
                 loop {
                   let start_time = std::time::Instant::now();
-                  time::sleep(std::time::Duration::from_millis(500)).await;
+                  time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
                   // Check if page is still loading or if there are pending requests
                   let is_loading = page.tab
@@ -355,7 +359,7 @@ pub async fn scrape_croxy_proxy(
 
             // Additional wait for page to fully load the target content
             info!("Waiting additional time for page content to fully load...");
-            time::sleep(std::time::Duration::from_millis(2000)).await;
+            time::sleep(std::time::Duration::from_millis(random_delay())).await;
 
             // Verify we have the target page content, not CroxyProxy itself
             let current_url = page.url().await.unwrap_or_default().unwrap_or_default();
@@ -364,13 +368,13 @@ pub async fn scrape_croxy_proxy(
             // Check if we're still on CroxyProxy page instead of the target
             if current_url.contains("croxyproxy.com") && !current_url.contains("/go/") {
               warn!("Still on CroxyProxy main page, waiting longer for redirect...");
-              time::sleep(std::time::Duration::from_millis(3000)).await;
+              time::sleep(std::time::Duration::from_millis(random_delay())).await;
             }
           }
           Err(_) => {
             info!("IP redirect timeout - continuing with current page");
             // Even without IP redirect, wait a bit for any content to load
-            time::sleep(std::time::Duration::from_millis(2000)).await;
+            time::sleep(std::time::Duration::from_millis(random_delay())).await;
           }
         }
         html_content = page
