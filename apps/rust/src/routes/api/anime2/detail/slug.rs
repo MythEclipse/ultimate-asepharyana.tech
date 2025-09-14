@@ -1,4 +1,5 @@
 use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
+use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -96,8 +97,7 @@ lazy_static! {
   static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
   static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".entry-content p").unwrap();
   static ref GENRE_SELECTOR: Selector = Selector::parse(".genxed a").unwrap();
-  static ref DOWNLOAD_CONTAINER_SELECTOR: Selector =
-    Selector::parse(".soraddl.dlone .soraurl").unwrap();
+  static ref DOWNLOAD_CONTAINER_SELECTOR: Selector = Selector::parse(".soraddl .soraurl").unwrap();
   static ref RESOLUTION_SELECTOR: Selector = Selector::parse(".res").unwrap();
   static ref LINK_SELECTOR: Selector = Selector::parse(".slink a").unwrap();
   static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
@@ -137,14 +137,16 @@ pub async fn slug(
   let start_time = Instant::now();
   info!("Handling request for anime detail slug: {}", slug);
 
-  match fetch_anime_detail(&Arc::new(TokioMutex::new(())), &slug).await {
+  let result = fetch_anime_detail(&Arc::new(TokioMutex::new(())), slug.clone()).await;
+
+  match result {
     Ok(data) => {
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
       Json(DetailResponse {
         status: "Ok".to_string(),
         data,
-      })
+      }).into_response()
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
@@ -154,33 +156,14 @@ pub async fn slug(
         total_duration,
         e
       );
-      Json(DetailResponse {
-        status: "Error".to_string(),
-        data: AnimeDetailData {
-          title: "".to_string(),
-          alternative_title: "".to_string(),
-          poster: "".to_string(),
-          poster2: "".to_string(),
-          r#type: "".to_string(),
-          status: "".to_string(),
-          release_date: "".to_string(),
-          synopsis: "".to_string(),
-          studio: "".to_string(),
-          genres: vec![],
-          producers: vec![],
-          recommendations: vec![],
-          batch: vec![],
-          ova: vec![],
-          downloads: vec![],
-        },
-      })
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)).into_response()
     }
   }
 }
 
 async fn fetch_anime_detail(
   browser_client: &Arc<TokioMutex<()>>,
-  slug: &str
+  slug: String
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = Instant::now();
   let url = format!("https://alqanime.net/{}/", slug);
@@ -189,8 +172,27 @@ async fn fetch_anime_detail(
   if let Some(entry) = HTML_CACHE.get(&url) {
     if entry.1.elapsed() < CACHE_TTL {
       info!("Cache hit for URL: {}", url);
-      let document = Html::parse_document(&entry.0);
-      return parse_anime_detail_document(&document, slug);
+      let entry_0_clone = entry.0.clone();
+      let slug_clone = slug.clone();
+      let parse_result = tokio::task::spawn_blocking(move || {
+        parse_anime_detail_document(&Html::parse_document(&entry_0_clone), &slug_clone)
+      }).await;
+
+      match parse_result {
+        Ok(inner_result) => {
+          match inner_result {
+            Ok(data) => {
+              return Ok(data);
+            }
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+        Err(join_err) => {
+          return Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>);
+        }
+      }
     } else {
       HTML_CACHE.remove(&url);
     }
@@ -224,9 +226,22 @@ async fn fetch_anime_detail(
     Ok(html) => {
       // Cache the result
       HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
+      let html_clone = html.clone(); // Clone the html string
+      let slug_clone = slug.clone();
 
-      let document = Html::parse_document(&html);
-      parse_anime_detail_document(&document, slug)
+      let parse_result = tokio::task::spawn_blocking(move || {
+        parse_anime_detail_document(&Html::parse_document(&html_clone), &slug_clone)
+      }).await;
+
+      match parse_result {
+        Ok(inner_result) => {
+          match inner_result {
+            Ok(data) => Ok(data),
+            Err(e) => Err(e),
+          }
+        }
+        Err(join_err) => { Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>) }
+      }
     }
     Err(e) => {
       error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);

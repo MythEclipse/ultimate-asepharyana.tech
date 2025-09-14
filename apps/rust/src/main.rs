@@ -1,5 +1,7 @@
-// Temporary comment to force recompile
 #![doc = "Logging Setup"]
+#[macro_use]
+extern crate lazy_static;
+// Temporary comment to force recompile
 //
 // This application uses [`tracing`](https://docs.rs/tracing) for structured logging.
 // The log level is controlled by the `RUST_LOG` environment variable (e.g., `info`, `debug`, `warn`, `error`).

@@ -6,9 +6,13 @@ use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use lazy_static::lazy_static;
 use dashmap::DashMap;
-use tracing::{ info, error };
-use std::time::Instant;
+use tracing::{ info, error, warn };
+use std::time::{ Duration, Instant };
 use axum::extract::State;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use tokio::sync::Mutex as TokioMutex;
+use tokio::task;
+use backoff::{ future::retry, ExponentialBackoff };
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -51,23 +55,62 @@ pub struct ListResponse {
 }
 
 lazy_static! {
-  static ref ITEM_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-  static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-  static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-  static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
-  static ref NEXT_SELECTOR: Selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
-  static ref CACHE: DashMap<String, (Vec<CompleteAnimeItem>, Pagination)> = DashMap::new();
+  pub static ref ITEM_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
+  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
+  pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
+  pub static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
+  pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
+  pub static ref CACHE: DashMap<String, (Vec<CompleteAnimeItem>, Pagination)> = DashMap::new();
+  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
+}
+const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
+async fn fetch_html_with_retry(
+  browser: &Arc<TokioMutex<()>>,
+  url: &str
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+  if let Some(entry) = HTML_CACHE.get(url) {
+    if entry.1.elapsed() < CACHE_TTL {
+      info!("Cache hit for URL: {}", url);
+      return Ok(entry.0.clone());
+    } else {
+      HTML_CACHE.remove(url);
+    }
+  }
+
+  let backoff = ExponentialBackoff {
+    initial_interval: Duration::from_millis(500),
+    max_interval: Duration::from_secs(10),
+    multiplier: 2.0,
+    max_elapsed_time: Some(Duration::from_secs(30)),
+    ..Default::default()
+  };
+
+  let fetch_operation = || async {
+    info!("Fetching URL: {}", url);
+    match fetch_with_proxy(url, browser).await {
+      Ok(response) => {
+        info!("Successfully fetched URL: {}", url);
+        Ok(response.data)
+      }
+      Err(e) => {
+        warn!("Failed to fetch URL: {}, error: {:?}", url, e);
+        Err(backoff::Error::transient(e))
+      }
+    }
+  };
+
+  let html = retry(backoff, fetch_operation).await?;
+  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
+  Ok(html)
 }
 
-async fn fetch_html(
-  _url: &str
-) -> Result<String, Box<dyn std::error::Error>> {
-  Err("Browser functionality has been removed".into())
-}
-
-fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Pagination) {
+fn parse_anime_page(
+  html: &str,
+  slug: &str
+) -> Result<(Vec<CompleteAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let document = Html::parse_document(html);
 
   let mut anime_list = Vec::new();
@@ -139,7 +182,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
     previous_page,
   };
 
-  (anime_list, pagination)
+  Ok((anime_list, pagination))
 }
 
 #[utoipa::path(
@@ -170,16 +213,40 @@ pub async fn slug(
       message: "Success".to_string(),
       data: cached.0.clone(),
       total: Some(cached.0.len() as i64),
-    });
+    }).into_response();
   }
 
-  match
-    fetch_html(
-      &format!("https://otakudesu.cloud/complete-anime/page/{}/", slug)
-    ).await
-  {
+  let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);
+
+  match fetch_html_with_retry(&Arc::new(TokioMutex::new(())), &url).await {
     Ok(html) => {
-      let (anime_list, pagination) = parse_anime_page(&html, &slug);
+      let html_clone = html.clone(); // Clone the html string
+      let slug_clone = slug.clone(); // Clone slug for the blocking task
+      let parse_result = task::spawn_blocking(move ||
+        parse_anime_page(&html_clone, &slug_clone)
+      ).await;
+
+      let (anime_list, pagination) = match parse_result {
+        Ok(inner_result) => {
+          match inner_result {
+            Ok(data) => data,
+            Err(e) => {
+              return Json(ListResponse {
+                message: format!("Error parsing anime page: {}", e),
+                data: vec![],
+                total: None,
+              }).into_response();
+            }
+          }
+        }
+        Err(join_err) => {
+          return Json(ListResponse {
+            message: format!("Blocking task join error: {}", join_err),
+            data: vec![],
+            total: None,
+          }).into_response();
+        }
+      };
       // Cache the result
       CACHE.insert(slug.clone(), (anime_list.clone(), pagination.clone()));
       let duration = start.elapsed();
@@ -188,16 +255,16 @@ pub async fn slug(
         message: "Success".to_string(),
         data: anime_list.clone(),
         total: Some(anime_list.len() as i64),
-      })
+      }).into_response()
     }
     Err(e) => {
       let duration = start.elapsed();
       error!("Error fetching for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
       Json(ListResponse {
-        message: "Error".to_string(),
+        message: format!("Error: {}", e),
         data: vec![],
-        total: Some(0),
-      })
+        total: None,
+      }).into_response()
     }
   }
 }

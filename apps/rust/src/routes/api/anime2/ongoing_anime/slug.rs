@@ -1,4 +1,5 @@
 use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
+use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -57,15 +58,15 @@ pub struct OngoingAnimeResponse {
 
 // Pre-compiled CSS selectors for performance
 lazy_static! {
-  static ref BS_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-  static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
-  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-  static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
-  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-  static ref PAGINATION_SELECTOR: Selector = Selector::parse(
+  pub static ref BS_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
+  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+  pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  pub static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
+  pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  pub static ref PAGINATION_SELECTOR: Selector = Selector::parse(
     ".pagination .page-numbers:not(.next)"
   ).unwrap();
-  static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
+  pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
 }
 
 // Pre-compiled regex for slug extraction
@@ -93,48 +94,33 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 pub async fn slug(
   State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, (StatusCode, String)> {
   let start_time = Instant::now();
   info!("Handling request for ongoing_anime slug: {}", slug);
 
-  match fetch_ongoing_anime_page(&Arc::new(TokioMutex::new(())), &slug).await {
-    Ok((anime_list, pagination)) => {
-      let total_duration = start_time.elapsed();
-      info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
-      Json(OngoingAnimeResponse {
-        status: "Ok".to_string(),
-        data: anime_list,
-        pagination,
-      })
-    }
-    Err(e) => {
-      let total_duration = start_time.elapsed();
-      error!(
-        "Failed to process request for slug: {} after {:?}, error: {:?}",
-        slug,
-        total_duration,
-        e
-      );
-      Json(OngoingAnimeResponse {
-        status: "Error".to_string(),
-        data: vec![],
-        pagination: Pagination {
-          current_page: 1,
-          last_visible_page: 1,
-          has_next_page: false,
-          next_page: None,
-          has_previous_page: false,
-          previous_page: None,
-        },
-      })
-    }
-  }
+  let (anime_list, pagination) = fetch_ongoing_anime_page(
+    &Arc::new(TokioMutex::new(())),
+    slug.clone()
+  ).await.map_err(|e| {
+    error!("Failed to fetch ongoing anime page for slug: {}, error: {:?}", slug, e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Error fetching ongoing anime page: {}", e))
+  })?;
+
+  let total_duration = start_time.elapsed();
+  info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
+  Ok(
+    Json(OngoingAnimeResponse {
+      status: "Ok".to_string(),
+      data: anime_list,
+      pagination,
+    })
+  )
 }
 
 async fn fetch_ongoing_anime_page(
   client: &Arc<TokioMutex<()>>,
-  slug: &str
-) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+  slug: String
+) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
   let start_time = Instant::now();
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=ongoing&order=update", slug);
@@ -143,8 +129,16 @@ async fn fetch_ongoing_anime_page(
   if let Some(entry) = HTML_CACHE.get(&url) {
     if entry.1.elapsed() < CACHE_TTL {
       info!("Cache hit for URL: {}", url);
-      let document = Html::parse_document(&entry.0);
-      return parse_ongoing_anime_document(&document, slug);
+      let entry_0_clone = entry.0.clone();
+      let slug_clone = slug.clone();
+      return match
+        tokio::task::spawn_blocking(move || {
+          parse_ongoing_anime_document(&Html::parse_document(&entry_0_clone), &slug_clone)
+        }).await
+      {
+        Ok(inner_result) => inner_result,
+        Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
+      };
     } else {
       HTML_CACHE.remove(&url);
     }
@@ -174,25 +168,26 @@ async fn fetch_ongoing_anime_page(
     }
   };
 
-  match retry(backoff, fetch_operation).await {
-    Ok(html) => {
-      // Cache the result
-      HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
+  let html = retry(backoff, fetch_operation).await.map_err(|e|
+    format!("Failed to fetch HTML with retry: {}", e)
+  )?;
+  HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
+  let slug_clone = slug.clone();
 
-      let document = Html::parse_document(&html);
-      parse_ongoing_anime_document(&document, slug)
-    }
-    Err(e) => {
-      error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
-      Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
-    }
+  match
+    tokio::task::spawn_blocking(move || {
+      parse_ongoing_anime_document(&Html::parse_document(&html), &slug_clone)
+    }).await
+  {
+    Ok(inner_result) => inner_result,
+    Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
   }
 }
 
 fn parse_ongoing_anime_document(
   document: &Html,
   slug: &str
-) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
   let start_time = Instant::now();
   info!("Starting to parse ongoing anime document for slug: {}", slug);
 

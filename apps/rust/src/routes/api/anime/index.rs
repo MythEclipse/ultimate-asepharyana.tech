@@ -1,3 +1,4 @@
+// Ensure lazy_static macro is available
 use axum::{ response::IntoResponse, routing::get, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
@@ -7,6 +8,21 @@ use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
+use tokio::task;
+use backoff::{ future::retry, ExponentialBackoff };
+use std::time::{ Duration, Instant };
+use dashmap::DashMap;
+use tracing::{ info, warn };
+
+
+lazy_static! {
+  pub static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
+  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
+  pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
+  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
+}
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -79,17 +95,24 @@ pub async fn anime(State(_app_state): State<Arc<AppState>>) -> impl IntoResponse
   }
 }
 
+const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
 async fn fetch_anime_data(
   browser: &Arc<TokioMutex<()>>
-) -> Result<AnimeData, Box<dyn std::error::Error>> {
+) -> Result<AnimeData, Box<dyn std::error::Error + Send + Sync>> {
   let ongoing_url = "https://otakudesu.cloud/ongoing-anime/";
   let complete_url = "https://otakudesu.cloud/complete-anime/";
 
-  let ongoing_html = fetch_html(browser, ongoing_url).await?;
-  let complete_html = fetch_html(browser, complete_url).await?;
+  let (ongoing_html, complete_html) = tokio::join!(
+    fetch_html_with_retry(browser, ongoing_url),
+    fetch_html_with_retry(browser, complete_url)
+  );
 
-  let ongoing_anime = parse_ongoing_anime(&ongoing_html);
-  let complete_anime = parse_complete_anime(&complete_html);
+  let ongoing_html = ongoing_html?;
+  let complete_html = complete_html?;
+
+  let ongoing_anime = task::spawn_blocking(move || parse_ongoing_anime(&ongoing_html)).await??;
+  let complete_anime = task::spawn_blocking(move || parse_complete_anime(&complete_html)).await??;
 
   Ok(AnimeData {
     ongoing_anime,
@@ -97,33 +120,61 @@ async fn fetch_anime_data(
   })
 }
 
-async fn fetch_html(
+async fn fetch_html_with_retry(
   browser: &Arc<TokioMutex<()>>,
   url: &str
-) -> Result<String, Box<dyn std::error::Error>> {
-  let response = fetch_with_proxy(url, browser).await?;
-  Ok(response.data)
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+  if let Some(entry) = HTML_CACHE.get(url) {
+    if entry.1.elapsed() < CACHE_TTL {
+      info!("Cache hit for URL: {}", url);
+      return Ok(entry.0.clone());
+    } else {
+      HTML_CACHE.remove(url);
+    }
+  }
+
+  let backoff = ExponentialBackoff {
+    initial_interval: Duration::from_millis(500),
+    max_interval: Duration::from_secs(10),
+    multiplier: 2.0,
+    max_elapsed_time: Some(Duration::from_secs(30)),
+    ..Default::default()
+  };
+
+  let fetch_operation = || async {
+    info!("Fetching URL: {}", url);
+    match fetch_with_proxy(url, browser).await {
+      Ok(response) => {
+        info!("Successfully fetched URL: {}", url);
+        Ok(response.data)
+      }
+      Err(e) => {
+        warn!("Failed to fetch URL: {}, error: {:?}", url, e);
+        Err(backoff::Error::transient(e))
+      }
+    }
+  };
+
+  let html = retry(backoff, fetch_operation).await?;
+  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
+  Ok(html)
 }
 
-fn parse_ongoing_anime(html: &str) -> Vec<OngoingAnimeItem> {
+fn parse_ongoing_anime(
+  html: &str
+) -> Result<Vec<OngoingAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
   let document = Html::parse_document(html);
-  let item_selector = Selector::parse(".venz ul li").unwrap();
-  let title_selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let episode_selector = Selector::parse(".epz").unwrap();
-
   let mut ongoing_anime = Vec::new();
 
-  for element in document.select(&item_selector) {
+  for element in document.select(&VENZ_SELECTOR) {
     let title = element
-      .select(&title_selector)
+      .select(&TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let slug = element
-      .select(&link_selector)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .and_then(|href| href.split('/').nth(4))
@@ -131,20 +182,20 @@ fn parse_ongoing_anime(html: &str) -> Vec<OngoingAnimeItem> {
       .to_string();
 
     let poster = element
-      .select(&img_selector)
+      .select(&IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let current_episode = element
-      .select(&episode_selector)
+      .select(&EPISODE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_else(|| "N/A".to_string());
 
     let anime_url = element
-      .select(&link_selector)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
@@ -160,29 +211,24 @@ fn parse_ongoing_anime(html: &str) -> Vec<OngoingAnimeItem> {
       });
     }
   }
-
-  ongoing_anime
+  Ok(ongoing_anime)
 }
 
-fn parse_complete_anime(html: &str) -> Vec<CompleteAnimeItem> {
+fn parse_complete_anime(
+  html: &str
+) -> Result<Vec<CompleteAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
   let document = Html::parse_document(html);
-  let item_selector = Selector::parse(".venz ul li").unwrap();
-  let title_selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-  let link_selector = Selector::parse("a").unwrap();
-  let img_selector = Selector::parse("img").unwrap();
-  let episode_selector = Selector::parse(".epz").unwrap();
-
   let mut complete_anime = Vec::new();
 
-  for element in document.select(&item_selector) {
+  for element in document.select(&VENZ_SELECTOR) {
     let title = element
-      .select(&title_selector)
+      .select(&TITLE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
     let slug = element
-      .select(&link_selector)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .and_then(|href| href.split('/').nth(4))
@@ -190,20 +236,20 @@ fn parse_complete_anime(html: &str) -> Vec<CompleteAnimeItem> {
       .to_string();
 
     let poster = element
-      .select(&img_selector)
+      .select(&IMG_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("src"))
       .unwrap_or("")
       .to_string();
 
     let episode_count = element
-      .select(&episode_selector)
+      .select(&EPISODE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_else(|| "N/A".to_string());
 
     let anime_url = element
-      .select(&link_selector)
+      .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
       .unwrap_or("")
@@ -219,8 +265,7 @@ fn parse_complete_anime(html: &str) -> Vec<CompleteAnimeItem> {
       });
     }
   }
-
-  complete_anime
+  Ok(complete_anime)
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

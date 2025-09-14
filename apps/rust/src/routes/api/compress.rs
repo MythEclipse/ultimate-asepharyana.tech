@@ -16,11 +16,8 @@ use image::ImageFormat;
 use tokio::fs; // Use tokio's fs for async operations
 use std::path::PathBuf;
 use uuid;
-use uuid;
 
 type CompressionTask = Box<dyn (FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>) + Send>;
-
-pub const ENDPOINT_METHOD: &str = "get";
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/compress";

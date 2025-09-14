@@ -67,8 +67,6 @@ use crate::routes::api::komik::detail::Chapter;
 use crate::routes::api::komik::detail::DetailData;
 use crate::routes::api::komik::detail::DetailQuery;
 use crate::routes::api::komik::detail::DetailResponse as DetailResponse_2;
-use crate::routes::api::komik::detail::EpisodeList as EpisodeList_1;
-use crate::routes::api::komik::detail::Recommendation as Recommendation_2;
 use crate::routes::api::komik::manga::slug::MangaItem;
 use crate::routes::api::komik::manga::slug::MangaResponse;
 use crate::routes::api::komik::manga::slug::Pagination as Pagination_6;
@@ -166,8 +164,6 @@ components(
                   DetailData,
                   DetailQuery,
                   DetailResponse_2,
-                  EpisodeList_1,
-                  Recommendation_2,
                   MangaItem,
                   MangaResponse,
                   Pagination_6,

@@ -1,4 +1,5 @@
 use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
+use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -14,6 +15,7 @@ use regex::Regex;
 use once_cell::sync::Lazy;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
+use tokio::task;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -57,15 +59,17 @@ pub struct ListResponse {
 
 // Pre-compiled CSS selectors for performance
 lazy_static! {
-  static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd article.bs").unwrap();
-  static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
-  static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-  static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-  static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
-  static ref PAGINATION_SELECTOR: Selector = Selector::parse(
+  pub static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd article.bs").unwrap();
+  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+  pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
+  pub static ref PAGINATION_SELECTOR: Selector = Selector::parse(
     ".pagination .page-numbers:not(.next)"
   ).unwrap();
-  static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next.page-numbers").unwrap();
+  pub static ref NEXT_SELECTOR: Selector = Selector::parse(
+    ".pagination .next.page-numbers"
+  ).unwrap();
 }
 
 // Pre-compiled regex for slug extraction
@@ -77,7 +81,7 @@ lazy_static! {
 }
 const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
-async fn fetch_html(
+async fn fetch_html_with_retry(
   browser_client: &Arc<TokioMutex<()>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
@@ -117,20 +121,15 @@ async fn fetch_html(
     }
   };
 
-  match retry(backoff, fetch_operation).await {
-    Ok(html) => {
-      // Cache the result
-      HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
-      Ok(html)
-    }
-    Err(e) => {
-      error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
-      Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
-    }
-  }
+  let html = retry(backoff, fetch_operation).await?;
+  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
+  Ok(html)
 }
 
-fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Pagination) {
+fn parse_anime_page(
+  html: &str,
+  slug: &str
+) -> Result<(Vec<CompleteAnimeItem>, Pagination), String> {
   let start_time = Instant::now();
   info!("Starting to parse anime page for slug: {}", slug);
 
@@ -209,7 +208,7 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
   let duration = start_time.elapsed();
   info!("Parsed {} anime items in {:?}", anime_list.len(), duration);
 
-  (anime_list, pagination)
+  Ok((anime_list, pagination))
 }
 
 #[utoipa::path(
@@ -228,39 +227,43 @@ fn parse_anime_page(html: &str, slug: &str) -> (Vec<CompleteAnimeItem>, Paginati
 pub async fn slug(
   State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, (StatusCode, String)> {
   let start_time = Instant::now();
   info!("Handling request for complete_anime slug: {}", slug);
 
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
 
-  match fetch_html(&Arc::new(TokioMutex::new(())), &url).await {
-    Ok(html) => {
-      let (anime_list, _pagination) = parse_anime_page(&html, &slug);
-      let total_duration = start_time.elapsed();
-      info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
-      Json(ListResponse {
-        message: "Success".to_string(),
-        data: anime_list.clone(),
-        total: Some(anime_list.len() as i64),
-      })
-    }
-    Err(e) => {
-      let total_duration = start_time.elapsed();
-      error!(
-        "Failed to process request for slug: {} after {:?}, error: {:?}",
-        slug,
-        total_duration,
-        e
-      );
-      Json(ListResponse {
-        message: "Error".to_string(),
-        data: vec![],
-        total: Some(0),
-      })
-    }
-  }
+  let html = fetch_html_with_retry(&Arc::new(TokioMutex::new(())), &url)
+    .await
+    .map_err(|e| {
+      error!("Failed to fetch HTML for slug: {}, error: {:?}", slug, e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error fetching HTML: {}", e))
+    })?;
+
+  let html_clone = html.clone();
+  let slug_clone = slug.clone();
+  let (anime_list, _pagination) = task
+    ::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
+    .await
+    .map_err(|e| {
+      error!("Failed to spawn blocking task for slug: {}, error: {:?}", slug, e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error spawning blocking task: {}", e))
+    })? // Handle JoinError
+    .map_err(|e| {
+      error!("Failed to parse anime page for slug: {}, error: {:?}", slug, e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error parsing anime page: {}", e))
+    })?; // Handle parsing error
+
+  let total_duration = start_time.elapsed();
+  info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
+  Ok(
+    Json(ListResponse {
+      message: "Success".to_string(),
+      data: anime_list.clone(),
+      total: Some(anime_list.len() as i64),
+    })
+  )
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

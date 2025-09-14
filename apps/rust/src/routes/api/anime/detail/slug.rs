@@ -1,14 +1,18 @@
 use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
+use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use scraper::Selector;
+use scraper::{ Html, Selector };
 use lazy_static::lazy_static;
 use dashmap::DashMap;
-use tracing::{ info, error };
-use std::time::Instant;
+use tracing::{ info, error, warn };
+use std::time::{ Duration, Instant };
 use axum::extract::State;
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use tokio::sync::Mutex as TokioMutex;
+use backoff::{ future::retry, ExponentialBackoff };
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -69,16 +73,18 @@ pub struct DetailResponse {
 }
 
 lazy_static! {
-  static ref INFO_SELECTOR: Selector = Selector::parse(".infozingle p").unwrap();
-  static ref POSTER_SELECTOR: Selector = Selector::parse(".fotoanime img").unwrap();
-  static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".sinopc").unwrap();
-  static ref GENRE_LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-  static ref EPISODE_LIST_SELECTOR: Selector = Selector::parse(".episodelist ul li a").unwrap();
-  static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
-  static ref RECOMMENDATION_TITLE_SELECTOR: Selector = Selector::parse(".judul-anime a").unwrap();
-  static ref RECOMMENDATION_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-  static ref CACHE: DashMap<String, AnimeDetailData> = DashMap::new();
+  pub static ref INFO_SELECTOR: Selector = Selector::parse(".infozingle p").unwrap();
+  pub static ref POSTER_SELECTOR: Selector = Selector::parse(".fotoanime img").unwrap();
+  pub static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".sinopc").unwrap();
+  pub static ref GENRE_LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+  pub static ref EPISODE_LIST_SELECTOR: Selector = Selector::parse(".episodelist ul li a").unwrap();
+  pub static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
+  pub static ref RECOMMENDATION_TITLE_SELECTOR: Selector = Selector::parse(".judul-anime a").unwrap();
+  pub static ref RECOMMENDATION_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+  pub static ref CACHE: DashMap<String, AnimeDetailData> = DashMap::new();
+  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
+const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 #[utoipa::path(
     get,
@@ -96,7 +102,7 @@ lazy_static! {
 pub async fn slug(
   State(_app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, (StatusCode, String)> {
   let start = Instant::now();
   info!("Starting request for detail slug: {}", slug);
 
@@ -104,53 +110,214 @@ pub async fn slug(
   if let Some(cached) = CACHE.get(&slug) {
     let duration = start.elapsed();
     info!("Cache hit for detail slug: {}, duration: {:?}", slug, duration);
-    return Json(DetailResponse {
-      status: "Ok".to_string(),
-      data: cached.clone(),
-    });
+    return Ok(
+      Json(DetailResponse {
+        status: "Ok".to_string(),
+        data: cached.clone(),
+      })
+    );
   }
 
-  match fetch_anime_detail(&slug).await {
-    Ok(data) => {
-      let detail_response = DetailResponse {
-        status: "Ok".to_string(),
-        data: data.clone(),
-      };
-      // Cache the result
-      CACHE.insert(slug.clone(), data);
-      let duration = start.elapsed();
-      info!("Fetched and parsed detail for slug: {}, duration: {:?}", slug, duration);
-      Json(detail_response)
-    }
-    Err(e) => {
-      let duration = start.elapsed();
-      error!("Error fetching detail for slug: {}, error: {:?}, duration: {:?}", slug, e, duration);
-      Json(DetailResponse {
-        status: "Error".to_string(),
-        data: AnimeDetailData {
-          title: "".to_string(),
-          alternative_title: "".to_string(),
-          poster: "".to_string(),
-          r#type: "".to_string(),
-          status: "".to_string(),
-          release_date: "".to_string(),
-          studio: "".to_string(),
-          genres: vec![],
-          synopsis: "".to_string(),
-          episode_lists: vec![],
-          batch: vec![],
-          producers: vec![],
-          recommendations: vec![],
-        },
-      })
-    }
-  }
+  let data = fetch_anime_detail(&Arc::new(TokioMutex::new(())), slug.clone())
+    .await
+    .map_err(|e| {
+      error!("Error fetching detail for slug: {}, error: {:?}", slug, e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
+    })?;
+
+  let detail_response = DetailResponse {
+    status: "Ok".to_string(),
+    data: data.clone(),
+  };
+  // Cache the result
+  CACHE.insert(slug.clone(), data);
+  let duration = start.elapsed();
+  info!("Fetched and parsed detail for slug: {}, duration: {:?}", slug, duration);
+  Ok(Json(detail_response))
 }
 
 async fn fetch_anime_detail(
+  browser_client: &Arc<TokioMutex<()>>,
+  slug: String
+) -> Result<AnimeDetailData, String> {
+  let url = format!("https://otakudesu.cloud/anime/{}", slug);
+
+  if let Some(entry) = HTML_CACHE.get(&url) {
+    if entry.1.elapsed() < CACHE_TTL {
+      info!("Cache hit for URL: {}", url);
+      let entry_0_clone = entry.0.clone();
+      let slug_clone = slug.clone();
+      return match tokio::task::spawn_blocking(move || {
+        let document = Html::parse_document(&entry_0_clone);
+        parse_anime_detail_document(&document, &slug_clone)
+      }).await {
+        Ok(inner_result) => inner_result,
+        Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
+      };
+    } else {
+      HTML_CACHE.remove(&url);
+    }
+  }
+
+  let backoff = ExponentialBackoff {
+    initial_interval: Duration::from_millis(500),
+    max_interval: Duration::from_secs(10),
+    multiplier: 2.0,
+    max_elapsed_time: Some(Duration::from_secs(30)),
+    ..Default::default()
+  };
+
+  let fetch_operation = || async {
+    info!("Fetching URL: {}", url);
+    match fetch_with_proxy(&url, browser_client).await {
+      Ok(response) => {
+        info!("Successfully fetched URL: {}", url);
+        Ok(response.data)
+      }
+      Err(e) => {
+        warn!("Failed to fetch URL: {}, error: {:?}", url, e);
+        Err(backoff::Error::transient(e))
+      }
+    }
+  };
+
+  let html = retry(backoff, fetch_operation).await
+    .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
+  HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
+
+  match tokio::task::spawn_blocking(move || {
+    let document = Html::parse_document(&html);
+    parse_anime_detail_document(&document, &slug)
+  }).await {
+    Ok(inner_result) => inner_result,
+    Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
+  }
+}
+
+fn parse_anime_detail_document(
+  document: &Html,
   _slug: &str
-) -> Result<AnimeDetailData, Box<dyn std::error::Error>> {
-  Err("Browser functionality has been removed".into())
+) -> Result<AnimeDetailData, String> {
+  let info_selector = Selector::parse(".infozingle p").unwrap();
+  let poster_selector = Selector::parse(".fotoanime img").unwrap();
+  let synopsis_selector = Selector::parse(".sinopc").unwrap();
+  let genre_link_selector = Selector::parse("a").unwrap();
+  let episode_list_selector = Selector::parse(".episodelist ul li a").unwrap();
+  let recommendation_selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
+  let recommendation_title_selector = Selector::parse(".judul-anime a").unwrap();
+  let recommendation_img_selector = Selector::parse("img").unwrap();
+
+  let mut title = String::new();
+  let mut alternative_title = String::new();
+  let mut r#type = String::new();
+  let mut status = String::new();
+  let mut release_date = String::new();
+  let mut studio = String::new();
+  let producers = Vec::new(); // Not present in the original HTML, keeping empty
+
+  for element in document.select(&info_selector) {
+    let text = element.text().collect::<String>();
+    if text.contains("Judul:") {
+      title = text.replace("Judul:", "").trim().to_string();
+    } else if text.contains("Japanese:") {
+      alternative_title = text.replace("Japanese:", "").trim().to_string();
+    } else if text.contains("Type:") {
+      r#type = text.replace("Type:", "").trim().to_string();
+    } else if text.contains("Status:") {
+      status = text.replace("Status:", "").trim().to_string();
+    } else if text.contains("Tanggal Rilis:") {
+      release_date = text.replace("Tanggal Rilis:", "").trim().to_string();
+    } else if text.contains("Studio:") {
+      studio = text.replace("Studio:", "").trim().to_string();
+    }
+  }
+
+  let poster = document
+    .select(&poster_selector)
+    .next()
+    .and_then(|e| e.value().attr("src"))
+    .unwrap_or("")
+    .to_string();
+
+  let synopsis = document
+    .select(&synopsis_selector)
+    .next()
+    .map(|e| e.text().collect::<String>().trim().to_string())
+    .unwrap_or_default();
+
+  let mut genres = Vec::new();
+  if
+    let Some(genres_element) = document
+      .select(&info_selector)
+      .find(|e| e.text().collect::<String>().contains("Genres:"))
+  {
+    for genre_link in genres_element.select(&genre_link_selector) {
+      let name = genre_link.text().collect::<String>().trim().to_string();
+      let anime_url = genre_link.value().attr("href").unwrap_or("").to_string();
+      let genre_slug = anime_url.split('/').nth(4).unwrap_or("").to_string(); // Adjust as needed
+      genres.push(Genre { name, slug: genre_slug, anime_url });
+    }
+  }
+
+  let mut episode_lists = Vec::new();
+  for element in document.select(&episode_list_selector) {
+    let episode = element.text().collect::<String>().trim().to_string();
+    let slug = element
+      .value()
+      .attr("href")
+      .and_then(|href| href.split('/').nth(4))
+      .unwrap_or("")
+      .to_string();
+    episode_lists.push(EpisodeList { episode, slug });
+  }
+
+  // Batch and producers are not directly parsable from the provided HTML structure
+  // Keeping them empty as per previous implementation for anime/full/slug.rs
+
+  let mut recommendations = Vec::new();
+  for element in document.select(&recommendation_selector) {
+    let title = element
+      .select(&recommendation_title_selector)
+      .next()
+      .map(|e| e.text().collect::<String>().trim().to_string())
+      .unwrap_or_default();
+    let poster = element
+      .select(&recommendation_img_selector)
+      .next()
+      .and_then(|e| e.value().attr("src"))
+      .unwrap_or("")
+      .to_string();
+    let slug = element
+      .select(&genre_link_selector) // Reusing genre_link_selector for general links
+      .next()
+      .and_then(|e| e.value().attr("href"))
+      .and_then(|href| href.split('/').nth(4))
+      .unwrap_or("")
+      .to_string();
+    recommendations.push(Recommendation {
+      title,
+      slug,
+      poster,
+      status: "".to_string(),
+      r#type: "".to_string(),
+    }); // Status and type not available from this selector
+  }
+
+  Ok(AnimeDetailData {
+    title,
+    alternative_title,
+    poster,
+    r#type,
+    status,
+    release_date,
+    studio,
+    genres,
+    synopsis,
+    episode_lists,
+    batch: vec![],
+    producers,
+    recommendations,
+  })
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
