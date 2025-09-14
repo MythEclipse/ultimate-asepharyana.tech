@@ -8,11 +8,10 @@ use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
-use dashmap::DashMap;
 use tracing::{ info, error };
-use std::time::{ Duration, Instant };
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
+use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -62,10 +61,8 @@ lazy_static! {
   pub static ref SEASON_SELECTOR: Selector = Selector::parse(".season").unwrap();
   pub static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
   pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-  static ref CACHE: DashMap<String, SearchResponse> = DashMap::new();
-  static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct SearchResponse {
@@ -93,24 +90,34 @@ pub struct SearchQuery {
     )
 )]
 pub async fn search(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Query(params): Query<SearchQuery>
-) -> impl IntoResponse {
-  let start = Instant::now();
-  info!("Starting search for query: {}", params.q.as_deref().unwrap_or(""));
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+  let start = std::time::Instant::now();
+  let query = params.q.unwrap_or_else(|| "one".to_string());
+  info!("Starting search for query: {}", query);
 
-  // Check cache first
-  if let Some(cached) = self::CACHE.get(&params.q.clone().unwrap_or_default()) {
-    let duration = start.elapsed();
-    info!(
-      "Cache hit for search query: {}, duration: {:?}",
-      params.q.as_deref().unwrap_or(""),
-      duration
-    );
-    return Json(cached.clone()).into_response();
+  let cache_key = format!("anime2:search:{}", query);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_str) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let search_response: SearchResponse = serde_json::from_str(&json_data_str).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(search_response).into_response());
   }
 
-  let query = params.q.unwrap_or_else(|| "one".to_string());
   let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
 
   let result = fetch_and_parse_search(&Arc::new(TokioMutex::new(())), &url, query.clone()).await;
@@ -122,16 +129,26 @@ pub async fn search(
         data,
         pagination,
       };
-      // Cache the result
-      self::CACHE.insert(query.clone(), response.clone());
+      let json_data = serde_json::to_string(&response).map_err(|e| {
+        error!("Failed to serialize response for caching: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+      })?;
+
+      // Store in Redis with TTL
+      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+        error!("Failed to set data in Redis: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+      })?;
+      info!("Cache set for key: {}", cache_key);
+
       let duration = start.elapsed();
       info!("Fetched and parsed search for query: {}, duration: {:?}", query, duration);
-      Json(response).into_response()
+      Ok(Json(response).into_response())
     }
     Err(e) => {
       let duration = start.elapsed();
       error!("Error searching for query: {}, error: {:?}, duration: {:?}", query, e, duration);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)).into_response()
+      Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
     }
   }
 }
@@ -141,24 +158,6 @@ async fn fetch_and_parse_search(
   url: &str,
   query: String
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      let html_string = entry.0.clone(); // Clone the html string for the blocking task
-      let query_clone = query.clone();
-      return match tokio::task::spawn_blocking(move || {
-        let document = Html::parse_document(&html_string);
-        parse_search_document(&document, &query_clone)
-      }).await {
-        Ok(inner_result) => inner_result,
-        Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>),
-      };
-    } else {
-      HTML_CACHE.remove(url);
-    }
-  }
-
   let operation = || async {
     let response = fetch_with_proxy(url, browser).await?;
     Ok(response.data)
@@ -166,7 +165,7 @@ async fn fetch_and_parse_search(
 
   let backoff = ExponentialBackoff::default();
   let html = retry(backoff, operation).await?;
-  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
+
   let query_clone = query.clone();
 
   match tokio::task::spawn_blocking(move || {

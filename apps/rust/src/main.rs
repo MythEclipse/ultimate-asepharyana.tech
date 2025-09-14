@@ -20,6 +20,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use rust_lib::config::CONFIG_MAP;
+use rust_lib::redis_client::REDIS_POOL;
 
 use crate::routes::api::{ create_api_routes, ApiDoc };
 use crate::routes::AppState;
@@ -45,8 +46,11 @@ async fn main() -> anyhow::Result<()> {
       "default_secret".to_string()
     });
 
+  let _ = REDIS_POOL.get().await; // Initialize the pool early
+
   let app_state = Arc::new(AppState {
     jwt_secret,
+    redis_pool: REDIS_POOL.clone(),
   });
 
   tracing::info!("Building application routes...");

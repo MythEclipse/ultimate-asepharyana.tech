@@ -1,4 +1,5 @@
 use thiserror::Error;
+use deadpool_redis::PoolError;
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -16,6 +17,12 @@ pub enum AppError {
   #[error("IO error: {0}")] IoError(#[from] std::io::Error),
   #[error("Timeout error: {0}")] TimeoutError(String),
   #[error("Other error: {0}")] Other(String),
+}
+
+impl From<PoolError> for AppError {
+    fn from(err: PoolError) -> Self {
+        AppError::Other(err.to_string())
+    }
 }
 
 impl From<failure::Error> for AppError {

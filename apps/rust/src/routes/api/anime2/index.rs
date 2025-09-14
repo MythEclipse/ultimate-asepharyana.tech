@@ -1,4 +1,5 @@
 use axum::{ response::IntoResponse, routing::get, Json, Router };
+use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -7,12 +8,11 @@ use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
-use tokio::task;
 use backoff::{ future::retry, ExponentialBackoff };
-use std::time::{ Duration, Instant };
-use dashmap::DashMap;
-use tracing::{ info, warn };
+use std::time::Duration;
+use tracing::{ info, warn, error };
 use lazy_static::lazy_static;
+use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -67,21 +67,56 @@ pub struct Anime2Response {
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn anime2(State(_app_state): State<Arc<AppState>>) -> impl IntoResponse {
+pub async fn anime2(State(app_state): State<Arc<AppState>>) -> Result<
+  impl IntoResponse,
+  (StatusCode, String)
+> {
+  let start_time = std::time::Instant::now();
+  info!("Handling request for anime2 index");
+
+  let cache_key = "anime2:index";
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let anime2_response: Anime2Response = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(anime2_response).into_response());
+  }
+
   match fetch_anime_data(&Arc::new(TokioMutex::new(()))).await {
-    Ok(data) =>
-      Json(Anime2Response {
-        status: "Ok".to_string(),
-        data,
-      }),
-    Err(_) =>
-      Json(Anime2Response {
-        status: "Error".to_string(),
-        data: Anime2Data {
-          ongoing_anime: vec![],
-          complete_anime: vec![],
-        },
-      }),
+    Ok(data) => {
+      let response = Anime2Response { status: "Ok".to_string(), data };
+      let json_data = serde_json::to_string(&response).map_err(|e| {
+        error!("Failed to serialize response for caching: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+      })?;
+
+      // Store in Redis with TTL
+      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+        error!("Failed to set data in Redis: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+      })?;
+      info!("Cache set for key: {}", cache_key);
+
+      info!("Successfully processed anime2 index in {:?}", start_time.elapsed());
+      Ok(Json(response).into_response())
+    }
+    Err(e) => {
+      error!("Error processing anime2 index: {:?}", e);
+      Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
+    }
   }
 }
 
@@ -91,9 +126,8 @@ lazy_static! {
   pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
   pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
   pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
-  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 async fn fetch_anime_data(
   client: &Arc<TokioMutex<()>>
@@ -109,8 +143,12 @@ async fn fetch_anime_data(
   let ongoing_html = ongoing_html?;
   let complete_html = complete_html?;
 
-  let ongoing_anime = task::spawn_blocking(move || parse_ongoing_anime(&ongoing_html)).await??;
-  let complete_anime = task::spawn_blocking(move || parse_complete_anime(&complete_html)).await??;
+  let ongoing_anime = tokio::task::spawn_blocking(move ||
+    parse_ongoing_anime(&ongoing_html)
+  ).await??;
+  let complete_anime = tokio::task::spawn_blocking(move ||
+    parse_complete_anime(&complete_html)
+  ).await??;
 
   Ok(Anime2Data {
     ongoing_anime,
@@ -122,15 +160,6 @@ async fn fetch_html_with_retry(
   client: &Arc<TokioMutex<()>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-  if let Some(entry) = HTML_CACHE.get(url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      return Ok(entry.0.clone());
-    } else {
-      HTML_CACHE.remove(url);
-    }
-  }
-
   let backoff = ExponentialBackoff {
     initial_interval: Duration::from_millis(500),
     max_interval: Duration::from_secs(10),
@@ -154,7 +183,6 @@ async fn fetch_html_with_retry(
   };
 
   let html = retry(backoff, fetch_operation).await?;
-  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
   Ok(html)
 }
 

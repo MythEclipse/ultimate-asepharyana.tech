@@ -31,6 +31,7 @@ uuid = { workspace = true, features = ["v4", "serde"] }
 thiserror = { workspace = true }
 failure = { workspace = true }
 redis = { workspace = true }
+deadpool-redis = { workspace = true }
 once_cell = { workspace = true }
 url = { workspace = true }
 regex = { workspace = true }

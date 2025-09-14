@@ -8,14 +8,13 @@ use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
-use dashmap::DashMap;
-use std::time::{ Duration, Instant };
+use std::time::Duration;
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
-use tokio::task;
+use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -75,29 +74,97 @@ lazy_static! {
 // Pre-compiled regex for slug extraction
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
-// Cache for HTML responses with TTL (5 minutes)
-lazy_static! {
-  static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
+const CACHE_TTL: u64 = 300; // 5 minutes
+
+#[utoipa::path(
+    get,
+    params(
+        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "1")
+    ),
+    path = "/api/anime2/complete-anime/{slug}",
+    tag = "anime2",
+    operation_id = "anime2_complete_anime_slug",
+    responses(
+        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = ListResponse),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
+pub async fn slug(
+  State(app_state): State<Arc<AppState>>,
+  Path(slug): Path<String>
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+  let start_time = std::time::Instant::now();
+  info!("Handling request for complete_anime slug: {}", slug);
+
+  let cache_key = format!("anime2:complete:{}", slug);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let list_response: ListResponse = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(list_response).into_response());
+  }
+
+  let url =
+    format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
+
+  let html = fetch_html_with_retry(&Arc::new(TokioMutex::new(())), &url).await.map_err(|e| {
+    error!("Failed to fetch HTML for slug: {}, error: {:?}", slug, e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Error fetching HTML: {}", e))
+  })?;
+
+  let html_clone = html.clone();
+  let slug_clone = slug.clone();
+  let (anime_list, _pagination) = tokio::task
+    ::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone)).await
+    .map_err(|e| {
+      error!("Failed to spawn blocking task for slug: {}, error: {:?}", slug, e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error spawning blocking task: {}", e))
+    })
+    ? // Handle JoinError
+    .map_err(|e| {
+      error!("Failed to parse anime page for slug: {}, error: {:?}", slug, e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error parsing anime page: {}", e))
+    })?; // Handle parsing error
+
+  let list_response = ListResponse {
+    message: "Success".to_string(),
+    data: anime_list.clone(),
+    total: Some(anime_list.len() as i64),
+  };
+  let json_data = serde_json::to_string(&list_response).map_err(|e| {
+    error!("Failed to serialize response for caching: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+  })?;
+
+  // Store in Redis with TTL
+  conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+    error!("Failed to set data in Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+  info!("Cache set for key: {}", cache_key);
+
+  let total_duration = start_time.elapsed();
+  info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
+  Ok(Json(list_response).into_response())
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 
 async fn fetch_html_with_retry(
   browser_client: &Arc<TokioMutex<()>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-  let start_time = Instant::now();
-
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      return Ok(entry.0.clone());
-    } else {
-      HTML_CACHE.remove(url);
-    }
-  }
-
-  // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
     initial_interval: Duration::from_millis(500),
     max_interval: Duration::from_secs(10),
@@ -110,8 +177,7 @@ async fn fetch_html_with_retry(
     info!("Fetching URL: {}", url);
     match fetch_with_proxy(url, browser_client).await {
       Ok(response) => {
-        let duration = start_time.elapsed();
-        info!("Successfully fetched URL: {} in {:?}", url, duration);
+        info!("Successfully fetched URL: {}", url);
         Ok(response.data)
       }
       Err(e) => {
@@ -122,7 +188,6 @@ async fn fetch_html_with_retry(
   };
 
   let html = retry(backoff, fetch_operation).await?;
-  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
   Ok(html)
 }
 
@@ -130,7 +195,7 @@ fn parse_anime_page(
   html: &str,
   slug: &str
 ) -> Result<(Vec<CompleteAnimeItem>, Pagination), String> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   info!("Starting to parse anime page for slug: {}", slug);
 
   let document = Html::parse_document(html);
@@ -209,61 +274,6 @@ fn parse_anime_page(
   info!("Parsed {} anime items in {:?}", anime_list.len(), duration);
 
   Ok((anime_list, pagination))
-}
-
-#[utoipa::path(
-    get,
-    params(
-        ("slug" = String, Path, description = "URL-friendly identifier for the resource (typically lowercase with hyphens)", example = "1")
-    ),
-    path = "/api/anime2/complete-anime/{slug}",
-    tag = "anime2",
-    operation_id = "anime2_complete_anime_slug",
-    responses(
-        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = ListResponse),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
-)]
-pub async fn slug(
-  State(_app_state): State<Arc<AppState>>,
-  Path(slug): Path<String>
-) -> Result<impl IntoResponse, (StatusCode, String)> {
-  let start_time = Instant::now();
-  info!("Handling request for complete_anime slug: {}", slug);
-
-  let url =
-    format!("https://alqanime.net/advanced-search/page/{}/?status=completed&order=update", slug);
-
-  let html = fetch_html_with_retry(&Arc::new(TokioMutex::new(())), &url)
-    .await
-    .map_err(|e| {
-      error!("Failed to fetch HTML for slug: {}, error: {:?}", slug, e);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error fetching HTML: {}", e))
-    })?;
-
-  let html_clone = html.clone();
-  let slug_clone = slug.clone();
-  let (anime_list, _pagination) = task
-    ::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
-    .await
-    .map_err(|e| {
-      error!("Failed to spawn blocking task for slug: {}, error: {:?}", slug, e);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error spawning blocking task: {}", e))
-    })? // Handle JoinError
-    .map_err(|e| {
-      error!("Failed to parse anime page for slug: {}, error: {:?}", slug, e);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error parsing anime page: {}", e))
-    })?; // Handle parsing error
-
-  let total_duration = start_time.elapsed();
-  info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
-  Ok(
-    Json(ListResponse {
-      message: "Success".to_string(),
-      data: anime_list.clone(),
-      total: Some(anime_list.len() as i64),
-    })
-  )
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

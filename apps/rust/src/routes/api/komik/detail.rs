@@ -14,8 +14,8 @@ use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
-use dashmap::DashMap;
-use std::time::{ Duration, Instant };
+use std::time::Duration;
+use deadpool_redis::redis::AsyncCommands;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/detail";
@@ -62,23 +62,36 @@ pub struct DetailQuery {
 
 lazy_static! {
   static ref TITLE_SELECTOR: Selector = Selector::parse("h1.entry-title").unwrap();
-  static ref ALTERNATIVE_TITLE_SELECTOR: Selector = Selector::parse(".spe span:contains('Judul Alternatif:')").unwrap();
+  static ref ALTERNATIVE_TITLE_SELECTOR: Selector = Selector::parse(
+    ".spe span:contains('Judul Alternatif:')"
+  ).unwrap();
   static ref SCORE_SELECTOR: Selector = Selector::parse(".rtg > div > i").unwrap();
   static ref POSTER_SELECTOR: Selector = Selector::parse(".thumb img").unwrap();
-  static ref DESCRIPTION_SELECTOR: Selector = Selector::parse("#sinopsis > section > div > div.entry-content.entry-content-single > p").unwrap();
+  static ref DESCRIPTION_SELECTOR: Selector = Selector::parse(
+    "#sinopsis > section > div > div.entry-content.entry-content-single > p"
+  ).unwrap();
   static ref STATUS_SELECTOR: Selector = Selector::parse(".spe span:contains('Status:')").unwrap();
   static ref GENRE_SELECTOR: Selector = Selector::parse(".genre-info a").unwrap();
-  static ref RELEASE_DATE_SELECTOR: Selector = Selector::parse("#chapter_list > ul > li:last-child > span.dt").unwrap();
-  static ref AUTHOR_SELECTOR: Selector = Selector::parse(".spe span:contains('Pengarang:')").unwrap();
-  static ref TYPE_SELECTOR: Selector = Selector::parse(".spe span:contains('Jenis Komik:') a").unwrap();
-  static ref TOTAL_CHAPTER_SELECTOR: Selector = Selector::parse("#chapter_list > ul > li:nth-child(1) > span.lchx").unwrap();
-  static ref UPDATED_ON_SELECTOR: Selector = Selector::parse("#chapter_list > ul > li:nth-child(1) > span.dt").unwrap();
+  static ref RELEASE_DATE_SELECTOR: Selector = Selector::parse(
+    "#chapter_list > ul > li:last-child > span.dt"
+  ).unwrap();
+  static ref AUTHOR_SELECTOR: Selector = Selector::parse(
+    ".spe span:contains('Pengarang:')"
+  ).unwrap();
+  static ref TYPE_SELECTOR: Selector = Selector::parse(
+    ".spe span:contains('Jenis Komik:') a"
+  ).unwrap();
+  static ref TOTAL_CHAPTER_SELECTOR: Selector = Selector::parse(
+    "#chapter_list > ul > li:nth-child(1) > span.lchx"
+  ).unwrap();
+  static ref UPDATED_ON_SELECTOR: Selector = Selector::parse(
+    "#chapter_list > ul > li:nth-child(1) > span.dt"
+  ).unwrap();
   static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse("#chapter_list ul li").unwrap();
   static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse(".lchx a").unwrap();
   static ref DATE_LINK_SELECTOR: Selector = Selector::parse(".dt a").unwrap();
-  static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
     get,
@@ -95,23 +108,52 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 )]
 #[axum::debug_handler]
 pub async fn detail(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Query(params): Query<DetailQuery>
 ) -> Result<Json<DetailResponse>, (StatusCode, String)> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
   info!("Handling request for komik detail: {}", komik_id);
 
+  let cache_key = format!("komik:detail:{}", komik_id);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let detail_response: DetailResponse = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(detail_response));
+  }
+
   match fetch_komik_detail(&Arc::new(TokioMutex::new(())), komik_id.clone()).await {
     Ok(data) => {
+      let detail_response = DetailResponse { status: true, data };
+      let json_data = serde_json::to_string(&detail_response).map_err(|e| {
+        error!("Failed to serialize response for caching: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+      })?;
+
+      // Store in Redis with TTL
+      conn.set_ex(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+        error!("Failed to set data in Redis: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+      })?;
+      info!("Cache set for key: {}", cache_key);
+
       let total_duration = start_time.elapsed();
       info!("Successfully processed request for komik_id: {} in {:?}", komik_id, total_duration);
-      Ok(
-        Json(DetailResponse {
-          status: true,
-          data,
-        })
-      )
+      Ok(Json(detail_response))
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
@@ -130,23 +172,9 @@ async fn fetch_komik_detail(
   browser_client: &Arc<TokioMutex<()>>,
   komik_id: String
 ) -> Result<DetailData, Box<dyn std::error::Error + Send + Sync>> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let base_url = "https://komikindo.ch"; // Updated as per user feedback
   let url = format!("{}/komik/{}", base_url, komik_id);
-
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(&url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      let entry_0_clone = entry.0.clone();
-      let komik_id_clone = komik_id.clone();
-      return tokio::task::spawn_blocking(move ||
-        parse_komik_detail_document(&Html::parse_document(&entry_0_clone), &komik_id_clone)
-      ).await?;
-    } else {
-      HTML_CACHE.remove(&url);
-    }
-  }
 
   // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
@@ -172,29 +200,16 @@ async fn fetch_komik_detail(
     }
   };
 
-  match retry(backoff, fetch_operation).await {
-    Ok(html) => {
-      // Cache the result
-      HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
-      let html_clone = html.clone(); // Clone the html string
-      let komik_id_clone = komik_id.clone();
+  let html = retry(backoff, fetch_operation).await?;
 
-      tokio::task::spawn_blocking(move ||
-        parse_komik_detail_document(&Html::parse_document(&html_clone), &komik_id_clone)
-      ).await?
-    }
-    Err(e) => {
-      error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
-      Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
-    }
-  }
+  tokio::task::spawn_blocking(move || parse_komik_detail_document(&Html::parse_document(&html), &komik_id)).await?
 }
 
 fn parse_komik_detail_document(
   document: &Html,
   _komik_id: &str
 ) -> Result<DetailData, Box<dyn std::error::Error + Send + Sync>> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   info!("Starting to parse komik detail document");
 
   let title = document

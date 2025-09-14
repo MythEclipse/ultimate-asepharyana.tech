@@ -2,17 +2,17 @@ use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
 use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
+use rust_lib::utils::error::AppError;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use lazy_static::lazy_static;
-use dashmap::DashMap;
 use tracing::{ info, error, warn };
-use std::time::{ Duration, Instant };
 use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
+use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -78,13 +78,14 @@ lazy_static! {
   pub static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".sinopc").unwrap();
   pub static ref GENRE_LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
   pub static ref EPISODE_LIST_SELECTOR: Selector = Selector::parse(".episodelist ul li a").unwrap();
-  pub static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
-  pub static ref RECOMMENDATION_TITLE_SELECTOR: Selector = Selector::parse(".judul-anime a").unwrap();
+  pub static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse(
+    "#recommend-anime-series .isi-anime"
+  ).unwrap();
+  pub static ref RECOMMENDATION_TITLE_SELECTOR: Selector =
+    Selector::parse(".judul-anime a").unwrap();
   pub static ref RECOMMENDATION_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-  pub static ref CACHE: DashMap<String, AnimeDetailData> = DashMap::new();
-  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
     get,
@@ -100,70 +101,71 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
     )
 )]
 pub async fn slug(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-  let start = Instant::now();
+  let start = std::time::Instant::now();
   info!("Starting request for detail slug: {}", slug);
 
+  let cache_key = format!("anime:detail:{}", slug);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
   // Check cache first
-  if let Some(cached) = CACHE.get(&slug) {
-    let duration = start.elapsed();
-    info!("Cache hit for detail slug: {}, duration: {:?}", slug, duration);
-    return Ok(
-      Json(DetailResponse {
-        status: "Ok".to_string(),
-        data: cached.clone(),
-      })
-    );
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let detail_response: DetailResponse = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(detail_response).into_response());
   }
 
-  let data = fetch_anime_detail(&Arc::new(TokioMutex::new(())), slug.clone())
-    .await
-    .map_err(|e| {
-      error!("Error fetching detail for slug: {}, error: {:?}", slug, e);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
-    })?;
+  let data = fetch_anime_detail(&Arc::new(TokioMutex::new(())), slug.clone()).await.map_err(|e| {
+    error!("Error fetching detail for slug: {}, error: {:?}", slug, e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
+  })?;
 
   let detail_response = DetailResponse {
     status: "Ok".to_string(),
     data: data.clone(),
   };
+  let json_data = serde_json::to_string(&detail_response).map_err(|e| {
+    error!("Failed to serialize response for caching: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+  })?;
+
   // Cache the result
-  CACHE.insert(slug.clone(), data);
+  conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+    error!("Failed to set data in Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+  info!("Cache set for key: {}", cache_key);
+
   let duration = start.elapsed();
   info!("Fetched and parsed detail for slug: {}, duration: {:?}", slug, duration);
-  Ok(Json(detail_response))
+  Ok(Json(detail_response).into_response())
 }
 
 async fn fetch_anime_detail(
   browser_client: &Arc<TokioMutex<()>>,
   slug: String
-) -> Result<AnimeDetailData, String> {
+) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
+  let start_time = std::time::Instant::now();
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
 
-  if let Some(entry) = HTML_CACHE.get(&url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      let entry_0_clone = entry.0.clone();
-      let slug_clone = slug.clone();
-      return match tokio::task::spawn_blocking(move || {
-        let document = Html::parse_document(&entry_0_clone);
-        parse_anime_detail_document(&document, &slug_clone)
-      }).await {
-        Ok(inner_result) => inner_result,
-        Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
-      };
-    } else {
-      HTML_CACHE.remove(&url);
-    }
-  }
-
   let backoff = ExponentialBackoff {
-    initial_interval: Duration::from_millis(500),
-    max_interval: Duration::from_secs(10),
+    initial_interval: std::time::Duration::from_millis(500),
+    max_interval: std::time::Duration::from_secs(10),
     multiplier: 2.0,
-    max_elapsed_time: Some(Duration::from_secs(30)),
+    max_elapsed_time: Some(std::time::Duration::from_secs(30)),
     ..Default::default()
   };
 
@@ -181,30 +183,27 @@ async fn fetch_anime_detail(
     }
   };
 
-  let html = retry(backoff, fetch_operation).await
-    .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
-  HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
+  let html = retry(backoff, fetch_operation).await.map_err(|e|
+    format!("Failed to fetch HTML with retry: {}", e)
+  )?;
 
-  match tokio::task::spawn_blocking(move || {
-    let document = Html::parse_document(&html);
-    parse_anime_detail_document(&document, &slug)
-  }).await {
-    Ok(inner_result) => inner_result,
-    Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
+  match tokio::task::spawn_blocking(move || parse_anime_detail_document(&Html::parse_document(&html), &slug)).await {
+    Ok(inner_result) => inner_result.map_err(|e| e.into()),
+    Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>),
   }
 }
 
-fn parse_anime_detail_document(
-  document: &Html,
-  _slug: &str
-) -> Result<AnimeDetailData, String> {
+fn parse_anime_detail_document(document: &Html, _slug: &str) -> Result<AnimeDetailData, AppError> {
   let info_selector = Selector::parse(".infozingle p").unwrap();
   let poster_selector = Selector::parse(".fotoanime img").unwrap();
   let synopsis_selector = Selector::parse(".sinopc").unwrap();
   let genre_link_selector = Selector::parse("a").unwrap();
   let episode_list_selector = Selector::parse(".episodelist ul li a").unwrap();
-  let recommendation_selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
-  let recommendation_title_selector = Selector::parse(".judul-anime a").unwrap();
+  let recommendation_selector = Selector::parse(
+    "#recommend-anime-series .isi-anime"
+  ).unwrap();
+  let recommendation_title_selector =
+    Selector::parse(".judul-anime a").unwrap();
   let recommendation_img_selector = Selector::parse("img").unwrap();
 
   let mut title = String::new();

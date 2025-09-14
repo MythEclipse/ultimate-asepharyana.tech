@@ -8,13 +8,13 @@ use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
-use dashmap::DashMap;
-use std::time::{ Duration, Instant };
+use std::time::Duration;
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
 use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
+use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -72,11 +72,7 @@ lazy_static! {
 // Pre-compiled regex for slug extraction
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
-// Cache for HTML responses with TTL (5 minutes)
-lazy_static! {
-  static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
-}
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
     get,
@@ -92,11 +88,34 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
     )
 )]
 pub async fn slug(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Path(slug): Path<String>
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   info!("Handling request for ongoing_anime slug: {}", slug);
+
+  let cache_key = format!("anime2:ongoing:{}", slug);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let ongoing_anime_response: OngoingAnimeResponse = serde_json
+      ::from_str(&json_data_string)
+      .map_err(|e| {
+        error!("Failed to deserialize cached data: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+      })?;
+    return Ok(Json(ongoing_anime_response).into_response());
+  }
 
   let (anime_list, pagination) = fetch_ongoing_anime_page(
     &Arc::new(TokioMutex::new(())),
@@ -106,43 +125,35 @@ pub async fn slug(
     (StatusCode::INTERNAL_SERVER_ERROR, format!("Error fetching ongoing anime page: {}", e))
   })?;
 
+  let ongoing_anime_response = OngoingAnimeResponse {
+    status: "Ok".to_string(),
+    data: anime_list,
+    pagination,
+  };
+  let json_data = serde_json::to_string(&ongoing_anime_response).map_err(|e| {
+    error!("Failed to serialize response for caching: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+  })?;
+
+  // Store in Redis with TTL
+  conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+    error!("Failed to set data in Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+  info!("Cache set for key: {}", cache_key);
+
   let total_duration = start_time.elapsed();
   info!("Successfully processed request for slug: {} in {:?}", slug, total_duration);
-  Ok(
-    Json(OngoingAnimeResponse {
-      status: "Ok".to_string(),
-      data: anime_list,
-      pagination,
-    })
-  )
+  Ok(Json(ongoing_anime_response).into_response())
 }
 
 async fn fetch_ongoing_anime_page(
   client: &Arc<TokioMutex<()>>,
   slug: String
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let url =
     format!("https://alqanime.net/advanced-search/page/{}/?status=ongoing&order=update", slug);
-
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(&url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      let entry_0_clone = entry.0.clone();
-      let slug_clone = slug.clone();
-      return match
-        tokio::task::spawn_blocking(move || {
-          parse_ongoing_anime_document(&Html::parse_document(&entry_0_clone), &slug_clone)
-        }).await
-      {
-        Ok(inner_result) => inner_result,
-        Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err)),
-      };
-    } else {
-      HTML_CACHE.remove(&url);
-    }
-  }
 
   // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
@@ -157,8 +168,8 @@ async fn fetch_ongoing_anime_page(
     info!("Fetching URL: {}", url);
     match fetch_with_proxy(&url, client).await {
       Ok(response) => {
-        let duration = start_time.elapsed();
-        info!("Successfully fetched URL: {} in {:?}", url, duration);
+        let _duration = start_time.elapsed();
+        info!("Successfully fetched URL: {}", url);
         Ok(response.data)
       }
       Err(e) => {
@@ -171,7 +182,6 @@ async fn fetch_ongoing_anime_page(
   let html = retry(backoff, fetch_operation).await.map_err(|e|
     format!("Failed to fetch HTML with retry: {}", e)
   )?;
-  HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
   let slug_clone = slug.clone();
 
   match
@@ -188,7 +198,7 @@ fn parse_ongoing_anime_document(
   document: &Html,
   slug: &str
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   info!("Starting to parse ongoing anime document for slug: {}", slug);
 
   let mut anime_list = Vec::new();

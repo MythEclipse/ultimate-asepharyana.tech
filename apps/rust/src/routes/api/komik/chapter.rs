@@ -14,8 +14,8 @@ use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
-use dashmap::DashMap;
-use std::time::{ Duration, Instant };
+use std::time::Duration;
+use deadpool_redis::redis::AsyncCommands;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
@@ -46,13 +46,18 @@ pub struct ChapterQuery {
 
 lazy_static! {
   static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
-  static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(".nextprev a[rel=\"prev\"]").unwrap();
-  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse(".nextprev a:has(.icol.daftarch)").unwrap();
-  static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(".nextprev a[rel=\"next\"]").unwrap();
+  static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(
+    ".nextprev a[rel=\"prev\"]"
+  ).unwrap();
+  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse(
+    ".nextprev a:has(.icol.daftarch)"
+  ).unwrap();
+  static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
+    ".nextprev a[rel=\"next\"]"
+  ).unwrap();
   static ref IMAGE_SELECTOR: Selector = Selector::parse("#chimg-auh img").unwrap();
-  static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
     get,
@@ -69,27 +74,56 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 )]
 #[axum::debug_handler]
 pub async fn chapter(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Query(params): Query<ChapterQuery>
 ) -> Result<Json<ChapterResponse>, (StatusCode, String)> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let chapter_url = params.chapter_url.unwrap_or_default();
   info!("Handling request for komik chapter: {}", chapter_url);
 
+  let cache_key = format!("komik:chapter:{}", chapter_url);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let chapter_response: ChapterResponse = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(chapter_response));
+  }
+
   match fetch_komik_chapter(&Arc::new(TokioMutex::new(())), chapter_url.clone()).await {
     Ok(data) => {
+      let chapter_response = ChapterResponse { message: "Ok".to_string(), data };
+      let json_data = serde_json::to_string(&chapter_response).map_err(|e| {
+        error!("Failed to serialize response for caching: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+      })?;
+
+      // Store in Redis with TTL
+      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+        error!("Failed to set data in Redis: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+      })?;
+      info!("Cache set for key: {}", cache_key);
+
       let total_duration = start_time.elapsed();
       info!(
         "Successfully processed request for chapter_url: {} in {:?}",
         chapter_url,
         total_duration
       );
-      Ok(
-        Json(ChapterResponse {
-          message: "Ok".to_string(),
-          data,
-        })
-      )
+      Ok(Json(chapter_response))
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
@@ -108,23 +142,9 @@ async fn fetch_komik_chapter(
   browser_client: &Arc<TokioMutex<()>>,
   chapter_url: String
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let base_url = "https://komikindo.ch"; // Updated as per user feedback
   let url = format!("{}/chapter/{}", base_url, chapter_url);
-
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(&url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      let entry_0_clone = entry.0.clone();
-      let chapter_url_clone = chapter_url.clone();
-      return tokio::task::spawn_blocking(move ||
-        parse_komik_chapter_document(&Html::parse_document(&entry_0_clone), &chapter_url_clone)
-      ).await?;
-    } else {
-      HTML_CACHE.remove(&url);
-    }
-  }
 
   // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
@@ -140,7 +160,7 @@ async fn fetch_komik_chapter(
     match fetch_with_proxy(&url, browser_client).await {
       Ok(response) => {
         let duration = start_time.elapsed();
-        info!("Successfully fetched URL: {} in {:?}", url, duration);
+        info!("Successfully fetched URL: {}", url);
         Ok(response.data)
       }
       Err(e) => {
@@ -150,29 +170,18 @@ async fn fetch_komik_chapter(
     }
   };
 
-  match retry(backoff, fetch_operation).await {
-    Ok(html) => {
-      // Cache the result
-      HTML_CACHE.insert(url.clone(), (html.clone(), Instant::now()));
-      let html_clone = html.clone(); // Clone the html string
-      let chapter_url_clone = chapter_url.clone();
+  let html = retry(backoff, fetch_operation).await?;
 
-      tokio::task::spawn_blocking(move ||
-        parse_komik_chapter_document(&Html::parse_document(&html_clone), &chapter_url_clone)
-      ).await?
-    }
-    Err(e) => {
-      error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
-      Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
-    }
-  }
+  tokio::task::spawn_blocking(move ||
+    parse_komik_chapter_document(&Html::parse_document(&html), &chapter_url)
+  ).await?
 }
 
 fn parse_komik_chapter_document(
   document: &Html,
   _chapter_url: &str
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   info!("Starting to parse komik chapter document");
 
   let title = document

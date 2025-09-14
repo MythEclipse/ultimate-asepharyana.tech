@@ -10,10 +10,9 @@ use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
-use tokio::task;
 use backoff::{ future::retry, ExponentialBackoff };
-use std::time::{ Duration, Instant };
-use dashmap::DashMap;
+use deadpool_redis::redis::AsyncCommands;
+use std::time::Duration;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -83,9 +82,8 @@ lazy_static! {
   pub static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
   pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
   pub static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
-  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
     get,
@@ -103,28 +101,64 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 )]
 #[axum::debug_handler]
 pub async fn search(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Query(params): Query<SearchQuery>
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let query = params.query.unwrap_or_default();
   let page = params.page.unwrap_or(1);
   info!("Starting komik search for query: '{}', page: {}", query, page);
 
+  let cache_key = format!("komik:search:{}:{}", query, page);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let search_response: SearchResponse = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(search_response));
+  }
+
   let url = format!("{}/page/{}/?s={}", *KOMIK_BASE_URL, page, urlencoding::encode(&query));
 
-  let (data, pagination) = fetch_and_parse_search(&Arc::new(TokioMutex::new(())), &url, page)
-    .await
-    .map_err(|e| {
-      error!(
-        "Failed to process komik search for query: '{}', page: {} after {:?}, error: {:?}",
-        query,
-        page,
-        start_time.elapsed(),
-        e
-      );
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
-    })?;
+  let (data, pagination) = fetch_and_parse_search(
+    &Arc::new(TokioMutex::new(())),
+    &url,
+    page
+  ).await.map_err(|e| {
+    error!(
+      "Failed to process komik search for query: '{}', page: {} after {:?}, error: {:?}",
+      query,
+      page,
+      start_time.elapsed(),
+      e
+    );
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
+  })?;
+
+  let search_response = SearchResponse { data, pagination };
+  let json_data = serde_json::to_string(&search_response).map_err(|e| {
+    error!("Failed to serialize response for caching: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+  })?;
+
+  // Store in Redis with TTL
+  conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+    error!("Failed to set data in Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+  info!("Cache set for key: {}", cache_key);
 
   let total_duration = start_time.elapsed();
   info!(
@@ -133,12 +167,7 @@ pub async fn search(
     page,
     total_duration
   );
-  Ok(
-    Json(SearchResponse {
-      data,
-      pagination,
-    })
-  )
+  Ok(Json(search_response))
 }
 
 async fn fetch_and_parse_search(
@@ -146,23 +175,6 @@ async fn fetch_and_parse_search(
   url: &str,
   page: u32
 ) -> Result<(Vec<MangaItem>, Pagination), String> {
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      let html_string = entry.0.clone(); // Clone the html string for the blocking task
-      let parse_result = task::spawn_blocking(move ||
-        parse_search_document(html_string, page)
-      ).await;
-      return match parse_result {
-        Ok(inner_result) => inner_result,
-        Err(join_err) => Err(format!("Blocking task failed: {}", join_err)),
-      };
-    } else {
-      HTML_CACHE.remove(url);
-    }
-  }
-
   let backoff = ExponentialBackoff {
     initial_interval: Duration::from_millis(500),
     max_interval: Duration::from_secs(10),
@@ -185,11 +197,11 @@ async fn fetch_and_parse_search(
     }
   };
 
-  let html = retry(backoff, fetch_operation).await
-    .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
-  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
+  let html = retry(backoff, fetch_operation).await.map_err(|e|
+    format!("Failed to fetch HTML with retry: {}", e)
+  )?;
 
-  let parse_result = task::spawn_blocking(move || parse_search_document(html, page)).await;
+  let parse_result = tokio::task::spawn_blocking(move || parse_search_document(html, page)).await;
   match parse_result {
     Ok(inner_result) => inner_result,
     Err(join_err) => Err(format!("Blocking task failed: {}", join_err)),
@@ -222,12 +234,11 @@ fn parse_search_document(
       .select(&CHAPTER_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
-      .and_then(|text| {
-        CHAPTER_REGEX
-          .captures(&text)
-          .and_then(|cap: regex::Captures| cap.get(0))
+      .and_then(|text|
+        CHAPTER_REGEX.captures(&text)
+          .and_then(|cap| cap.get(0))
           .map(|m| m.as_str().to_string())
-      })
+      )
       .unwrap_or_default();
 
     let score = element

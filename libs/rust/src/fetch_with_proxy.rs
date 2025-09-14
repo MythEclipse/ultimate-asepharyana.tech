@@ -2,8 +2,9 @@
 
 use reqwest::Client;
 use tracing::{ info, warn, error };
+use redis::AsyncCommands;
 
-use crate::redis_client::get_redis_connection;
+use crate::redis_client::get_redis_conn;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
 use std::sync::Arc;
@@ -32,9 +33,9 @@ fn get_fetch_cache_key(slug: &str) -> String {
 }
 
 async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, AppError> {
-  let mut conn = get_redis_connection()?;
+  let mut conn = get_redis_conn().await?;
   let key = get_fetch_cache_key(slug);
-  let cached: Option<String> = redis::cmd("GET").arg(&key).query(&mut conn)?;
+  let cached: Option<String> = conn.get(&key).await?;
   if let Some(cached_str) = cached {
     match serde_json::from_str::<FetchResult>(&cached_str) {
       Ok(parsed) => {
@@ -49,10 +50,10 @@ async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, AppError> {
 }
 
 async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppError> {
-  let mut conn = get_redis_connection()?;
+  let mut conn = get_redis_conn().await?;
   let key = get_fetch_cache_key(slug);
   let json_string = serde_json::to_string(value)?;
-  redis::cmd("SET").arg(&key).arg(&json_string).arg("EX").arg(120).query::<()>(&mut conn)?;
+  conn.set_ex::<_, _, ()>(&key, &json_string, 120).await?;
   Ok(())
 }
 // --- REDIS CACHE WRAPPER END ---
@@ -138,7 +139,7 @@ pub async fn fetch_with_proxy(
 
         if is_internet_baik_block_page(&text_data) {
           warn!("Blocked by internetbaik (direct fetch), trying proxies");
-                  let proxy_result = fetch_from_proxies(slug, browser).await?;
+          let proxy_result = fetch_from_proxies(slug, browser).await?;
           set_cached_fetch(slug, &proxy_result).await?;
           Ok(proxy_result)
         } else {

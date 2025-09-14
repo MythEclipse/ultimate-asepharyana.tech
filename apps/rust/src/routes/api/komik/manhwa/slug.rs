@@ -1,6 +1,8 @@
 //use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manhwa slug endpoint.
 
 use axum::{ extract::Query, response::IntoResponse, routing::get, Json, Router };
+use std::time::Duration;
+use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
@@ -10,12 +12,11 @@ use regex::Regex;
 use rust_lib::config::CONFIG_MAP;
 use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
-use std::time::{ Duration, Instant };
 use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use tokio::sync::Mutex as TokioMutex;
+use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
-use dashmap::DashMap;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -80,9 +81,8 @@ lazy_static! {
   pub static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
   pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
   pub static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
-  pub static ref HTML_CACHE: DashMap<String, (String, Instant)> = DashMap::new();
 }
-const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
     get,
@@ -98,23 +98,54 @@ const CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
     )
 )]
 pub async fn list(
-  State(_app_state): State<Arc<AppState>>,
+  State(app_state): State<Arc<AppState>>,
   Query(params): Query<QueryParams>
 ) -> impl IntoResponse {
-  let start_time = Instant::now();
+  let start_time = std::time::Instant::now();
   let page = params.page;
   info!("Starting manhwa list request for page {}", page);
+
+  let cache_key = format!("komik:manhwa:{}", page);
+  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+    error!("Failed to get Redis connection: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  // Try to get cached data
+  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+    error!("Failed to get data from Redis: {:?}", e);
+    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+  })?;
+
+  if let Some(json_data_string) = cached_response {
+    info!("Cache hit for key: {}", cache_key);
+    let manhwa_response: ManhwaResponse = serde_json::from_str(&json_data_string).map_err(|e| {
+      error!("Failed to deserialize cached data: {:?}", e);
+      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    })?;
+    return Ok(Json(manhwa_response).into_response());
+  }
 
   let url = format!("{}/manhwa/page/{}/", *BASE_URL, page);
 
   match fetch_and_parse_manhwa_list(&Arc::new(TokioMutex::new(())), &url, page).await {
     Ok((data, pagination)) => {
+      let manhwa_response = ManhwaResponse { data, pagination };
+      let json_data = serde_json::to_string(&manhwa_response).map_err(|e| {
+        error!("Failed to serialize response for caching: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+      })?;
+
+      // Store in Redis with TTL
+      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+        error!("Failed to set data in Redis: {:?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+      })?;
+      info!("Cache set for key: {}", cache_key);
+
       let total_duration = start_time.elapsed();
       info!("Successfully processed manhwa list for page: {} in {:?}", page, total_duration);
-      Json(ManhwaResponse {
-        data,
-        pagination,
-      })
+      Ok(Json(manhwa_response).into_response())
     }
     Err(e) => {
       let total_duration = start_time.elapsed();
@@ -124,17 +155,7 @@ pub async fn list(
         total_duration,
         e
       );
-      Json(ManhwaResponse {
-        data: vec![],
-        pagination: Pagination {
-          current_page: page,
-          last_visible_page: page,
-          has_next_page: false,
-          next_page: None,
-          has_previous_page: false,
-          previous_page: None,
-        },
-      })
+      Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
     }
   }
 }
@@ -144,19 +165,6 @@ async fn fetch_and_parse_manhwa_list(
   url: &str,
   page: u32
 ) -> Result<(Vec<ManhwaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-  // Check cache first
-  if let Some(entry) = HTML_CACHE.get(url) {
-    if entry.1.elapsed() < CACHE_TTL {
-      info!("Cache hit for URL: {}", url);
-      return tokio::task::spawn_blocking(move || {
-        let document = Html::parse_document(&entry.0);
-        parse_manhwa_list_document(&document, page)
-      }).await?;
-    } else {
-      HTML_CACHE.remove(url);
-    }
-  }
-
   let backoff = ExponentialBackoff {
     initial_interval: Duration::from_millis(500),
     max_interval: Duration::from_secs(10),
@@ -179,11 +187,10 @@ async fn fetch_and_parse_manhwa_list(
     }
   };
 
-  let html = retry(backoff, fetch_operation).await?;
-  HTML_CACHE.insert(url.to_string(), (html.clone(), Instant::now()));
+  let html_string = retry(backoff, fetch_operation).await?.to_string();
 
   tokio::task::spawn_blocking(move || {
-    let document = Html::parse_document(&html);
+    let document = Html::parse_document(&html_string);
     parse_manhwa_list_document(&document, page)
   }).await?
 }
