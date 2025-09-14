@@ -1,5 +1,4 @@
 #![doc = "Logging Setup"]
-#[macro_use]
 extern crate lazy_static;
 // Temporary comment to force recompile
 //

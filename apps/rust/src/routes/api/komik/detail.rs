@@ -145,7 +145,7 @@ pub async fn detail(
       })?;
 
       // Store in Redis with TTL
-      conn.set_ex(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
+      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
         error!("Failed to set data in Redis: {:?}", e);
         (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
       })?;

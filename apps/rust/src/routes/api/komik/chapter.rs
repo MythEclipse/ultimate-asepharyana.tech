@@ -159,7 +159,7 @@ async fn fetch_komik_chapter(
     info!("Fetching URL: {}", url);
     match fetch_with_proxy(&url, browser_client).await {
       Ok(response) => {
-        let duration = start_time.elapsed();
+        let _duration = start_time.elapsed();
         info!("Successfully fetched URL: {}", url);
         Ok(response.data)
       }
@@ -213,8 +213,8 @@ fn parse_komik_chapter_document(
     }
   }
 
-  let duration = start_time.elapsed();
-  info!("Parsed komik chapter document in {:?}", duration);
+  let _duration = start_time.elapsed();
+  info!("Parsed komik chapter document in {:?}", _duration);
 
   Ok(ChapterData {
     title,

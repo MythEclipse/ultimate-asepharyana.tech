@@ -158,7 +158,7 @@ async fn fetch_anime_detail(
   browser_client: &Arc<TokioMutex<()>>,
   slug: String
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-  let start_time = std::time::Instant::now();
+  let _start_time_fetch = std::time::Instant::now(); // Renamed to clearly differentiate and mark as unused
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
 
   let backoff = ExponentialBackoff {
