@@ -120,7 +120,7 @@ fn process_directory_entries(
       continue;
     }
 
-    let mod_name_sanitized = sanitize_module_name(file_name);
+    let mod_name = sanitize_module_name(file_name);
 
     if path.is_dir() {
       // Recursively generate mod.rs for the subdirectory
@@ -133,12 +133,12 @@ fn process_directory_entries(
       )?;
 
       if has_routes {
-        pub_mods.push(format!("pub mod {};", mod_name_sanitized));
-        route_registrations.push(mod_name_sanitized.clone());
+        pub_mods.push(format!("pub mod {};", mod_name));
+        route_registrations.push(mod_name.clone());
 
         // If this is the root level, add to modules
         if current_dir == root_api_path {
-          modules.push(mod_name_sanitized.clone());
+          modules.push(mod_name.clone());
         }
       }
     } else if path.is_file() && path.extension().map_or(false, |e| e == "rs") {
@@ -150,15 +150,15 @@ fn process_directory_entries(
         .and_then(|s| s.to_str())
         .ok_or_else(|| anyhow::anyhow!("Invalid file stem for: {:?}", path))?;
 
-      let mod_name = sanitize_module_name(file_stem);
-      pub_mods.push(format!("pub mod {};", mod_name));
+      let mod_name_from_file_stem = sanitize_module_name(file_stem);
+      pub_mods.push(format!("pub mod {};", mod_name_from_file_stem));
 
       // For dynamic routes, register the route using the dynamic segment
       if is_dynamic {
         // Assuming dynamic routes are always in the format "some_name.rs" where "some_name" is the parameter
         route_registrations.push(format!("{}/{{{}}}", current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/"), file_stem));
       } else {
-        route_registrations.push(mod_name.clone());
+        route_registrations.push(mod_name_from_file_stem.clone());
       }
 
       if
@@ -174,7 +174,7 @@ fn process_directory_entries(
 
       // If this is the root level, add to modules
       if current_dir == root_api_path {
-        modules.push(mod_name.clone());
+        modules.push(mod_name_from_file_stem.clone());
       }
     }
   }

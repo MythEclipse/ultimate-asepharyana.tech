@@ -52,7 +52,7 @@ fn main() -> Result<()> {
 
     // Setup environment and collect API data
     let api_routes_path = setup_build_environment(&config)?;
-    let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path, &config)?;
+    let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
 
     // Generate and validate OpenAPI specification
     let openapi_doc = generate_api_modules(&api_routes_path, &modules, &api_handlers, &openapi_schemas)?;
@@ -97,14 +97,11 @@ fn setup_build_environment(config: &BuildConfig) -> Result<PathBuf> {
 }
 
 /// Collect API data: handlers, schemas, and modules
-fn collect_api_data(api_routes_path: &Path, _config: &BuildConfig) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
+fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
     log::debug!("Collecting API data");
 
-    // Early return with empty collections if regeneration not needed
-    let should_regenerate_value = should_regenerate(api_routes_path)?;
-    if !should_regenerate_value {
-        return Ok((Vec::new(), HashSet::new(), Vec::new()));
-    }
+    // Always regenerate (hash checking disabled)
+    // The previous `should_regenerate` function always returned true, so this is inlined.
 
     let mut api_handlers = Vec::new();
     let mut openapi_schemas = HashSet::new();
@@ -148,16 +145,6 @@ fn generate_api_modules(
     )?)
 }
 
-fn should_regenerate(_api_routes_path: &Path) -> Result<bool> {
-    // Force regeneration if environment variable is set
-    if env::var("FORCE_API_REGEN").is_ok() {
-        log::info!("FORCE_API_REGEN environment variable detected, forcing regeneration");
-        return Ok(true);
-    }
-
-    // Always regenerate (hash checking disabled)
-    Ok(true)
-}
 
 fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
     log::debug!("Validating OpenAPI specification");
