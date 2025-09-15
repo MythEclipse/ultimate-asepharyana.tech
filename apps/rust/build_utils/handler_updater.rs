@@ -4,12 +4,6 @@ use std::path::Path;
 use anyhow::{ anyhow, Context, Result };
 use regex::Regex;
 
-// Re-export modules for public API
-pub mod param_parsing;
-pub mod utoipa_generation;
-pub mod response_enhancement;
-pub mod schema_injection;
-
 use crate::build_utils::constants::{ ENDPOINT_METADATA_REGEX, HANDLER_FN_REGEX };
 use crate::build_utils::path_utils::{
   extract_path_params,
@@ -20,9 +14,9 @@ use crate::build_utils::path_utils::{
 };
 use crate::build_utils::handler_template::generate_handler_template;
 use crate::build_utils::handler_updater::param_parsing::parse_query_params;
-use crate::build_utils::handler_updater::utoipa_generation::generate_utoipa_macro as imported_generate_utoipa_macro;
+use crate::build_utils::handler_updater::utoipa_generation::generate_utoipa_macro;
 use crate::build_utils::handler_updater::response_enhancement::enhance_response_struct;
-use crate::build_utils::handler_updater::schema_injection::inject_schemas;
+use crate::build_utils::handler_utils::schema_injection::inject_schemas;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -63,14 +57,6 @@ pub fn update_handler_file(
     .replace(['[', ']'], "")
     .replace('-', "_");
 
-  let relative_path = path.strip_prefix(root_api_path).unwrap();
-  let relative_path_no_ext = relative_path.with_extension("");
-  let relative_path_str = relative_path_no_ext.to_str().unwrap();
-  let tag_str = sanitize_tag(relative_path_str);
-  let default_tag = if tag_str.is_empty() { "api".to_string() } else { tag_str };
-
-  let operation_id = sanitize_operation_id(relative_path_str);
-
   let doc_comment = {
     let register_pos = content.find("pub fn register_routes").unwrap_or(content.len());
     let before = &content[..register_pos];
@@ -91,143 +77,29 @@ pub fn update_handler_file(
     }
   };
 
-  let mut metadata = HashMap::new();
-  for cap in ENDPOINT_METADATA_REGEX.captures_iter(&content) {
-    metadata.insert(cap[1].to_string(), cap[2].to_string());
-  }
+  let metadata = extract_and_normalize_metadata(&content, path, root_api_path, &file_stem, doc_comment)?;
 
-  // Only set ENDPOINT_TAG if it doesn't exist
-  let tag_regex = Regex::new(r#"const\s+ENDPOINT_TAG:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  if !tag_regex.is_match(&content) {
-    content = tag_regex
-      .replace(&content, &format!(r#"const ENDPOINT_TAG: &str = "{}";"#, default_tag))
-      .to_string();
-  }
+  let http_method = metadata.get("ENDPOINT_METHOD").cloned().unwrap();
+  let route_path = metadata.get("ENDPOINT_PATH").cloned().unwrap();
+  let route_tag = metadata.get("ENDPOINT_TAG").cloned().unwrap();
+  let operation_id = metadata.get("OPERATION_ID").cloned().unwrap();
+  let route_description = metadata.get("ENDPOINT_DESCRIPTION").cloned().unwrap();
+  let response_body = metadata.get("SUCCESS_RESPONSE_BODY").cloned().unwrap();
 
-  // Only set OPERATION_ID if it doesn't exist
-  let operation_id_regex = Regex::new(r#"const\s+OPERATION_ID:\s*&\s*str\s*=\s*"[^"]*";"#).unwrap();
-  if !operation_id_regex.is_match(&content) {
-    content = operation_id_regex
-      .replace(&content, &format!(r#"const OPERATION_ID: &str = "{}";"#, operation_id))
-      .to_string();
-  }
-
-  let http_method = metadata
-    .get("ENDPOINT_METHOD")
-    .cloned()
-    .unwrap_or_else(|| "get".to_string());
-  let mut route_path = metadata
-    .get("ENDPOINT_PATH")
-    .cloned()
-    .unwrap_or_else(|| {
-      let relative_path_no_ext = path.strip_prefix(root_api_path).unwrap().with_extension("");
-      relative_path_no_ext.to_str().unwrap().replace("\\", "/")
-    })
-    .trim_start_matches('/') // Strip all leading slashes from current path
-    .to_string();
-
-  // Prepend "/api/" to ensure consistency, but avoid duplication
-  if route_path.contains("/api/api/") {
-    // Replace all duplicate /api/ patterns
-    route_path = route_path.replace("/api/api/", "/api/");
-  }
-  if !route_path.starts_with("/api/") && !route_path.starts_with("api/") {
-    route_path = format!("/api/{}", route_path);
-  }
-  // Remove any leading "api/" without slash and replace with "/api/"
-  if route_path.starts_with("api/") {
-    route_path = format!("/{}", route_path);
-  }
-
-  // Parse path params from existing function signature
-  let parsed_path_params = parse_path_params_from_signature(&content)?;
-
-  // Update ENDPOINT_PATH if there are path params and route_path doesn't have {param}
-  if !parsed_path_params.is_empty() {
-    for (param_name, _) in &parsed_path_params {
-      if
-        route_path.ends_with(&format!("/{}", file_stem)) &&
-        !route_path.contains(&format!("{{{}}}", param_name))
-      {
-        let new_route_path = route_path.replace(
-          &format!("/{}", file_stem),
-          &format!("/{{{}}}", param_name)
-        );
-        // Only update ENDPOINT_PATH for path params if it doesn't exist
-        let endpoint_path_regex = Regex::new(
-          r#"const\s+ENDPOINT_PATH:\s*&\s*str\s*=\s*"[^"]*";"#
-        ).unwrap();
-        if !endpoint_path_regex.is_match(&content) {
-          content = endpoint_path_regex
-            .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, new_route_path))
-            .to_string();
-        }
-        route_path = new_route_path;
-        // Continue to apply the correct ENDPOINT_PATH below
-      }
-    }
-  }
-
-  // Only generate ENDPOINT_PATH if it doesn't exist
-  let endpoint_path_regex = Regex::new(
-    r#"const\s+ENDPOINT_PATH:\s*&\s*str\s*=\s*"[^"]*";"#
-  ).unwrap();
-  if !endpoint_path_regex.is_match(&content) {
-    content = endpoint_path_regex
-      .replace(&content, &format!(r#"const ENDPOINT_PATH: &str = "{}";"#, route_path))
-      .to_string();
-  }
-
-  let route_tag = default_tag.clone();
-  let response_body = metadata
-    .get("SUCCESS_RESPONSE_BODY")
-    .cloned()
-    .unwrap_or_else(|| "String".to_string());
   let axum_path = if route_path.contains('[') && route_path.contains(']') {
-    // Legacy bracket notation
-    Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
+      Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
   } else {
-    // New pattern-based dynamic detection
-    let mut axum_path = route_path.clone();
-    let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
-    for pattern in &dynamic_patterns {
-      if route_path.ends_with(pattern) {
-        let param_name = pattern.trim_start_matches('_');
-        axum_path = route_path.replace(pattern, &format!("{{{}}}", param_name));
-        break;
+      let mut axum_path = route_path.clone();
+      let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+      for pattern in &dynamic_patterns {
+          if route_path.ends_with(pattern) {
+              let param_name = pattern.trim_start_matches('_');
+              axum_path = route_path.replace(pattern, &format!("{{{}}}", param_name));
+              break;
+          }
       }
-    }
-    axum_path
+      axum_path
   };
-  let existing_description = metadata.get("ENDPOINT_DESCRIPTION").cloned();
-  let route_description = if let Some(desc) = &existing_description {
-    // Prefer doc comment over generic descriptions
-    if desc.starts_with("Description for the") || desc == "Description for the X endpoint" {
-      doc_comment.unwrap_or_else(|| generate_default_description(&axum_path, &http_method))
-    } else {
-      desc.clone()
-    }
-  } else {
-    doc_comment.unwrap_or_else(|| generate_default_description(&axum_path, &http_method))
-  };
-
-  // Only set ENDPOINT_DESCRIPTION if it doesn't exist
-  let description_regex = Regex::new(
-    r#"const\s+ENDPOINT_DESCRIPTION:\s*&\s*str\s*=\s*"[^"]*";"#
-  ).unwrap();
-  if !description_regex.is_match(&content) {
-    content = description_regex
-      .replace(
-        &content,
-        &format!(
-          r#"const ENDPOINT_DESCRIPTION: &str = "{}";"#,
-          route_description.replace("\"", "\\\"")
-        )
-      )
-      .to_string();
-  }
-
-  let openapi_route_path = route_path.clone();
 
   // Sanitize response body for utoipa: strip Json<> wrapper and module path, keep only the type name.
   let sanitized_response = if response_body.starts_with("Json<") {
@@ -242,6 +114,7 @@ pub fn update_handler_file(
     response_body.split("::").last().unwrap_or(&response_body).to_string()
   };
 
+  let parsed_path_params = parse_path_params_from_signature(&content)?;
   let path_params = if !parsed_path_params.is_empty() {
     parsed_path_params
   } else {
@@ -251,15 +124,9 @@ pub fn update_handler_file(
   // Parse query parameters from the handler content
   let query_params = parse_query_params(&content)?;
 
-  println!("cargo:warning=File: {:?}", path);
-  println!("cargo:warning=axum_path: {}", axum_path);
-  println!("cargo:warning=route_path: {}", route_path);
-  println!("cargo:warning=path_params: {:?}", path_params);
-  println!("cargo:warning=query_params: {:?}", query_params);
-
-  let new_utoipa_macro = imported_generate_utoipa_macro(
+  let new_utoipa_macro = generate_utoipa_macro(
     &http_method,
-    &openapi_route_path,
+    &route_path, // Use route_path here as it's the normalized one
     &route_tag,
     &sanitized_response,
     &route_description,
@@ -268,38 +135,19 @@ pub fn update_handler_file(
     &query_params
   );
 
-  println!("cargo:warning=Generated utoipa macro:");
-  println!("cargo:warning={}", new_utoipa_macro);
-
-  // Debug: Check if content will actually change
-  println!("cargo:warning=Content length before: {}", content.len());
-
-  // Find and replace utoipa macro manually
   let mut updated_content = content.clone();
   let mut utoipa_replaced = false;
-  if let Some(start_pos) = content.find("#[utoipa::path(") {
-    println!("cargo:warning=Found utoipa macro at position {}", start_pos);
 
+  if let Some(start_pos) = content.find("#[utoipa::path(") {
     // Find the end by looking for the closing )] pattern
     if let Some(end_marker_pos) = content[start_pos..].find(")]") {
       let end_pos = start_pos + end_marker_pos + 2; // +2 to include the )]
-      println!(
-        "cargo:warning=Found closing )] at position {}, end_pos = {}",
-        start_pos + end_marker_pos,
-        end_pos
-      );
-      println!("cargo:warning=Replacing utoipa macro from {} to {}", start_pos, end_pos);
       let before = &content[..start_pos];
       let after = &content[end_pos..];
       updated_content = format!("{}{}{}", before, new_utoipa_macro, after);
       utoipa_replaced = content != updated_content;
-      println!("cargo:warning=Content length after replacement: {}", updated_content.len());
-      println!("cargo:warning=Utoipa macro replaced: {}", utoipa_replaced);
-    } else {
-      println!("cargo:warning=Could not find closing )] pattern");
     }
   } else {
-    println!("cargo:warning=No utoipa macro found, adding new one");
     // Add new utoipa macro before the function
     let fn_regex = Regex::new(r"(pub async fn \w+)").unwrap();
     if let Some(cap) = fn_regex.find(&content) {
@@ -307,14 +155,13 @@ pub fn update_handler_file(
       let after_fn = &content[cap.start()..];
       updated_content = format!("{}{}\n{}", before_fn, new_utoipa_macro, after_fn);
       utoipa_replaced = true;
-      println!("cargo:warning=Added new utoipa macro");
     }
   }
 
   // Update function signature if there are path params
   if !path_params.is_empty() {
     let fn_regex = Regex::new(r"(pub async fn \w+)\s*\([^)]*\)\s*->\s*impl IntoResponse").unwrap();
-    if let Some(cap) = fn_regex.captures(&content) {
+    if let Some(cap) = fn_regex.captures(&updated_content) {
       let fn_start = &cap[1];
       let params_str = path_params
         .iter()
@@ -322,82 +169,64 @@ pub fn update_handler_file(
         .collect::<Vec<_>>()
         .join(", ");
       let new_fn = format!("{}({}) -> impl IntoResponse", fn_start, params_str);
-      content = fn_regex.replace(&content, &new_fn).to_string();
+      updated_content = fn_regex.replace(&updated_content, &new_fn).to_string();
     }
 
     // Ensure Path import
-    if !content.contains("extract::Path") {
+    if !updated_content.contains("extract::Path") {
       let import_regex = Regex::new(r"use axum::\{([^}]*)\};").unwrap();
-      if let Some(cap) = import_regex.captures(&content) {
+      if let Some(cap) = import_regex.captures(&updated_content) {
         let existing = &cap[1];
         let new_import = format!("extract::Path, {}", existing);
-        content = import_regex
-          .replace(&content, &format!("use axum::{{{}}};", new_import))
+        updated_content = import_regex
+          .replace(&updated_content, &format!("use axum::{{{}}};", new_import))
           .to_string();
       }
     }
   }
-  // Only set SUCCESS_RESPONSE_BODY if it doesn't exist
-  let response_body_regex = Regex::new(
-    r#"const\s+SUCCESS_RESPONSE_BODY:\s*&\s*str\s*=\s*"[^"]*";"#
-  ).unwrap();
-  if !response_body_regex.is_match(&content) {
-    content = response_body_regex
-      .replace(&content, &format!(r#"const SUCCESS_RESPONSE_BODY: &str = "{}";"#, response_body))
-      .to_string();
-  }
-  let actual_func_name = HANDLER_FN_REGEX.captures(&content)
+
+  let actual_func_name = HANDLER_FN_REGEX.captures(&updated_content)
     .map(|c| c[1].to_string())
     .unwrap_or_else(|| file_stem.to_string());
-  let _fn_signature = format!("pub async fn {}(", actual_func_name);
 
-  // Simple approach: just generate for the first handler
   let new_register_fn = format!(
     "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
     http_method.to_lowercase(),
     actual_func_name
   );
 
-  let mut new_content = updated_content.clone();
+  let mut final_content = updated_content.clone();
 
-  // Don't remove existing utoipa::path macros if we're parsing them
-  // Only update if there are no utoipa macros or if we need to regenerate them
-
-  // Remove existing register_routes and add new one
   let register_regex = Regex::new(
     r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\}\s*"
   ).unwrap();
 
   // Check if existing register_routes contains multiple routes
-  if let Some(existing_register) = register_regex.find(&content) {
+  if let Some(existing_register) = register_regex.find(&final_content) {
     let route_count = existing_register.as_str().matches(".route(").count();
     if route_count > 1 {
       // Skip updating if it already has multiple routes
-      new_content = content.clone();
+      final_content = content.clone();
     } else {
-      new_content = register_regex.replace_all(&new_content, "").to_string();
-      new_content = new_content.trim_end().to_string();
-      new_content.push_str("\n\n");
-      new_content.push_str(&new_register_fn);
+      final_content = register_regex.replace_all(&final_content, "").to_string();
+      final_content = final_content.trim_end().to_string();
+      final_content.push_str("\n\n");
+      final_content.push_str(&new_register_fn);
     }
   } else {
-    new_content = new_content.trim_end().to_string();
-    new_content.push_str("\n\n");
-    new_content.push_str(&new_register_fn);
+    final_content = final_content.trim_end().to_string();
+    final_content.push_str("\n\n");
+    final_content.push_str(&new_register_fn);
   }
 
   // Enhance response struct if it's basic
-  new_content = enhance_response_struct(&new_content, &axum_path)?;
+  final_content = enhance_response_struct(&final_content, &axum_path)?;
 
-  if updated_content != new_content || utoipa_replaced {
-    println!("cargo:warning=Writing updated content to file: {:?}", path);
-    fs::write(path, &new_content)?;
-    println!("cargo:warning=File write completed successfully");
-  } else {
-    println!("cargo:warning=No changes detected, file not written");
+  if content != final_content || utoipa_replaced {
+    fs::write(path, &final_content)?;
   }
 
-  inject_schemas(&new_content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
+  inject_schemas(&final_content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
 
   Ok(
     Some(HandlerRouteInfo {
@@ -472,4 +301,102 @@ fn update_uploader_file(
       route_tag: "uploader".to_string(),
     })
   )
+}
+
+/// Extracts and normalizes metadata from handler content.
+fn extract_and_normalize_metadata(
+    content: &str,
+    path: &Path,
+    root_api_path: &Path,
+    file_stem: &str,
+    doc_comment: Option<String>
+) -> Result<HashMap<String, String>> {
+    let mut metadata = HashMap::new();
+
+    // Extract existing metadata
+    for cap in ENDPOINT_METADATA_REGEX.captures_iter(content) {
+        metadata.insert(cap[1].to_string(), cap[2].to_string());
+    }
+
+    let relative_path_no_ext = path.strip_prefix(root_api_path).unwrap().with_extension("");
+    let relative_path_str = relative_path_no_ext.to_str().unwrap();
+
+    // Default ENDPOINT_TAG
+    let default_tag = {
+        let tag_str = sanitize_tag(relative_path_str);
+        if tag_str.is_empty() { "api".to_string() } else { tag_str }
+    };
+    metadata.entry("ENDPOINT_TAG".to_string()).or_insert(default_tag);
+
+    // Default OPERATION_ID
+    let operation_id = sanitize_operation_id(relative_path_str);
+    metadata.entry("OPERATION_ID".to_string()).or_insert(operation_id);
+
+    // Default ENDPOINT_METHOD
+    metadata.entry("ENDPOINT_METHOD".to_string()).or_insert("get".to_string());
+
+    // Default ENDPOINT_PATH
+    let default_route_path = relative_path_no_ext.to_str().unwrap().replace("\\", "/");
+    let mut route_path = metadata.entry("ENDPOINT_PATH".to_string()).or_insert(default_route_path).clone();
+
+    // Normalize route_path
+    route_path = normalize_route_path(&route_path);
+    metadata.insert("ENDPOINT_PATH".to_string(), route_path.clone());
+
+    // Update ENDPOINT_PATH if there are path params and route_path doesn't have {param}
+    let parsed_path_params = parse_path_params_from_signature(content)?;
+    if !parsed_path_params.is_empty() {
+        for (param_name, _) in &parsed_path_params {
+            if route_path.ends_with(&format!("/{}", file_stem)) && !route_path.contains(&format!("{{{}}}", param_name)) {
+                let new_route_path = route_path.replace(&format!("/{}", file_stem), &format!("/{{{}}}", param_name));
+                metadata.insert("ENDPOINT_PATH".to_string(), new_route_path.clone());
+                route_path = new_route_path;
+                break;
+            }
+        }
+    }
+
+    // Default ENDPOINT_DESCRIPTION
+    let axum_path = if route_path.contains('[') && route_path.contains(']') {
+        Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
+    } else {
+        let mut axum_path = route_path.clone();
+        let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+        for pattern in &dynamic_patterns {
+            if route_path.ends_with(pattern) {
+                let param_name = pattern.trim_start_matches('_');
+                axum_path = route_path.replace(pattern, &format!("{{{}}}", param_name));
+                break;
+            }
+        }
+        axum_path
+    };
+    let http_method = metadata.get("ENDPOINT_METHOD").unwrap().clone();
+    let default_description = doc_comment.unwrap_or_else(|| generate_default_description(&axum_path, &http_method));
+    metadata.entry("ENDPOINT_DESCRIPTION".to_string()).or_insert(default_description);
+
+    // Default SUCCESS_RESPONSE_BODY
+    metadata.entry("SUCCESS_RESPONSE_BODY".to_string()).or_insert("String".to_string());
+
+    Ok(metadata)
+}
+
+/// Normalizes a route path by ensuring it starts with "/api/" and removing duplicates.
+fn normalize_route_path(route_path: &str) -> String {
+    let mut normalized_path = route_path.to_string();
+
+    // Replace all duplicate /api/ patterns
+    while normalized_path.contains("/api/api/") {
+        normalized_path = normalized_path.replace("/api/api/", "/api/");
+    }
+
+    // Ensure it starts with "/api/"
+    if !normalized_path.starts_with("/api/") {
+        if normalized_path.starts_with("api/") {
+            normalized_path = format!("/{}", normalized_path);
+        } else {
+            normalized_path = format!("/api/{}", normalized_path);
+        }
+    }
+    normalized_path
 }

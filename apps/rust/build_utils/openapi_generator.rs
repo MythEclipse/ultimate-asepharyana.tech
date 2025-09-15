@@ -27,29 +27,7 @@ pub fn generate_root_api_mod(
   );
   content.push_str("\n");
 
-  // Process and sort schemas
-  let mut sorted_schemas: Vec<String> = schemas.iter().cloned().collect();
-  sorted_schemas.sort();
-
-  // Generate schema imports and handle duplicates
-  let mut imports = Vec::new();
-  let mut names = Vec::new();
-  let mut counts = HashMap::new();
-
-  for full in sorted_schemas.iter() {
-    let simple_name = full.split("::").last().unwrap().to_string();
-    let count = counts.entry(simple_name.clone()).or_insert(0);
-    *count += 1;
-
-    if *count > 1 {
-      let alias = format!("{} as {}_{}", full, simple_name, *count - 1);
-      imports.push(format!("use {};", alias));
-      names.push(format!("{}_{}", simple_name, *count - 1));
-    } else {
-      imports.push(format!("use {};", full));
-      names.push(simple_name);
-    }
-  }
+  let (imports, names) = generate_schema_imports_and_names(schemas);
 
   // Add schema imports to content
   content.push_str(&imports.join("\n"));
@@ -123,4 +101,31 @@ pub fn generate_root_api_mod(
   struct ApiDoc;
 
   Ok(ApiDoc::openapi())
+/// Generates schema import strings and sanitized names, handling duplicates by aliasing.
+fn generate_schema_imports_and_names(
+    schemas: &HashSet<String>
+) -> (Vec<String>, Vec<String>) {
+    let mut sorted_schemas: Vec<String> = schemas.iter().cloned().collect();
+    sorted_schemas.sort();
+
+    let mut imports = Vec::new();
+    let mut names = Vec::new();
+    let mut counts = HashMap::new();
+
+    for full in sorted_schemas.iter() {
+        let simple_name = full.split("::").last().unwrap().to_string();
+        let count = counts.entry(simple_name.clone()).or_insert(0);
+        *count += 1;
+
+        if *count > 1 {
+            let alias = format!("{} as {}_{}", full, simple_name, *count - 1);
+            imports.push(format!("use {};", alias));
+            names.push(format!("{}_{}", simple_name, *count - 1));
+        } else {
+            imports.push(format!("use {};", full));
+            names.push(simple_name);
+        }
+    }
+    (imports, names)
+}
 }

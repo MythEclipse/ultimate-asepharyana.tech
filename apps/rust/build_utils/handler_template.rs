@@ -46,120 +46,18 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
     };
     let operation_id = sanitize_operation_id(&route_path_str);
 
-    let (response_struct_name, response_fields, success_response_body) = if axum_path.contains("/search") {
-        ("SearchResponse", r#"
-    /// Success message
-    pub message: String,
-    /// Search results - replace with actual Vec<T> where T implements ToSchema
-    pub data: Vec<serde_json::Value>,
-    /// Total number of results
-    pub total: Option<u64>,
-    /// Current page
-    pub page: Option<u32>,
-    /// Results per page
-    pub per_page: Option<u32>,"#, "Json<SearchResponse>")
-    } else if axum_path.contains('{') || axum_path.contains("/detail") {
-        ("DetailResponse", r#"
-    /// Success message
-    pub message: String,
-    /// Detailed data - replace with actual T where T implements ToSchema
-    pub data: serde_json::Value,"#, "Json<DetailResponse>")
-    } else {
-        ("ListResponse", r#"
-    /// Success message
-    pub message: String,
-    /// List of items - replace with actual Vec<T> where T implements ToSchema
-    pub data: Vec<serde_json::Value>,
-    /// Total number of items
-    pub total: Option<u64>,"#, "Json<ListResponse>")
-    };
+    let (response_struct_name, response_fields, success_response_body) =
+        get_response_struct_info(&axum_path);
 
-    // Extract dynamic parameters from route_path_str
-    let mut path_params = Vec::new();
+    let path_params = extract_path_params_from_route(&route_path_str);
 
-    // Check for bracket notation first (legacy)
-    for cap in DYNAMIC_REGEX.captures_iter(&route_path_str) {
-        let param = &cap[1];
-        if param.starts_with("...") {
-            // Catch-all parameter
-            let param_name = param.strip_prefix("...").unwrap_or(param);
-            path_params.push((param_name.to_string(), "Vec<String>"));
-        } else {
-            path_params.push((param.to_string(), "String"));
-        }
-    }
+    let func_signature = build_function_signature(&func_name, &path_params);
 
-    // If no bracket params found, check for dynamic patterns
-    if path_params.is_empty() {
-        let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
-        for pattern in &dynamic_patterns {
-            if route_path_str.ends_with(pattern) {
-                let param_name = pattern.trim_start_matches('_');
-                path_params.push((param_name.to_string(), "String"));
-                break;
-            }
-        }
-    }
+    let response_data = build_response_data(&response_struct_name, &path_params);
 
-    // Build function signature with Path extractors
-    let func_signature = if path_params.is_empty() {
-        format!("pub async fn {}() -> impl IntoResponse", func_name)
-    } else {
-        let params_str = path_params.iter()
-            .map(|(name, typ)| format!("Path({}): Path<{}>", name, typ))
-            .collect::<Vec<_>>()
-            .join(", ");
-        format!("pub async fn {}({}) -> impl IntoResponse", func_name, params_str)
-    };
+    let message_content = build_message_content(&func_name, &path_params);
 
-    // Build response data that includes path parameters
-    let response_data = if path_params.is_empty() {
-        if response_struct_name == "SearchResponse" {
-            r#"
-            data: vec![],
-            total: None,
-            page: None,
-            per_page: None,"#.to_string()
-        } else if response_struct_name == "ListResponse" {
-            r#"
-            data: vec![],
-            total: None,"#.to_string()
-        } else {
-            r#"
-            data: serde_json::json!(null),"#.to_string()
-        }
-    } else {
-        let param_assignments = path_params.iter()
-            .map(|(name, _)| format!("\"{}\": \"{}\"", name, name))
-            .collect::<Vec<_>>()
-            .join(", ");
-        if response_struct_name == "ListResponse" || response_struct_name == "SearchResponse" {
-            format!(r#"
-            data: vec![serde_json::json!({{{}}})],
-            total: Some(1),"#, param_assignments)
-        } else {
-            format!(r#"
-            data: serde_json::json!({{{}}}),"#, param_assignments)
-        }
-    };
-
-    // Build message that includes path parameter info
-    let message_content = if path_params.is_empty() {
-        format!("\"Hello from {}!\".to_string()", func_name)
-    } else {
-        let param_info = path_params.iter()
-            .map(|(name, _)| format!("{}: {{{}}}", name, name))
-            .collect::<Vec<_>>()
-            .join(", ");
-        format!("format!(\"Hello from {} with parameters: {}\")", func_name, param_info)
-    };
-
-    // Build imports with Path if needed
-    let imports = if path_params.is_empty() {
-        "use axum::{response::IntoResponse, routing::get, Json, Router};".to_string()
-    } else {
-        "use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};".to_string()
-    };
+    let imports = build_imports(&path_params);
 
     let template = format!(
       r#"//! Handler for the {} endpoint.
@@ -217,4 +115,127 @@ pub fn generate_handler_template(path: &Path, root_api_path: &Path) -> Result<()
     fs::write(path, template)?;
     println!("cargo:warning=Generated new handler template for {:?}", path);
     Ok(())
+}
+
+fn get_response_struct_info(axum_path: &str) -> (&str, &str, &str) {
+    if axum_path.contains("/search") {
+        ("SearchResponse", r#"
+    /// Success message
+    pub message: String,
+    /// Search results - replace with actual Vec<T> where T implements ToSchema
+    pub data: Vec<serde_json::Value>,
+    /// Total number of results
+    pub total: Option<u64>,
+    /// Current page
+    pub page: Option<u32>,
+    /// Results per page
+    pub per_page: Option<u32>,"#, "Json<SearchResponse>")
+    } else if axum_path.contains('{') || axum_path.contains("/detail") {
+        ("DetailResponse", r#"
+    /// Success message
+    pub message: String,
+    /// Detailed data - replace with actual T where T implements ToSchema
+    pub data: serde_json::Value,"#, "Json<DetailResponse>")
+    } else {
+        ("ListResponse", r#"
+    /// Success message
+    pub message: String,
+    /// List of items - replace with actual Vec<T> where T implements ToSchema
+    pub data: Vec<serde_json::Value>,
+    /// Total number of items
+    pub total: Option<u64>,"#, "Json<ListResponse>")
+    }
+}
+
+fn extract_path_params_from_route(route_path_str: &str) -> Vec<(String, String)> {
+    let mut path_params = Vec::new();
+
+    // Check for bracket notation first (legacy)
+    for cap in DYNAMIC_REGEX.captures_iter(route_path_str) {
+        let param = &cap[1];
+        if param.starts_with("...") {
+            // Catch-all parameter
+            let param_name = param.strip_prefix("...").unwrap_or(param);
+            path_params.push((param_name.to_string(), "Vec<String>".to_string()));
+        } else {
+            path_params.push((param.to_string(), "String".to_string()));
+        }
+    }
+
+    // If no bracket params found, check for dynamic patterns
+    if path_params.is_empty() {
+        let dynamic_patterns = ["_id", "id", "slug", "uuid", "key"];
+        for pattern in &dynamic_patterns {
+            if route_path_str.ends_with(pattern) {
+                let param_name = pattern.trim_start_matches('_');
+                path_params.push((param_name.to_string(), "String".to_string()));
+                break;
+            }
+        }
+    }
+    path_params
+}
+
+fn build_function_signature(func_name: &str, path_params: &[(String, String)]) -> String {
+    if path_params.is_empty() {
+        format!("pub async fn {}() -> impl IntoResponse", func_name)
+    } else {
+        let params_str = path_params.iter()
+            .map(|(name, typ)| format!("Path({}): Path<{}>", name, typ))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("pub async fn {}({}) -> impl IntoResponse", func_name, params_str)
+    }
+}
+
+fn build_response_data(response_struct_name: &str, path_params: &[(String, String)]) -> String {
+    if path_params.is_empty() {
+        if response_struct_name == "SearchResponse" {
+            r#"
+            data: vec![],
+            total: None,
+            page: None,
+            per_page: None,"#.to_string()
+        } else if response_struct_name == "ListResponse" {
+            r#"
+            data: vec![],
+            total: None,"#.to_string()
+        } else {
+            r#"
+            data: serde_json::json!(null),"#.to_string()
+        }
+    } else {
+        let param_assignments = path_params.iter()
+            .map(|(name, _)| format!("\"{}\": \"{}\"", name, name))
+            .collect::<Vec<_>>()
+            .join(", ");
+        if response_struct_name == "ListResponse" || response_struct_name == "SearchResponse" {
+            format!(r#"
+            data: vec![serde_json::json!({{{}}})],
+            total: Some(1),"#, param_assignments)
+        } else {
+            format!(r#"
+            data: serde_json::json!({{{}}}),"#, param_assignments)
+        }
+    }
+}
+
+fn build_message_content(func_name: &str, path_params: &[(String, String)]) -> String {
+    if path_params.is_empty() {
+        format!("\"Hello from {}!\".to_string()", func_name)
+    } else {
+        let param_info = path_params.iter()
+            .map(|(name, _)| format!("{}: {{{}}}", name, name))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("format!(\"Hello from {} with parameters: {}\")", func_name, param_info)
+    }
+}
+
+fn build_imports(path_params: &[(String, String)]) -> String {
+    if path_params.is_empty() {
+        "use axum::{response::IntoResponse, routing::get, Json, Router};".to_string()
+    } else {
+        "use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};".to_string()
+    }
 }
