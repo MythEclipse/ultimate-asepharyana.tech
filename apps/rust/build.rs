@@ -43,35 +43,22 @@ impl Default for BuildConfig {
 type ApiHandlers = Vec<build_utils::handler_updater::HandlerRouteInfo>;
 
 fn main() -> Result<()> {
-    // Initialize configuration and logging
-    let config = BuildConfig::default();
-    if config.enable_logging {
-        env_logger::init();
-        log::info!("Starting API build process");
-    }
+    let config = initialize_build();
+    log::info!("Starting API build process");
 
-    // Setup environment and collect API data
     let api_routes_path = setup_build_environment(&config)?;
     let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
 
-    // Generate and validate OpenAPI specification
-    let openapi_doc = generate_api_modules(&api_routes_path, &modules, &api_handlers, &openapi_schemas)?;
+    let openapi_doc = openapi_generator::generate_root_api_mod(
+        &api_routes_path,
+        &modules,
+        &api_handlers,
+        &openapi_schemas,
+    )?;
     validate_openapi_spec(&openapi_doc)?;
 
-    // Write OpenAPI spec to output directory
-    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR environment variable not set")?);
-    let openapi_spec_path = out_dir.join("openapi_spec.json");
+    write_openapi_spec(&openapi_doc)?;
 
-    let mut temp_file = NamedTempFile::new_in(&out_dir)
-        .context("Failed to create temporary OpenAPI spec file")?;
-
-    serde_json::to_writer_pretty(&mut temp_file, &openapi_doc)
-        .context("Failed to serialize OpenAPI specification")?;
-
-    temp_file.persist(&openapi_spec_path)
-        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec: {:?}", e))?;
-
-    // Print build metrics
     println!("cargo:warning=API build completed - {} handlers, {} schemas, {} modules",
              api_handlers.len(), openapi_schemas.len(), modules.len());
 
@@ -79,38 +66,43 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Setup build environment: create directories and configure Cargo reruns
+fn initialize_build() -> BuildConfig {
+    let config = BuildConfig::default();
+    if config.enable_logging {
+        env_logger::init();
+    }
+    config
+}
+
 fn setup_build_environment(config: &BuildConfig) -> Result<PathBuf> {
     log::debug!("Setting up build environment");
+    configure_cargo_reruns(config);
+    create_api_routes_directory(config)?;
+    Ok(config.api_routes_path.clone())
+}
 
-    // Configure Cargo rerun triggers
+fn configure_cargo_reruns(config: &BuildConfig) {
     println!("cargo:rerun-if-env-changed=FORCE_API_REGEN");
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed={}/", config.api_routes_path.display());
     println!("cargo:rerun-if-changed={}", config.build_utils_path.display());
-
-    // Create API routes directory if it doesn't exist
-    fs::create_dir_all(&config.api_routes_path)
-        .with_context(|| format!("Failed to create API routes directory: {:?}", config.api_routes_path))?;
-
-    Ok(config.api_routes_path.clone())
 }
 
-/// Collect API data: handlers, schemas, and modules
+fn create_api_routes_directory(config: &BuildConfig) -> Result<()> {
+    fs::create_dir_all(&config.api_routes_path)
+        .with_context(|| format!("Failed to create API routes directory: {:?}", config.api_routes_path))?;
+    Ok(())
+}
+
 fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
     log::debug!("Collecting API data");
-
-    // Always regenerate (hash checking disabled)
-    // The previous `should_regenerate` function always returned true, so this is inlined.
 
     let mut api_handlers = Vec::new();
     let mut openapi_schemas = HashSet::new();
     let mut modules = Vec::new();
 
-    // Pre-allocate capacity for better performance
     openapi_schemas.reserve(100);
 
-    // Generate module files and collect data
     mod_generator::generate_mod_for_directory(
         api_routes_path,
         api_routes_path,
@@ -119,7 +111,6 @@ fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<Stri
         &mut modules,
     )?;
 
-    // Deduplicate and sort modules using functional pattern
     let modules = modules.into_iter()
         .unique()
         .sorted()
@@ -128,23 +119,21 @@ fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<Stri
     Ok((api_handlers, openapi_schemas, modules))
 }
 
-/// Generate root API module and OpenAPI documentation
-fn generate_api_modules(
-    api_routes_path: &Path,
-    modules: &Vec<String>,
-    api_handlers: &ApiHandlers,
-    openapi_schemas: &HashSet<String>
-) -> Result<OpenApi> {
-    log::debug!("Generating API modules and OpenAPI documentation");
+fn write_openapi_spec(openapi_doc: &OpenApi) -> Result<()> {
+    log::debug!("Writing OpenAPI specification to file");
+    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR environment variable not set")?);
+    let openapi_spec_path = out_dir.join("openapi_spec.json");
 
-    Ok(openapi_generator::generate_root_api_mod(
-        api_routes_path,
-        modules,
-        api_handlers,
-        openapi_schemas,
-    )?)
+    let mut temp_file = NamedTempFile::new_in(&out_dir)
+        .context("Failed to create temporary OpenAPI spec file")?;
+
+    serde_json::to_writer_pretty(&mut temp_file, openapi_doc)
+        .context("Failed to serialize OpenAPI specification")?;
+
+    temp_file.persist(&openapi_spec_path)
+        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec: {:?}", e))?;
+    Ok(())
 }
-
 
 fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
     log::debug!("Validating OpenAPI specification");

@@ -3,7 +3,6 @@ use std::fs;
 use std::path::Path;
 use anyhow::Result;
 use itertools::Itertools;
-use utoipa::OpenApi;
 use crate::build_utils::handler_updater::HandlerRouteInfo;
 
 pub fn generate_root_api_mod(
@@ -60,7 +59,21 @@ pub fn generate_root_api_mod(
     )
   );
 
-  // Generate router registration code
+  content.push_str(&generate_router_creation_code(modules));
+
+  fs::write(api_routes_path.join("mod.rs"), content)?;
+
+  Ok({
+    use utoipa::OpenApi; // Bring OpenApi trait into scope for TempApiDoc
+    #[derive(utoipa::OpenApi)]
+    #[openapi(paths(), components(schemas()), tags((name = "api", description = "Main API")))]
+    struct TempApiDoc;
+    TempApiDoc::openapi()
+  })
+}
+
+/// Generates the router creation code for the root API module.
+fn generate_router_creation_code(modules: &[String]) -> String {
   let router_registrations = modules
     .iter()
     .map(|m| format!("    router = {}::register_routes(router);", m))
@@ -72,60 +85,35 @@ pub fn generate_root_api_mod(
     "    let mut router = Router::new();"
   };
 
-  // Add router creation function
-  content.push_str(
-    &format!(
-      "pub fn create_api_routes() -> Router<Arc<AppState>> {{\n{}\n{}\n    router\n}}\n",
-      router_declaration,
-      router_registrations
-    )
-  );
-
-  // Write generated content to file
-  fs::write(api_routes_path.join("mod.rs"), content)?;
-
-  // Create and return OpenAPI document
-  #[derive(utoipa::OpenApi)]
-  #[openapi(
-    paths(
-      // Handlers are dynamically added above in the generated content
-    ),
-    components(
-      schemas(
-        // Schemas are dynamically added above in the generated content
-      )
-    ),
-    tags((name = "api", description = "Main API"))
-  )]
-  #[allow(dead_code)]
-  struct ApiDoc;
-
-  Ok(ApiDoc::openapi())
-/// Generates schema import strings and sanitized names, handling duplicates by aliasing.
-fn generate_schema_imports_and_names(
-    schemas: &HashSet<String>
-) -> (Vec<String>, Vec<String>) {
-    let mut sorted_schemas: Vec<String> = schemas.iter().cloned().collect();
-    sorted_schemas.sort();
-
-    let mut imports = Vec::new();
-    let mut names = Vec::new();
-    let mut counts = HashMap::new();
-
-    for full in sorted_schemas.iter() {
-        let simple_name = full.split("::").last().unwrap().to_string();
-        let count = counts.entry(simple_name.clone()).or_insert(0);
-        *count += 1;
-
-        if *count > 1 {
-            let alias = format!("{} as {}_{}", full, simple_name, *count - 1);
-            imports.push(format!("use {};", alias));
-            names.push(format!("{}_{}", simple_name, *count - 1));
-        } else {
-            imports.push(format!("use {};", full));
-            names.push(simple_name);
-        }
-    }
-    (imports, names)
+  format!(
+    "pub fn create_api_routes() -> Router<Arc<AppState>> {{\n{}\n{}\n    router\n}}\n",
+    router_declaration,
+    router_registrations
+  )
 }
+
+/// Generates schema import strings and sanitized names, handling duplicates by aliasing.
+fn generate_schema_imports_and_names(schemas: &HashSet<String>) -> (Vec<String>, Vec<String>) {
+  let mut sorted_schemas: Vec<String> = schemas.iter().cloned().collect();
+  sorted_schemas.sort();
+
+  let mut imports = Vec::new();
+  let mut names = Vec::new();
+  let mut counts = HashMap::new();
+
+  for full in sorted_schemas.iter() {
+    let simple_name = full.split("::").last().unwrap().to_string();
+    let count = counts.entry(simple_name.clone()).or_insert(0);
+    *count += 1;
+
+    if *count > 1 {
+      let alias = format!("{} as {}_{}", full, simple_name, *count - 1);
+      imports.push(format!("use {};", alias));
+      names.push(format!("{}_{}", simple_name, *count - 1));
+    } else {
+      imports.push(format!("use {};", full));
+      names.push(simple_name);
+    }
+  }
+  (imports, names)
 }

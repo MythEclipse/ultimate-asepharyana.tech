@@ -84,6 +84,7 @@ use crate::routes::api::komik::search::Pagination as Pagination_9;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
 use crate::routes::api::proxy::croxy::ProxyParams;
+use crate::routes::api::uploader::ListResponse as ListResponse_3;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -106,7 +107,8 @@ paths(
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::search::search,
-              crate::routes::api::proxy::croxy::croxy
+              crate::routes::api::proxy::croxy::croxy,
+              crate::routes::api::uploader::uploader
         ),
 components(
             schemas(
@@ -180,7 +182,8 @@ components(
                   Pagination_9,
                   SearchQuery_2,
                   SearchResponse_2,
-                  ProxyParams
+                  ProxyParams,
+                  ListResponse_3
             )
         ),
 info(
