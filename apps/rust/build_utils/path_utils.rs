@@ -40,6 +40,13 @@ pub fn generate_default_description(path_str: &str, method: &str) -> String {
         "search" => format!("Searches for {} based on query parameters.", second_last_segment),
         "detail" => format!("Retrieves details for a specific {} by ID.", second_last_segment),
         "list" => format!("Retrieves a list of {}.", second_last_segment),
+        "index" => {
+            if second_last_segment.is_empty() {
+                format!("Handles {} requests for the root API endpoint.", method.to_uppercase())
+            } else {
+                format!("Handles {} requests for the {} index endpoint.", method.to_uppercase(), second_last_segment)
+            }
+        },
         "[slug]" => format!("Retrieves details for a specific {} by slug.", second_last_segment),
         "[[...file]]" => format!("Handles file operations (upload/download) for {}.", second_last_segment),
         _ => format!("Handles {} requests for the {} endpoint.", method.to_uppercase(), path_str),

@@ -497,6 +497,11 @@ fn extract_and_normalize_metadata(
     .or_insert(default_route_path)
     .clone();
 
+  // Special handling for index.rs files
+  if file_stem == "index" && route_path.ends_with("/index") {
+    route_path = route_path.strip_suffix("/index").unwrap_or("/").to_string();
+  }
+
   // Normalize route_path
   route_path = normalize_route_path(&route_path);
   metadata.insert("ENDPOINT_PATH".to_string(), route_path.clone());
@@ -556,7 +561,10 @@ fn normalize_route_path(route_path: &str) -> String {
   }
 
   // Ensure it starts with "/api/"
-  if !normalized_path.starts_with("/api/") {
+  if
+    !normalized_path.starts_with("/api/") &&
+    !(normalized_path == "/" && route_path.is_empty())
+  {
     if normalized_path.starts_with("api/") {
       normalized_path = format!("/{}", normalized_path);
     } else {

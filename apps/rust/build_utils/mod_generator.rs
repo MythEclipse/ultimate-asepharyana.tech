@@ -114,7 +114,7 @@ fn process_directory_entries(
       .file_name()
       .and_then(|s| s.to_str())
       .unwrap_or("");
-    if file_name.starts_with('.') || file_name == "mod.rs" || file_name == "test" {
+    if file_name.starts_with('.') || file_name == "mod.rs" || file_name == "test" || file_name == "index.rs" {
       continue;
     }
 
@@ -141,7 +141,6 @@ fn process_directory_entries(
       }
     } else if path.is_file() && path.extension().map_or(false, |e| e == "rs") {
       let file_content = fs::read_to_string(&path)?;
-      let is_dynamic = is_dynamic_route_content(&file_content);
 
       let file_stem = path
         .file_stem()
@@ -149,13 +148,27 @@ fn process_directory_entries(
         .ok_or_else(|| anyhow::anyhow!("Invalid file stem for: {:?}", path))?;
 
       let mod_name_from_file_stem = sanitize_module_name(file_stem);
-      pub_mods.push(format!("pub mod {};", mod_name_from_file_stem));
+
+      let is_index_file = file_stem == "index";
+      let is_dynamic = is_dynamic_route_content(&file_content);
+
+      if !is_index_file {
+        pub_mods.push(format!("pub mod {};", mod_name_from_file_stem));
+      }
 
       // For dynamic routes, register the route using the dynamic segment
       if is_dynamic {
-        // Assuming dynamic routes are always in the format "some_name.rs" where "some_name" is the parameter
         route_registrations.push(format!("{}/{{{}}}", current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/"), file_stem));
-      } else {
+      } else if is_index_file {
+        // For index.rs, the route path is the directory itself
+        let route_path = current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/");
+        if route_path.is_empty() {
+            route_registrations.push("root_index".to_string()); // Special case for /api/index.rs
+        } else {
+            route_registrations.push(route_path);
+        }
+      }
+      else {
         route_registrations.push(mod_name_from_file_stem.clone());
       }
 
@@ -170,10 +183,31 @@ fn process_directory_entries(
         all_handlers.push(handler_info);
       }
 
-      // If this is the root level, add to modules
-      if current_dir == root_api_path {
+      // If this is the root level and not an index file, add to modules
+      if current_dir == root_api_path && !is_index_file {
         modules.push(mod_name_from_file_stem.clone());
       }
+    }
+  }
+
+  // After processing all entries, check if there's an index.rs in this directory
+  // If so, and it's not already registered, add it to the route registrations.
+  let index_path = current_dir.join("index.rs");
+  if index_path.exists() {
+    let module_name = sanitize_module_name("index");
+    let route_path = current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/");
+    let full_path_for_registration = if route_path.is_empty() {
+        format!("{}::{}", module_path_prefix, module_name) // For root /api/index.rs
+    } else {
+        format!("{}::{}", module_path_prefix, module_name)
+    };
+
+    // Only add if not already present (to avoid duplicates from the earlier logic for dynamic routes)
+    // Only add if not already present (to avoid duplicates from the earlier logic for dynamic routes)
+    // For index.rs, we want to push the full module path so it can be registered directly
+    if !route_registrations.contains(&full_path_for_registration) {
+        pub_mods.push(format!("pub mod {};", module_name));
+        route_registrations.push(full_path_for_registration);
     }
   }
 
@@ -184,11 +218,18 @@ fn build_route_registration_body(route_registrations: &[String]) -> String {
   if route_registrations.is_empty() {
     "router".to_string()
   } else {
-    route_registrations
-      .iter()
-      .rev()
+    let mut reversed_registrations: Vec<String> = route_registrations.iter().cloned().collect();
+    reversed_registrations.reverse();
+
+    reversed_registrations
+      .into_iter()
       .fold("router".to_string(), |acc, reg| {
-        format!("{}::register_routes({})", reg, acc)
+        // If it's a direct path (like "anime/detail/{slug}"), format it differently
+        if reg.contains("::") { // Check if it's a full module path (e.g., crate::routes::api::anime::index)
+            format!("{}::register_routes({})", reg, acc)
+        } else { // It's a module name (e.g., product_list)
+            format!("{}::register_routes({})", reg, acc)
+        }
       })
   }
 }

@@ -12,14 +12,80 @@ Prasyarat:
 Ringkasan tipe endpoint:
 
 - Static: path tetap, contoh: /api/products/list
+- Index: path root untuk sebuah direktori, contoh: /api/anime (dari `index.rs` di `src/routes/api/anime/index.rs`)
 - Dynamic: path dinamis dengan parameter, contoh: /api/products/detail/product_id → /api/products/detail/{id}
 - Params (query): query string, contoh: /api/products/search?q=sepatu&sort=price_desc
 
-Pengenalan Dynamic Routes:
+Pengenalan Dynamic Routes dan Index Files:
 Sistem secara otomatis mendeteksi segmen dinamis berdasarkan pola nama file (misalnya, `slug.rs` untuk parameter `{slug}`).
 Contoh: `anime/detail/slug` akan menghasilkan `anime/detail/slug.rs`.
+File `index.rs` akan secara otomatis di-handle sebagai route root untuk direktorinya.
+Contoh: `src/routes/api/anime/index.rs` akan melayani `/api/anime`.
 
-## 1. Endpoint Static (tanpa parameter)
+## 1. Endpoint Index (root directory route)
+
+------------------------------------------------------------
+
+- Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
+
+  cargo run --bin scaffold -- anime/index
+
+- Jalankan build:
+
+  cargo build
+
+- Edit handler di [`src/routes/api/anime/index.rs`](apps/rust/src/routes/api/anime/index.rs:1)
+
+Contoh handler (Rust) untuk `index.rs`:
+
+```rust
+use axum::{response::IntoResponse, routing::get, Json, Router};
+use std::sync::Arc;
+use crate::routes::AppState;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+
+pub const ENDPOINT_METHOD: &str = "get";
+pub const ENDPOINT_PATH: &str = "/api/anime"; // Ini akan otomatis disesuaikan
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime index endpoint.";
+pub const ENDPOINT_TAG: &str = "anime";
+pub const OPERATION_ID: &str = "anime_index";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<AnimeResponse>";
+
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct AnimeResponse {
+    pub message: String,
+    pub data: String,
+}
+
+pub async fn index(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
+    Json(AnimeResponse { message: "Hello from anime index!".to_string(), data: "Anime data here".to_string() })
+}
+
+pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
+    router.route(ENDPOINT_PATH, get(index))
+}
+```
+
+Tes endpoint:
+
+`curl http://127.0.0.1:3000/api/anime`
+
+## 2. Endpoint Static (tanpa parameter)
+
+------------------------------------------------------------
+
+- Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
+
+  cargo run --bin scaffold -- products/list
+
+- Jalankan build:
+
+  cargo build
+
+- Edit handler di [`src/routes/api/products/list.rs`](apps/rust/src/routes/api/products/list.rs:1)
+
+Contoh handler (Rust):
 
 ------------------------------------------------------------
 
@@ -45,7 +111,7 @@ pub struct ListResponse {
 }
 
 pub async fn list() -> impl IntoResponse {
-    Json(ListResponse { message: "All products".to_string() })
+    Json(ListResponse { message: "All products".to_string(), data: vec![], total: None })
 }
 ```
 
@@ -53,7 +119,7 @@ Tes endpoint:
 
 `curl http://127.0.0.1:3000/api/products/list`
 
-## 2. Endpoint Dynamic / Path Parameter
+## 3. Endpoint Dynamic / Path Parameter
 
 ------------------------------------------------------------
 
@@ -130,7 +196,7 @@ Tes:
 
 `curl http://127.0.0.1:3000/api/anime/detail/log-horizon`
 
-## 3. Endpoint Query Params
+## 4. Endpoint Query Params
 
 ------------------------------------------------------------
 
@@ -174,7 +240,7 @@ Tes:
 
 `curl "http://127.0.0.1:3000/api/products/search?q=sepatu&sort=price_desc&page=2"`
 
-## 4. Kombinasi: Slug + Query Params
+## 5. Kombinasi: Slug + Query Params
 
 ------------------------------------------------------------
 
@@ -209,7 +275,7 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 }
 ```
 
-## 5. Petunjuk Operasional & Best Practices
+## 6. Petunjuk Operasional & Best Practices
 
 ------------------------------------------------------------
 
@@ -219,7 +285,7 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 - Jalankan server: `cargo run` (dijalankan dari `apps/rust`).
 - Tes health: `curl http://127.0.0.1:3000/api/health`
 
-## 6. Contoh lengkap alur
+## 7. Contoh lengkap alur
 
 ------------------------------------------------------------
 
