@@ -7,7 +7,6 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use regex::Regex;
-use rust_lib::config::CONFIG_MAP;
 use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use axum::extract::State;
