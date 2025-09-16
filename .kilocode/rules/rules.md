@@ -8,29 +8,7 @@ Always create and continuously update a todo list for complex tasks, prioritizin
 
 ### 1. Pre-modification Verification
 
-Always read the target file using `read_file` before applying any changes. This ensures you have the most up-to-date context, preventing unintended overwrites or conflicts. Compare any search content with actual file content, including whitespace and indentation, to guarantee precise modifications.
-
-### 1a. Edit Tool Preference
-
-Always prioritize using `apply_diff` for edits instead of `search_and_replace`, as it provides better precision, context, and reduces the risk of unintended changes.
-
-```
-
-CORRECT FORMAT:
-
-<<<<<<< SEARCH
-:start_line: (required) The line number of original content where the search block starts.
--------
-[exact content to find including whitespace]
-=======
-[new content to replace with]
->>>>>>> REPLACE
-
-```
-
-### 3. Expanded Search Area for Modifications
-
-When using `apply_diff` or `search_and_replace`, always expand the search area beyond the exact lines you intend to modify. For instance, if you plan to edit lines 10-15, set your search range from line 5 to line 20. This practice helps to capture surrounding context, prevent partial matches, and reduce the risk of unintended changes due to slight variations in whitespace or indentation that might not be immediately apparent.
+Always read the target file using `read_file` before applying any changes. This ensures you have the most up-to-date context, preventing unintended overwrites or conflicts. When modifying an existing file, prioritize the latest context to ensure changes are based on the most current state. Compare any search content with actual file content, including whitespace and indentation, to guarantee precise modifications.
 
 ### 4. Think Like a Programmer
 
@@ -77,4 +55,4 @@ Start with the simplest possible solution that meets the core requirements ("mak
 
 ### 12. Traceability and Debugging
 
-Integrate effective logging and debugging mechanisms. Ensure that log messages are informative, context-rich, and categorized appropriately (e.g., INFO, WARN, ERROR). Design error messages to be descriptive, actionable, and useful for efficient troubleshooting and diagnosis.
+Integrate effective logging and debugging mechanisms. When debugging or fixing errors, focus on understanding the implementation and how the code works, ensuring that changes do not break existing functionality. Ensure that log messages are informative, context-rich, and categorized appropriately (e.g., INFO, WARN, ERROR). Design error messages to be descriptive, actionable, and useful for efficient troubleshooting and diagnosis.
