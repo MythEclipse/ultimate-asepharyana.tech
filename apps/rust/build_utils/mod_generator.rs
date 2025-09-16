@@ -152,23 +152,15 @@ fn process_directory_entries(
       let is_index_file = file_stem == "index";
       let is_dynamic = is_dynamic_route_content(&file_content);
 
-      if !is_index_file {
-        pub_mods.push(format!("pub mod {};", mod_name_from_file_stem));
-      }
+      pub_mods.push(format!("pub mod {};", mod_name_from_file_stem));
 
       // For dynamic routes, register the route using the dynamic segment
       if is_dynamic {
         route_registrations.push(format!("{}/{{{}}}", current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/"), file_stem));
       } else if is_index_file {
-        // For index.rs, the route path is the directory itself
-        let route_path = current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/");
-        if route_path.is_empty() {
-            route_registrations.push("root_index".to_string()); // Special case for /api/index.rs
-        } else {
-            route_registrations.push(route_path);
-        }
-      }
-      else {
+        // For index.rs, register the full module path
+        route_registrations.push(format!("{}::{}", module_path_prefix, mod_name_from_file_stem));
+      } else {
         route_registrations.push(mod_name_from_file_stem.clone());
       }
 
@@ -187,27 +179,6 @@ fn process_directory_entries(
       if current_dir == root_api_path && !is_index_file {
         modules.push(mod_name_from_file_stem.clone());
       }
-    }
-  }
-
-  // After processing all entries, check if there's an index.rs in this directory
-  // If so, and it's not already registered, add it to the route registrations.
-  let index_path = current_dir.join("index.rs");
-  if index_path.exists() {
-    let module_name = sanitize_module_name("index");
-    let route_path = current_dir.strip_prefix(root_api_path)?.to_str().unwrap().replace("\\", "/");
-    let full_path_for_registration = if route_path.is_empty() {
-        format!("{}::{}", module_path_prefix, module_name) // For root /api/index.rs
-    } else {
-        format!("{}::{}", module_path_prefix, module_name)
-    };
-
-    // Only add if not already present (to avoid duplicates from the earlier logic for dynamic routes)
-    // Only add if not already present (to avoid duplicates from the earlier logic for dynamic routes)
-    // For index.rs, we want to push the full module path so it can be registered directly
-    if !route_registrations.contains(&full_path_for_registration) {
-        pub_mods.push(format!("pub mod {};", module_name));
-        route_registrations.push(full_path_for_registration);
     }
   }
 

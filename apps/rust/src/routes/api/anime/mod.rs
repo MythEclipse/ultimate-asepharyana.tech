@@ -6,12 +6,11 @@ pub mod detail;
 pub mod full;
 pub mod ongoing_anime;
 pub mod search;
-pub mod index;
 
 /// Register routes for this directory
 use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  complete_anime::register_routes(detail::register_routes(full::register_routes(ongoing_anime::register_routes(search::register_routes(crate::routes::api::anime::index::register_routes(router))))))
+  complete_anime::register_routes(detail::register_routes(full::register_routes(ongoing_anime::register_routes(search::register_routes(router)))))
 }
