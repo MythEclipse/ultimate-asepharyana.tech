@@ -22,7 +22,7 @@ use rust_lib::config::CONFIG_MAP;
 use rust_lib::redis_client::REDIS_POOL;
 
 use crate::routes::api::{ create_api_routes, ApiDoc };
-use crate::routes::AppState;
+use crate::routes::{ AppState, register_komik2_routes };
 
 mod routes;
 
@@ -57,6 +57,7 @@ async fn main() -> anyhow::Result<()> {
 
   let app = Router::new()
     .merge(create_api_routes().with_state(app_state.clone()))
+    .merge(register_komik2_routes(Router::new()).with_state(app_state.clone())) // Register komik2 routes
     .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
     .layer(cors);
 

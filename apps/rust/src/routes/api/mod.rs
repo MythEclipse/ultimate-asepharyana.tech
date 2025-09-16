@@ -10,6 +10,7 @@ pub mod anime2;
 pub mod compress;
 pub mod drivepng;
 pub mod komik;
+pub mod komik2;
 pub mod proxy;
 pub mod uploader;
 
@@ -52,29 +53,52 @@ use crate::routes::api::anime::search::SearchResponse as SearchResponse_1;
 use crate::routes::api::compress::CompressQuery;
 use crate::routes::api::compress::CompressResponse;
 use crate::routes::api::drivepng::ListResponse as ListResponse_2;
-use crate::routes::api::komik::chapter::ChapterData;
-use crate::routes::api::komik::chapter::ChapterQuery;
-use crate::routes::api::komik::chapter::ChapterResponse;
-use crate::routes::api::komik::detail::Chapter;
-use crate::routes::api::komik::detail::DetailData;
-use crate::routes::api::komik::detail::DetailQuery;
-use crate::routes::api::komik::detail::DetailResponse as DetailResponse_2;
-use crate::routes::api::komik::manga::slug::MangaItem;
-use crate::routes::api::komik::manga::slug::MangaResponse;
-use crate::routes::api::komik::manga::slug::Pagination as Pagination_6;
-use crate::routes::api::komik::manga::slug::QueryParams;
-use crate::routes::api::komik::manhua::slug::ManhuaItem;
-use crate::routes::api::komik::manhua::slug::ManhuaResponse;
-use crate::routes::api::komik::manhua::slug::Pagination as Pagination_7;
-use crate::routes::api::komik::manhua::slug::QueryParams as QueryParams_1;
-use crate::routes::api::komik::manhwa::slug::ManhwaItem;
-use crate::routes::api::komik::manhwa::slug::ManhwaResponse;
-use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_8;
-use crate::routes::api::komik::manhwa::slug::QueryParams as QueryParams_2;
-use crate::routes::api::komik::search::MangaItem as MangaItem_1;
-use crate::routes::api::komik::search::Pagination as Pagination_9;
-use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
-use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
+use crate::routes::api::komik2::chapter::ChapterData;
+use crate::routes::api::komik2::chapter::ChapterQuery;
+use crate::routes::api::komik2::chapter::ChapterResponse;
+use crate::routes::api::komik2::detail::Chapter;
+use crate::routes::api::komik2::detail::DetailData;
+use crate::routes::api::komik2::detail::DetailQuery;
+use crate::routes::api::komik2::detail::DetailResponse as DetailResponse_2;
+use crate::routes::api::komik2::manga::slug::MangaItem;
+use crate::routes::api::komik2::manga::slug::MangaResponse;
+use crate::routes::api::komik2::manga::slug::Pagination as Pagination_6;
+use crate::routes::api::komik2::manga::slug::QueryParams;
+use crate::routes::api::komik2::manhua::slug::ManhuaItem;
+use crate::routes::api::komik2::manhua::slug::ManhuaResponse;
+use crate::routes::api::komik2::manhua::slug::Pagination as Pagination_7;
+use crate::routes::api::komik2::manhua::slug::QueryParams as QueryParams_1;
+use crate::routes::api::komik2::manhwa::slug::ManhwaItem;
+use crate::routes::api::komik2::manhwa::slug::ManhwaResponse;
+use crate::routes::api::komik2::manhwa::slug::Pagination as Pagination_8;
+use crate::routes::api::komik2::manhwa::slug::QueryParams as QueryParams_2;
+use crate::routes::api::komik2::search::MangaItem as MangaItem_1;
+use crate::routes::api::komik2::search::Pagination as Pagination_9;
+use crate::routes::api::komik2::search::SearchQuery as SearchQuery_2;
+use crate::routes::api::komik2::search::SearchResponse as SearchResponse_2;
+use crate::routes::api::komik::chapter::ChapterData as ChapterData_1;
+use crate::routes::api::komik::chapter::ChapterQuery as ChapterQuery_1;
+use crate::routes::api::komik::chapter::ChapterResponse as ChapterResponse_1;
+use crate::routes::api::komik::detail::Chapter as Chapter_1;
+use crate::routes::api::komik::detail::DetailData as DetailData_1;
+use crate::routes::api::komik::detail::DetailQuery as DetailQuery_1;
+use crate::routes::api::komik::detail::DetailResponse as DetailResponse_3;
+use crate::routes::api::komik::manga::slug::MangaItem as MangaItem_2;
+use crate::routes::api::komik::manga::slug::MangaResponse as MangaResponse_1;
+use crate::routes::api::komik::manga::slug::Pagination as Pagination_10;
+use crate::routes::api::komik::manga::slug::QueryParams as QueryParams_3;
+use crate::routes::api::komik::manhua::slug::ManhuaItem as ManhuaItem_1;
+use crate::routes::api::komik::manhua::slug::ManhuaResponse as ManhuaResponse_1;
+use crate::routes::api::komik::manhua::slug::Pagination as Pagination_11;
+use crate::routes::api::komik::manhua::slug::QueryParams as QueryParams_4;
+use crate::routes::api::komik::manhwa::slug::ManhwaItem as ManhwaItem_1;
+use crate::routes::api::komik::manhwa::slug::ManhwaResponse as ManhwaResponse_1;
+use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_12;
+use crate::routes::api::komik::manhwa::slug::QueryParams as QueryParams_5;
+use crate::routes::api::komik::search::MangaItem as MangaItem_3;
+use crate::routes::api::komik::search::Pagination as Pagination_13;
+use crate::routes::api::komik::search::SearchQuery as SearchQuery_3;
+use crate::routes::api::komik::search::SearchResponse as SearchResponse_3;
 use crate::routes::api::proxy::croxy::ProxyParams;
 use crate::routes::api::uploader::ListResponse as ListResponse_3;
 #[derive(utoipa::OpenApi)]
@@ -97,6 +121,12 @@ paths(
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::search::search,
+              crate::routes::api::komik2::chapter::chapter,
+              crate::routes::api::komik2::detail::detail,
+              crate::routes::api::komik2::manga::slug::list,
+              crate::routes::api::komik2::manhua::slug::list,
+              crate::routes::api::komik2::manhwa::slug::list,
+              crate::routes::api::komik2::search::search,
               crate::routes::api::proxy::croxy::fetch_with_proxy_only,
               crate::routes::api::uploader::uploader
         ),
@@ -164,6 +194,29 @@ components(
                   Pagination_9,
                   SearchQuery_2,
                   SearchResponse_2,
+                  ChapterData_1,
+                  ChapterQuery_1,
+                  ChapterResponse_1,
+                  Chapter_1,
+                  DetailData_1,
+                  DetailQuery_1,
+                  DetailResponse_3,
+                  MangaItem_2,
+                  MangaResponse_1,
+                  Pagination_10,
+                  QueryParams_3,
+                  ManhuaItem_1,
+                  ManhuaResponse_1,
+                  Pagination_11,
+                  QueryParams_4,
+                  ManhwaItem_1,
+                  ManhwaResponse_1,
+                  Pagination_12,
+                  QueryParams_5,
+                  MangaItem_3,
+                  Pagination_13,
+                  SearchQuery_3,
+                  SearchResponse_3,
                   ProxyParams,
                   ListResponse_3
             )
@@ -187,6 +240,7 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = compress::register_routes(router);
     router = drivepng::register_routes(router);
     router = komik::register_routes(router);
+    router = komik2::register_routes(router);
     router = proxy::register_routes(router);
     router = uploader::register_routes(router);
     router
