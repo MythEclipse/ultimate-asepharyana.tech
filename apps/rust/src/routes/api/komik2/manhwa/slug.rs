@@ -13,6 +13,7 @@ use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
+use rust_lib::urls::get_komik2_url;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -61,7 +62,6 @@ pub struct QueryParams {
 }
 
 lazy_static! {
-  static ref BASE_URL: String = "https://komiku.org/".to_string();
   pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse(".animposx").unwrap();
   pub static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h4").unwrap();
   pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
@@ -120,7 +120,7 @@ pub async fn list(
     return Ok(Json(manhwa_response).into_response());
   }
 
-  let url = format!("{}/daftar-komik/?tipe=manhwa&page={}", *BASE_URL, page);
+  let url = format!("{}/manhwa/page/{}/", get_komik2_url(), page);
 
   let (data, pagination) = fetch_and_parse_manhwa_list(&url, page).await.map_err(|e| {
     error!(

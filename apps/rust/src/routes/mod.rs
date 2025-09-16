@@ -12,8 +12,3 @@ pub struct AppState {
   pub jwt_secret: String,
   pub redis_pool: Pool,
 }
-
-pub fn register_komik2_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  info!("Registering komik2 routes via komik2::mod.rs");
-  komik2::register_routes(router)
-}
