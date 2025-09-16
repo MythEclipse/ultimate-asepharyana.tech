@@ -1,5 +1,6 @@
 use thiserror::Error;
 use deadpool_redis::PoolError;
+use axum::response::IntoResponse;
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -17,12 +18,7 @@ pub enum AppError {
   #[error("IO error: {0}")] IoError(#[from] std::io::Error),
   #[error("Timeout error: {0}")] TimeoutError(String),
   #[error("Other error: {0}")] Other(String),
-}
-
-impl From<PoolError> for AppError {
-    fn from(err: PoolError) -> Self {
-        AppError::Other(err.to_string())
-    }
+  #[error("HTTP error: {0}")] HttpError(#[from] http::Error),
 }
 
 impl From<failure::Error> for AppError {
@@ -49,3 +45,14 @@ impl From<anyhow::Error> for AppError {
     }
 }
 
+impl From<deadpool_redis::PoolError> for AppError {
+    fn from(err: deadpool_redis::PoolError) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()
+    }
+}

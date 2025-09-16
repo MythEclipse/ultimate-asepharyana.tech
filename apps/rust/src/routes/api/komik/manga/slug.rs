@@ -175,7 +175,7 @@ async fn fetch_and_parse_manga_list(
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(url, client).await {
+    match fetch_with_proxy(url).await {
       Ok(response) => {
         info!("Successfully fetched URL: {}", url);
         Ok(response.data)

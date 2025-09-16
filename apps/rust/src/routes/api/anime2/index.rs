@@ -170,7 +170,7 @@ async fn fetch_html_with_retry(
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(url, client).await {
+    match fetch_with_proxy(url).await {
       Ok(response) => {
         info!("Successfully fetched URL: {}", url);
         Ok(response.data)

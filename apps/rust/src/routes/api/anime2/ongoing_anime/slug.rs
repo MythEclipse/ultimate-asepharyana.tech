@@ -166,7 +166,7 @@ async fn fetch_ongoing_anime_page(
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(&url, client).await {
+    match fetch_with_proxy(&url).await {
       Ok(response) => {
         let _duration = start_time.elapsed();
         info!("Successfully fetched URL: {}", url);

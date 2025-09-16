@@ -67,7 +67,7 @@ pub fn update_handler_file(
     &http_method,
     &route_path,
     &route_tag,
-    &response_body,
+    response_body.as_deref(),
     &route_description,
     &operation_id
   )?;
@@ -157,7 +157,7 @@ struct Metadata {
   route_tag: String,
   operation_id: String,
   route_description: String,
-  response_body: String,
+  response_body: Option<String>,
   axum_path: String,
 }
 
@@ -181,7 +181,7 @@ fn parse_and_normalize_metadata(
   let route_tag = metadata_map.get("ENDPOINT_TAG").cloned().unwrap();
   let operation_id = metadata_map.get("OPERATION_ID").cloned().unwrap();
   let route_description = metadata_map.get("ENDPOINT_DESCRIPTION").cloned().unwrap();
-  let response_body = metadata_map.get("SUCCESS_RESPONSE_BODY").cloned().unwrap();
+  let response_body = metadata_map.get("SUCCESS_RESPONSE_BODY").cloned();
 
   let axum_path = if route_path.contains('[') && route_path.contains(']') {
     Regex::new(r"\[(.*?)\]").unwrap().replace_all(&route_path, "{$1}").to_string()
@@ -214,21 +214,23 @@ fn generate_and_update_utoipa_macro(
   http_method: &str,
   route_path: &str,
   route_tag: &str,
-  response_body: &str,
+  response_body: Option<&str>,
   route_description: &str,
   operation_id: &str
 ) -> Result<(String, bool)> {
-  let sanitized_response = if response_body.starts_with("Json<") {
-    response_body
-      .trim_start_matches("Json<")
-      .trim_end_matches('>')
-      .split("::")
-      .last()
-      .unwrap_or(response_body)
-      .to_string()
-  } else {
-    response_body.split("::").last().unwrap_or(response_body).to_string()
-  };
+  let sanitized_response = response_body.map(|body| {
+    if body.starts_with("Json<") {
+      body
+        .trim_start_matches("Json<")
+        .trim_end_matches('>')
+        .split("::")
+        .last()
+        .unwrap_or(body)
+        .to_string()
+    } else {
+      body.split("::").last().unwrap_or(body).to_string()
+    }
+  });
 
   let parsed_path_params = parse_path_params_from_signature(content)?;
   let path_params = if !parsed_path_params.is_empty() {
@@ -243,7 +245,7 @@ fn generate_and_update_utoipa_macro(
     http_method,
     route_path,
     route_tag,
-    &sanitized_response,
+    sanitized_response.as_deref(),
     route_description,
     operation_id,
     &path_params,
@@ -539,8 +541,7 @@ fn extract_and_normalize_metadata(
   );
   metadata.entry("ENDPOINT_DESCRIPTION".to_string()).or_insert(default_description);
 
-  // Default SUCCESS_RESPONSE_BODY
-  metadata.entry("SUCCESS_RESPONSE_BODY".to_string()).or_insert("String".to_string());
+  // SUCCESS_RESPONSE_BODY is now optional - no default
 
   Ok(metadata)
 }

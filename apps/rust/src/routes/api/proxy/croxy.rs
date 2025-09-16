@@ -19,7 +19,7 @@ pub const ENDPOINT_TAG: &str = "proxy";
 #[allow(dead_code)]
 pub const OPERATION_ID: &str = "proxy_fetch";
 #[allow(dead_code)]
-pub const SUCCESS_RESPONSE_BODY: &str = "Response";
+pub const SUCCESS_RESPONSE_BODY: &str = "Vec<u8>";
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ProxyParams {
@@ -33,15 +33,16 @@ pub struct ProxyParams {
     tag = "proxy",
     operation_id = "proxy_fetch",
     responses(
-        (status = 200, description = "Handles GET requests for the proxy endpoint."), (status = 500, description = "Internal Server Error", body = String)
+        (status = 200, description = "Handles GET requests for the proxy endpoint.", body = Vec<u8>),
+        (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn croxy(
-  State(state): State<Arc<AppState>>,
+  _state: State<Arc<AppState>>,
   Query(params): Query<ProxyParams>
 ) -> Result<Response, AppError> {
   let slug = params.url;
-  match fetch_with_proxy(&slug, &state.browser).await {
+  match fetch_with_proxy(&slug).await {
     Ok(fetch_result) => {
       let mut response_builder = Response::builder().status(StatusCode::OK);
 

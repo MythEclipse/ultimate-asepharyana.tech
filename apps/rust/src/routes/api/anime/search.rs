@@ -154,7 +154,7 @@ async fn fetch_and_parse_search(
   query: String
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let operation = || async {
-    let response = fetch_with_proxy(url, browser).await?;
+    let response = fetch_with_proxy(url).await?;
     Ok(response.data)
   };
 

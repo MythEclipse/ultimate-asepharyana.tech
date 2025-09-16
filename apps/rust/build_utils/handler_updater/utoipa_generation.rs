@@ -5,7 +5,7 @@ pub fn generate_utoipa_macro(
   http_method: &str,
   route_path: &str,
   route_tag: &str,
-  response_body: &str,
+  response_body: Option<&str>,
   route_description: &str,
   operation_id: &str,
   path_params: &[(String, String)],
@@ -46,6 +46,12 @@ pub fn generate_utoipa_macro(
     }
   };
 
+  let body_str = if let Some(body) = response_body {
+    format!(", body = {}", body)
+  } else {
+    String::new()
+  };
+
   format!(
     r#"#[utoipa::path(
     {}{},
@@ -53,7 +59,7 @@ pub fn generate_utoipa_macro(
     tag = "{}",
     operation_id = "{}",
     responses(
-        (status = 200, description = "{}", body = {}),
+        (status = 200, description = "{}"{}),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]"#,
@@ -63,6 +69,6 @@ pub fn generate_utoipa_macro(
     route_tag,
     operation_id,
     route_description,
-    response_body
+    body_str
   )
 }

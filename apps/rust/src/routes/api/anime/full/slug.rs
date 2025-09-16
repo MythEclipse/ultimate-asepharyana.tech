@@ -151,7 +151,7 @@ async fn fetch_anime_full(
   let url = format!("https://otakudesu.cloud/episode/{}", slug);
 
   let operation = || async {
-    let response = fetch_with_proxy(&url, client).await?;
+    let response = fetch_with_proxy(&url).await?;
     Ok(response.data)
   };
 

@@ -187,7 +187,7 @@ async fn fetch_komik_detail(
 
   let fetch_operation = || async {
     info!("Fetching URL: {}", url);
-    match fetch_with_proxy(&url, browser_client).await {
+    match fetch_with_proxy(&url).await {
       Ok(response) => {
         let duration = start_time.elapsed();
         info!("Successfully fetched URL: {} in {:?}", url, duration);
