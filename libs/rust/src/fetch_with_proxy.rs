@@ -60,7 +60,7 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppErro
 
 pub async fn fetch_with_proxy(
   slug: &str,
-  browser: &Arc<TokioMutex<()>>
+  _browser: &Arc<TokioMutex<()>>
 ) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
@@ -139,7 +139,7 @@ pub async fn fetch_with_proxy(
 
         if is_internet_baik_block_page(&text_data) {
           warn!("Blocked by internetbaik (direct fetch), trying proxies");
-          let proxy_result = fetch_from_proxies(slug, browser).await?;
+          let proxy_result = fetch_from_proxies(slug).await?;
           set_cached_fetch(slug, &proxy_result).await?;
           Ok(proxy_result)
         } else {
@@ -151,7 +151,7 @@ pub async fn fetch_with_proxy(
         let error_msg = format!("Direct fetch failed with status {}", res.status());
         error!("Direct fetch failed for {}: {}", slug, error_msg);
         error!("Direct fetch failed, trying proxies");
-        let proxy_result = fetch_from_proxies(slug, browser).await?;
+        let proxy_result = fetch_from_proxies(slug).await?;
         set_cached_fetch(slug, &proxy_result).await?;
         Ok(proxy_result)
       }
@@ -159,7 +159,7 @@ pub async fn fetch_with_proxy(
     Err(e) => {
       warn!("Direct fetch failed for {}: {:?}", slug, e);
       error!("Direct fetch failed, trying proxies");
-      let proxy_result = fetch_from_proxies(slug, browser).await?;
+      let proxy_result = fetch_from_proxies(slug).await?;
       set_cached_fetch(slug, &proxy_result).await?;
       Ok(proxy_result)
     }
@@ -168,21 +168,76 @@ pub async fn fetch_with_proxy(
 
 pub async fn fetch_with_proxy_only(
   slug: &str,
-  browser: &Arc<TokioMutex<()>>
+  _browser: &Arc<TokioMutex<()>>
 ) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
   }
 
-  let proxy_result = fetch_from_proxies(slug, browser).await?;
+  let proxy_result = fetch_from_proxies(slug).await?;
   set_cached_fetch(slug, &proxy_result).await?;
   Ok(proxy_result)
 }
 
-async fn fetch_from_proxies(
-  slug: &str,
-  _browser: &Arc<TokioMutex<()>>
-) -> Result<FetchResult, AppError> {
-  error!("Proxy functionality has been removed for {}", slug);
-  Err(AppError::Other("Proxy functionality has been removed".to_string()))
+async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
+  let proxy_urls = [
+    "https://my-fetcher-mytheclipse8647-ap12h7hq.apn.leapcell.dev/fetch?url=",
+    // Add more proxy URLs here if needed
+  ];
+
+  let client = Client::new();
+  let encoded_url = urlencoding::encode(slug);
+
+  for (i, base_proxy_url) in proxy_urls.iter().enumerate() {
+    let proxy_url = format!("{}{}", base_proxy_url, encoded_url);
+    info!(
+      "[fetch_from_proxies] Attempting to fetch {} via proxy {}/{}",
+      slug,
+      i + 1,
+      proxy_urls.len()
+    );
+
+    match client.get(&proxy_url).timeout(std::time::Duration::from_secs(30)).send().await {
+      Ok(res) => {
+        info!(
+          "[fetch_from_proxies] Proxy fetch response from {}/{} for {}: status={}",
+          i + 1,
+          proxy_urls.len(),
+          slug,
+          res.status()
+        );
+        if res.status().is_success() {
+          let content_type = res
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|h| h.to_str().ok())
+            .map(|s| s.to_string());
+          let data = res.text().await?;
+
+          let result = FetchResult { data, content_type };
+          info!(
+            "[fetch_from_proxies] Successfully fetched {} via proxy {}/{}",
+            slug,
+            i + 1,
+            proxy_urls.len()
+          );
+          return Ok(result);
+        } else {
+          let error_msg = format!(
+            "Proxy {}/{} fetch failed with status {}",
+            i + 1,
+            proxy_urls.len(),
+            res.status()
+          );
+          warn!("Proxy fetch failed for {}: {}", slug, error_msg);
+        }
+      }
+      Err(e) => {
+        warn!("Proxy {}/{} fetch failed for {}: {:?}", i + 1, proxy_urls.len(), slug, e);
+      }
+    }
+  }
+
+  error!("All proxy attempts failed for {}", slug);
+  Err(AppError::Other("All proxy attempts failed".to_string()))
 }

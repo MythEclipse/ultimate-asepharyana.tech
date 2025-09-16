@@ -1,34 +1,61 @@
-use axum::{ extract::{ Query, State }, Router, routing::get };
+use axum::{ extract::{ Query, State }, response::Response, routing::get, Router };
+use http::StatusCode;
+use serde::Deserialize;
+use utoipa::ToSchema;
 use std::sync::Arc;
-use serde::Deserialize; // Keep Deserialize for ProxyParams
 
-use utoipa::ToSchema; // Keep ToSchema for ProxyParams
-
-use rust_lib::error::ErrorResponse;
-
+use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use crate::routes::AppState;
+use rust_lib::utils::error::AppError;
 
+#[allow(dead_code)]
+pub const ENDPOINT_METHOD: &str = "get";
+#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/proxy/croxy";
+#[allow(dead_code)]
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the proxy endpoint.";
+#[allow(dead_code)]
+pub const ENDPOINT_TAG: &str = "proxy";
+#[allow(dead_code)]
+pub const OPERATION_ID: &str = "proxy_fetch";
+#[allow(dead_code)]
+pub const SUCCESS_RESPONSE_BODY: &str = "Response";
 
-#[derive(Deserialize, ToSchema, Debug)]
-pub struct ProxyParams {}
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ProxyParams {
+  url: String,
+}
 
+/// Handles GET requests for the proxy endpoint.
 #[utoipa::path(
     get,
     path = "/api/proxy/croxy",
     tag = "proxy",
-    operation_id = "proxy_croxy",
+    operation_id = "proxy_fetch",
     responses(
-        (status = 200, description = "Handles GET requests for the /api/proxy/croxy endpoint.", body = String),
-        (status = 500, description = "Internal Server Error", body = String)
+        (status = 200, description = "Handles GET requests for the proxy endpoint."), (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-#[axum::debug_handler]
 pub async fn croxy(
-  Query(_params): Query<ProxyParams>,
-  State(_state): State<Arc<AppState>>
-) -> Result<String, ErrorResponse> {
-  Err(ErrorResponse { error: "Proxy functionality has been removed".to_string() })
+  State(state): State<Arc<AppState>>,
+  Query(params): Query<ProxyParams>
+) -> Result<Response, AppError> {
+  let slug = params.url;
+  match fetch_with_proxy(&slug, &state.browser).await {
+    Ok(fetch_result) => {
+      let mut response_builder = Response::builder().status(StatusCode::OK);
+
+      if let Some(content_type) = fetch_result.content_type {
+        response_builder = response_builder.header("Content-Type", content_type);
+      }
+
+      Ok(response_builder.body(fetch_result.data.into())?)
+    }
+    Err(e) => {
+      eprintln!("Proxy fetch error: {:?}", e);
+      Err(AppError::Other(format!("Failed to fetch URL via proxy: {}", e)))
+    }
+  }
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
