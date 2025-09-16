@@ -1,10 +1,10 @@
 pub mod api;
 use axum::Router;
 use std::sync::Arc;
-use crate::routes::api::komik2::detail::register_routes as register_komik2_detail_routes;
-use crate::routes::api::komik2::chapter::register_routes as register_komik2_chapter_routes;
+use crate::routes::api::komik2;
 
 use deadpool_redis::Pool;
+use tracing::info;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -14,7 +14,6 @@ pub struct AppState {
 }
 
 pub fn register_komik2_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  let router = register_komik2_detail_routes(router);
-  let router = register_komik2_chapter_routes(router);
-  router
+  info!("Registering komik2 routes via komik2::mod.rs");
+  komik2::register_routes(router)
 }
