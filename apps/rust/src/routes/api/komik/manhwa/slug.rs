@@ -14,7 +14,6 @@ use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
 
@@ -128,7 +127,7 @@ pub async fn list(
 
   let url = format!("{}/manhwa/page/{}/", *BASE_URL, page);
 
-  match fetch_and_parse_manhwa_list(&Arc::new(TokioMutex::new(())), &url, page).await {
+  match fetch_and_parse_manhwa_list(&url, page).await {
     Ok((data, pagination)) => {
       let manhwa_response = ManhwaResponse { data, pagination };
       let json_data = serde_json::to_string(&manhwa_response).map_err(|e| {
@@ -161,7 +160,6 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manhwa_list(
-  client: &Arc<TokioMutex<()>>,
   url: &str,
   page: u32
 ) -> Result<(Vec<ManhwaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {

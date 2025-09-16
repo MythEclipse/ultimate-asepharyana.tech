@@ -9,7 +9,6 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use tracing::{ info, error };
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 use deadpool_redis::redis::AsyncCommands;
 
@@ -59,7 +58,9 @@ lazy_static! {
   pub static ref RATING_SELECTOR: Selector = Selector::parse(".score").unwrap();
   pub static ref TYPE_SELECTOR: Selector = Selector::parse(".typez").unwrap();
   pub static ref SEASON_SELECTOR: Selector = Selector::parse(".season").unwrap();
-  pub static ref PAGINATION_SELECTOR: Selector = Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
+  pub static ref PAGINATION_SELECTOR: Selector = Selector::parse(
+    ".pagination .page-numbers:not(.next)"
+  ).unwrap();
   pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
@@ -120,7 +121,7 @@ pub async fn search(
 
   let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
 
-  let result = fetch_and_parse_search(&Arc::new(TokioMutex::new(())), &url, query.clone()).await;
+  let result = fetch_and_parse_search(&url, query.clone()).await;
 
   match result {
     Ok((data, pagination)) => {
@@ -154,7 +155,6 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  browser: &Arc<TokioMutex<()>>,
   url: &str,
   query: String
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
@@ -168,10 +168,12 @@ async fn fetch_and_parse_search(
 
   let query_clone = query.clone();
 
-  match tokio::task::spawn_blocking(move || {
-    let document = Html::parse_document(&html);
-    parse_search_document(&document, &query_clone)
-  }).await {
+  match
+    tokio::task::spawn_blocking(move || {
+      let document = Html::parse_document(&html);
+      parse_search_document(&document, &query_clone)
+    }).await
+  {
     Ok(inner_result) => inner_result,
     Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>),
   }

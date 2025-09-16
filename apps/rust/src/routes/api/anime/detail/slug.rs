@@ -10,7 +10,6 @@ use lazy_static::lazy_static;
 use tracing::{ info, error, warn };
 use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 
@@ -128,7 +127,7 @@ pub async fn slug(
     return Ok(Json(detail_response).into_response());
   }
 
-  let data = fetch_anime_detail(&Arc::new(TokioMutex::new(())), slug.clone()).await.map_err(|e| {
+  let data = fetch_anime_detail(slug.clone()).await.map_err(|e| {
     error!("Error fetching detail for slug: {}, error: {:?}", slug, e);
     (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
   })?;
@@ -155,9 +154,8 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser_client: &Arc<TokioMutex<()>>,
-  slug: String
-) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
+   slug: String
+ ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let _start_time_fetch = std::time::Instant::now(); // Renamed to clearly differentiate and mark as unused
   let url = format!("https://otakudesu.cloud/anime/{}", slug);
 

@@ -9,7 +9,6 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use tracing::{ info, error, warn };
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 use deadpool_redis::redis::AsyncCommands;
 use regex::Regex;
@@ -116,7 +115,7 @@ pub async fn slug(
     return Ok(Json(ongoing_anime_response).into_response());
   }
 
-  let result = fetch_ongoing_anime_page(&Arc::new(TokioMutex::new(())), slug.clone()).await;
+  let result = fetch_ongoing_anime_page(slug.clone()).await;
 
   match result {
     Ok((anime_list, pagination)) => {
@@ -155,9 +154,8 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &Arc<TokioMutex<()>>,
-  slug: String
-) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+   slug: String
+ ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let _start_time = std::time::Instant::now();
   let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
 

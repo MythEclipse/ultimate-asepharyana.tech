@@ -12,7 +12,6 @@ use lazy_static::lazy_static;
 use axum::extract::State;
 use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
@@ -102,7 +101,7 @@ pub async fn chapter(
     return Ok(Json(chapter_response));
   }
 
-  match fetch_komik_chapter(&Arc::new(TokioMutex::new(())), chapter_url.clone()).await {
+  match fetch_komik_chapter(chapter_url.clone()).await {
     Ok(data) => {
       let chapter_response = ChapterResponse { message: "Ok".to_string(), data };
       let json_data = serde_json::to_string(&chapter_response).map_err(|e| {
@@ -139,7 +138,6 @@ pub async fn chapter(
 }
 
 async fn fetch_komik_chapter(
-  browser_client: &Arc<TokioMutex<()>>,
   chapter_url: String
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();

@@ -10,7 +10,6 @@ use tracing::{ info, error, warn };
 use std::time::Duration;
 use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 use regex::Regex;
@@ -116,7 +115,7 @@ pub async fn slug(
 
   let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);
 
-  match fetch_html_with_retry(&Arc::new(TokioMutex::new(())), &url).await {
+  match fetch_html_with_retry(&url).await {
     Ok(html) => {
       let html_clone = html.clone(); // Clone the html string
       let slug_clone = slug.clone(); // Clone slug for the blocking task
@@ -173,9 +172,8 @@ pub async fn slug(
 }
 
 async fn fetch_html_with_retry(
-  browser: &Arc<TokioMutex<()>>,
-  url: &str
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+   url: &str
+ ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let backoff = ExponentialBackoff {
     initial_interval: Duration::from_millis(500),
     max_interval: Duration::from_secs(10),

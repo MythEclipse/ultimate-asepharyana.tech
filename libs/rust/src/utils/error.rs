@@ -1,5 +1,4 @@
 use thiserror::Error;
-use deadpool_redis::PoolError;
 use axum::response::IntoResponse;
 
 #[derive(Error, Debug)]

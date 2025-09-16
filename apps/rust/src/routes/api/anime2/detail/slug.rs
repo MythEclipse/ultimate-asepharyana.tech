@@ -12,7 +12,6 @@ use std::time::Duration;
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 use deadpool_redis::redis::AsyncCommands;
 
@@ -154,7 +153,7 @@ pub async fn slug(
     return Ok(Json(detail_response).into_response());
   }
 
-  let result = fetch_anime_detail(&Arc::new(TokioMutex::new(())), slug.clone()).await;
+  let result = fetch_anime_detail(slug.clone()).await;
 
   match result {
     Ok(data) => {
@@ -189,7 +188,6 @@ pub async fn slug(
 }
 
 async fn fetch_anime_detail(
-  browser_client: &Arc<TokioMutex<()>>,
   slug: String
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();

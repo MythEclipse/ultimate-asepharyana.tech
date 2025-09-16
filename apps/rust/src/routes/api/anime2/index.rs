@@ -6,7 +6,6 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
@@ -95,7 +94,7 @@ pub async fn anime2(State(app_state): State<Arc<AppState>>) -> Result<
     return Ok(Json(anime2_response).into_response());
   }
 
-  match fetch_anime_data(&Arc::new(TokioMutex::new(()))).await {
+  match fetch_anime_data().await {
     Ok(data) => {
       let response = Anime2Response { status: "Ok".to_string(), data };
       let json_data = serde_json::to_string(&response).map_err(|e| {
@@ -129,15 +128,13 @@ lazy_static! {
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
-async fn fetch_anime_data(
-  client: &Arc<TokioMutex<()>>
-) -> Result<Anime2Data, Box<dyn std::error::Error + Send + Sync>> {
+async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Send + Sync>> {
   let ongoing_url = "https://alqanime.net/advanced-search/?status=ongoing&order=update";
   let complete_url = "https://alqanime.net/advanced-search/?status=completed&order=update";
 
   let (ongoing_html, complete_html) = tokio::join!(
-    fetch_html_with_retry(client, ongoing_url),
-    fetch_html_with_retry(client, complete_url)
+    fetch_html_with_retry(ongoing_url),
+    fetch_html_with_retry(complete_url)
   );
 
   let ongoing_html = ongoing_html?;
@@ -157,7 +154,6 @@ async fn fetch_anime_data(
 }
 
 async fn fetch_html_with_retry(
-  client: &Arc<TokioMutex<()>>,
   url: &str
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
   let backoff = ExponentialBackoff {

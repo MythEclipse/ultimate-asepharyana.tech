@@ -9,7 +9,6 @@ use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use tracing::{ info, error };
-use tokio::sync::Mutex as TokioMutex;
 use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
@@ -118,7 +117,7 @@ pub async fn slug(
     return Ok(Json(full_response).into_response());
   }
 
-  let data = fetch_anime_full(&Arc::new(TokioMutex::new(())), slug.clone()).await.map_err(|e| {
+  let data = fetch_anime_full(slug.clone()).await.map_err(|e| {
     error!("Error fetching full for slug: {}, error: {:?}", slug, e);
     (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
   })?;
@@ -145,9 +144,8 @@ pub async fn slug(
 }
 
 async fn fetch_anime_full(
-  client: &Arc<TokioMutex<()>>,
-  slug: String
-) -> Result<AnimeFullData, String> {
+   slug: String
+ ) -> Result<AnimeFullData, String> {
   let url = format!("https://otakudesu.cloud/episode/{}", slug);
 
   let operation = || async {

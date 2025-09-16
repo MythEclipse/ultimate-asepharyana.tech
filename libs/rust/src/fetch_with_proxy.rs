@@ -7,8 +7,6 @@ use redis::AsyncCommands;
 use crate::redis_client::get_redis_conn;
 use crate::utils::http::is_internet_baik_block_page;
 use crate::utils::error::AppError;
-use std::sync::Arc;
-use tokio::sync::Mutex as TokioMutex; // Use Tokio Mutex for async operations
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {

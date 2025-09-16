@@ -9,7 +9,6 @@ use regex::Regex;
 use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 use std::time::Duration;
@@ -132,11 +131,7 @@ pub async fn search(
 
   let url = format!("{}/page/{}/?s={}", *KOMIK_BASE_URL, page, urlencoding::encode(&query));
 
-  let (data, pagination) = fetch_and_parse_search(
-    &Arc::new(TokioMutex::new(())),
-    &url,
-    page
-  ).await.map_err(|e| {
+  let (data, pagination) = fetch_and_parse_search(&url, page).await.map_err(|e| {
     error!(
       "Failed to process komik search for query: '{}', page: {} after {:?}, error: {:?}",
       query,
@@ -171,7 +166,6 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  client: &Arc<TokioMutex<()>>,
   url: &str,
   page: u32
 ) -> Result<(Vec<MangaItem>, Pagination), String> {

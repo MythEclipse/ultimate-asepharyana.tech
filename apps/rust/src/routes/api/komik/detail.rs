@@ -12,7 +12,6 @@ use lazy_static::lazy_static;
 use axum::extract::State;
 use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
@@ -136,7 +135,7 @@ pub async fn detail(
     return Ok(Json(detail_response));
   }
 
-  match fetch_komik_detail(&Arc::new(TokioMutex::new(())), komik_id.clone()).await {
+  match fetch_komik_detail(komik_id.clone()).await {
     Ok(data) => {
       let detail_response = DetailResponse { status: true, data };
       let json_data = serde_json::to_string(&detail_response).map_err(|e| {
@@ -169,7 +168,6 @@ pub async fn detail(
 }
 
 async fn fetch_komik_detail(
-  browser_client: &Arc<TokioMutex<()>>,
   komik_id: String
 ) -> Result<DetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
@@ -202,7 +200,9 @@ async fn fetch_komik_detail(
 
   let html = retry(backoff, fetch_operation).await?;
 
-  tokio::task::spawn_blocking(move || parse_komik_detail_document(&Html::parse_document(&html), &komik_id)).await?
+  tokio::task::spawn_blocking(move ||
+    parse_komik_detail_document(&Html::parse_document(&html), &komik_id)
+  ).await?
 }
 
 fn parse_komik_detail_document(

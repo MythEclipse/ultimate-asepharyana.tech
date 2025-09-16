@@ -14,7 +14,6 @@ use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use tokio::sync::Mutex as TokioMutex;
 use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
 
@@ -128,11 +127,7 @@ pub async fn list(
 
   let url = format!("{}/manga/page/{}/", *BASE_URL, page);
 
-  let (data, pagination) = fetch_and_parse_manga_list(
-    &Arc::new(TokioMutex::new(())),
-    &url,
-    page
-  ).await.map_err(|e| {
+  let (data, pagination) = fetch_and_parse_manga_list(&url, page).await.map_err(|e| {
     error!(
       "Failed to process manga list for page: {} after {:?}, error: {:?}",
       page,
@@ -161,7 +156,6 @@ pub async fn list(
 }
 
 async fn fetch_and_parse_manga_list(
-  client: &Arc<TokioMutex<()>>,
   url: &str,
   page: u32
 ) -> Result<(Vec<MangaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {

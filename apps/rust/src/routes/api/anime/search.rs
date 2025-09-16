@@ -11,7 +11,6 @@ use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use tracing::{ info, error };
 use axum::extract::State;
-use tokio::sync::Mutex as TokioMutex;
 use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
@@ -117,7 +116,7 @@ pub async fn search(
 
   let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", urlencoding::encode(&query));
 
-  match fetch_and_parse_search(&Arc::new(TokioMutex::new(())), &url, query.clone()).await {
+  match fetch_and_parse_search(&url, query.clone()).await {
     Ok((data, pagination)) => {
       let response = SearchResponse {
         status: "Ok".to_string(),
@@ -149,7 +148,6 @@ pub async fn search(
 }
 
 async fn fetch_and_parse_search(
-  browser: &Arc<TokioMutex<()>>,
   url: &str,
   query: String
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {

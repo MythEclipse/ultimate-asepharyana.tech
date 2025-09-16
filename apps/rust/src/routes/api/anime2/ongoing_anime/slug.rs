@@ -12,7 +12,6 @@ use std::time::Duration;
 use tracing::{ info, warn, error };
 use regex::Regex;
 use once_cell::sync::Lazy;
-use tokio::sync::Mutex as TokioMutex;
 use axum::extract::State;
 use deadpool_redis::redis::AsyncCommands;
 
@@ -117,10 +116,7 @@ pub async fn slug(
     return Ok(Json(ongoing_anime_response).into_response());
   }
 
-  let (anime_list, pagination) = fetch_ongoing_anime_page(
-    &Arc::new(TokioMutex::new(())),
-    slug.clone()
-  ).await.map_err(|e| {
+  let (anime_list, pagination) = fetch_ongoing_anime_page(slug.clone()).await.map_err(|e| {
     error!("Failed to fetch ongoing anime page for slug: {}, error: {:?}", slug, e);
     (StatusCode::INTERNAL_SERVER_ERROR, format!("Error fetching ongoing anime page: {}", e))
   })?;
@@ -148,7 +144,6 @@ pub async fn slug(
 }
 
 async fn fetch_ongoing_anime_page(
-  client: &Arc<TokioMutex<()>>,
   slug: String
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
   let start_time = std::time::Instant::now();
