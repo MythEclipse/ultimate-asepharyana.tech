@@ -4,7 +4,7 @@ use std::path::Path;
 use anyhow::Result;
 use itertools::Itertools;
 use crate::build_utils::handler_updater::HandlerRouteInfo;
-use super::{FileBackup, BuildOperation};
+use super::{ BuildOperation };
 
 pub fn generate_root_api_mod(
   api_routes_path: &Path,

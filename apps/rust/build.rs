@@ -6,7 +6,7 @@
 /// - Generates the root API module with OpenAPI schemas and handlers.
 /// - Ensures rebuilds occur when build utilities or API routes change.
 /// - Implements error checking before rewriting and rollback on failure.
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -181,22 +181,6 @@ fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<Stri
         .collect();
 
     Ok((api_handlers, openapi_schemas, modules))
-}
-
-fn write_openapi_spec(openapi_doc: &OpenApi) -> Result<()> {
-    log::debug!("Writing OpenAPI specification to file");
-    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR environment variable not set")?);
-    let openapi_spec_path = out_dir.join("openapi_spec.json");
-
-    let mut temp_file = NamedTempFile::new_in(&out_dir)
-        .context("Failed to create temporary OpenAPI spec file")?;
-
-    serde_json::to_writer_pretty(&mut temp_file, openapi_doc)
-        .context("Failed to serialize OpenAPI specification")?;
-
-    temp_file.persist(&openapi_spec_path)
-        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec: {:?}", e))?;
-    Ok(())
 }
 
 fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
