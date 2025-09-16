@@ -4,7 +4,7 @@ use std::path::Path;
 use anyhow::Result;
 use itertools::Itertools;
 use crate::build_utils::handler_updater::HandlerRouteInfo;
-use super::{ BuildOperation };
+
 
 pub fn generate_root_api_mod(
   api_routes_path: &Path,
@@ -12,17 +12,7 @@ pub fn generate_root_api_mod(
   all_handlers: &[HandlerRouteInfo],
   schemas: &HashSet<String>
 ) -> Result<utoipa::openapi::OpenApi> {
-  generate_root_api_mod_internal(api_routes_path, modules, all_handlers, schemas, None)
-}
-
-pub fn generate_root_api_mod_with_backup(
-  api_routes_path: &Path,
-  modules: &[String],
-  all_handlers: &[HandlerRouteInfo],
-  schemas: &HashSet<String>,
-  operation: &mut BuildOperation
-) -> Result<utoipa::openapi::OpenApi> {
-  generate_root_api_mod_internal(api_routes_path, modules, all_handlers, schemas, Some(operation))
+  generate_root_api_mod_internal(api_routes_path, modules, all_handlers, schemas)
 }
 
 fn generate_root_api_mod_internal(
@@ -30,7 +20,6 @@ fn generate_root_api_mod_internal(
   modules: &[String],
   all_handlers: &[HandlerRouteInfo],
   schemas: &HashSet<String>,
-  operation: Option<&mut BuildOperation>
 ) -> Result<utoipa::openapi::OpenApi> {
   // Initialize content with header and base imports
   let mut content = String::from(
@@ -79,18 +68,9 @@ fn generate_root_api_mod_internal(
       schema_list
     )
   );
-
   content.push_str(&generate_router_creation_code(modules));
 
-  // Create backup before writing if operation is provided
   let mod_file_path = api_routes_path.join("mod.rs");
-  if let Some(op) = operation {
-    if mod_file_path.exists() {
-      let backup = super::FileBackup::new(&mod_file_path)?;
-      op.add_backup(backup);
-    }
-  }
-
   fs::write(&mod_file_path, content)?;
 
   Ok({
