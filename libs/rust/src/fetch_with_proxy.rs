@@ -56,9 +56,7 @@ async fn set_cached_fetch(slug: &str, value: &FetchResult) -> Result<(), AppErro
 }
 // --- REDIS CACHE WRAPPER END ---
 
-pub async fn fetch_with_proxy(
-  slug: &str
-) -> Result<FetchResult, AppError> {
+pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
   }
@@ -163,9 +161,7 @@ pub async fn fetch_with_proxy(
   }
 }
 
-pub async fn fetch_with_proxy_only(
-  slug: &str
-) -> Result<FetchResult, AppError> {
+pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, AppError> {
   if let Ok(Some(cached)) = get_cached_fetch(slug).await {
     return Ok(cached);
   }
@@ -178,6 +174,7 @@ pub async fn fetch_with_proxy_only(
 async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
   let proxy_urls = [
     "https://my-fetcher-mytheclipse8647-ap12h7hq.apn.leapcell.dev/fetch?url=",
+    "https://next-fetcher.vercel.app/api/fetch?url=",
     // Add more proxy URLs here if needed
   ];
 
