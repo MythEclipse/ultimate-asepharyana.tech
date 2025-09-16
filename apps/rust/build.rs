@@ -5,7 +5,8 @@
 /// - Generates module files for the API routes.
 /// - Generates the root API module with OpenAPI schemas and handlers.
 /// - Ensures rebuilds occur when build utilities or API routes change.
-use std::collections::HashSet;
+/// - Implements error checking before rewriting and rollback on failure.
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -18,7 +19,7 @@ use tempfile::NamedTempFile;
 use utoipa::openapi::OpenApi;
 
 mod build_utils;
-use build_utils::{mod_generator, openapi_generator};
+use build_utils::{mod_generator, openapi_generator, FileBackup, BuildOperation};
 
 
 /// Configuration for the build process
@@ -44,25 +45,88 @@ type ApiHandlers = Vec<build_utils::handler_updater::HandlerRouteInfo>;
 
 fn main() -> Result<()> {
     let config = initialize_build();
-    log::info!("Starting API build process");
+    log::info!("Starting API build process with error checking and rollback");
 
-    let api_routes_path = setup_build_environment(&config)?;
+    let mut operation = BuildOperation::new();
+
+    // Phase 1: Dry run - check for potential errors without modifying files
+    match perform_dry_run(&config) {
+        Ok(_) => log::info!("Dry run completed successfully"),
+        Err(e) => {
+            log::error!("Dry run failed: {}", e);
+            println!("cargo:warning=Dry run failed, aborting build: {}", e);
+            return Err(e);
+        }
+    }
+
+    // Phase 2: Actual build with rollback capability
+    match perform_build_with_rollback(&config, &mut operation) {
+        Ok(_) => {
+            println!("cargo:warning=API build completed successfully - no rollback needed");
+            log::info!("API build process completed successfully");
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("Build failed, initiating rollback: {}", e);
+            println!("cargo:warning=Build failed, rolling back changes: {}", e);
+
+            if let Err(rollback_err) = operation.rollback() {
+                log::error!("Rollback also failed: {}", rollback_err);
+                println!("cargo:warning=CRITICAL: Rollback failed: {}", rollback_err);
+                return Err(rollback_err);
+            }
+
+            println!("cargo:warning=Rollback completed successfully");
+            Err(e)
+        }
+    }
+}
+
+/// Performs a dry run to check for potential errors before actual file modifications
+fn perform_dry_run(config: &BuildConfig) -> Result<()> {
+    log::info!("Performing dry run to check for errors");
+
+    let api_routes_path = setup_build_environment(config)?;
     let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
 
-    let openapi_doc = openapi_generator::generate_root_api_mod(
+    // Test OpenAPI generation without writing files
+    let _openapi_doc = openapi_generator::generate_root_api_mod(
         &api_routes_path,
         &modules,
         &api_handlers,
         &openapi_schemas,
     )?;
+
+    // Test OpenAPI validation
+    validate_openapi_spec(&_openapi_doc)?;
+
+    log::info!("Dry run validation passed");
+    Ok(())
+}
+
+/// Performs the actual build with rollback capability
+fn perform_build_with_rollback(config: &BuildConfig, operation: &mut BuildOperation) -> Result<()> {
+    log::info!("Performing actual build with rollback capability");
+
+    let api_routes_path = setup_build_environment(config)?;
+    let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
+
+    // Generate OpenAPI with backup tracking
+    let openapi_doc = openapi_generator::generate_root_api_mod_with_backup(
+        &api_routes_path,
+        &modules,
+        &api_handlers,
+        &openapi_schemas,
+        operation
+    )?;
+
     validate_openapi_spec(&openapi_doc)?;
 
-    write_openapi_spec(&openapi_doc)?;
+    write_openapi_spec_with_backup(&openapi_doc, operation)?;
 
     println!("cargo:warning=API build completed - {} handlers, {} schemas, {} modules",
              api_handlers.len(), openapi_schemas.len(), modules.len());
 
-    log::info!("API build process completed successfully");
     Ok(())
 }
 
@@ -145,5 +209,29 @@ fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
         .context("OpenAPI specification validation failed")?;
 
     log::info!("OpenAPI specification validation passed");
+    Ok(())
+}
+
+fn write_openapi_spec_with_backup(openapi_doc: &OpenApi, operation: &mut BuildOperation) -> Result<()> {
+    log::debug!("Writing OpenAPI specification to file with backup");
+
+    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR environment variable not set")?);
+    let openapi_spec_path = out_dir.join("openapi_spec.json");
+
+    // Create backup if file exists
+    if openapi_spec_path.exists() {
+        let backup = FileBackup::new(&openapi_spec_path)?;
+        operation.add_backup(backup);
+    }
+
+    let mut temp_file = NamedTempFile::new_in(&out_dir)
+        .context("Failed to create temporary OpenAPI spec file")?;
+
+    serde_json::to_writer_pretty(&mut temp_file, openapi_doc)
+        .context("Failed to serialize OpenAPI specification")?;
+
+    temp_file.persist(&openapi_spec_path)
+        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec: {:?}", e))?;
+
     Ok(())
 }

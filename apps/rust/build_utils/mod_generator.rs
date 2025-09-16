@@ -4,8 +4,7 @@ use std::path::{ Path, PathBuf };
 use anyhow::{ Result, Context };
 use crate::build_utils::handler_updater::{ HandlerRouteInfo, update_handler_file };
 use crate::build_utils::path_utils::is_dynamic_route_content;
-
-// Removed generate_handler_template as it's no longer directly called here
+use super::BuildOperation;
 
 fn is_rust_keyword(s: &str) -> bool {
   matches!(
