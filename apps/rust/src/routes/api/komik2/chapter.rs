@@ -44,17 +44,19 @@ pub struct ChapterQuery {
 }
 
 lazy_static! {
-  static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse("#Judul h1").unwrap();
   static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nextprev a[rel=\"prev\"]"
+    ".nxpr a.rl"
   ).unwrap();
   static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nextprev a:has(.icol.daftarch)"
+    "a[href*='#Chapter']"
   ).unwrap();
   static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nextprev a[rel=\"next\"]"
+    ".nxpr a:not(.rl):not([href*='#Chapter'])"
   ).unwrap();
-  static ref IMAGE_SELECTOR: Selector = Selector::parse("#chimg-auh img").unwrap();
+  static ref IMAGE_SELECTOR: Selector = Selector::parse(
+    "#Baca_Komik img"
+  ).unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 

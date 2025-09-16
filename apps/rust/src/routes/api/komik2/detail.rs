@@ -65,12 +65,12 @@ lazy_static! {
     ".spe span:contains('Judul Alternatif:')"
   ).unwrap();
   static ref SCORE_SELECTOR: Selector = Selector::parse(".rtg > div > i").unwrap();
-  static ref POSTER_SELECTOR: Selector = Selector::parse(".thumb img").unwrap();
+  static ref POSTER_SELECTOR: Selector = Selector::parse("div.ims img").unwrap();
   static ref DESCRIPTION_SELECTOR: Selector = Selector::parse(
-    "#sinopsis > section > div > div.entry-content.entry-content-single > p"
+    "article section p"
   ).unwrap();
   static ref STATUS_SELECTOR: Selector = Selector::parse(".spe span:contains('Status:')").unwrap();
-  static ref GENRE_SELECTOR: Selector = Selector::parse(".genre-info a").unwrap();
+  static ref GENRE_SELECTOR: Selector = Selector::parse("ul.genre li a").unwrap();
   static ref RELEASE_DATE_SELECTOR: Selector = Selector::parse(
     "#chapter_list > ul > li:last-child > span.dt"
   ).unwrap();
@@ -86,9 +86,9 @@ lazy_static! {
   static ref UPDATED_ON_SELECTOR: Selector = Selector::parse(
     "#chapter_list > ul > li:nth-child(1) > span.dt"
   ).unwrap();
-  static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse("#chapter_list ul li").unwrap();
-  static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse(".lchx a").unwrap();
-  static ref DATE_LINK_SELECTOR: Selector = Selector::parse(".dt a").unwrap();
+  static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse("table#Daftar_Chapter tbody#daftarChapter tr").unwrap();
+  static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse("td.judulseries a").unwrap();
+  static ref DATE_LINK_SELECTOR: Selector = Selector::parse("td.tanggalseries").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -239,9 +239,18 @@ fn parse_komik_detail_document(
 
   let description = document
     .select(&DESCRIPTION_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
+    .filter_map(|e| {
+        let text = e.text().collect::<String>().trim().to_string();
+        if text.starts_with("One Piece Kisah Ace") || text.starts_with("Kisah perjalanan seorang bajak") { // Heuristic to identify the main synopsis
+            Some(text)
+        } else {
+            None
+        }
+    })
+    .collect::<Vec<String>>()
+    .join("\n")
+    .trim()
+    .to_string();
 
   let status = document
     .select(&STATUS_SELECTOR)
@@ -300,7 +309,7 @@ fn parse_komik_detail_document(
       .select(&CHAPTER_LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
-      .and_then(|href| href.split('/').nth(3)) // Adjust index based on actual URL structure
+      .and_then(|href| href.split('/').filter(|s| !s.is_empty()).last()) // Get the last non-empty segment
       .unwrap_or("")
       .to_string();
     chapters.push(Chapter { chapter, date, chapter_id });

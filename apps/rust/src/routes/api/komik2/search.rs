@@ -68,19 +68,19 @@ lazy_static! {
   static ref KOMIK2_BASE_URL: String = CONFIG_MAP.get("KOMIK2_BASE_URL")
     .cloned()
     .unwrap_or_else(|| "https://komiku.org".to_string());
-  pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse(".list-update_item").unwrap();
-  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".data h4 a").unwrap();
-  pub static ref IMG_SELECTOR: Selector = Selector::parse(".img img").unwrap();
-  pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(".chapter-list a").unwrap();
-  pub static ref SCORE_SELECTOR: Selector = Selector::parse("i").unwrap(); // Assuming 'i' is still used for score, or will be ignored if not present
-  pub static ref DATE_SELECTOR: Selector = Selector::parse(".data .date").unwrap();
-  pub static ref TYPE_SELECTOR: Selector = Selector::parse(".typeflag").unwrap(); // Assuming .typeflag is still used, or will be ignored if not present
-  pub static ref LINK_SELECTOR: Selector = Selector::parse(".data h4 a").unwrap();
+  pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge").unwrap();
+  pub static ref TITLE_SELECTOR: Selector = Selector::parse("div.kan a h3").unwrap();
+  pub static ref IMG_SELECTOR: Selector = Selector::parse("div.bgei img").unwrap();
+  pub static ref CHAPTER_SELECTOR: Selector = Selector::parse("div.new1:has(span:contains(\"Terbaru:\")) span:nth-child(2)").unwrap();
+  pub static ref SCORE_SELECTOR: Selector = Selector::parse(".rating, .score").unwrap(); // Keep existing, no score found in search results
+  pub static ref DATE_SELECTOR: Selector = Selector::parse("div.kan p").unwrap();
+  pub static ref TYPE_SELECTOR: Selector = Selector::parse("div.tpe1_inf").unwrap();
+  pub static ref LINK_SELECTOR: Selector = Selector::parse("div.bgei a, div.kan a").unwrap();
   pub static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
-  pub static ref CURRENT_SELECTOR: Selector = Selector::parse(".pagination .current").unwrap();
-  pub static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination a:not(.next)").unwrap();
-  pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-  pub static ref PREV_SELECTOR: Selector = Selector::parse(".pagination .prev").unwrap();
+  pub static ref CURRENT_SELECTOR: Selector = Selector::parse(".pagination > .current, .pagination > span.page-numbers.current").unwrap();
+  pub static ref PAGE_SELECTORS: Selector = Selector::parse(".pagination > a, .pagination > .page-numbers:not(.next):not(.prev)").unwrap();
+  pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination > a.next, .pagination > .next.page-numbers").unwrap();
+  pub static ref PREV_SELECTOR: Selector = Selector::parse(".pagination > a.prev, .pagination > .prev.page-numbers").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -250,15 +250,15 @@ fn parse_search_document(
     let r#type = element
       .select(&TYPE_SELECTOR)
       .next()
-      .and_then(|e| e.value().attr("class"))
-      .map(|class| class.split(' ').nth(1).unwrap_or("").to_string())
+      .map(|e| e.text().collect::<String>().trim().to_string())
+      .map(|text| text.split_whitespace().next().unwrap_or("").to_string())
       .unwrap_or_default();
 
     let slug = element
       .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
-      .and_then(|href| href.split('/').nth(4))
+      .and_then(|href| href.split('/').nth(2)) // Adjusted to get the slug part from /manga/slug-name/
       .unwrap_or("")
       .to_string();
 
