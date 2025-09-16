@@ -6,7 +6,7 @@
 
 Always read the target file using [`read_file`](tool:read_file) before applying any changes. This ensures you have the most up-to-date context, preventing unintended overwrites or conflicts. When modifying an existing file, prioritize the latest context to ensure changes are based on the most current state. Compare any search content with actual file content, including whitespace and indentation, to guarantee precise modifications.
 
-- **Exact Match for [`apply_diff`](tool:apply_diff):** When using [`apply_diff`](tool:apply_diff), ensure the `SEARCH` content precisely matches the target file's content, including all characters, whitespace, and indentation, to prevent unintended modifications.
+- **Exact Match for [`apply_diff`](tool:apply_diff):** When using [`apply_diff`](tool:apply_diff), ensure the `SEARCH` content precisely matches the target file's content, including all characters example `&`, whitespace, and indentation, to prevent unintended modifications.
 
 ### 2. Task Management and Prioritization
 
