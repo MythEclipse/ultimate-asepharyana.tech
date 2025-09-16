@@ -29,6 +29,9 @@ pub struct ProxyParams {
 /// Handles GET requests for the proxy endpoint.
 #[utoipa::path(
     get,
+    params(
+        ("url" = String, Query, description = "Parameter for resource identification", example = "sample_value")
+    ),
     path = "/api/proxy/croxy",
     tag = "proxy",
     operation_id = "proxy_fetch",

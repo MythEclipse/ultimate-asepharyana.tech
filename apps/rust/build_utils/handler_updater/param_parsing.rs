@@ -14,16 +14,24 @@ pub fn parse_query_params(content: &str) -> Result<Vec<(String, String)>> {
     let _param_name = &cap[1];
     let struct_name = &cap[2];
 
-    // Find the struct definition line
-    let struct_line_pattern = format!("struct {} {{", struct_name);
-    if let Some(start_pos) = content.find(&struct_line_pattern) {
+    // Find the struct definition line (with optional pub)
+    let pub_struct_pattern = format!("pub struct {} {{", struct_name);
+    let struct_pattern = format!("struct {} {{", struct_name);
+    let start_pos = content.find(&pub_struct_pattern).or_else(|| content.find(&struct_pattern));
+    if let Some(start_pos) = start_pos {
+      // Determine which pattern was found and its length
+      let pattern_len = if content[start_pos..].starts_with(&pub_struct_pattern) {
+        pub_struct_pattern.len()
+      } else {
+        struct_pattern.len()
+      };
       // Find the end of the struct
       let struct_content = &content[start_pos..];
       if let Some(end_pos) = struct_content.find('}') {
-        let struct_body = &struct_content[struct_line_pattern.len()..end_pos];
+        let struct_body = &struct_content[pattern_len..end_pos];
 
         // Parse fields from struct body
-        let field_regex = Regex::new(r"pub\s+(\w+):\s*([^,]+),?").map_err(|e|
+        let field_regex = Regex::new(r"(?:pub\s+)?(\w+):\s*([^,]+),?").map_err(|e|
           anyhow!("Invalid field regex pattern: {}", e)
         )?;
 
