@@ -10,6 +10,8 @@ Always create and continuously update a todo list for complex tasks, prioritizin
 
 Always read the target file using `read_file` before applying any changes. This ensures you have the most up-to-date context, preventing unintended overwrites or conflicts. When modifying an existing file, prioritize the latest context to ensure changes are based on the most current state. Compare any search content with actual file content, including whitespace and indentation, to guarantee precise modifications.
 
+- **Exact Match for `apply_diff`:** When using `apply_diff`, ensure the `SEARCH` content precisely matches the target file's content, including all characters, whitespace, and indentation, to prevent unintended modifications.
+
 ### 4. Think Like a Programmer
 
 Approach every task with a logical, structured, and problem-solving mindset, mirroring a seasoned human programmer. This involves:
