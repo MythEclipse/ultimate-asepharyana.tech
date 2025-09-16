@@ -57,8 +57,7 @@ async fn main() -> anyhow::Result<()> {
 
   let app = Router::new()
     .merge(create_api_routes().with_state(app_state.clone()))
-    .merge(register_komik2_routes(Router::new()).with_state(app_state.clone())) // Register komik2 routes
-    .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
+   .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
     .layer(cors);
 
   let port = 4091;
