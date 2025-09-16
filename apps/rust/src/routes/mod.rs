@@ -1,7 +1,6 @@
 pub mod api;
-pub mod komik2;
-
 use axum::Router;
+use std::sync::Arc;
 use crate::routes::api::komik2::detail::register_routes as register_komik2_detail_routes;
 use crate::routes::api::komik2::chapter::register_routes as register_komik2_chapter_routes;
 
