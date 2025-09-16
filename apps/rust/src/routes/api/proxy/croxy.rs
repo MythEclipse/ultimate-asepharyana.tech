@@ -17,7 +17,7 @@ pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the proxy endpo
 #[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "proxy";
 #[allow(dead_code)]
-pub const OPERATION_ID: &str = "proxy_fetch";
+pub const OPERATION_ID: &str = "fetch_with_proxy_only";
 #[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Vec<u8>";
 
@@ -34,13 +34,13 @@ pub struct ProxyParams {
     ),
     path = "/api/proxy/croxy",
     tag = "proxy",
-    operation_id = "proxy_fetch",
+    operation_id = "fetch_with_proxy_only",
     responses(
         (status = 200, description = "Handles GET requests for the proxy endpoint.", body = Vec<u8>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn croxy(
+pub async fn fetch_with_proxy_only(
   _state: State<Arc<AppState>>,
   Query(params): Query<ProxyParams>
 ) -> Result<Response, AppError> {
@@ -63,5 +63,5 @@ pub async fn croxy(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(croxy))
+    router.route(ENDPOINT_PATH, get(fetch_with_proxy_only))
 }

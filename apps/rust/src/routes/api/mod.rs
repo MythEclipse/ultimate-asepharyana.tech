@@ -107,7 +107,7 @@ paths(
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::search::search,
-              crate::routes::api::proxy::croxy::croxy,
+              crate::routes::api::proxy::croxy::fetch_with_proxy_only,
               crate::routes::api::uploader::uploader
         ),
 components(
