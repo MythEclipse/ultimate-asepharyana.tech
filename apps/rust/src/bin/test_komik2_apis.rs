@@ -13,11 +13,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .spawn()
         .expect("Failed to start server");
 
-    println!("Server started. Waiting for it to be ready...");
-    sleep(Duration::from_secs(15)).await;
-
     let client = Client::new();
     let base_url = "http://127.0.0.1:4092"; // Assuming your server runs on this address and port
+
+    println!("Server started. Waiting for it to be ready...");
+    let mut attempts = 0;
+    let max_attempts = 60; // Wait up to 60 seconds
+    loop {
+        match client.get(format!("{}/docs", base_url)).send().await {
+            Ok(_) => {
+                println!("Server is ready!");
+                break;
+            }
+            Err(_) => {
+                attempts += 1;
+                if attempts >= max_attempts {
+                    panic!("Server did not start within {} seconds", max_attempts);
+                }
+                println!("Waiting for server... attempt {}/{}", attempts, max_attempts);
+                sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
 
     println!("Starting API tests...");
 
