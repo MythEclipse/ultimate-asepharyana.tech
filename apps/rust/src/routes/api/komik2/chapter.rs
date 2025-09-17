@@ -180,7 +180,7 @@ async fn fetch_komik2_chapter(
 
 fn parse_komik2_chapter_document(
   document: &Html,
-  _chapter_url: &str
+  chapter_url: &str
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
   info!("Starting to parse komik2 chapter document");
@@ -218,20 +218,64 @@ fn parse_komik2_chapter_document(
     )
     .unwrap_or_default();
 
-  let prev_chapter_id = document
-    .select(&PREV_CHAPTER_SELECTOR)
-    .next()
-    .and_then(|e| e.value().attr("href"))
-    .map(|href|
-      href
-        .trim_end_matches('/')
-        .split('/')
-        .filter(|s| !s.is_empty())
-        .last()
-        .unwrap_or("")
-        .to_string()
-    )
-    .unwrap_or_default();
+  // Function to extract and decrement chapter number from URL for any series
+  fn get_previous_chapter_id(chapter_url: &str) -> String {
+    // Pattern: "*-chapter-XX" where XX is chapter number
+    const CHAPTER_PATTERN: &str = "chapter-";
+
+    // Look for "chapter-" pattern in the URL
+    if let Some(pattern_pos) = chapter_url.rfind(CHAPTER_PATTERN) {
+      let prefix = &chapter_url[0..pattern_pos];
+      let suffix = &chapter_url[pattern_pos + CHAPTER_PATTERN.len()..];
+
+      // Try to extract chapter number (handles 1, 2, or more digit numbers)
+      let chapter_num = suffix.chars()
+        .take_while(|c| c.is_digit(10))
+        .collect::<String>();
+
+      if let Ok(num) = chapter_num.parse::<u32>() {
+        // Decrement chapter number, but not below 1 (not 0 as requested)
+        let prev_num = num.saturating_sub(1);
+
+        // Format with same number of digits as original (preserve leading zeros if any)
+        let formatted_num = if chapter_num.starts_with('0') {
+          // Keep leading zeros if original had them
+          format!("{:0width$}", prev_num, width = chapter_num.len())
+        } else {
+          // No leading zeros needed
+          prev_num.to_string()
+        };
+
+        // Reconstruct with previous chapter number
+        return format!("{}{}{}", prefix, CHAPTER_PATTERN, formatted_num);
+      }
+    }
+
+    // If we can't determine a previous chapter from URL, return empty string
+    String::new()
+  }
+
+  // Get previous chapter ID - first try URL pattern, then fall back to HTML extraction
+  let prev_chapter_id_from_url = get_previous_chapter_id(&chapter_url);
+  let prev_chapter_id = if !prev_chapter_id_from_url.is_empty() {
+    prev_chapter_id_from_url
+  } else {
+    // Fall back to HTML parsing if URL pattern doesn't match
+    document
+      .select(&PREV_CHAPTER_SELECTOR)
+      .next()
+      .and_then(|e| e.value().attr("href"))
+      .map(|href|
+        href
+          .trim_end_matches('/')
+          .split('/')
+          .filter(|s| !s.is_empty())
+          .last()
+          .unwrap_or("")
+          .to_string()
+      )
+      .unwrap_or_default()
+  };
 
   let mut images = Vec::new();
   for el in document.select(&IMAGE_SELECTOR) {
