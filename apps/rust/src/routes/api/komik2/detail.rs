@@ -115,11 +115,18 @@ fn find_table_row_with_text(
   document: &Html,
   text_fragments: &[&str]
 ) -> Option<String> {
+  let lower_text_fragments: Vec<String> = text_fragments
+    .iter()
+    .map(|&s| s.to_lowercase())
+    .collect();
+
   document
     .select(selector)
     .find(|row| {
-      let row_text = row.text().collect::<String>().to_lowercase();
-      text_fragments.iter().any(|&fragment| row_text.contains(fragment))
+      let row_text = row.text().collect::<String>();
+      lower_text_fragments
+        .iter()
+        .any(|fragment| row_text.to_lowercase().contains(fragment))
     })
     .and_then(|row| {
       row
@@ -258,13 +265,12 @@ async fn fetch_komik_detail(
   let html = retry(backoff, fetch_operation).await?;
 
   tokio::task::spawn_blocking(move ||
-    parse_komik_detail_document(&Html::parse_document(&html), &komik_id)
+    parse_komik_detail_document(&Html::parse_document(&html))
   ).await?
 }
 
 fn parse_komik_detail_document(
   document: &Html,
-  _komik_id: &str
 ) -> Result<DetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
   info!("Starting to parse komik2 detail document");
@@ -309,118 +315,95 @@ fn parse_komik_detail_document(
 
   let status = document
     .select(&get_info_row_selector())
-    .find(|row| row.text().collect::<String>().to_lowercase().contains("status"))
+    .find(|row| {
+      let text = row.text().collect::<String>();
+      text.to_lowercase().contains("status")
+    })
     .map(|row| {
       let full_text = row.text().collect::<String>();
+      let lower_text = full_text.to_lowercase();
 
-      // Extract only the part after "Status:" (case insensitive)
-      let status_value = if let Some(status_pos) = full_text.to_lowercase().find("status:") {
-        let start_pos = status_pos + 7; // "Status:" is 7 characters
-        let value_part = &full_text[start_pos..];
-        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      let status_value = if let Some(status_pos) = lower_text.find("status:") {
+        &full_text[status_pos + 7..]
       } else if let Some(colon_pos) = full_text.find(':') {
-        // Fallback to split by colon if "Status:" pattern isn't found
-        let value_part = &full_text[colon_pos + 1..];
-        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+        &full_text[colon_pos + 1..]
       } else {
-        // If no colon, just clean up the text
-        full_text.replace('\n', " ").replace('\t', " ").trim().to_string()
+        full_text.as_str()
       };
 
-      // Remove any remaining label text and clean up
-      status_value.replace("Status", "").replace("Jenis Komik", "").replace("Type", "")
-        .replace('\n', " ").replace('\t', " ").trim().to_string()
+      status_value
+        .replace('\n', " ")
+        .replace('\t', " ")
+        .replace("Status", "")
+        .replace("Jenis Komik", "")
+        .replace("Type", "")
+        .trim()
+        .to_string()
     })
     .unwrap_or_default();
 
   let r#type = document
     .select(&get_info_row_selector())
-    .find(
-      |row|
-        row.text().collect::<String>().to_lowercase().contains("jenis komik") ||
-        row.text().collect::<String>().to_lowercase().contains("type")
-    )
+    .find(|row| {
+      let text = row.text().collect::<String>();
+      text.to_lowercase().contains("jenis komik") || text.to_lowercase().contains("type")
+    })
     .map(|row| {
       let full_text = row.text().collect::<String>();
+      let lower_text = full_text.to_lowercase();
 
-      // Try to extract value after "Jenis Komik:" first
-      let type_value = if let Some(jk_pos) = full_text.to_lowercase().find("jenis komik:") {
-        let start_pos = jk_pos + 11; // "Jenis Komik:" is 11 characters
-        let value_part = &full_text[start_pos..];
-        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
-      }
-      // Then try "Type:"
-      else if let Some(type_pos) = full_text.to_lowercase().find("type:") {
-        let start_pos = type_pos + 5; // "Type:" is 5 characters
-        let value_part = &full_text[start_pos..];
-        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
-      }
-      // Fallback to split by colon
-      else if let Some(colon_pos) = full_text.find(':') {
-        let value_part = &full_text[colon_pos + 1..];
-        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
-      }
-      // If all else fails, use the whole text
-      else {
-        full_text.replace('\n', " ").replace('\t', " ").trim().to_string()
+      let type_value = if let Some(jk_pos) = lower_text.find("jenis komik:") {
+        &full_text[jk_pos + 11..]
+      } else if let Some(type_pos) = lower_text.find("type:") {
+        &full_text[type_pos + 5..]
+      } else if let Some(colon_pos) = full_text.find(':') {
+        &full_text[colon_pos + 1..]
+      } else {
+        full_text.as_str()
       };
 
-      // Clean up any remaining label text and extra whitespace
-      type_value.replace("Jenis Komik", "").replace("Type", "")
-        .replace('\n', " ").replace('\t', " ").trim().to_string()
+      type_value
+        .replace('\n', " ")
+        .replace('\t', " ")
+        .replace("Jenis Komik", "")
+        .replace("Type", "")
+        .trim()
+        .to_string()
     })
     .unwrap_or_default();
 
   let author = document
     .select(&get_info_row_selector())
-    .find(
-      |row|
-        row.text().collect::<String>().to_lowercase().contains("pengarang") ||
-        row.text().collect::<String>().to_lowercase().contains("author")
-    )
+    .find(|row| {
+      let text = row.text().collect::<String>();
+      text.to_lowercase().contains("pengarang") || text.to_lowercase().contains("author")
+    })
     .map(|row| {
       let full_text = row.text().collect::<String>();
+      let lower_text = full_text.to_lowercase();
 
-      // First, normalize all whitespace (newlines, tabs, multiple spaces) to single spaces
-      let normalized_text = full_text
-        .replace('\n', " ")          // Replace newlines with spaces
-        .replace('\t', " ")          // Replace tabs with spaces
-        .split_whitespace()          // Split on any whitespace
-        .collect::<Vec<&str>>()      // Collect into vector
-        .join(" ")                   // Join with single spaces
-        .trim()                      // Trim leading/trailing spaces
-        .to_string();                // Convert back to String
-
-      // Try different patterns to extract just the author name
-      let author_name = if let Some(pos) = normalized_text.to_lowercase().find("pengarang:") {
-        // Extract everything after "Pengarang:"
-        normalized_text[pos + 10..].trim().to_string()
-      } else if let Some(pos) = normalized_text.to_lowercase().find("pengarang ") {
-        // Extract everything after "Pengarang " (with space)
-        normalized_text[pos + 10..].trim().to_string()
-      } else if let Some(pos) = normalized_text.to_lowercase().find("author:") {
-        // Extract everything after "Author:"
-        normalized_text[pos + 7..].trim().to_string()
-      } else if let Some(pos) = normalized_text.to_lowercase().find("author ") {
-        // Extract everything after "Author " (with space)
-        normalized_text[pos + 7..].trim().to_string()
-      } else if let Some(colon_pos) = normalized_text.find(':') {
-        // Fallback to split by colon
-        normalized_text[colon_pos + 1..].trim().to_string()
+      let author_name = if let Some(pos) = lower_text.find("pengarang:") {
+        &full_text[pos + 10..]
+      } else if let Some(pos) = lower_text.find("pengarang ") {
+        &full_text[pos + 10..]
+      } else if let Some(pos) = lower_text.find("author:") {
+        &full_text[pos + 7..]
+      } else if let Some(pos) = lower_text.find("author ") {
+        &full_text[pos + 7..]
+      } else if let Some(colon_pos) = full_text.find(':') {
+        &full_text[colon_pos + 1..]
       } else {
-        // If no pattern matches, use the whole text
-        normalized_text
+        full_text.as_str()
       };
 
-      // Final cleanup to ensure no label text remains
       let final_author = author_name
         .replace("Pengarang", "")
         .replace("Author", "")
         .replace("pengarang", "")
         .replace("author", "")
-        .trim().to_string();
+        .trim()
+        .to_string();
 
-      // If we still have something that looks like "Pengarang Name", try a different approach
       if final_author.starts_with("Pengarang") || final_author.starts_with("pengarang") {
         final_author.split_whitespace().skip(1).collect::<Vec<_>>().join(" ")
       } else {
@@ -515,64 +498,37 @@ fn parse_komik_detail_document(
   // Improved chapter parsing with better data extraction
   let mut chapters = Vec::new();
   for el in document.select(&get_chapter_list_selector()) {
-    // Extract chapter title/number
-    let chapter = el
-      .select(&get_chapter_link_selector())
-      .next()
+    let chapter_link_element = el.select(&get_chapter_link_selector()).next();
+    let date_element = el.select(&get_date_link_selector()).next();
+
+    let chapter = chapter_link_element
+      .as_ref()
       .map(|e| {
-        let text = e.text().collect::<String>().trim().to_string();
-        // Extract numeric chapter if available (e.g., "Chapter 123" -> "123")
+        let text = e.text().collect::<String>();
         text
           .split_whitespace()
           .find(|&s| s.chars().any(|c| c.is_digit(10)))
           .map(|num_part| num_part.to_string())
-          .unwrap_or(text)
+          .unwrap_or(text.trim().to_string())
       })
       .unwrap_or_default();
 
-    // Extract date
-    let date = el
-      .select(&get_date_link_selector())
-      .next()
+    let date = date_element
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
 
-    // Extract chapter ID from URL
-    let chapter_id = el
-      .select(&get_chapter_link_selector())
-      .next()
+    let chapter_id = chapter_link_element
       .and_then(|e| e.value().attr("href"))
       .map(|href| {
-        let parts: Vec<&str> = href
+        href
           .split('/')
           .filter(|s| !s.is_empty())
-          .collect();
-        // Try to find segment after known category (manga|manhua|manhwa)
-        if
-          let Some(pos) = parts
-            .iter()
-            .position(
-              |s|
-                *s == "manga" ||
-                *s == "manhua" ||
-                *s == "manhwa" ||
-                *s == "chapter" ||
-                *s == "chapters"
-            )
-        {
-          parts
-            .get(pos + 1)
-            .cloned()
-            .unwrap_or("")
-            .to_string()
-        } else {
-          // Fallback to last segment or full path if nothing else works
-          parts.last().cloned().unwrap_or("").to_string()
-        }
+          .last() // Get the last segment, which is usually the ID
+          .unwrap_or("")
+          .to_string()
       })
       .unwrap_or_default();
 
-    // Only add chapter if it has at least a chapter ID
     if !chapter_id.is_empty() {
       chapters.push(Chapter { chapter, date, chapter_id });
     }
