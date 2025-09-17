@@ -49,6 +49,7 @@ tower-http = { workspace = true }
 backoff = { workspace = true, features = ["futures", "tokio"] }
 dashmap =  { workspace = true }
 deadpool-redis = { workspace = true }
+rayon = { workspace = true }
 
 tower = { workspace = true }
 

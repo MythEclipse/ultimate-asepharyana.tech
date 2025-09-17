@@ -15,6 +15,7 @@ use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
+use rayon::prelude::*;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
@@ -496,43 +497,59 @@ fn parse_komik_detail_document(
   }
 
   // Improved chapter parsing with better data extraction
-  let mut chapters = Vec::new();
-  for el in document.select(&get_chapter_list_selector()) {
-    let chapter_link_element = el.select(&get_chapter_link_selector()).next();
-    let date_element = el.select(&get_date_link_selector()).next();
+  let chapter_html_snippets: Vec<String> = document
+    .select(&get_chapter_list_selector())
+    .map(|el| el.html())
+    .collect();
 
-    let chapter = chapter_link_element
-      .as_ref()
-      .map(|e| {
-        let text = e.text().collect::<String>();
-        text
-          .split_whitespace()
-          .find(|&s| s.chars().any(|c| c.is_digit(10)))
-          .map(|num_part| num_part.to_string())
-          .unwrap_or(text.trim().to_string())
-      })
-      .unwrap_or_default();
+  let chapters: Vec<Chapter> = chapter_html_snippets
+    .par_iter()
+    .filter_map(|html_snippet| {
+      let fragment = Html::parse_fragment(html_snippet);
+      let el = fragment.root_element(); // Get the root element of the fragment
 
-    let date = date_element
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
+      // Re-create selectors for the fragment, as they operate on the document structure
+      let chapter_link_selector_local = get_chapter_link_selector();
+      let date_link_selector_local = get_date_link_selector();
 
-    let chapter_id = chapter_link_element
-      .and_then(|e| e.value().attr("href"))
-      .map(|href| {
-        href
-          .split('/')
-          .filter(|s| !s.is_empty())
-          .last() // Get the last segment, which is usually the ID
-          .unwrap_or("")
-          .to_string()
-      })
-      .unwrap_or_default();
+      let chapter_link_element = el.select(&chapter_link_selector_local).next();
+      let date_element = el.select(&date_link_selector_local).next();
 
-    if !chapter_id.is_empty() {
-      chapters.push(Chapter { chapter, date, chapter_id });
-    }
-  }
+      let chapter = chapter_link_element
+        .as_ref()
+        .map(|e| {
+          let text = e.text().collect::<String>();
+          text
+            .split_whitespace()
+            .find(|&s| s.chars().any(|c| c.is_digit(10)))
+            .map(|num_part| num_part.to_string())
+            .unwrap_or(text.trim().to_string())
+        })
+        .unwrap_or_default();
+
+      let date = date_element
+        .map(|e| e.text().collect::<String>().trim().to_string())
+        .unwrap_or_default();
+
+      let chapter_id = chapter_link_element
+        .and_then(|e| e.value().attr("href"))
+        .map(|href| {
+          href
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .last()
+            .unwrap_or("")
+            .to_string()
+        })
+        .unwrap_or_default();
+
+      if !chapter_id.is_empty() {
+        Some(Chapter { chapter, date, chapter_id })
+      } else {
+        None
+      }
+    })
+    .collect();
 
   let duration = start_time.elapsed();
   info!("Parsed komik2 detail document in {:?}", duration);
