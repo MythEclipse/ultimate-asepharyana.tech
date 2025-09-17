@@ -505,12 +505,11 @@ fn parse_komik_detail_document(
       .as_ref()
       .map(|e| {
         let text = e.text().collect::<String>();
-        // Assuming chapter text is "Chapter N" or "Ch N", try to extract just N
         text
-          .trim_start_matches("Chapter ")
-          .trim_start_matches("Ch ")
-          .trim()
-          .to_string()
+          .split_whitespace()
+          .find(|&s| s.chars().any(|c| c.is_digit(10)))
+          .map(|num_part| num_part.to_string())
+          .unwrap_or(text.trim().to_string())
       })
       .unwrap_or_default();
 
@@ -520,9 +519,13 @@ fn parse_komik_detail_document(
 
     let chapter_id = chapter_link_element
       .and_then(|e| e.value().attr("href"))
-      .and_then(|href| {
-        // Find the last segment after a '/'
-        href.rsplit_once('/').map(|(_, id)| id.to_string())
+      .map(|href| {
+        href
+          .split('/')
+          .filter(|s| !s.is_empty())
+          .last() // Get the last segment, which is usually the ID
+          .unwrap_or("")
+          .to_string()
       })
       .unwrap_or_default();
 
