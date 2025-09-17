@@ -30,11 +30,10 @@ export interface Komik {
   title: string;
   poster: string;
   chapter: string;
-  score: string;
   date: string;
+  reader_count: string;
   type: string;
-  komik_id: string;
-  slug: string; // Added slug property
+  slug: string;
 }
 
 import { fetchData } from '../../../../../utils/useFetch';
@@ -54,7 +53,7 @@ export default function Page() {
     error,
     isLoading,
   } = useSWR<KomikData>(
-    `/api/komik/manga?page=${pageNumber}&order=update`,
+    `/api/komik2/manga?page=${pageNumber}&order=update`,
     fetcher,
     {
       revalidateIfStale: true,

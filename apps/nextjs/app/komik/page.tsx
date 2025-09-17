@@ -10,9 +10,9 @@ export interface Komik {
   title: string;
   poster: string;
   chapter: string;
-  score: string;
-  type: string;
   date: string;
+  reader_count: string;
+  type: string;
   slug: string;
 }
 
@@ -24,15 +24,15 @@ const fetcher = async (url: string) => {
 
 function HomePage() {
   const { data: manga, error: mangaError } = useSWR(
-    `/api/komik/manga?page=1&order=update`,
+    `/api/komik2/manga?page=1&order=update`,
     fetcher,
   );
   const { data: manhua, error: manhuaError } = useSWR(
-    `/api/komik/manhua?page=1&order=update`,
+    `/api/komik2/manhua?page=1&order=update`,
     fetcher,
   );
   const { data: manhwa, error: manhwaError } = useSWR(
-    `/api/komik/manhwa?page=1&order=update`,
+    `/api/komik2/manhwa?page=1&order=update`,
     fetcher,
   );
 
@@ -117,9 +117,11 @@ function HomePage() {
                     komiks.length > 0 ? (
                       <UnifiedGrid
                         items={komiks.map((comic: Komik) => ({
-                          ...comic,
-                          poster: comic.poster,
                           slug: comic.slug,
+                          title: comic.title,
+                          poster: comic.poster,
+                          chapter: comic.chapter,
+                          chapter_count: comic.chapter, // Assuming chapter here refers to latest chapter text, and we can use it for count display as well
                         }))}
                         itemType="komik"
                       />

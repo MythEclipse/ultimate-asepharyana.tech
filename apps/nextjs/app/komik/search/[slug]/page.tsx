@@ -30,7 +30,7 @@ import { fetchData } from '../../../../utils/useFetch';
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
   try {
     const response = await fetchData(
-      `/api/komik/search?query=${encodeURIComponent(query)}&page=1`,
+      `/api/komik2/search?query=${encodeURIComponent(query)}&page=1`,
     );
     if (response.status && response.status >= 400) {
       throw new Error('Network response was not ok');
