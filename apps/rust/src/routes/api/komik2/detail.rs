@@ -360,6 +360,7 @@ fn parse_komik_detail_document(
     .find(|row| row.text().collect::<String>().to_lowercase().contains("status"))
     .map(|row| {
       let txt = row.text().collect::<String>().trim().to_string();
+      // Remove label and clean up whitespace (including newlines)
       txt.replace("Status:", "").replace("Status :", "").trim().to_string()
     })
     .unwrap_or_default();
@@ -373,6 +374,7 @@ fn parse_komik_detail_document(
     )
     .map(|row| {
       let txt = row.text().collect::<String>().trim().to_string();
+      // Remove label and clean up whitespace (including newlines)
       txt.replace("Jenis Komik:", "").replace("Type:", "").replace("Jenis :", "").trim().to_string()
     })
     .unwrap_or_default();
@@ -386,6 +388,7 @@ fn parse_komik_detail_document(
     )
     .map(|row| {
       let txt = row.text().collect::<String>().trim().to_string();
+      // Remove label and clean up whitespace (including newlines)
       txt
         .replace("Pengarang:", "")
         .replace("Author:", "")
@@ -455,7 +458,8 @@ fn parse_komik_detail_document(
     &get_release_date_selector(),
     document,
     &["tanggal rilis", "release date"]
-  ).unwrap_or_else(|| {
+  ).map(|date| date.trim().to_string())
+  .unwrap_or_else(|| {
     // Fallback to last chapter date if no specific release date found
     document
       .select(&get_chapter_list_selector())
