@@ -9,7 +9,7 @@ https://komiku.org/?post_type=manga&s=naruto";
   println!("Fetching HTML URL: {}", html_url);
   let html_response = fetch_with_proxy(html_url).await?;
   println!("HTML Response length: {}", html_response.data.len());
-  println!("First 500 chars: {}", &html_response.data[..(500).min(html_response.data.len())]);
+  println!("Full HTML response: {}", html_response.data);
 
   // Test API approach for manga listing
   let api_manga_url = "
@@ -19,7 +19,7 @@ https://api.komiku.org/manga/page/1/?tipe=manga
   match fetch_with_proxy(api_manga_url).await {
     Ok(api_response) => {
       println!("API Manga Response length: {}", api_response.data.len());
-      println!("First 500 chars: {}", &api_response.data[..(500).min(api_response.data.len())]);
+      println!("Full API Manga response: {}", api_response.data);
     }
     Err(e) => {
       println!("API Manga fetch failed: {:?}", e);
@@ -34,7 +34,7 @@ https://api.komiku.org/manga/page/1/?tipe=manhua
   match fetch_with_proxy(api_manhua_url).await {
     Ok(api_response) => {
       println!("API Manhua Response length: {}", api_response.data.len());
-      println!("First 500 chars: {}", &api_response.data[..(500).min(api_response.data.len())]);
+      println!("Full API Manhua response: {}", api_response.data);
     }
     Err(e) => {
       println!("API Manhua fetch failed: {:?}", e);
@@ -49,7 +49,7 @@ https://api.komiku.org/manga/page/1/?tipe=manhwa
   match fetch_with_proxy(api_manhwa_url).await {
     Ok(api_response) => {
       println!("API Manhwa Response length: {}", api_response.data.len());
-      println!("First 500 chars: {}", &api_response.data[..(500).min(api_response.data.len())]);
+      println!("Full API Manhwa response: {}", api_response.data);
     }
     Err(e) => {
       println!("API Manhwa fetch failed: {:?}", e);
