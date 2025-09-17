@@ -16,6 +16,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
 use rayon::prelude::*;
+use once_cell::sync::Lazy; // Add this import
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
@@ -58,57 +59,18 @@ pub struct DetailQuery {
   pub komik_id: Option<String>,
 }
 
-// Define selectors without using lazy_static to avoid initialization issues
-fn get_title_selector() -> Selector {
-  Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap()
-}
-
-fn get_info_row_selector() -> Selector {
-  Selector::parse(
-    ".spe span, .inftable tr, .infos .infox .spe span, .info dd, .detail-info dd"
-  ).unwrap()
-}
-
-
-fn get_poster_selector() -> Selector {
-  Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap()
-}
-
-fn get_description_selector() -> Selector {
-  Selector::parse("article section p, .entry-content p, .desc p, .sinopsis, .desc-text").unwrap()
-}
-
-fn get_genre_selector() -> Selector {
-  Selector::parse(".genre a, ul.genre li a, .tag a").unwrap()
-}
-
-fn get_chapter_list_selector() -> Selector {
-  Selector::parse(
-    "table#Daftar_Chapter tbody#daftarChapter tr, #chapter_list li, .eplister ul li, .chapter-list li"
-  ).unwrap()
-}
-
-fn get_chapter_link_selector() -> Selector {
-  Selector::parse("td.judulseries a, a.chapter, a, .chapter-item a").unwrap()
-}
-
-fn get_date_link_selector() -> Selector {
-  Selector::parse(
-    "td.tanggalseries, .rightarea .date, .epcontent .date, .udate, .chapter-date"
-  ).unwrap()
-}
-
-fn get_release_date_selector() -> Selector {
-  Selector::parse(".spe span").unwrap()
-}
-
-fn get_updated_on_selector() -> Selector {
-  Selector::parse(".spe span").unwrap()
-}
-
-fn get_total_chapter_selector() -> Selector {
-  Selector::parse(".spe span").unwrap()
-}
+// Define selectors using once_cell::sync::Lazy for efficient initialization
+static TITLE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap());
+static INFO_ROW_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span, .inftable tr, .infos .infox .spe span, .info dd, .detail-info dd").unwrap());
+static POSTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap());
+static DESCRIPTION_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("article section p, .entry-content p, .desc p, .sinopsis, .desc-text").unwrap());
+static GENRE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".genre a, ul.genre li a, .tag a").unwrap());
+static CHAPTER_LIST_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("table#Daftar_Chapter tbody#daftarChapter tr, #chapter_list li, .eplister ul li, .chapter-list li").unwrap());
+static CHAPTER_LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td.judulseries a, a.chapter, a, .chapter-item a").unwrap());
+static DATE_LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td.tanggalseries, .rightarea .date, .epcontent .date, .udate, .chapter-date").unwrap());
+static RELEASE_DATE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
+static UPDATED_ON_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
+static TOTAL_CHAPTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 
 // Helper function to find table rows containing specific text
 fn find_table_row_with_text(
@@ -278,7 +240,7 @@ fn parse_komik_detail_document(
 
   // Improved title extraction with fallback options
   let title = document
-    .select(&get_title_selector())
+    .select(&TITLE_SELECTOR)
     .next()
     .map(|e| {
       let text = e.text().collect::<String>().trim().to_string();
@@ -315,7 +277,7 @@ fn parse_komik_detail_document(
     .unwrap_or_default();
 
   let status = document
-    .select(&get_info_row_selector())
+    .select(&INFO_ROW_SELECTOR)
     .find(|row| {
       let text = row.text().collect::<String>();
       text.to_lowercase().contains("status")
@@ -344,7 +306,7 @@ fn parse_komik_detail_document(
     .unwrap_or_default();
 
   let r#type = document
-    .select(&get_info_row_selector())
+    .select(&INFO_ROW_SELECTOR)
     .find(|row| {
       let text = row.text().collect::<String>();
       text.to_lowercase().contains("jenis komik") || text.to_lowercase().contains("type")
@@ -374,7 +336,7 @@ fn parse_komik_detail_document(
     .unwrap_or_default();
 
   let author = document
-    .select(&get_info_row_selector())
+    .select(&INFO_ROW_SELECTOR)
     .find(|row| {
       let text = row.text().collect::<String>();
       text.to_lowercase().contains("pengarang") || text.to_lowercase().contains("author")
@@ -414,14 +376,14 @@ fn parse_komik_detail_document(
     .unwrap_or_default();
 
   let poster = document
-    .select(&get_poster_selector())
+    .select(&POSTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("src"))
     .map(|s| s.split('?').next().unwrap_or(s).to_string())
     .unwrap_or_default();
 
   let description = document
-    .select(&get_description_selector())
+    .select(&DESCRIPTION_SELECTOR)
     .map(|e| e.text().collect::<String>())
     .filter(|t| t.len() > 50) // avoid tiny fragments
     .collect::<Vec<String>>()
@@ -431,7 +393,7 @@ fn parse_komik_detail_document(
 
   // Extract release date, total chapter, and updated_on using specific selectors first
   let release_date = find_table_row_with_text(
-    &get_release_date_selector(),
+    &RELEASE_DATE_SELECTOR,
     document,
     &["tanggal rilis", "release date"]
   ).map(|date| {
@@ -441,20 +403,20 @@ fn parse_komik_detail_document(
   .unwrap_or_else(|| {
     // Fallback to last chapter date if no specific release date found
     document
-      .select(&get_chapter_list_selector())
+      .select(&CHAPTER_LIST_SELECTOR)
       .last()
-      .and_then(|last| last.select(&get_date_link_selector()).next())
+      .and_then(|last| last.select(&DATE_LINK_SELECTOR).next())
       .map(|e| e.text().collect::<String>().replace('\n', " ").replace('\t', " ").trim().to_string())
       .unwrap_or_default()
   });
 
   let total_chapter = find_table_row_with_text(
-    &get_total_chapter_selector(),
+    &TOTAL_CHAPTER_SELECTOR,
     document,
     &["total chapter", "total chapters"]
   ).unwrap_or_else(|| {
     // Fallback to chapter count if no specific total found
-    let count = document.select(&get_chapter_list_selector()).count();
+    let count = document.select(&CHAPTER_LIST_SELECTOR).count();
     if count > 0 {
       count.to_string()
     } else {
@@ -463,7 +425,7 @@ fn parse_komik_detail_document(
   });
 
   let updated_on = find_table_row_with_text(
-    &get_updated_on_selector(),
+    &UPDATED_ON_SELECTOR,
     document,
     &["diperbarui", "updated"]
   )
@@ -481,15 +443,15 @@ fn parse_komik_detail_document(
     .unwrap_or_else(|| {
       // Fallback to first chapter date if no specific updated date found
       document
-        .select(&get_chapter_list_selector())
+        .select(&CHAPTER_LIST_SELECTOR)
         .next()
-        .and_then(|first| first.select(&get_date_link_selector()).next())
+        .and_then(|first| first.select(&DATE_LINK_SELECTOR).next())
         .map(|e| e.text().collect::<String>().trim().to_string())
         .unwrap_or_default()
     });
 
   let mut genres = Vec::new();
-  for element in document.select(&get_genre_selector()) {
+  for element in document.select(&GENRE_SELECTOR) {
     let genre = element.text().collect::<String>().trim().to_string();
     if !genre.is_empty() {
       genres.push(genre);
@@ -497,51 +459,51 @@ fn parse_komik_detail_document(
   }
 
   // Improved chapter parsing with better data extraction
-  let chapter_html_snippets: Vec<String> = document
-    .select(&get_chapter_list_selector())
-    .map(|el| el.html())
+  let raw_chapter_data: Vec<(String, String, String)> = document
+    .select(&CHAPTER_LIST_SELECTOR)
+    .filter_map(|el| {
+      let chapter_link_element = el.select(&CHAPTER_LINK_SELECTOR).next();
+      let date_element = el.select(&DATE_LINK_SELECTOR).next();
+
+      let chapter_text = chapter_link_element
+        .as_ref()
+        .map(|e| e.text().collect::<String>())
+        .unwrap_or_default();
+
+      let date_text = date_element
+        .map(|e| e.text().collect::<String>())
+        .unwrap_or_default();
+
+      let href_text = chapter_link_element
+        .and_then(|e| e.value().attr("href"))
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+
+      if !chapter_text.is_empty() || !date_text.is_empty() || !href_text.is_empty() {
+        Some((chapter_text, date_text, href_text))
+      } else {
+        None
+      }
+    })
     .collect();
 
-  let chapters: Vec<Chapter> = chapter_html_snippets
+  let chapters: Vec<Chapter> = raw_chapter_data
     .par_iter()
-    .filter_map(|html_snippet| {
-      let fragment = Html::parse_fragment(html_snippet);
-      let el = fragment.root_element(); // Get the root element of the fragment
+    .filter_map(|(chapter_text, date_text, href_text)| {
+      let chapter = chapter_text
+        .split_whitespace()
+        .find(|&s| s.chars().any(|c| c.is_digit(10)))
+        .map(|num_part| num_part.to_string())
+        .unwrap_or(chapter_text.trim().to_string());
 
-      // Re-create selectors for the fragment, as they operate on the document structure
-      let chapter_link_selector_local = get_chapter_link_selector();
-      let date_link_selector_local = get_date_link_selector();
+      let date = date_text.trim().to_string();
 
-      let chapter_link_element = el.select(&chapter_link_selector_local).next();
-      let date_element = el.select(&date_link_selector_local).next();
-
-      let chapter = chapter_link_element
-        .as_ref()
-        .map(|e| {
-          let text = e.text().collect::<String>();
-          text
-            .split_whitespace()
-            .find(|&s| s.chars().any(|c| c.is_digit(10)))
-            .map(|num_part| num_part.to_string())
-            .unwrap_or(text.trim().to_string())
-        })
-        .unwrap_or_default();
-
-      let date = date_element
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .unwrap_or_default();
-
-      let chapter_id = chapter_link_element
-        .and_then(|e| e.value().attr("href"))
-        .map(|href| {
-          href
-            .split('/')
-            .filter(|s| !s.is_empty())
-            .last()
-            .unwrap_or("")
-            .to_string()
-        })
-        .unwrap_or_default();
+      let chapter_id = href_text
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .last()
+        .unwrap_or("")
+        .to_string();
 
       if !chapter_id.is_empty() {
         Some(Chapter { chapter, date, chapter_id })
