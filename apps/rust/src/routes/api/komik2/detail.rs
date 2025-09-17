@@ -359,9 +359,25 @@ fn parse_komik_detail_document(
     .select(&get_info_row_selector())
     .find(|row| row.text().collect::<String>().to_lowercase().contains("status"))
     .map(|row| {
-      let txt = row.text().collect::<String>().trim().to_string();
-      // Remove label and clean up whitespace (including newlines)
-      txt.replace("Status:", "").replace("Status :", "").trim().to_string()
+      let full_text = row.text().collect::<String>();
+
+      // Extract only the part after "Status:" (case insensitive)
+      let status_value = if let Some(status_pos) = full_text.to_lowercase().find("status:") {
+        let start_pos = status_pos + 7; // "Status:" is 7 characters
+        let value_part = &full_text[start_pos..];
+        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      } else if let Some(colon_pos) = full_text.find(':') {
+        // Fallback to split by colon if "Status:" pattern isn't found
+        let value_part = &full_text[colon_pos + 1..];
+        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      } else {
+        // If no colon, just clean up the text
+        full_text.replace('\n', " ").replace('\t', " ").trim().to_string()
+      };
+
+      // Remove any remaining label text and clean up
+      status_value.replace("Status", "").replace("Jenis Komik", "").replace("Type", "")
+        .replace('\n', " ").replace('\t', " ").trim().to_string()
     })
     .unwrap_or_default();
 
@@ -373,9 +389,33 @@ fn parse_komik_detail_document(
         row.text().collect::<String>().to_lowercase().contains("type")
     )
     .map(|row| {
-      let txt = row.text().collect::<String>().trim().to_string();
-      // Remove label and clean up whitespace (including newlines)
-      txt.replace("Jenis Komik:", "").replace("Type:", "").replace("Jenis :", "").trim().to_string()
+      let full_text = row.text().collect::<String>();
+
+      // Try to extract value after "Jenis Komik:" first
+      let type_value = if let Some(jk_pos) = full_text.to_lowercase().find("jenis komik:") {
+        let start_pos = jk_pos + 11; // "Jenis Komik:" is 11 characters
+        let value_part = &full_text[start_pos..];
+        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      }
+      // Then try "Type:"
+      else if let Some(type_pos) = full_text.to_lowercase().find("type:") {
+        let start_pos = type_pos + 5; // "Type:" is 5 characters
+        let value_part = &full_text[start_pos..];
+        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      }
+      // Fallback to split by colon
+      else if let Some(colon_pos) = full_text.find(':') {
+        let value_part = &full_text[colon_pos + 1..];
+        value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      }
+      // If all else fails, use the whole text
+      else {
+        full_text.replace('\n', " ").replace('\t', " ").trim().to_string()
+      };
+
+      // Clean up any remaining label text and extra whitespace
+      type_value.replace("Jenis Komik", "").replace("Type", "")
+        .replace('\n', " ").replace('\t', " ").trim().to_string()
     })
     .unwrap_or_default();
 
@@ -387,14 +427,19 @@ fn parse_komik_detail_document(
         row.text().collect::<String>().to_lowercase().contains("author")
     )
     .map(|row| {
-      let txt = row.text().collect::<String>().trim().to_string();
-      // Remove label and clean up whitespace (including newlines)
-      txt
-        .replace("Pengarang:", "")
-        .replace("Author:", "")
-        .replace("Pengarang :", "")
-        .trim()
-        .to_string()
+      let full_text = row.text().collect::<String>();
+
+      // Handle different label formats
+      let value_part = if full_text.to_lowercase().contains("pengarang") {
+        full_text.replace("Pengarang:", "").replace("Pengarang :", "").trim().to_string()
+      } else if full_text.to_lowercase().contains("author") {
+        full_text.replace("Author:", "").replace("Author :", "").trim().to_string()
+      } else {
+        full_text.trim().to_string()
+      };
+
+      // Clean up whitespace including newlines and extra spaces
+      value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
     })
     .unwrap_or_default();
 
@@ -458,14 +503,17 @@ fn parse_komik_detail_document(
     &get_release_date_selector(),
     document,
     &["tanggal rilis", "release date"]
-  ).map(|date| date.trim().to_string())
+  ).map(|date| {
+    // Clean up whitespace including newlines and extra spaces
+    date.replace('\n', " ").replace('\t', " ").trim().to_string()
+  })
   .unwrap_or_else(|| {
     // Fallback to last chapter date if no specific release date found
     document
       .select(&get_chapter_list_selector())
       .last()
       .and_then(|last| last.select(&get_date_link_selector()).next())
-      .map(|e| e.text().collect::<String>().trim().to_string())
+      .map(|e| e.text().collect::<String>().replace('\n', " ").replace('\t', " ").trim().to_string())
       .unwrap_or_default()
   });
 
