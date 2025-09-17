@@ -21,5 +21,12 @@ pub fn get_production_url() -> String {
 pub fn get_komik2_url() -> String {
   CONFIG_MAP.get("KOMIK2_BASE_URL")
     .cloned()
+    .unwrap_or_else(|| "https://komiku.org".to_string())
+}
+
+// Get Komik2 API URL from environment config
+pub fn get_komik2_api_url() -> String {
+  CONFIG_MAP.get("KOMIK2_API_URL")
+    .cloned()
     .unwrap_or_else(|| "https://api.komiku.org".to_string())
 }

@@ -47,14 +47,14 @@ pub struct ChapterQuery {
 lazy_static! {
   static ref TITLE_SELECTOR: Selector = Selector::parse("title").unwrap();
   static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nxpr a:not(.rl):not([href*='#Chapter']), .chprev a, a.prev"
+    ".navi-chapter.prev a, .chapter-nav.prev a, .prev-chapter a"
   ).unwrap();
-  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse("a[href*='#Chapter']").unwrap();
+  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse("table#Daftar_Chapter tbody tr").unwrap();
   static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nxpr a.rl, .nxpr a.next, .chnext a, a.next"
+    ".navi-chapter.next a, .chapter-nav.next a, .next-chapter a"
   ).unwrap();
   static ref IMAGE_SELECTOR: Selector = Selector::parse(
-    "#Baca_Komik img, .entry-content img, .reader-area img"
+    "img[data-src], img[src], #Baca_Komik img, .entry-content img"
   ).unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
@@ -143,7 +143,7 @@ async fn fetch_komik2_chapter(
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
   let base_url = get_komik2_url();
-  let url = format!("{}/{}", base_url, chapter_url); // Adjusted URL format
+  let url = format!("{}/{}", base_url, chapter_url); // Keep as-is since chapter URLs might already have correct format
 
   // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
