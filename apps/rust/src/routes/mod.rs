@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 pub mod api;
 use axum::Router;
 use std::sync::Arc;
