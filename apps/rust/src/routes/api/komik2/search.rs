@@ -9,6 +9,7 @@ use regex::Regex;
 use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 use std::time::Duration;
@@ -62,12 +63,8 @@ pub struct SearchQuery {
 }
 
 use axum::extract::State;
-use rust_lib::config::CONFIG_MAP;
 
 lazy_static! {
-  static ref KOMIK2_BASE_URL: String = CONFIG_MAP.get("KOMIK2_BASE_URL")
-    .cloned()
-    .unwrap_or_else(|| "https://komiku.org".to_string());
   pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge, .listupd .bge").unwrap();
   pub static ref TITLE_SELECTOR: Selector = Selector::parse(
     "div.kan h3, div.kan a h3, .tt h3"
@@ -145,7 +142,7 @@ pub async fn search(
     return Ok(Json(search_response));
   }
 
-  let url = format!("{}/?post_type=manga&s={}", *KOMIK2_BASE_URL, urlencoding::encode(&query));
+  let url = format!("{}/?post_type=manga&s={}", get_komik2_url(), urlencoding::encode(&query));
 
   let (data, pagination) = fetch_and_parse_search(&url, page).await.map_err(|e| {
     error!(

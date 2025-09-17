@@ -12,6 +12,7 @@ use lazy_static::lazy_static;
 use axum::extract::State;
 use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
@@ -141,7 +142,7 @@ async fn fetch_komik2_chapter(
   chapter_url: String
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
-  let base_url = "https://komiku.org";
+  let base_url = get_komik2_url();
   let url = format!("{}/{}", base_url, chapter_url); // Adjusted URL format
 
   // Retry logic with exponential backoff
