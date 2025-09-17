@@ -73,7 +73,7 @@ lazy_static! {
 
   // More specific score selectors - target elements with rating/score data
   static ref SCORE_SELECTOR: Selector = Selector::parse(
-    ".spe span:contains('Rating:'), .score, .rating, .numscore, .srating"
+    ".spe span:contains('Rating:'), .score, .rating, .numscore, .srating, .up"
   ).unwrap();
 
   // More specific alternative title selectors
@@ -252,6 +252,12 @@ fn parse_komik_detail_document(
           .trim()
           .to_string()
     })
+    .or_else(|| {
+      // Fallback to try to extract title from h3 elements in the bge class (API response format)
+      document.select(&Selector::parse(".bge .kan h3").unwrap())
+          .next()
+          .map(|e| e.text().collect::<String>().trim().to_string())
+    })
     .unwrap_or_default();
 
   // Extract labeled fields from info rows with more specific selectors
@@ -264,6 +270,21 @@ fn parse_komik_detail_document(
           .replace("Alternative:", "")
           .trim()
           .to_string()
+    })
+    .or_else(|| {
+      // Look for alternative title in any span or div that might contain it
+      document.select(&Selector::parse(".spe span").unwrap())
+          .find(|e| {
+              let text = e.text().collect::<String>().to_lowercase();
+              text.contains("alternatif") || text.contains("alternative")
+          })
+          .map(|e| {
+              let text = e.text().collect::<String>().trim().to_string();
+              text.replace("Judul Alternatif:", "")
+                  .replace("Alternative:", "")
+                  .trim()
+                  .to_string()
+          })
     })
     .unwrap_or_default();
 
@@ -312,11 +333,17 @@ fn parse_komik_detail_document(
     .select(&SCORE_SELECTOR)
     .find(|e| {
       let text = e.text().collect::<String>().to_lowercase();
-      text.contains("rating") || text.contains("score") ||
-      text.chars().any(|c| c.is_digit(10) || c == '.' || c == ',')
+      text.contains("rating") || text.contains("score") || text.contains("up") ||
+      text.chars().any(|c| c.is_digit(10) || c == '.' || c == ',' || c == '/')
     })
     .map(|e| {
-      let text = e.text().collect::<String>();
+      let text = e.text().collect::<String>().trim().to_string();
+
+      // Handle the "Up X" format specifically - this is the pattern we see in the API responses
+      if text.starts_with("Up ") {
+        return text.to_string();
+      }
+
       // Extract numeric score if available (e.g., "8.5/10" or "4.2")
       let numeric_score = text.split_whitespace()
           .find(|&s| s.chars().any(|c| c.is_digit(10)))
@@ -404,6 +431,16 @@ fn parse_komik_detail_document(
           .replace("Updated:", "")
           .trim()
           .to_string()
+    })
+    .or_else(|| {
+      // Look for updated date in the "judul2" class which contains "pembaca • X waktu lalu"
+      document.select(&Selector::parse(".bge .kan .judul2").unwrap())
+          .next()
+          .map(|e| {
+              let text = e.text().collect::<String>().trim().to_string();
+              // Extract the part after "• " which contains the time information
+              text.split("• ").nth(1).unwrap_or("").trim().to_string()
+          })
     })
     .unwrap_or_else(|| {
       // Fallback to first chapter date if no specific updated date found
