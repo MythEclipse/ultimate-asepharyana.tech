@@ -71,7 +71,7 @@ lazy_static! {
   pub static ref IMG_SELECTOR: Selector = Selector::parse(".bgei img").unwrap();
   // Chapter label text
   pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(
-    "a:contains('Terbaru'), .lch"
+    ".new1 a span:last-child, .new1 span, .lch"
   ).unwrap();
   // Score / Up indicator
   // Date text

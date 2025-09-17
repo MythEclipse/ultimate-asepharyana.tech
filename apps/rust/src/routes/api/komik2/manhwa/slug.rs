@@ -65,7 +65,7 @@ lazy_static! {
   pub static ref TITLE_SELECTOR: Selector = Selector::parse(".kan h3, .kan a h3, .tt h3").unwrap();
   pub static ref IMG_SELECTOR: Selector = Selector::parse(".bgei img").unwrap();
   pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(
-    "a:contains('Terbaru'), .lch"
+    ".new1 a span:last-child, .new1 span, .lch"
   ).unwrap();
   pub static ref DATE_SELECTOR: Selector = Selector::parse(
     ".judul2, .kan span.judul2, .mdis .date"
