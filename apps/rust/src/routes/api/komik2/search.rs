@@ -142,7 +142,7 @@ pub async fn search(
     return Ok(Json(search_response));
   }
 
-  let url = format!("{}/?post_type=manga&s={}", get_komik2_url(), urlencoding::encode(&query));
+  let url = format!("https://api.komiku.org/?post_type=manga&s={}", urlencoding::encode(&query));
 
   let (data, pagination) = fetch_and_parse_search(&url, page).await.map_err(|e| {
     error!(

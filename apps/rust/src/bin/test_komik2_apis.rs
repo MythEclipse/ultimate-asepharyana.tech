@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test /api/komik2/detail
     println!("Testing /api/komik2/detail...");
-    let detail_url = format!("{}/api/komik2/detail?komik_id=one-piece", base_url);
+    let detail_url = format!("{}/api/komik2/detail?komik_id=komik-one-piece-indo", base_url);
     let response = client.get(&detail_url).send().await?.error_for_status()?;
     let json_response: serde_json::Value = response.json().await?;
     println!("Detail API Response: {:?}", json_response);

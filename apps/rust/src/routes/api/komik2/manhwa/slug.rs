@@ -134,7 +134,7 @@ pub async fn list(
     return Ok(Json(manhwa_response).into_response());
   }
 
-  let url = format!("{}/manhwa/page/{}/", get_komik2_url(), page);
+  let url = format!("https://api.komiku.org/manhwa/page/{}/", page);
 
   let (data, pagination) = fetch_and_parse_manhwa_list(&url, page).await.map_err(|e| {
     error!(

@@ -136,7 +136,7 @@ pub async fn list(
     return Ok(Json(manhua_response).into_response());
   }
 
-  let url = format!("{}/manhua/page/{}/", get_komik2_url(), page);
+  let url = format!("https://api.komiku.org/manhua/page/{}/", page);
 
   let (data, pagination) = fetch_and_parse_manhua_list(&url, page).await.map_err(|e| {
     error!(
