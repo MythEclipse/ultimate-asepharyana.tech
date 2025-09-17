@@ -234,18 +234,25 @@ fn parse_manhwa_list_document(
       .to_string();
     poster = poster.split('?').next().unwrap_or(&poster).to_string();
 
-    let chapter = element
-      .select(&CHAPTER_SELECTOR)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .map(|text| {
-        let processed_text = text.replace("Terbaru:", "").replace("Awal:", "").trim().to_string();
-        CHAPTER_REGEX.captures(&processed_text)
-          .and_then(|cap| cap.get(0))
-          .map(|m| format!("Chapter {}", m.as_str()))
-          .unwrap_or_default()
-      })
-      .unwrap_or_default();
+    let chapter = {
+      let mut found_chapter = String::new();
+      for chapter_element in element.select(&LINK_SELECTOR) {
+        let text = chapter_element.text().collect::<String>().trim().to_string();
+        if text.contains("Chapter") {
+          let processed_text = text.replace("Terbaru:", "").replace("Awal:", "").trim().to_string();
+          if let Some(captures) = CHAPTER_REGEX.captures(&processed_text) {
+            if let Some(m) = captures.get(0) {
+              found_chapter = format!("Chapter {}", m.as_str());
+              // Prioritize "Terbaru" if found
+              if text.contains("Terbaru") {
+                break;
+              }
+            }
+          }
+        }
+      }
+      found_chapter
+    };
 
     let date = element
       .select(&DATE_SELECTOR)
