@@ -203,8 +203,8 @@ fn parse_komik2_chapter_document(
     })
     .unwrap_or_default();
 
-  let prev_chapter_id = document
-    .select(&PREV_CHAPTER_SELECTOR)
+  let next_chapter_id = document
+    .select(&NEXT_CHAPTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("href"))
     .map(|href|
@@ -264,5 +264,5 @@ fn parse_komik2_chapter_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(chapter))
+    router.route(ENDPOINT_PATH, get(chapter))
 }

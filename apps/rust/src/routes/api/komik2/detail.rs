@@ -61,11 +61,13 @@ pub struct DetailQuery {
 
 // Define selectors without using lazy_static to avoid initialization issues
 fn get_title_selector() -> Selector {
-  Selector::parse("title").unwrap()
+  Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap()
 }
 
 fn get_info_row_selector() -> Selector {
-  Selector::parse(".inftable tr").unwrap()
+  Selector::parse(
+    ".spe span, .inftable tr, .infos .infox .spe span, .info dd, .detail-info dd"
+  ).unwrap()
 }
 
 fn get_score_selector() -> Selector {
@@ -73,27 +75,15 @@ fn get_score_selector() -> Selector {
 }
 
 fn get_alternative_title_selector() -> Selector {
-  Selector::parse(".inftable tr").unwrap()
-}
-
-// Helper function to find table rows containing specific text
-fn find_table_row_with_text(selector: &Selector, document: &Html, text_fragments: &[&str]) -> Option<String> {
-  document.select(selector).find(|row| {
-    let row_text = row.text().collect::<String>().to_lowercase();
-    text_fragments.iter().any(|&fragment| row_text.contains(fragment))
-  }).and_then(|row| {
-    row.select(&Selector::parse("td:last-child").unwrap())
-      .next()
-      .map(|cell| cell.text().collect::<String>().trim().to_string())
-  })
+  Selector::parse(".spe span").unwrap()
 }
 
 fn get_poster_selector() -> Selector {
-  Selector::parse("meta[name='thumbnailUrl']").unwrap()
+  Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap()
 }
 
 fn get_description_selector() -> Selector {
-  Selector::parse("meta[name='description']").unwrap()
+  Selector::parse("article section p, .entry-content p, .desc p, .sinopsis, .desc-text").unwrap()
 }
 
 fn get_genre_selector() -> Selector {
@@ -101,28 +91,53 @@ fn get_genre_selector() -> Selector {
 }
 
 fn get_chapter_list_selector() -> Selector {
-  Selector::parse("table#Daftar_Chapter tbody tr").unwrap()
+  Selector::parse(
+    "table#Daftar_Chapter tbody#daftarChapter tr, #chapter_list li, .eplister ul li, .chapter-list li"
+  ).unwrap()
 }
 
 fn get_chapter_link_selector() -> Selector {
-  Selector::parse("td.judulseries a").unwrap()
+  Selector::parse("td.judulseries a, a.chapter, a, .chapter-item a").unwrap()
 }
 
 fn get_date_link_selector() -> Selector {
-  Selector::parse("td.tanggalseries").unwrap()
+  Selector::parse(
+    "td.tanggalseries, .rightarea .date, .epcontent .date, .udate, .chapter-date"
+  ).unwrap()
 }
 
 fn get_release_date_selector() -> Selector {
-  Selector::parse(".inftable tr").unwrap()
+  Selector::parse(".spe span").unwrap()
 }
 
 fn get_updated_on_selector() -> Selector {
-  Selector::parse(".inftable tr").unwrap()
+  Selector::parse(".spe span").unwrap()
 }
 
 fn get_total_chapter_selector() -> Selector {
-  Selector::parse(".inftable tr").unwrap()
+  Selector::parse(".spe span").unwrap()
 }
+
+// Helper function to find table rows containing specific text
+fn find_table_row_with_text(
+  selector: &Selector,
+  document: &Html,
+  text_fragments: &[&str]
+) -> Option<String> {
+  document
+    .select(selector)
+    .find(|row| {
+      let row_text = row.text().collect::<String>().to_lowercase();
+      text_fragments.iter().any(|&fragment| row_text.contains(fragment))
+    })
+    .and_then(|row| {
+      row
+        .select(&Selector::parse("td:last-child").unwrap())
+        .next()
+        .map(|cell| cell.text().collect::<String>().trim().to_string())
+    })
+}
+
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -171,7 +186,8 @@ pub async fn detail(
   match fetch_komik_detail(komik_id.clone()).await {
     Ok(data) => {
       // Validate that we got meaningful data
-      let is_valid_response = !data.title.is_empty() || !data.chapters.is_empty() || !data.description.is_empty();
+      let is_valid_response =
+        !data.title.is_empty() || !data.chapters.is_empty() || !data.description.is_empty();
 
       if !is_valid_response {
         error!("Received empty response for komik_id: {}. All fields are empty.", komik_id);
@@ -209,7 +225,7 @@ pub async fn detail(
         "Empty response" => "No data received from the source website".to_string(),
         "Failed to fetch" => "Failed to connect to the source website".to_string(),
         "Timeout" => "Request timed out while connecting to source website".to_string(),
-        _ => format!("Failed to fetch komik data: {}", e)
+        _ => format!("Failed to fetch komik data: {}", e),
       };
 
       Err((StatusCode::INTERNAL_SERVER_ERROR, error_msg))
@@ -264,72 +280,80 @@ fn parse_komik_detail_document(
 
   // Improved title extraction with fallback options
   let title = document
-      .select(&get_title_selector())
-      .next()
-      .map(|e| {
-        let text = e.text().collect::<String>().trim().to_string();
-        // Remove common prefixes/suffixes that might be included
-        text
-          .replace("Komik ", "")
-          .replace("Manga ", "")
-          .replace("Manhua ", "")
-          .replace("Manhwa ", "")
-          .trim()
-          .to_string()
-      })
-      .or_else(|| {
-        // Fallback to try to extract title from h1 elements
-        document
-          .select(&Selector::parse("h1").unwrap())
-          .next()
-          .map(|e| e.text().collect::<String>().trim().to_string())
-      })
-      .or_else(|| {
-        // Final fallback to document title
-        document
-          .select(&Selector::parse("title").unwrap())
-          .next()
-          .map(|e| {
-            let text = e.text().collect::<String>();
-            if text.contains("Komik ") {
-              text.replace("Komik ", "").trim().to_string()
-            } else {
-              text.trim().to_string()
-            }
-          })
-      })
-      .unwrap_or_default();
+    .select(&get_title_selector())
+    .next()
+    .map(|e| {
+      let text = e.text().collect::<String>().trim().to_string();
+      // Remove common prefixes/suffixes that might be included
+      text
+        .replace("Komik ", "")
+        .replace("Manga ", "")
+        .replace("Manhua ", "")
+        .replace("Manhwa ", "")
+        .trim()
+        .to_string()
+    })
+    .or_else(|| {
+      // Fallback to try to extract title from h1 elements
+      document
+        .select(&Selector::parse("h1").unwrap())
+        .next()
+        .map(|e| e.text().collect::<String>().trim().to_string())
+    })
+    .or_else(|| {
+      // Final fallback to document title
+      document
+        .select(&Selector::parse("title").unwrap())
+        .next()
+        .map(|e| {
+          let text = e.text().collect::<String>();
+          if text.contains("Komik ") {
+            text.replace("Komik ", "").trim().to_string()
+          } else {
+            text.trim().to_string()
+          }
+        })
+    })
+    .unwrap_or_default();
 
   // Extract labeled fields from info rows with more specific selectors
   let alternative_title = find_table_row_with_text(
     &get_alternative_title_selector(),
     document,
     &["judul alternatif", "judul indonesia", "alternative title"]
-  ).or_else(|| {
-    // Look for alternative title in any span or div that might contain it
-    document
-      .select(&Selector::parse(".spe span, .inftable tr td").unwrap())
-      .find(|e| {
-        let text = e.text().collect::<String>().to_lowercase();
-        text.contains("alternatif") || text.contains("alternative") || text.contains("indonesia")
-      })
-      .map(|e| {
-        let text = e.text().collect::<String>().trim().to_string();
-        text.replace("Judul Alternatif:", "").replace("Alternative:", "").replace("Judul Indonesia:", "").trim().to_string()
-      })
-  }).or_else(|| {
-    // Final fallback - extract from title if it contains multiple parts
-    if title.contains(" - ") {
-      let parts: Vec<&str> = title.split(" - ").collect();
-      if parts.len() > 1 {
-        Some(parts[1].trim().to_string())
+  )
+    .or_else(|| {
+      // Look for alternative title in any span or div that might contain it
+      document
+        .select(&Selector::parse(".spe span, .inftable tr td").unwrap())
+        .find(|e| {
+          let text = e.text().collect::<String>().to_lowercase();
+          text.contains("alternatif") || text.contains("alternative") || text.contains("indonesia")
+        })
+        .map(|e| {
+          let text = e.text().collect::<String>().trim().to_string();
+          text
+            .replace("Judul Alternatif:", "")
+            .replace("Alternative:", "")
+            .replace("Judul Indonesia:", "")
+            .trim()
+            .to_string()
+        })
+    })
+    .or_else(|| {
+      // Final fallback - extract from title if it contains multiple parts
+      if title.contains(" - ") {
+        let parts: Vec<&str> = title.split(" - ").collect();
+        if parts.len() > 1 {
+          Some(parts[1].trim().to_string())
+        } else {
+          None
+        }
       } else {
         None
       }
-    } else {
-      None
-    }
-  }).unwrap_or_default();
+    })
+    .unwrap_or_default();
 
   let status = document
     .select(&get_info_row_selector())
@@ -459,25 +483,27 @@ fn parse_komik_detail_document(
     &get_updated_on_selector(),
     document,
     &["diperbarui", "updated"]
-  ).or_else(|| {
-    // Look for updated date in the "judul2" class which contains "pembaca • X waktu lalu"
-    document
-      .select(&Selector::parse(".bge .kan .judul2").unwrap())
-      .next()
-      .map(|e| {
-        let text = e.text().collect::<String>().trim().to_string();
-        // Extract the part after "• " which contains the time information
-        text.split("• ").nth(1).unwrap_or("").trim().to_string()
-      })
-  }).unwrap_or_else(|| {
-    // Fallback to first chapter date if no specific updated date found
-    document
-      .select(&get_chapter_list_selector())
-      .next()
-      .and_then(|first| first.select(&get_date_link_selector()).next())
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default()
-  });
+  )
+    .or_else(|| {
+      // Look for updated date in the "judul2" class which contains "pembaca • X waktu lalu"
+      document
+        .select(&Selector::parse(".bge .kan .judul2").unwrap())
+        .next()
+        .map(|e| {
+          let text = e.text().collect::<String>().trim().to_string();
+          // Extract the part after "• " which contains the time information
+          text.split("• ").nth(1).unwrap_or("").trim().to_string()
+        })
+    })
+    .unwrap_or_else(|| {
+      // Fallback to first chapter date if no specific updated date found
+      document
+        .select(&get_chapter_list_selector())
+        .next()
+        .and_then(|first| first.select(&get_date_link_selector()).next())
+        .map(|e| e.text().collect::<String>().trim().to_string())
+        .unwrap_or_default()
+    });
 
   let mut genres = Vec::new();
   for element in document.select(&get_genre_selector()) {
