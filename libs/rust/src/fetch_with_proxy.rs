@@ -133,30 +133,23 @@ pub async fn fetch_with_proxy(slug: &str) -> Result<FetchResult, AppError> {
         };
 
         if is_internet_baik_block_page(&text_data) {
-          warn!("Blocked by internetbaik (direct fetch), trying proxies");
-          let proxy_result = fetch_from_proxies(slug).await?;
-          set_cached_fetch(slug, &proxy_result).await?;
-          Ok(proxy_result)
+          warn!("Blocked by internetbaik (direct fetch) for {}", slug);
+          return Err(AppError::Other(format!("Blocked by internetbaik for {}", slug)));
         } else {
           let result = FetchResult { data: text_data, content_type };
           set_cached_fetch(slug, &result).await?;
           Ok(result)
         }
       } else {
-        let error_msg = format!("Direct fetch failed with status {}", res.status());
-        error!("Direct fetch failed for {}: {}", slug, error_msg);
-        error!("Direct fetch failed, trying proxies");
-        let proxy_result = fetch_from_proxies(slug).await?;
-        set_cached_fetch(slug, &proxy_result).await?;
-        Ok(proxy_result)
+        let error_msg = format!("Direct fetch failed with status {} for {}", res.status(), slug);
+        error!("{}", error_msg);
+        Err(AppError::Other(error_msg))
       }
     }
     Err(e) => {
-      warn!("Direct fetch failed for {}: {:?}", slug, e);
-      error!("Direct fetch failed, trying proxies");
-      let proxy_result = fetch_from_proxies(slug).await?;
-      set_cached_fetch(slug, &proxy_result).await?;
-      Ok(proxy_result)
+      let error_msg = format!("Direct fetch failed for {}: {:?}", slug, e);
+      error!("{}", error_msg);
+      Err(AppError::Other(error_msg))
     }
   }
 }
@@ -166,71 +159,50 @@ pub async fn fetch_with_proxy_only(slug: &str) -> Result<FetchResult, AppError> 
     return Ok(cached);
   }
 
-  let proxy_result = fetch_from_proxies(slug).await?;
-  set_cached_fetch(slug, &proxy_result).await?;
-  Ok(proxy_result)
+  fetch_from_single_proxy(slug).await
 }
 
-async fn fetch_from_proxies(slug: &str) -> Result<FetchResult, AppError> {
-  let proxy_urls = [
-    "https://my-fetcher-mytheclipse8647-ap12h7hq.apn.leapcell.dev/fetch?url=",
-    "https://next-fetcher.vercel.app/api/fetch?url=",
-    // Add more proxy URLs here if needed
-  ];
-
+async fn fetch_from_single_proxy(slug: &str) -> Result<FetchResult, AppError> {
+  let proxy_url_base = "https://my-fetcher-mytheclipse8647-ap12h7hq.apn.leapcell.dev/fetch?url="; // Use only the first proxy
   let client = Client::new();
   let encoded_url = urlencoding::encode(slug);
+  let proxy_url = format!("{}{}", proxy_url_base, encoded_url);
 
-  for (i, base_proxy_url) in proxy_urls.iter().enumerate() {
-    let proxy_url = format!("{}{}", base_proxy_url, encoded_url);
-    info!(
-      "[fetch_from_proxies] Attempting to fetch {} via proxy {}/{}",
-      slug,
-      i + 1,
-      proxy_urls.len()
-    );
+  info!("[fetch_from_single_proxy] Attempting to fetch {} via single proxy", slug);
 
-    match client.get(&proxy_url).timeout(std::time::Duration::from_secs(30)).send().await {
-      Ok(res) => {
-        info!(
-          "[fetch_from_proxies] Proxy fetch response from {}/{} for {}: status={}",
-          i + 1,
-          proxy_urls.len(),
-          slug,
-          res.status()
+  match client.get(&proxy_url).timeout(std::time::Duration::from_secs(30)).send().await {
+    Ok(res) => {
+      info!(
+        "[fetch_from_single_proxy] Proxy fetch response for {}: status={}",
+        slug,
+        res.status()
+      );
+      if res.status().is_success() {
+        let content_type = res
+          .headers()
+          .get(reqwest::header::CONTENT_TYPE)
+          .and_then(|h| h.to_str().ok())
+          .map(|s| s.to_string());
+        let data = res.text().await?;
+
+        let result = FetchResult { data, content_type };
+        info!("[fetch_from_single_proxy] Successfully fetched {} via single proxy", slug);
+        set_cached_fetch(slug, &result).await?;
+        Ok(result)
+      } else {
+        let error_msg = format!(
+          "Single proxy fetch failed with status {} for {}",
+          res.status(),
+          slug
         );
-        if res.status().is_success() {
-          let content_type = res
-            .headers()
-            .get(reqwest::header::CONTENT_TYPE)
-            .and_then(|h| h.to_str().ok())
-            .map(|s| s.to_string());
-          let data = res.text().await?;
-
-          let result = FetchResult { data, content_type };
-          info!(
-            "[fetch_from_proxies] Successfully fetched {} via proxy {}/{}",
-            slug,
-            i + 1,
-            proxy_urls.len()
-          );
-          return Ok(result);
-        } else {
-          let error_msg = format!(
-            "Proxy {}/{} fetch failed with status {}",
-            i + 1,
-            proxy_urls.len(),
-            res.status()
-          );
-          warn!("Proxy fetch failed for {}: {}", slug, error_msg);
-        }
-      }
-      Err(e) => {
-        warn!("Proxy {}/{} fetch failed for {}: {:?}", i + 1, proxy_urls.len(), slug, e);
+        warn!("{}", error_msg);
+        Err(AppError::Other(error_msg))
       }
     }
+    Err(e) => {
+      let error_msg = format!("Single proxy fetch failed for {}: {:?}", slug, e);
+      warn!("{}", error_msg);
+      Err(AppError::Other(error_msg))
+    }
   }
-
-  error!("All proxy attempts failed for {}", slug);
-  Err(AppError::Other("All proxy attempts failed".to_string()))
 }
