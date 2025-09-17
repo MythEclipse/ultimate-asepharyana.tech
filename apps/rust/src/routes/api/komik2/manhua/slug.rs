@@ -15,7 +15,7 @@ use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
-use rust_lib::urls::{ get_komik2_url, get_komik2_api_url };
+use rust_lib::urls::{ get_komik2_api_url };
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -70,7 +70,7 @@ lazy_static! {
   pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(
     ".new1 a span:last-child, .new1 span, .lch"
   ).unwrap();
-  pub static ref SCORE_SELECTOR: Selector = Selector::parse(".up, .epx, .numscore").unwrap();
+  pub static ref SCORE_SELECTOR: Selector = Selector::parse("body > div:nth-child(1) > div.kan > div:nth-child(5) > a > span:nth-child(2)").unwrap();
   pub static ref DATE_SELECTOR: Selector = Selector::parse(
     ".judul2, .kan span.judul2, .mdis .date"
   ).unwrap();

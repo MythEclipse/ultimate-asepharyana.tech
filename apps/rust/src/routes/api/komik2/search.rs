@@ -9,7 +9,6 @@ use regex::Regex;
 use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
-use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 use std::time::Duration;
