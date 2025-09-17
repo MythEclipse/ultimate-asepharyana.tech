@@ -60,18 +60,42 @@ pub struct DetailQuery {
 }
 
 // Define selectors using once_cell::sync::Lazy for efficient initialization
-static TITLE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap());
-static INFO_ROW_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span, .inftable tr, .infos .infox .spe span, .info dd, .detail-info dd").unwrap());
-static POSTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap());
-static DESCRIPTION_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("article section p, .entry-content p, .desc p, .sinopsis, .desc-text").unwrap());
-static GENRE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".genre a, ul.genre li a, .tag a").unwrap());
-static CHAPTER_LIST_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("table#Daftar_Chapter tbody#daftarChapter tr, #chapter_list li, .eplister ul li, .chapter-list li").unwrap());
-static CHAPTER_LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td.judulseries a, a.chapter, a, .chapter-item a").unwrap());
-static DATE_LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td.tanggalseries, .rightarea .date, .epcontent .date, .udate, .chapter-date").unwrap());
+static TITLE_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap()
+);
+static INFO_ROW_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse(
+    ".spe span, .inftable tr, .infos .infox .spe span, .info dd, .detail-info dd"
+  ).unwrap()
+);
+static POSTER_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap()
+);
+static DESCRIPTION_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse("article section p, .entry-content p, .desc p, .sinopsis, .desc-text").unwrap()
+);
+static GENRE_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse(".genre a, ul.genre li a, .tag a").unwrap()
+);
+static CHAPTER_LIST_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse(
+    "table#Daftar_Chapter tbody#daftarChapter tr, #chapter_list li, .eplister ul li, .chapter-list li"
+  ).unwrap()
+);
+static CHAPTER_LINK_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse("td.judulseries a, a.chapter, a, .chapter-item a").unwrap()
+);
+static DATE_LINK_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse(
+    "td.tanggalseries, .rightarea .date, .epcontent .date, .udate, .chapter-date"
+  ).unwrap()
+);
 static RELEASE_DATE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 static UPDATED_ON_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 static TOTAL_CHAPTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
-static JUDUL2_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".bge .kan .judul2").unwrap());
+static JUDUL2_SELECTOR: Lazy<Selector> = Lazy::new(||
+  Selector::parse(".bge .kan .judul2").unwrap()
+);
 
 // Helper function to find table rows containing specific text
 fn find_table_row_with_text(
@@ -88,9 +112,7 @@ fn find_table_row_with_text(
     .select(selector)
     .find(|row| {
       let row_text = row.text().collect::<String>();
-      lower_text_fragments
-        .iter()
-        .any(|fragment| row_text.to_lowercase().contains(fragment))
+      lower_text_fragments.iter().any(|fragment| row_text.to_lowercase().contains(fragment))
     })
     .and_then(|row| {
       row
@@ -234,7 +256,7 @@ async fn fetch_komik_detail(
 }
 
 fn parse_komik_detail_document(
-  document: &Html,
+  document: &Html
 ) -> Result<DetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
   info!("Starting to parse komik2 detail document");
@@ -397,19 +419,22 @@ fn parse_komik_detail_document(
     &RELEASE_DATE_SELECTOR,
     document,
     &["tanggal rilis", "release date"]
-  ).map(|date| {
-    // Clean up whitespace including newlines and extra spaces
-    date.replace('\n', " ").replace('\t', " ").trim().to_string()
-  })
-  .unwrap_or_else(|| {
-    // Fallback to last chapter date if no specific release date found
-    document
-      .select(&CHAPTER_LIST_SELECTOR)
-      .last()
-      .and_then(|last| last.select(&DATE_LINK_SELECTOR).next())
-      .map(|e| e.text().collect::<String>().replace('\n', " ").replace('\t', " ").trim().to_string())
-      .unwrap_or_default()
-  });
+  )
+    .map(|date| {
+      // Clean up whitespace including newlines and extra spaces
+      date.replace('\n', " ").replace('\t', " ").trim().to_string()
+    })
+    .unwrap_or_else(|| {
+      // Fallback to last chapter date if no specific release date found
+      document
+        .select(&CHAPTER_LIST_SELECTOR)
+        .last()
+        .and_then(|last| last.select(&DATE_LINK_SELECTOR).next())
+        .map(|e|
+          e.text().collect::<String>().replace('\n', " ").replace('\t', " ").trim().to_string()
+        )
+        .unwrap_or_default()
+    });
 
   let total_chapter = find_table_row_with_text(
     &TOTAL_CHAPTER_SELECTOR,
@@ -471,9 +496,7 @@ fn parse_komik_detail_document(
         .map(|e| e.text().collect::<String>())
         .unwrap_or_default();
 
-      let date_text = date_element
-        .map(|e| e.text().collect::<String>())
-        .unwrap_or_default();
+      let date_text = date_element.map(|e| e.text().collect::<String>()).unwrap_or_default();
 
       let href_text = chapter_link_element
         .and_then(|e| e.value().attr("href"))
@@ -533,5 +556,5 @@ fn parse_komik_detail_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(detail))
+  router.route(ENDPOINT_PATH, get(detail))
 }
