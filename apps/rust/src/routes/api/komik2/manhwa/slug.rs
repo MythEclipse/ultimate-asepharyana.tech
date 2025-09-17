@@ -34,6 +34,7 @@ pub struct ManhwaItem {
   pub poster: String,
   pub chapter: String,
   pub date: String,
+  pub pembaca: String,
   pub r#type: String,
   pub slug: String,
 }
@@ -254,11 +255,15 @@ fn parse_manhwa_list_document(
       found_chapter
     };
 
-    let date = element
+    let full_date_string = element
       .select(&DATE_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
       .unwrap_or_default();
+
+    let parts: Vec<&str> = full_date_string.split(" • ").collect();
+    let date = parts.get(1).unwrap_or(&"").to_string();
+    let pembaca = parts.get(0).unwrap_or(&"").to_string();
 
     let r#type = element
       .select(&TYPE_SELECTOR)
@@ -296,6 +301,7 @@ fn parse_manhwa_list_document(
       poster,
       chapter,
       date,
+      pembaca,
       r#type,
       slug,
     });
