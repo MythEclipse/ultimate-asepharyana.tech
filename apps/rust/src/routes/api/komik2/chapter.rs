@@ -278,6 +278,15 @@ fn parse_komik2_chapter_document(
   };
 
   let mut images = Vec::new();
+  let forbidden_images = [
+    "https://flagcdn.com/32x24/jp.png",
+    "https://flagcdn.com/32x24/kr.png",
+    "https://flagcdn.com/32x24/cn.png",
+    "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg",
+    "https://www.gravatar.com/avatar/?d=mp&s=80",
+    "/asset/img/komikuplus2.jpg",
+    "https://komiku.org/asset/img/Loading.gif",
+  ];
   for el in document.select(&IMAGE_SELECTOR) {
     if
       let Some(src) = el
@@ -292,7 +301,9 @@ fn parse_komik2_chapter_document(
             .and_then(|s| s.split_whitespace().next())
         )
     {
-      images.push(src.to_string());
+      if !forbidden_images.contains(&src) {
+        images.push(src.to_string());
+      }
     }
   }
 

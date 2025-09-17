@@ -1,30 +1,20 @@
 //! Handler for the detail endpoint.
 #![allow(dead_code)]
 
-use axum::{ extract::Query, routing::{ get, get_service }, Json, Router };
+use axum::{ extract::{ Query, State, ws::{ WebSocketUpgrade, WebSocket, Message } }, http::StatusCode, response::{ IntoResponse, Response }, routing::{ get, get_service }, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use tracing::{ info, error, warn };
-use axum::{ extract::Query, routing::{ get, get_service }, Json, Router };
-use std::sync::Arc;
-use crate::routes::AppState;
-use serde::{ Deserialize, Serialize };
-use utoipa::ToSchema;
-use scraper::{ Html, Selector };
-use tracing::{ info, error, warn };
-use axum::extract::{ State, ws::{ WebSocketUpgrade, WebSocket, Message } };
-use axum::http::StatusCode;
-use axum::response::{ IntoResponse, Response };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
 use rayon::prelude::*;
-use once_cell::sync::Lazy; // Add this import
+use once_cell::sync::Lazy;
 use futures::{ StreamExt, FutureExt };
 
 pub const ENDPOINT_METHOD: &str = "get";
