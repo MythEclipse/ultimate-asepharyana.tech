@@ -136,11 +136,7 @@ pub async fn list(
     return Ok(Json(manhua_response).into_response());
   }
 
-  let url = if page == 1 {
-    "https://komiku.org/pustaka/?tipe=manhua".to_string()
-  } else {
-    format!("https://komiku.org/pustaka/page/{}/?tipe=manhua", page)
-  };
+  let url = format!("https://api.komiku.org/manga/page/{}/?tipe=manhua", page);
 
   let (data, pagination) = fetch_and_parse_manhua_list(&url, page).await.map_err(|e| {
     error!(

@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test /api/komik2/detail
     println!("Testing /api/komik2/detail...");
-    let detail_url = format!("{}/api/komik2/detail?komik_id=komik-one-piece-indo", base_url);
+    let detail_url = format!("{}/api/komik2/detail?komik_id=boku-to-kimi-gyaru-ga-fufu-ni-naru-made", base_url);
     let response = client.get(&detail_url).send().await?.error_for_status()?;
     let json_response: serde_json::Value = response.json().await?;
     println!("Detail API Response: {:?}", json_response);
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test /api/komik2/chapter
     println!("Testing /api/komik2/chapter...");
-    let chapter_url = format!("{}/api/komik2/chapter?chapter_url=im-actually-a-cultivation-bigshot-chapter-01", base_url);
+    let chapter_url = format!("{}/api/komik2/chapter?chapter_url=boku-to-kimi-gyaru-ga-fufu-ni-naru-made-chapter-1", base_url);
     let response = client.get(&chapter_url).send().await?.error_for_status()?;
     let json_response: serde_json::Value = response.json().await?;
     println!("Chapter API Response: {:?}", json_response);
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test /api/komik2/search
     println!("Testing /api/komik2/search...");
-    let search_url = format!("{}/api/komik2/search?query=one+piece", base_url);
+    let search_url = format!("{}/api/komik2/search?query=naruto", base_url);
     let response = client.get(&search_url).send().await?.error_for_status()?;
     let json_response: serde_json::Value = response.json().await?;
     println!("Search API Response: {:?}", json_response);
