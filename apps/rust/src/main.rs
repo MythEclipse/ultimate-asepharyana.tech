@@ -60,7 +60,10 @@ async fn main() -> anyhow::Result<()> {
     .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
     .layer(cors);
 
-  let port = 4091;
+  let port = std::env::var("PORT")
+      .unwrap_or_else(|_| "4091".to_string())
+      .parse::<u16>()
+      .unwrap_or(4091);
   let addr = SocketAddr::from(([0, 0, 0, 0], port));
   tracing::info!("Binding server to address: {}", addr);
 

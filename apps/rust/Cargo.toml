@@ -83,6 +83,10 @@ path = "src/bin/scaffold.rs"
 [[bin]]
 name = "test_scaffold"
 path = "src/bin/test_scaffold.rs"
+[[bin]]
+name = "test_komik2_apis"
+path = "src/bin/test_komik2_apis.rs"
+
 
 [features]
 default = ["ffmpeg"]
