@@ -429,17 +429,51 @@ fn parse_komik_detail_document(
     .map(|row| {
       let full_text = row.text().collect::<String>();
 
-      // Handle different label formats
-      let value_part = if full_text.to_lowercase().contains("pengarang") {
-        full_text.replace("Pengarang:", "").replace("Pengarang :", "").trim().to_string()
-      } else if full_text.to_lowercase().contains("author") {
-        full_text.replace("Author:", "").replace("Author :", "").trim().to_string()
+      // First, normalize all whitespace (newlines, tabs, multiple spaces) to single spaces
+      let normalized_text = full_text
+        .replace('\n', " ")          // Replace newlines with spaces
+        .replace('\t', " ")          // Replace tabs with spaces
+        .split_whitespace()          // Split on any whitespace
+        .collect::<Vec<&str>>()      // Collect into vector
+        .join(" ")                   // Join with single spaces
+        .trim()                      // Trim leading/trailing spaces
+        .to_string();                // Convert back to String
+
+      // Try different patterns to extract just the author name
+      let author_name = if let Some(pos) = normalized_text.to_lowercase().find("pengarang:") {
+        // Extract everything after "Pengarang:"
+        normalized_text[pos + 10..].trim().to_string()
+      } else if let Some(pos) = normalized_text.to_lowercase().find("pengarang ") {
+        // Extract everything after "Pengarang " (with space)
+        normalized_text[pos + 10..].trim().to_string()
+      } else if let Some(pos) = normalized_text.to_lowercase().find("author:") {
+        // Extract everything after "Author:"
+        normalized_text[pos + 7..].trim().to_string()
+      } else if let Some(pos) = normalized_text.to_lowercase().find("author ") {
+        // Extract everything after "Author " (with space)
+        normalized_text[pos + 7..].trim().to_string()
+      } else if let Some(colon_pos) = normalized_text.find(':') {
+        // Fallback to split by colon
+        normalized_text[colon_pos + 1..].trim().to_string()
       } else {
-        full_text.trim().to_string()
+        // If no pattern matches, use the whole text
+        normalized_text
       };
 
-      // Clean up whitespace including newlines and extra spaces
-      value_part.replace('\n', " ").replace('\t', " ").trim().to_string()
+      // Final cleanup to ensure no label text remains
+      let final_author = author_name
+        .replace("Pengarang", "")
+        .replace("Author", "")
+        .replace("pengarang", "")
+        .replace("author", "")
+        .trim().to_string();
+
+      // If we still have something that looks like "Pengarang Name", try a different approach
+      if final_author.starts_with("Pengarang") || final_author.starts_with("pengarang") {
+        final_author.split_whitespace().skip(1).collect::<Vec<_>>().join(" ")
+      } else {
+        final_author
+      }
     })
     .unwrap_or_default();
 
