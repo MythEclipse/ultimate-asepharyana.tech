@@ -33,8 +33,6 @@ pub struct Chapter {
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct DetailData {
   pub title: String,
-  pub alternative_title: String,
-  pub score: String,
   pub poster: String,
   pub description: String,
   pub status: String,
@@ -70,13 +68,6 @@ fn get_info_row_selector() -> Selector {
   ).unwrap()
 }
 
-fn get_score_selector() -> Selector {
-  Selector::parse(".spe span, .score, .rating, .numscore, .srating, .up").unwrap()
-}
-
-fn get_alternative_title_selector() -> Selector {
-  Selector::parse(".spe span").unwrap()
-}
 
 fn get_poster_selector() -> Selector {
   Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap()
@@ -316,45 +307,6 @@ fn parse_komik_detail_document(
     })
     .unwrap_or_default();
 
-  // Extract labeled fields from info rows with more specific selectors
-  let alternative_title = find_table_row_with_text(
-    &get_alternative_title_selector(),
-    document,
-    &["judul alternatif", "judul indonesia", "alternative title"]
-  )
-    .or_else(|| {
-      // Look for alternative title in any span or div that might contain it
-      document
-        .select(&Selector::parse(".spe span, .inftable tr td").unwrap())
-        .find(|e| {
-          let text = e.text().collect::<String>().to_lowercase();
-          text.contains("alternatif") || text.contains("alternative") || text.contains("indonesia")
-        })
-        .map(|e| {
-          let text = e.text().collect::<String>().trim().to_string();
-          text
-            .replace("Judul Alternatif:", "")
-            .replace("Alternative:", "")
-            .replace("Judul Indonesia:", "")
-            .trim()
-            .to_string()
-        })
-    })
-    .or_else(|| {
-      // Final fallback - extract from title if it contains multiple parts
-      if title.contains(" - ") {
-        let parts: Vec<&str> = title.split(" - ").collect();
-        if parts.len() > 1 {
-          Some(parts[1].trim().to_string())
-        } else {
-          None
-        }
-      } else {
-        None
-      }
-    })
-    .unwrap_or_default();
-
   let status = document
     .select(&get_info_row_selector())
     .find(|row| row.text().collect::<String>().to_lowercase().contains("status"))
@@ -473,45 +425,6 @@ fn parse_komik_detail_document(
         final_author.split_whitespace().skip(1).collect::<Vec<_>>().join(" ")
       } else {
         final_author
-      }
-    })
-    .unwrap_or_default();
-
-  // Improved score extraction - look for numeric values or specific rating formats
-  let score = document
-    .select(&get_score_selector())
-    .find(|e| {
-      let text = e.text().collect::<String>().to_lowercase();
-      text.contains("rating") ||
-        text.contains("score") ||
-        text.contains("up") ||
-        text.chars().any(|c| (c.is_digit(10) || c == '.' || c == ',' || c == '/'))
-    })
-    .map(|e| {
-      let text = e.text().collect::<String>().trim().to_string();
-
-      // Handle the "Up X" format specifically - this is the pattern we see in the API responses
-      if text.starts_with("Up ") {
-        return text.to_string();
-      }
-
-      // Extract numeric score if available (e.g., "8.5/10" or "4.2")
-      let numeric_score = text
-        .split_whitespace()
-        .find(|&s| s.chars().any(|c| c.is_digit(10)))
-        .unwrap_or(&text);
-
-      // Clean up the score - keep only numbers, dots, and slashes
-      let cleaned = numeric_score
-        .chars()
-        .filter(|&c| (c.is_digit(10) || c == '.' || c == ',' || c == '/'))
-        .collect::<String>();
-
-      // If we have something like "Up 1", keep it but prefer numeric scores
-      if cleaned.len() < 2 {
-        text.replace("Rating:", "").replace("Score:", "").trim().to_string()
-      } else {
-        cleaned
       }
     })
     .unwrap_or_default();
@@ -670,8 +583,6 @@ fn parse_komik_detail_document(
 
   Ok(DetailData {
     title,
-    alternative_title,
-    score,
     poster,
     description,
     status,
