@@ -8,6 +8,13 @@ use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use tracing::{ info, error, warn };
+use axum::{ extract::Query, routing::{ get, get_service }, Json, Router };
+use std::sync::Arc;
+use crate::routes::AppState;
+use serde::{ Deserialize, Serialize };
+use utoipa::ToSchema;
+use scraper::{ Html, Selector };
+use tracing::{ info, error, warn };
 use axum::extract::{ State, ws::{ WebSocketUpgrade, WebSocket, Message } };
 use axum::http::StatusCode;
 use axum::response::{ IntoResponse, Response };
@@ -18,8 +25,7 @@ use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
 use rayon::prelude::*;
 use once_cell::sync::Lazy; // Add this import
-use futures::{ SinkExt, StreamExt, FutureExt };
-use crate::routes::api::komik2::chapter::fetch_komik2_chapter;
+use futures::{ StreamExt, FutureExt };
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
@@ -68,8 +74,6 @@ pub enum KomikDetailEvent {
   Detail(DetailData),
   Error(String),
   EndOfStream,
-  ChapterImage(String), // New event for sending individual chapter images
-  ChapterImagesEnd, // Signal end of chapter images
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -605,94 +609,64 @@ async fn handle_socket(mut socket: WebSocket, app_state: Arc<AppState>) {
 
         match request {
             Ok(req) => {
-                if let Some(chapter_id) = req.chapter_id {
-                    info!("Processing chapter image request for komik_id: {}, chapter_id: {}", req.komik_id, chapter_id);
-                    // Assuming fetch_komik2_chapter exists and returns ChapterData
-                    // You'll need to import `fetch_komik2_chapter` from `crate::routes::api::komik2::chapter`
-                    use crate::routes::api::komik2::chapter::fetch_komik2_chapter;
-                    match fetch_komik2_chapter(chapter_id.clone()).await {
-                        Ok(chapter_data) => {
-                            for image_url in chapter_data.images {
-                                let image_event = KomikDetailEvent::ChapterImage(image_url);
-                                if socket.send(Message::Text(serde_json::to_string(&image_event).unwrap().into())).await.is_err() {
-                                    warn!("Client disconnected during image stream.");
-                                    return;
-                                }
-                                tokio::time::sleep(Duration::from_millis(20)).await; // Small delay
-                            }
-                            if socket.send(Message::Text(serde_json::to_string(&KomikDetailEvent::ChapterImagesEnd).unwrap().into())).await.is_err() {
-                                warn!("Client disconnected before ChapterImagesEnd.");
+                // Removed chapter image streaming logic
+                info!("Processing detail request for komik_id: {}", req.komik_id);
+                let komik_id = req.komik_id.clone();
+
+                // Fetch detail data
+                match fetch_komik_detail(komik_id).await {
+                    Ok(mut detail_data) => {
+                        // Send initial detail data (without chapters)
+                        let chapters_to_send = detail_data.chapters.drain(..).collect::<Vec<_>>(); // Temporarily remove chapters
+                        let initial_detail_event = KomikDetailEvent::Detail(detail_data);
+                        if
+                            socket
+                                .send(Message::Text(serde_json::to_string(&initial_detail_event).unwrap().into()))
+                                .await
+                                .is_err()
+                        {
+                            warn!("Client disconnected during initial detail send.");
+                            return;
+                        }
+
+                        // Send chapters one by one
+                        for chapter in chapters_to_send {
+                            let chapter_event = KomikDetailEvent::Chapter(chapter);
+                            if
+                                socket
+                                    .send(Message::Text(serde_json::to_string(&chapter_event).unwrap().into()))
+                                    .await
+                                    .is_err()
+                            {
+                                warn!("Client disconnected during chapter stream.");
                                 return;
                             }
-                        },
-                        Err(e) => {
-                            error!("Failed to fetch chapter images for WS: {:?}", e);
-                            let error_event = KomikDetailEvent::Error(format!("Failed to fetch chapter images: {}", e));
-                            if socket.send(Message::Text(serde_json::to_string(&error_event).unwrap().into())).await.is_err() {
-                                warn!("Client disconnected during error send.");
-                                return;
-                            }
+                            // Small delay to simulate real-time parsing and prevent overwhelming the client
+                            tokio::time::sleep(Duration::from_millis(50)).await;
+                        }
+
+                        // Signal end of stream
+                        if
+                            socket
+                                .send(Message::Text(serde_json::to_string(&KomikDetailEvent::EndOfStream).unwrap().into()))
+                                .await
+                                .is_err()
+                        {
+                            warn!("Client disconnected before EndOfStream.");
+                            return;
                         }
                     }
-                } else {
-                    info!("Processing detail request for komik_id: {}", req.komik_id);
-                    let komik_id = req.komik_id.clone();
-
-                    // Fetch detail data
-                    match fetch_komik_detail(komik_id).await {
-                        Ok(mut detail_data) => {
-                            // Send initial detail data (without chapters)
-                            let chapters_to_send = detail_data.chapters.drain(..).collect::<Vec<_>>(); // Temporarily remove chapters
-                            let initial_detail_event = KomikDetailEvent::Detail(detail_data);
-                            if
-                                socket
-                                    .send(Message::Text(serde_json::to_string(&initial_detail_event).unwrap().into()))
-                                    .await
-                                    .is_err()
-                            {
-                                warn!("Client disconnected during initial detail send.");
-                                return;
-                            }
-
-                            // Send chapters one by one
-                            for chapter in chapters_to_send {
-                                let chapter_event = KomikDetailEvent::Chapter(chapter);
-                                if
-                                    socket
-                                        .send(Message::Text(serde_json::to_string(&chapter_event).unwrap().into()))
-                                        .await
-                                        .is_err()
-                                {
-                                    warn!("Client disconnected during chapter stream.");
-                                    return;
-                                }
-                                // Small delay to simulate real-time parsing and prevent overwhelming the client
-                                tokio::time::sleep(Duration::from_millis(50)).await;
-                            }
-
-                            // Signal end of stream
-                            if
-                                socket
-                                    .send(Message::Text(serde_json::to_string(&KomikDetailEvent::EndOfStream).unwrap().into()))
-                                    .await
-                                    .is_err()
-                            {
-                                warn!("Client disconnected before EndOfStream.");
-                                return;
-                            }
-                        }
-                        Err(e) => {
-                            error!("Failed to fetch komik detail for WS: {:?}", e);
-                            let error_event = KomikDetailEvent::Error(format!("Failed to fetch detail: {}", e));
-                            if
-                                socket
-                                    .send(Message::Text(serde_json::to_string(&error_event).unwrap().into()))
-                                    .await
-                                    .is_err()
-                            {
-                                warn!("Client disconnected during error send.");
-                                return;
-                            }
+                    Err(e) => {
+                        error!("Failed to fetch komik detail for WS: {:?}", e);
+                        let error_event = KomikDetailEvent::Error(format!("Failed to fetch detail: {}", e));
+                        if
+                            socket
+                                .send(Message::Text(serde_json::to_string(&error_event).unwrap().into()))
+                                .await
+                                .is_err()
+                        {
+                            warn!("Client disconnected during error send.");
+                            return;
                         }
                     }
                 }

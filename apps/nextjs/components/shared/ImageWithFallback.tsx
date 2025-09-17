@@ -14,13 +14,31 @@ export const ImageWithFallback = ({
 }: ImageWithFallbackProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasError, setHasError] = useState(false);
-  const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
 
+  const normalizeImageUrl = (url: string) => {
+    if (!url || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // Handle relative paths like /asset/img/komikuplus2.jpg
+    if (url.startsWith('/')) {
+      return `${window.location.origin}${url}`;
+    }
+    return `${window.location.origin}/${url}`;
+  };
+
+  const normalizedImageUrl = normalizeImageUrl(imageUrl);
   const fallback = 'default.png';
   const imageSources = [
-    imageUrl && imageUrl.trim() !== '' ? imageUrl : null,
-    `https://imagecdn.app/v1/images/${encodeURIComponent(imageUrl || fallback)}`,
-    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl || fallback)}`,
+    normalizedImageUrl && normalizedImageUrl.trim() !== ''
+      ? normalizedImageUrl
+      : null,
+    `https://imagecdn.app/v1/images/${encodeURIComponent(
+      normalizedImageUrl || fallback,
+    )}`,
+    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(
+      normalizedImageUrl || fallback,
+    )}`,
   ].filter(Boolean) as string[];
 
   useEffect(() => {
