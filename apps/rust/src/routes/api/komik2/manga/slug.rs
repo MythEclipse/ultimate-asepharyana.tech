@@ -15,7 +15,7 @@ use axum::extract::State;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
-use rust_lib::urls::get_komik2_url;
+use rust_lib::urls::{ get_komik2_url, get_komik2_api_url };
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -145,10 +145,11 @@ pub async fn list(
     return Ok(Json(manga_response).into_response());
   }
 
+  let base_api_url = get_komik2_api_url();
   let url = if page == 1 {
-    "https://api.komiku.org/manga/?tipe=manga".to_string()
+    format!("{}/manga/?tipe=manga", base_api_url)
   } else {
-    format!("https://api.komiku.org/manga/page/{}/?tipe=manga", page)
+    format!("{}/manga/page/{}/?tipe=manga", base_api_url, page)
   };
 
   let (data, pagination) = fetch_and_parse_manga_list(&url, page).await.map_err(|e| {

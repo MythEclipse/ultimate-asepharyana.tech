@@ -47,11 +47,13 @@ pub struct ChapterQuery {
 lazy_static! {
   static ref TITLE_SELECTOR: Selector = Selector::parse("title").unwrap();
   static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".navi-chapter.prev a, .chapter-nav.prev a, .prev-chapter a"
+    ".nxpr a:not(.rl):not([href*='#Chapter']), .chprev a, a.prev"
   ).unwrap();
-  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse("table#Daftar_Chapter tbody tr").unwrap();
+  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse(
+    "table#Daftar_Chapter tbody tr"
+  ).unwrap();
   static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".navi-chapter.next a, .chapter-nav.next a, .next-chapter a"
+    ".nxpr a.rl, .nxpr a.next, .chnext a, a.next"
   ).unwrap();
   static ref IMAGE_SELECTOR: Selector = Selector::parse(
     "img[data-src], img[src], #Baca_Komik img, .entry-content img"
@@ -216,8 +218,8 @@ fn parse_komik2_chapter_document(
     )
     .unwrap_or_default();
 
-  let next_chapter_id = document
-    .select(&NEXT_CHAPTER_SELECTOR)
+  let prev_chapter_id = document
+    .select(&PREV_CHAPTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("href"))
     .map(|href|
@@ -262,5 +264,5 @@ fn parse_komik2_chapter_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(chapter))
+  router.route(ENDPOINT_PATH, get(chapter))
 }
