@@ -64,26 +64,41 @@ pub struct QueryParams {
 }
 
 lazy_static! {
-  pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge").unwrap();
-  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".kan a h3").unwrap();
+  // Card container for each item
+  pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge, .listupd .bge").unwrap();
+  // Title inside card
+  pub static ref TITLE_SELECTOR: Selector = Selector::parse(".kan h3, .kan a h3, .tt h3").unwrap();
+  // Poster image inside card
   pub static ref IMG_SELECTOR: Selector = Selector::parse(".bgei img").unwrap();
-  pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(".new1 a span:last-child").unwrap();
-  pub static ref SCORE_SELECTOR: Selector = Selector::parse("i, .rating, .score").unwrap();
-  pub static ref DATE_SELECTOR: Selector = Selector::parse(".judul2").unwrap();
-  pub static ref TYPE_SELECTOR: Selector = Selector::parse(".tpe1_inf b").unwrap();
-  pub static ref LINK_SELECTOR: Selector = Selector::parse(".kan a").unwrap();
+  // Chapter label text
+  pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(
+    ".new1 a span:last-child, .new1 span, .lch"
+  ).unwrap();
+  // Score / Up indicator
+  pub static ref SCORE_SELECTOR: Selector = Selector::parse(".up, .epx, .numscore").unwrap();
+  // Date text
+  pub static ref DATE_SELECTOR: Selector = Selector::parse(
+    ".judul2, .kan span.judul2, .mdis .date"
+  ).unwrap();
+  // Type label in info line
+  pub static ref TYPE_SELECTOR: Selector = Selector::parse(
+    ".tpe1_inf b, .tpe1_inf span.type, .mdis .type"
+  ).unwrap();
+  // Link to detail
+  pub static ref LINK_SELECTOR: Selector = Selector::parse(".bgei a, .kan a").unwrap();
   pub static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
+  // Pagination
   pub static ref CURRENT_SELECTOR: Selector = Selector::parse(
-    ".pagination .current, .pagination > .current, .pagination > span.page-numbers.current"
+    ".pagination .current, .pagination > .current, .pagination > span.page-numbers.current, .hpage .current"
   ).unwrap();
   pub static ref PAGE_SELECTORS: Selector = Selector::parse(
-    ".pagination a:not(.next), .pagination > a, .pagination > .page-numbers:not(.next):not(.prev)"
+    ".pagination a:not(.next):not(.prev), .pagination > a, .pagination > .page-numbers:not(.next):not(.prev), .hpage a"
   ).unwrap();
   pub static ref NEXT_SELECTOR: Selector = Selector::parse(
-    ".pagination .next, .pagination > a.next, .pagination > .next.page-numbers"
+    ".pagination .next, .pagination > a.next, .pagination > .next.page-numbers, .hpage .next"
   ).unwrap();
   pub static ref PREV_SELECTOR: Selector = Selector::parse(
-    ".pagination .prev, .pagination > a.prev, .pagination > .prev.page-numbers"
+    ".pagination .prev, .pagination > a.prev, .pagination > .prev.page-numbers, .hpage .prev"
   ).unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
@@ -130,7 +145,7 @@ pub async fn list(
     return Ok(Json(manga_response).into_response());
   }
 
-  let url = format!("{}/manga/page/{}/", get_komik2_url(), page);
+  let url = format!("{}/manga/page/{}/?tipe=manga", get_komik2_url(), page);
 
   let (data, pagination) = fetch_and_parse_manga_list(&url, page).await.map_err(|e| {
     error!(
@@ -210,7 +225,19 @@ fn parse_manga_list_document(
     let mut poster = element
       .select(&IMG_SELECTOR)
       .next()
-      .and_then(|e| e.value().attr("src"))
+      .and_then(|e|
+        e
+          .value()
+          .attr("src")
+          .or_else(|| e.value().attr("data-src"))
+          .or_else(|| e.value().attr("data-lazy-src"))
+          .or_else(|| {
+            // Fallback to first srcset URL
+            e.value()
+              .attr("srcset")
+              .and_then(|s| s.split_whitespace().next())
+          })
+      )
       .unwrap_or("")
       .to_string();
     poster = poster.split('?').next().unwrap_or(&poster).to_string();
@@ -248,9 +275,28 @@ fn parse_manga_list_document(
       .select(&LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
-      .and_then(|href| href.split('/').nth(2))
-      .unwrap_or("")
-      .to_string();
+      .map(|href| {
+        let parts: Vec<&str> = href
+          .split('/')
+          .filter(|s| !s.is_empty())
+          .collect();
+        // Try to find segment after known category (manga|manhua|manhwa)
+        if
+          let Some(pos) = parts
+            .iter()
+            .position(|s| (*s == "manga" || *s == "manhua" || *s == "manhwa"))
+        {
+          parts
+            .get(pos + 1)
+            .cloned()
+            .unwrap_or("")
+            .to_string()
+        } else {
+          // Fallback to last segment
+          parts.last().cloned().unwrap_or("").to_string()
+        }
+      })
+      .unwrap_or_default();
 
     data.push(MangaItem {
       title,

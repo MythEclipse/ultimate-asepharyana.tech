@@ -60,35 +60,27 @@ pub struct DetailQuery {
 }
 
 lazy_static! {
-  static ref TITLE_SELECTOR: Selector = Selector::parse("h1.entry-title").unwrap();
-  static ref ALTERNATIVE_TITLE_SELECTOR: Selector = Selector::parse(
-    ".spe span:contains('Judul Alternatif:')"
+  static ref TITLE_SELECTOR: Selector = Selector::parse("h1#Judul, h1.entry-title").unwrap();
+  // The site often uses definition lists or spans with labels; we select info container rows
+  static ref INFO_ROW_SELECTOR: Selector = Selector::parse(
+    ".spe span, .inftable tr, .infos .infox .spe span"
   ).unwrap();
-  static ref SCORE_SELECTOR: Selector = Selector::parse(".rtg > div > i").unwrap();
-  static ref POSTER_SELECTOR: Selector = Selector::parse("div.ims img").unwrap();
+  static ref SCORE_SELECTOR: Selector = Selector::parse(".spe span").unwrap();
+  static ref POSTER_SELECTOR: Selector = Selector::parse("#Imgnovel, div.ims img, .thumb img").unwrap();
   static ref DESCRIPTION_SELECTOR: Selector = Selector::parse(
-    "article section p"
+    "article section p, .entry-content p, .desc p"
   ).unwrap();
-  static ref STATUS_SELECTOR: Selector = Selector::parse(".spe span:contains('Status:')").unwrap();
-  static ref GENRE_SELECTOR: Selector = Selector::parse("ul.genre li a").unwrap();
-  static ref RELEASE_DATE_SELECTOR: Selector = Selector::parse(
-    "#chapter_list > ul > li:last-child > span.dt"
+  static ref GENRE_SELECTOR: Selector = Selector::parse(".genre a, ul.genre li a").unwrap();
+  // Chapter meta often listed in list; keep generic selectors
+  static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse(
+    "table#Daftar_Chapter tbody#daftarChapter tr, #chapter_list li, .eplister ul li"
   ).unwrap();
-  static ref AUTHOR_SELECTOR: Selector = Selector::parse(
-    ".spe span:contains('Pengarang:')"
+  static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse(
+    "td.judulseries a, a.chapter, a"
   ).unwrap();
-  static ref TYPE_SELECTOR: Selector = Selector::parse(
-    ".spe span:contains('Jenis Komik:') a"
+  static ref DATE_LINK_SELECTOR: Selector = Selector::parse(
+    "td.tanggalseries, .rightarea .date, .epcontent .date, .udate"
   ).unwrap();
-  static ref TOTAL_CHAPTER_SELECTOR: Selector = Selector::parse(
-    "#chapter_list > ul > li:nth-child(1) > span.lchx"
-  ).unwrap();
-  static ref UPDATED_ON_SELECTOR: Selector = Selector::parse(
-    "#chapter_list > ul > li:nth-child(1) > span.dt"
-  ).unwrap();
-  static ref CHAPTER_LIST_SELECTOR: Selector = Selector::parse("table#Daftar_Chapter tbody#daftarChapter tr").unwrap();
-  static ref CHAPTER_LINK_SELECTOR: Selector = Selector::parse("td.judulseries a").unwrap();
-  static ref DATE_LINK_SELECTOR: Selector = Selector::parse("td.tanggalseries").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -218,16 +210,46 @@ fn parse_komik_detail_document(
     .map(|e| e.text().collect::<String>().trim().to_string())
     .unwrap_or_default();
 
-  let alternative_title = document
-    .select(&ALTERNATIVE_TITLE_SELECTOR)
-    .next()
-    .map(|e| { e.text().collect::<String>().replace("Judul Alternatif:", "").trim().to_string() })
-    .unwrap_or_default();
+  // Extract labeled fields from info rows
+  let mut alternative_title = String::new();
+  let mut status = String::new();
+  let mut r#type = String::new();
+  let mut author = String::new();
+  for row in document.select(&INFO_ROW_SELECTOR) {
+    let txt = row.text().collect::<String>().trim().to_string();
+    let lower = txt.to_lowercase();
+    if
+      alternative_title.is_empty() &&
+      (lower.contains("judul alternatif") || lower.contains("alternative"))
+    {
+      alternative_title = txt
+        .replace("Judul Alternatif:", "")
+        .replace("Alternative:", "")
+        .trim()
+        .to_string();
+    }
+    if status.is_empty() && lower.contains("status") {
+      status = txt.replace("Status:", "").trim().to_string();
+    }
+    if r#type.is_empty() && (lower.contains("jenis komik") || lower.contains("type")) {
+      // sometimes the type anchor text is within the span
+      r#type = txt.replace("Jenis Komik:", "").replace("Type:", "").trim().to_string();
+    }
+    if author.is_empty() && (lower.contains("pengarang") || lower.contains("author")) {
+      author = txt.replace("Pengarang:", "").replace("Author:", "").trim().to_string();
+    }
+  }
 
   let score = document
     .select(&SCORE_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
+    .find(|e| e.text().collect::<String>().to_lowercase().contains("rating"))
+    .map(|e| {
+      e.text()
+        .collect::<String>()
+        .replace("Rating:", "")
+        .trim()
+        .to_string()
+    })
     .unwrap_or_default();
 
   let poster = document
@@ -239,54 +261,38 @@ fn parse_komik_detail_document(
 
   let description = document
     .select(&DESCRIPTION_SELECTOR)
-    .filter_map(|e| {
-        let text = e.text().collect::<String>().trim().to_string();
-        if text.starts_with("One Piece Kisah Ace") || text.starts_with("Kisah perjalanan seorang bajak") { // Heuristic to identify the main synopsis
-            Some(text)
-        } else {
-            None
-        }
-    })
+    .map(|e| e.text().collect::<String>())
+    .filter(|t| t.len() > 50) // avoid tiny fragments
     .collect::<Vec<String>>()
     .join("\n")
     .trim()
     .to_string();
 
-  let status = document
-    .select(&STATUS_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().replace("Status:", "").trim().to_string())
-    .unwrap_or_default();
-
-  let r#type = document
-    .select(&TYPE_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  let release_date = document
-    .select(&RELEASE_DATE_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  let author = document
-    .select(&AUTHOR_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().replace("Pengarang:", "").trim().to_string())
-    .unwrap_or_default();
-
-  let total_chapter = document
-    .select(&TOTAL_CHAPTER_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
-
-  let updated_on = document
-    .select(&UPDATED_ON_SELECTOR)
-    .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
-    .unwrap_or_default();
+  // Release date, total chapter, updated_on are often within the chapter list meta; try to infer
+  let mut release_date = String::new();
+  let mut total_chapter = String::new();
+  let mut updated_on = String::new();
+  // Try read first and last items
+  if let Some(first) = document.select(&CHAPTER_LIST_SELECTOR).next() {
+    // updated_on or latest date
+    updated_on = first
+      .select(&DATE_LINK_SELECTOR)
+      .next()
+      .map(|e| e.text().collect::<String>().trim().to_string())
+      .unwrap_or_default();
+  }
+  if let Some(last) = document.select(&CHAPTER_LIST_SELECTOR).last() {
+    release_date = last
+      .select(&DATE_LINK_SELECTOR)
+      .next()
+      .map(|e| e.text().collect::<String>().trim().to_string())
+      .unwrap_or_default();
+  }
+  // Count chapters
+  let count = document.select(&CHAPTER_LIST_SELECTOR).count();
+  if count > 0 {
+    total_chapter = count.to_string();
+  }
 
   let mut genres = Vec::new();
   for element in document.select(&GENRE_SELECTOR) {
@@ -309,9 +315,14 @@ fn parse_komik_detail_document(
       .select(&CHAPTER_LINK_SELECTOR)
       .next()
       .and_then(|e| e.value().attr("href"))
-      .and_then(|href| href.split('/').filter(|s| !s.is_empty()).last()) // Get the last non-empty segment
-      .unwrap_or("")
-      .to_string();
+      .map(|href| {
+        let parts: Vec<&str> = href
+          .split('/')
+          .filter(|s| !s.is_empty())
+          .collect();
+        parts.last().cloned().unwrap_or("").to_string()
+      })
+      .unwrap_or_default();
     chapters.push(Chapter { chapter, date, chapter_id });
   }
 

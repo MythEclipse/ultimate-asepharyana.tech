@@ -44,18 +44,16 @@ pub struct ChapterQuery {
 }
 
 lazy_static! {
-  static ref TITLE_SELECTOR: Selector = Selector::parse("#Judul h1").unwrap();
+  static ref TITLE_SELECTOR: Selector = Selector::parse("title").unwrap();
   static ref PREV_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nxpr a.rl"
+    ".nxpr a:not(.rl):not([href*='#Chapter']), .chprev a, a.prev"
   ).unwrap();
-  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse(
-    "a[href*='#Chapter']"
-  ).unwrap();
+  static ref LIST_CHAPTER_SELECTOR: Selector = Selector::parse("a[href*='#Chapter']").unwrap();
   static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".nxpr a:not(.rl):not([href*='#Chapter'])"
+    ".nxpr a.rl, .nxpr a.next, .chnext a, a.next"
   ).unwrap();
   static ref IMAGE_SELECTOR: Selector = Selector::parse(
-    "#Baca_Komik img"
+    "#Baca_Komik img, .entry-content img, .reader-area img"
   ).unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
@@ -187,28 +185,66 @@ fn parse_komik2_chapter_document(
   let title = document
     .select(&TITLE_SELECTOR)
     .next()
-    .map(|e| e.text().collect::<String>().trim().to_string())
+    .map(|e| {
+      let full_title = e.text().collect::<String>();
+      // Extract series title from "Chapter XX | Komik TITLE - Komiku"
+      if let Some(start) = full_title.find("Komik ") {
+        if let Some(end) = full_title.find(" - Komiku") {
+          full_title[start + 6..end].trim().to_string()
+        } else {
+          full_title
+        }
+      } else {
+        full_title
+      }
+    })
     .unwrap_or_default();
 
   let prev_chapter_id = document
     .select(&PREV_CHAPTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("href"))
-    .and_then(|href| href.split('/').last()) // Changed to last() as per komiku.org URL structure
-    .unwrap_or("")
-    .to_string();
+    .map(|href|
+      href
+        .trim_end_matches('/')
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .last()
+        .unwrap_or("")
+        .to_string()
+    )
+    .unwrap_or_default();
 
   let next_chapter_id = document
     .select(&NEXT_CHAPTER_SELECTOR)
     .next()
     .and_then(|e| e.value().attr("href"))
-    .and_then(|href| href.split('/').last()) // Changed to last() as per komiku.org URL structure
-    .unwrap_or("")
-    .to_string();
+    .map(|href|
+      href
+        .trim_end_matches('/')
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .last()
+        .unwrap_or("")
+        .to_string()
+    )
+    .unwrap_or_default();
 
   let mut images = Vec::new();
   for el in document.select(&IMAGE_SELECTOR) {
-    if let Some(src) = el.value().attr("src") {
+    if
+      let Some(src) = el
+        .value()
+        .attr("src")
+        .or_else(|| el.value().attr("data-src"))
+        .or_else(|| el.value().attr("data-lazy-src"))
+        .or_else(||
+          el
+            .value()
+            .attr("srcset")
+            .and_then(|s| s.split_whitespace().next())
+        )
+    {
       images.push(src.to_string());
     }
   }

@@ -23,5 +23,5 @@ pub fn get_komik2_url() -> String {
     CONFIG_MAP
         .get("KOMIK2_BASE_URL")
         .cloned()
-        .unwrap_or_else(|| "https://komiku.org".to_string())
+        .unwrap_or_else(|| "https://api.komiku.org".to_string())
 }
