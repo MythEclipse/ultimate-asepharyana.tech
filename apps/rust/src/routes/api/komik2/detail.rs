@@ -71,6 +71,7 @@ static DATE_LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td.tan
 static RELEASE_DATE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 static UPDATED_ON_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 static TOTAL_CHAPTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
+static JUDUL2_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".bge .kan .judul2").unwrap());
 
 // Helper function to find table rows containing specific text
 fn find_table_row_with_text(
@@ -432,7 +433,7 @@ fn parse_komik_detail_document(
     .or_else(|| {
       // Look for updated date in the "judul2" class which contains "pembaca • X waktu lalu"
       document
-        .select(&Selector::parse(".bge .kan .judul2").unwrap())
+        .select(&JUDUL2_SELECTOR)
         .next()
         .map(|e| {
           let text = e.text().collect::<String>().trim().to_string();
