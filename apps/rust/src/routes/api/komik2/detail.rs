@@ -18,14 +18,14 @@ use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
 use rayon::prelude::*;
 use once_cell::sync::Lazy; // Add this import
-use futures::{ SinkExt, StreamExt };
+use futures::{ SinkExt, StreamExt, FutureExt };
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves details for a specific komik2 by ID.";
 pub const ENDPOINT_TAG: &str = "komik2";
 pub const OPERATION_ID: &str = "komik2_detail";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailData>";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Chapter {
@@ -53,6 +53,19 @@ pub struct DetailData {
 pub struct DetailResponse {
   pub status: bool,
   pub data: DetailData,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct KomikDetailRequest {
+  pub komik_id: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub enum KomikDetailEvent {
+  Chapter(Chapter),
+  Detail(DetailData),
+  Error(String),
+  EndOfStream,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -564,30 +577,106 @@ pub async fn ws_handler(
   ws.on_upgrade(|socket| handle_socket(socket, app_state))
 }
 
-async fn handle_socket(mut socket: WebSocket, _app_state: Arc<AppState>) {
+async fn handle_socket(mut socket: WebSocket, app_state: Arc<AppState>) {
   info!("WebSocket connection established.");
 
   while let Some(msg) = socket.recv().await {
     let msg = if let Ok(msg) = msg {
       msg
     } else {
-      // client disconnected
       error!("WebSocket client disconnected with error.");
       return;
     };
 
     match msg {
       Message::Text(text) => {
-        info!("Received text message: {}", text);
-        if socket.send(Message::Text(format!("Echo: {}", text).into())).await.is_err() {
-          warn!("Failed to send echo message, client likely disconnected.");
-          return;
+        info!("Received WebSocket text message: {}", text);
+        let request: Result<KomikDetailRequest, _> = serde_json::from_str(&text);
+
+        match request {
+          Ok(req) => {
+            info!("Processing request for komik_id: {}", req.komik_id);
+            let komik_id = req.komik_id.clone();
+
+            // Fetch detail data
+            match fetch_komik_detail(komik_id).await {
+              Ok(mut detail_data) => {
+                // Send initial detail data (without chapters)
+                let chapters_to_send = detail_data.chapters.drain(..).collect::<Vec<_>>(); // Temporarily remove chapters
+                let initial_detail_event = KomikDetailEvent::Detail(detail_data);
+                if
+                  socket
+                    .send(Message::Text(serde_json::to_string(&initial_detail_event).unwrap()))
+                    .await
+                    .is_err()
+                {
+                  warn!("Client disconnected during initial detail send.");
+                  return;
+                }
+
+                // Send chapters one by one
+                for chapter in chapters_to_send {
+                  let chapter_event = KomikDetailEvent::Chapter(chapter);
+                  if
+                    socket
+                      .send(Message::Text(serde_json::to_string(&chapter_event).unwrap()))
+                      .await
+                      .is_err()
+                  {
+                    warn!("Client disconnected during chapter stream.");
+                    return;
+                  }
+                  // Small delay to simulate real-time parsing and prevent overwhelming the client
+                  tokio::time::sleep(Duration::from_millis(50)).await;
+                }
+
+                // Signal end of stream
+                if
+                  socket
+                    .send(Message::Text(serde_json::to_string(&KomikDetailEvent::EndOfStream).unwrap()))
+                    .await
+                    .is_err()
+                {
+                  warn!("Client disconnected before EndOfStream.");
+                  return;
+                }
+              }
+              Err(e) => {
+                error!("Failed to fetch komik detail for WS: {:?}", e);
+                let error_event = KomikDetailEvent::Error(format!("Failed to fetch detail: {}", e));
+                if
+                  socket
+                    .send(Message::Text(serde_json::to_string(&error_event).unwrap()))
+                    .await
+                    .is_err()
+                {
+                  warn!("Client disconnected during error send.");
+                  return;
+                }
+              }
+            }
+          }
+          Err(e) => {
+            error!("Failed to parse WebSocket request: {:?}", e);
+            let error_event = KomikDetailEvent::Error(
+              format!("Invalid request format: {}", e)
+            );
+            if
+              socket
+                .send(Message::Text(serde_json::to_string(&error_event).unwrap()))
+                .await
+                .is_err()
+            {
+              warn!("Client disconnected during invalid request error send.");
+              return;
+            }
+          }
         }
       }
-      Message::Binary(bin) => {
-        info!("Received binary message of {} bytes.", bin.len());
-        if socket.send(Message::Binary(bin)).await.is_err() {
-          warn!("Failed to send binary echo message, client likely disconnected.");
+      Message::Binary(_) => {
+        warn!("Received unexpected binary message.");
+        if socket.send(Message::Text("Error: Binary messages not supported.".to_string())).await.is_err() {
+          warn!("Client disconnected during binary message error.");
           return;
         }
       }
