@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use tower_http::cors::{ Any, CorsLayer };
+use tower_http::{ cors::{ Any, CorsLayer } };
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;

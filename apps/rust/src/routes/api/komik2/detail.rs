@@ -1,15 +1,16 @@
 //! Handler for the detail endpoint.
 #![allow(dead_code)]
 
-use axum::{ extract::Query, routing::get, Json, Router };
+use axum::{ extract::Query, routing::{ get, get_service }, Json, Router };
 use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use tracing::{ info, error, warn };
-use axum::extract::State;
+use axum::extract::{ State, ws::{ WebSocketUpgrade, WebSocket, Message } };
 use axum::http::StatusCode;
+use axum::response::{ IntoResponse, Response };
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
@@ -17,6 +18,7 @@ use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
 use rayon::prelude::*;
 use once_cell::sync::Lazy; // Add this import
+use futures::{ SinkExt, StreamExt };
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
@@ -555,6 +557,65 @@ fn parse_komik_detail_document(
   })
 }
 
+pub async fn ws_handler(
+  ws: WebSocketUpgrade,
+  State(app_state): State<Arc<AppState>>
+) -> Response {
+  ws.on_upgrade(|socket| handle_socket(socket, app_state))
+}
+
+async fn handle_socket(mut socket: WebSocket, _app_state: Arc<AppState>) {
+  info!("WebSocket connection established.");
+
+  while let Some(msg) = socket.recv().await {
+    let msg = if let Ok(msg) = msg {
+      msg
+    } else {
+      // client disconnected
+      error!("WebSocket client disconnected with error.");
+      return;
+    };
+
+    match msg {
+      Message::Text(text) => {
+        info!("Received text message: {}", text);
+        if socket.send(Message::Text(format!("Echo: {}", text).into())).await.is_err() {
+          warn!("Failed to send echo message, client likely disconnected.");
+          return;
+        }
+      }
+      Message::Binary(bin) => {
+        info!("Received binary message of {} bytes.", bin.len());
+        if socket.send(Message::Binary(bin)).await.is_err() {
+          warn!("Failed to send binary echo message, client likely disconnected.");
+          return;
+        }
+      }
+      Message::Ping(ping) => {
+        info!("Received ping message.");
+        if socket.send(Message::Pong(ping)).await.is_err() {
+          warn!("Failed to send pong message, client likely disconnected.");
+          return;
+        }
+      }
+      Message::Pong(_) => {
+        info!("Received pong message.");
+      }
+      Message::Close(cf) => {
+        info!("Received close message: {:?}", cf);
+        if let Some(close_frame) = cf {
+          warn!("WebSocket connection closed with code: {}", close_frame.code);
+        } else {
+          warn!("WebSocket connection closed.");
+        }
+        return;
+      }
+    }
+  }
+}
+
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(detail))
+  router
+    .route(ENDPOINT_PATH, get(detail))
+    .route("/ws/komik2/detail", get(ws_handler))
 }
