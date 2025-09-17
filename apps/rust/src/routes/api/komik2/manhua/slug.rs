@@ -240,11 +240,13 @@ fn parse_manhua_list_document(
       .select(&CHAPTER_SELECTOR)
       .next()
       .map(|e| e.text().collect::<String>().trim().to_string())
-      .and_then(|text|
-        CHAPTER_REGEX.captures(&text)
+      .map(|text| {
+        let processed_text = text.replace("Terbaru:", "").replace("Awal:", "").trim().to_string();
+        CHAPTER_REGEX.captures(&processed_text)
           .and_then(|cap| cap.get(0))
-          .map(|m| m.as_str().to_string())
-      )
+          .map(|m| format!("Chapter {}", m.as_str()))
+          .unwrap_or_default()
+      })
       .unwrap_or_default();
 
     let date = element
