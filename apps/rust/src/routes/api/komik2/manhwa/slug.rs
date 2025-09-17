@@ -33,7 +33,6 @@ pub struct ManhwaItem {
   pub title: String,
   pub poster: String,
   pub chapter: String,
-  pub score: String,
   pub date: String,
   pub r#type: String,
   pub slug: String,
@@ -66,9 +65,8 @@ lazy_static! {
   pub static ref TITLE_SELECTOR: Selector = Selector::parse(".kan h3, .kan a h3, .tt h3").unwrap();
   pub static ref IMG_SELECTOR: Selector = Selector::parse(".bgei img").unwrap();
   pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(
-    ".new1 a span:last-child, .new1 span, .lch"
+    "a:contains('Terbaru'), .lch"
   ).unwrap();
-  pub static ref SCORE_SELECTOR: Selector = Selector::parse("body > div:nth-child(1) > div.kan > div:nth-child(5) > a > span:nth-child(2)").unwrap();
   pub static ref DATE_SELECTOR: Selector = Selector::parse(
     ".judul2, .kan span.judul2, .mdis .date"
   ).unwrap();
@@ -247,12 +245,6 @@ fn parse_manhwa_list_document(
       )
       .unwrap_or_default();
 
-    let score = element
-      .select(&SCORE_SELECTOR)
-      .next()
-      .map(|e| e.text().collect::<String>().trim().to_string())
-      .unwrap_or_default();
-
     let date = element
       .select(&DATE_SELECTOR)
       .next()
@@ -294,7 +286,6 @@ fn parse_manhwa_list_document(
       title,
       poster,
       chapter,
-      score,
       date,
       r#type,
       slug,
