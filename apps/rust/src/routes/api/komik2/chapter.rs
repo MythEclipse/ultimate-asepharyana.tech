@@ -140,7 +140,7 @@ pub async fn chapter(
   }
 }
 
-async fn fetch_komik2_chapter(
+pub async fn fetch_komik2_chapter(
   chapter_url: String
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
