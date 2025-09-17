@@ -1,28 +1,17 @@
-//! Handler for the detail endpoint.
-#![allow(dead_code)]
-
-use axum::{ extract::Query, routing::get, Json, Router };
+use axum::{extract::Query, Json, Router};
 use std::sync::Arc;
 use crate::routes::AppState;
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use scraper::{ Html, Selector };
-use tracing::{ info, error, warn };
+use scraper::{Html, Selector};
+use tracing::{info, error, warn};
 use lazy_static::lazy_static;
 use axum::extract::State;
-use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
 use rust_lib::urls::get_komik2_url;
-use backoff::{ future::retry, ExponentialBackoff };
+use backoff::{future::retry, ExponentialBackoff};
 use std::time::Duration;
-use deadpool_redis::redis::AsyncCommands;
-
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
-pub const ENDPOINT_DESCRIPTION: &str = "Retrieves details for a specific komik2 by ID.";
-pub const ENDPOINT_TAG: &str = "komik2";
-pub const OPERATION_ID: &str = "komik2_detail";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailData>";
+use tokio;
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Chapter {
@@ -115,82 +104,6 @@ lazy_static! {
   static ref TOTAL_CHAPTER_SELECTOR: Selector = Selector::parse(
     ".spe span:contains('Total Chapter:'), .spe span:contains('Total Chapters:')"
   ).unwrap();
-}
-const CACHE_TTL: u64 = 300; // 5 minutes
-
-#[utoipa::path(
-    get,
-    params(
-        ("komik_id" = Option<String>, Query, description = "Comic/manga identifier", example = "sample_value")
-    ),
-    path = "/api/komik2/detail",
-    tag = "komik2",
-    operation_id = "komik2_detail",
-    responses(
-        (status = 200, description = "Retrieves details for a specific komik2 by ID.", body = DetailData),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
-)]
-#[axum::debug_handler]
-pub async fn detail(
-  State(app_state): State<Arc<AppState>>,
-  Query(params): Query<DetailQuery>
-) -> Result<Json<DetailResponse>, (StatusCode, String)> {
-  let start_time = std::time::Instant::now();
-  let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
-  info!("Handling request for komik2 detail: {}", komik_id);
-
-  let cache_key = format!("komik2:detail:{}", komik_id);
-  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-    error!("Failed to get Redis connection: {:?}", e);
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
-  })?;
-
-  // Try to get cached data
-  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-    error!("Failed to get data from Redis: {:?}", e);
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
-  })?;
-
-  if let Some(json_data_string) = cached_response {
-    info!("Cache hit for key: {}", cache_key);
-    let detail_response: DetailResponse = serde_json::from_str(&json_data_string).map_err(|e| {
-      error!("Failed to deserialize cached data: {:?}", e);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
-    })?;
-    return Ok(Json(detail_response));
-  }
-
-  match fetch_komik_detail(komik_id.clone()).await {
-    Ok(data) => {
-      let detail_response = DetailResponse { status: true, data };
-      let json_data = serde_json::to_string(&detail_response).map_err(|e| {
-        error!("Failed to serialize response for caching: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
-      })?;
-
-      // Store in Redis with TTL
-      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
-        error!("Failed to set data in Redis: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
-      })?;
-      info!("Cache set for key: {}", cache_key);
-
-      let total_duration = start_time.elapsed();
-      info!("Successfully processed request for komik_id: {} in {:?}", komik_id, total_duration);
-      Ok(Json(detail_response))
-    }
-    Err(e) => {
-      let total_duration = start_time.elapsed();
-      error!(
-        "Failed to process request for komik_id: {} after {:?}, error: {:?}",
-        komik_id,
-        total_duration,
-        e
-      );
-      Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
-    }
-  }
 }
 
 async fn fetch_komik_detail(
@@ -495,6 +408,46 @@ fn parse_komik_detail_document(
   })
 }
 
-pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(detail))
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+  // Test with a popular manga
+  let komik_id = "naruto";
+  println!("Testing detail parsing for: {}", komik_id);
+
+  match fetch_komik_detail(komik_id.to_string()).await {
+    Ok(data) => {
+      println!("✅ Successfully parsed detail data:");
+      println!("==============================");
+      println!("Title: {}", data.title);
+      println!("Alternative Title: {}", data.alternative_title);
+      println!("Score: {}", data.score);
+      println!("Updated On: {}", data.updated_on);
+      println!("Total Chapters: {}", data.total_chapter);
+      println!("Status: {}", data.status);
+      println!("Type: {}", data.r#type);
+      println!("Author: {}", data.author);
+      println!("Genres: {:?}", data.genres);
+      println!("Chapters Found: {}", data.chapters.len());
+
+      // Print first few chapters as sample
+      if !data.chapters.is_empty() {
+        println!("First Chapter: {}", data.chapters[0].chapter);
+        println!("First Chapter ID: {}", data.chapters[0].chapter_id);
+        println!("First Chapter Date: {}", data.chapters[0].date);
+      }
+
+      // Verify specific fields mentioned in the task
+      println!("\n🔍 Task Verification:");
+      println!("- 'chapter' field: {}", if data.chapters.len() > 0 { "✅ Populated" } else { "❌ Empty" });
+      println!("- 'score' field: {}", if !data.score.is_empty() { "✅ Populated" } else { "❌ Empty" });
+      println!("- 'title' field: {}", if !data.title.is_empty() { "✅ Populated" } else { "❌ Empty" });
+      println!("- 'alternative_title' field: {}", if !data.alternative_title.is_empty() { "✅ Populated" } else { "❌ Empty" });
+      println!("- 'updated_on' field: {}", if !data.updated_on.is_empty() { "✅ Populated" } else { "❌ Empty" });
+    }
+    Err(e) => {
+      println!("❌ Failed to parse detail data: {:?}", e);
+    }
+  }
+
+  Ok(())
 }
