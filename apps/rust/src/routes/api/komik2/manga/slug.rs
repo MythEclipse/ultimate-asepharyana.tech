@@ -145,7 +145,11 @@ pub async fn list(
     return Ok(Json(manga_response).into_response());
   }
 
-  let url = format!("https://api.komiku.org/manga/page/{}/?tipe=manga", page);
+  let url = if page == 1 {
+    "https://api.komiku.org/manga/?tipe=manga".to_string()
+  } else {
+    format!("https://api.komiku.org/manga/page/{}/?tipe=manga", page)
+  };
 
   let (data, pagination) = fetch_and_parse_manga_list(&url, page).await.map_err(|e| {
     error!(
