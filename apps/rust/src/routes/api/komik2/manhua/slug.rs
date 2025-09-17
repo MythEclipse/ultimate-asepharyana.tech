@@ -36,7 +36,7 @@ pub struct ManhuaItem {
   pub poster: String,
   pub chapter: String,
   pub date: String,
-  pub pembaca: String,
+  pub reader_count: String,
   pub r#type: String,
   pub slug: String,
 }
@@ -303,7 +303,7 @@ fn parse_manhua_list_document(
       poster,
       chapter,
       date,
-      pembaca,
+      reader_count: pembaca,
       r#type,
       slug,
     });

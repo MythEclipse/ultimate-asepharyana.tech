@@ -36,7 +36,7 @@ pub struct MangaItem {
   pub poster: String,
   pub chapter: String,
   pub date: String,
-  pub pembaca: String,
+  pub reader_count: String,
   pub r#type: String,
   pub slug: String,
 }
@@ -314,7 +314,7 @@ fn parse_manga_list_document(
       poster,
       chapter,
       date,
-      pembaca,
+      reader_count: pembaca,
       r#type,
       slug,
     });
