@@ -110,6 +110,8 @@ static TOTAL_CHAPTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".s
 static JUDUL2_SELECTOR: Lazy<Selector> = Lazy::new(||
   Selector::parse(".bge .kan .judul2").unwrap()
 );
+static CHAPTER_TITLE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)(?:chapter|ch\.?)\s*(\d+)").unwrap());
+static CHAPTER_NUMBER_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b(\d+)\b").unwrap());
 
 // Helper function to find table rows containing specific text
 fn find_table_row_with_text(
@@ -515,9 +517,9 @@ fn parse_komik_detail_document(
       let chapter = {
         let trimmed_chapter_text = chapter_text.trim();
         // Try to find "Chapter N", "Ch. N", or just "N"
-        if let Some(captures) = regex::Regex::new(r"(?i)(?:chapter|ch\.?)\s*(\d+)").unwrap().captures(trimmed_chapter_text) {
+        if let Some(captures) = CHAPTER_TITLE_REGEX.captures(trimmed_chapter_text) {
           captures.get(1).map_or(trimmed_chapter_text.to_string(), |m| m.as_str().to_string())
-        } else if let Some(captures) = regex::Regex::new(r"\b(\d+)\b").unwrap().captures(trimmed_chapter_text) {
+        } else if let Some(captures) = CHAPTER_NUMBER_REGEX.captures(trimmed_chapter_text) {
           captures.get(1).map_or(trimmed_chapter_text.to_string(), |m| m.as_str().to_string())
         } else {
           trimmed_chapter_text.to_string()
