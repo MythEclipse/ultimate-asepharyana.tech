@@ -98,12 +98,16 @@ static CHAPTER_LIST_SELECTOR: Lazy<Selector> = Lazy::new(||
 );
 static CHAPTER_LINK_SELECTOR: Lazy<Selector> = Lazy::new(||
   Selector::parse("td.judulseries a, a.chapter, a, .chapter-item a, li.wp-manga-chapter a").unwrap()
-);
+); // Keep original for now, but will use simpler ones in logic
 static DATE_LINK_SELECTOR: Lazy<Selector> = Lazy::new(||
   Selector::parse(
     "td.tanggalseries, .rightarea .date, .epcontent .date, .udate, .chapter-date"
   ).unwrap()
-);
+); // Keep original for now, but will use simpler ones in logic
+
+// New simpler selectors for chapter parsing optimization
+static SIMPLE_CHAPTER_LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("a").unwrap());
+static SIMPLE_DATE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("span, div, td, time").unwrap());
 static RELEASE_DATE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 static UPDATED_ON_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
 static TOTAL_CHAPTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
@@ -483,24 +487,45 @@ fn parse_komik_detail_document(
     }
   }
 
-  // Improved chapter parsing with better data extraction
+  // Optimized chapter parsing with simpler inner selectors and Rust-based filtering
   let raw_chapter_data: Vec<(String, String, String)> = document
     .select(&CHAPTER_LIST_SELECTOR)
     .filter_map(|el| {
-      let chapter_link_element = el.select(&CHAPTER_LINK_SELECTOR).next();
-      let date_element = el.select(&DATE_LINK_SELECTOR).next();
+      let mut chapter_text = String::new();
+      let mut date_text = String::new();
+      let mut href_text = String::new();
 
-      let chapter_text = chapter_link_element
-        .as_ref()
-        .map(|e| clean_text(e.text().collect::<String>()))
-        .unwrap_or_default();
+      // Attempt to find a suitable chapter link
+      for link_el in el.select(&SIMPLE_CHAPTER_LINK_SELECTOR) {
+        if let Some(href) = link_el.value().attr("href") {
+          let text = clean_text(link_el.text().collect::<String>());
+          // Heuristic: A link is likely a chapter link if its text contains "chapter" (case-insensitive) or a number
+          if
+            text.to_lowercase().contains("chapter") ||
+            text.chars().any(|c| c.is_digit(10)) ||
+            href.contains("chapter")
+          {
+            chapter_text = text;
+            href_text = href.to_string();
+            break; // Found the most likely chapter link, stop searching
+          }
+        }
+      }
 
-      let date_text = date_element.map(|e| clean_text(e.text().collect::<String>())).unwrap_or_default();
-
-      let href_text = chapter_link_element
-        .and_then(|e| e.value().attr("href"))
-        .map(|s| s.to_string())
-        .unwrap_or_default();
+      // Attempt to find a suitable date
+      for date_el in el.select(&SIMPLE_DATE_SELECTOR) {
+        let text = clean_text(date_el.text().collect::<String>());
+        // Heuristic: A date element is likely if its text contains common date separators or words
+        if
+          text.contains("-") || text.contains("/") || text.contains("Jan") || text.contains("Feb") ||
+          text.contains("Mar") || text.contains("Apr") || text.contains("May") || text.contains("Jun") ||
+          text.contains("Jul") || text.contains("Aug") || text.contains("Sep") || text.contains("Oct") ||
+          text.contains("Nov") || text.contains("Dec") || text.contains("ago")
+        {
+          date_text = text;
+          break; // Found the most likely date, stop searching
+        }
+      }
 
       if !chapter_text.is_empty() || !date_text.is_empty() || !href_text.is_empty() {
         Some((chapter_text, date_text, href_text))
