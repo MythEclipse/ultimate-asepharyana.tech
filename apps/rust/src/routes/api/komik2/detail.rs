@@ -74,38 +74,17 @@ pub struct DetailQuery {
 }
 
 // Define selectors using once_cell::sync::Lazy for efficient initialization
-static TITLE_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap()
-);
-static INFO_ROW_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("table.inftable tr").unwrap()
-);
-static POSTER_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap()
-);
-static DESCRIPTION_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("article section p, .entry-content p, .desc p, .sinopsis, .desc-text, .entry-content div, .series-synopsys, .manga-info-content .summary__content").unwrap()
-);
-static GENRE_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse(".genre a, ul.genre li a, .tag a").unwrap()
-);
-static CHAPTER_LIST_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("tbody#daftarChapter tr").unwrap()
-);
-static CHAPTER_LINK_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("td.judulseries a").unwrap()
-);
-static DATE_LINK_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse("td.tanggalseries").unwrap()
-);
-static RELEASE_DATE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
-static UPDATED_ON_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
-static TOTAL_CHAPTER_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".spe span").unwrap());
-static JUDUL2_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse(".bge .kan .judul2").unwrap()
-);
-static CHAPTER_TITLE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)(?:chapter|ch\.?)\s*(\d+)").unwrap());
-static CHAPTER_NUMBER_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b(\d+)\b").unwrap());
+static TITLE_SELECTOR: Lazy<String> = Lazy::new(|| r#"div#Judul h1 span[itemprop="name"]"#.to_string());
+static INFO_ROW_SELECTOR: Lazy<String> = Lazy::new(|| "table.inftable tr".to_string());
+static POSTER_SELECTOR: Lazy<String> = Lazy::new(|| r#"section#Informasi .ims img"#.to_string());
+static DESCRIPTION_SELECTOR: Lazy<String> = Lazy::new(|| "p.desc".to_string());
+static GENRE_SELECTOR: Lazy<String> = Lazy::new(|| "ul.genre li a".to_string());
+static CHAPTER_LIST_SELECTOR: Lazy<String> = Lazy::new(|| "tbody#daftarChapter tr".to_string());
+static CHAPTER_LINK_SELECTOR: Lazy<String> = Lazy::new(|| "td.judulseries a".to_string());
+static DATE_LINK_SELECTOR: Lazy<String> = Lazy::new(|| "td.tanggalseries".to_string());
+static JUDUL2_SELECTOR: Lazy<String> = Lazy::new(|| "div.judul2".to_string());
+static CHAPTER_TITLE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)(?:chapter|ch\.?)\s*([\d\.]+)").unwrap());
+static CHAPTER_NUMBER_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"([\d\.]+)").unwrap());
 
 // Helper function to find table rows containing specific text
 fn find_table_row_with_text<'a>(
@@ -297,7 +276,7 @@ fn parse_komik_detail_document(
 
   // Improved title extraction with fallback options
   let title = document
-    .select(&TITLE_SELECTOR)
+    .select(&Selector::parse(&TITLE_SELECTOR).unwrap())
     .next()
     .map(|e| {
       let text = clean_text(e.text().collect::<String>());
@@ -333,7 +312,9 @@ fn parse_komik_detail_document(
     })
     .unwrap_or_default();
 
-  let info_rows_vec: Vec<scraper::ElementRef> = document.select(&INFO_ROW_SELECTOR).collect();
+  let info_rows_vec: Vec<scraper::ElementRef> = document
+    .select(&Selector::parse(&INFO_ROW_SELECTOR).unwrap())
+    .collect();
   let info_rows = &info_rows_vec[..]; // Create a slice from the Vec
 
   let status = info_rows
@@ -400,14 +381,14 @@ fn parse_komik_detail_document(
     .unwrap_or_default();
 
   let poster = document
-    .select(&POSTER_SELECTOR)
+    .select(&Selector::parse(&POSTER_SELECTOR).unwrap())
     .next()
     .and_then(|e| e.value().attr("src"))
     .map(|s| s.split('?').next().unwrap_or(s).to_string())
     .unwrap_or_default();
 
   let description = document
-    .select(&DESCRIPTION_SELECTOR)
+    .select(&Selector::parse(&DESCRIPTION_SELECTOR).unwrap())
     .map(|e| clean_text(e.text().collect::<String>()))
     .filter(|t| t.len() > 50) // avoid tiny fragments
     .collect::<Vec<String>>()
@@ -424,9 +405,9 @@ fn parse_komik_detail_document(
     .unwrap_or_else(|| {
       // Fallback to last chapter date if no specific release date found
       document
-        .select(&CHAPTER_LIST_SELECTOR)
+        .select(&Selector::parse(&CHAPTER_LIST_SELECTOR).unwrap())
         .last()
-        .and_then(|last| last.select(&DATE_LINK_SELECTOR).next())
+        .and_then(|last| last.select(&Selector::parse(&DATE_LINK_SELECTOR).unwrap()).next())
         .map(|e| clean_text(e.text().collect::<String>()))
         .unwrap_or_default()
     });
@@ -436,7 +417,7 @@ fn parse_komik_detail_document(
     &["total chapter", "total chapters"]
   ).unwrap_or_else(|| {
     // Fallback to chapter count if no specific total found
-    let count = document.select(&CHAPTER_LIST_SELECTOR).count();
+    let count = document.select(&Selector::parse(&CHAPTER_LIST_SELECTOR).unwrap()).count();
     if count > 0 {
       count.to_string()
     } else {
@@ -451,7 +432,7 @@ fn parse_komik_detail_document(
     .or_else(|| {
       // Look for updated date in the "judul2" class which contains "pembaca • X waktu lalu"
       document
-        .select(&JUDUL2_SELECTOR)
+        .select(&Selector::parse(&JUDUL2_SELECTOR).unwrap())
         .next()
         .map(|e| {
           let text = clean_text(e.text().collect::<String>());
@@ -462,15 +443,15 @@ fn parse_komik_detail_document(
     .unwrap_or_else(|| {
       // Fallback to first chapter date if no specific updated date found
       document
-        .select(&CHAPTER_LIST_SELECTOR)
+        .select(&Selector::parse(&CHAPTER_LIST_SELECTOR).unwrap())
         .next()
-        .and_then(|first| first.select(&DATE_LINK_SELECTOR).next())
+        .and_then(|first| first.select(&Selector::parse(&DATE_LINK_SELECTOR).unwrap()).next())
         .map(|e| clean_text(e.text().collect::<String>()))
         .unwrap_or_default()
     });
 
   let mut genres = Vec::new();
-  for element in document.select(&GENRE_SELECTOR) {
+  for element in document.select(&Selector::parse(&GENRE_SELECTOR).unwrap()) {
     let genre = clean_text(element.text().collect::<String>());
     if !genre.is_empty() {
       genres.push(genre);
@@ -479,10 +460,10 @@ fn parse_komik_detail_document(
 
   // Optimized chapter parsing with refined selectors
   let raw_chapter_data: Vec<(String, String, String)> = document
-    .select(&CHAPTER_LIST_SELECTOR)
+    .select(&Selector::parse(&CHAPTER_LIST_SELECTOR).unwrap())
     .filter_map(|el| {
-      let chapter_link_element = el.select(&CHAPTER_LINK_SELECTOR).next();
-      let date_element = el.select(&DATE_LINK_SELECTOR).next();
+      let chapter_link_element = el.select(&Selector::parse(&CHAPTER_LINK_SELECTOR).unwrap()).next();
+      let date_element = el.select(&Selector::parse(&DATE_LINK_SELECTOR).unwrap()).next();
 
       let chapter_text = chapter_link_element
         .as_ref()

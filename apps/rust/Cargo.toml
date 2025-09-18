@@ -49,10 +49,10 @@ backoff = { workspace = true, features = ["futures", "tokio"] }
 dashmap =  { workspace = true }
 deadpool-redis = { workspace = true }
 rayon = { workspace = true }
-tl = { version = "0.7.6" }
+tl = { workspace = true }
 
 tower = { workspace = true }
-scraper = "0.24.0"
+scraper = { workspace = true }
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
