@@ -114,9 +114,8 @@ static CHAPTER_TITLE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)(?:chapt
 static CHAPTER_NUMBER_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b(\d+)\b").unwrap());
 
 // Helper function to find table rows containing specific text
-fn find_table_row_with_text(
-  selector: &Selector,
-  document: &Html,
+fn find_table_row_with_text<'a>(
+  info_rows: &[scraper::ElementRef<'a>], // Changed to accept a slice
   text_fragments: &[&str]
 ) -> Option<String> {
   let lower_text_fragments: Vec<String> = text_fragments
@@ -124,8 +123,8 @@ fn find_table_row_with_text(
     .map(|&s| s.to_lowercase())
     .collect();
 
-  document
-    .select(selector)
+  info_rows
+    .iter() // Iterate over the slice
     .find(|row| {
       let row_text = row.text().collect::<String>();
       lower_text_fragments.iter().any(|fragment| row_text.to_lowercase().contains(fragment))
@@ -340,9 +339,12 @@ fn parse_komik_detail_document(
     })
     .unwrap_or_default();
 
-  let status = document
-    .select(&INFO_ROW_SELECTOR)
-    .find_map(|row| {
+  let info_rows_vec: Vec<scraper::ElementRef> = document.select(&INFO_ROW_SELECTOR).collect();
+  let info_rows = &info_rows_vec[..]; // Create a slice from the Vec
+
+  let status = info_rows
+    .iter()
+    .find_map(|&row| {
       let full_text = row.text().collect::<String>();
       if full_text.to_lowercase().contains("status") {
         Some(
@@ -359,9 +361,9 @@ fn parse_komik_detail_document(
     })
     .unwrap_or_default();
 
-  let r#type = document
-    .select(&INFO_ROW_SELECTOR)
-    .find_map(|row| {
+  let r#type = info_rows
+    .iter()
+    .find_map(|&row| {
       let full_text = row.text().collect::<String>();
       if full_text.to_lowercase().contains("jenis komik") || full_text.to_lowercase().contains("type") {
         Some(
@@ -377,9 +379,9 @@ fn parse_komik_detail_document(
     })
     .unwrap_or_default();
 
-  let author = document
-    .select(&INFO_ROW_SELECTOR)
-    .find_map(|row| {
+  let author = info_rows
+    .iter()
+    .find_map(|&row| {
       let full_text = row.text().collect::<String>();
       if
         full_text.to_lowercase().contains("pengarang") ||
@@ -421,8 +423,7 @@ fn parse_komik_detail_document(
 
   // Extract release date, total chapter, and updated_on using specific selectors first
   let release_date = find_table_row_with_text(
-    &INFO_ROW_SELECTOR, // Use INFO_ROW_SELECTOR for consistency
-    document,
+    info_rows,
     &["tanggal rilis", "release date"]
   )
     .map(clean_text)
@@ -437,8 +438,7 @@ fn parse_komik_detail_document(
     });
 
   let total_chapter = find_table_row_with_text(
-    &INFO_ROW_SELECTOR, // Use INFO_ROW_SELECTOR for consistency
-    document,
+    info_rows,
     &["total chapter", "total chapters"]
   ).unwrap_or_else(|| {
     // Fallback to chapter count if no specific total found
@@ -451,8 +451,7 @@ fn parse_komik_detail_document(
   });
 
   let updated_on = find_table_row_with_text(
-    &INFO_ROW_SELECTOR, // Use INFO_ROW_SELECTOR for consistency
-    document,
+    info_rows,
     &["diperbarui", "updated"]
   )
     .or_else(|| {
@@ -568,7 +567,7 @@ pub async fn ws_handler(
   ws.on_upgrade(|socket| handle_socket(socket, app_state))
 }
 
-async fn handle_socket(mut socket: WebSocket, app_state: Arc<AppState>) {
+async fn handle_socket(mut socket: WebSocket, _app_state: Arc<AppState>) {
   info!("WebSocket connection established.");
 
   while let Some(msg) = socket.recv().await {
