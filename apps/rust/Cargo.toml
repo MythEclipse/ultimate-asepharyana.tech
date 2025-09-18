@@ -29,7 +29,6 @@ data-url = { workspace = true }
 base64 = { workspace = true }
 tokio-util = { workspace = true }
 async-trait = { workspace = true }
-scraper = { workspace = true }
 regex = { workspace = true }
 oxidize-pdf = { workspace = true }
 infer = { workspace = true }
@@ -50,8 +49,10 @@ backoff = { workspace = true, features = ["futures", "tokio"] }
 dashmap =  { workspace = true }
 deadpool-redis = { workspace = true }
 rayon = { workspace = true }
+tl = { version = "0.7.6" }
 
 tower = { workspace = true }
+scraper = "0.24.0"
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
