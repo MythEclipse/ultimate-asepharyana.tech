@@ -29,6 +29,7 @@ pub struct ChapterData {
   pub title: String,
   pub next_chapter_id: String,
   pub prev_chapter_id: String,
+  pub list_chapter: String,
   pub images: Vec<String>,
 }
 
@@ -326,5 +327,5 @@ fn parse_komik2_chapter_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(chapter))
+    router.route(ENDPOINT_PATH, get(chapter))
 }

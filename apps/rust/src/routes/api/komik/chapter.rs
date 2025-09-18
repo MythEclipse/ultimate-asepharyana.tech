@@ -223,5 +223,5 @@ fn parse_komik_chapter_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router.route(ENDPOINT_PATH, get(chapter))
+    router.route(ENDPOINT_PATH, get(chapter))
 }
