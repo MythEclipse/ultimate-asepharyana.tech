@@ -87,18 +87,9 @@ lazy_static! {
   pub static ref LINK_SELECTOR: Selector = Selector::parse(".bgei a, .kan a").unwrap();
   pub static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
   // Pagination
-  pub static ref CURRENT_SELECTOR: Selector = Selector::parse(
-    ".pagination .current, .pagination > .current, .pagination > span.page-numbers.current, .hpage .current"
-  ).unwrap();
-  pub static ref PAGE_SELECTORS: Selector = Selector::parse(
-    ".pagination a:not(.next):not(.prev), .pagination > a, .pagination > .page-numbers:not(.next):not(.prev), .hpage a"
-  ).unwrap();
-  pub static ref NEXT_SELECTOR: Selector = Selector::parse(
-    ".pagination .next, .pagination > a.next, .pagination > .next.page-numbers, .hpage .next"
-  ).unwrap();
-  pub static ref PREV_SELECTOR: Selector = Selector::parse(
-    ".pagination .prev, .pagination > a.prev, .pagination > .prev.page-numbers, .hpage .prev"
-  ).unwrap();
+  pub static ref NEXT_PAGE_SPAN_SELECTOR: Selector =
+    Selector::parse("body > span[hx-get]").unwrap();
+  pub static ref PAGE_NUMBER_REGEX: Regex = Regex::new(r"/page/(\d+)/").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -320,30 +311,36 @@ fn parse_manga_list_document(
     });
   }
 
-  let last_visible_page = document
-    .select(&PAGE_SELECTORS)
-    .last()
-    .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
-    .unwrap_or(current_page);
+  let has_previous_page = current_page > 1;
+  let previous_page = if has_previous_page { Some(current_page - 1) } else { None };
 
-  let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
-  let has_previous_page = document.select(&PREV_SELECTOR).next().is_some();
+  let mut has_next_page = false;
+  let mut next_page: Option<u32> = None;
+
+  if let Some(next_span) = document.select(&NEXT_PAGE_SPAN_SELECTOR).next() {
+    if let Some(hx_get_url) = next_span.value().attr("hx-get") {
+      if let Some(captures) = PAGE_NUMBER_REGEX.captures(hx_get_url) {
+        if let Some(page_str) = captures.get(1) {
+          if let Ok(page_num) = page_str.as_str().parse::<u32>() {
+            has_next_page = true;
+            next_page = Some(page_num);
+          }
+        }
+      }
+    }
+  }
+
+  // If there's a next page, last_visible_page is the next page number - 1 (current_page + 1)
+  // If there's no next page, then current_page is the last page.
+  let last_visible_page = next_page.unwrap_or(current_page);
 
   let pagination = Pagination {
     current_page,
     last_visible_page,
     has_next_page,
-    next_page: if has_next_page {
-      Some(current_page + 1)
-    } else {
-      None
-    },
+    next_page,
     has_previous_page,
-    previous_page: if has_previous_page {
-      Some(current_page - 1)
-    } else {
-      None
-    },
+    previous_page,
   };
 
   Ok((data, pagination))
