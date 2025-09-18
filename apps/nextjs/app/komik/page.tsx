@@ -1,6 +1,6 @@
 import React from 'react';
 import KomikPageClient from './KomikPageClient';
-import { serverFetch } from '../../utils/serverFetch';
+import { APIURLSERVER } from '../../lib/url';
 
 export const revalidate = 60;
 
@@ -19,6 +19,21 @@ interface KomikData {
 }
 
 async function HomePage() {
+  const fetchData = async (url: string) => {
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  };
+
   let initialManga: KomikData | null = null;
   let initialManhua: KomikData | null = null;
   let initialManhwa: KomikData | null = null;
@@ -27,9 +42,9 @@ async function HomePage() {
   try {
     // Fetch all three endpoints concurrently
     const [mangaResponse, manhuaResponse, manhwaResponse] = await Promise.allSettled([
-      serverFetch('/api/komik2/manga?page=1&order=update'),
-      serverFetch('/api/komik2/manhua?page=1&order=update'),
-      serverFetch('/api/komik2/manhwa?page=1&order=update'),
+      fetchData('/api/komik2/manga?page=1&order=update'),
+      fetchData('/api/komik2/manhua?page=1&order=update'),
+      fetchData('/api/komik2/manhwa?page=1&order=update'),
     ]);
 
     if (mangaResponse.status === 'fulfilled') {
@@ -55,10 +70,10 @@ async function HomePage() {
 
   return (
     <KomikPageClient
-      initialManga={initialManga}
-      initialManhua={initialManhua}
-      initialManhwa={initialManhwa}
-      initialError={error}
+      manga={initialManga}
+      manhua={initialManhua}
+      manhwa={initialManhwa}
+      error={error}
     />
   );
 }

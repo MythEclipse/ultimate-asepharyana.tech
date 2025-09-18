@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
-import useSWR from 'swr';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PRODUCTION } from '../../../../lib/url';
@@ -70,13 +69,6 @@ interface AnimeData {
   };
 }
 
-import { fetchData } from '../../../../utils/useFetch';
-
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
-
 const DetailPageSkeleton = () => (
   <main className='p-4 md:p-8 min-h-screen'>
     <div className='max-w-6xl mx-auto'>
@@ -128,27 +120,16 @@ interface AnimeDetailPageClientProps {
 function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailPageClientProps) {
   const router = useRouter();
 
-  const { data: anime, error } = useSWR<AnimeData>(
-    `/api/anime/detail/${slug}`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000,
-      fallbackData: initialData || undefined,
-      refreshInterval: 60000,
-    }
-  );
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
-    if (anime?.data.episode_lists) {
-      anime.data.episode_lists.forEach((episode) => {
+    if (initialData?.data.episode_lists) {
+      initialData.data.episode_lists.forEach((episode) => {
         router.prefetch(`/anime/full/${episode.slug}`);
       });
     }
-  }, [anime, router]);
+  }, [initialData, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -171,11 +152,11 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
       bookmarks = bookmarks.filter(
         (item: { slug: string }) => item.slug !== slug
       );
-    } else if (anime?.data) {
+    } else if (initialData?.data) {
       bookmarks.push({
         slug,
-        title: anime.data.title,
-        poster: anime.data.poster,
+        title: initialData.data.title,
+        poster: initialData.data.poster,
       });
     }
     localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
@@ -183,12 +164,12 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
   };
 
   const imageSources = [
-    anime?.data.poster,
-    anime?.data.poster
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(anime.data.poster)}`
+    initialData?.data.poster,
+    initialData?.data.poster
+      ? `https://imagecdn.app/v1/images/${encodeURIComponent(initialData.data.poster)}`
       : null,
-    anime?.data.poster
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(anime.data.poster)}`
+    initialData?.data.poster
+      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(initialData.data.poster)}`
       : null,
     '/default.png',
   ].filter(Boolean) as string[];
@@ -199,8 +180,8 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
     }
   };
 
-  const displayError = error || initialError;
-  const displayData = anime || initialData;
+  const displayError = initialError;
+  const displayData = initialData;
 
   if (displayError)
     return (
@@ -210,26 +191,26 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
     );
   if (!displayData) return <DetailPageSkeleton />;
 
-  const { data } = displayData;
+  const { data: animeData } = displayData;
   const metadata = [
     {
       label: 'Type',
-      value: data.type,
+      value: animeData.type,
       icon: <Type className='w-5 h-5 text-blue-500' />,
     },
     {
       label: 'Status',
-      value: data.status,
+      value: animeData.status,
       icon: <CircleDot className='w-5 h-5 text-green-500' />,
     },
     {
       label: 'Released',
-      value: data.release_date,
+      value: animeData.release_date,
       icon: <Calendar className='w-5 h-5 text-red-500' />,
     },
     {
       label: 'Studio',
-      value: data.studio,
+      value: animeData.studio,
       icon: <Video className='w-5 h-5 text-purple-500' />,
     },
   ];
@@ -245,7 +226,7 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
                   <Card className='overflow-hidden'>
                     <Image
                       src={imageSources[currentImageIndex]}
-                      alt={data.title}
+                      alt={animeData.title}
                       width={400}
                       height={600}
                       className='object-cover w-full aspect-[2/3]'
@@ -267,7 +248,7 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
 
                 <div className='w-full md:w-2/3 space-y-6'>
                   <h1 className='text-4xl font-bold tracking-tight'>
-                    {data.title}
+                    {animeData.title}
                   </h1>
 
                   <Card>
@@ -294,7 +275,7 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
                   </Card>
 
                   <div className='flex flex-wrap gap-2'>
-                    {data.genres?.map((genre) => (
+                    {animeData.genres?.map((genre) => (
                       <Badge variant='secondary' key={genre.slug}>
                         {genre.name}
                       </Badge>
@@ -307,7 +288,7 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
                     </CardHeader>
                     <CardContent>
                       <p className='text-muted-foreground leading-relaxed'>
-                        {data.synopsis || 'No synopsis available.'}
+                        {animeData.synopsis || 'No synopsis available.'}
                       </p>
                     </CardContent>
                   </Card>
@@ -316,14 +297,14 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
                     <CardHeader>
                       <CardTitle>Episodes</CardTitle>
                       <CardDescription>
-                        Total {data.episode_lists?.length || 0} episodes
+                        Total {animeData.episode_lists?.length || 0} episodes
                         available.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
-                        {data.episode_lists?.length > 0 ? (
-                          data.episode_lists.map((episode, index) => (
+                        {animeData.episode_lists?.length > 0 ? (
+                          animeData.episode_lists.map((episode, index) => (
                             <Tooltip key={`${episode.slug}-${index}`}>
                               <TooltipTrigger asChild>
                                 <Button
@@ -362,8 +343,8 @@ function AnimeDetailPageClient({ slug, initialData, initialError }: AnimeDetailP
                       Recommendations
                     </h2>
                     <div className='flex overflow-x-auto pb-4 -mx-1 gap-4'>
-                      {data.recommendations?.length > 0 ? (
-                        data.recommendations.map((rec, index) => (
+                      {animeData.recommendations?.length > 0 ? (
+                        animeData.recommendations.map((rec, index) => (
                           <div
                             key={`${rec.slug}-${index}`}
                             className='flex-shrink-0 w-40 md:w-48'

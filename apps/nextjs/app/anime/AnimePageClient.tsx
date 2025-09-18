@@ -1,6 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
 import UnifiedGrid from '../../components/shared/UnifiedGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -31,27 +30,16 @@ interface CompleteAnime {
   current_episode: string;
 }
 
-import { fetchData } from '../../utils/useFetch';
-
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
-
 interface AnimePageClientProps {
-  initialData: HomeData | null;
-  initialError: string | null;
+  data: HomeData | null;
+  error: string | null;
 }
 
-function AnimePageClient({ initialData, initialError }: AnimePageClientProps) {
-  const { data, error } = useSWR<HomeData>(`/api/anime/`, fetcher, {
-    refreshInterval: 60000,
-    fallbackData: initialData || undefined,
-  });
+function AnimePageClient({ data, error }: AnimePageClientProps) {
   const router = useRouter();
 
-  const displayError = error || initialError;
-  const displayData = data || initialData;
+  const displayError = error;
+  const displayData = data;
 
   if (displayError) return <div>Error loading data: {displayError}</div>;
   if (!displayData)

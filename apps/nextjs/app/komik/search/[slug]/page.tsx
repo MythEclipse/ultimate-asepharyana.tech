@@ -1,9 +1,8 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import React from 'react';
 import SearchForm from '../../../../components/misc/SearchForm';
 import CardA from '../../../../components/anime/MediaCard'; // Changed to default import
 import { Info } from 'lucide-react';
+import { APIURLSERVER } from '../../../../lib/url';
 
 interface Genre {
   name: string;
@@ -25,9 +24,25 @@ interface SearchDetailData {
   status: string;
   data: Anime[];
 }
-import { fetchData } from '../../../../utils/useFetch';
+
+export const revalidate = 60;
 
 const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
+  const fetchData = async (url: string) => {
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  };
+
   try {
     const response = await fetchData(
       `/api/komik2/search?query=${encodeURIComponent(query)}&page=1`,
@@ -42,25 +57,16 @@ const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
     return { status: 'error', data: [] };
   }
 };
-const SearchPage = () => {
-  const params = useParams();
-  const slug = params?.slug;
 
-  const query = decodeURIComponent(
-    Array.isArray(slug) ? slug[0] : (slug ?? ''),
-  );
-  const [searchResults, setSearchResults] = useState<SearchDetailData>({
-    status: '',
-    data: [],
-  });
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    fetchSearchResults(query).then((result) => {
-      setSearchResults(result);
-      setLoading(false);
-    });
-  }, [query]);
-  if (loading) {
+export default async function SearchPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const query = decodeURIComponent(slug);
+  const searchResults = await fetchSearchResults(query);
+  if (searchResults.data.length === 0 && searchResults.status === 'error') {
     return (
       <main className="p-6">
         <h1 className="text-2xl font-bold mb-4">Search Results</h1>
@@ -69,10 +75,11 @@ const SearchPage = () => {
           initialQuery={query}
           baseUrl="/komik"
         />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
-          {Array.from({ length: 15 }).map((_, index) => (
-            <CardA key={index} loading={loading} />
-          ))}
+        <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
+          <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <h2 className="text-xl font-medium text-blue-800 dark:text-blue-200">
+            No results found for "{query}"
+          </h2>
         </div>
       </main>
     );
@@ -108,4 +115,3 @@ const SearchPage = () => {
     </main>
   );
 };
-export default SearchPage;

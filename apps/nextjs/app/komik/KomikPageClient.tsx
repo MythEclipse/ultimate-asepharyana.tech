@@ -1,7 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
-import useSWR from 'swr';
+import { memo } from 'react';
 import Link from 'next/link';
 import UnifiedGrid from '../../components/shared/UnifiedGrid';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
@@ -20,48 +19,31 @@ interface KomikData {
   data: Komik[];
 }
 
-import { fetchData } from '../../utils/useFetch';
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
-
 interface KomikPageClientProps {
-  initialManga: KomikData | null;
-  initialManhua: KomikData | null;
-  initialManhwa: KomikData | null;
-  initialError: string | null;
+  manga: KomikData | null;
+  manhua: KomikData | null;
+  manhwa: KomikData | null;
+  error: string | null;
 }
 
 function KomikPageClient({
-  initialManga,
-  initialManhua,
-  initialManhwa: initialManhwaData,
-  initialError
+  manga,
+  manhua,
+  manhwa,
+  error
 }: KomikPageClientProps) {
-  const { data: manga, error: mangaError } = useSWR(
-    `/api/komik2/manga?page=1&order=update`,
-    fetcher,
-    { fallbackData: initialManga, refreshInterval: 60000 }
-  );
-  const { data: manhua, error: manhuaError } = useSWR(
-    `/api/komik2/manhua?page=1&order=update`,
-    fetcher,
-    { fallbackData: initialManhua, refreshInterval: 60000 }
-  );
-  const { data: manhwa, error: manhwaError } = useSWR(
-    `/api/komik2/manhwa?page=1&order=update`,
-    fetcher,
-    { fallbackData: initialManhwaData, refreshInterval: 60000 }
-  );
-
-  const error = mangaError || manhuaError || manhwaError || initialError;
 
   // Menentukan status loading untuk setiap kategori
   const isLoading = {
-    Manga: !manga && !mangaError,
-    Manhua: !manhua && !manhuaError,
-    Manhwa: !manhwa && !manhwaError,
+    Manga: !manga && !error,
+    Manhua: !manhua && !error,
+    Manhwa: !manhwa && !error,
+  };
+
+  const komiksData = {
+    Manga: manga?.data,
+    Manhua: manhua?.data,
+    Manhwa: manhwa?.data,
   };
 
   return (
@@ -91,11 +73,7 @@ function KomikPageClient({
         ) : (
           <div className="space-y-12">
             {['Manga', 'Manhua', 'Manhwa'].map((type) => {
-              const komiks = {
-                Manga: manga?.data,
-                Manhua: manhua?.data,
-                Manhwa: manhwa?.data,
-              }[type];
+              const komiks = komiksData[type as keyof typeof komiksData];
 
               return (
                 <section key={type} className="mb-12 space-y-6">

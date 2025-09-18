@@ -1,11 +1,7 @@
-'use client';
-
-import React, { useState } from 'react';
-import { useParams } from 'next/navigation';
-import useSWR from 'swr';
 import Image from 'next/image';
-import { PRODUCTION } from '../../../../lib/url';
-import { fetchData } from '../../../../utils/useFetch';
+import { PRODUCTION, APIURLSERVER } from '../../../../lib/url';
+export const revalidate = 60;
+import PosterImage from '../PosterImage';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
 import MediaCard from '../../../../components/anime/MediaCard'; // Changed to default import
@@ -90,10 +86,7 @@ const processDownloads = (downloads: DownloadResolution[] = []) => {
   return episodes;
 };
 
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
+
 
 // --- SKELETON (Tidak berubah) ---
 const DetailPageSkeleton = () => (
@@ -127,19 +120,48 @@ const DetailPageSkeleton = () => (
   </main>
 );
 
-export default function DetailAnimePage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const params = useParams();
-  const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug || '');
+export default async function DetailAnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
 
-  const { data, error, isLoading } = useSWR<{ data: AnimeData }>(
-    slug ? `/api/anime2/detail/${slug}` : null,
-    fetcher,
-    { refreshInterval: 60000 }
-  );
+  if (!slug) {
+    return (
+      <div className='min-h-screen p-6 flex items-center justify-center'>
+        <Card className='max-w-md w-full p-8 text-center'>
+          <AlertTriangle className='w-16 h-16 text-destructive mx-auto mb-4' />
+          <CardHeader>
+            <CardTitle className='text-2xl text-destructive'>
+              Invalid URL
+            </CardTitle>
+            <CardDescription>
+              The slug is missing.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
-  if (isLoading) return <DetailPageSkeleton />;
-  if (error || !data?.data)
+  let data: { data: AnimeData } | null = null;
+
+  try {
+    const url = `/api/anime2/detail/${slug}`;
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    data = await response.json();
+  } catch (error) {
     return (
       <div className='min-h-screen p-6 flex items-center justify-center'>
         <Card className='max-w-md w-full p-8 text-center'>
@@ -155,26 +177,28 @@ export default function DetailAnimePage() {
         </Card>
       </div>
     );
+  }
+
+  if (!data?.data) {
+    return (
+      <div className='min-h-screen p-6 flex items-center justify-center'>
+        <Card className='max-w-md w-full p-8 text-center'>
+          <AlertTriangle className='w-16 h-16 text-destructive mx-auto mb-4' />
+          <CardHeader>
+            <CardTitle className='text-2xl text-destructive'>
+              Gagal Memuat Data
+            </CardTitle>
+            <CardDescription>
+              Terjadi kesalahan saat mengambil data.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const anime = data.data;
   const groupedDownloads = processDownloads(anime.downloads); // <-- LOGIKA ASLI ANDA DIGUNAKAN
-  const fallback = '/default.png';
-
-  const imageSources = [
-    anime.poster?.trim() ? anime.poster : null,
-    anime.poster?.trim()
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(anime.poster)}`
-      : null,
-    anime.poster?.trim()
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(anime.poster)}`
-      : null,
-    fallback,
-  ].filter(Boolean) as string[];
-
-  const handleError = () => {
-    if (currentIndex < imageSources.length - 1)
-      setCurrentIndex(currentIndex + 1);
-  };
 
   const metadata = [
     {
@@ -197,16 +221,7 @@ export default function DetailAnimePage() {
             <div className='flex flex-col md:flex-row items-start gap-8'>
               <div className='w-full md:w-1/3 flex flex-col gap-4 md:sticky top-8'>
                 <Card className='overflow-hidden'>
-                  <Image
-                    src={imageSources[currentIndex]}
-                    alt={anime.title}
-                    width={400}
-                    height={600}
-                    className='object-cover w-full aspect-[2/3]'
-                    priority
-                    unoptimized
-                    onError={handleError}
-                  />
+                  <PosterImage poster={anime.poster} title={anime.title} />
                 </Card>
                 <Card>
                   <CardHeader className='p-4 pb-2'>

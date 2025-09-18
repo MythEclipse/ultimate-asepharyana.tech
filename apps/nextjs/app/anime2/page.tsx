@@ -1,6 +1,6 @@
 import React from 'react';
 import Anime2PageClient from './Anime2PageClient';
-import { serverFetch } from '../../utils/serverFetch';
+import { APIURLSERVER } from '../../lib/url';
 
 export const revalidate = 60;
 
@@ -33,7 +33,18 @@ async function AnimePage() {
   let error: string | null = null;
 
   try {
-    initialData = await serverFetch('/api/anime2/');
+    const fullUrl = '/api/anime2'.startsWith('/') ? `${APIURLSERVER}/api/anime2` : '/api/anime2';
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    initialData = await response.json();
   } catch (err) {
     console.error('Failed to fetch anime2 data on server:', err);
     error = 'Failed to load anime data';

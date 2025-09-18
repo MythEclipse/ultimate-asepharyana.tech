@@ -1,9 +1,12 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import React from 'react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import SearchForm from '../../../../components/misc/SearchForm';
-import CardA from '../../../../components/anime/MediaCard'; // Changed to default import
-import { Info, AlertTriangle } from 'lucide-react';
+import CardA from '../../../../components/anime/MediaCard';
+import { Info } from 'lucide-react';
+import { APIURLSERVER } from '../../../../lib/url';
+
+export const revalidate = 60;
 
 interface Genre {
   name: string;
@@ -21,85 +24,39 @@ interface Anime {
   last_release_date?: string;
   url?: string;
 }
-import { fetchData } from '../../../../utils/useFetch';
-
 interface SearchDetailData {
   status: string;
   data: Anime[];
 }
-const fetchSearchResults = async (query: string): Promise<SearchDetailData> => {
-  try {
-    const response = await fetchData(
-      `/api/anime/search?q=${encodeURIComponent(query)}`,
-    );
-    if (response.status && response.status >= 400) {
-      throw new Error('Network response was not ok');
-    }
-    const result: SearchDetailData = response.data;
-    return result;
-  } catch (error) {
-    console.error('Error fetching search results:', error);
-    return { status: 'error', data: [] };
-  }
-};
-const SearchPage = () => {
-  const params = useParams();
-  const slug = params?.slug || ''; // Access slug safely
+
+async function SearchPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const query = decodeURIComponent(Array.isArray(slug) ? slug[0] : slug);
 
-  const [searchResults, setSearchResults] = useState<SearchDetailData>({
-    status: '',
-    data: [],
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (slug) {
-      // Conditionally fetch data
-      fetchSearchResults(query).then((result) => {
-        setSearchResults(result);
-        setLoading(false);
-      });
-    } else {
-      setLoading(false); // If no slug, stop loading and show no results
-    }
-  }, [query, slug]); // Add slug to dependency array
-
   if (!slug) {
-    return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Search Results</h1>
-        <SearchForm
-          classname="w-full mb-8"
-          initialQuery={query}
-          baseUrl="/anime"
-        />
-        <div className="p-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center gap-4">
-          <AlertTriangle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-          <h2 className="text-xl font-medium text-yellow-800 dark:text-yellow-200">
-            Please enter a search query.
-          </h2>
-        </div>
-      </main>
-    );
+    notFound();
   }
-  if (loading) {
-    return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Search Results</h1>
-        <SearchForm
-          classname="w-full mb-8"
-          initialQuery={query}
-          baseUrl="/anime"
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
-          {Array.from({ length: 15 }).map((_, index) => (
-            <CardA key={index} loading={loading} />
-          ))}
-        </div>
-      </main>
-    );
+
+  let searchResults: SearchDetailData = { status: 'error', data: [] };
+
+  try {
+    const url = `/api/anime/search?q=${encodeURIComponent(query)}`;
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    searchResults = await response.json();
+  } catch (err) {
+    console.error('Failed to fetch search results on server:', err);
+    searchResults = { status: 'error', data: [] };
   }
+
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">Search Results</h1>
@@ -115,8 +72,8 @@ const SearchPage = () => {
               key={anime.slug}
               title={anime.title}
               description={`${anime.status || 'Unknown status'} • ⭐${anime.rating || 'N/A'}`}
-              imageUrl={anime.poster} // Changed imageUrl to image
-              linkUrl={`/anime/detail/${anime.slug}`} // Changed linkUrl to link
+              imageUrl={anime.poster}
+              linkUrl={`/anime/detail/${anime.slug}`}
             />
           ))}
         </div>
@@ -124,11 +81,12 @@ const SearchPage = () => {
         <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
           <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           <h2 className="text-xl font-medium text-blue-800 dark:text-blue-200">
-            No results found for &quot;{query}&quot;
+            No results found for "{query}"
           </h2>
         </div>
       )}
     </main>
   );
-};
+}
+
 export default SearchPage;

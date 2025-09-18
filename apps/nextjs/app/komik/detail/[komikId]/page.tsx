@@ -1,11 +1,6 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import useSWR from 'swr';
-import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
-import { PRODUCTION } from '../../../../lib/url';
-import { fetchData } from '../../../../utils/useFetch';
+import { APIURLSERVER } from '../../../../lib/url';
+import PosterImage from '../PosterImage';
+import BookmarkButton from '../BookmarkButton';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
 import { Button } from '../../../../components/ui/button';
@@ -25,7 +20,6 @@ import {
   TooltipTrigger,
 } from '../../../../components/ui/tooltip';
 import {
-  Bookmark,
   Calendar,
   CircleDot,
   FileText,
@@ -61,10 +55,7 @@ interface ApiResponse {
   data: MangaData;
 }
 
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
+export const revalidate = 60;
 
 // --- SKELETON COMPONENT ---
 const DetailPageSkeleton = () => (
@@ -97,66 +88,33 @@ const DetailPageSkeleton = () => (
   </main>
 );
 
-export default function DetailMangaPage() {
-  const router = useRouter();
-  const params = useParams();
-  const komikId = params?.komikId as string;
-
-  const {
-    data: mangaData,
-    error,
-    isLoading,
-  } = useSWR<ApiResponse>(
-    komikId ? `/api/komik2/detail?komik_id=${komikId}` : null,
-    fetcher,
-    { refreshInterval: 60000 }
-  );
-
-  const [bookmarked, setBookmarked] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Use useEffect for side effects, placed at the top level of the component
-  useEffect(() => {
-    if (typeof window !== 'undefined' && komikId) {
-      const bookmarks = JSON.parse(
-        localStorage.getItem('bookmarks-komik') || '[]',
-      );
-      setBookmarked(
-        bookmarks.some((item: { slug: string }) => item.slug === komikId),
-      );
+export default async function DetailMangaPage({
+  params,
+}: {
+  params: Promise<{ komikId: string }>;
+}) {
+  const fetchData = async (url: string) => {
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  }, [komikId]);
-
-  useEffect(() => {
-    if (mangaData) {
-      console.log('mangaData received:', mangaData);
-    }
-  }, [mangaData]);
-
-  const handleBookmark = () => {
-    if (!mangaData) return;
-    let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
-    const isBookmarked = bookmarks.some(
-      (item: { slug: string }) => item.slug === komikId,
-    );
-
-    if (isBookmarked) {
-      bookmarks = bookmarks.filter(
-        (item: { slug: string }) => item.slug !== komikId,
-      );
-    } else {
-      bookmarks.push({
-        slug: komikId,
-        title: mangaData.data.title,
-        poster: mangaData.data.poster,
-      });
-    }
-    localStorage.setItem('bookmarks-komik', JSON.stringify(bookmarks));
-    setBookmarked(!isBookmarked);
+    return await response.json();
   };
 
-  if (isLoading) return <DetailPageSkeleton />;
-  if (error || !mangaData)
+  const { komikId } = await params;
+
+  let mangaData: ApiResponse | null = null;
+
+  try {
+    mangaData = await fetchData(`/api/komik2/detail?komik_id=${komikId}`);
+  } catch (error) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
         <Card className="max-w-md w-full p-8 text-center">
@@ -172,24 +130,27 @@ export default function DetailMangaPage() {
         </Card>
       </div>
     );
+  }
+
+  if (!mangaData?.data) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center">
+        <Card className="max-w-md w-full p-8 text-center">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <CardHeader>
+            <CardTitle className="text-2xl text-destructive">
+              Gagal Memuat Data
+            </CardTitle>
+            <CardDescription>
+              Terjadi kesalahan saat mengambil data manga.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const manga = mangaData.data;
-  const fallback = '/default.png';
-  const imageSources = [
-    manga.poster?.trim() ? manga.poster : null,
-    manga.poster?.trim()
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(manga.poster)}`
-      : null,
-    manga.poster?.trim()
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(manga.poster)}`
-      : null,
-    fallback,
-  ].filter(Boolean) as string[];
-
-  const handleError = () => {
-    if (currentIndex < imageSources.length - 1)
-      setCurrentIndex(currentIndex + 1);
-  };
 
   const metadata = [
     {
@@ -228,26 +189,13 @@ export default function DetailMangaPage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="w-full md:w-1/3 flex flex-col gap-4 md:sticky top-8">
                   <Card className="overflow-hidden">
-                    <Image
-                      src={imageSources[currentIndex]}
-                      alt={'Poster image of ' + (manga.title || 'manga')}
-                      width={400}
-                      height={600}
-                      className="object-cover w-full aspect-[2/3]"
-                      priority
-                      unoptimized
-                      onError={handleError}
-                    />
+                    <PosterImage poster={manga.poster} title={manga.title} />
                   </Card>
-                  <Button
-                    onClick={handleBookmark}
-                    variant={bookmarked ? 'destructive' : 'default'}
-                    size="lg"
-                    className="w-full"
-                  >
-                    <Bookmark className="w-5 h-5 mr-2" />
-                    {bookmarked ? 'Hapus Bookmark' : 'Bookmark'}
-                  </Button>
+                  <BookmarkButton
+                    komikId={komikId}
+                    title={manga.title}
+                    poster={manga.poster}
+                  />
                 </div>
 
                 <div className="w-full md:w-2/3 space-y-6">
@@ -260,11 +208,7 @@ export default function DetailMangaPage() {
                   <Card>
                     <CardContent className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                       {metadata.map(
-                        (item: {
-                          label: string;
-                          value: string;
-                          icon: React.ReactNode;
-                        }) => (
+                        (item) => (
                           <div
                             key={item.label}
                             className="flex items-center gap-3"
@@ -322,16 +266,14 @@ export default function DetailMangaPage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  onClick={() =>
-                                    router.push(
-                                      `/komik/chapter/${chapter.chapter_id}`,
-                                    )
-                                  }
                                   className="justify-between w-full h-full p-3 whitespace-normal"
                                 >
-                                  <p className="line-clamp-2 text-left">
+                                  <a
+                                    href={`/komik/chapter/${chapter.chapter_id}`}
+                                    className="line-clamp-2 text-left flex-1"
+                                  >
                                     {chapter.chapter}
-                                  </p>
+                                  </a>
                                   <ArrowRight className="w-4 h-4 ml-2 flex-shrink-0" />
                                 </Button>
                               </TooltipTrigger>

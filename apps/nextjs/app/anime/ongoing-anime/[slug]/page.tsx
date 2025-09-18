@@ -1,16 +1,16 @@
-'use client';
-
-import useSWR from 'swr';
-import { useParams } from 'next/navigation';
+import React from 'react';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
+import { APIURLSERVER } from '../../../../lib/url';
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Clapperboard,
-  ArrowRight,
 } from 'lucide-react';
+
+export const revalidate = 60;
 
 interface OngoingAnimeData {
   status: string;
@@ -39,99 +39,32 @@ interface Pagination {
   previous_page: number | null;
 }
 
-import { fetchData } from '../../../../utils/useFetch';
-
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
-
-export default function AnimePage() {
-  const params = useParams();
-  const slug = params?.slug as string;
-
-  const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
-    slug ? `/api/anime/ongoing-anime/${slug}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      refreshInterval: 60000,
-    }
-  );
+async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   if (!slug) {
-    return (
-      <main className='min-h-screen p-6 bg-background dark:bg-dark'>
-        <div className='max-w-7xl mx-auto mt-12'>
-          <div className='p-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center gap-4'>
-            <AlertTriangle className='w-8 h-8 text-yellow-600 dark:text-yellow-400' />
-            <div>
-              <h1 className='text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-2'>
-                Loading or Invalid URL
-              </h1>
-              <p className='text-yellow-700 dark:text-yellow-300'>
-                Please ensure you are accessing this page with a valid slug.
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
+    notFound();
   }
 
-  if (isLoading) {
-    return (
-      <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
-        <div className='max-w-7xl mx-auto'>
-          {/* <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
-                    Anime
-                </h1> */}
+  let data: OngoingAnimeData | null = null;
+  let error: string | null = null;
 
-          {/* Ongoing Anime Section */}
-          <section className='mb-12 space-y-6'>
-            <div className='flex items-center justify-between mb-6'>
-              <div className='flex items-center gap-3'>
-                <div className='p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl'>
-                  <Clapperboard className='w-6 h-6 text-blue-600 dark:text-blue-400' />
-                </div>
-                <h2 className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-                  Ongoing Anime
-                </h2>
-              </div>
-              <div className='flex items-center gap-2 text-blue-600 dark:text-blue-400'>
-                <span className='skeleton w-16 h-4 rounded'></span>
-                <ArrowRight className='w-4 h-4' />
-              </div>
-            </div>
-
-            <UnifiedGrid items={[]} loading={true} itemType="anime" />
-          </section>
-
-          {/* Complete Anime Section */}
-          {/* <section className='space-y-6'>
-                    <div className='flex items-center justify-between mb-6'>
-                        <div className='flex items-center gap-3'>
-                            <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
-                                <CheckCircle className='w-6 h-6 text-green-600 dark:text-green-400' />
-                            </div>
-                            <h2 className='text-2xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
-                                Complete Anime
-                            </h2>
-                        </div>
-                        <div className='flex items-center gap-2 text-green-600 dark:text-green-400'>
-                            <span className='skeleton w-16 h-4 rounded'></span>
-                            <ArrowRight className='w-4 h-4' />
-                        </div>
-                    </div>
-
-                    <AnimeGrid
-                        animes={[]}
-                        loading={true}
-                    />
-                </section> */}
-        </div>
-      </main>
-    );
+  try {
+    const url = `/api/anime/ongoing-anime/${slug}`;
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    data = await response.json();
+  } catch (err) {
+    console.error('Failed to fetch ongoing anime data on server:', err);
+    error = 'Failed to load ongoing anime data';
   }
 
   if (error || !data) {
@@ -145,8 +78,7 @@ export default function AnimePage() {
                 Error Loading Data
               </h1>
               <p className='text-red-700 dark:text-red-300'>
-                {error?.message ||
-                  'Could not fetch data from the API. Please try again later.'}
+                Could not fetch data from the API. Please try again later.
               </p>
             </div>
           </div>
@@ -159,11 +91,6 @@ export default function AnimePage() {
     return (
       <main className='p-4 md:p-8 bg-background dark:bg-dark min-h-screen'>
         <div className='max-w-7xl mx-auto'>
-          {/* <h1 className='text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400'>
-                    Anime
-                </h1> */}
-
-          {/* Ongoing Anime Section */}
           <section className='mb-12 space-y-6'>
             <div className='flex items-center justify-between mb-6'>
               <div className='flex items-center gap-4'>
@@ -174,37 +101,10 @@ export default function AnimePage() {
                   Currently Airing Anime
                 </h1>
               </div>
-              <div className='flex items-center gap-2 text-blue-600 dark:text-blue-400'>
-                <span className='skeleton w-16 h-4 rounded'></span>
-                <ArrowRight className='w-4 h-4' />
-              </div>
             </div>
 
             <UnifiedGrid items={[]} loading={true} itemType="anime" />
           </section>
-
-          {/* Complete Anime Section */}
-          {/* <section className='space-y-6'>
-                    <div className='flex items-center justify-between mb-6'>
-                        <div className='flex items-center gap-3'>
-                            <div className='p-3 bg-green-100 dark:bg-green-900/50 rounded-xl'>
-                                <CheckCircle className='w-6 h-6 text-green-600 dark:text-green-400' />
-                            </div>
-                            <h2 className='text-2xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent'>
-                                Complete Anime
-                            </h2>
-                        </div>
-                        <div className='flex items-center gap-2 text-green-600 dark:text-green-400'>
-                            <span className='skeleton w-16 h-4 rounded'></span>
-                            <ArrowRight className='w-4 h-4' />
-                        </div>
-                    </div>
-
-                    <AnimeGrid
-                        animes={[]}
-                        loading={true}
-                    />
-                </section> */}
         </div>
       </main>
     );
@@ -257,3 +157,5 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
     </div>
   );
 };
+
+export default AnimePage;

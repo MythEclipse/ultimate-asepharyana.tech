@@ -1,7 +1,3 @@
-'use client';
-
-import { useParams } from 'next/navigation';
-import useSWR from 'swr';
 import Link from 'next/link';
 import ClientPlayer from '../../../../components/misc/ClientPlayer';
 import { Button } from '../../../../components/ui/button';
@@ -21,6 +17,7 @@ import {
   Server,
   AlertTriangle,
 } from 'lucide-react';
+import { APIURLSERVER } from '../../../../lib/url';
 
 // --- INTERFACES ---
 interface AnimeResponse {
@@ -44,12 +41,7 @@ interface EpisodeInfo {
   slug: string;
 }
 
-import { fetchData } from '../../../../utils/useFetch';
-
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
+export const revalidate = 60;
 
 // --- SKELETON COMPONENT ---
 const PlayerPageSkeleton = () => (
@@ -86,20 +78,12 @@ const PlayerPageSkeleton = () => (
 );
 
 // --- MAIN COMPONENT ---
-export default function WatchAnimePage() {
-  const params = useParams();
-  const slug = params?.slug as string; // Access slug safely
-
-  // --- Menggunakan kembali cara fetch SWR yang lama ---
-  const { data, error, isLoading } = useSWR<AnimeResponse | null>(
-    slug ? `/api/anime/full/${slug}` : null, // Conditionally fetch data
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      refreshInterval: 60000,
-    }
-  );
+export default async function WatchAnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
 
   if (!slug) {
     return (
@@ -115,8 +99,37 @@ export default function WatchAnimePage() {
     );
   }
 
-  if (isLoading) return <PlayerPageSkeleton />;
-  if (error || !data || data.status !== 'Ok') {
+  let data: AnimeResponse | null = null;
+
+  try {
+    const url = `/api/anime/full/${slug}`;
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    data = await response.json();
+  } catch (error) {
+    return (
+      <main className='p-4 md:p-8 flex items-center justify-center min-h-[70vh]'>
+        <Alert variant='destructive' className='max-w-lg'>
+          <AlertTriangle className='h-4 w-4' />
+          <AlertTitle>Gagal Memuat Episode</AlertTitle>
+          <AlertDescription>
+            Terjadi kesalahan saat mengambil data. Episode mungkin tidak ada
+            atau link rusak.
+          </AlertDescription>
+        </Alert>
+      </main>
+    );
+  }
+
+  if (!data || data.status !== 'Ok') {
     return (
       <main className='p-4 md:p-8 flex items-center justify-center min-h-[70vh]'>
         <Alert variant='destructive' className='max-w-lg'>
@@ -201,7 +214,7 @@ export default function WatchAnimePage() {
                     <CardTitle className='text-lg'>{resolution}</CardTitle>
                   </CardHeader>
                   <CardContent className='space-y-2'>
-                    {links.map((link, index) => (
+                    {(links as DownloadLink[]).map((link, index) => (
                       <Button
                         asChild
                         key={index}

@@ -1,16 +1,16 @@
-'use client';
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import { notFound } from 'next/navigation';
 import ComicCard from '../../../../../components/komik/ComicGrid';
+import { APIURLSERVER } from '../../../../../lib/url';
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
+
+export const revalidate = 60;
 
 interface Pagination {
   current_page: number;
@@ -36,77 +36,37 @@ export interface Komik {
   slug: string;
 }
 
-import { fetchData } from '../../../../../utils/useFetch';
-
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
-
-export default function Page() {
-  const params = useParams();
-  const router = useRouter();
-  const pageNumber = parseInt(params?.pageNumber as string, 10);
-
-  const {
-    data: komikData,
-    error,
-    isLoading,
-  } = useSWR<KomikData>(
-    `/api/komik2/manhwa?page=${pageNumber}&order=update`,
-    fetcher,
-    {
-      revalidateIfStale: true,
-      revalidateOnFocus: false,
-      refreshInterval: 60 * 1000,
-    },
-  );
-
-  useEffect(() => {
-    if (isNaN(pageNumber)) {
-      router.replace('/404');
+async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
+  const fetchData = async (url: string) => {
+    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  }, [pageNumber, router]);
+    return await response.json();
+  };
 
-  if (isNaN(pageNumber)) return null;
+  const { pageNumber: pageNumberStr } = await params;
+  const pageNumber = parseInt(pageNumberStr, 10);
 
-  if (isLoading) {
-    return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-                <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Latest Manhwa
-                </h1>
-                <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-                  Halaman {komikData?.pagination?.current_page ?? '-'} dari{' '}
-                  {komikData?.pagination?.last_visible_page ?? '-'}
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/komik/manhwa/page/1"
-              className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30"
-            >
-              Lihat Semua
-              <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
-          <div className="flex flex-col items-center p-4">
-            <div className="grid grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-              {Array.from({ length: 40 }).map((_, index) => (
-                <ComicCard key={index} loading2 />
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
-    );
+  if (isNaN(pageNumber)) {
+    notFound();
+  }
+
+  let komikData: KomikData | null = null;
+  let error: string | null = null;
+
+  try {
+    komikData = await fetchData(`/api/komik2/manhwa?page=${pageNumber}&order=update`);
+  } catch (err) {
+    console.error('Failed to fetch manhwa data on server:', err);
+    error = 'Failed to load manhwa data';
   }
 
   if (error || !komikData) {
@@ -208,3 +168,5 @@ export default function Page() {
     </main>
   );
 }
+
+export default Page;
