@@ -274,12 +274,37 @@ fn parse_komik_detail_document(
   let start_time = std::time::Instant::now();
   info!("Starting to parse komik2 detail document");
 
+  // Helper function to clean and format extracted text
+  fn clean_text(text: String) -> String {
+    text.replace('\n', " ").replace('\t', " ").trim().to_string()
+  }
+
+  // Helper function to extract text after a keyword or colon
+  fn extract_value_after_keyword(
+    full_text: &str,
+    keywords: &[&str],
+    default_index: usize
+  ) -> String {
+    let lower_text = full_text.to_lowercase();
+    for keyword in keywords {
+      if let Some(pos) = lower_text.find(&format!("{}:", keyword)) {
+        return clean_text(full_text[pos + keyword.len() + 1..].to_string());
+      } else if let Some(pos) = lower_text.find(&format!("{} ", keyword)) {
+        return clean_text(full_text[pos + keyword.len() + 1..].to_string());
+      }
+    }
+    if let Some(colon_pos) = full_text.find(':') {
+      return clean_text(full_text[colon_pos + 1..].to_string());
+    }
+    clean_text(full_text[default_index..].to_string())
+  }
+
   // Improved title extraction with fallback options
   let title = document
     .select(&TITLE_SELECTOR)
     .next()
     .map(|e| {
-      let text = e.text().collect::<String>().trim().to_string();
+      let text = clean_text(e.text().collect::<String>());
       // Remove common prefixes/suffixes that might be included
       text
         .replace("Komik ", "")
@@ -294,7 +319,7 @@ fn parse_komik_detail_document(
       document
         .select(&Selector::parse("h1").unwrap())
         .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .map(|e| clean_text(e.text().collect::<String>()))
     })
     .or_else(|| {
       // Final fallback to document title
@@ -302,7 +327,7 @@ fn parse_komik_detail_document(
         .select(&Selector::parse("title").unwrap())
         .next()
         .map(|e| {
-          let text = e.text().collect::<String>();
+          let text = clean_text(e.text().collect::<String>());
           if text.contains("Komik ") {
             text.replace("Komik ", "").trim().to_string()
           } else {
@@ -314,105 +339,63 @@ fn parse_komik_detail_document(
 
   let status = document
     .select(&INFO_ROW_SELECTOR)
-    .find(|row| {
-      let text = row.text().collect::<String>();
-      text.to_lowercase().contains("status")
-    })
-    .map(|row| {
+    .find_map(|row| {
       let full_text = row.text().collect::<String>();
-      let lower_text = full_text.to_lowercase();
-
-      let status_value = if let Some(status_pos) = lower_text.find("status:") {
-        &full_text[status_pos + 7..]
-      } else if let Some(colon_pos) = full_text.find(':') {
-        &full_text[colon_pos + 1..]
+      if full_text.to_lowercase().contains("status") {
+        Some(
+          extract_value_after_keyword(&full_text, &["status"], 0)
+            .replace("Status", "")
+            .replace("Jenis Komik", "")
+            .replace("Type", "")
+            .trim()
+            .to_string()
+        )
       } else {
-        full_text.as_str()
-      };
-
-      status_value
-        .replace('\n', " ")
-        .replace('\t', " ")
-        .replace("Status", "")
-        .replace("Jenis Komik", "")
-        .replace("Type", "")
-        .trim()
-        .to_string()
+        None
+      }
     })
     .unwrap_or_default();
 
   let r#type = document
     .select(&INFO_ROW_SELECTOR)
-    .find(|row| {
-      let text = row.text().collect::<String>();
-      text.to_lowercase().contains("jenis komik") || text.to_lowercase().contains("type")
-    })
-    .map(|row| {
+    .find_map(|row| {
       let full_text = row.text().collect::<String>();
-      let lower_text = full_text.to_lowercase();
-
-      let type_value = if let Some(jk_pos) = lower_text.find("jenis komik:") {
-        &full_text[jk_pos + 11..]
-      } else if let Some(type_pos) = lower_text.find("type:") {
-        &full_text[type_pos + 5..]
-      } else if let Some(colon_pos) = full_text.find(':') {
-        &full_text[colon_pos + 1..]
+      if full_text.to_lowercase().contains("jenis komik") || full_text.to_lowercase().contains("type") {
+        Some(
+          extract_value_after_keyword(&full_text, &["jenis komik", "type"], 0)
+            .replace("Jenis Komik", "")
+            .replace("Type", "")
+            .trim()
+            .to_string()
+        )
       } else {
-        full_text.as_str()
-      };
-
-      type_value
-        .replace('\n', " ")
-        .replace('\t', " ")
-        .replace("Jenis Komik", "")
-        .replace("Type", "")
-        .trim()
-        .to_string()
+        None
+      }
     })
     .unwrap_or_default();
 
   let author = document
     .select(&INFO_ROW_SELECTOR)
-    .find(|row| {
-      let text = row.text().collect::<String>();
-      text.to_lowercase().contains("pengarang") || text.to_lowercase().contains("author") || text.to_lowercase().contains("artist")
-    })
-    .map(|row| {
+    .find_map(|row| {
       let full_text = row.text().collect::<String>();
-      let lower_text = full_text.to_lowercase();
-
-      let author_name = if let Some(pos) = lower_text.find("pengarang:") {
-        &full_text[pos + 10..]
-      } else if let Some(pos) = lower_text.find("pengarang ") {
-        &full_text[pos + 10..]
-      } else if let Some(pos) = lower_text.find("author:") {
-        &full_text[pos + 7..]
-      } else if let Some(pos) = lower_text.find("author ") {
-        &full_text[pos + 7..]
-      } else if let Some(pos) = lower_text.find("artist:") {
-        &full_text[pos + 7..]
-      } else if let Some(pos) = lower_text.find("artist ") {
-        &full_text[pos + 7..]
-      } else if let Some(colon_pos) = full_text.find(':') {
-        &full_text[colon_pos + 1..]
+      if
+        full_text.to_lowercase().contains("pengarang") ||
+        full_text.to_lowercase().contains("author") ||
+        full_text.to_lowercase().contains("artist")
+      {
+        Some(
+          extract_value_after_keyword(&full_text, &["pengarang", "author", "artist"], 0)
+            .replace("Pengarang", "")
+            .replace("Author", "")
+            .replace("pengarang", "")
+            .replace("author", "")
+            .replace("Artist", "")
+            .replace("artist", "")
+            .trim()
+            .to_string()
+        )
       } else {
-        full_text.as_str()
-      };
-
-      let final_author = author_name
-        .replace("Pengarang", "")
-        .replace("Author", "")
-        .replace("pengarang", "")
-        .replace("author", "")
-        .replace("Artist", "")
-        .replace("artist", "")
-        .trim()
-        .to_string();
-
-      if final_author.starts_with("Pengarang") || final_author.starts_with("pengarang") {
-        final_author.split_whitespace().skip(1).collect::<Vec<_>>().join(" ")
-      } else {
-        final_author
+        None
       }
     })
     .unwrap_or_default();
@@ -426,7 +409,7 @@ fn parse_komik_detail_document(
 
   let description = document
     .select(&DESCRIPTION_SELECTOR)
-    .map(|e| e.text().collect::<String>())
+    .map(|e| clean_text(e.text().collect::<String>()))
     .filter(|t| t.len() > 50) // avoid tiny fragments
     .collect::<Vec<String>>()
     .join("\n")
@@ -435,28 +418,23 @@ fn parse_komik_detail_document(
 
   // Extract release date, total chapter, and updated_on using specific selectors first
   let release_date = find_table_row_with_text(
-    &RELEASE_DATE_SELECTOR,
+    &INFO_ROW_SELECTOR, // Use INFO_ROW_SELECTOR for consistency
     document,
     &["tanggal rilis", "release date"]
   )
-    .map(|date| {
-      // Clean up whitespace including newlines and extra spaces
-      date.replace('\n', " ").replace('\t', " ").trim().to_string()
-    })
+    .map(clean_text)
     .unwrap_or_else(|| {
       // Fallback to last chapter date if no specific release date found
       document
         .select(&CHAPTER_LIST_SELECTOR)
         .last()
         .and_then(|last| last.select(&DATE_LINK_SELECTOR).next())
-        .map(|e|
-          e.text().collect::<String>().replace('\n', " ").replace('\t', " ").trim().to_string()
-        )
+        .map(|e| clean_text(e.text().collect::<String>()))
         .unwrap_or_default()
     });
 
   let total_chapter = find_table_row_with_text(
-    &TOTAL_CHAPTER_SELECTOR,
+    &INFO_ROW_SELECTOR, // Use INFO_ROW_SELECTOR for consistency
     document,
     &["total chapter", "total chapters"]
   ).unwrap_or_else(|| {
@@ -470,7 +448,7 @@ fn parse_komik_detail_document(
   });
 
   let updated_on = find_table_row_with_text(
-    &UPDATED_ON_SELECTOR,
+    &INFO_ROW_SELECTOR, // Use INFO_ROW_SELECTOR for consistency
     document,
     &["diperbarui", "updated"]
   )
@@ -480,7 +458,7 @@ fn parse_komik_detail_document(
         .select(&JUDUL2_SELECTOR)
         .next()
         .map(|e| {
-          let text = e.text().collect::<String>().trim().to_string();
+          let text = clean_text(e.text().collect::<String>());
           // Extract the part after "• " which contains the time information
           text.split("• ").nth(1).unwrap_or("").trim().to_string()
         })
@@ -491,13 +469,13 @@ fn parse_komik_detail_document(
         .select(&CHAPTER_LIST_SELECTOR)
         .next()
         .and_then(|first| first.select(&DATE_LINK_SELECTOR).next())
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .map(|e| clean_text(e.text().collect::<String>()))
         .unwrap_or_default()
     });
 
   let mut genres = Vec::new();
   for element in document.select(&GENRE_SELECTOR) {
-    let genre = element.text().collect::<String>().trim().to_string();
+    let genre = clean_text(element.text().collect::<String>());
     if !genre.is_empty() {
       genres.push(genre);
     }
@@ -512,10 +490,10 @@ fn parse_komik_detail_document(
 
       let chapter_text = chapter_link_element
         .as_ref()
-        .map(|e| e.text().collect::<String>())
+        .map(|e| clean_text(e.text().collect::<String>()))
         .unwrap_or_default();
 
-      let date_text = date_element.map(|e| e.text().collect::<String>()).unwrap_or_default();
+      let date_text = date_element.map(|e| clean_text(e.text().collect::<String>())).unwrap_or_default();
 
       let href_text = chapter_link_element
         .and_then(|e| e.value().attr("href"))
