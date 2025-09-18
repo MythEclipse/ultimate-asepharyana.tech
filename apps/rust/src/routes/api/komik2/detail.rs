@@ -78,9 +78,7 @@ static TITLE_SELECTOR: Lazy<Selector> = Lazy::new(||
   Selector::parse("h1#Judul, h1.entry-title, .entry-title, .title-series, .post-title").unwrap()
 );
 static INFO_ROW_SELECTOR: Lazy<Selector> = Lazy::new(||
-  Selector::parse(
-    ".spe span, .inftable tr, .infos .infox .spe span, .info dd, .detail-info dd, .infobox p, .infobox span, .ts-information-box .imptdt, .manga-info-content li"
-  ).unwrap()
+  Selector::parse("table.inftable tr").unwrap()
 );
 static POSTER_SELECTOR: Lazy<Selector> = Lazy::new(||
   Selector::parse("#Imgnovel, div.ims img, .thumb img, .poster img").unwrap()
