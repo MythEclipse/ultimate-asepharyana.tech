@@ -97,6 +97,7 @@ export default function WatchAnimePage() {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      refreshInterval: 60000,
     }
   );
 

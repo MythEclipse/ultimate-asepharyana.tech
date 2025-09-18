@@ -1,25 +1,50 @@
-import { Redis } from '@upstash/redis';
+import { createClient, RedisClientType } from 'redis';
 import logger from '../utils/logger';
 
-if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-  throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set');
-}
+const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+const redisPort = parseInt(process.env.REDIS_PORT || '6379');
+const redisPassword = process.env.REDIS_PASSWORD || '';
 
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+export const redis: RedisClientType = createClient({
+  socket: {
+    host: redisHost,
+    port: redisPort,
+  },
+  password: redisPassword || undefined,
+});
+
+// Handle connection events
+redis.on('error', (err) => {
+  logger.error('[Redis] Connection error:', err);
+});
+
+redis.on('connect', () => {
+  logger.info('[Redis] Connected successfully');
+});
+
+redis.on('ready', () => {
+  logger.info('[Redis] Client ready');
+});
+
+redis.on('end', () => {
+  logger.info('[Redis] Connection ended');
+});
+
+// Connect to Redis
+redis.connect().catch((err) => {
+  logger.error('[Redis] Failed to connect:', err);
 });
 
 // Test Redis connection
 export async function testRedisConnection(): Promise<boolean> {
   try {
     logger.info('[Redis] Testing connection with config:', {
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length
+      host: redisHost,
+      port: redisPort,
+      hasPassword: !!redisPassword
     });
 
-    await redis.set('test-connection', 'ok', { ex: 10 });
+    await redis.set('test-connection', 'ok', { EX: 10 });
     const result = await redis.get('test-connection');
     if (result === 'ok') {
       logger.info('[Redis] Connection test successful');
@@ -33,9 +58,9 @@ export async function testRedisConnection(): Promise<boolean> {
       message: error.message,
       code: error.code,
       stack: error.stack,
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-      tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length
+      host: redisHost,
+      port: redisPort,
+      hasPassword: !!redisPassword
     });
     return false;
   }

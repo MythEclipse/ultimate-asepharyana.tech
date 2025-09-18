@@ -55,6 +55,9 @@ export default function AnimePage() {
       if (response.status && response.status >= 400) throw new Error('Gagal memuat data');
       return response.data;
     },
+    {
+      refreshInterval: 60000,
+    }
   );
 
   if (!slug) {

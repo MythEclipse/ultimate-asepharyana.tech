@@ -134,7 +134,8 @@ export default function DetailAnimePage() {
 
   const { data, error, isLoading } = useSWR<{ data: AnimeData }>(
     slug ? `/api/anime2/detail/${slug}` : null,
-    fetcher
+    fetcher,
+    { refreshInterval: 60000 }
   );
 
   if (isLoading) return <DetailPageSkeleton />;

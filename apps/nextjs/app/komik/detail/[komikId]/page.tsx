@@ -109,6 +109,7 @@ export default function DetailMangaPage() {
   } = useSWR<ApiResponse>(
     komikId ? `/api/komik2/detail?komik_id=${komikId}` : null,
     fetcher,
+    { refreshInterval: 60000 }
   );
 
   const [bookmarked, setBookmarked] = useState(false);

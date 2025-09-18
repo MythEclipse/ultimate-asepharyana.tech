@@ -53,7 +53,8 @@ export default function AnimePage() {
 
   const { data, error, isLoading } = useSWR<CompleteAnimeData | null>(
     slug ? `/api/anime/complete-anime/${slug}` : null, // Conditionally fetch data
-    fetcher
+    fetcher,
+    { refreshInterval: 60000 }
   );
 
   if (!slug) {

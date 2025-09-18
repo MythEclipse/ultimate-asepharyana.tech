@@ -55,6 +55,7 @@ export default function AnimePage() {
     fetcher,
     {
       revalidateOnFocus: false,
+      refreshInterval: 60000,
     }
   );
 

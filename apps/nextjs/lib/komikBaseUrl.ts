@@ -11,7 +11,7 @@ const KOMIK_BASE_URL_LOCK_KEY = 'komik:baseurl:lock';
 const KOMIK_BASE_URL_KEY = 'komik:baseurl';
 
 async function acquireRedisLock(key: string, ttlMs: number): Promise<boolean> {
-  return await redis.set(key, 'locked', { nx: true, px: ttlMs }) === 'OK';
+  return await redis.set(key, 'locked', { NX: true, PX: ttlMs }) === 'OK';
 }
 
 async function releaseRedisLock(key: string) {
@@ -107,7 +107,7 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
       }
       logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
       // Cache the result immediately for other waiters
-      await redis.set(KOMIK_BASE_URL_KEY, orgLink.replace(/\/$/, ''), { ex: 60 * 60 * 24 * 30 });
+      await redis.set(KOMIK_BASE_URL_KEY, orgLink.replace(/\/$/, ''), { EX: 60 * 60 * 24 * 30 });
       return orgLink.replace(/\/$/, '');
     } finally {
       await releaseRedisLock(KOMIK_BASE_URL_LOCK_KEY);
@@ -128,7 +128,7 @@ export const getCachedKomikBaseUrl = async (forceRefresh = false): Promise<strin
   }
   // Fetch new value and cache it
   const url = await getDynamicKomikBaseUrl();
-  await redis.set(KOMIK_BASE_URL_KEY, url, { ex: 60 * 60 * 24 * 30 });
+  await redis.set(KOMIK_BASE_URL_KEY, url, { EX: 60 * 60 * 24 * 30 });
   logger.info('[getCachedKomikBaseUrl] Refreshed and cached base URL', { url });
   return url;
 };

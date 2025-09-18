@@ -69,7 +69,7 @@ async function setCachedFetch(
 ) {
   try {
     const key = getFetchCacheKey(slug);
-    await redis.set(key, JSON.stringify(value), { ex: 120 });
+    await redis.set(key, JSON.stringify(value), { EX: 120 });
   } catch (redisError) {
     logger.warn(`[fetchWithProxy] Redis set failed for ${slug}:`, {
       error: redisError,

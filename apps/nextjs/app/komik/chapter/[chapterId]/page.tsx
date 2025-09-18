@@ -42,6 +42,7 @@ export default function ChapterPage() {
     {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
+      refreshInterval: 60000,
     },
   );
 

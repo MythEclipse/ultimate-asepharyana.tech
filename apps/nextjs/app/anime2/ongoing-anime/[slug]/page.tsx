@@ -55,6 +55,9 @@ export default function AnimePage() {
   const { data, error, isLoading } = useSWR<OngoingAnimeData | null>(
     slug ? `/api/anime2/ongoing-anime/${slug}` : null,
     fetcher,
+    {
+      refreshInterval: 60000,
+    }
   );
 
   if (!slug) {

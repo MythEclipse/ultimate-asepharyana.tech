@@ -1,10 +1,8 @@
-'use client';
+import React from 'react';
+import KomikPageClient from './KomikPageClient';
+import { serverFetch } from '../../utils/serverFetch';
 
-import React, { memo } from 'react';
-import useSWR from 'swr';
-import Link from 'next/link';
-import UnifiedGrid from '../../components/shared/UnifiedGrid';
-import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
+export const revalidate = 60;
 
 export interface Komik {
   title: string;
@@ -16,132 +14,53 @@ export interface Komik {
   slug: string;
 }
 
-import { fetchData } from '../../utils/useFetch';
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data;
-};
+interface KomikData {
+  data: Komik[];
+}
 
-function HomePage() {
-  const { data: manga, error: mangaError } = useSWR(
-    `/api/komik2/manga?page=1&order=update`,
-    fetcher,
-  );
-  const { data: manhua, error: manhuaError } = useSWR(
-    `/api/komik2/manhua?page=1&order=update`,
-    fetcher,
-  );
-  const { data: manhwa, error: manhwaError } = useSWR(
-    `/api/komik2/manhwa?page=1&order=update`,
-    fetcher,
-  );
+async function HomePage() {
+  let initialManga: KomikData | null = null;
+  let initialManhua: KomikData | null = null;
+  let initialManhwa: KomikData | null = null;
+  let error: string | null = null;
 
-  const error = mangaError || manhuaError || manhwaError;
+  try {
+    // Fetch all three endpoints concurrently
+    const [mangaResponse, manhuaResponse, manhwaResponse] = await Promise.allSettled([
+      serverFetch('/api/komik2/manga?page=1&order=update'),
+      serverFetch('/api/komik2/manhua?page=1&order=update'),
+      serverFetch('/api/komik2/manhwa?page=1&order=update'),
+    ]);
 
-  // Menentukan status loading untuk setiap kategori
-  const isLoading = {
-    Manga: !manga && !mangaError,
-    Manhua: !manhua && !manhuaError,
-    Manhwa: !manhwa && !manhwaError,
-  };
-  // const Skeleton = () => (
-  //   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-  //     {[...Array(40)].map((_, i) => (
-  //       <div key={i} className="animate-pulse space-y-3">
-  //         <div className="aspect-[2/3] w-full rounded-xl bg-gray-200 dark:bg-gray-700" />
-  //         <div className="space-y-2">
-  //           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-  //           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-  //           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
-  //         </div>
-  //       </div>
-  //     ))}
-  //   </div>
-  // );
+    if (mangaResponse.status === 'fulfilled') {
+      initialManga = mangaResponse.value;
+    }
+    if (manhuaResponse.status === 'fulfilled') {
+      initialManhua = manhuaResponse.value;
+    }
+    if (manhwaResponse.status === 'fulfilled') {
+      initialManhwa = manhwaResponse.value;
+    }
+
+    // If all failed, set error
+    if (mangaResponse.status === 'rejected' &&
+        manhuaResponse.status === 'rejected' &&
+        manhwaResponse.status === 'rejected') {
+      error = 'Failed to load komik data';
+    }
+  } catch (err) {
+    console.error('Failed to fetch komik data on server:', err);
+    error = 'Failed to load komik data';
+  }
+
   return (
-    <main className="min-h-screen p-4 md:p-8 lg:p-12 bg-background text-foreground">
-      <div className="max-w-7xl mx-auto space-y-12">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-            <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Komik Catalog
-          </h1>
-        </div>
-
-        {error ? (
-          <div className="p-4 sm:p-6 bg-red-100 dark:bg-red-900/30 rounded-xl sm:rounded-2xl flex items-center gap-3 sm:gap-4">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
-            <div>
-              <h2 className="text-lg sm:text-xl font-medium text-red-800 dark:text-red-200 mb-1 sm:mb-2">
-                Error Loading Data
-              </h2>
-              <p className="text-red-700 dark:text-red-300">
-                Failed to fetch comic data. Please try again later.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-12">
-            {['Manga', 'Manhua', 'Manhwa'].map((type) => {
-              const komiks = {
-                Manga: manga?.data,
-                Manhua: manhua?.data,
-                Manhwa: manhwa?.data,
-              }[type];
-
-              return (
-                <section key={type} className="mb-12 space-y-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
-                        <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        {type}
-                      </h2>
-                    </div>
-                    <Link
-                      href={`/komik/${type.toLowerCase()}/page/1`}
-                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                    >
-                      View All
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-
-                  {isLoading[type as keyof typeof isLoading] ? (
-                    <UnifiedGrid loading={true} items={[]} itemType="komik" />
-                  ) : komiks ? (
-                    komiks.length > 0 ? (
-                      <UnifiedGrid
-                        items={komiks.map((comic: Komik) => ({
-                          slug: comic.slug,
-                          title: comic.title,
-                          poster: comic.poster,
-                          chapter: comic.chapter,
-                          chapter_count: comic.chapter, // Assuming chapter here refers to latest chapter text, and we can use it for count display as well
-                        }))}
-                        itemType="komik"
-                      />
-                    ) : (
-                      <div className="p-4 sm:p-6 bg-blue-100 dark:bg-blue-900/30 rounded-xl sm:rounded-2xl flex items-center gap-3 sm:gap-4">
-                        <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                        <h3 className="text-base sm:text-lg font-medium text-blue-800 dark:text-blue-200">
-                          No {type} available at the moment
-                        </h3>
-                      </div>
-                    )
-                  ) : null}
-                </section>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </main>
+    <KomikPageClient
+      initialManga={initialManga}
+      initialManhua={initialManhua}
+      initialManhwa={initialManhwa}
+      initialError={error}
+    />
   );
 }
 
-export default memo(HomePage);
+export default HomePage;

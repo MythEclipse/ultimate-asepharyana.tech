@@ -149,7 +149,7 @@ export async function scrapeCroxyProxyCached(targetUrl: string): Promise<string>
     return cached;
   }
   const html = await scrapeCroxyProxy(targetUrl);
-  await redis.set(cacheKey, html, { ex: 3600 });
+  await redis.set(cacheKey, html, { EX: 3600 });
   logger.info(`[scrapeCroxyProxyCached] Cached result for ${targetUrl} (1 hour)`);
   return html;
 }
