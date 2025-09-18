@@ -16,6 +16,7 @@ use deadpool_redis::redis::AsyncCommands;
 use rayon::prelude::*;
 use once_cell::sync::Lazy;
 use futures::{ StreamExt, FutureExt };
+use regex::Regex;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/detail";
@@ -511,11 +512,17 @@ fn parse_komik_detail_document(
   let chapters: Vec<Chapter> = raw_chapter_data
     .par_iter()
     .filter_map(|(chapter_text, date_text, href_text)| {
-      let chapter = chapter_text
-        .split_whitespace()
-        .find(|&s| s.chars().any(|c| c.is_digit(10)))
-        .map(|num_part| num_part.to_string())
-        .unwrap_or(chapter_text.trim().to_string());
+      let chapter = {
+        let trimmed_chapter_text = chapter_text.trim();
+        // Try to find "Chapter N", "Ch. N", or just "N"
+        if let Some(captures) = regex::Regex::new(r"(?i)(?:chapter|ch\.?)\s*(\d+)").unwrap().captures(trimmed_chapter_text) {
+          captures.get(1).map_or(trimmed_chapter_text.to_string(), |m| m.as_str().to_string())
+        } else if let Some(captures) = regex::Regex::new(r"\b(\d+)\b").unwrap().captures(trimmed_chapter_text) {
+          captures.get(1).map_or(trimmed_chapter_text.to_string(), |m| m.as_str().to_string())
+        } else {
+          trimmed_chapter_text.to_string()
+        }
+      };
 
       let date = date_text.trim().to_string();
 
