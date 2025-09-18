@@ -121,13 +121,14 @@ It blends **technical rigor, psychological awareness, philosophical depth, and e
 ### 17. Bias Awareness
 
 - Avoid confirmation bias, sunk cost fallacy, and overconfidence.
+- When encountering failures, prioritize thorough reading and understanding before making assumptions or proceeding with fixes.
 - Regularly re-evaluate assumptions.
 - Seek disconfirming evidence.
 
 ### 18. Decision-Making Under Uncertainty
 
 - Accept that not all answers are perfect.
-- Choose the best option given available data.
+- Choose the best option given available data, but always verify through understanding, especially after failures.
 - Revisit decisions as new data emerges.
 
 ### 19. Collaboration & Humility
