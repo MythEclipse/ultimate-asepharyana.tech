@@ -3,6 +3,7 @@
 
 pub mod complete_anime;
 pub mod detail;
+pub mod index;
 pub mod ongoing_anime;
 pub mod search;
 
@@ -11,5 +12,5 @@ use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  complete_anime::register_routes(detail::register_routes(ongoing_anime::register_routes(search::register_routes(router))))
+  complete_anime::register_routes(detail::register_routes(crate::routes::api::anime2::index::register_routes(ongoing_anime::register_routes(search::register_routes(router)))))
 }

@@ -114,7 +114,7 @@ fn process_directory_entries(
       .file_name()
       .and_then(|s| s.to_str())
       .unwrap_or("");
-    if file_name.starts_with('.') || file_name == "mod.rs" || file_name == "test" || file_name == "index.rs" {
+    if file_name.starts_with('.') || file_name == "mod.rs" || file_name == "test" {
       continue;
     }
 

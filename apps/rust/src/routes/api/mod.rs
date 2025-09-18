@@ -23,14 +23,18 @@ use crate::routes::api::anime2::detail::slug::DownloadItem;
 use crate::routes::api::anime2::detail::slug::Genre;
 use crate::routes::api::anime2::detail::slug::Link;
 use crate::routes::api::anime2::detail::slug::Recommendation;
-use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeItem;
+use crate::routes::api::anime2::index::Anime2Data;
+use crate::routes::api::anime2::index::Anime2Response;
+use crate::routes::api::anime2::index::CompleteAnimeItem as CompleteAnimeItem_1;
+use crate::routes::api::anime2::index::OngoingAnimeItem;
+use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_1;
 use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeResponse;
 use crate::routes::api::anime2::ongoing_anime::slug::Pagination as Pagination_1;
 use crate::routes::api::anime2::search::AnimeItem;
 use crate::routes::api::anime2::search::Pagination as Pagination_2;
 use crate::routes::api::anime2::search::SearchQuery;
 use crate::routes::api::anime2::search::SearchResponse;
-use crate::routes::api::anime::complete_anime::slug::CompleteAnimeItem as CompleteAnimeItem_1;
+use crate::routes::api::anime::complete_anime::slug::CompleteAnimeItem as CompleteAnimeItem_2;
 use crate::routes::api::anime::complete_anime::slug::ListResponse as ListResponse_1;
 use crate::routes::api::anime::complete_anime::slug::Pagination as Pagination_3;
 use crate::routes::api::anime::detail::slug::AnimeDetailData as AnimeDetailData_1;
@@ -43,7 +47,11 @@ use crate::routes::api::anime::full::slug::AnimeInfo;
 use crate::routes::api::anime::full::slug::DownloadLink;
 use crate::routes::api::anime::full::slug::EpisodeInfo;
 use crate::routes::api::anime::full::slug::FullResponse;
-use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_1;
+use crate::routes::api::anime::index::AnimeData;
+use crate::routes::api::anime::index::AnimeResponse;
+use crate::routes::api::anime::index::CompleteAnimeItem as CompleteAnimeItem_3;
+use crate::routes::api::anime::index::OngoingAnimeItem as OngoingAnimeItem_2;
+use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_3;
 use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeResponse as OngoingAnimeResponse_1;
 use crate::routes::api::anime::ongoing_anime::slug::Pagination as Pagination_4;
 use crate::routes::api::anime::search::AnimeItem as AnimeItem_1;
@@ -108,10 +116,12 @@ paths(
               crate::routes::api::anime::complete_anime::slug::slug,
               crate::routes::api::anime::detail::slug::slug,
               crate::routes::api::anime::full::slug::slug,
+              crate::routes::api::anime::index::anime,
               crate::routes::api::anime::ongoing_anime::slug::slug,
               crate::routes::api::anime::search::search,
               crate::routes::api::anime2::complete_anime::slug::slug,
               crate::routes::api::anime2::detail::slug::slug,
+              crate::routes::api::anime2::index::anime2,
               crate::routes::api::anime2::ongoing_anime::slug::slug,
               crate::routes::api::anime2::search::search,
               crate::routes::api::compress::compress,
@@ -142,14 +152,18 @@ components(
                   Genre,
                   Link,
                   Recommendation,
+                  Anime2Data,
+                  Anime2Response,
+                  CompleteAnimeItem_1,
                   OngoingAnimeItem,
+                  OngoingAnimeItem_1,
                   OngoingAnimeResponse,
                   Pagination_1,
                   AnimeItem,
                   Pagination_2,
                   SearchQuery,
                   SearchResponse,
-                  CompleteAnimeItem_1,
+                  CompleteAnimeItem_2,
                   ListResponse_1,
                   Pagination_3,
                   AnimeDetailData_1,
@@ -162,7 +176,11 @@ components(
                   DownloadLink,
                   EpisodeInfo,
                   FullResponse,
-                  OngoingAnimeItem_1,
+                  AnimeData,
+                  AnimeResponse,
+                  CompleteAnimeItem_3,
+                  OngoingAnimeItem_2,
+                  OngoingAnimeItem_3,
                   OngoingAnimeResponse_1,
                   Pagination_4,
                   AnimeItem_1,
