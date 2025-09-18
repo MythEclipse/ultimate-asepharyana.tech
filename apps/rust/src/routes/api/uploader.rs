@@ -28,14 +28,18 @@ pub struct ListResponse {
 }
 
 #[utoipa::path(
-    get,
-    path = "/api//uploader",
-    tag = "uploader",
-    operation_id = "uploader",
-    responses(
-        (status = 200, description = "Handles GET requests for the uploader endpoint.", body = ListResponse),
-        (status = 500, description = "Internal Server Error", body = String)
-    )
+  get,
+  path = "/api/uploader",
+  tag = "uploader",
+  operation_id = "uploader",
+  responses(
+    (
+      status = 200,
+      description = "Handles GET requests for the uploader endpoint.",
+      body = ListResponse,
+    ),
+    (status = 500, description = "Internal Server Error", body = String)
+  )
 )]
 pub async fn uploader() -> impl IntoResponse {
   Json(ListResponse {
@@ -48,5 +52,5 @@ pub async fn uploader() -> impl IntoResponse {
 /// Handles GET requests for the uploader endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(uploader))
+  router.route(ENDPOINT_PATH, get(uploader))
 }
