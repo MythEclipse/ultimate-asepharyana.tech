@@ -12,6 +12,7 @@ use lazy_static::lazy_static;
 use axum::extract::State;
 use axum::http::StatusCode;
 use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use regex::Regex;
 use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
@@ -275,6 +276,13 @@ fn parse_komik2_chapter_document(
       .unwrap_or_default()
   };
 
+  fn get_list_chapter_from_url(chapter_url: &str) -> String {
+    let re = regex::Regex::new(r"-chapter-\d+").unwrap();
+    re.replace_all(chapter_url, "").to_string()
+  }
+
+  let list_chapter = get_list_chapter_from_url(&chapter_url);
+
   let mut images = Vec::new();
   let forbidden_images = [
     "https://flagcdn.com/32x24/jp.png",
@@ -311,8 +319,8 @@ fn parse_komik2_chapter_document(
   Ok(ChapterData {
     title,
     next_chapter_id,
-    list_chapter,
     prev_chapter_id,
+    list_chapter,
     images,
   })
 }
