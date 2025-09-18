@@ -9,7 +9,7 @@ use serde_json;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/uploader";
+pub const ENDPOINT_PATH: &str = "uploader";
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the uploader endpoint.";
 pub const ENDPOINT_TAG: &str = "uploader";
 pub const OPERATION_ID: &str = "uploader";
@@ -29,7 +29,7 @@ pub struct ListResponse {
 
 #[utoipa::path(
     get,
-    path = "/api//uploader",
+    path = "/api/uploader",
     tag = "uploader",
     operation_id = "uploader",
     responses(
