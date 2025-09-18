@@ -311,11 +311,12 @@ fn parse_komik2_chapter_document(
   Ok(ChapterData {
     title,
     next_chapter_id,
+    list_chapter,
     prev_chapter_id,
     images,
   })
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(chapter))
+  router.route(ENDPOINT_PATH, get(chapter))
 }
