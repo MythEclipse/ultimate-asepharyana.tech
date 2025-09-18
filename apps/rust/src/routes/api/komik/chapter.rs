@@ -142,7 +142,7 @@ async fn fetch_komik_chapter(
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
   let base_url = "https://komikindo.ch"; // Updated as per user feedback
-  let url = format!("{}/chapter/{}", base_url, chapter_url);
+  let url = format!("{}/chapter/{}/", base_url, chapter_url);
 
   // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
@@ -223,5 +223,5 @@ fn parse_komik_chapter_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(chapter))
+  router.route(ENDPOINT_PATH, get(chapter))
 }

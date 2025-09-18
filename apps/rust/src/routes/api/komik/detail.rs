@@ -172,7 +172,7 @@ async fn fetch_komik_detail(
 ) -> Result<DetailData, Box<dyn std::error::Error + Send + Sync>> {
   let start_time = std::time::Instant::now();
   let base_url = "https://komikindo.ch"; // Updated as per user feedback
-  let url = format!("{}/komik/{}", base_url, komik_id);
+  let url = format!("{}/komik/{}/", base_url, komik_id);
 
   // Retry logic with exponential backoff
   let backoff = ExponentialBackoff {
