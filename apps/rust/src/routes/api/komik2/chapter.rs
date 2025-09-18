@@ -16,7 +16,6 @@ use rust_lib::urls::get_komik2_url;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;
-
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik2/chapter";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves chapter data for a specific komik2 chapter.";
@@ -55,9 +54,7 @@ lazy_static! {
   static ref NEXT_CHAPTER_SELECTOR: Selector = Selector::parse(
     ".nxpr a.rl, .nxpr a.next, .chnext a, a.next"
   ).unwrap();
-  static ref IMAGE_SELECTOR: Selector = Selector::parse(
-    "img[data-src], img[src], #Baca_Komik img, .entry-content img"
-  ).unwrap();
+  static ref IMAGE_SELECTOR: Selector = Selector::parse("#Baca_Komik img").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -229,7 +226,8 @@ fn parse_komik2_chapter_document(
       let suffix = &chapter_url[pattern_pos + CHAPTER_PATTERN.len()..];
 
       // Try to extract chapter number (handles 1, 2, or more digit numbers)
-      let chapter_num = suffix.chars()
+      let chapter_num = suffix
+        .chars()
         .take_while(|c| c.is_digit(10))
         .collect::<String>();
 
