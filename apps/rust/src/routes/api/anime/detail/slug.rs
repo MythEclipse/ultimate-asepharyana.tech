@@ -44,8 +44,10 @@ pub struct Recommendation {
   pub title: String,
   pub slug: String,
   pub poster: String,
-  pub status: String,
-  pub r#type: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub status: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub r#type: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -53,21 +55,27 @@ pub struct AnimeDetailData {
   pub title: String,
   pub alternative_title: String,
   pub poster: String,
-  pub r#type: String,
-  pub status: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub r#type: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub status: Option<String>,
   pub release_date: String,
   pub studio: String,
+  #[serde(skip_serializing_if = "Vec::is_empty")]
   pub genres: Vec<Genre>,
   pub synopsis: String,
   pub episode_lists: Vec<EpisodeList>,
+  #[serde(skip_serializing_if = "Vec::is_empty")]
   pub batch: Vec<EpisodeList>,
+  #[serde(skip_serializing_if = "Vec::is_empty")]
   pub producers: Vec<String>,
   pub recommendations: Vec<Recommendation>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct DetailResponse {
-  pub status: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub status: Option<String>,
   pub data: AnimeDetailData,
 }
 
@@ -133,7 +141,7 @@ pub async fn slug(
   })?;
 
   let detail_response = DetailResponse {
-    status: "Ok".to_string(),
+    status: Some("Ok".to_string()),
     data: data.clone(),
   };
   let json_data = serde_json::to_string(&detail_response).map_err(|e| {
@@ -206,8 +214,8 @@ fn parse_anime_detail_document(document: &Html, _slug: &str) -> Result<AnimeDeta
 
   let mut title = String::new();
   let mut alternative_title = String::new();
-  let mut r#type = String::new();
-  let mut status = String::new();
+  let mut r#type: Option<String> = None;
+  let mut status: Option<String> = None;
   let mut release_date = String::new();
   let mut studio = String::new();
   let producers = Vec::new(); // Not present in the original HTML, keeping empty
@@ -219,9 +227,15 @@ fn parse_anime_detail_document(document: &Html, _slug: &str) -> Result<AnimeDeta
     } else if text.contains("Japanese:") {
       alternative_title = text.replace("Japanese:", "").trim().to_string();
     } else if text.contains("Type:") {
-      r#type = text.replace("Type:", "").trim().to_string();
+      let type_str = text.replace("Type:", "").trim().to_string();
+      if !type_str.is_empty() {
+        r#type = Some(type_str);
+      }
     } else if text.contains("Status:") {
-      status = text.replace("Status:", "").trim().to_string();
+      let status_str = text.replace("Status:", "").trim().to_string();
+      if !status_str.is_empty() {
+        status = Some(status_str);
+      }
     } else if text.contains("Tanggal Rilis:") {
       release_date = text.replace("Tanggal Rilis:", "").trim().to_string();
     } else if text.contains("Studio:") {
@@ -295,8 +309,8 @@ fn parse_anime_detail_document(document: &Html, _slug: &str) -> Result<AnimeDeta
       title,
       slug,
       poster,
-      status: "".to_string(),
-      r#type: "".to_string(),
+      status: None,
+      r#type: None,
     }); // Status and type not available from this selector
   }
 
