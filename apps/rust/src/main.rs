@@ -18,13 +18,11 @@ use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use rust_lib::config::CONFIG_MAP;
-use rust_lib::redis_client::REDIS_POOL;
+use rust::config::CONFIG_MAP;
+use rust::redis_client::REDIS_POOL;
 
-use crate::routes::api::{ create_api_routes, ApiDoc };
-use crate::routes::AppState;
-
-mod routes;
+use rust::routes::api::{ create_api_routes, ApiDoc };
+use rust::routes::AppState;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

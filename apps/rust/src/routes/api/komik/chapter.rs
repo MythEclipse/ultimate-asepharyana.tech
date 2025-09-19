@@ -11,7 +11,7 @@ use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use axum::extract::State;
 use axum::http::StatusCode;
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use deadpool_redis::redis::AsyncCommands;

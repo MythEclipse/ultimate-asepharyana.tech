@@ -2,14 +2,14 @@ use axum::{ extract::Path, response::IntoResponse, routing::get, Json, Router };
 use axum::http::StatusCode;
 use std::sync::Arc;
 use crate::routes::AppState;
-use rust_lib::utils::error::AppError;
+use crate::utils::error::AppError;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
 use lazy_static::lazy_static;
 use tracing::{ info, error, warn };
 use axum::extract::State;
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 

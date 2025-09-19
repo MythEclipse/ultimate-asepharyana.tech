@@ -4,9 +4,9 @@ use serde::Deserialize;
 use utoipa::ToSchema;
 use std::sync::Arc;
 
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use rust_lib::utils::error::AppError;
+use crate::utils::error::AppError;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";

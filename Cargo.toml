@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "apps/rust",
-    "libs/rust",
 ]
 
 [workspace.package]
@@ -80,10 +79,6 @@ tokio-tungstenite = "0.27.0"
 tower-http = { version = "0.6.6", features = ["cors"] }
 openapiv3 = "2.2.0"
 jsonschema = "0.33.0"
-
-# --- LIBS ---
-rust_lib = { path = "libs/rust" }
-
 
 # --- DEVELOPMENT DEPENDENCIES ---
 

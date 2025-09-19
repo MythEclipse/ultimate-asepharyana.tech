@@ -5,7 +5,7 @@ use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
 use scraper::{ Html, Selector };
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;

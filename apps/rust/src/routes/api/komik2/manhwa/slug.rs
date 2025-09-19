@@ -10,10 +10,10 @@ use regex::Regex;
 use tracing::{ info, error, warn };
 use lazy_static::lazy_static;
 use axum::extract::State;
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use deadpool_redis::redis::AsyncCommands;
 use backoff::{ future::retry, ExponentialBackoff };
-use rust_lib::urls::{ get_komik2_api_url };
+use crate::urls::{ get_komik2_api_url };
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";

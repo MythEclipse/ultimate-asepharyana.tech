@@ -9,7 +9,7 @@ use lazy_static::lazy_static;
 use tracing::{ info, error, warn };
 use std::time::Duration;
 use axum::extract::State;
-use rust_lib::fetch_with_proxy::fetch_with_proxy;
+use crate::fetch_with_proxy::fetch_with_proxy;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 use regex::Regex;

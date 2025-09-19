@@ -6,35 +6,34 @@ edition = "2021"
 # Dependensi yang dibutuhkan saat aplikasi berjalan
 [dependencies]
 axum = { workspace = true }
-tokio = { workspace = true }
-axum-extra = { workspace = true }
-serde = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+axum-extra = { workspace = true, features = ["cookie"] }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 dotenvy = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 anyhow = { workspace = true }
-sqlx = { workspace = true }
-uuid = { workspace = true, features = ["v4"] }
-chrono = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
 bytes = { workspace = true }
 futures = { workspace = true }
 bcrypt = { workspace = true }
 jsonwebtoken = { workspace = true }
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["json", "stream"] }
 http = { workspace = true }
-image = { workspace = true }
+image = { workspace = true, default-features = false, features = ["jpeg", "png"] }
 sha1 = { workspace = true }
 data-url = { workspace = true }
 base64 = { workspace = true }
-tokio-util = { workspace = true }
+tokio-util = { workspace = true, features = ["codec"] }
 async-trait = { workspace = true }
 regex = { workspace = true }
 oxidize-pdf = { workspace = true }
 infer = { workspace = true }
 ffmpeg-next = { workspace = true, optional = true }
 once_cell = { workspace = true }
-rust_lib = { path = "../../libs/rust" }
 urlencoding = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
@@ -50,9 +49,12 @@ dashmap =  { workspace = true }
 deadpool-redis = { workspace = true }
 rayon = { workspace = true }
 tl = { workspace = true }
-
 tower = { workspace = true }
 scraper = { workspace = true }
+failure = { workspace = true }
+flate2 = { workspace = true }
+redis = { workspace = true }
+thiserror = { workspace = true }
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
@@ -89,8 +91,11 @@ path = "src/bin/test_scaffold.rs"
 name = "test_komik2_apis"
 path = "src/bin/test_komik2_apis.rs"
 
+# [[bin]]
+# name = "test_openapi"
+# path = "src/bin/test_openapi.rs"
+
 
 [features]
-default = ["ffmpeg"]
+# default = ["ffmpeg"]
 ffmpeg = ["ffmpeg-next"]
-

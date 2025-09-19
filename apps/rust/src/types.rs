@@ -1,4 +1,4 @@
-use rust_lib::utils::error::AppError;
+use crate::utils::error::AppError;
 use axum::{
   http::StatusCode,
   response::{IntoResponse, Response},
