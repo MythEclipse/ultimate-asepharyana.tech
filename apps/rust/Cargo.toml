@@ -1,3 +1,17 @@
+[profile.dev]
+opt-level = 0          # paling cepat compile (runtime agak lambat, tapi cukup buat dev)
+debug = true
+incremental = true     # cache per crate biar rebuild lebih cepat
+codegen-units = 16     # pecah kerjaan jadi banyak unit, cepat compile
+lto = false
+strip = "none"         # jangan strip biar debugging gampang
+
+[profile.release]
+opt-level = 3          # maksimal speed
+lto = "fat"            # optimasi maksimal (thin lebih cepat tapi kurang optimal)
+codegen-units = 1      # lebih optimal, walau compile lebih lama
+strip = "symbols"      # buang simbol debug → binary lebih kecil
+panic = "abort"        # kurangi overhead unwinding
 [package]
 name = "rust"
 version = "0.1.0"
@@ -83,13 +97,13 @@ reqwest = { version = "0.12.23", features = ["json", "stream", "multipart"] }
 [[bin]]
 name = "scaffold"
 path = "src/bin/scaffold.rs"
-
 [[bin]]
 name = "test_scaffold"
 path = "src/bin/test_scaffold.rs"
+
 [[bin]]
-name = "test_komik2_apis"
-path = "src/bin/test_komik2_apis.rs"
+name = "test_apis"
+path = "src/bin/test_apis.rs"
 
 # [[bin]]
 # name = "test_openapi"
