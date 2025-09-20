@@ -30,3 +30,11 @@ pub fn get_komik2_api_url() -> String {
     .cloned()
     .unwrap_or_else(|| "https://api.komiku.org".to_string())
 }
+
+pub const OTAKUDESU_BASE_URL: &str = "https://otakudesu.best";
+
+pub fn get_otakudesu_url() -> String {
+  CONFIG_MAP.get("OTAKUDESU_BASE_URL")
+    .cloned()
+    .unwrap_or_else(|| OTAKUDESU_BASE_URL.to_string())
+}

@@ -12,6 +12,7 @@ use axum::extract::State;
 use crate::fetch_with_proxy::fetch_with_proxy;
 use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
+use crate::urls::OTAKUDESU_BASE_URL;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -165,7 +166,7 @@ async fn fetch_anime_detail(
    slug: String
  ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
   let _start_time_fetch = std::time::Instant::now(); // Renamed to clearly differentiate and mark as unused
-  let url = format!("https://otakudesu.cloud/anime/{}", slug);
+  let url = format!("{}/anime/{}", OTAKUDESU_BASE_URL, slug);
 
   let backoff = ExponentialBackoff {
     initial_interval: std::time::Duration::from_millis(500),

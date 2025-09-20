@@ -33,9 +33,6 @@ export const ImageWithFallback = ({
     normalizedImageUrl && normalizedImageUrl.trim() !== ''
       ? normalizedImageUrl
       : null,
-    `https://imagecdn.app/v1/images/${encodeURIComponent(
-      normalizedImageUrl || fallback,
-    )}`,
     `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(
       normalizedImageUrl || fallback,
     )}`,

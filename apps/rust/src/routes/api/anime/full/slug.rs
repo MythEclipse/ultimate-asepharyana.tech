@@ -10,6 +10,7 @@ use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use tracing::{ info, error };
 use deadpool_redis::redis::AsyncCommands;
+use crate::urls::OTAKUDESU_BASE_URL;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -146,7 +147,7 @@ pub async fn slug(
 async fn fetch_anime_full(
    slug: String
  ) -> Result<AnimeFullData, String> {
-  let url = format!("https://otakudesu.cloud/episode/{}", slug);
+  let url = format!("{}/episode/{}", OTAKUDESU_BASE_URL, slug);
 
   let operation = || async {
     let response = fetch_with_proxy(&url).await?;

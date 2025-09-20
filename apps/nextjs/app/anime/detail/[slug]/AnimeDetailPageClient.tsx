@@ -170,9 +170,6 @@ function AnimeDetailPageClient({
   const imageSources = [
     initialData?.data.poster,
     initialData?.data.poster
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(initialData.data.poster)}`
-      : null,
-    initialData?.data.poster
       ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(initialData.data.poster)}`
       : null,
     '/default.png',

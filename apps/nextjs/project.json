@@ -17,7 +17,7 @@
       "executor": "@nx/next:build",
       "dependsOn": ["services:build"],
       "options": {
-        "outputPath": "dist/apps/nextjs"
+        "outputPath": "apps/nextjs"
       }
     }
   }

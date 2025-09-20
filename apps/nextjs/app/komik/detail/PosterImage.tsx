@@ -16,9 +16,6 @@ export default function PosterImage({ poster, title }: PosterImageProps) {
   const imageSources = [
     poster?.trim() ? poster : null,
     poster?.trim()
-      ? `https://imagecdn.app/v1/images/${encodeURIComponent(poster)}`
-      : null,
-    poster?.trim()
       ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(poster)}`
       : null,
     fallback,

@@ -88,25 +88,14 @@ function MediaCard(props: MediaCardProps) {
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
-  const fallbackImage = '/default.png';
 
   const imageSources = useMemo(
     () =>
       [
         props.imageUrl, // Use props.imageUrl directly
         props.imageUrl
-          ? `https://imagecdn.app/v1/images/${encodeURIComponent(props.imageUrl)}`
-          : null,
-        props.imageUrl
-          ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(props.imageUrl)}`
-          : null,
-        props.imageUrl
-          ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(props.imageUrl)}`
-          : null,
-        props.imageUrl
           ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(props.imageUrl)}`
           : null,
-        fallbackImage,
       ].filter(Boolean) as string[],
     [props.imageUrl], // Depend on props.imageUrl
   );

@@ -5,7 +5,11 @@
   "sourceRoot": "apps/rust/src",
   "targets": {
     "build": {
-      "executor": "@monodon/rust:build",
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "env CC=\"\" cargo build -p rust --release",
+        "cwd": "apps/rust"
+      },
       "configurations": {
         "production": {
           "release": true
@@ -22,7 +26,7 @@
     "start": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'apps\\\\rust\\\\target\\\\release\\\\rust.exe' : './apps/rust/target/release/rust', {stdio: 'inherit'})\"",
+        "command": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'apps\\\\rust\\\\target\\\\release\\\\rust.exe' : 'apps/rust/target/release/rust', {stdio: 'inherit'})\"",
         "cwd": "."
       }
     },

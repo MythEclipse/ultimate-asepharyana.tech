@@ -14,6 +14,7 @@ use deadpool_redis::redis::AsyncCommands;
 use regex::Regex;
 use once_cell::sync::Lazy;
 use std::time::Duration; // Add this import
+use crate::urls::OTAKUDESU_BASE_URL;
 
 // Pre-compiled regex for slug extraction
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
@@ -157,7 +158,7 @@ async fn fetch_ongoing_anime_page(
    slug: String
  ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
   let _start_time = std::time::Instant::now();
-  let url = format!("https://otakudesu.cloud/ongoing-anime/page/{}/", slug);
+  let url = format!("{}/ongoing-anime/page/{}/", OTAKUDESU_BASE_URL, slug);
 
   let backoff = ExponentialBackoff {
     initial_interval: Duration::from_millis(500),

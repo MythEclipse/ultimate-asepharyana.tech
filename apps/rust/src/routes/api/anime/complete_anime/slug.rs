@@ -14,6 +14,7 @@ use backoff::{ future::retry, ExponentialBackoff };
 use deadpool_redis::redis::AsyncCommands;
 use regex::Regex;
 use once_cell::sync::Lazy;
+use crate::urls::OTAKUDESU_BASE_URL;
 
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
@@ -113,7 +114,7 @@ pub async fn slug(
     return Ok(Json(list_response).into_response());
   }
 
-  let url = format!("https://otakudesu.cloud/complete-anime/page/{}/", slug);
+  let url = format!("{}/complete-anime/page/{}/", OTAKUDESU_BASE_URL, slug);
 
   match fetch_html_with_retry(&url).await {
     Ok(html) => {

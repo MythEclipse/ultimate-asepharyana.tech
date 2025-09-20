@@ -11,6 +11,7 @@ use axum::extract::State;
 use backoff::{ future::retry, ExponentialBackoff };
 use std::time::Duration;
 use tracing::{ info, warn, error };
+use crate::urls::get_otakudesu_url;
 use lazy_static::lazy_static;
 use deadpool_redis::redis::AsyncCommands;
 
@@ -131,12 +132,12 @@ const CACHE_TTL: u64 = 300; // 5 minutes
 
 async fn fetch_anime_data(
  ) -> Result<AnimeData, Box<dyn std::error::Error + Send + Sync>> {
-   let ongoing_url = "https://otakudesu.cloud/ongoing-anime/";
-   let complete_url = "https://otakudesu.cloud/complete-anime/";
+   let ongoing_url = format!("{}/ongoing-anime/", get_otakudesu_url());
+   let complete_url = format!("{}/complete-anime/", get_otakudesu_url());
 
    let (ongoing_html, complete_html) = tokio::join!(
-     fetch_html_with_retry(ongoing_url),
-     fetch_html_with_retry(complete_url)
+     fetch_html_with_retry(&ongoing_url),
+     fetch_html_with_retry(&complete_url)
    );
 
   let ongoing_html = ongoing_html?;

@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { CardBody, CardContainer, CardItem } from './3d-card';
 import Link from 'next/link';
-import { BaseUrl } from '../../lib/url';
+import { PRODUCTION } from '../../lib/url';
 
 interface ThreeDCardProps {
   title: string;
@@ -15,6 +15,16 @@ interface ThreeDCardProps {
 
 const ThreeDCard: React.FC<ThreeDCardProps> = memo(
   ({ title, description, imageUrl, linkUrl }) => {
+    const [currentImageSrc, setCurrentImageSrc] = useState(imageUrl);
+    const [hasError, setHasError] = useState(false);
+
+    const handleImageError = () => {
+      if (!hasError) {
+        setCurrentImageSrc(`${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`);
+        setHasError(true);
+      }
+    };
+
     return (
       <Link href={linkUrl} passHref>
         <CardContainer className="inter-var cursor-pointer">
@@ -34,12 +44,13 @@ const ThreeDCard: React.FC<ThreeDCardProps> = memo(
             </CardItem>
             <CardItem translateZ="100" className="w-full h-[60%] mt-2">
               <Image
-                src={`${BaseUrl}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`}
+                src={currentImageSrc}
                 height="400"
                 width="300"
                 className="h-full w-full object-cover rounded-xl group-hover/card:shadow-xl"
                 alt="thumbnail"
                 unoptimized
+                onError={handleImageError}
               />
             </CardItem>
           </CardBody>

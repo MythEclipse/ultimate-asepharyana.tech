@@ -11,6 +11,7 @@ use lazy_static::lazy_static;
 use backoff::{ future::retry, ExponentialBackoff };
 use tracing::{ info, error };
 use axum::extract::State;
+use crate::urls::get_otakudesu_url;
 use deadpool_redis::redis::AsyncCommands;
 
 #[allow(dead_code)]
@@ -114,7 +115,7 @@ pub async fn search(
     return Ok(Json(search_response).into_response());
   }
 
-  let url = format!("https://otakudesu.cloud/?s={}&post_type=anime", urlencoding::encode(&query));
+  let url = format!("{}/?s={}&post_type=anime", get_otakudesu_url(), urlencoding::encode(&query));
 
   match fetch_and_parse_search(&url, query.clone()).await {
     Ok((data, pagination)) => {
@@ -263,7 +264,7 @@ fn parse_pagination(document: &Html, _query: &str) -> Pagination {
   let last_visible_page = 57;
 
   let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
-  let has_previous_page = page_num > 1;
+  let has_previous_page = document.select(&NEXT_SELECTOR).next().is_some(); // Simplified, as Next.js uses parseInt(slug, 10) || 1
 
   Pagination {
     current_page: page_num,
