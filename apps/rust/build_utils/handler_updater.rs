@@ -48,8 +48,12 @@ pub fn update_handler_file(
       return Ok(None);
     }
   };
+  if is_scaffolded_file(&content) {
+    println!("cargo:warning=Detected scaffolded file {:?}, skipping handle_empty_file logic", path);
+  }
 
   let file_stem = get_file_stem(path)?;
+
   let doc_comment = get_doc_comment(&content);
 
   let Metadata {
@@ -98,6 +102,15 @@ pub fn update_handler_file(
     route_path,
     route_tag
   )
+}
+
+fn is_scaffolded_file(content: &str) -> bool {
+  content.contains("//! Handler for the") &&
+  content.contains("#![allow(dead_code)]") &&
+  content.contains("ENDPOINT_METHOD") &&
+  content.contains("#[utoipa::path(") &&
+  content.contains("pub async fn") &&
+  content.contains("register_routes")
 }
 
 fn read_and_check_file(path: &Path) -> Result<Option<String>> {
