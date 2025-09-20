@@ -3,15 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "nextjs:dev": "nx serve nextjs",
-    "nextjs:build": "nx build nextjs",
-    "nextjs:lint": "nx lint nextjs --fix",
-    "nextjs:start": "nx start nextjs",
-    "service:dev": "nx serve services",
-    "service:build": "nx build services",
-    "service:lint": "nx lint services --fix",
-    "service:start": "nx start services",
-    "rust:start": "./apps/rust/target/release/RustExpress"
+    "dev": "nx serve nextjs",
+    "build": "nx build nextjs",
+    "lint": "nx lint nextjs --fix",
+    "start": "nx start nextjs"
   },
   "private": true,
   "dependencies": {
