@@ -12,7 +12,6 @@ import {
   CardTitle,
   CardDescription,
 } from '../../../../components/ui/card';
-import { Skeleton } from '../../../../components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -57,37 +56,6 @@ interface ApiResponse {
 
 export const revalidate = 60;
 
-// --- SKELETON COMPONENT ---
-const DetailPageSkeleton = () => (
-  <main className="p-4 md:p-8 min-h-screen">
-    <div className="max-w-6xl mx-auto">
-      <div className="rounded-[24px] p-6 md:p-10 bg-card">
-        <div className="flex flex-col md:flex-row items-start gap-8">
-          <div className="w-full md:w-1/3 flex flex-col gap-4">
-            <Skeleton className="aspect-[2/3] w-full rounded-xl" />
-            <Skeleton className="h-12 w-full rounded-full" />
-          </div>
-          <div className="w-full md:w-2/3 space-y-6">
-            <Skeleton className="h-10 w-3/4 rounded-lg" />
-            <Card>
-              <CardContent className="p-4">
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
-            <div className="flex flex-wrap gap-2">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-8 w-24 rounded-full" />
-              ))}
-            </div>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-);
-
 export default async function DetailMangaPage({
   params,
 }: {
@@ -114,7 +82,7 @@ export default async function DetailMangaPage({
 
   try {
     mangaData = await fetchData(`/api/komik2/detail?komik_id=${komikId}`);
-  } catch (error) {
+  } catch (e) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
         <Card className="max-w-md w-full p-8 text-center">

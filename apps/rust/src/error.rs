@@ -9,12 +9,19 @@ use axum::{
 use serde_json::json;
 use serde::{Deserialize, Serialize};
 use crate::utils::error::AppError;
+use tokio::task::JoinError;
 
 #[derive(Error, Debug)]
 pub enum LibError {
   #[error("An unknown error occurred")]
   Unknown,
   #[error("Fantoccini error: {0}")] FantocciniError(String),
+}
+
+impl From<JoinError> for LibError {
+    fn from(_err: JoinError) -> Self {
+        LibError::Unknown
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,6 +51,7 @@ impl IntoResponse for ErrorResponse {
       _ if self.error.contains("Fantoccini error") => (StatusCode::BAD_GATEWAY, self.error),
       _ if self.error.contains("IO error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
       _ if self.error.contains("Timeout error") => (StatusCode::REQUEST_TIMEOUT, self.error),
+      _ if self.error.contains("Join error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
       _ => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
     };
 
@@ -55,4 +63,3 @@ impl IntoResponse for ErrorResponse {
   }
 }
 
-pub use ErrorResponse;

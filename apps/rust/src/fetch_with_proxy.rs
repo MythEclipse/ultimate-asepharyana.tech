@@ -3,6 +3,7 @@
 use reqwest::Client;
 use tracing::{ info, warn, error };
 use redis::AsyncCommands;
+use deadpool_redis::Connection;
 
 use crate::redis_client::get_redis_conn;
 use crate::utils::http::is_internet_baik_block_page;
@@ -34,7 +35,7 @@ fn get_fetch_cache_key(slug: &str) -> String {
 async fn get_cached_fetch(slug: &str) -> Result<Option<FetchResult>, AppError> {
   // Use a static Redis connection pool for reuse
   use once_cell::sync::Lazy;
-  static REDIS_POOL: Lazy<tokio::sync::Mutex<Option<redis::aio::Connection>>> = Lazy::new(|| tokio::sync::Mutex::new(None));
+  static REDIS_POOL: Lazy<tokio::sync::Mutex<Option<Connection>>> = Lazy::new(|| tokio::sync::Mutex::new(None));
   let mut pool = REDIS_POOL.lock().await;
   if pool.is_none() {
     *pool = Some(get_redis_conn().await?);

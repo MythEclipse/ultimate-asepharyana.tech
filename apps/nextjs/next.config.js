@@ -1,5 +1,6 @@
 //@ts-check
 
+const path = require('path');
 const { composePlugins, withNx } = require('@nx/next');
 
 /**
@@ -72,6 +73,7 @@ const nextConfig = {
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
   webpack: (config, { isServer, webpack }) => {
+    config.resolve.alias['@/lib'] = path.join(__dirname, 'lib');
     return config;
   },
 };

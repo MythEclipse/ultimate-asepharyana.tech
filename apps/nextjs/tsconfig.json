@@ -17,7 +17,12 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/lib/*": ["./lib/*"],
+      "@asepharyana/services": ["../../libs/services/src/index.ts"]
+    }
   },
   "include": [
     "**/*.jsx",

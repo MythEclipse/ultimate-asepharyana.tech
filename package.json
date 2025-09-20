@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "nx serve nextjs",
-    "build": "nx build nextjs",
-    "lint": "nx lint nextjs --fix",
-    "start": "nx start nextjs"
+    "nextjs:dev": "nx serve nextjs",
+    "nextjs:build": "nx build nextjs",
+    "nextjs:lint": "nx lint nextjs --fix",
+    "nextjs:start": "nx start nextjs"
   },
   "private": true,
   "dependencies": {

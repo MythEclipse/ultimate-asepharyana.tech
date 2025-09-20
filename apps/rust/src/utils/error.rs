@@ -50,6 +50,12 @@ impl From<deadpool_redis::PoolError> for AppError {
     }
 }
 
+impl From<tokio::task::JoinError> for AppError {
+    fn from(err: tokio::task::JoinError) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()

@@ -29,27 +29,37 @@ interface CompleteAnime {
 }
 
 async function AnimePage() {
-  let initialData: HomeData | null = null;
+  let initialData: HomeData = {
+    status: 'error',
+    data: {
+      ongoing_anime: [],
+      complete_anime: [],
+    },
+  };
   let error: string | null = null;
 
-  try {
-    const fullUrl = '/api/anime2'.startsWith('/')
-      ? `${APIURLSERVER}/api/anime2`
-      : '/api/anime2';
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      const fullUrl = '/api/anime2'.startsWith('/')
+        ? `${APIURLSERVER}/api/anime2`
+        : '/api/anime2';
+      const response = await fetch(fullUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      initialData = await response.json();
+    } catch (err) {
+      console.error('Failed to fetch anime2 data on server:', err);
+      error = 'Failed to load anime data';
     }
-    initialData = await response.json();
-  } catch (err) {
-    console.error('Failed to fetch anime2 data on server:', err);
-    error = 'Failed to load anime data';
+  } else {
+    console.warn('Skipping API fetch in development mode during build.');
   }
 
   return <Anime2PageClient initialData={initialData} initialError={error} />;

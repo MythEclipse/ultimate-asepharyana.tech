@@ -6,8 +6,7 @@ use std::sync::Arc;
 use crate::routes::AppState;
 use serde::{ Deserialize, Serialize };
 use utoipa::ToSchema;
-use std::collections::VecDeque;
-use tokio::sync::Mutex;
+use tokio::sync::{ Mutex, mpsc };
 use std::path::Path;
 use sha1::{ Sha1, Digest };
 use std::time::{ SystemTime, UNIX_EPOCH };
@@ -34,8 +33,25 @@ lazy_static::lazy_static! {
   };
   static ref CACHE_EXPIRY: u64 = 0; // 0 for debugging, forces cache invalidation
   static ref MAX_QUEUE_SIZE: usize = 10;
+
+  // Define IS_PROCESSING
+  static ref IS_PROCESSING: Mutex<bool> = Mutex::new(false);
+
   // Use mpsc channel for compression queue
-  static ref (QUEUE_SENDER, QUEUE_RECEIVER): (tokio::sync::mpsc::Sender<CompressionTask>, tokio::sync::mpsc::Receiver<CompressionTask>) = tokio::sync::mpsc::channel(*MAX_QUEUE_SIZE);
+  static ref QUEUE_SENDER: mpsc::Sender<CompressionTask> = {
+      let (sender, mut receiver) = mpsc::channel::<CompressionTask>(*MAX_QUEUE_SIZE);
+      tokio::spawn(async move {
+          while let Some(task) = receiver.recv().await {
+              // Execute the task
+              task().await;
+
+              // After a task is done, signal that processing is complete
+              let mut processing = IS_PROCESSING.lock().await;
+              *processing = false;
+          }
+      });
+      sender
+  };
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -108,27 +124,6 @@ fn generate_cache_key(url: &str, size_param: &str) -> String {
   let mut hasher = Sha1::new();
   hasher.update(format!("{}{}", url, size_param));
   format!("{:x}.cache", hasher.finalize())
-}
-
-async fn process_next() {
-  let mut processing = IS_PROCESSING.lock().await;
-  if *processing {
-    return;
-  }
-
-  let mut queue = QUEUE.lock().await;
-  if let Some(task) = queue.pop_front() {
-    *processing = true;
-    drop(processing);
-    drop(queue);
-
-    task().await;
-
-    let mut processing = IS_PROCESSING.lock().await;
-    *processing = false;
-    // Box the future to prevent infinite size
-    Box::pin(process_next()).await;
-  }
 }
 
 async fn compress_image(

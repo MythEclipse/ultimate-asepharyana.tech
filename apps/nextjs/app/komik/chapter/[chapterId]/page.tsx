@@ -1,7 +1,6 @@
 import { APIURLSERVER } from '../../../../lib/url';
 import NavigationButtons from '../NavigationButtons';
 import { ImageWithFallback } from '../../../../components/shared/ImageWithFallback';
-import { Skeleton } from '../../../../components/ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
 
 interface ChapterDetail {
@@ -43,7 +42,7 @@ export default async function ChapterPage({
       `/api/komik2/chapter?chapter_url=${chapterId}`,
     );
     chapter = response.data;
-  } catch (error) {
+  } catch (e) {
     return (
       <main className="min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center">
         <div className="max-w-md text-center">

@@ -2,7 +2,7 @@ use reqwest::Client;
 use tracing::{info, error};
 use bytes::Bytes;
 use crate::utils::error::AppError;
-use crate::utils::headers::{common_headers, common_image_headers}; // Import the new common_headers and common_image_headers functions
+use crate::utils::headers::{common_image_headers}; // Import the new common_headers and common_image_headers functions
 
 pub struct ImageProxyResult {
     pub data: Bytes,

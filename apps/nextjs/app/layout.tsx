@@ -8,8 +8,8 @@ import './globals.css';
 import { ThemeProvider } from '../components/providers/theme-provider';
 import Navbar from '../components/navbar/Navbar';
 import { Toaster } from 'sonner';
-
 export const metadata: Metadata = {
+  metadataBase: new URL('https://asepharyana.tech'),
   title: 'Asepharyana',
   description: 'A personal website by Asep Haryayana',
   icons: {
