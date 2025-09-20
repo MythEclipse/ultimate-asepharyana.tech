@@ -1,28 +1,29 @@
-# Use a Rust base image
-FROM rust:latest as builder
+# syntax=docker/dockerfile:1
 
-# Set the working directory in the container
+# --- Build Stage ---
+FROM rust:1.74 AS builder
+
 WORKDIR /app
 
-# Copy Cargo.toml and Cargo.lock
+# Copy manifest and lock files first for caching
 COPY Cargo.toml Cargo.lock ./
 
-# Copy the apps/rust directory
+# Copy source code and build dependencies
 COPY src ./src
 COPY build_utils ./build_utils
 COPY migrations ./migrations
 
-# Build the Rust application
+# Build release binary
 RUN cargo build --release --manifest-path Cargo.toml --target-dir target
 
-# Use a smaller base image for the final stage
+# --- Runtime Stage ---
 FROM debian:stable-slim
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /app/target/release/rust /usr/local/bin/rust_app
+WORKDIR /app
 
-# Expose the port Rust application runs on
+# Copy only the built binary
+COPY --from=builder /app/target/release/rust /app/rust_app
+
 EXPOSE 4091
 
-# Command to run the application
-CMD ["/usr/local/bin/rust_app"]
+CMD ["/app/rust_app"]
