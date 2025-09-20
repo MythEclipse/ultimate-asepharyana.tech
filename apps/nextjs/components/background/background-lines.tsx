@@ -16,7 +16,7 @@ export const BackgroundLines = ({
     <div
       className={cn(
         'h-[20rem] md:h-screen w-full bg-white dark:bg-black',
-        className
+        className,
       )}
     >
       <SVG />
@@ -63,18 +63,18 @@ const SVG = () => {
   ];
   return (
     <svg
-      viewBox='0 0 1440 900'
-      fill='none'
-      xmlns='http://www.w3.org/2000/svg'
-      className='absolute inset-0 w-full h-full opacity-0 animate-fade-in'
+      viewBox="0 0 1440 900"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="absolute inset-0 w-full h-full opacity-0 animate-fade-in"
     >
       {paths.map((path, idx) => (
         <path
           d={path}
           stroke={colors[idx]}
-          strokeWidth='2.3'
-          strokeLinecap='round'
-          className='animate-draw-path'
+          strokeWidth="2.3"
+          strokeLinecap="round"
+          className="animate-draw-path"
           key={`path-first-${idx}`}
         />
       ))}
@@ -84,9 +84,9 @@ const SVG = () => {
         <path
           d={path}
           stroke={colors[idx]}
-          strokeWidth='2.3'
-          strokeLinecap='round'
-          className='animate-draw-path'
+          strokeWidth="2.3"
+          strokeLinecap="round"
+          className="animate-draw-path"
           key={`path-second-${idx}`}
         />
       ))}

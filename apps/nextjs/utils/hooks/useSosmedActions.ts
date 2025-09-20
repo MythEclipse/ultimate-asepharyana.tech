@@ -7,8 +7,6 @@ import { useGlobalStore } from './useGlobalStore';
 export function useSosmedActions() {
   const { data: session } = useSession();
 
-
-
   const setNewComment = useGlobalStore((s) => s.setNewComment);
 
   const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});

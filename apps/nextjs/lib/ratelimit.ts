@@ -12,7 +12,9 @@ export class SimpleRateLimit {
     this.windowMs = windowMs;
   }
 
-  async check(identifier: string): Promise<{ success: boolean; remaining: number; resetTime: number }> {
+  async check(
+    identifier: string,
+  ): Promise<{ success: boolean; remaining: number; resetTime: number }> {
     const key = `ratelimit:${identifier}`;
     const now = Date.now();
     const windowStart = now - this.windowMs;
@@ -34,7 +36,7 @@ export class SimpleRateLimit {
       return {
         success,
         remaining,
-        resetTime: now + this.windowMs
+        resetTime: now + this.windowMs,
       };
     } catch (error) {
       // If Redis fails, allow the request (fail open)
@@ -42,7 +44,7 @@ export class SimpleRateLimit {
       return {
         success: true,
         remaining: this.maxRequests - 1,
-        resetTime: now + this.windowMs
+        resetTime: now + this.windowMs,
       };
     }
   }

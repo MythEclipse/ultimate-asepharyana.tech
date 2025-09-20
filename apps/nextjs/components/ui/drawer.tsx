@@ -19,14 +19,14 @@ const Drawer = ({
       <div
         className={cn(
           'fixed inset-0 z-50',
-          shouldScaleBackground && 'bg-black/80'
+          shouldScaleBackground && 'bg-black/80',
         )}
       >
         <div
-          className='fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background'
+          className="fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background"
           {...props}
         >
-          <div className='mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted' />
+          <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
           {children}
         </div>
       </div>
@@ -71,11 +71,11 @@ const DrawerContent = React.forwardRef<
     ref={ref}
     className={cn(
       'fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background',
-      className
+      className,
     )}
     {...props}
   >
-    <div className='mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted' />
+    <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
     {children}
   </div>
 ));
@@ -111,7 +111,7 @@ const DrawerTitle = React.forwardRef<
     ref={ref}
     className={cn(
       'text-lg font-semibold leading-none tracking-tight',
-      className
+      className,
     )}
     {...props}
   />

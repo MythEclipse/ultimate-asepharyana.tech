@@ -23,59 +23,59 @@ paths:
               - titledesc
       responses:
         '200':
-                description: '200'
-                content:
-                  application/json:
-                    schema:
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
                       type: object
                       properties:
-                        data:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              title:
-                                type: string
-                              image:
-                                type: string
-                              chapter:
-                                type: string
-                              score:
-                                type: string
-                              date:
-                                type: string
-                              type:
-                                type: string
-                              komik_id:
-                                type: string
-                            required:
-                              - title
-                              - image
-                              - chapter
-                              - score
-                              - date
-                              - type
-                              - komik_id
-                        pagination:
-                          type: object
-                          properties:
-                            current_page:
-                              type: integer
-                            last_visible_page:
-                              type: integer
-                            has_next_page:
-                              type: boolean
-                            next_page:
-                              type: integer
-                              nullable: true
-                            has_previous_page:
-                              type: boolean
-                            previous_page:
-                              type: integer
-                              nullable: true
+                        title:
+                          type: string
+                        image:
+                          type: string
+                        chapter:
+                          type: string
+                        score:
+                          type: string
+                        date:
+                          type: string
+                        type:
+                          type: string
+                        komik_id:
+                          type: string
                       required:
-                        - data
-                        - pagination
+                        - title
+                        - image
+                        - chapter
+                        - score
+                        - date
+                        - type
+                        - komik_id
+                  pagination:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_visible_page:
+                        type: integer
+                      has_next_page:
+                        type: boolean
+                      next_page:
+                        type: integer
+                        nullable: true
+                      has_previous_page:
+                        type: boolean
+                      previous_page:
+                        type: integer
+                        nullable: true
+                required:
+                  - data
+                  - pagination
         '400':
           description: '400'
           content:
@@ -121,59 +121,59 @@ paths:
               - titledesc
       responses:
         '200':
-                description: '200'
-                content:
-                  application/json:
-                    schema:
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
                       type: object
                       properties:
-                        data:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              title:
-                                type: string
-                              image:
-                                type: string
-                              chapter:
-                                type: string
-                              score:
-                                type: string
-                              date:
-                                type: string
-                              type:
-                                type: string
-                              komik_id:
-                                type: string
-                            required:
-                              - title
-                              - image
-                              - chapter
-                              - score
-                              - date
-                              - type
-                              - komik_id
-                        pagination:
-                          type: object
-                          properties:
-                            current_page:
-                              type: integer
-                            last_visible_page:
-                              type: integer
-                            has_next_page:
-                              type: boolean
-                            next_page:
-                              type: integer
-                              nullable: true
-                            has_previous_page:
-                              type: boolean
-                            previous_page:
-                              type: integer
-                              nullable: true
+                        title:
+                          type: string
+                        image:
+                          type: string
+                        chapter:
+                          type: string
+                        score:
+                          type: string
+                        date:
+                          type: string
+                        type:
+                          type: string
+                        komik_id:
+                          type: string
                       required:
-                        - data
-                        - pagination
+                        - title
+                        - image
+                        - chapter
+                        - score
+                        - date
+                        - type
+                        - komik_id
+                  pagination:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_visible_page:
+                        type: integer
+                      has_next_page:
+                        type: boolean
+                      next_page:
+                        type: integer
+                        nullable: true
+                      has_previous_page:
+                        type: boolean
+                      previous_page:
+                        type: integer
+                        nullable: true
+                required:
+                  - data
+                  - pagination
         '400':
           description: '400'
           content:
@@ -219,59 +219,59 @@ paths:
               - titledesc
       responses:
         '200':
-                description: '200'
-                content:
-                  application/json:
-                    schema:
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
                       type: object
                       properties:
-                        data:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              title:
-                                type: string
-                              image:
-                                type: string
-                              chapter:
-                                type: string
-                              score:
-                                type: string
-                              date:
-                                type: string
-                              type:
-                                type: string
-                              komik_id:
-                                type: string
-                            required:
-                              - title
-                              - image
-                              - chapter
-                              - score
-                              - date
-                              - type
-                              - komik_id
-                        pagination:
-                          type: object
-                          properties:
-                            current_page:
-                              type: integer
-                            last_visible_page:
-                              type: integer
-                            has_next_page:
-                              type: boolean
-                            next_page:
-                              type: integer
-                              nullable: true
-                            has_previous_page:
-                              type: boolean
-                            previous_page:
-                              type: integer
-                              nullable: true
+                        title:
+                          type: string
+                        image:
+                          type: string
+                        chapter:
+                          type: string
+                        score:
+                          type: string
+                        date:
+                          type: string
+                        type:
+                          type: string
+                        komik_id:
+                          type: string
                       required:
-                        - data
-                        - pagination
+                        - title
+                        - image
+                        - chapter
+                        - score
+                        - date
+                        - type
+                        - komik_id
+                  pagination:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_visible_page:
+                        type: integer
+                      has_next_page:
+                        type: boolean
+                      next_page:
+                        type: integer
+                        nullable: true
+                      has_previous_page:
+                        type: boolean
+                      previous_page:
+                        type: integer
+                        nullable: true
+                required:
+                  - data
+                  - pagination
         '400':
           description: '400'
           content:
@@ -306,49 +306,49 @@ paths:
           schema:
             type: string
       responses:
-       '200':
-                description: '200'
-                content:
-                  application/json:
-                    schema:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
                       type: object
                       properties:
-                        data:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              title:
-                                type: string
-                              image:
-                                type: string
-                              chapter:
-                                type: string
-                              score:
-                                type: string
-                              date:
-                                type: string
-                              type:
-                                type: string
-                              komik_id:
-                                type: string
-                            required:
-                              - title
-                              - image
-                              - chapter
-                              - score
-                              - date
-                              - type
-                              - komik_id
-                        prevPage:
-                          type: boolean
-                        nextPage:
-                          type: boolean
+                        title:
+                          type: string
+                        image:
+                          type: string
+                        chapter:
+                          type: string
+                        score:
+                          type: string
+                        date:
+                          type: string
+                        type:
+                          type: string
+                        komik_id:
+                          type: string
                       required:
-                        - data
-                        - prevPage
-                        - nextPage
-       '400':
+                        - title
+                        - image
+                        - chapter
+                        - score
+                        - date
+                        - type
+                        - komik_id
+                  prevPage:
+                    type: boolean
+                  nextPage:
+                    type: boolean
+                required:
+                  - data
+                  - prevPage
+                  - nextPage
+        '400':
           description: '400'
           content:
             application/json:
@@ -359,7 +359,7 @@ paths:
                     type: string
                 required:
                   - message
-       '500':
+        '500':
           description: '500'
           content:
             application/json:
@@ -942,7 +942,6 @@ paths:
                 required:
                   - message
 
-
   /api/anime/search:
     get:
       summary: 'Cari anime berdasarkan kueri'
@@ -1326,7 +1325,6 @@ paths:
                               type: string
                             poster:
                               type: string
-
 
   /api/anime2/search:
     get:

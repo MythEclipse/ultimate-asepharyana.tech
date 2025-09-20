@@ -1,5 +1,5 @@
 {
-    "nxConsole.generateAiAgentRules": true,
-    "WillLuke.nextjs.addTypesOnSave": true,
-    "WillLuke.nextjs.hasPrompted": true
+  "nxConsole.generateAiAgentRules": true,
+  "WillLuke.nextjs.addTypesOnSave": true,
+  "WillLuke.nextjs.hasPrompted": true
 }

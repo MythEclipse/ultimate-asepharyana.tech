@@ -22,7 +22,7 @@ const badgeVariants = cva(
     defaultVariants: {
       variant: 'default',
     },
-  }
+  },
 );
 
 function Badge({
@@ -36,7 +36,7 @@ function Badge({
 
   return (
     <Comp
-      data-slot='badge'
+      data-slot="badge"
       className={cn(badgeVariants({ variant }), className)}
       {...props}
     />

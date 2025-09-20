@@ -54,9 +54,11 @@ export const fetchDataMultiple = async (
 
   const fetchPromises = endpoints.map(({ url, baseUrl }, index) =>
     fetchData(url, method, pyld, formDataObj, baseUrl).then((result) => {
-      console.log(`Fetch successful from endpoint ${index + 1}: ${url} (baseUrl: ${baseUrl || 'default'})`);
+      console.log(
+        `Fetch successful from endpoint ${index + 1}: ${url} (baseUrl: ${baseUrl || 'default'})`,
+      );
       return result;
-    })
+    }),
   );
 
   try {

@@ -63,7 +63,9 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
   let error: string | null = null;
 
   try {
-    komikData = await fetchData(`/api/komik2/manhua?page=${pageNumber}&order=update`);
+    komikData = await fetchData(
+      `/api/komik2/manhua?page=${pageNumber}&order=update`,
+    );
   } catch (err) {
     console.error('Failed to fetch manhua data on server:', err);
     error = 'Failed to load manhua data';

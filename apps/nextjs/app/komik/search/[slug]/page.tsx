@@ -114,4 +114,4 @@ export default async function SearchPage({
       )}
     </main>
   );
-};
+}

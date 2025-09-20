@@ -8,8 +8,20 @@ import { cn } from '../../utils/utils';
  * @param {React.InputHTMLAttributes<HTMLInputElement> & { 'aria-describedby'?: string; 'aria-invalid'?: boolean; }} props - The properties for the Input component.
  * @returns {JSX.Element} The rendered input element.
  */
-const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, type, 'aria-describedby': ariaDescribedBy, 'aria-invalid': ariaInvalid, ...props }, ref) => {
+const Input = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement>
+>(
+  (
+    {
+      className,
+      type,
+      'aria-describedby': ariaDescribedBy,
+      'aria-invalid': ariaInvalid,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <input
         type={type}
@@ -19,7 +31,7 @@ const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLI
           'placeholder:text-muted-foreground',
           'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          className
+          className,
         )}
         ref={ref}
         aria-describedby={ariaDescribedBy}
@@ -27,7 +39,7 @@ const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLI
         {...props}
       />
     );
-  }
+  },
 );
 Input.displayName = 'Input';
 

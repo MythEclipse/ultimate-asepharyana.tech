@@ -66,7 +66,7 @@ export const ImageWithFallback = ({
       <Image
         src={imageSources[currentIndex]}
         alt={`Chapter Page ${index + 1}`}
-        className='w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700'
+        className="w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700"
         width={725}
         height={1024}
         unoptimized

@@ -53,7 +53,7 @@ const FloatingDockMobile = ({
             : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div ref={scrollContainerRef} className='max-h-96 overflow-y-auto'>
+        <div ref={scrollContainerRef} className="max-h-96 overflow-y-auto">
           {items.map((item, idx) => (
             <div
               key={item.title}
@@ -70,10 +70,10 @@ const FloatingDockMobile = ({
                     'bg-blue-500 text-white': pathname === item.href,
                     'bg-white dark:bg-black text-blue-500 border border-blue-500 hover:bg-blue-500 hover:text-white focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50':
                       pathname !== item.href,
-                  }
+                  },
                 )}
               >
-                <div className='h-8 w-8'>{item.icon}</div>
+                <div className="h-8 w-8">{item.icon}</div>
               </AnimatedButton>
             </div>
           ))}
@@ -84,9 +84,9 @@ const FloatingDockMobile = ({
           setOpen(!open);
           handleScrollUp(); // Scroll to the top when clicked
         }}
-        className='text-blue-500 bg-transparent border-2 border-blue-500 rounded-full shadow-lg hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50'
+        className="text-blue-500 bg-transparent border-2 border-blue-500 rounded-full shadow-lg hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
       >
-        <IconLayoutNavbarCollapse className='h-8 w-8 text-neutral-500 dark:text-neutral-400' />
+        <IconLayoutNavbarCollapse className="h-8 w-8 text-neutral-500 dark:text-neutral-400" />
       </AnimatedButton>
     </div>
   );
@@ -103,7 +103,7 @@ const FloatingDockDesktop = ({
     <div
       className={cn(
         'fixed bottom-4 left-1/2 transform -translate-x-1/2 hidden md:flex h-16 gap-6 items-end rounded-2xl bg-transparent px-4 pb-6 border border-transparent z-50',
-        className
+        className,
       )}
     >
       {items.map((item) => (
@@ -151,17 +151,17 @@ function IconContainer({
         {
           'bg-blue-500': pathname === href,
           'bg-gray-200 dark:bg-neutral-800': pathname !== href,
-        }
+        },
       )}
       style={{ transform: `scale(${scale})` }}
     >
       {hovered && (
-        <div className='absolute left-1/2 -translate-x-1/2 -top-10 px-4 py-2 whitespace-pre rounded-md bg-white dark:bg-black dark:border-neutral-900 dark:text-white border border-gray-200 text-sm'>
+        <div className="absolute left-1/2 -translate-x-1/2 -top-10 px-4 py-2 whitespace-pre rounded-md bg-white dark:bg-black dark:border-neutral-900 dark:text-white border border-gray-200 text-sm">
           {title}
         </div>
       )}
-      <div className='h-14 w-14 text-blue-500 border border-blue-500 rounded-full shadow-md hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center'>
-        <div className='h-7 w-7'>{icon}</div>
+      <div className="h-14 w-14 text-blue-500 border border-blue-500 rounded-full shadow-md hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center">
+        <div className="h-7 w-7">{icon}</div>
       </div>
     </button>
   );

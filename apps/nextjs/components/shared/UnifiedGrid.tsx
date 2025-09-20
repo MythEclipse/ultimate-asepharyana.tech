@@ -31,8 +31,7 @@ type UnifiedGridProps<T extends Anime | Komik = Anime | Komik> = {
   // Removed itemClassName and isAnime2
 };
 
-const DEFAULT_GRID_CLASS =
-  'grid grid-cols-3 lg:grid-cols-5 gap-6 w-full';
+const DEFAULT_GRID_CLASS = 'grid grid-cols-3 lg:grid-cols-5 gap-6 w-full';
 
 function UnifiedGrid<T extends Anime | Komik>({
   items,
@@ -46,10 +45,7 @@ function UnifiedGrid<T extends Anime | Komik>({
     return (
       <div className={gridClassName || DEFAULT_GRID_CLASS}>
         {Array.from({ length: 10 }).map((_, idx) => (
-          <MediaCard
-            key={idx}
-            loading={true}
-          />
+          <MediaCard key={idx} loading={true} />
         ))}
       </div>
     );
@@ -82,11 +78,7 @@ function UnifiedGrid<T extends Anime | Komik>({
           <MediaCard
             key={komik.slug}
             title={komik.title}
-            description={
-              komik.chapter ||
-              komik.chapter_count ||
-              ''
-            }
+            description={komik.chapter || komik.chapter_count || ''}
             imageUrl={komik.poster || ''}
             linkUrl={`/komik/detail/${komik.slug}`}
           />
@@ -122,11 +114,7 @@ function UnifiedGrid<T extends Anime | Komik>({
               <MediaCard
                 key={komik.slug}
                 title={komik.title}
-                description={
-                  komik.chapter ||
-                  komik.chapter_count ||
-                  ''
-                }
+                description={komik.chapter || komik.chapter_count || ''}
                 imageUrl={komik.poster || ''}
                 linkUrl={`/komik/detail/${komik.slug}`}
               />

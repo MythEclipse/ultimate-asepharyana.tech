@@ -5,12 +5,12 @@ import { corsHeaders } from './corsHeaders';
 
 type ApiHandler<T> = (
   req: NextRequest,
-  props: { params: T }
+  props: { params: T },
 ) => Promise<NextResponse>;
 
 function formatLogContext(context: Record<string, unknown>) {
   return Object.entries(context)
-     
+
     .filter(([_, v]) => v !== undefined)
     .map(([k, v]) => `${k}=${v}`)
     .join(' | ');
@@ -38,14 +38,15 @@ export function withLogging<T>(handler: ApiHandler<T>) {
           status: response.status,
           durationMs: duration,
           ...(requestId ? { requestId } : {}),
-        })}`
+        })}`,
       );
       if (requestId) {
         response.headers.set('x-request-id', requestId);
       }
       return response;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       const duration = Date.now() - start;
       logger.error(
         `[Error processing request] ${formatLogContext({
@@ -55,7 +56,7 @@ export function withLogging<T>(handler: ApiHandler<T>) {
           error: errorMessage,
           durationMs: duration,
           ...(requestId ? { requestId } : {}),
-        })}`
+        })}`,
       );
       const response = NextResponse.json(
         {
@@ -63,7 +64,7 @@ export function withLogging<T>(handler: ApiHandler<T>) {
           error: errorMessage,
           ...(requestId ? { requestId } : {}),
         },
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: corsHeaders },
       );
       if (requestId) {
         response.headers.set('x-request-id', requestId);

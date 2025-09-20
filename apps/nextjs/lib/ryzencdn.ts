@@ -3,7 +3,7 @@ const ryzenCDN = async (
   inp:
     | Buffer
     | { buffer: Buffer; originalname?: string }
-    | Array<Buffer | { buffer: Buffer; originalname?: string }>
+    | Array<Buffer | { buffer: Buffer; originalname?: string }>,
 ) => {
   try {
     const form = new FormData();
@@ -25,7 +25,7 @@ const ryzenCDN = async (
       form.append(
         'file',
         new Blob([new Uint8Array(buffer)], { type: type.mime }),
-        `${originalName}.${type.ext}`
+        `${originalName}.${type.ext}`,
       );
     }
 
@@ -52,7 +52,7 @@ const ryzenCDN = async (
 
     return Array.isArray(inp)
       ? (json as unknown as RyzenCDNResponse[]).map(
-          (f: RyzenCDNResponse) => f.url
+          (f: RyzenCDNResponse) => f.url,
         )
       : json.url;
   } catch (error) {

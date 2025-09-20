@@ -12,9 +12,9 @@ import { navLinks } from '../../utils/constants';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 
 const Logo = memo(() => (
-  <Link href='/' className='flex items-center gap-2'>
-    <Image src='/Logo.svg' alt='Logo' width={28} height={28} />
-    <span className='hidden text-base font-semibold sm:inline-block md:text-lg'>
+  <Link href="/" className="flex items-center gap-2">
+    <Image src="/Logo.svg" alt="Logo" width={28} height={28} />
+    <span className="hidden text-base font-semibold sm:inline-block md:text-lg">
       Asep Haryana
     </span>
   </Link>
@@ -80,18 +80,18 @@ function MobileNav() {
   };
 
   return (
-    <nav className='md:hidden' aria-label="Mobile Navigation">
+    <nav className="md:hidden" aria-label="Mobile Navigation">
       <Button
         onClick={toggleMenu}
-        variant='ghost'
-        size='icon'
+        variant="ghost"
+        size="icon"
         aria-label="Open navigation menu"
         aria-controls="mobile-nav-menu"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <Menu className='h-6 w-6' aria-hidden="true" />
-        <span className='sr-only'>Open Menu</span>
+        <Menu className="h-6 w-6" aria-hidden="true" />
+        <span className="sr-only">Open Menu</span>
       </Button>
 
       <AnimatePresence>
@@ -100,49 +100,53 @@ function MobileNav() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className='fixed inset-0 z-50 bg-background/80 backdrop-blur-sm'
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
             onClick={toggleMenu}
           >
             <motion.div
               ref={menuRef}
               variants={menuVariants}
-              initial='hidden'
-              animate='visible'
-              exit='exit'
-              className='fixed inset-x-0 top-0 z-50 bg-background shadow-lg rounded-b-lg md:rounded-b-2xl'
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed inset-x-0 top-0 z-50 bg-background shadow-lg rounded-b-lg md:rounded-b-2xl"
               onClick={(e) => e.stopPropagation()}
               id="mobile-nav-menu"
               tabIndex={-1}
               role="menu"
               aria-label="Main menu"
             >
-              <div className='flex items-center justify-between p-4 border-b'>
+              <div className="flex items-center justify-between p-4 border-b">
                 <Logo />
                 <Button
                   onClick={toggleMenu}
-                  variant='ghost'
-                  size='icon'
+                  variant="ghost"
+                  size="icon"
                   aria-label="Close navigation menu"
                 >
-                  <X className='h-6 w-6' aria-hidden="true" />
-                  <span className='sr-only'>Close Menu</span>
+                  <X className="h-6 w-6" aria-hidden="true" />
+                  <span className="sr-only">Close Menu</span>
                 </Button>
               </div>
-              <div className='p-6'>
+              <div className="p-6">
                 <motion.ul
                   variants={listVariants}
-                  initial='hidden'
-                  animate='visible'
-                  className='flex flex-col items-center gap-4 sm:gap-6'
+                  initial="hidden"
+                  animate="visible"
+                  className="flex flex-col items-center gap-4 sm:gap-6"
                   role="menu"
                   aria-label="Navigation links"
                 >
                   {navLinks.map((link) => (
-                    <motion.li key={link.href} variants={itemVariants} role="none">
+                    <motion.li
+                      key={link.href}
+                      variants={itemVariants}
+                      role="none"
+                    >
                       <Link
                         href={link.href}
                         onClick={toggleMenu}
-                        className='text-xl font-medium text-muted-foreground hover:text-primary transition-colors'
+                        className="text-xl font-medium text-muted-foreground hover:text-primary transition-colors"
                         role="menuitem"
                         tabIndex={0}
                         aria-label={link.label}

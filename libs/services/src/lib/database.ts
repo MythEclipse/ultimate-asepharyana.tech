@@ -14,7 +14,7 @@ export function initializeDb(databaseUrl: string) {
       Promise.resolve(
         createPool({
           uri: databaseUrl,
-        }) as unknown as MysqlPool
+        }) as unknown as MysqlPool,
       ),
   });
 

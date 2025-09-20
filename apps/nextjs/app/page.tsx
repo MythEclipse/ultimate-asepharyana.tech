@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className='min-h-screen bg-background text-foreground'>
-      <div className='flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-4 md:p-8 lg:p-12'>
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-4 md:p-8 lg:p-12">
         <Bg>
           <AnimatedContent />
         </Bg>

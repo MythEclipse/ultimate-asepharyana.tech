@@ -32,7 +32,7 @@ export default function BookmarkPage() {
 
   useEffect(() => {
     const storedBookmarks = JSON.parse(
-      localStorage.getItem('bookmarks-anime') || '[]'
+      localStorage.getItem('bookmarks-anime') || '[]',
     );
     setBookmarks(storedBookmarks);
     setIsLoading(false);
@@ -68,13 +68,13 @@ export default function BookmarkPage() {
   }
 
   return (
-    <main className='min-h-screen p-6 bg-background dark:bg-dark'>
-      <div className='max-w-7xl mx-auto space-y-8'>
-        <div className='flex items-center gap-4'>
-          <div className='p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl'>
-            <Bookmark className='w-8 h-8 text-purple-600 dark:text-purple-400' />
+    <main className="min-h-screen p-6 bg-background dark:bg-dark">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
+            <Bookmark className="w-8 h-8 text-purple-600 dark:text-purple-400" />
           </div>
-          <h1 className='text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             My Bookmarks ({bookmarks.length})
           </h1>
         </div>
@@ -85,16 +85,16 @@ export default function BookmarkPage() {
           <>
             <AnimeGrid animes={getPaginatedBookmarks()} />
 
-            <div className='flex flex-wrap gap-4 justify-between items-center mt-8'>
-              <div className='flex gap-4'>
+            <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
+              <div className="flex gap-4">
                 {pagination.has_previous_page && (
                   <button
                     onClick={() =>
                       handlePageChange(pagination.current_page - 1)
                     }
-                    className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'
+                    className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
                   >
-                    <ChevronLeft className='w-5 h-5' />
+                    <ChevronLeft className="w-5 h-5" />
                     Previous
                   </button>
                 )}
@@ -104,15 +104,15 @@ export default function BookmarkPage() {
                     onClick={() =>
                       handlePageChange(pagination.current_page + 1)
                     }
-                    className='px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2'
+                    className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
                   >
                     Next
-                    <ChevronRight className='w-5 h-5' />
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 )}
               </div>
 
-              <span className='text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4'>
+              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
                 Page {pagination.current_page} of {pagination.last_visible_page}
               </span>
             </div>

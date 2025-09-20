@@ -18,7 +18,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ placeholder }) => {
 
   return (
     <SimpleMDE
-      className='dark:bg-darka dark:text-gray-100'
+      className="dark:bg-darka dark:text-gray-100"
       options={{
         spellChecker: false, // Menonaktifkan spell checker
         renderingConfig: {

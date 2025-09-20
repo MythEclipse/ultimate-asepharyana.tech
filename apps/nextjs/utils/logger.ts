@@ -23,7 +23,7 @@ import util from 'util';
 export async function logErrorToApi(
   error: unknown,
   info?: unknown,
-  maxRetries = 3
+  maxRetries = 3,
 ): Promise<void> {
   let attempt = 0;
   let lastError: unknown = null;
@@ -48,7 +48,10 @@ export async function logErrorToApi(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           error: errorPayload,
-          info: typeof info === 'object' && info !== null ? JSON.stringify(info) : String(info),
+          info:
+            typeof info === 'object' && info !== null
+              ? JSON.stringify(info)
+              : String(info),
         }),
       });
       return;
@@ -59,7 +62,12 @@ export async function logErrorToApi(
     }
   }
   // If all retries fail, fallback to console
-  console.error('Failed to log error to API after retries:', error, info, lastError);
+  console.error(
+    'Failed to log error to API after retries:',
+    error,
+    info,
+    lastError,
+  );
 }
 
 // Membuat format dasar yang bisa digunakan bersama
@@ -68,7 +76,7 @@ const baseFormat = winston.format.combine(
   winston.format.errors({ stack: true }), // Menampilkan stack trace untuk error
   winston.format.printf(({ timestamp, level, message, stack }) => {
     return `${timestamp} [${level}]: ${stack || message}`;
-  })
+  }),
 );
 
 const transports: winston.transport[] = [];
@@ -76,18 +84,15 @@ const transports: winston.transport[] = [];
 if (process.env.NODE_ENV !== 'production') {
   transports.push(
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        baseFormat
-      )
-    })
+      format: winston.format.combine(winston.format.colorize(), baseFormat),
+    }),
   );
 } else {
   transports.push(
     new winston.transports.Console({
       level: 'warn',
-      format: baseFormat
-    })
+      format: baseFormat,
+    }),
   );
 }
 
@@ -144,11 +149,15 @@ const logger = new Proxy(winstonLogger, {
   get(target, prop, receiver) {
     // Only wrap log level methods
     if (
-      ['info', 'warn', 'error', 'debug', 'verbose', 'silly', 'http'].includes(String(prop))
+      ['info', 'warn', 'error', 'debug', 'verbose', 'silly', 'http'].includes(
+        String(prop),
+      )
     ) {
       return (...args: unknown[]) => {
         const msg = formatLogArgs(args);
-        return ((target as unknown) as Record<string, (...args: unknown[]) => unknown>)[prop as string](msg);
+        return (
+          target as unknown as Record<string, (...args: unknown[]) => unknown>
+        )[prop as string](msg);
       };
     }
     // Default: passthrough

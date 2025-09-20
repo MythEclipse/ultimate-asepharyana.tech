@@ -7,11 +7,11 @@ export function cors(req: Request, res: Response) {
   res.headers.set('Access-Control-Allow-Origin', '*');
   res.headers.set(
     'Access-Control-Allow-Methods',
-    'GET, POST, PUT, DELETE, OPTIONS'
+    'GET, POST, PUT, DELETE, OPTIONS',
   );
   res.headers.set(
     'Access-Control-Allow-Headers',
-    'Content-Type, Authorization'
+    'Content-Type, Authorization',
   );
 
   if (req.method === 'OPTIONS') {

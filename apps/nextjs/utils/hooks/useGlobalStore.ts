@@ -18,10 +18,11 @@ type Preferences = {
   [key: string]: string | number | boolean | undefined;
 };
 
-type GlobalState = SosmedUIState & NavbarState & {
-  preferences: Preferences;
-  setPreferences: (prefs: Preferences) => void;
-};
+type GlobalState = SosmedUIState &
+  NavbarState & {
+    preferences: Preferences;
+    setPreferences: (prefs: Preferences) => void;
+  };
 
 export const useGlobalStore = create<GlobalState>()(
   devtools(
@@ -40,10 +41,12 @@ export const useGlobalStore = create<GlobalState>()(
           })),
         // Navbar state
         isMobileNavOpen: false,
-        setMobileNavOpen: (open: boolean) => set(() => ({ isMobileNavOpen: open })),
+        setMobileNavOpen: (open: boolean) =>
+          set(() => ({ isMobileNavOpen: open })),
         // Preferences
         preferences: {},
-        setPreferences: (prefs: Preferences) => set(() => ({ preferences: prefs })),
+        setPreferences: (prefs: Preferences) =>
+          set(() => ({ preferences: prefs })),
       }),
       {
         name: 'global-store',
@@ -52,8 +55,8 @@ export const useGlobalStore = create<GlobalState>()(
           newComments: state.newComments,
           preferences: state.preferences,
         }),
-      }
+      },
     ),
-    { name: 'GlobalStore' }
-  )
+    { name: 'GlobalStore' },
+  ),
 );

@@ -30,9 +30,8 @@ function KomikPageClient({
   manga,
   manhua,
   manhwa,
-  error
+  error,
 }: KomikPageClientProps) {
-
   // Menentukan status loading untuk setiap kategori
   const isLoading = {
     Manga: !manga && !error,

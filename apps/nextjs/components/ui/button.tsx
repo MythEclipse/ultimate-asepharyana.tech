@@ -32,7 +32,7 @@ const buttonVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 );
 
 /**
@@ -57,8 +57,11 @@ function Button({
 
   return (
     <Comp
-      data-slot='button'
-      className={cn(buttonVariants({ variant, size, className }), 'focus-visible:outline-none')}
+      data-slot="button"
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        'focus-visible:outline-none',
+      )}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
       {...props}

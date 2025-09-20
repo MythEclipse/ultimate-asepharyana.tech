@@ -1,11 +1,24 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  memo,
+  useMemo,
+} from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '../../utils/utils'; // Changed to relative import
 import { PRODUCTION } from '../../lib/url'; // Changed to relative import
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'; // Removed CardBody, CardContainer, CardItem
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card'; // Removed CardBody, CardContainer, CardItem
 import { Badge } from '../ui/badge'; // Changed to relative import
 import { Skeleton } from '../ui/skeleton'; // Changed to relative import
 
@@ -45,7 +58,9 @@ const TypeBadge = memo(({ type, badge }: { type?: string; badge?: string }) => {
   if (!label) return null;
   const colorClass = typeColors[label] || 'bg-gray-500 hover:bg-gray-600';
   return (
-    <Badge className={cn('absolute top-2 right-2 text-white border-0', colorClass)}>
+    <Badge
+      className={cn('absolute top-2 right-2 text-white border-0', colorClass)}
+    >
       {label}
     </Badge>
   );
@@ -53,16 +68,16 @@ const TypeBadge = memo(({ type, badge }: { type?: string; badge?: string }) => {
 TypeBadge.displayName = 'TypeBadge';
 
 const CardSkeleton = memo(() => (
-  <Card className='w-full max-w-sm overflow-hidden'>
-    <div className='relative h-64'>
-      <Skeleton className='h-full w-full rounded-t-md rounded-b-none' />
+  <Card className="w-full max-w-sm overflow-hidden">
+    <div className="relative h-64">
+      <Skeleton className="h-full w-full rounded-t-md rounded-b-none" />
     </div>
     <CardHeader>
-      <Skeleton className='h-5 w-3/4' />
+      <Skeleton className="h-5 w-3/4" />
     </CardHeader>
     <CardContent>
-      <Skeleton className='h-4 w-full' />
-      <Skeleton className='h-4 w-5/6 mt-2' />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6 mt-2" />
     </CardContent>
   </Card>
 ));
@@ -79,13 +94,21 @@ function MediaCard(props: MediaCardProps) {
     () =>
       [
         props.imageUrl, // Use props.imageUrl directly
-        props.imageUrl ? `https://imagecdn.app/v1/images/${encodeURIComponent(props.imageUrl)}` : null,
-        props.imageUrl ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(props.imageUrl)}` : null,
-        props.imageUrl ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(props.imageUrl)}` : null,
-        props.imageUrl ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(props.imageUrl)}` : null,
+        props.imageUrl
+          ? `https://imagecdn.app/v1/images/${encodeURIComponent(props.imageUrl)}`
+          : null,
+        props.imageUrl
+          ? `${PRODUCTION}/api/img-compress2?url=${encodeURIComponent(props.imageUrl)}`
+          : null,
+        props.imageUrl
+          ? `${PRODUCTION}/api/img-compress3?url=${encodeURIComponent(props.imageUrl)}`
+          : null,
+        props.imageUrl
+          ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(props.imageUrl)}`
+          : null,
         fallbackImage,
       ].filter(Boolean) as string[],
-    [props.imageUrl] // Depend on props.imageUrl
+    [props.imageUrl], // Depend on props.imageUrl
   );
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -124,15 +147,9 @@ function MediaCard(props: MediaCardProps) {
     router.push(props.linkUrl || '/');
   }, [router, props.linkUrl]);
 
-
   // Dynamic Card (This will be the only variant now)
-  const {
-    title,
-    description,
-    type,
-    badge,
-    loading,
-  } = props as DynamicCardProps; // Removed imageUrl and linkUrl from destructuring
+  const { title, description, type, badge, loading } =
+    props as DynamicCardProps; // Removed imageUrl and linkUrl from destructuring
 
   if (loading) {
     return <CardSkeleton />;
@@ -141,20 +158,20 @@ function MediaCard(props: MediaCardProps) {
   return (
     <Card
       onClick={handleCardClick}
-      className='w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl'
+      className="w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl"
     >
-      <div className='relative h-64'>
+      <div className="relative h-64">
         {isImageLoading && (
-          <Skeleton className='absolute inset-0 h-full w-full rounded-t-md rounded-b-none' />
+          <Skeleton className="absolute inset-0 h-full w-full rounded-t-md rounded-b-none" />
         )}
         <Image
           src={imageSources[currentImageIndex]}
           alt={title || 'Card Image'}
           fill
-          sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className={cn(
             'object-cover transition-opacity duration-300',
-            isImageLoading ? 'opacity-0' : 'opacity-100'
+            isImageLoading ? 'opacity-0' : 'opacity-100',
           )}
           onLoad={handleImageLoad}
           onError={handleImageError}
@@ -163,9 +180,9 @@ function MediaCard(props: MediaCardProps) {
         <TypeBadge type={type} badge={badge} />
       </div>
       <CardHeader>
-        <CardTitle className='truncate'>{title}</CardTitle>
+        <CardTitle className="truncate">{title}</CardTitle>
         {description && (
-          <CardDescription className='line-clamp-2'>
+          <CardDescription className="line-clamp-2">
             {description}
           </CardDescription>
         )}

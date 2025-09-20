@@ -41,11 +41,12 @@ async function HomePage() {
 
   try {
     // Fetch all three endpoints concurrently
-    const [mangaResponse, manhuaResponse, manhwaResponse] = await Promise.allSettled([
-      fetchData('/api/komik2/manga?page=1&order=update'),
-      fetchData('/api/komik2/manhua?page=1&order=update'),
-      fetchData('/api/komik2/manhwa?page=1&order=update'),
-    ]);
+    const [mangaResponse, manhuaResponse, manhwaResponse] =
+      await Promise.allSettled([
+        fetchData('/api/komik2/manga?page=1&order=update'),
+        fetchData('/api/komik2/manhua?page=1&order=update'),
+        fetchData('/api/komik2/manhwa?page=1&order=update'),
+      ]);
 
     if (mangaResponse.status === 'fulfilled') {
       initialManga = mangaResponse.value;
@@ -58,9 +59,11 @@ async function HomePage() {
     }
 
     // If all failed, set error
-    if (mangaResponse.status === 'rejected' &&
-        manhuaResponse.status === 'rejected' &&
-        manhwaResponse.status === 'rejected') {
+    if (
+      mangaResponse.status === 'rejected' &&
+      manhuaResponse.status === 'rejected' &&
+      manhwaResponse.status === 'rejected'
+    ) {
       error = 'Failed to load komik data';
     }
   } catch (err) {

@@ -2,9 +2,7 @@ import { APIURLSERVER } from '../../../../lib/url';
 import NavigationButtons from '../NavigationButtons';
 import { ImageWithFallback } from '../../../../components/shared/ImageWithFallback';
 import { Skeleton } from '../../../../components/ui/skeleton';
-import {
-  AlertTriangle,
-} from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface ChapterDetail {
   title: string;
@@ -41,7 +39,9 @@ export default async function ChapterPage({
   let chapter: ChapterDetail | null = null;
 
   try {
-    const response = await fetchData(`/api/komik2/chapter?chapter_url=${chapterId}`);
+    const response = await fetchData(
+      `/api/komik2/chapter?chapter_url=${chapterId}`,
+    );
     chapter = response.data;
   } catch (error) {
     return (
@@ -97,10 +97,7 @@ export default async function ChapterPage({
       <div className="max-w-4xl mx-auto space-y-4">
         {chapter.images?.map((image, index) => (
           <div key={`${image}-${index}`} className="relative group">
-            <ImageWithFallback
-              imageUrl={image}
-              index={index}
-            />
+            <ImageWithFallback imageUrl={image} index={index} />
             <div className="absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity">
               Halaman {index + 1}
             </div>

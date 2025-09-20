@@ -48,7 +48,7 @@ async function getCachedFetch(
         // ignore parse error, fallback to fetch
       }
     }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (redisError: any) {
     logger.warn(`[fetchWithProxy] Redis get failed for ${slug}:`, {
       message: redisError?.message,

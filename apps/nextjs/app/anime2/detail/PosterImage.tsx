@@ -35,7 +35,7 @@ export default function PosterImage({ poster, title }: PosterImageProps) {
       alt={title}
       width={400}
       height={600}
-      className='object-cover w-full aspect-[2/3]'
+      className="object-cover w-full aspect-[2/3]"
       priority
       unoptimized
       onError={handleError}

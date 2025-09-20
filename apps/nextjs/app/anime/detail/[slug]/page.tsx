@@ -65,7 +65,13 @@ async function DetailAnimePage({
     error = 'Failed to load anime data';
   }
 
-  return <AnimeDetailPageClient slug={slug} initialData={initialData} initialError={error} />;
+  return (
+    <AnimeDetailPageClient
+      slug={slug}
+      initialData={initialData}
+      initialError={error}
+    />
+  );
 }
 
 export default DetailAnimePage;

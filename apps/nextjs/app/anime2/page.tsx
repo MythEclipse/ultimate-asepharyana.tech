@@ -33,7 +33,9 @@ async function AnimePage() {
   let error: string | null = null;
 
   try {
-    const fullUrl = '/api/anime2'.startsWith('/') ? `${APIURLSERVER}/api/anime2` : '/api/anime2';
+    const fullUrl = '/api/anime2'.startsWith('/')
+      ? `${APIURLSERVER}/api/anime2`
+      : '/api/anime2';
     const response = await fetch(fullUrl, {
       headers: {
         'Content-Type': 'application/json',

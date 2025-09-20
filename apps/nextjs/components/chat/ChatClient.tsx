@@ -257,9 +257,7 @@ export default function ChatClient() {
               <Button
                 onClick={sendMessage}
                 disabled={
-                  !status.connected ||
-                  status.sending ||
-                  status.uploading
+                  !status.connected || status.sending || status.uploading
                 }
                 className="h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
               >

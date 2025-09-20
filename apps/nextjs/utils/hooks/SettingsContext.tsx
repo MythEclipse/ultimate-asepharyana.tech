@@ -1,7 +1,13 @@
 // apps/NextJS/hooks/SettingsContext.tsx
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -15,7 +21,9 @@ interface SettingsContextType {
   setPreferences: (prefs: Preferences) => void;
 }
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined,
+);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>('system');
@@ -23,8 +31,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Load persisted settings
-    const storedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
-    const storedPrefs = typeof window !== 'undefined' ? localStorage.getItem('preferences') : null;
+    const storedTheme =
+      typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
+    const storedPrefs =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('preferences')
+        : null;
     if (storedTheme) setThemeState(storedTheme as Theme);
     if (storedPrefs) setPreferencesState(JSON.parse(storedPrefs));
   }, []);
@@ -36,11 +48,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
   const setPreferences = (prefs: Preferences) => {
     setPreferencesState(prefs);
-    if (typeof window !== 'undefined') localStorage.setItem('preferences', JSON.stringify(prefs));
+    if (typeof window !== 'undefined')
+      localStorage.setItem('preferences', JSON.stringify(prefs));
   };
 
   return (
-    <SettingsContext.Provider value={{ theme, setTheme, preferences, setPreferences }}>
+    <SettingsContext.Provider
+      value={{ theme, setTheme, preferences, setPreferences }}
+    >
       {children}
     </SettingsContext.Provider>
   );

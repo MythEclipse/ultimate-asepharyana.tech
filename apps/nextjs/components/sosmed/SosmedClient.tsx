@@ -175,7 +175,10 @@ export default function SosmedClient() {
     }
     setIsCommenting((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetchData(`/api/sosmed/comments`, 'POST', { content: comment, postId });
+      await fetchData(`/api/sosmed/comments`, 'POST', {
+        content: comment,
+        postId,
+      });
       mutate(`/api/sosmed/posts`);
       setNewComment(postId, '');
     } catch (error) {
@@ -224,7 +227,10 @@ export default function SosmedClient() {
     }
     setIsEditing((prev) => ({ ...prev, [commentId]: true }));
     try {
-      await fetchData(`/api/sosmed/comments`, 'PUT', { id: commentId, content });
+      await fetchData(`/api/sosmed/comments`, 'PUT', {
+        id: commentId,
+        content,
+      });
       mutate(`/api/sosmed/posts`);
     } catch (error) {
       console.error('Error editing comment:', error);

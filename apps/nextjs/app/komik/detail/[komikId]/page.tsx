@@ -207,26 +207,24 @@ export default async function DetailMangaPage({
 
                   <Card>
                     <CardContent className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {metadata.map(
-                        (item) => (
-                          <div
-                            key={item.label}
-                            className="flex items-center gap-3"
-                          >
-                            <span className="p-2 bg-muted rounded-lg">
-                              {item.icon}
-                            </span>
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                {item.label}
-                              </p>
-                              <p className="font-semibold">
-                                {item.value || 'N/A'}
-                              </p>
-                            </div>
+                      {metadata.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex items-center gap-3"
+                        >
+                          <span className="p-2 bg-muted rounded-lg">
+                            {item.icon}
+                          </span>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              {item.label}
+                            </p>
+                            <p className="font-semibold">
+                              {item.value || 'N/A'}
+                            </p>
                           </div>
-                        ),
-                      )}
+                        </div>
+                      ))}
                     </CardContent>
                   </Card>
 

@@ -51,9 +51,7 @@ export default function PostActions({
         ) : (
           <span
             className={`font-medium ${
-              userHasLiked
-                ? 'text-red-600'
-                : 'text-gray-600 dark:text-gray-400'
+              userHasLiked ? 'text-red-600' : 'text-gray-600 dark:text-gray-400'
             } group-hover/like:text-red-600`}
           >
             {likesCount}

@@ -11,14 +11,18 @@ This document explains how to run unit tests for the RustExpress application.
 ## Test Types
 
 ### 1. Model Tests (No Database Required)
+
 These tests verify the ChatMessage model functionality:
+
 - Message creation
 - Serialization/Deserialization
 - Field validation
 - Cloning
 
 ### 2. Service Tests (Database Required)
+
 These tests verify the chat service functionality:
+
 - Saving messages to database
 - Loading messages from database
 - Message ordering
@@ -32,17 +36,20 @@ These tests verify the chat service functionality:
 This method automatically sets up a MySQL test database using Docker.
 
 **Windows (PowerShell):**
+
 ```powershell
 .\test-docker.ps1
 ```
 
 **Unix/Linux (Bash):**
+
 ```bash
 chmod +x test-docker.sh
 ./test-docker.sh
 ```
 
 This script will:
+
 1. Start a MySQL container on port 3307
 2. Create the test database
 3. Run all tests
@@ -53,17 +60,20 @@ This script will:
 If you have a MySQL server running locally:
 
 **Windows:**
+
 ```powershell
 .\test.ps1
 ```
 
 **Unix/Linux:**
+
 ```bash
 chmod +x test.sh
 ./test.sh
 ```
 
 Make sure your MySQL server is configured with:
+
 - Host: localhost:3307 (or update the scripts)
 - Username: root
 - Password: password
@@ -97,6 +107,7 @@ cargo test -- --nocapture
 ### Database Schema
 
 The tests require a `chat_messages` table. The schema is defined in:
+
 ```
 migrations/20250101000000_create_chat_messages_table.sql
 ```
@@ -106,13 +117,15 @@ migrations/20250101000000_create_chat_messages_table.sql
 Current test coverage includes:
 
 ### ChatMessage Model Tests
+
 - ✅ `test_chat_message_new()` - Message creation with all fields
-- ✅ `test_chat_message_new_minimal()` - Message creation with minimal fields  
+- ✅ `test_chat_message_new_minimal()` - Message creation with minimal fields
 - ✅ `test_chat_message_serialization()` - JSON serialization
 - ✅ `test_chat_message_deserialization()` - JSON deserialization
 - ✅ `test_chat_message_clone()` - Object cloning
 
 ### Chat Service Tests
+
 - ✅ `test_save_message_success()` - Successful message saving
 - ✅ `test_save_message_with_minimal_fields()` - Saving with optional fields
 - ✅ `test_load_messages_empty()` - Loading from empty database
@@ -142,21 +155,25 @@ Current test coverage includes:
 ### Docker Commands
 
 **Check container status:**
+
 ```bash
 docker-compose -f docker-compose.test.yml ps
 ```
 
 **View container logs:**
+
 ```bash
 docker-compose -f docker-compose.test.yml logs mysql-test
 ```
 
 **Stop test containers:**
+
 ```bash
 docker-compose -f docker-compose.test.yml down
 ```
 
 **Clean up volumes:**
+
 ```bash
 docker-compose -f docker-compose.test.yml down -v
 ```
@@ -170,11 +187,11 @@ For automated testing in CI/CD pipelines, use the Docker-based approach:
 steps:
   - name: Setup MySQL Test Database
     run: docker-compose -f apps/RustExpress/docker-compose.test.yml up -d
-  
+
   - name: Wait for MySQL
     run: |
       timeout 60 bash -c 'while ! docker exec rustexpress-mysql-test mysqladmin ping -h"localhost" --silent; do sleep 2; done'
-  
+
   - name: Run Tests
     env:
       TEST_DATABASE_URL: mysql://root:password@localhost:3307/test_rustexpress

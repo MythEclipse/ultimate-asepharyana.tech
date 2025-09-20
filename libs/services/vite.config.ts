@@ -36,7 +36,7 @@ export default defineConfig(() => ({
       formats: ['es' as const],
     },
     rollupOptions: { external: [] },
-  outDir: '../../dist/libs',
+    outDir: '../../dist/libs',
     reportCompressedSize: true,
     commonjsOptions: { transformMixedEsModules: true },
   },

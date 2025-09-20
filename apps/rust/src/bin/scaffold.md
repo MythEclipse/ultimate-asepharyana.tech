@@ -59,7 +59,7 @@ Handler protected akan memverifikasi token JWT secara otomatis melalui middlewar
 
 ## 1. Endpoint Index (root directory route)
 
-------------------------------------------------------------
+---
 
 - Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -105,7 +105,7 @@ Tes endpoint:
 
 ## 2. Endpoint Static (tanpa parameter)
 
-------------------------------------------------------------
+---
 
 - Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -116,7 +116,7 @@ Tes endpoint:
 
 Contoh handler (Rust):
 
-------------------------------------------------------------
+---
 
 - Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -147,7 +147,7 @@ Tes endpoint:
 
 ## 3. Endpoint Dynamic / Path Parameter
 
-------------------------------------------------------------
+---
 
 - Untuk path dinamis, gunakan nama file yang sesuai dengan parameter:
 
@@ -221,7 +221,7 @@ Tes:
 
 ## 4. Endpoint Query Params
 
-------------------------------------------------------------
+---
 
 - Scaffold path tanpa query (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -262,7 +262,7 @@ Tes:
 
 ## 5. Kombinasi: Slug + Query Params
 
-------------------------------------------------------------
+---
 
 - Contoh path: anime/slug/reviews
 - Scaffold (dapat dijalankan dari workspace root atau apps/rust/):
@@ -295,7 +295,7 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 
 ## 6. Endpoint dengan Authentication (--protected)
 
-------------------------------------------------------------
+---
 
 - Untuk membuat endpoint yang memerlukan authentication:
 
@@ -348,7 +348,7 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" http://127.0.0.1:3000/api/user/pr
 
 ## 7. Petunjuk Operasional & Best Practices
 
-------------------------------------------------------------
+---
 
 - State aplikasi dinamai `AppState`. Untuk mengaksesnya, gunakan `Arc<AppState>` dan parameter `State` di handler.
 - Jangan edit `mod.rs` di `src/routes/api` karena dihasilkan oleh [`apps/rust/build.rs`](apps/rust/build.rs:1).
@@ -359,17 +359,17 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" http://127.0.0.1:3000/api/user/pr
 
 ## 8. Contoh lengkap alur
 
-------------------------------------------------------------
+---
 
 1. buat file kosong (dapat dijalankan dari workspace root atau apps/rust/):
 
-    cargo run --bin scaffold -- anime/detail/slug
+   cargo run --bin scaffold -- anime/detail/slug
 
 2. **Baru**: Template lengkap sudah dihasilkan, langsung edit file
 3. edit `src/routes/api/anime/detail/slug.rs`
 4. run:
 
-    cargo run
+   cargo run
 
 Catatan tambahan:
 
@@ -384,3 +384,4 @@ Dokumentasi scaffold telah diperbarui di [`apps/rust/src/bin/scaffold.md`](apps/
 # Dari workspace root atau apps/rust/
 cargo run --bin scaffold -- test/helloworld
 # Template lengkap langsung tersedia untuk edit
+```

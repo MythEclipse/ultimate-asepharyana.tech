@@ -81,7 +81,10 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
 
         logger.info('Form submitted. Waiting for initial navigation...');
         await Promise.all([
-          page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }),
+          page.waitForNavigation({
+            waitUntil: 'domcontentloaded',
+            timeout: 60000,
+          }),
           page.click(SUBMIT_BUTTON_SELECTOR),
         ]);
 
@@ -90,15 +93,21 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
         const pageText = pageContent.toLowerCase();
 
         const isErrorUrl = currentUrl.includes('/requests?fso=');
-        const hasErrorText = pageText.includes('your session has outdated') || pageText.includes('something went wrong');
+        const hasErrorText =
+          pageText.includes('your session has outdated') ||
+          pageText.includes('something went wrong');
 
         if (isErrorUrl || hasErrorText) {
-          logger.warn(`Error detected (URL: ${isErrorUrl}, Text: ${hasErrorText}). Retrying...`);
+          logger.warn(
+            `Error detected (URL: ${isErrorUrl}, Text: ${hasErrorText}). Retrying...`,
+          );
           continue;
         }
 
         if (pageText.includes('proxy is launching')) {
-          logger.info('Proxy launching page detected. Waiting for final redirect...');
+          logger.info(
+            'Proxy launching page detected. Waiting for final redirect...',
+          );
           await page.waitForNavigation({ waitUntil: 'load', timeout: 120000 });
           logger.info(`Redirected successfully to: ${page.url()}`);
         } else {
@@ -113,10 +122,13 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
         logger.debug('Retrieved page content.');
         break;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error(`Attempt ${attempt} failed: ${errorMessage}`);
         if (attempt === MAX_RETRIES) {
-          throw new Error(`Failed to scrape after ${MAX_RETRIES} attempts: ${errorMessage}`);
+          throw new Error(
+            `Failed to scrape after ${MAX_RETRIES} attempts: ${errorMessage}`,
+          );
         }
       }
     }
@@ -141,16 +153,22 @@ import { redis } from './redis';
  * @param targetUrl URL to scrape via CroxyProxy
  * @returns HTML string (cached for 1 hour)
  */
-export async function scrapeCroxyProxyCached(targetUrl: string): Promise<string> {
+export async function scrapeCroxyProxyCached(
+  targetUrl: string,
+): Promise<string> {
   const cacheKey = `scrapeCroxyProxy:${targetUrl}`;
   const cached = await redis.get(cacheKey);
   if (typeof cached === 'string' && cached) {
-    logger.info(`[scrapeCroxyProxyCached] Returning cached result for ${targetUrl}`);
+    logger.info(
+      `[scrapeCroxyProxyCached] Returning cached result for ${targetUrl}`,
+    );
     return cached;
   }
   const html = await scrapeCroxyProxy(targetUrl);
   await redis.set(cacheKey, html, { EX: 3600 });
-  logger.info(`[scrapeCroxyProxyCached] Cached result for ${targetUrl} (1 hour)`);
+  logger.info(
+    `[scrapeCroxyProxyCached] Cached result for ${targetUrl} (1 hour)`,
+  );
   return html;
 }
 

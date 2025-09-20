@@ -83,7 +83,7 @@ export const BackgroundBeamsWithCollision = ({
           }
         }
       `}</style>
-      <div className='absolute inset-0 pointer-events-none z-20'>
+      <div className="absolute inset-0 pointer-events-none z-20">
         {beams.map((beam, index) => (
           <CollisionMechanism
             key={index}
@@ -143,7 +143,7 @@ const CollisionMechanism = ({
     // ADJUSTED: Increased timeout for explosion to linger longer.
     setTimeout(
       () => setCollision({ detected: false, coordinates: null }),
-      2000
+      2000,
     );
   };
 
@@ -151,7 +151,7 @@ const CollisionMechanism = ({
     <>
       <div
         ref={beamRef}
-        className='absolute w-px bg-gradient-to-t from-indigo-500/0 via-purple-500 to-indigo-500/0 animation-beam'
+        className="absolute w-px bg-gradient-to-t from-indigo-500/0 via-purple-500 to-indigo-500/0 animation-beam"
         style={
           {
             left: `${beamOptions.initialX ?? 0}px`,
@@ -197,7 +197,7 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
       {particles.map((particle) => (
         <span
           key={particle.id}
-          className='absolute animation-explosion-particle'
+          className="absolute animation-explosion-particle"
           style={
             {
               backgroundImage:

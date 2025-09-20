@@ -7,7 +7,7 @@ A high-performance Rust migration of the existing Express.js application, built 
 This RustExpress application is a **direct migration** from the existing Express.js application (`../Express/`). It maintains API compatibility while offering:
 
 - **🚀 Better Performance** - Rust's zero-cost abstractions and memory safety
-- **🔒 Enhanced Safety** - Compile-time guarantees and error handling  
+- **🔒 Enhanced Safety** - Compile-time guarantees and error handling
 - **⚡ Lower Resource Usage** - Reduced memory footprint and CPU usage
 - **🌐 Same API Interface** - Drop-in replacement for the Express.js version
 
@@ -22,29 +22,33 @@ This RustExpress application is a **direct migration** from the existing Express
 
 ## Prerequisites
 
-- Rust 1.70+ 
+- Rust 1.70+
 - Cargo
 - SQLite
 
 ## Setup
 
 1. **Clone and navigate to the project:**
+
    ```bash
    cd apps/RustExpress
    ```
 
 2. **Install dependencies:**
+
    ```bash
    cargo build
    ```
 
 3. **Set up environment variables:**
    Copy `.env.example` to `.env` and modify as needed:
+
    ```bash
    cp .env.example .env
    ```
 
    Default configuration:
+
    ```env
    PORT=3001
    DATABASE_URL=sqlite:./chat.db
@@ -57,11 +61,13 @@ This RustExpress application is a **direct migration** from the existing Express
 ## Running the Application
 
 ### Development
+
 ```bash
 cargo run
 ```
 
 ### Production Build
+
 ```bash
 cargo build --release
 ./target/release/RustExpress
@@ -70,10 +76,12 @@ cargo build --release
 ## API Endpoints
 
 ### REST API
+
 - `GET /` - Health check endpoint
 - `POST /merge-pdfs` - Merge multiple PDF files
 
 ### WebSocket
+
 - `GET /ws` - WebSocket connection for real-time chat
 
 ## WebSocket Chat Usage
@@ -91,6 +99,7 @@ Connect to `ws://localhost:3001/ws` and send JSON messages:
 ```
 
 The server will:
+
 1. Send chat history on connection
 2. Save new messages to the database
 3. Echo messages back to the client
@@ -107,6 +116,7 @@ curl -X POST -F "file1=@document1.pdf" -F "file2=@document2.pdf" \
 ## Database Schema
 
 ### chat_messages table
+
 - `id` - Unique message identifier
 - `user_id` - User identifier
 - `text` - Message content
@@ -119,16 +129,19 @@ curl -X POST -F "file1=@document1.pdf" -F "file2=@document2.pdf" \
 ## Development
 
 ### Running Tests
+
 ```bash
 cargo test
 ```
 
 ### Code Formatting
+
 ```bash
 cargo fmt
 ```
 
 ### Linting
+
 ```bash
 cargo clippy
 ```
@@ -165,11 +178,13 @@ This project is licensed under the MIT License.
 Use the provided migration scripts:
 
 **Windows (PowerShell):**
+
 ```powershell
 .\migrate.ps1
 ```
 
 **Linux/macOS (Bash):**
+
 ```bash
 chmod +x migrate.sh
 ./migrate.sh
@@ -185,18 +200,19 @@ chmod +x migrate.sh
 
 ### API Compatibility
 
-| Express.js Route | RustExpress Route | Status |
-|------------------|------------------|--------|
-| `GET /` | `GET /` | ✅ Compatible (redirects to asepharyana.tech/chat) |
-| `POST /merge-pdfs` | `POST /merge-pdfs` | ✅ Compatible (same API) |
-| WebSocket `/` | WebSocket `/ws` | ✅ Compatible (same protocol) |
-| N/A | `GET /api/health` | ✨ New (health check endpoint) |
-| N/A | `GET /api/status` | ✨ New (status monitoring) |
+| Express.js Route   | RustExpress Route  | Status                                             |
+| ------------------ | ------------------ | -------------------------------------------------- |
+| `GET /`            | `GET /`            | ✅ Compatible (redirects to asepharyana.tech/chat) |
+| `POST /merge-pdfs` | `POST /merge-pdfs` | ✅ Compatible (same API)                           |
+| WebSocket `/`      | WebSocket `/ws`    | ✅ Compatible (same protocol)                      |
+| N/A                | `GET /api/health`  | ✨ New (health check endpoint)                     |
+| N/A                | `GET /api/status`  | ✨ New (status monitoring)                         |
 
 ### Performance Comparison
 
 Based on typical workloads:
+
 - **Memory Usage**: ~70% reduction compared to Node.js Express
-- **CPU Usage**: ~40% reduction under load  
+- **CPU Usage**: ~40% reduction under load
 - **Request Latency**: ~30% faster response times
 - **Concurrent Connections**: 3-5x higher capacity

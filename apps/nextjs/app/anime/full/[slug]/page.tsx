@@ -8,7 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../../components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '../../../../components/ui/alert';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '../../../../components/ui/alert';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import {
   ArrowLeft,
@@ -45,29 +49,29 @@ export const revalidate = 60;
 
 // --- SKELETON COMPONENT ---
 const PlayerPageSkeleton = () => (
-  <main className='p-4 md:p-8'>
-    <div className='max-w-6xl mx-auto space-y-8'>
-      <div className='text-center space-y-4'>
-        <Skeleton className='h-12 w-3/4 mx-auto rounded-lg' />
+  <main className="p-4 md:p-8">
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="text-center space-y-4">
+        <Skeleton className="h-12 w-3/4 mx-auto rounded-lg" />
       </div>
-      <Skeleton className='aspect-video w-full rounded-xl' />
-      <div className='flex justify-between gap-4'>
-        <Skeleton className='h-12 flex-1 rounded-lg' />
-        <Skeleton className='h-12 flex-1 rounded-lg' />
+      <Skeleton className="aspect-video w-full rounded-xl" />
+      <div className="flex justify-between gap-4">
+        <Skeleton className="h-12 flex-1 rounded-lg" />
+        <Skeleton className="h-12 flex-1 rounded-lg" />
       </div>
       <Card>
-        <CardHeader className='items-center'>
-          <Skeleton className='h-8 w-1/3 rounded-lg' />
+        <CardHeader className="items-center">
+          <Skeleton className="h-8 w-1/3 rounded-lg" />
         </CardHeader>
-        <CardContent className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
             <Card key={i}>
               <CardHeader>
-                <Skeleton className='h-6 w-1/2 rounded-md' />
+                <Skeleton className="h-6 w-1/2 rounded-md" />
               </CardHeader>
-              <CardContent className='space-y-2'>
-                <Skeleton className='h-10 w-full rounded-md' />
-                <Skeleton className='h-10 w-full rounded-md' />
+              <CardContent className="space-y-2">
+                <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
               </CardContent>
             </Card>
           ))}
@@ -87,12 +91,13 @@ export default async function WatchAnimePage({
 
   if (!slug) {
     return (
-      <main className='p-4 md:p-8 flex items-center justify-center min-h-[70vh]'>
-        <Alert variant='destructive' className='max-w-lg'>
-          <AlertTriangle className='h-4 w-4' />
+      <main className="p-4 md:p-8 flex items-center justify-center min-h-[70vh]">
+        <Alert variant="destructive" className="max-w-lg">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Invalid URL</AlertTitle>
           <AlertDescription>
-            The episode slug is missing. Please ensure you are accessing this page with a valid episode.
+            The episode slug is missing. Please ensure you are accessing this
+            page with a valid episode.
           </AlertDescription>
         </Alert>
       </main>
@@ -116,9 +121,9 @@ export default async function WatchAnimePage({
     data = await response.json();
   } catch (error) {
     return (
-      <main className='p-4 md:p-8 flex items-center justify-center min-h-[70vh]'>
-        <Alert variant='destructive' className='max-w-lg'>
-          <AlertTriangle className='h-4 w-4' />
+      <main className="p-4 md:p-8 flex items-center justify-center min-h-[70vh]">
+        <Alert variant="destructive" className="max-w-lg">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Gagal Memuat Episode</AlertTitle>
           <AlertDescription>
             Terjadi kesalahan saat mengambil data. Episode mungkin tidak ada
@@ -131,9 +136,9 @@ export default async function WatchAnimePage({
 
   if (!data || data.status !== 'Ok') {
     return (
-      <main className='p-4 md:p-8 flex items-center justify-center min-h-[70vh]'>
-        <Alert variant='destructive' className='max-w-lg'>
-          <AlertTriangle className='h-4 w-4' />
+      <main className="p-4 md:p-8 flex items-center justify-center min-h-[70vh]">
+        <Alert variant="destructive" className="max-w-lg">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Gagal Memuat Episode</AlertTitle>
           <AlertDescription>
             Terjadi kesalahan saat mengambil data. Episode mungkin tidak ada
@@ -147,22 +152,22 @@ export default async function WatchAnimePage({
   const animeData = data.data;
 
   return (
-    <main className='p-4 md:p-8'>
-      <div className='space-y-6'>
-        <div className='text-center space-y-2'>
-          <h1 className='text-3xl md:text-4xl font-bold tracking-tight'>
+    <main className="p-4 md:p-8">
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
             {animeData.episode}
           </h1>
-          <div className='h-0.5 w-32 mx-auto bg-gradient-to-r from-transparent via-primary to-transparent' />
+          <div className="h-0.5 w-32 mx-auto bg-gradient-to-r from-transparent via-primary to-transparent" />
         </div>
 
-        <Card className='overflow-hidden shadow-lg'>
-          <CardContent className='p-0 aspect-video'>
+        <Card className="overflow-hidden shadow-lg">
+          <CardContent className="p-0 aspect-video">
             {animeData.stream_url ? (
               <ClientPlayer url={animeData.stream_url} />
             ) : (
-              <div className='w-full h-full flex items-center justify-center bg-muted'>
-                <p className='text-muted-foreground'>
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <p className="text-muted-foreground">
                   Link streaming tidak tersedia.
                 </p>
               </div>
@@ -170,71 +175,71 @@ export default async function WatchAnimePage({
           </CardContent>
         </Card>
 
-        <div className='flex justify-between items-center gap-2 sm:gap-4'>
+        <div className="flex justify-between items-center gap-2 sm:gap-4">
           {animeData.has_previous_episode && animeData.previous_episode ? (
-            <Button asChild className='flex-1' variant='outline'>
+            <Button asChild className="flex-1" variant="outline">
               <Link
                 href={`/anime/full/${animeData.previous_episode.slug}`}
                 scroll={false}
               >
-                <ArrowLeft className='w-4 h-4 mr-2' />
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 Episode Sebelumnya
               </Link>
             </Button>
           ) : (
-            <div className='flex-1' />
+            <div className="flex-1" />
           )}
           {animeData.has_next_episode && animeData.next_episode ? (
-            <Button asChild className='flex-1'>
+            <Button asChild className="flex-1">
               <Link
                 href={`/anime/full/${animeData.next_episode.slug}`}
                 scroll={false}
               >
                 Episode Selanjutnya
-                <ArrowRight className='w-4 h-4 ml-2' />
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
           ) : (
-            <div className='flex-1' />
+            <div className="flex-1" />
           )}
         </div>
 
         <Card>
-          <CardHeader className='items-center'>
+          <CardHeader className="items-center">
             <CardTitle>Unduh Episode</CardTitle>
             <CardDescription>
               Pilih resolusi dan server yang tersedia.
             </CardDescription>
           </CardHeader>
-          <CardContent className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {Object.entries(animeData.download_urls).map(
               ([resolution, links]) => (
-                <Card key={resolution} className='bg-background/50'>
+                <Card key={resolution} className="bg-background/50">
                   <CardHeader>
-                    <CardTitle className='text-lg'>{resolution}</CardTitle>
+                    <CardTitle className="text-lg">{resolution}</CardTitle>
                   </CardHeader>
-                  <CardContent className='space-y-2'>
+                  <CardContent className="space-y-2">
                     {(links as DownloadLink[]).map((link, index) => (
                       <Button
                         asChild
                         key={index}
-                        variant='secondary'
-                        className='w-full justify-start'
+                        variant="secondary"
+                        className="w-full justify-start"
                       >
                         <a
                           href={link.url}
-                          target='_blank'
-                          rel='noopener noreferrer'
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <Server className='w-4 h-4 mr-2' />
+                          <Server className="w-4 h-4 mr-2" />
                           {link.server}
-                          <Download className='w-4 h-4 ml-auto' />
+                          <Download className="w-4 h-4 ml-auto" />
                         </a>
                       </Button>
                     ))}
                   </CardContent>
                 </Card>
-              )
+              ),
             )}
           </CardContent>
         </Card>

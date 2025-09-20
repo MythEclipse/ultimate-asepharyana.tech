@@ -41,7 +41,7 @@ export async function testRedisConnection(): Promise<boolean> {
     logger.info('[Redis] Testing connection with config:', {
       host: redisHost,
       port: redisPort,
-      hasPassword: !!redisPassword
+      hasPassword: !!redisPassword,
     });
 
     await redis.set('test-connection', 'ok', { EX: 10 });
@@ -50,7 +50,10 @@ export async function testRedisConnection(): Promise<boolean> {
       logger.info('[Redis] Connection test successful');
       return true;
     } else {
-      logger.error('[Redis] Connection test failed - unexpected result:', result);
+      logger.error(
+        '[Redis] Connection test failed - unexpected result:',
+        result,
+      );
       return false;
     }
   } catch (error: any) {
@@ -60,7 +63,7 @@ export async function testRedisConnection(): Promise<boolean> {
       stack: error.stack,
       host: redisHost,
       port: redisPort,
-      hasPassword: !!redisPassword
+      hasPassword: !!redisPassword,
     });
     return false;
   }

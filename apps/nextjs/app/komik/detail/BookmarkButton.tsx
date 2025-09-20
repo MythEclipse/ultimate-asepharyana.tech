@@ -10,7 +10,11 @@ interface BookmarkButtonProps {
   poster: string;
 }
 
-export default function BookmarkButton({ komikId, title, poster }: BookmarkButtonProps) {
+export default function BookmarkButton({
+  komikId,
+  title,
+  poster,
+}: BookmarkButtonProps) {
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {

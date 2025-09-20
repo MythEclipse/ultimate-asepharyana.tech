@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "../ui/button";
+import { Button } from '../ui/button';
 import {
   Card,
   CardContent,
@@ -8,16 +8,23 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../ui/card";
-import { FallbackProps } from "react-error-boundary";
+} from '../ui/card';
+import { FallbackProps } from 'react-error-boundary';
 
 export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900" role="alert">
+    <div
+      className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900"
+      role="alert"
+    >
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-red-600 dark:text-red-400">Something went wrong.</CardTitle>
-          <CardDescription>An unexpected error occurred. Please try again.</CardDescription>
+          <CardTitle className="text-red-600 dark:text-red-400">
+            Something went wrong.
+          </CardTitle>
+          <CardDescription>
+            An unexpected error occurred. Please try again.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="font-semibold">Error Details:</p>
@@ -29,9 +36,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
           <Button onClick={resetErrorBoundary} variant="outline">
             Try again
           </Button>
-          <Button onClick={() => window.location.reload()}>
-            Refresh Page
-          </Button>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
         </CardFooter>
       </Card>
     </div>

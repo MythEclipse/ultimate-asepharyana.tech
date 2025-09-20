@@ -1,2 +1,0 @@
-[env]
-BINDGEN_EXTRA_CLANG_ARGS = "--target=x86_64-w64-mingw32"

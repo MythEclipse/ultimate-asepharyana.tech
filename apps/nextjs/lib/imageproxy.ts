@@ -11,7 +11,6 @@ export async function imageProxy(url: string) {
     if (cdnResponse.status !== 200) {
       const fetchRespone = await fetchManual(url);
       if (fetchRespone.status !== 200) {
-
         return await uploadImage(url);
       }
       logger.error(`Failed to fetch image from URL: ${url}`);
@@ -27,15 +26,15 @@ export async function imageProxy(url: string) {
 async function cdnImage(url: string) {
   try {
     const response = await fetch(
-      `https://imagecdn.app/v1/images/${encodeURIComponent(url)}`
+      `https://imagecdn.app/v1/images/${encodeURIComponent(url)}`,
     );
     if (!response.ok) {
       logger.error(
-        `Failed to fetch image from CDN: ${url}, Status: ${response.status}`
+        `Failed to fetch image from CDN: ${url}, Status: ${response.status}`,
       );
       return NextResponse.json(
         { error: 'Failed to fetch image from CDN' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -44,7 +43,7 @@ async function cdnImage(url: string) {
       logger.error(`CDN URL does not point to an image: ${url}`);
       return NextResponse.json(
         { error: 'CDN URL does not point to an image' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,22 +61,22 @@ async function cdnImage(url: string) {
     logger.error(`Internal server error: ${(error as Error).message}`);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 async function cdnImage2(url: string) {
   try {
     const response = await fetch(
-      `https://imagecdn.app/v2/images/${encodeURIComponent(url)}`
+      `https://imagecdn.app/v2/images/${encodeURIComponent(url)}`,
     );
     if (!response.ok) {
       logger.error(
-        `Failed to fetch image from CDN: ${url}, Status: ${response.status}`
+        `Failed to fetch image from CDN: ${url}, Status: ${response.status}`,
       );
       return NextResponse.json(
         { error: 'Failed to fetch image from CDN' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -86,7 +85,7 @@ async function cdnImage2(url: string) {
       logger.error(`CDN URL does not point to an image: ${url}`);
       return NextResponse.json(
         { error: 'CDN URL does not point to an image' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -104,7 +103,7 @@ async function cdnImage2(url: string) {
     logger.error(`Internal server error: ${(error as Error).message}`);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -114,11 +113,11 @@ async function uploadImage(url: string) {
     const response = await fetch(url);
     if (!response.ok) {
       logger.error(
-        `Failed to fetch image from URL: ${url}, Status: ${response.status}`
+        `Failed to fetch image from URL: ${url}, Status: ${response.status}`,
       );
       return NextResponse.json(
         { error: 'Failed to fetch image' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -127,7 +126,7 @@ async function uploadImage(url: string) {
       logger.error(`URL does not point to an image: ${url}`);
       return NextResponse.json(
         { error: 'URL does not point to an image' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,11 +145,11 @@ async function uploadImage(url: string) {
 
     if (!uploadResponse.ok) {
       logger.error(
-        `Failed to upload image to uploader service, Status: ${uploadResponse.status}`
+        `Failed to upload image to uploader service, Status: ${uploadResponse.status}`,
       );
       return NextResponse.json(
         { error: 'Failed to upload image' },
-        { status: uploadResponse.status }
+        { status: uploadResponse.status },
       );
     }
 
@@ -170,7 +169,7 @@ async function uploadImage(url: string) {
     logger.error(`Internal server error: ${(error as Error).message}`);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -180,11 +179,11 @@ async function fetchManual(url: string) {
     const response = await fetch(url);
     if (!response.ok) {
       logger.error(
-        `Failed to fetch image from URL: ${url}, Status: ${response.status}`
+        `Failed to fetch image from URL: ${url}, Status: ${response.status}`,
       );
       return NextResponse.json(
         { error: 'Failed to fetch image' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -193,12 +192,11 @@ async function fetchManual(url: string) {
       logger.error(`URL does not point to an image: ${url}`);
       return NextResponse.json(
         { error: 'URL does not point to an image' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const imageBuffer = await response.arrayBuffer();
-
 
     return new NextResponse(imageBuffer, {
       headers: {
@@ -211,7 +209,7 @@ async function fetchManual(url: string) {
     logger.error(`Internal server error: ${(error as Error).message}`);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

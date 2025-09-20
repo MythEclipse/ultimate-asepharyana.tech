@@ -8,28 +8,28 @@ const anime = [
   {
     title: 'Home',
     icon: (
-      <HiHome className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+      <HiHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />
     ),
     href: '/anime2',
   },
   {
     title: 'Ongoing Anime',
     icon: (
-      <MdUpdate className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+      <MdUpdate className="h-full w-full text-neutral-500 dark:text-neutral-300" />
     ),
     href: '/anime2/ongoing-anime/1',
   },
   {
     title: 'Complete Anime',
     icon: (
-      <FaCheckCircle className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+      <FaCheckCircle className="h-full w-full text-neutral-500 dark:text-neutral-300" />
     ), // Ganti dengan ikon ceklis
     href: '/anime2/complete-anime/1',
   },
   {
     title: 'Search',
     icon: (
-      <HiOutlineSearch className='h-full w-full text-neutral-500 dark:text-neutral-300' />
+      <HiOutlineSearch className="h-full w-full text-neutral-500 dark:text-neutral-300" />
     ),
     href: `/anime2/search/${encodeURIComponent('a')}`,
   },
@@ -42,10 +42,14 @@ const anime = [
   // },
 ];
 
-export default function Layout({ children }: { readonly children: React.ReactNode }) {
+export default function Layout({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   return (
     <>
-      <div className=''>{children}</div>
+      <div className="">{children}</div>
       <DockKomik content={anime} />
     </>
   );

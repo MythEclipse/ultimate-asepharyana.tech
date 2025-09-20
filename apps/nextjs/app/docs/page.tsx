@@ -41,7 +41,7 @@ async function getOpenApiSpec(): Promise<OpenAPIV3.Document> {
   } catch (error) {
     console.error('Error loading OpenAPI spec:', error);
     throw new Error(
-      'Gagal memuat dokumentasi. Silakan coba lagi atau hubungi administrator.'
+      'Gagal memuat dokumentasi. Silakan coba lagi atau hubungi administrator.',
     );
   }
 }
@@ -53,7 +53,7 @@ export default async function OpenApiDocsPage() {
     openApiSpec = await getOpenApiSpec();
   } catch (error) {
     return (
-      <div className='error-container'>
+      <div className="error-container">
         <h1>⚠️ Gagal Memuat Dokumentasi</h1>
         <p>{(error as Error).message}</p>
         <p>Silakan coba:</p>
@@ -67,7 +67,7 @@ export default async function OpenApiDocsPage() {
   }
 
   return (
-    <main className='api-docs-container'>
+    <main className="api-docs-container">
       <SwaggerUIComponent spec={openApiSpec} />
     </main>
   );

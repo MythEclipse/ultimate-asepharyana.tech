@@ -3,18 +3,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 
 interface NavigationButtonsProps {
   listChapter: string;
   nextChapterId?: string;
 }
 
-export default function NavigationButtons({ listChapter, nextChapterId }: NavigationButtonsProps) {
+export default function NavigationButtons({
+  listChapter,
+  nextChapterId,
+}: NavigationButtonsProps) {
   const router = useRouter();
 
   return (

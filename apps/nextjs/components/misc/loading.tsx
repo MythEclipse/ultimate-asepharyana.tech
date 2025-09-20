@@ -4,14 +4,14 @@ import loadingGif from '../../public/loading.webp';
 
 const Loading: React.FC = () => {
   return (
-    <div className='fixed inset-0 flex justify-center items-center z-50'>
-      <div className='rounded-full h-36 w-36'>
+    <div className="fixed inset-0 flex justify-center items-center z-50">
+      <div className="rounded-full h-36 w-36">
         <Image
           src={loadingGif}
-          alt='Loading...'
+          alt="Loading..."
           width={150}
           height={150}
-          className='rounded-full'
+          className="rounded-full"
           unoptimized
           priority
         />

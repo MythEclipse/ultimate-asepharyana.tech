@@ -21,7 +21,7 @@ Contoh: `anime/detail/slug` akan menghasilkan `anime/detail/slug.rs`.
 
 ## 1. Endpoint Static (tanpa parameter)
 
-------------------------------------------------------------
+---
 
 - Perintah scaffold (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -55,7 +55,7 @@ Tes endpoint:
 
 ## 2. Endpoint Dynamic / Path Parameter
 
-------------------------------------------------------------
+---
 
 - Untuk path dinamis, gunakan nama file yang sesuai dengan parameter:
 
@@ -132,7 +132,7 @@ Tes:
 
 ## 3. Endpoint Query Params
 
-------------------------------------------------------------
+---
 
 - Scaffold path tanpa query (dapat dijalankan dari workspace root atau apps/rust/):
 
@@ -176,7 +176,7 @@ Tes:
 
 ## 4. Kombinasi: Slug + Query Params
 
-------------------------------------------------------------
+---
 
 - Contoh path: anime/slug/reviews
 - Scaffold (dapat dijalankan dari workspace root atau apps/rust/):
@@ -211,7 +211,7 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 
 ## 5. Petunjuk Operasional & Best Practices
 
-------------------------------------------------------------
+---
 
 - State aplikasi dinamai `AppState`. Untuk mengaksesnya, gunakan `Arc<AppState>` dan parameter `State` di handler.
 - Jangan edit `mod.rs` di `src/routes/api` karena dihasilkan oleh [`apps/rust/build.rs`](apps/rust/build.rs:1).
@@ -221,14 +221,16 @@ pub async fn reviews(Path(product_id): Path<String>, Query(q): Query<ReviewQuery
 
 ## 6. Contoh lengkap alur
 
-------------------------------------------------------------
+---
 
 1. buat file kosong (dapat dijalankan dari workspace root atau apps/rust/):
 
    cargo run --bin scaffold -- anime/detail/slug
+
 2. build:
 
    cargo build
+
 3. edit `src/routes/api/anime/detail/slug.rs`
 4. run:
 
@@ -246,3 +248,4 @@ Dokumentasi scaffold telah diperbarui di [`apps/rust/src/bin/scaffold.md`](apps/
 # Dari workspace root atau apps/rust/
 cargo run --bin scaffold -- test/helloworld
 cargo build
+```

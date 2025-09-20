@@ -35,7 +35,7 @@ export default function BookmarkPage() {
 
   useEffect(() => {
     const storedBookmarks = JSON.parse(
-      localStorage.getItem('bookmarks-komik') || '[]'
+      localStorage.getItem('bookmarks-komik') || '[]',
     );
     setBookmarks(storedBookmarks);
     setIsLoading(false);
@@ -68,17 +68,17 @@ export default function BookmarkPage() {
 
   if (isLoading) {
     return (
-      <main className='p-6'>
-        <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
+      <main className="p-6">
+        <h1 className="dark:text-lighta text-2xl font-bold mt-8 mb-4">
           Bookmarked Comic ({bookmarks.length})
         </h1>
         <UnifiedGrid loading={true} items={[]} itemType="komik" />
-        <div className='flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse'>
-          <div className='flex gap-4'>
-            <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
-            <div className='w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg' />
+        <div className="flex flex-wrap gap-4 justify-between items-center mt-8 animate-pulse">
+          <div className="flex gap-4">
+            <div className="w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg" />
+            <div className="w-24 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg" />
           </div>
-          <div className='w-32 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full' />
+          <div className="w-32 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
         </div>
       </main>
     );
@@ -86,16 +86,16 @@ export default function BookmarkPage() {
 
   if (bookmarks.length === 0) {
     return (
-      <main className='p-6'>
-        <h1 className='text-2xl font-bold mt-8 mb-4'>No Bookmarked Comic</h1>
+      <main className="p-6">
+        <h1 className="text-2xl font-bold mt-8 mb-4">No Bookmarked Comic</h1>
         <p>You have not bookmarked any Comic yet.</p>
       </main>
     );
   }
 
   return (
-    <main className='p-6'>
-      <h1 className='dark:text-lighta text-2xl font-bold mt-8 mb-4'>
+    <main className="p-6">
+      <h1 className="dark:text-lighta text-2xl font-bold mt-8 mb-4">
         Bookmarked Comic ({bookmarks.length})
       </h1>
       <UnifiedGrid items={getPaginatedBookmarks()} itemType="komik" />
@@ -115,8 +115,8 @@ const PaginationComponent = ({
   onPageChange: (page: number) => void;
 }) => {
   return (
-    <div className='flex justify-between mt-8'>
-      <div className='flex gap-4'>
+    <div className="flex justify-between mt-8">
+      <div className="flex gap-4">
         {pagination.has_previous_page && (
           <ButtonA onClick={() => onPageChange(pagination.current_page - 1)}>
             Previous
@@ -130,7 +130,7 @@ const PaginationComponent = ({
         )}
       </div>
 
-      <div className='text-gray-600 dark:text-gray-400'>
+      <div className="text-gray-600 dark:text-gray-400">
         Page {pagination.current_page} of {pagination.last_visible_page}
       </div>
     </div>
