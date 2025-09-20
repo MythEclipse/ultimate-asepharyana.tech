@@ -142,7 +142,7 @@ paths(
               crate::routes::api::uploader::uploader
         ),
 components(
-    schemas(
+            schemas(
                   CompleteAnimeItem,
                   ListResponse,
                   Pagination,

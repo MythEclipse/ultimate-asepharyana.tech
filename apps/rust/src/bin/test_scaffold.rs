@@ -94,12 +94,6 @@ fn main() -> std::io::Result<()> {
         "src/routes/api/test/v3/protected/posts/detail/key.rs",
     ])?;
 
-    println!("\n🔨 Final build after cleanup...");
-    if let Err(e) = run_command("cargo", &["build"]) {
-        println!("⚠️  Build failed (likely due to file locking on Windows): {}", e);
-        println!("   This is normal and doesn't affect the scaffold test results.");
-    }
-
     println!("\n🎉 All tests passed! Scaffold system is working correctly.");
     println!("=================================");
     println!("✅ Static routes: Created and deleted successfully");
@@ -243,25 +237,16 @@ fn verify_protected_content(path: &str) -> std::io::Result<()> {
 fn verify_openapi_security_schemes() -> std::io::Result<()> {
     println!("🔍 Verifying OpenAPI documentation includes security schemes...");
 
-    // Build the project to generate OpenAPI docs
-    let build_output = Command::new("cargo")
-        .args(&["build"])
-        .output()?;
+    // Get the OpenAPI spec from OUT_DIR (generated during build)
+    let out_dir = env::var("OUT_DIR").map_err(|_| std::io::Error::new(std::io::ErrorKind::NotFound, "OUT_DIR environment variable not set"))?;
+    let openapi_path = std::path::Path::new(&out_dir).join("openapi_spec.json");
 
-    if !build_output.status.success() {
-        let stderr = String::from_utf8_lossy(&build_output.stderr);
-        eprintln!("Build failed: {}", stderr);
-        return Err(std::io::Error::other("Build failed"));
-    }
-
-    // Check if openapi_output.json exists
-    let openapi_path = "apps/rust/openapi_output.json";
-    if !fs::metadata(openapi_path).is_ok() {
-        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "OpenAPI output file not found"));
+    if !fs::metadata(&openapi_path).is_ok() {
+        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "OpenAPI spec file not found in OUT_DIR"));
     }
 
     // Read and parse the OpenAPI JSON
-    let openapi_content = fs::read_to_string(openapi_path)?;
+    let openapi_content = fs::read_to_string(&openapi_path)?;
     let openapi: serde_json::Value = serde_json::from_str(&openapi_content)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to parse OpenAPI JSON: {}", e)))?;
 

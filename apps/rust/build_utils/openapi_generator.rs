@@ -77,7 +77,7 @@ fn generate_root_api_mod_internal(
   Ok({
     use utoipa::OpenApi; // Bring OpenApi trait into scope for TempApiDoc
     #[derive(utoipa::OpenApi)]
-    #[openapi(paths(), components(schemas()), tags((name = "api", description = "Main API")))]
+    #[openapi(paths(), components(schemas()), security(("ApiKeyAuth" = [])), tags((name = "api", description = "Main API")))]
     struct TempApiDoc;
     TempApiDoc::openapi()
   })
