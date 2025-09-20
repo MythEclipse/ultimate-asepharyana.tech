@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Info } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 
 interface ErrorLoadingDisplayProps {

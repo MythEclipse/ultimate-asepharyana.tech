@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import AnimeGrid from '../../../../components/anime/AnimeGrid';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { CompleteAnimeData, Anime, Pagination } from '../../../../types/anime';
+import { CompleteAnimeData, Pagination } from '../../../../types/anime';
 
 interface OngoingAnime2PageClientProps {
   initialData: CompleteAnimeData | null;
@@ -20,7 +20,6 @@ interface OngoingAnime2PageClientProps {
 function OngoingAnime2PageClient({
   initialData,
   initialError,
-  slug,
 }: OngoingAnime2PageClientProps) {
   if (initialError) {
     return <ErrorLoadingDisplay type="error" message={initialError} />;
