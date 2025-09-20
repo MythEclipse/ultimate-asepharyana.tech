@@ -84,7 +84,7 @@ export default async function WatchAnimePage({
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     data = await response.json();
-  } catch (e) {
+  } catch (_e) {
     return (
       <main className="p-4 md:p-8 flex items-center justify-center min-h-[70vh]">
         <Alert variant="destructive" className="max-w-lg">

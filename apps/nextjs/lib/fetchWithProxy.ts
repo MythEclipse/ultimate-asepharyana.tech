@@ -4,6 +4,10 @@ import { DEFAULT_HEADERS } from '../utils/DHead';
 import { scrapeCroxyProxy } from './scrapeCroxyProxy';
 import { redis } from './redis';
 
+interface CustomError extends Error {
+  code?: string;
+}
+
 interface FetchResult {
   data: string | object;
   contentType: string | null;
@@ -44,11 +48,12 @@ async function getCachedFetch(slug: string): Promise<FetchResult | null> {
         // ignore parse error, fallback to fetch
       }
     }
-  } catch (redisError: any) {
+  } catch (redisError: unknown) {
+    const err = redisError as CustomError;
     logger.warn(`[fetchWithProxy] Redis get failed for ${slug}:`, {
-      message: redisError?.message,
-      code: redisError?.code,
-      stack: redisError?.stack,
+      message: err?.message,
+      code: err?.code,
+      stack: err?.stack,
       url: process.env.UPSTASH_REDIS_REST_URL,
       hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
       tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
@@ -89,7 +94,8 @@ async function handleFetchResponse(
     logger.info(
       `[fetchWithProxy] ${source} fetch successful for ${slug}, status: ${res.status}`,
     );
-    const contentType = res.headers['content-type'] || res.headers['Content-Type'];
+    const contentType =
+      res.headers['content-type'] || res.headers['Content-Type'];
     let data = res.data;
 
     if (contentType?.includes('application/json')) {
@@ -97,7 +103,9 @@ async function handleFetchResponse(
     }
 
     if (isInternetBaikBlockPage(data)) {
-      logger.warn(`Blocked by internetbaik (${source} fetch), trying scrapeCroxyProxy`);
+      logger.warn(
+        `Blocked by internetbaik (${source} fetch), trying scrapeCroxyProxy`,
+      );
       const croxyResult = await CroxyProxyOnly(slug);
       await setCachedFetch(slug, croxyResult);
       return croxyResult;
@@ -132,18 +140,18 @@ export async function fetchWithProxy(slug: string): Promise<FetchResult> {
   let directError: Error | undefined;
   try {
     return await attemptAxiosFetch(slug);
-  } catch (error) {
-    directError = error as Error;
+  } catch (error: unknown) {
+    directError = error as CustomError;
     logger.warn(`Direct axios fetch failed for ${slug}:`, directError);
     logger.error('Direct axios fetch failed, trying scrapeCroxyProxy');
   }
 
   try {
     return await attemptCroxyProxyFetch(slug);
-  } catch (croxyError) {
+  } catch (croxyError: unknown) {
     logger.error(`ScrapeCroxyProxy also failed for ${slug}:`, croxyError);
     throw new Error(
-      `Both direct axios fetch and proxy failed for ${slug}. Direct error: ${directError?.message}. Proxy error: ${(croxyError as Error).message}`,
+      `Both direct axios fetch and proxy failed for ${slug}. Direct error: ${directError?.message}. Proxy error: ${(croxyError as CustomError).message}`,
     );
   }
 }
@@ -155,13 +163,15 @@ export async function fetchWithProxyOnly(slug: string): Promise<FetchResult> {
   let croxyError: Error | undefined;
   try {
     return await attemptCroxyProxyFetch(slug);
-  } catch (error) {
-    croxyError = error as Error;
+  } catch (error: unknown) {
+    croxyError = error as CustomError;
     logger.warn(`[fetchWithProxyOnly] scrapeCroxyProxy failed:`, {
       url: slug,
       error: croxyError.message,
     });
-    logger.warn('Trying direct axios fetch as final fallback...', { url: slug });
+    logger.warn('Trying direct axios fetch as final fallback...', {
+      url: slug,
+    });
   }
 
   try {
@@ -170,13 +180,13 @@ export async function fetchWithProxyOnly(slug: string): Promise<FetchResult> {
       timeout: 10000, // 10 second timeout
     });
     return handleFetchResponse(slug, res, 'Final direct axios fallback');
-  } catch (finalError) {
+  } catch (finalError: unknown) {
     logger.error('Final direct axios fetch fallback also failed:', {
-      finalError: (finalError as Error).message,
+      finalError: (finalError as CustomError).message,
       url: slug,
     });
     throw new Error(
-      `All fetch methods failed for ${slug}. Scrape error: ${croxyError?.message}. Final axios fetch error: ${(finalError as Error).message}`,
+      `All fetch methods failed for ${slug}. Scrape error: ${croxyError?.message}. Final axios fetch error: ${(finalError as CustomError).message}`,
     );
   }
 }

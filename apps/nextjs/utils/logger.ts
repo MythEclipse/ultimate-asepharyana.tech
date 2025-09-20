@@ -142,7 +142,7 @@ function formatLogArgs(args: unknown[]): string {
     .join(' ');
 }
 
-export default {
+const logger = {
   info: (...args: unknown[]) => winstonLogger.info(formatLogArgs(args)),
   warn: (...args: unknown[]) => winstonLogger.warn(formatLogArgs(args)),
   error: (...args: unknown[]) => winstonLogger.error(formatLogArgs(args)),
@@ -151,3 +151,5 @@ export default {
   silly: (...args: unknown[]) => winstonLogger.silly(formatLogArgs(args)),
   http: (...args: unknown[]) => winstonLogger.http(formatLogArgs(args)),
 };
+
+export default logger;

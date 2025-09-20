@@ -17,7 +17,6 @@ interface ChartTooltipPayload {
   name?: string;
   value?: number;
   color?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: Record<string, any>;
 }
 // Format: { THEME_NAME: CSS_SELECTOR }
@@ -176,7 +175,7 @@ function ChartTooltipContent({
   /**
    * Formatter for the value.
    */
-   
+
   formatter?: (
     value: string | number,
     name: string,

@@ -1,6 +1,10 @@
 import { createClient, RedisClientType } from 'redis';
 import logger from '../utils/logger';
 
+interface CustomError extends Error {
+  code?: string;
+}
+
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
 const redisPort = parseInt(process.env.REDIS_PORT || '6379');
 const redisPassword = process.env.REDIS_PASSWORD || '';
@@ -56,11 +60,12 @@ export async function testRedisConnection(): Promise<boolean> {
       );
       return false;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as CustomError;
     logger.error('[Redis] Connection test failed:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack,
+      message: err.message,
+      code: err.code,
+      stack: err.stack,
       host: redisHost,
       port: redisPort,
       hasPassword: !!redisPassword,

@@ -62,7 +62,9 @@ async function getBrowserPage(): Promise<Page> {
       }
     });
     await pageInstance.setUserAgent(getRandomUserAgent());
-    await pageInstance.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
+    await pageInstance.setExtraHTTPHeaders({
+      'Accept-Language': 'en-US,en;q=0.9',
+    });
     logger.info('Puppeteer page initialized.');
   }
   return pageInstance;

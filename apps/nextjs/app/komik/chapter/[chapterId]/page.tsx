@@ -42,7 +42,7 @@ export default async function ChapterPage({
       `/api/komik2/chapter?chapter_url=${chapterId}`,
     );
     chapter = response.data;
-  } catch (e) {
+  } catch (_e) {
     return (
       <main className="min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center">
         <div className="max-w-md text-center">

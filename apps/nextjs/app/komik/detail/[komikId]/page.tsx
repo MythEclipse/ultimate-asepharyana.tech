@@ -82,7 +82,7 @@ export default async function DetailMangaPage({
 
   try {
     mangaData = await fetchData(`/api/komik2/detail?komik_id=${komikId}`);
-  } catch (e) {
+  } catch (_e) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
         <Card className="max-w-md w-full p-8 text-center">

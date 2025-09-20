@@ -51,7 +51,7 @@ export default async function SearchPage({
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     searchResults = await response.json();
-  } catch (e) {
+  } catch (_e) {
     searchResults = { status: 'error', data: [] };
   }
 

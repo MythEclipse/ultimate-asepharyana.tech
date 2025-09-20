@@ -1,6 +1,6 @@
 'use client';
 
-import { APIURL, BaseUrl } from '../lib/url';
+import { APIURL } from '../lib/url';
 
 export const fetchData = async (
   url: string,
@@ -61,7 +61,7 @@ export const fetchDataMultiple = async (
         if (i !== index) ctrl.abort();
       });
       return result;
-    })
+    }),
   );
 
   try {

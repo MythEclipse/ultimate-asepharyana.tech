@@ -52,10 +52,7 @@ export class SimpleRateLimit {
   async checkBulk(
     identifiers: string[],
   ): Promise<
-    Record<
-      string,
-      { success: boolean; remaining: number; resetTime: number }
-    >
+    Record<string, { success: boolean; remaining: number; resetTime: number }>
   > {
     const now = Date.now();
     const windowStart = now - this.windowMs;
@@ -85,7 +82,7 @@ export class SimpleRateLimit {
         };
       }
       return results;
-    } catch (error) {
+    } catch (_error) {
       identifiers.forEach((identifier) => {
         results[identifier] = {
           success: true,
