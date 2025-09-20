@@ -126,7 +126,7 @@ curl -X POST -F "file1=@document1.pdf" -F "file2=@document2.pdf" \
 - `role` - User role
 - `timestamp` - Message timestamp
 
-## Development
+## Developer Workflow
 
 ### Running Tests
 

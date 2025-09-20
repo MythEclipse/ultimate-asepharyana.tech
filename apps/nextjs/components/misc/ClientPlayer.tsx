@@ -10,6 +10,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
     <div className="flex justify-center items-center h-screen">
       <iframe
         src={url}
+        title="Video player"
         style={{ width: '80%', height: '80vh', border: 'none' }}
         allowFullScreen
       />
