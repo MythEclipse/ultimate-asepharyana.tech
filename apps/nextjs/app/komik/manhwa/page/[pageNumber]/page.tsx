@@ -2,13 +2,13 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ComicCard from '../../../../../components/komik/ComicGrid';
-import { APIURLSERVER } from '../../../../../lib/url';
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
+import { fetchKomikData } from '../../../../../lib/komikFetcher';
 
 export const revalidate = 60;
 
@@ -37,21 +37,6 @@ export interface Komik {
 }
 
 async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
-  const fetchData = async (url: string) => {
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  };
-
   const { pageNumber: pageNumberStr } = await params;
   const pageNumber = parseInt(pageNumberStr, 10);
 
@@ -63,8 +48,10 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
   let error: string | null = null;
 
   try {
-    komikData = await fetchData(
+    komikData = await fetchKomikData(
       `/api/komik2/manhwa?page=${pageNumber}&order=update`,
+      revalidate,
+      10000
     );
   } catch (err) {
     console.error('Failed to fetch manhwa data on server:', err);

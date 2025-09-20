@@ -1,7 +1,7 @@
-import { APIURLSERVER } from '../../../../lib/url';
 import NavigationButtons from '../NavigationButtons';
 import { ImageWithFallback } from '../../../../components/shared/ImageWithFallback';
 import { AlertTriangle } from 'lucide-react';
+import { fetchKomikData } from '../../../../lib/komikFetcher';
 
 interface ChapterDetail {
   title: string;
@@ -18,28 +18,15 @@ export default async function ChapterPage({
 }: {
   params: Promise<{ chapterId: string }>;
 }) {
-  const fetchData = async (url: string) => {
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  };
-
   const { chapterId } = await params;
 
   let chapter: ChapterDetail | null = null;
 
   try {
-    const response = await fetchData(
+    const response = await fetchKomikData(
       `/api/komik2/chapter?chapter_url=${chapterId}`,
+      revalidate,
+      10000
     );
     chapter = response.data;
   } catch (_e) {

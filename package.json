@@ -12,7 +12,11 @@
     "rust:start": "nx start rust",
     "rust:lint": "nx lint rust",
     "rust:test": "nx test rust",
-    "rust:format": "nx format rust"
+    "rust:format": "nx format rust",
+    "service:dev": "nx serve services",
+    "service:build": "nx build services",
+    "service:lint": "nx lint services --fix",
+    "service:start": "nx start services"
   },
   "private": true,
   "dependencies": {

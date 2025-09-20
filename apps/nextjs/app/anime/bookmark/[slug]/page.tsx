@@ -4,8 +4,7 @@ import AnimeGrid from '../../../../components/anime/AnimeGrid';
 import BookmarkLoadingSkeleton from '../../../../components/skeleton/BookmarkLoadingSkeleton';
 import EmptyBookmarkMessage from '../../../../components/misc/EmptyBookmarkMessage';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const ITEMS_PER_PAGE = 24;
+import { usePagination } from '../../../../utils/hooks/usePagination';
 
 interface BookmarkItem {
   slug: string;
@@ -13,22 +12,10 @@ interface BookmarkItem {
   poster: string;
 }
 
-interface Pagination {
-  current_page: number;
-  last_visible_page: number;
-  has_next_page: boolean;
-  has_previous_page: boolean;
-}
-
 export default function BookmarkPage() {
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
-    current_page: 1,
-    last_visible_page: 1,
-    has_next_page: false,
-    has_previous_page: false,
-  });
   const [isLoading, setIsLoading] = useState(true);
+  const { pagination, handlePageChange, ITEMS_PER_PAGE } = usePagination();
 
   useEffect(() => {
     const storedBookmarks = JSON.parse(
@@ -38,27 +25,14 @@ export default function BookmarkPage() {
     setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    const totalPages = Math.ceil(bookmarks.length / ITEMS_PER_PAGE);
-    const currentPage = Math.min(pagination.current_page, totalPages || 1);
-
-    setPagination({
-      current_page: currentPage,
-      last_visible_page: totalPages,
-      has_next_page: currentPage < totalPages,
-      has_previous_page: currentPage > 1,
-    });
-  }, [bookmarks, pagination.current_page]);
-
-  const handlePageChange = (newPage: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      current_page: Math.max(1, Math.min(newPage, prev.last_visible_page)),
-    }));
-  };
+  const totalPages = Math.ceil(bookmarks.length / ITEMS_PER_PAGE);
+  const current_page = pagination.currentPage;
+  const last_visible_page = totalPages;
+  const has_next_page = current_page < totalPages;
+  const has_previous_page = current_page > 1;
 
   const getPaginatedBookmarks = () => {
-    const start = (pagination.current_page - 1) * ITEMS_PER_PAGE;
+    const start = (current_page - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
     return bookmarks.slice(start, end);
   };
@@ -87,11 +61,9 @@ export default function BookmarkPage() {
 
             <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
               <div className="flex gap-4">
-                {pagination.has_previous_page && (
+                {has_previous_page && (
                   <button
-                    onClick={() =>
-                      handlePageChange(pagination.current_page - 1)
-                    }
+                    onClick={() => handlePageChange(current_page - 1)}
                     className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -99,11 +71,9 @@ export default function BookmarkPage() {
                   </button>
                 )}
 
-                {pagination.has_next_page && (
+                {has_next_page && (
                   <button
-                    onClick={() =>
-                      handlePageChange(pagination.current_page + 1)
-                    }
+                    onClick={() => handlePageChange(current_page + 1)}
                     className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
                   >
                     Next
@@ -113,7 +83,7 @@ export default function BookmarkPage() {
               </div>
 
               <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-                Page {pagination.current_page} of {pagination.last_visible_page}
+                Page {current_page} of {last_visible_page}
               </span>
             </div>
           </>

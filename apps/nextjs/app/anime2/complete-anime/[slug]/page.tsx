@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { Pagination } from '../../../../types/types';
 
 export const revalidate = 60;
 
@@ -23,15 +24,6 @@ interface Anime {
   current_episode: string;
   release_day: string;
   newest_release_date: string;
-}
-
-interface Pagination {
-  current_page?: number;
-  last_visible_page?: number;
-  has_next_page?: boolean;
-  next_page?: number | null;
-  has_previous_page?: boolean;
-  previous_page?: number | null;
 }
 
 interface CompleteAnimeData {

@@ -1,4 +1,3 @@
-import { APIURLSERVER } from '../../../../lib/url';
 import PosterImage from '../PosterImage';
 import BookmarkButton from '../BookmarkButton';
 
@@ -27,6 +26,7 @@ import {
   ArrowRight,
   AlertTriangle,
 } from 'lucide-react';
+import { fetchKomikData } from '../../../../lib/komikFetcher';
 
 // --- INTERFACES ---
 interface Chapter {
@@ -61,27 +61,12 @@ export default async function DetailMangaPage({
 }: {
   params: Promise<{ komikId: string }>;
 }) {
-  const fetchData = async (url: string) => {
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  };
-
   const { komikId } = await params;
 
   let mangaData: ApiResponse | null = null;
 
   try {
-    mangaData = await fetchData(`/api/komik2/detail?komik_id=${komikId}`);
+    mangaData = await fetchKomikData(`/api/komik2/detail?komik_id=${komikId}`, revalidate, 10000);
   } catch (_e) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
