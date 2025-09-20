@@ -90,6 +90,7 @@ openapiv3 = "2.2.0"
 jsonschema = "0.33.0"
 utoipa = { version = "5.4.0", features = ["axum_extras"] }
 serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 reqwest = { version = "0.12.23", features = ["json", "stream", "multipart"] }
 
 # Dependensi yang hanya dibutuhkan untuk tes

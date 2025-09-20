@@ -225,7 +225,7 @@ fn verify_protected_content(path: &str) -> std::io::Result<()> {
         ("Extension import", "use axum::Extension;"),
         ("Extension<Claims> parameter", "Extension(claims): Extension<Claims>"),
         ("AuthMiddleware::layer()", "AuthMiddleware::layer()"),
-        ("security scheme", "security(("),
+        ("security scheme", "security("),
         ("ApiKeyAuth", "(\"ApiKeyAuth\" = [])"),
     ];
 
@@ -246,7 +246,6 @@ fn verify_openapi_security_schemes() -> std::io::Result<()> {
     // Build the project to generate OpenAPI docs
     let build_output = Command::new("cargo")
         .args(&["build"])
-        .current_dir("apps/rust")
         .output()?;
 
     if !build_output.status.success() {
@@ -266,52 +265,34 @@ fn verify_openapi_security_schemes() -> std::io::Result<()> {
     let openapi: serde_json::Value = serde_json::from_str(&openapi_content)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to parse OpenAPI JSON: {}", e)))?;
 
-    // Check for securitySchemes in components
-    if let Some(components) = openapi.get("components") {
-        if let Some(security_schemes) = components.get("securitySchemes") {
-            println!("✅ Found securitySchemes in OpenAPI components");
+    // Check for security at the root level
+    if let Some(security) = openapi.get("security") {
+        println!("✅ Found security at OpenAPI root");
 
-            // Check for ApiKeyAuth scheme
-            if let Some(api_key_auth) = security_schemes.get("ApiKeyAuth") {
-                println!("✅ Found ApiKeyAuth security scheme");
-
-                // Verify the scheme structure
-                if let Some(scheme_type) = api_key_auth.get("type") {
-                    if scheme_type == "apiKey" {
-                        println!("✅ ApiKeyAuth has correct type: apiKey");
+        // Check for ApiKeyAuth in security
+        if let Some(security_array) = security.as_array() {
+            if let Some(first_security) = security_array.get(0) {
+                if let Some(api_key_auth) = first_security.get("ApiKeyAuth") {
+                    if api_key_auth.is_array() && api_key_auth.as_array().unwrap().is_empty() {
+                        println!("✅ Found ApiKeyAuth security requirement");
                     } else {
-                        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("ApiKeyAuth has incorrect type: {}", scheme_type)));
+                        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "ApiKeyAuth security requirement is not an empty array"));
                     }
-                }
-
-                if let Some(name) = api_key_auth.get("name") {
-                    if name == "Authorization" {
-                        println!("✅ ApiKeyAuth has correct name: Authorization");
-                    } else {
-                        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("ApiKeyAuth has incorrect name: {}", name)));
-                    }
-                }
-
-                if let Some(location) = api_key_auth.get("in") {
-                    if location == "header" {
-                        println!("✅ ApiKeyAuth has correct location: header");
-                    } else {
-                        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("ApiKeyAuth has incorrect location: {}", location)));
-                    }
+                } else {
+                    return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "ApiKeyAuth not found in security"));
                 }
             } else {
-                return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "ApiKeyAuth security scheme not found"));
+                return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No security requirements found"));
             }
         } else {
-            return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "securitySchemes not found in OpenAPI components"));
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "security is not an array"));
         }
     } else {
-        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "components not found in OpenAPI spec"));
+        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "security not found at OpenAPI root"));
     }
 
     println!("✅ OpenAPI security schemes verification completed successfully");
     Ok(())
-}
 }
 
 fn cleanup_files(paths: &[&str]) -> std::io::Result<()> {

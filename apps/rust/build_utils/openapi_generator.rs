@@ -58,7 +58,8 @@ fn generate_root_api_mod_internal(
       "#[derive(utoipa::OpenApi)]\n\
     #[openapi(\n\
         paths(\n{}\n        ),\n\
-        components(\n            schemas(\n{}\n            )\n        ),\n\
+        components(\n            schemas(\n{}\n            )\n        ),
+        security((\n            \"ApiKeyAuth\" = []\n        )),\n\
         info(\n            title = \"Freefire\",\n            version = \"0.0.1\",\n            description = \"api gratis\"\n        ),\n\
         tags(\n            (name = \"api\", description = \"Main API\")\n        )\n\
     )]\n\

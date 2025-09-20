@@ -142,7 +142,7 @@ paths(
               crate::routes::api::uploader::uploader
         ),
 components(
-            schemas(
+    schemas(
                   CompleteAnimeItem,
                   ListResponse,
                   Pagination,
@@ -241,6 +241,9 @@ components(
                   ListResponse_3
             )
         ),
+        security((
+            "ApiKeyAuth" = []
+        )),
 info(
             title = "Freefire",
             version = "0.0.1",
