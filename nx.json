@@ -21,7 +21,9 @@
     "@nx/vite/plugin",
     "@nx/next/plugin",
     "@nx/playwright/plugin",
-    "@nx/react/router-plugin"
+    "@nx/react/router-plugin",
+    "@monodon/rust",
+    "@monodon/rust"
   ],
   "generators": {
     "@nx/react": {

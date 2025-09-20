@@ -6,7 +6,13 @@
     "nextjs:dev": "nx serve nextjs",
     "nextjs:build": "nx build nextjs",
     "nextjs:lint": "nx lint nextjs --fix",
-    "nextjs:start": "nx start nextjs"
+    "nextjs:start": "nx start nextjs",
+    "rust:build": "nx build rust",
+    "rust:dev": "nx serve rust",
+    "rust:start": "nx start rust",
+    "rust:lint": "nx lint rust",
+    "rust:test": "nx test rust",
+    "rust:format": "nx format rust"
   },
   "private": true,
   "dependencies": {
@@ -114,6 +120,7 @@
     "@eslint/compat": "^1.3.2",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.34.0",
+    "@monodon/rust": "^2.3.0",
     "@next/eslint-plugin-next": "^15.5.2",
     "@nx/devkit": "21.4.1",
     "@nx/eslint": "21.4.1",
