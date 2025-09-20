@@ -1,26 +1,19 @@
 'use client';
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  memo,
-  useMemo,
-} from 'react';
+import React, { useCallback, memo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { cn } from '../../utils/utils'; // Changed to relative import
-import { PRODUCTION } from '../../lib/url'; // Changed to relative import
+import { cn } from '../../utils/utils';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card'; // Removed CardBody, CardContainer, CardItem
-import { Badge } from '../ui/badge'; // Changed to relative import
-import { Skeleton } from '../ui/skeleton'; // Changed to relative import
+} from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Skeleton } from '../ui/skeleton';
+import { useImageFallback } from '../../utils/hooks/useImageFallback';
 
 type DynamicCardProps = {
   title?: string;
@@ -84,61 +77,15 @@ const CardSkeleton = memo(() => (
 CardSkeleton.displayName = 'CardSkeleton';
 
 function MediaCard(props: MediaCardProps) {
-  // Call all hooks unconditionally at the top level
-  const [isImageLoading, setIsImageLoading] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
-
-  const imageSources = useMemo(
-    () =>
-      [
-        props.imageUrl, // Use props.imageUrl directly
-        props.imageUrl
-          ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(props.imageUrl)}`
-          : null,
-      ].filter(Boolean) as string[],
-    [props.imageUrl], // Depend on props.imageUrl
-  );
-
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (isImageLoading) {
-      timeoutRef.current = setTimeout(() => {
-        if (currentImageIndex < imageSources.length - 1) {
-          setCurrentImageIndex((prev) => prev + 1);
-        } else {
-          setIsImageLoading(false);
-        }
-      }, 5000);
-    }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [currentImageIndex, isImageLoading, imageSources.length]);
-
-  const handleImageError = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (currentImageIndex < imageSources.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    } else {
-      setIsImageLoading(false);
-    }
-  }, [currentImageIndex, imageSources.length]);
-
-  const handleImageLoad = useCallback(() => {
-    setIsImageLoading(false);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  }, []);
+  const { src, onError } = useImageFallback({ imageUrl: props.imageUrl });
 
   const handleCardClick = useCallback(() => {
-    // Use props.linkUrl directly
     router.push(props.linkUrl || '/');
   }, [router, props.linkUrl]);
 
-  // Dynamic Card (This will be the only variant now)
   const { title, description, type, badge, loading } =
-    props as DynamicCardProps; // Removed imageUrl and linkUrl from destructuring
+    props as DynamicCardProps;
 
   if (loading) {
     return <CardSkeleton />;
@@ -150,20 +97,14 @@ function MediaCard(props: MediaCardProps) {
       className="w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl"
     >
       <div className="relative h-64">
-        {isImageLoading && (
-          <Skeleton className="absolute inset-0 h-full w-full rounded-t-md rounded-b-none" />
-        )}
+        <Skeleton className="absolute inset-0 h-full w-full rounded-t-md rounded-b-none" />
         <Image
-          src={imageSources[currentImageIndex]}
+          src={src}
           alt={title || 'Card Image'}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className={cn(
-            'object-cover transition-opacity duration-300',
-            isImageLoading ? 'opacity-0' : 'opacity-100',
-          )}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
+          className={cn('object-cover transition-opacity duration-300')}
+          onError={onError}
           unoptimized
         />
         <TypeBadge type={type} badge={badge} />

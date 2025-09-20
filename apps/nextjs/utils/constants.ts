@@ -5,3 +5,5 @@ export const navLinks: NavLink[] = [
   // { href: '/docs', label: 'Docs' },
   { href: '/project', label: 'Project' },
 ];
+
+export const PRODUCTION = process.env.NEXT_PUBLIC_PRODUCTION_URL || 'https://asepharyana.tech';
