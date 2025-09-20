@@ -1,4 +1,4 @@
-import PosterImage from '../PosterImage';
+import PosterImage from '../../../../components/shared/PosterImage';
 import BookmarkButton from '../BookmarkButton';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';

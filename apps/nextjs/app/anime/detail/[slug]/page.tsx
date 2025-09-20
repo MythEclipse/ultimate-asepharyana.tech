@@ -1,42 +1,9 @@
 import React from 'react';
 import AnimeDetailPageClient from './AnimeDetailPageClient';
 import { APIURLSERVER } from '../../../../lib/url';
+import { AnimeData } from '../../../../types/anime';
 
 export const revalidate = 60;
-
-interface Genre {
-  name: string;
-  slug: string;
-}
-
-interface Episode {
-  episode: string;
-  slug: string;
-}
-
-interface Recommendation {
-  slug: string;
-  title: string;
-  poster: string;
-}
-
-interface AnimeData {
-  status: string;
-  data: {
-    title: string;
-    alternative_title: string;
-    poster: string;
-    type: string;
-    status: string;
-    release_date: string;
-    studio: string;
-    synopsis: string;
-    genres: Genre[];
-    producers: string[];
-    episode_lists: Episode[];
-    recommendations: Recommendation[];
-  };
-}
 
 async function DetailAnimePage({
   params,
@@ -59,7 +26,8 @@ async function DetailAnimePage({
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    initialData = await response.json();
+    const responseData = await response.json();
+    initialData = responseData.data; // Extract the nested data
   } catch (err) {
     console.error('Failed to fetch anime detail data on server:', err);
     error = 'Failed to load anime data';

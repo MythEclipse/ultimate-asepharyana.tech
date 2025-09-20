@@ -1,32 +1,9 @@
-import React from 'react';
 import { notFound } from 'next/navigation';
-import SearchForm from '../../../../components/misc/SearchForm';
-import CardA from '../../../../components/anime/MediaCard';
-import { Info } from 'lucide-react';
 import { APIURLSERVER } from '../../../../lib/url';
+import { SearchDetailData } from '../../../../types/anime';
+import SearchPageClient from './SearchPageClient';
 
 export const revalidate = 60;
-
-interface Genre {
-  name: string;
-  slug: string;
-  otakudesu_url: string;
-}
-interface Anime {
-  title: string;
-  slug: string;
-  poster: string;
-  genres?: Genre[];
-  status?: string;
-  rating?: string;
-  episode_count?: number;
-  last_release_date?: string;
-  url?: string;
-}
-interface SearchDetailData {
-  status: string;
-  data: Anime[];
-}
 
 async function SearchPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -36,7 +13,8 @@ async function SearchPage({ params }: { params: Promise<{ slug: string }> }) {
     notFound();
   }
 
-  let searchResults: SearchDetailData = { status: 'error', data: [] };
+  let searchResults: SearchDetailData | null = null;
+  let error: string | null = null;
 
   try {
     const url = `/api/anime/search?q=${encodeURIComponent(query)}`;
@@ -53,38 +31,15 @@ async function SearchPage({ params }: { params: Promise<{ slug: string }> }) {
     searchResults = await response.json();
   } catch (err) {
     console.error('Failed to fetch search results on server:', err);
-    searchResults = { status: 'error', data: [] };
+    error = 'Failed to load search results';
   }
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Search Results</h1>
-      <SearchForm
-        classname="w-full mb-8"
-        initialQuery={query}
-        baseUrl="/anime"
-      />
-      {searchResults.data.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
-          {searchResults.data.map((anime) => (
-            <CardA
-              key={anime.slug}
-              title={anime.title}
-              description={`${anime.status || 'Unknown status'} • ⭐${anime.rating || 'N/A'}`}
-              imageUrl={anime.poster}
-              linkUrl={`/anime/detail/${anime.slug}`}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
-          <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-xl font-medium text-blue-800 dark:text-blue-200">
-            No results found for &quot;{query}&quot;
-          </h2>
-        </div>
-      )}
-    </main>
+    <SearchPageClient
+      initialData={searchResults}
+      initialError={error}
+      query={query}
+    />
   );
 }
 

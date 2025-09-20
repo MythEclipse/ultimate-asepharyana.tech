@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { PRODUCTION } from '../../../../lib/url';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
 import MediaCard from '../../../../components/anime/MediaCard';
@@ -16,7 +14,6 @@ import {
   CardTitle,
   CardDescription,
 } from '../../../../components/ui/card';
-import { Skeleton } from '../../../../components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -34,82 +31,9 @@ import {
   Popcorn,
   Clapperboard,
 } from 'lucide-react';
-
-interface Genre {
-  name: string;
-  slug: string;
-}
-
-interface Episode {
-  episode: string;
-  slug: string;
-}
-
-interface Recommendation {
-  slug: string;
-  title: string;
-  poster: string;
-}
-
-interface AnimeData {
-  status: string;
-  data: {
-    title: string;
-    alternative_title: string;
-    poster: string;
-    type: string;
-    status: string;
-    release_date: string;
-    studio: string;
-    synopsis: string;
-    genres: Genre[];
-    producers: string[];
-    episode_lists: Episode[];
-    recommendations: Recommendation[];
-  };
-}
-
-const DetailPageSkeleton = () => (
-  <main className="p-4 md:p-8 min-h-screen">
-    <div className="max-w-6xl mx-auto">
-      <div className="rounded-[24px] p-6 md:p-10 bg-card">
-        <div className="flex flex-col md:flex-row items-start gap-8">
-          <div className="w-full md:w-1/3 flex flex-col gap-4">
-            <Skeleton className="aspect-[2/3] w-full rounded-xl" />
-            <Skeleton className="h-12 w-full rounded-full" />
-          </div>
-          <div className="w-full md:w-2/3 space-y-6">
-            <Skeleton className="h-10 w-3/4 rounded-lg" />
-            <Card>
-              <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="w-10 h-10 rounded-lg" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-            <div className="flex flex-wrap gap-2">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-8 w-24 rounded-full" />
-              ))}
-            </div>
-            <div className="space-y-3">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-);
+import PosterImage from '../../../../components/shared/PosterImage';
+import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
+import { AnimeData } from '../../../../types/anime';
 
 interface AnimeDetailPageClientProps {
   slug: string;
@@ -124,12 +48,11 @@ function AnimeDetailPageClient({
 }: AnimeDetailPageClientProps) {
   const router = useRouter();
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
-    if (initialData?.data.episode_lists) {
-      initialData.data.episode_lists.forEach((episode) => {
+    if (initialData?.episode_lists) {
+      initialData.episode_lists.forEach((episode) => {
         router.prefetch(`/anime/full/${episode.slug}`);
       });
     }
@@ -156,43 +79,26 @@ function AnimeDetailPageClient({
       bookmarks = bookmarks.filter(
         (item: { slug: string }) => item.slug !== slug,
       );
-    } else if (initialData?.data) {
+    } else if (initialData) {
       bookmarks.push({
         slug,
-        title: initialData.data.title,
-        poster: initialData.data.poster,
+        title: initialData.title,
+        poster: initialData.poster,
       });
     }
     localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
     setBookmarked(!isBookmarked);
   };
 
-  const imageSources = [
-    initialData?.data.poster,
-    initialData?.data.poster
-      ? `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(initialData.data.poster)}`
-      : null,
-    '/default.png',
-  ].filter(Boolean) as string[];
+  if (initialError) {
+    return <ErrorLoadingDisplay type="error" message={initialError} />;
+  }
 
-  const handleImageError = () => {
-    if (currentImageIndex < imageSources.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    }
-  };
+  if (!initialData) {
+    return <ErrorLoadingDisplay type="loading" skeletonType="detail" />;
+  }
 
-  const displayError = initialError;
-  const displayData = initialData;
-
-  if (displayError)
-    return (
-      <p className="text-destructive text-center p-8">
-        Failed to load anime data.
-      </p>
-    );
-  if (!displayData) return <DetailPageSkeleton />;
-
-  const { data: animeData } = displayData;
+  const animeData = initialData;
   const metadata = [
     {
       label: 'Type',
@@ -225,15 +131,9 @@ function AnimeDetailPageClient({
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="w-full md:w-1/3 flex flex-col gap-4 md:sticky top-8">
                   <Card className="overflow-hidden">
-                    <Image
-                      src={imageSources[currentImageIndex]}
-                      alt={animeData.title}
-                      width={400}
-                      height={600}
-                      className="object-cover w-full aspect-[2/3]"
-                      priority
-                      unoptimized
-                      onError={handleImageError}
+                    <PosterImage
+                      poster={animeData.poster}
+                      title={animeData.title}
                     />
                   </Card>
                   <Button
@@ -298,13 +198,13 @@ function AnimeDetailPageClient({
                     <CardHeader>
                       <CardTitle>Episodes</CardTitle>
                       <CardDescription>
-                        Total {animeData.episode_lists?.length || 0} episodes
+                        Total {animeData.episode_lists?.length ?? 0} episodes
                         available.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {animeData.episode_lists?.length > 0 ? (
+                        {animeData.episode_lists && animeData.episode_lists.length > 0 ? (
                           animeData.episode_lists.map((episode, index) => (
                             <Tooltip key={`${episode.slug}-${index}`}>
                               <TooltipTrigger asChild>
@@ -344,7 +244,7 @@ function AnimeDetailPageClient({
                       Recommendations
                     </h2>
                     <div className="flex overflow-x-auto pb-4 -mx-1 gap-4">
-                      {animeData.recommendations?.length > 0 ? (
+                      {animeData.recommendations && animeData.recommendations.length > 0 ? (
                         animeData.recommendations.map((rec, index) => (
                           <div
                             key={`${rec.slug}-${index}`}
