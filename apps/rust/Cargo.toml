@@ -69,6 +69,7 @@ failure = "0.1"
 flate2 = "1.1"
 redis = { version = "0.32.5", features = ["tokio-comp"] }
 thiserror = "2.0.16"
+itertools = "0.14"
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)

@@ -1,8 +1,10 @@
 use std::env;
 use std::fs;
 use std::process;
+use anyhow;
+use rust::build_utils::template_generator;
 
-fn main() -> std::io::Result<()> {
+fn main() -> anyhow::Result<()> {
   let args: Vec<String> = env::args().collect();
 
   if args.len() != 2 {
@@ -13,14 +15,6 @@ fn main() -> std::io::Result<()> {
   }
 
   let full_route_path = args[1].clone();
-  let parts: Vec<&str> = full_route_path.split('/').collect();
-  let last_part = parts.last().unwrap_or(&"");
-
-  let is_dynamic_route =
-    *last_part == "id" ||
-    *last_part == "slug" ||
-    *last_part == "uuid" ||
-    *last_part == "key";
 
   let base_api_dir = get_base_api_dir()?;
   let mut file_path = base_api_dir.join(&full_route_path);
@@ -34,18 +28,11 @@ fn main() -> std::io::Result<()> {
   let parent_dir = file_path.parent().unwrap();
   fs::create_dir_all(parent_dir)?;
 
-  let initial_content = if is_dynamic_route {
-    "//! DYNAMIC_ROUTE\n".to_string()
-  } else {
-    "".to_string()
-  };
+  let template_content = template_generator::generate_template_content(&file_path, &base_api_dir)?;
 
-  fs::write(&file_path, initial_content)?;
+  fs::write(&file_path, template_content)?;
 
-  println!("✅ Empty file created successfully at: {}", file_path.display());
-  println!(
-    "   Run `cargo build` (in the crate) to auto-populate the file with the handler template."
-  );
+  println!("✅ Full handler template generated successfully at: {}", file_path.display());
 
   Ok(())
 }

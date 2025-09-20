@@ -13,3 +13,5 @@ pub mod ryzen_cdn;
 pub mod error;
 
 pub mod routes;
+#[path = "../build_utils/mod.rs"]
+pub mod build_utils;

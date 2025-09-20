@@ -4,6 +4,7 @@ pub mod handler_updater;
 pub mod mod_generator;
 pub mod openapi_generator;
 pub mod path_utils;
+pub mod template_generator;
 
 
 #[derive(Debug)]
