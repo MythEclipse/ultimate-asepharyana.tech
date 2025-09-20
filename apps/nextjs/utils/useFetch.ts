@@ -52,13 +52,16 @@ export const fetchDataMultiple = async (
     throw new Error('No endpoints provided');
   }
 
+  // Use AbortController to cancel remaining requests after first success
+  const controllers = endpoints.map(() => new AbortController());
   const fetchPromises = endpoints.map(({ url, baseUrl }, index) =>
     fetchData(url, method, pyld, formDataObj, baseUrl).then((result) => {
-      console.log(
-        `Fetch successful from endpoint ${index + 1}: ${url} (baseUrl: ${baseUrl || 'default'})`,
-      );
+      // Abort all other requests
+      controllers.forEach((ctrl, i) => {
+        if (i !== index) ctrl.abort();
+      });
       return result;
-    }),
+    })
   );
 
   try {
@@ -70,7 +73,6 @@ export const fetchDataMultiple = async (
     const errorMessages = Array.isArray(errors)
       ? errors.map((err) => String(err)).join('; ')
       : String(errors);
-    console.error(`All fetch attempts failed: ${errorMessages}`);
     throw new Error(`All fetch attempts failed: ${errorMessages}`);
   }
 };

@@ -130,39 +130,24 @@ winstonLogger.transports.forEach((transport) => {
   }
 });
 
-// Helper to serialize arguments like console.log
+// Helper to format log arguments
 function formatLogArgs(args: unknown[]): string {
   return args
     .map((arg) => {
-      if (typeof arg === 'string') return arg;
-      try {
-        return JSON.stringify(arg, null, 2);
-      } catch {
-        return String(arg);
+      if (typeof arg === 'object' && arg !== null) {
+        return util.inspect(arg, { depth: 3, breakLength: Infinity });
       }
+      return String(arg);
     })
     .join(' ');
 }
 
-// Create a proxy to wrap logger methods for variadic arguments
-const logger = new Proxy(winstonLogger, {
-  get(target, prop, receiver) {
-    // Only wrap log level methods
-    if (
-      ['info', 'warn', 'error', 'debug', 'verbose', 'silly', 'http'].includes(
-        String(prop),
-      )
-    ) {
-      return (...args: unknown[]) => {
-        const msg = formatLogArgs(args);
-        return (
-          target as unknown as Record<string, (...args: unknown[]) => unknown>
-        )[prop as string](msg);
-      };
-    }
-    // Default: passthrough
-    return Reflect.get(target, prop, receiver);
-  },
-});
-
-export default logger;
+export default {
+  info: (...args: unknown[]) => winstonLogger.info(formatLogArgs(args)),
+  warn: (...args: unknown[]) => winstonLogger.warn(formatLogArgs(args)),
+  error: (...args: unknown[]) => winstonLogger.error(formatLogArgs(args)),
+  debug: (...args: unknown[]) => winstonLogger.debug(formatLogArgs(args)),
+  verbose: (...args: unknown[]) => winstonLogger.verbose(formatLogArgs(args)),
+  silly: (...args: unknown[]) => winstonLogger.silly(formatLogArgs(args)),
+  http: (...args: unknown[]) => winstonLogger.http(formatLogArgs(args)),
+};

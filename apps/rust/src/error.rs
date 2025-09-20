@@ -1,9 +1,13 @@
 // Error module for crate-wide error handling
 
 use thiserror::Error;
-use axum::{ http::StatusCode, response::{ IntoResponse, Response }, Json };
+use axum::{
+  http::StatusCode,
+  response::{IntoResponse, Response},
+  Json,
+};
 use serde_json::json;
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 use crate::utils::error::AppError;
 
 #[derive(Error, Debug)]
@@ -15,17 +19,16 @@ pub enum LibError {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
-  pub error: String,
+    pub error: String,
 }
 
 impl From<AppError> for ErrorResponse {
-  fn from(app_error: AppError) -> Self {
-    ErrorResponse {
-      error: app_error.to_string(),
+    fn from(app_error: AppError) -> Self {
+        ErrorResponse {
+            error: app_error.to_string(),
+        }
     }
-  }
 }
-
 impl IntoResponse for ErrorResponse {
   fn into_response(self) -> Response {
     let (status, error_message) = match self.error.as_str() {
@@ -51,3 +54,5 @@ impl IntoResponse for ErrorResponse {
     (status, body).into_response()
   }
 }
+
+pub use ErrorResponse;

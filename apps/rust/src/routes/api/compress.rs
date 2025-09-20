@@ -34,12 +34,8 @@ lazy_static::lazy_static! {
   };
   static ref CACHE_EXPIRY: u64 = 0; // 0 for debugging, forces cache invalidation
   static ref MAX_QUEUE_SIZE: usize = 10;
-  static ref IS_PROCESSING: Mutex<bool> = Mutex::new(false);
-  static ref QUEUE: Mutex<
-    VecDeque<
-      Box<dyn (FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>) + Send>
-    >
-  > = Mutex::new(VecDeque::new());
+  // Use mpsc channel for compression queue
+  static ref (QUEUE_SENDER, QUEUE_RECEIVER): (tokio::sync::mpsc::Sender<CompressionTask>, tokio::sync::mpsc::Receiver<CompressionTask>) = tokio::sync::mpsc::channel(*MAX_QUEUE_SIZE);
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -419,18 +415,15 @@ pub async fn compress(Query(params): Query<CompressQuery>) -> impl IntoResponse 
     });
   }
 
-  // Check queue size
-  {
-    let queue = QUEUE.lock().await;
-    if queue.len() >= *MAX_QUEUE_SIZE {
-      tracing::warn!("Compression queue is full. Current queue size: {}", queue.len());
-      return Json(CompressResponse {
-        link: None,
-        error: Some("Server sibuk, coba lagi nanti".to_string()),
-      });
-    }
-    tracing::info!("Compression queue size: {}", queue.len());
+  let queue_len = QUEUE_SENDER.capacity();
+  if queue_len == 0 {
+    tracing::warn!("Compression queue is full.");
+    return Json(CompressResponse {
+      link: None,
+      error: Some("Server sibuk, coba lagi nanti".to_string()),
+    });
   }
+  tracing::info!("Compression queue available slots: {}", queue_len);
 
   // Create task
   let url = params.url.clone();

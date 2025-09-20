@@ -55,12 +55,15 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
     let waited = 0;
 
     // Try to acquire lock
+    let pollCount = 0;
+    const maxPolls = Math.ceil(maxWait / waitInterval);
     while (!(await acquireRedisLock(KOMIK_BASE_URL_LOCK_KEY, lockTtl))) {
       logger.debug('[getDynamicKomikBaseUrl] Waiting for Redis lock...');
       await sleep(waitInterval);
       waited += waitInterval;
-      // If waited too long, break and try anyway
-      if (waited >= maxWait) {
+      pollCount++;
+      // If waited too long or polled too many times, break and try anyway
+      if (waited >= maxWait || pollCount >= maxPolls) {
         logger.warn(
           '[getDynamicKomikBaseUrl] Waited too long for lock, proceeding anyway',
         );

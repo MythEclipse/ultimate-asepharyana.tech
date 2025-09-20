@@ -2,6 +2,7 @@ use reqwest::Client;
 use tracing::{info, error};
 use bytes::Bytes;
 use crate::utils::error::AppError;
+use crate::utils::headers::{common_headers, common_image_headers}; // Import the new common_headers and common_image_headers functions
 
 pub struct ImageProxyResult {
     pub data: Bytes,
@@ -42,22 +43,7 @@ async fn fetch_cdn_image(url: &str, version: u8) -> Result<ImageProxyResult, App
     let encoded_url = urlencoding::encode(url);
     let cdn_url = format!("https://imagecdn.app/v{version}/images/{encoded_url}");
 
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(reqwest::header::ACCEPT, reqwest::header::HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
-    headers.insert(reqwest::header::ACCEPT_ENCODING, reqwest::header::HeaderValue::from_static("gzip, deflate, br"));
-    headers.insert(reqwest::header::ACCEPT_LANGUAGE, reqwest::header::HeaderValue::from_static("en-US,en;q=0.9,id;q=0.8"));
-    headers.insert(reqwest::header::CACHE_CONTROL, reqwest::header::HeaderValue::from_static("no-cache"));
-    headers.insert(reqwest::header::PRAGMA, reqwest::header::HeaderValue::from_static("no-cache"));
-    headers.insert("priority", reqwest::header::HeaderValue::from_static("u=0, i"));
-    headers.insert("sec-ch-ua", reqwest::header::HeaderValue::from_static("\"Not;A=Brand\";v=\"99\", \"Microsoft Edge\";v=\"139\", \"Chromium\";v=\"139\""));
-    headers.insert("sec-ch-ua-mobile", reqwest::header::HeaderValue::from_static("?0"));
-    headers.insert("sec-ch-ua-platform", reqwest::header::HeaderValue::from_static("\"Windows\""));
-    headers.insert("sec-fetch-dest", reqwest::header::HeaderValue::from_static("document"));
-    headers.insert("sec-fetch-mode", reqwest::header::HeaderValue::from_static("navigate"));
-    headers.insert("sec-fetch-site", reqwest::header::HeaderValue::from_static("none"));
-    headers.insert("sec-fetch-user", reqwest::header::HeaderValue::from_static("?1"));
-    headers.insert("upgrade-insecure-requests", reqwest::header::HeaderValue::from_static("1"));
-    headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"));
+    let headers = common_image_headers(); // Use the common_image_headers function
 
     match client.get(&cdn_url).headers(headers).send().await {
         Ok(response) => {
@@ -89,22 +75,7 @@ async fn fetch_cdn_image(url: &str, version: u8) -> Result<ImageProxyResult, App
 
 async fn fetch_manual(url: &str) -> Result<ImageProxyResult, AppError> {
     let client = Client::new();
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(reqwest::header::ACCEPT, reqwest::header::HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
-    headers.insert(reqwest::header::ACCEPT_ENCODING, reqwest::header::HeaderValue::from_static("gzip, deflate, br"));
-    headers.insert(reqwest::header::ACCEPT_LANGUAGE, reqwest::header::HeaderValue::from_static("en-US,en;q=0.9,id;q=0.8"));
-    headers.insert(reqwest::header::CACHE_CONTROL, reqwest::header::HeaderValue::from_static("no-cache"));
-    headers.insert(reqwest::header::PRAGMA, reqwest::header::HeaderValue::from_static("no-cache"));
-    headers.insert("priority", reqwest::header::HeaderValue::from_static("u=0, i"));
-    headers.insert("sec-ch-ua", reqwest::header::HeaderValue::from_static("\"Not;A=Brand\";v=\"99\", \"Microsoft Edge\";v=\"139\", \"Chromium\";v=\"139\""));
-    headers.insert("sec-ch-ua-mobile", reqwest::header::HeaderValue::from_static("?0"));
-    headers.insert("sec-ch-ua-platform", reqwest::header::HeaderValue::from_static("\"Windows\""));
-    headers.insert("sec-fetch-dest", reqwest::header::HeaderValue::from_static("document"));
-    headers.insert("sec-fetch-mode", reqwest::header::HeaderValue::from_static("navigate"));
-    headers.insert("sec-fetch-site", reqwest::header::HeaderValue::from_static("none"));
-    headers.insert("sec-fetch-user", reqwest::header::HeaderValue::from_static("?1"));
-    headers.insert("upgrade-insecure-requests", reqwest::header::HeaderValue::from_static("1"));
-    headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"));
+    let headers = common_image_headers(); // Use the common_image_headers function
 
     match client.get(url).headers(headers).send().await {
         Ok(response) => {
