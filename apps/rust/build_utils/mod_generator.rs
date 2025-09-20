@@ -62,7 +62,7 @@ fn is_rust_keyword(s: &str) -> bool {
 }
 
 fn sanitize_module_name(name: &str) -> String {
-  let sanitized = name.trim_matches(|c| (c == '[' || c == ']')).replace('-', "_");
+  let sanitized = name.trim_matches(|c| c == '[' || c == ']').replace('-', "_");
   if is_rust_keyword(&sanitized) {
     format!("r#{}", sanitized)
   } else {

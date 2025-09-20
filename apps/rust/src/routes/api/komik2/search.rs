@@ -290,7 +290,7 @@ fn parse_search_document(
         if
           let Some(pos) = parts
             .iter()
-            .position(|s| (*s == "manga" || *s == "manhua" || *s == "manhwa"))
+            .position(|s| *s == "manga" || *s == "manhua" || *s == "manhwa")
         {
           parts
             .get(pos + 1)
