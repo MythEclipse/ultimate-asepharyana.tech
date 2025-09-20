@@ -2,6 +2,8 @@ use anyhow::Result;
 use reqwest::Client;
 use serde_json::Value;
 use tokio;
+
+#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt; // Add this for Windows-specific process creation flags
 
 const BASE_URL: &str = "http://localhost:4091/api";
@@ -75,12 +77,16 @@ async fn main() -> Result<()> {
     println!("Starting Rust project in development mode...");
     println!("Starting server with cargo run...");
 
-    const DETACHED_PROCESS: u32 = 0x00000008; // Define DETACHED_PROCESS flag for Windows
+    let mut command = Command::new("cargo");
+    command.args(&["run", "--bin", "rust"]);
 
-    let mut server_process = Command::new("cargo")
-        .args(&["run", "--bin", "rust"]) // Use cargo run to start the main server binary
-        .creation_flags(DETACHED_PROCESS) // Use creation_flags for Windows to detach the process
-        .spawn()?;
+    #[cfg(target_os = "windows")]
+    {
+        const DETACHED_PROCESS: u32 = 0x00000008;
+        command.creation_flags(DETACHED_PROCESS);
+    }
+
+    let mut server_process = command.spawn()?;
 
     println!("Waiting for server to start...");
     let mut attempts = 0;
