@@ -19,7 +19,6 @@
   "plugins": [
     "@nx/eslint/plugin",
     "@nx/vite/plugin",
-    "@nx/storybook/plugin",
     "@nx/next/plugin",
     "@nx/playwright/plugin",
     "@nx/react/router-plugin"
