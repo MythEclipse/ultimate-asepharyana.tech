@@ -222,6 +222,13 @@ fn parse_and_normalize_metadata(
   })
 }
 
+fn is_handler_protected(content: &str) -> bool {
+  // Check if register_routes contains AuthMiddleware::layer()
+  content.contains("AuthMiddleware::layer()") ||
+  // Check if function signature contains Extension(claims): Extension<Claims>
+  content.contains("Extension(claims): Extension<Claims>")
+}
+
 fn generate_and_update_utoipa_macro(
   content: &str,
   http_method: &str,
@@ -254,6 +261,8 @@ fn generate_and_update_utoipa_macro(
 
   let query_params = parse_query_params(content)?;
 
+  let is_protected = is_handler_protected(content);
+
   let new_utoipa_macro = generate_utoipa_macro(
     http_method,
     route_path,
@@ -262,7 +271,8 @@ fn generate_and_update_utoipa_macro(
     route_description,
     operation_id,
     &path_params,
-    &query_params
+    &query_params,
+    is_protected
   );
 
   let mut updated_content = content.to_string();

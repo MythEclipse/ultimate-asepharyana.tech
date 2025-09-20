@@ -9,7 +9,8 @@ pub fn generate_utoipa_macro(
   route_description: &str,
   operation_id: &str,
   path_params: &[(String, String)],
-  query_params: &[(String, String)]
+  query_params: &[(String, String)],
+  is_protected: bool
 ) -> String {
   let method_ident = match http_method.to_uppercase().as_str() {
     "POST" => "post",
@@ -52,9 +53,15 @@ pub fn generate_utoipa_macro(
     String::new()
   };
 
+  let security_str = if is_protected {
+    ",\n    security((\"ApiKeyAuth\" = []))"
+  } else {
+    ""
+  };
+
   format!(
     r#"#[utoipa::path(
-    {}{},
+    {}{}{},
     path = "{}",
     tag = "{}",
     operation_id = "{}",
@@ -65,6 +72,7 @@ pub fn generate_utoipa_macro(
 )]"#,
     method_ident,
     params_str,
+    security_str,
     route_path,
     route_tag,
     operation_id,

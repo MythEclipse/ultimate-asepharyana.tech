@@ -2,7 +2,7 @@ use regex::Regex;
 use crate::build_utils::path_utils::{generate_default_description, sanitize_operation_id, sanitize_tag};
 use crate::build_utils::constants::DYNAMIC_REGEX;
 
-pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::path::Path) -> anyhow::Result<String> {
+pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::path::Path, protected: bool) -> anyhow::Result<String> {
     let file_stem = path
         .file_stem()
         .and_then(|s| s.to_str())
@@ -48,13 +48,28 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
 
     let path_params = extract_path_params_from_route(&route_path_str);
 
-    let func_signature = build_function_signature(&func_name, &path_params);
+    let func_signature = build_function_signature(&func_name, &path_params, protected);
 
     let response_data = build_response_data(&response_struct_name, &path_params);
 
     let message_content = build_message_content(&func_name, &path_params);
 
-    let imports = build_imports(&path_params);
+    let imports = build_imports(&path_params, protected);
+
+    let security = if protected {
+        r#"
+    security(
+        ("ApiKeyAuth" = [])
+    ),"#
+    } else { "" };
+    let middleware_layer = if protected {
+        "let router = router.layer(AuthMiddleware::layer());"
+    } else { "" };
+
+    let auth_verification = if protected {
+        r#"
+    "#
+    } else { "" };
 
     let template = format!(
       r#"//! Handler for the {} endpoint.
@@ -80,7 +95,22 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
     pub struct {} {{{}
     }}
 
+    #[utoipa::path(
+        get,
+        params(
+{}
+        ),
+        path = "/{}",
+        tag = "{}",
+        operation_id = "{}",
+        responses(
+            (status = 200, description = "{}", body = {}),
+            (status = 401, description = "Unauthorized", body = String),
+            (status = 500, description = "Internal Server Error", body = String)
+        ){}
+    )]
     {} {{
+        {}{}
         Json({} {{
             message: {},{}
         }})
@@ -88,6 +118,7 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
 
     /// {}
     pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
+        {middleware_layer}
         router.route(ENDPOINT_PATH, get({}))
     }}
     "#,
@@ -101,7 +132,21 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
         pascal_case_name,
         response_struct_name,
         response_fields,
+        if path_params.is_empty() { "".to_string() } else {
+            path_params.iter()
+                .map(|(name, _)| format!(r#"("{}" = String, Path, description = "Parameter")"#, name))
+                .collect::<Vec<_>>()
+                .join(",\n        ")
+        },
+        axum_path,
+        default_tag,
+        operation_id,
+        default_description,
+        response_struct_name,
+        security,
         func_signature,
+        auth_verification,
+        if protected { "\n    " } else { "" },
         response_struct_name,
         message_content,
         response_data,
@@ -171,15 +216,26 @@ pub fn extract_path_params_from_route(route_path_str: &str) -> Vec<(String, Stri
     path_params
 }
 
-pub fn build_function_signature(func_name: &str, path_params: &[(String, String)]) -> String {
+pub fn build_function_signature(func_name: &str, path_params: &[(String, String)], protected: bool) -> String {
+    let mut params = Vec::new();
+
+    if protected {
+        params.push("Extension(claims): Extension<Claims>".to_string());
+    }
+
     if path_params.is_empty() {
-        format!("pub async fn {}() -> impl IntoResponse", func_name)
+        if params.is_empty() {
+            format!("pub async fn {}() -> impl IntoResponse", func_name)
+        } else {
+            format!("pub async fn {}({}) -> impl IntoResponse", func_name, params.join(", "))
+        }
     } else {
-        let params_str = path_params.iter()
+        let path_params_str = path_params.iter()
             .map(|(name, typ)| format!("Path({}): Path<{}>", name, typ))
             .collect::<Vec<_>>()
             .join(", ");
-        format!("pub async fn {}({}) -> impl IntoResponse", func_name, params_str)
+        params.push(path_params_str);
+        format!("pub async fn {}({}) -> impl IntoResponse", func_name, params.join(", "))
     }
 }
 
@@ -227,10 +283,20 @@ pub fn build_message_content(func_name: &str, path_params: &[(String, String)]) 
     }
 }
 
-pub fn build_imports(path_params: &[(String, String)]) -> String {
-    if path_params.is_empty() {
-        "use axum::{response::IntoResponse, routing::get, Json, Router};".to_string()
-    } else {
-        "use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};".to_string()
+pub fn build_imports(path_params: &[(String, String)], protected: bool) -> String {
+    let mut imports = Vec::new();
+
+    if protected {
+        imports.push("use crate::middleware::auth::AuthMiddleware;".to_string());
+        imports.push("use crate::utils::auth::Claims;".to_string());
+        imports.push("use axum::Extension;".to_string());
     }
+
+    if path_params.is_empty() {
+        imports.push("use axum::{response::IntoResponse, routing::get, Json, Router};".to_string());
+    } else {
+        imports.push("use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};".to_string());
+    }
+
+    imports.join("\n")
 }

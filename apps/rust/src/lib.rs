@@ -2,6 +2,7 @@
 
 pub mod config;
 pub mod utils;
+pub mod middleware;
 pub mod urls;
 pub mod jwt;
 pub mod redis_client;

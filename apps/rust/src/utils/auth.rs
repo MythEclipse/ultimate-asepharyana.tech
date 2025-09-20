@@ -1,6 +1,6 @@
-// JWT Claims and verification using dynamic config from CONFIG_MAP
+// JWT Claims and utilities using dynamic config from CONFIG_MAP
 
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{encode, decode, Header, DecodingKey, EncodingKey, Validation, Algorithm};
 use crate::config::CONFIG_MAP;
 use crate::utils::error::AppError;
 
@@ -12,11 +12,21 @@ pub struct Claims {
     pub exp: usize,
 }
 
-pub async fn verify_jwt(token: &str) -> Result<Claims, AppError> {
+pub fn encode_jwt(claims: Claims) -> Result<String, AppError> {
     let secret = CONFIG_MAP.get("JWT_SECRET")
         .cloned()
         .unwrap_or_else(|| "default_secret".to_string());
-    let validation = Validation::default();
-    let decoded = decode::<Claims>(token, &DecodingKey::from_secret(secret.as_bytes()), &validation)?;
-    Ok(decoded.claims)
+    encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_bytes()))
+        .map_err(AppError::from)
+}
+
+pub fn decode_jwt(token: &str) -> Result<Claims, AppError> {
+    let secret = CONFIG_MAP.get("JWT_SECRET")
+        .cloned()
+        .unwrap_or_else(|| "default_secret".to_string());
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = true;
+    decode::<Claims>(token, &DecodingKey::from_secret(secret.as_bytes()), &validation)
+        .map(|data| data.claims)
+        .map_err(AppError::from)
 }

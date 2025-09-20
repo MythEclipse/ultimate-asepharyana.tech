@@ -2,19 +2,25 @@ use std::env;
 use std::fs;
 use std::process;
 use anyhow;
+use clap::Parser;
 use rust::build_utils::template_generator;
 
+#[derive(Parser)]
+#[command(name = "scaffold")]
+#[command(about = "Generate API handler templates")]
+struct Args {
+    /// The route path for the API handler
+    route_path: String,
+
+    /// Generate a protected API handler that requires authentication
+    #[arg(long)]
+    protected: bool,
+}
+
 fn main() -> anyhow::Result<()> {
-  let args: Vec<String> = env::args().collect();
+  let args = Args::parse();
 
-  if args.len() != 2 {
-    eprintln!("❌ Usage: cargo run --bin scaffold -- <route_path>");
-    eprintln!("   Example (static):  cargo run --bin scaffold -- products/list");
-    eprintln!("   Example (dynamic): cargo run --bin scaffold -- products/detail/id");
-    process::exit(1);
-  }
-
-  let full_route_path = args[1].clone();
+  let full_route_path = args.route_path.clone();
 
   let base_api_dir = get_base_api_dir()?;
   let mut file_path = base_api_dir.join(&full_route_path);
@@ -28,7 +34,7 @@ fn main() -> anyhow::Result<()> {
   let parent_dir = file_path.parent().unwrap();
   fs::create_dir_all(parent_dir)?;
 
-  let template_content = template_generator::generate_template_content(&file_path, &base_api_dir)?;
+  let template_content = template_generator::generate_template_content(&file_path, &base_api_dir, args.protected)?;
 
   fs::write(&file_path, template_content)?;
 
