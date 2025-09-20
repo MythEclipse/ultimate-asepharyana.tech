@@ -43,7 +43,6 @@ async function AnimePage() {
     try {
       const url = '/api/anime';
       const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-      console.log('Fetching data from URL:', fullUrl); // Debug log
       const response = await fetch(fullUrl, {
         headers: {
           'Content-Type': 'application/json',
