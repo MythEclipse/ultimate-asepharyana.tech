@@ -14,13 +14,12 @@ import { CompleteAnimeData, Pagination } from '../../../../types/anime';
 interface OngoingAnimePageClientProps {
   initialData: CompleteAnimeData | null;
   initialError: string | null;
-  _slug: string;
+  slug: string;
 }
 
 function OngoingAnimePageClient({
   initialData,
   initialError,
-  _slug,
 }: OngoingAnimePageClientProps) {
   if (initialError) {
     return <ErrorLoadingDisplay type="error" message={initialError} />;

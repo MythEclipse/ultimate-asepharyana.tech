@@ -1,12 +1,11 @@
-// apps/NextJS/hooks/useSosmedActions.ts
 import { useState } from 'react';
 import { mutate } from 'swr';
 import { useSession } from 'next-auth/react';
 import { useGlobalStore } from './useGlobalStore';
+import { SosmedService } from '../../api/sosmed';
 
 export function useSosmedActions() {
   const { data: session } = useSession();
-
   const setNewComment = useGlobalStore((s) => s.setNewComment);
 
   const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
@@ -15,14 +14,10 @@ export function useSosmedActions() {
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
 
   const handleLike = async (postId: string) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error('Authentication required');
     setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/likes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      });
+      await SosmedService.likePost(postId);
       mutate(`/api/sosmed/posts`);
     } finally {
       setIsLiking((prev) => ({ ...prev, [postId]: false }));
@@ -30,14 +25,10 @@ export function useSosmedActions() {
   };
 
   const handleUnlike = async (postId: string) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error('Authentication required');
     setIsLiking((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/likes`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      });
+      await SosmedService.unlikePost(postId);
       mutate(`/api/sosmed/posts`);
     } finally {
       setIsLiking((prev) => ({ ...prev, [postId]: false }));
@@ -45,14 +36,11 @@ export function useSosmedActions() {
   };
 
   const handleAddComment = async (postId: string, comment: string) => {
-    if (!session?.user || !comment?.trim()) return;
+    if (!session?.user) throw new Error('Authentication required');
+    if (!comment?.trim()) return;
     setIsCommenting((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: comment, postId }),
-      });
+      await SosmedService.addComment({ content: comment, postId });
       mutate(`/api/sosmed/posts`);
       setNewComment(postId, '');
     } finally {
@@ -61,14 +49,10 @@ export function useSosmedActions() {
   };
 
   const handleEditPost = async (postId: string, content: string) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error('Authentication required');
     setIsEditing((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/posts`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: postId, content }),
-      });
+      await SosmedService.updatePost(postId, { content });
       mutate(`/api/sosmed/posts`);
     } finally {
       setIsEditing((prev) => ({ ...prev, [postId]: false }));
@@ -76,14 +60,10 @@ export function useSosmedActions() {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error('Authentication required');
     setIsDeleting((prev) => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`/api/sosmed/posts`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: postId }),
-      });
+      await SosmedService.deletePost(postId);
       mutate(`/api/sosmed/posts`);
     } finally {
       setIsDeleting((prev) => ({ ...prev, [postId]: false }));
@@ -91,14 +71,10 @@ export function useSosmedActions() {
   };
 
   const handleEditComment = async (commentId: string, content: string) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error('Authentication required');
     setIsEditing((prev) => ({ ...prev, [commentId]: true }));
     try {
-      await fetch(`/api/sosmed/comments`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: commentId, content }),
-      });
+      await SosmedService.updateComment(commentId, { content });
       mutate(`/api/sosmed/posts`);
     } finally {
       setIsEditing((prev) => ({ ...prev, [commentId]: false }));
@@ -106,14 +82,10 @@ export function useSosmedActions() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error('Authentication required');
     setIsDeleting((prev) => ({ ...prev, [commentId]: true }));
     try {
-      await fetch(`/api/sosmed/comments`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: commentId }),
-      });
+      await SosmedService.deleteComment(commentId);
       mutate(`/api/sosmed/posts`);
     } finally {
       setIsDeleting((prev) => ({ ...prev, [commentId]: false }));

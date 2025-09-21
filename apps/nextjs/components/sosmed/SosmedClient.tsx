@@ -6,54 +6,13 @@ import { Textarea } from '../../components/text/textarea';
 import ButtonA from '../../components/ui/BaseButton';
 import { useSession } from 'next-auth/react';
 import { Loader2, UploadCloud, Lock } from 'lucide-react';
-import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 import useSWR, { mutate } from 'swr';
 import { fetchData } from '../../utils/useFetch';
-
-// Define missing types locally with corrected field names to match API response
-interface Posts {
-  id: string;
-  content: string;
-  userId: string;
-  postId: string;
-  created_at: Date;
-  updated_at: Date;
-  authorId: string;
-  image_url: string | null;
-  user: ClientUser;
-  likes: Likes[];
-  comments: Comments[];
-}
-
-interface Likes {
-  id: string;
-  userId: string;
-  postId: string;
-  created_at: Date;
-}
-
-interface Comments {
-  id: string;
-  content: string;
-  userId: string;
-  postId: string;
-  created_at: Date;
-  updated_at: Date;
-  authorId: string;
-  user: ClientUser;
-}
-
-interface ClientUser {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  emailVerified: Date | null;
-  role: string;
-}
+import { useSosmedActions } from '../../utils/hooks/useSosmedActions';
+import type { Posts, Likes, Comments, ClientUser } from '../../types';
 
 const fetcher = async (url: string) => {
-  const response = await fetchData(url);
+  const response = await fetchData<{ posts: Posts[] }>(url);
   return response.data;
 };
 
@@ -63,10 +22,20 @@ export default function SosmedClient() {
   const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
-  const [isCommenting, setIsCommenting] = useState<Record<string, boolean>>({});
-  const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
-  const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
+
+  const {
+    isLiking,
+    isCommenting,
+    isEditing,
+    isDeleting,
+    handleLike,
+    handleUnlike,
+    handleAddComment,
+    handleEditPost,
+    handleDeletePost,
+    handleEditComment,
+    handleDeleteComment,
+  } = useSosmedActions();
 
   const { data: postsData } = useSWR(
     session?.user?.email ? `/api/sosmed/posts` : null,
@@ -79,11 +48,6 @@ export default function SosmedClient() {
     },
   );
 
-  // Correctly implement setNewComment using the global store
-  const globalStore = useGlobalStore();
-  const setNewComment = (postId: string, value: string) => {
-    globalStore.setNewComment(postId, value);
-  };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
@@ -123,7 +87,7 @@ export default function SosmedClient() {
       setIsUploading(true);
       const formData = new FormData();
       formData.append('file', file);
-      fetchData(`/api/uploader`, 'POST', undefined, formData)
+      fetchData<{ url: string }>(`/api/uploader`, 'POST', undefined, formData)
         .then((response) => {
           setImageUrl(response.data.url);
           setIsUploading(false);
@@ -135,125 +99,19 @@ export default function SosmedClient() {
     }
   };
 
-  const handleLike = async (postId: string) => {
-    if (!session?.user?.email) {
-      console.error('User not authenticated to like post.');
-      return;
-    }
-    setIsLiking((prev) => ({ ...prev, [postId]: true }));
-    try {
-      await fetchData(`/api/sosmed/likes`, 'POST', { postId });
-      mutate(`/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error liking post:', error);
-    } finally {
-      setIsLiking((prev) => ({ ...prev, [postId]: false }));
-    }
-  };
 
-  const handleUnlike = async (postId: string) => {
-    if (!session?.user?.email) {
-      console.error('User not authenticated to unlike post.');
-      return;
-    }
-    setIsLiking((prev) => ({ ...prev, [postId]: true }));
-    try {
-      await fetchData(`/api/sosmed/likes`, 'DELETE', { postId });
-      mutate(`/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error unliking post:', error);
-    } finally {
-      setIsLiking((prev) => ({ ...prev, [postId]: false }));
-    }
-  };
 
-  const handleAddComment = async (postId: string, comment: string) => {
-    if (!comment?.trim()) return;
-    if (!session?.user?.email) {
-      console.error('User not authenticated to add comment.');
-      return;
-    }
-    setIsCommenting((prev) => ({ ...prev, [postId]: true }));
-    try {
-      await fetchData(`/api/sosmed/comments`, 'POST', {
-        content: comment,
-        postId,
-      });
-      mutate(`/api/sosmed/posts`);
-      setNewComment(postId, '');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    } finally {
-      setIsCommenting((prev) => ({ ...prev, [postId]: false }));
-    }
-  };
 
-  const handleEditPost = async (postId: string, content: string) => {
-    if (!session?.user?.email) {
-      console.error('User not authenticated to edit post.');
-      return;
-    }
-    setIsEditing((prev) => ({ ...prev, [postId]: true }));
-    try {
-      await fetchData(`/api/sosmed/posts`, 'PUT', { id: postId, content });
-      mutate(`/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error editing post:', error);
-    } finally {
-      setIsEditing((prev) => ({ ...prev, [postId]: false }));
-    }
-  };
 
-  const handleDeletePost = async (postId: string) => {
-    if (!session?.user?.email) {
-      console.error('User not authenticated to delete post.');
-      return;
-    }
-    setIsDeleting((prev) => ({ ...prev, [postId]: true }));
-    try {
-      await fetchData(`/api/sosmed/posts`, 'DELETE', { id: postId });
-      mutate(`/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error deleting post:', error);
-    } finally {
-      setIsDeleting((prev) => ({ ...prev, [postId]: false }));
-    }
-  };
 
-  const handleEditComment = async (commentId: string, content: string) => {
-    if (!session?.user?.email) {
-      console.error('User not authenticated to edit comment.');
-      return;
-    }
-    setIsEditing((prev) => ({ ...prev, [commentId]: true }));
-    try {
-      await fetchData(`/api/sosmed/comments`, 'PUT', {
-        id: commentId,
-        content,
-      });
-      mutate(`/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error editing comment:', error);
-    } finally {
-      setIsEditing((prev) => ({ ...prev, [commentId]: false }));
-    }
-  };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!session?.user?.email) {
-      console.error('User not authenticated to delete comment.');
-      return;
-    }
-    setIsDeleting((prev) => ({ ...prev, [commentId]: true }));
-    try {
-      await fetchData(`/api/sosmed/comments`, 'DELETE', { id: commentId });
-      mutate(`/api/sosmed/posts`);
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-    } finally {
-      setIsDeleting((prev) => ({ ...prev, [commentId]: false }));
-    }
-  };
+
+
+
+
+
+
+
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl md:py-12 bg-background text-foreground">

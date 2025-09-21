@@ -1,8 +1,9 @@
 'use client';
 
+import { HttpClient } from './httpClient';
 import { APIURL } from '../lib/url';
 
-export const fetchData = async (
+export const fetchData = async <T = unknown>(
   url: string,
   method = 'GET',
   pyld?: Record<string, unknown>,
@@ -10,32 +11,23 @@ export const fetchData = async (
   baseUrl?: string,
 ) => {
   const base = baseUrl || APIURL;
-  const fullUrl = url.startsWith('/')
-    ? `${base}${url.endsWith('/') ? url.slice(0, -1) : url}`
-    : url;
+  const fullUrl = HttpClient.buildUrl(base, url);
   try {
-    const options: RequestInit = {
-      method,
-      headers: {},
-    };
+    const options: RequestInit = { method };
 
     if (method === 'POST') {
       if (formDataObj) {
         options.body = formDataObj;
-        // Content-Type header is automatically set for FormData by fetch
       } else if (pyld) {
         options.body = JSON.stringify(pyld);
-        (options.headers as Record<string, string>)['Content-Type'] =
-          'application/json';
+        options.headers = { 'Content-Type': 'application/json' };
       }
     }
 
-    const response = await fetch(fullUrl, options);
-
-    const data = await response.json();
+    const data = await HttpClient.request<T>(fullUrl, method, pyld);
     return {
       data,
-      status: response.status,
+      status: 200, // HttpClient handles status internally
     };
   } catch (error: unknown) {
     throw new Error(String(error));

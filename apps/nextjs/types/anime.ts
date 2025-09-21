@@ -1,3 +1,7 @@
+import { Pagination } from './types';
+
+export type { Pagination };
+
 export interface Genre {
   name: string;
   slug: string;
@@ -67,11 +71,3 @@ export interface Anime {
   newest_release_date?: string;
 }
 
-export interface Pagination {
-  current_page: number;
-  last_visible_page: number;
-  has_next_page: boolean;
-  next_page: number | null;
-  has_previous_page: boolean;
-  previous_page: number | null;
-}
