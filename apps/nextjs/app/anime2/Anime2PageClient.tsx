@@ -51,7 +51,7 @@ function Anime2PageClient({
   initialError,
 }: Anime2PageClientProps) {
   const { data, error, isLoading, mutate } = useSWR<HomeData>(
-    `/api/anime2/`,
+    `/api/anime2`,
     fetcher,
     {
       revalidateOnFocus: false,

@@ -122,7 +122,7 @@ export const buildUrl = (base: string, path: string): string => {
   }
 
   const cleanBase = base.replace(/\/$/, '');
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanPath = path.startsWith('/') ? path.replace(/\/$/, '') : `/${path.replace(/\/$/, '')}`;
 
   return `${cleanBase}${cleanPath}`;
 };
