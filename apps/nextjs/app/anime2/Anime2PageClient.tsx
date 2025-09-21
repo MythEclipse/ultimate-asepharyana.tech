@@ -1,6 +1,6 @@
 'use client';
 
-import AnimeGrid from '../../components/anime/AnimeGrid';
+import UnifiedGrid from '../../components/shared/UnifiedGrid';
 import useSWR from 'swr';
 import {
   ArrowRight,
@@ -91,7 +91,7 @@ function Anime2PageClient({
               </Link>
             </div>
 
-            <AnimeGrid anime2 animes={[]} loading={true} />
+            <UnifiedGrid items={[]} loading={true} itemType="anime" isAnime2={true} />
           </section>
 
           {/* Complete Anime Section */}
@@ -114,7 +114,7 @@ function Anime2PageClient({
               </Link>
             </div>
 
-            <AnimeGrid anime2 animes={[]} loading={true} />
+            <UnifiedGrid items={[]} loading={true} itemType="anime" isAnime2={true} />
           </section>
         </div>
       </main>
@@ -170,14 +170,15 @@ function Anime2PageClient({
             </Link>
           </div>
 
-          <AnimeGrid
-            anime2={true}
-            animes={displayData.data.ongoing_anime.map((anime) => ({
+          <UnifiedGrid
+            items={displayData.data.ongoing_anime.map((anime) => ({
               ...anime,
               rating: '',
               release_day: '',
               newest_release_date: '',
             }))}
+            itemType="anime"
+            isAnime2={true}
           />
         </section>
 
@@ -201,15 +202,16 @@ function Anime2PageClient({
             </Link>
           </div>
 
-          <AnimeGrid
-            anime2={true}
-            animes={displayData.data.complete_anime.map((anime) => ({
+          <UnifiedGrid
+            items={displayData.data.complete_anime.map((anime) => ({
               ...anime,
               rating: '',
               release_day: '',
               newest_release_date: '',
               current_episode: anime.episode_count,
             }))}
+            itemType="anime"
+            isAnime2={true}
           />
         </section>
       </div>

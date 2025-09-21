@@ -1,7 +1,10 @@
 // UnifiedGrid.tsx
+'use client';
 
-import React from 'react';
-import MediaCard from '../anime/MediaCard';
+import React, { memo, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+
+const MediaCard = dynamic(() => import('../anime/MediaCard'), { ssr: false });
 
 export type Anime = {
   slug: string;
@@ -10,14 +13,22 @@ export type Anime = {
   current_episode?: string;
   episode?: string;
   episode_count?: string;
+  rating?: string;
+  release_day?: string;
+  newest_release_date?: string;
+  anime_url?: string;
 };
 
 export type Komik = {
   slug: string;
-  title: string;
+  title?: string;
   poster?: string;
   chapter?: string;
   chapter_count?: string;
+  score?: string;
+  date?: string;
+  type?: string;
+  komik_id?: string;
 };
 
 type ItemType = 'anime' | 'komik';
@@ -28,7 +39,8 @@ type UnifiedGridProps<T extends Anime | Komik = Anime | Komik> = {
   singleItem?: T;
   itemType: ItemType;
   gridClassName?: string;
-  // Removed itemClassName and isAnime2
+  isAnime2?: boolean;
+  loading2?: boolean;
 };
 
 const DEFAULT_GRID_CLASS = 'grid grid-cols-3 lg:grid-cols-5 gap-6 w-full';
@@ -39,61 +51,72 @@ function UnifiedGrid<T extends Anime | Komik>({
   singleItem,
   itemType,
   gridClassName,
+  isAnime2 = false,
+  loading2 = false,
 }: UnifiedGridProps<T>) {
-  // Skeleton loading
-  if (loading) {
-    return (
-      <div className={gridClassName || DEFAULT_GRID_CLASS}>
-        {Array.from({ length: 10 }).map((_, idx) => (
-          <MediaCard key={idx} loading={true} />
-        ))}
-      </div>
-    );
+  const loadingCards = useMemo(
+    () =>
+      Array.from({ length: 40 }).map((_, index) => (
+        <MediaCard key={index} loading={loading} />
+      )),
+    [loading],
+  );
+
+  // Single item mode (loading2)
+  if (loading2) {
+    return <MediaCard loading={true} />;
   }
 
-  // Single item mode
+  // Single item mode (actual item)
   if (singleItem) {
     if (itemType === 'anime') {
       const anime = singleItem as Anime;
+      const link = isAnime2 ? '/anime2/detail' : '/anime/detail';
       return (
-        <div className={gridClassName || DEFAULT_GRID_CLASS}>
-          <MediaCard
-            key={anime.slug}
-            title={anime.title}
-            description={
-              anime.current_episode ||
-              anime.episode ||
-              anime.episode_count ||
-              ''
-            }
-            imageUrl={anime.poster || ''}
-            linkUrl={`/anime/detail/${anime.slug}`}
-          />
-        </div>
+        <MediaCard
+          key={anime.slug}
+          title={anime.title}
+          description={
+            anime.current_episode ||
+            anime.episode ||
+            anime.episode_count ||
+            ''
+          }
+          imageUrl={anime.poster || ''}
+          linkUrl={`${link}/${anime.slug}`}
+        />
       );
     } else {
       const komik = singleItem as Komik;
       return (
-        <div className={gridClassName || DEFAULT_GRID_CLASS}>
-          <MediaCard
-            key={komik.slug}
-            title={komik.title}
-            description={komik.chapter || komik.chapter_count || ''}
-            imageUrl={komik.poster || ''}
-            linkUrl={`/komik/detail/${komik.slug}`}
-          />
-        </div>
+        <MediaCard
+          key={komik.slug}
+          title={komik.title || ''}
+          description={''} // ComicGrid always uses empty string for description
+          imageUrl={komik.poster || ''}
+          linkUrl={`/komik/detail/${komik.slug}`}
+        />
       );
     }
+  }
+
+  // Loading state for grid
+  if (loading) {
+    return (
+      <div className={gridClassName || DEFAULT_GRID_CLASS} style={{ padding: '1rem' }}>
+        {loadingCards}
+      </div>
+    );
   }
 
   // Items array mode
   if (items && items.length > 0) {
     return (
-      <div className={gridClassName || DEFAULT_GRID_CLASS}>
+      <div className={gridClassName || DEFAULT_GRID_CLASS} style={{ padding: '1rem' }}>
         {items.map((item) => {
           if (itemType === 'anime') {
             const anime = item as Anime;
+            const link = isAnime2 ? '/anime2/detail' : '/anime/detail';
             return (
               <MediaCard
                 key={anime.slug}
@@ -105,7 +128,7 @@ function UnifiedGrid<T extends Anime | Komik>({
                   ''
                 }
                 imageUrl={anime.poster || ''}
-                linkUrl={`/anime/detail/${anime.slug}`}
+                linkUrl={`${link}/${anime.slug}`}
               />
             );
           } else {
@@ -113,8 +136,8 @@ function UnifiedGrid<T extends Anime | Komik>({
             return (
               <MediaCard
                 key={komik.slug}
-                title={komik.title}
-                description={komik.chapter || komik.chapter_count || ''}
+                title={komik.title || ''}
+                description={''} // ComicGrid always uses empty string for description
                 imageUrl={komik.poster || ''}
                 linkUrl={`/komik/detail/${komik.slug}`}
               />
@@ -135,4 +158,7 @@ function UnifiedGrid<T extends Anime | Komik>({
   );
 }
 
-export default UnifiedGrid;
+const MemoizedUnifiedGrid = memo(UnifiedGrid) as typeof UnifiedGrid;
+(MemoizedUnifiedGrid as any).displayName = 'UnifiedGrid';
+
+export default MemoizedUnifiedGrid;

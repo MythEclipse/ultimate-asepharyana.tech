@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import ComicCard from '../../../../../components/komik/ComicGrid';
+import UnifiedGrid from '../../../../../components/shared/UnifiedGrid';
 import {
   BookOpen,
   ChevronLeft,
@@ -106,11 +106,7 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
 
         {/* Manga Grid */}
         <div className="flex flex-col items-center p-4">
-          <div className="grid grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-            {komikData.data.map((komik) => (
-              <ComicCard key={komik.slug} komik={komik} />
-            ))}
-          </div>
+          <UnifiedGrid items={komikData.data} itemType="komik" />
         </div>
 
         {/* Pagination */}

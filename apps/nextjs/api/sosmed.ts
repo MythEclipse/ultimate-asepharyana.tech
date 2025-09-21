@@ -1,5 +1,5 @@
 import { HttpClient } from '../utils/httpClient';
-import logger from '../utils/logger';
+import logger from '../utils/unified-logger';
 import { toAppError, logError } from '../utils/error-handler';
 
 export class SosmedService {

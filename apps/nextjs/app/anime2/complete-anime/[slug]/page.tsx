@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import AnimeGrid from '../../../../components/anime/AnimeGrid';
+import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import { APIURLSERVER } from '../../../../lib/url';
 import {
   AlertTriangle,
@@ -110,7 +110,7 @@ async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
           </div>
         </div>
 
-        <AnimeGrid anime2 animes={data.data} />
+        <UnifiedGrid items={data.data} itemType="anime" isAnime2={true} />
 
         <PaginationComponent pagination={data.pagination} />
       </div>

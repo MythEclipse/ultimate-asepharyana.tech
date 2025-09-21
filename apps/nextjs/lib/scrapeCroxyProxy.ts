@@ -7,7 +7,7 @@
  * This will fill the input, submit the form, and print the resulting HTML.
  */
 import puppeteer, { Browser, Page } from 'puppeteer';
-import logger from '../utils/logger';
+import logger from '../utils/unified-logger';
 import { performance } from 'perf_hooks'; // Keep for CLI execution timing if needed, but remove from main function
 
 const CROXY_PROXY_URL = 'https://www.croxyproxy.com/';

@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { withLogging } from '../../../lib/api-wrapper';
 import { fetchWithProxyOnly } from '../../../lib/fetchWithProxy';
-import logger from '../../../utils/logger';
+import logger from '../../../utils/unified-logger';
 import { toAppError, logError } from '../../../utils/error-handler';
 
 async function handler(request: NextRequest) {

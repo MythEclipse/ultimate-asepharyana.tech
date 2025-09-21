@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import AnimeGrid from '../../../../components/anime/AnimeGrid';
+import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import BookmarkLoadingSkeleton from '../../../../components/skeleton/BookmarkLoadingSkeleton';
 import EmptyBookmarkMessage from '../../../../components/misc/EmptyBookmarkMessage';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -57,7 +57,7 @@ export default function BookmarkPage() {
           <EmptyBookmarkMessage />
         ) : (
           <>
-            <AnimeGrid animes={getPaginatedBookmarks()} />
+            <UnifiedGrid items={getPaginatedBookmarks()} itemType="anime" />
 
             <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
               <div className="flex gap-4">

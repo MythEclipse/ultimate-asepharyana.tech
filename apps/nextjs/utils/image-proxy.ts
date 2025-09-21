@@ -3,7 +3,7 @@
  * Provides unified image handling, validation, caching, and fallback mechanisms
  */
 
-import logger from './logger';
+import logger from './unified-logger';
 import {
   ImageSource,
   ImageProxyConfig,

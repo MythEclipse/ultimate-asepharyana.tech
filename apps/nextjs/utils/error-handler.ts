@@ -2,7 +2,7 @@
  * Centralized error handling utilities for consistent error management across the application
  */
 
-import logger from './logger';
+import logger from './unified-logger';
 import {
   AppError,
   NetworkError,

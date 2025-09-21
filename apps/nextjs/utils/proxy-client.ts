@@ -1,9 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
-import logger from './logger';
+import logger from './unified-logger';
 import { DEFAULT_HEADERS } from './DHead';
 import { scrapeCroxyProxy } from '../lib/scrapeCroxyProxy';
 import { redis } from '../lib/redis';
-import { UnifiedHttpClient } from './http-client';
 import { HttpClientConfig, FetchResult, HttpError } from '../types/http';
 import {
   createNetworkError,
@@ -17,17 +16,30 @@ export interface CustomError extends Error {
   code?: string;
 }
 
-export class ProxyHttpClient extends UnifiedHttpClient {
+/**
+ * ProxyHttpClient - HTTP client with proxy capabilities for bypassing network restrictions
+ *
+ * This class provides proxy functionality for server-side use only, including:
+ * - Direct HTTP requests with Axios
+ * - Fallback to Croxy Proxy for blocked content
+ * - Redis caching for improved performance
+ * - Internet Baik block page detection
+ */
+export class ProxyHttpClient {
+  private config: HttpClientConfig;
   private proxyConfig: HttpClientConfig['proxy'];
 
   constructor(config: HttpClientConfig = {}) {
-    super({
+    this.config = {
       timeout: 10000,
       ...config,
-    });
+    };
     this.proxyConfig = config.proxy || { enabled: true, fallback: true };
   }
 
+  /**
+   * Check if the response data contains Internet Baik block page indicators
+   */
   private isInternetBaikBlockPage(data: string | object): boolean {
     if (typeof data !== 'string') return false;
     return (
@@ -37,11 +49,16 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     );
   }
 
-  // --- REDIS CACHE WRAPPER START ---
+  /**
+   * Get cache key for Redis storage
+   */
   private getFetchCacheKey(slug: string): string {
     return `fetch:proxy:${slug}`;
   }
 
+  /**
+   * Get cached fetch result from Redis
+   */
   private async getCachedFetch(slug: string): Promise<FetchResult | null> {
     try {
       const key = this.getFetchCacheKey(slug);
@@ -74,10 +91,13 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     return null;
   }
 
+  /**
+   * Cache fetch result in Redis
+   */
   private async setCachedFetch(slug: string, value: FetchResult) {
     try {
       const key = this.getFetchCacheKey(slug);
-      await redis.set(key, JSON.stringify(value), { EX: 120 });
+      await redis.set(key, JSON.stringify(value), { EX: this.config.cache?.ttl || 120 });
     } catch (redisError) {
       const networkError = createNetworkError('Redis connection failed', {
         originalError: redisError,
@@ -93,8 +113,10 @@ export class ProxyHttpClient extends UnifiedHttpClient {
       // ignore Redis error, continue without caching
     }
   }
-  // --- REDIS CACHE WRAPPER END ---
 
+  /**
+   * Handle Axios response and check for blocked content
+   */
   private async handleAxiosResponse(
     slug: string,
     res: AxiosResponse,
@@ -139,6 +161,9 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     });
   }
 
+  /**
+   * Attempt direct Axios fetch
+   */
   private async attemptAxiosFetch(slug: string): Promise<FetchResult> {
     const res: AxiosResponse = await axios.get(slug, {
       headers: DEFAULT_HEADERS,
@@ -147,6 +172,9 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     return this.handleAxiosResponse(slug, res, 'Direct axios');
   }
 
+  /**
+   * Attempt Croxy Proxy fetch
+   */
   async attemptCroxyProxyFetch(slug: string): Promise<FetchResult> {
     logger.info(`[ProxyHttpClient] Using scrapeCroxyProxy for ${slug}`);
     const html = await scrapeCroxyProxy(slug);
@@ -155,6 +183,9 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     return result;
   }
 
+  /**
+   * Fetch with proxy support (try direct first, fallback to proxy)
+   */
   async fetchWithProxy(slug: string): Promise<FetchResult> {
     const cached = await this.getCachedFetch(slug);
     if (cached) return cached;
@@ -190,6 +221,9 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     }
   }
 
+  /**
+   * Fetch with proxy only (no direct attempt)
+   */
   async fetchWithProxyOnly(slug: string): Promise<FetchResult> {
     const cached = await this.getCachedFetch(slug);
     if (cached) return cached;

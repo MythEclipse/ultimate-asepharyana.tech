@@ -7,7 +7,7 @@ import {
   ChevronRight,
   Clapperboard,
 } from 'lucide-react';
-import AnimeGrid from '../../../../components/anime/AnimeGrid';
+import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
 import { CompleteAnimeData, Pagination } from '../../../../types/anime';
 
@@ -55,7 +55,7 @@ function OngoingAnime2PageClient({
           </div>
         </div>
 
-        <AnimeGrid anime2 animes={data.data} />
+        <UnifiedGrid items={data.data} itemType="anime" isAnime2={true} />
 
         <PaginationComponent pagination={data.pagination} />
       </div>
