@@ -10,6 +10,17 @@ import {
   ServerSideConfig,
   ProxyConfig,
 } from '../types/http';
+import { getApiUrlConfig, buildUrl } from './url-utils';
+import {
+  createHttpError,
+  createTimeoutError,
+  handleFetchResponse,
+  handleNetworkError,
+  toAppError,
+  withRetry,
+  logError,
+} from './error-handler';
+import { ErrorCategory } from '../types/error';
 
 export class UnifiedHttpClient {
   protected config: HttpClientConfig;
@@ -27,7 +38,7 @@ export class UnifiedHttpClient {
   }
 
   static buildUrl(base: string, url: string): string {
-    return url.startsWith('/') ? `${base}${url}` : url;
+    return buildUrl(base, url);
   }
 
   private createAbortSignal(timeout?: number): AbortSignal {
@@ -49,19 +60,15 @@ export class UnifiedHttpClient {
   }
 
   private async handleResponse<T>(response: Response, url: string): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      const error: HttpError = new Error(errorData.message || 'Request failed');
-      error.status = response.status;
-      error.statusText = response.statusText;
-      error.url = url;
-      error.response = response;
-
-      logger.error(`HTTP Error: ${url} - Status: ${response.status}, Message: ${error.message}`);
-      throw error;
+    try {
+      await handleFetchResponse(response, url);
+      return response.json() as T;
+    } catch (error) {
+      // Log the error using centralized logging
+      const appError = toAppError(error, { url, method: 'handleResponse' });
+      logError(appError);
+      throw appError;
     }
-
-    return response.json() as T;
   }
 
   async fetchJson<T = unknown>(
@@ -70,16 +77,32 @@ export class UnifiedHttpClient {
     configOverride?: HttpClientConfig
   ): Promise<T> {
     const config = { ...this.config, ...configOverride };
-    const response = await fetch(url, {
-      ...options,
-      headers: this.createHeaders(
-        options.headers as Record<string, string>,
-        config.auth?.token
-      ),
-      signal: this.createAbortSignal(config.timeout),
-    });
 
-    return this.handleResponse<T>(response, url);
+    // Implement retry logic if enabled
+    const operation = async () => {
+      const response = await fetch(url, {
+        ...options,
+        headers: this.createHeaders(
+          options.headers as Record<string, string>,
+          config.auth?.token
+        ),
+        signal: this.createAbortSignal(config.timeout),
+      });
+
+      return this.handleResponse<T>(response, url);
+    };
+
+    if (config.retry?.enabled) {
+      return withRetry(operation, {
+        enabled: true,
+        maxAttempts: config.retry.maxAttempts || 3,
+        delayMs: config.retry.delay || 1000,
+        backoffMultiplier: 2,
+        maxDelayMs: 30000,
+      });
+    }
+
+    return operation();
   }
 
   async fetchWithAuth<T = unknown>(
@@ -114,15 +137,17 @@ export class UnifiedHttpClient {
 
   // Static factory methods for different use cases
   static createClientSide(config: ClientSideConfig = {}): UnifiedHttpClient {
+    const apiConfig = getApiUrlConfig();
     return new UnifiedHttpClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL || 'https://ws.asepharyana.tech',
+      baseUrl: apiConfig.client,
       ...config,
     });
   }
 
   static createServerSide(config: ServerSideConfig = {}): UnifiedHttpClient {
+    const apiConfig = getApiUrlConfig();
     return new UnifiedHttpClient({
-      baseUrl: process.env.API_URL_SERVER || 'http://localhost:4091',
+      baseUrl: apiConfig.server,
       ...config,
     });
   }

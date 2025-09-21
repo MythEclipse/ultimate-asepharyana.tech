@@ -1,40 +1,35 @@
 import { HttpClient } from '../utils/httpClient';
 import { APIURLSERVER } from '../lib/url';
+import { buildKomikUrl, buildKomik2MangaUrl } from '../utils/url-utils';
 
-export class KomikService {
+export class KomikAPI {
   static async searchKomik(query: string): Promise<unknown> {
-    const url = `/api/komik/search?q=${encodeURIComponent(query)}`;
-    const fullUrl = HttpClient.buildUrl(APIURLSERVER, url);
-    return HttpClient.fetchJson(fullUrl, {
+    const url = buildKomikUrl('search', undefined, query);
+    return HttpClient.fetchJson(url, {
       next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
     });
   }
 
   static async getKomikDetail(slug: string): Promise<unknown> {
-    const url = `/api/komik/detail/${slug}`;
-    const fullUrl = HttpClient.buildUrl(APIURLSERVER, url);
-    return HttpClient.fetchJson(fullUrl, {
+    const url = buildKomikUrl('detail', slug);
+    return HttpClient.fetchJson(url, {
       next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
     });
   }
 
   static async getKomikChapter(slug: string): Promise<unknown> {
-    const url = `/api/komik/chapter/${slug}`;
-    const fullUrl = HttpClient.buildUrl(APIURLSERVER, url);
-    return HttpClient.fetchJson(fullUrl, {
+    const url = buildKomikUrl('chapter', slug);
+    return HttpClient.fetchJson(url, {
       next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
     });
   }
+}
 
+export class Komik2API {
   static async getKomik2Manga(slug: string): Promise<unknown> {
-    const url = `/api/komik2/manga/${slug}`;
-    const fullUrl = HttpClient.buildUrl(APIURLSERVER, url);
-    return HttpClient.fetchJson(fullUrl, {
+    const url = buildKomik2MangaUrl(slug);
+    return HttpClient.fetchJson(url, {
       next: { revalidate: 60 },
-      signal: AbortSignal.timeout(10000),
     });
   }
 }

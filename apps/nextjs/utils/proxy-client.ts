@@ -5,6 +5,13 @@ import { scrapeCroxyProxy } from '../lib/scrapeCroxyProxy';
 import { redis } from '../lib/redis';
 import { UnifiedHttpClient } from './http-client';
 import { HttpClientConfig, FetchResult, HttpError } from '../types/http';
+import {
+  createNetworkError,
+  createHttpError,
+  toAppError,
+  logError,
+} from './error-handler';
+import { ErrorCategory } from '../types/error';
 
 export interface CustomError extends Error {
   code?: string;
@@ -51,15 +58,17 @@ export class ProxyHttpClient extends UnifiedHttpClient {
         }
       }
     } catch (redisError: unknown) {
-      const err = redisError as CustomError;
-      logger.warn(`[ProxyHttpClient] Redis get failed for ${slug}:`, {
-        message: err?.message,
-        code: err?.code,
-        stack: err?.stack,
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-        tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
+      const networkError = createNetworkError('Redis connection failed', {
+        originalError: redisError,
+        context: {
+          operation: 'getCachedFetch',
+          slug,
+          url: process.env.UPSTASH_REDIS_REST_URL,
+          hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+          tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
+        },
       });
+      logger.warn(`[ProxyHttpClient] Redis get failed for ${slug}:`, networkError);
       // ignore Redis error, fallback to fetch
     }
     return null;
@@ -70,12 +79,17 @@ export class ProxyHttpClient extends UnifiedHttpClient {
       const key = this.getFetchCacheKey(slug);
       await redis.set(key, JSON.stringify(value), { EX: 120 });
     } catch (redisError) {
-      logger.warn(`[ProxyHttpClient] Redis set failed for ${slug}:`, {
-        error: redisError,
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-        tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
+      const networkError = createNetworkError('Redis connection failed', {
+        originalError: redisError,
+        context: {
+          operation: 'setCachedFetch',
+          slug,
+          url: process.env.UPSTASH_REDIS_REST_URL,
+          hasToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+          tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
+        },
       });
+      logger.warn(`[ProxyHttpClient] Redis set failed for ${slug}:`, networkError);
       // ignore Redis error, continue without caching
     }
   }
@@ -118,7 +132,11 @@ export class ProxyHttpClient extends UnifiedHttpClient {
       return result;
     }
 
-    throw new Error(`${source} fetch failed with status ${res.status}`);
+    throw createHttpError(`${source} fetch failed with status ${res.status}`, res.status, {
+      statusText: res.statusText,
+      url: slug,
+      context: { source },
+    });
   }
 
   private async attemptAxiosFetch(slug: string): Promise<FetchResult> {
@@ -145,7 +163,8 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     try {
       return await this.attemptAxiosFetch(slug);
     } catch (error: unknown) {
-      directError = error as CustomError;
+      directError = toAppError(error, { url: slug, method: 'attemptAxiosFetch' });
+      logError(directError as any);
       logger.warn(`Direct axios fetch failed for ${slug}:`, directError);
       logger.error('Direct axios fetch failed, trying scrapeCroxyProxy');
     }
@@ -153,10 +172,21 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     try {
       return await this.attemptCroxyProxyFetch(slug);
     } catch (croxyError: unknown) {
-      logger.error(`ScrapeCroxyProxy also failed for ${slug}:`, croxyError);
-      throw new Error(
-        `Both direct axios fetch and proxy failed for ${slug}. Direct error: ${directError?.message}. Proxy error: ${(croxyError as CustomError).message}`,
+      const croxyAppError = toAppError(croxyError, { url: slug, method: 'attemptCroxyProxyFetch' });
+      logError(croxyAppError as any);
+
+      const combinedError = createNetworkError(
+        `Both direct axios fetch and proxy failed for ${slug}`,
+        {
+          originalError: croxyError,
+          context: {
+            directError: directError?.message,
+            croxyError: croxyAppError.message,
+            url: slug,
+          },
+        }
       );
+      throw combinedError;
     }
   }
 
@@ -168,11 +198,9 @@ export class ProxyHttpClient extends UnifiedHttpClient {
     try {
       return await this.attemptCroxyProxyFetch(slug);
     } catch (error: unknown) {
-      croxyError = error as CustomError;
-      logger.warn(`[ProxyHttpClient] scrapeCroxyProxy failed:`, {
-        url: slug,
-        error: croxyError.message,
-      });
+      croxyError = toAppError(error, { url: slug, method: 'attemptCroxyProxyFetch' });
+      logError(croxyError as any);
+      logger.warn(`[ProxyHttpClient] scrapeCroxyProxy failed:`, croxyError);
       logger.warn('Trying direct axios fetch as final fallback...', {
         url: slug,
       });
@@ -185,13 +213,22 @@ export class ProxyHttpClient extends UnifiedHttpClient {
       });
       return this.handleAxiosResponse(slug, res, 'Final direct axios fallback');
     } catch (finalError: unknown) {
-      logger.error('Final direct axios fetch fallback also failed:', {
-        finalError: (finalError as CustomError).message,
-        url: slug,
-      });
-      throw new Error(
-        `All fetch methods failed for ${slug}. Scrape error: ${croxyError?.message}. Final axios fetch error: ${(finalError as CustomError).message}`,
+      const finalAppError = toAppError(finalError, { url: slug, method: 'finalAxiosFallback' });
+      logError(finalAppError as any);
+
+      const combinedError = createNetworkError(
+        `All fetch methods failed for ${slug}`,
+        {
+          originalError: finalError,
+          context: {
+            croxyError: croxyError?.message,
+            finalError: finalAppError.message,
+            url: slug,
+          },
+        }
       );
+      logger.error('Final direct axios fetch fallback also failed:', combinedError);
+      throw combinedError;
     }
   }
 }

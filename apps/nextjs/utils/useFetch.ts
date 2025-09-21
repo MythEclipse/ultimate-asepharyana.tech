@@ -2,6 +2,8 @@
 
 import { HttpClient } from './httpClient';
 import { APIURL } from '../lib/url';
+import { getApiUrlConfig, buildUrl } from './url-utils';
+import { toAppError } from './error-handler';
 
 export const fetchData = async <T = unknown>(
   url: string,
@@ -10,8 +12,8 @@ export const fetchData = async <T = unknown>(
   formDataObj?: FormData,
   baseUrl?: string,
 ) => {
-  const base = baseUrl || APIURL;
-  const fullUrl = HttpClient.buildUrl(base, url);
+  const base = baseUrl || getApiUrlConfig().client;
+  const fullUrl = buildUrl(base, url);
   try {
     const options: RequestInit = { method };
 
@@ -30,7 +32,8 @@ export const fetchData = async <T = unknown>(
       status: 200, // HttpClient handles status internally
     };
   } catch (error: unknown) {
-    throw new Error(String(error));
+    const appError = toAppError(error, { url: fullUrl, method });
+    throw appError;
   }
 };
 
@@ -65,6 +68,11 @@ export const fetchDataMultiple = async (
     const errorMessages = Array.isArray(errors)
       ? errors.map((err) => String(err)).join('; ')
       : String(errors);
-    throw new Error(`All fetch attempts failed: ${errorMessages}`);
+    const appError = toAppError(errors, {
+      url: endpoints.map(e => e.url).join(', '),
+      method,
+      context: { errorMessages }
+    });
+    throw appError;
   }
 };

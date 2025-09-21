@@ -4,6 +4,7 @@ import logger from '../utils/logger';
 import { redis } from './redis';
 import * as cheerio from 'cheerio';
 import { fetchWithProxyOnly } from './fetchWithProxy';
+import { buildUrl, sanitizeUrl, isValidUrl } from '../utils/url-utils';
 
 // --- SINGLE FLIGHT LOGIC WITH REDIS LOCK START ---
 let komikBaseUrlPromise: Promise<string> | null = null;
@@ -126,11 +127,22 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
         throw new Error('Failed to fetch komik base URL selain cz');
       }
       logger.info('[getDynamicKomikBaseUrl] Got base URL', { orgLink });
+
+      // Validate and sanitize the URL before caching
+      const sanitizedUrl = sanitizeUrl(orgLink.replace(/\/$/, ''));
+      if (!isValidUrl(sanitizedUrl)) {
+        logger.error('[getDynamicKomikBaseUrl] Invalid URL after sanitization', {
+          original: orgLink,
+          sanitized: sanitizedUrl,
+        });
+        throw new Error('Invalid komik base URL after sanitization');
+      }
+
       // Cache the result immediately for other waiters
-      await redis.set(KOMIK_BASE_URL_KEY, orgLink.replace(/\/$/, ''), {
+      await redis.set(KOMIK_BASE_URL_KEY, sanitizedUrl, {
         EX: 60 * 60 * 24 * 30,
       });
-      return orgLink.replace(/\/$/, '');
+      return sanitizedUrl;
     } finally {
       await releaseRedisLock(KOMIK_BASE_URL_LOCK_KEY);
       komikBaseUrlPromise = null;
@@ -147,12 +159,35 @@ export const getCachedKomikBaseUrl = async (
     const cached = await redis.get(KOMIK_BASE_URL_KEY);
     if (typeof cached === 'string' && cached && !cached.includes('.cz')) {
       logger.info('[getCachedKomikBaseUrl] Using cached base URL', { cached });
-      return cached;
+
+      // Validate cached URL before returning
+      if (isValidUrl(cached)) {
+        return cached;
+      } else {
+        logger.warn('[getCachedKomikBaseUrl] Cached URL is invalid, refreshing', { cached });
+      }
     }
   }
   // Fetch new value and cache it
   const url = await getDynamicKomikBaseUrl();
-  await redis.set(KOMIK_BASE_URL_KEY, url, { EX: 60 * 60 * 24 * 30 });
-  logger.info('[getCachedKomikBaseUrl] Refreshed and cached base URL', { url });
-  return url;
+
+  // Validate URL before caching
+  const sanitizedUrl = sanitizeUrl(url);
+  if (!isValidUrl(sanitizedUrl)) {
+    logger.error('[getCachedKomikBaseUrl] Invalid URL fetched, not caching', {
+      original: url,
+      sanitized: sanitizedUrl,
+    });
+    throw new Error('Invalid komik base URL fetched');
+  }
+
+  await redis.set(KOMIK_BASE_URL_KEY, sanitizedUrl, { EX: 60 * 60 * 24 * 30 });
+  logger.info('[getCachedKomikBaseUrl] Refreshed and cached base URL', { url: sanitizedUrl });
+  return sanitizedUrl;
+};
+
+// Export URL utilities for komik-specific URL building
+export const buildKomikUrl = async (path: string): Promise<string> => {
+  const baseUrl = await getCachedKomikBaseUrl();
+  return buildUrl(baseUrl, path);
 };

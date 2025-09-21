@@ -2,44 +2,47 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { generateImageSources } from '../../utils/image-proxy';
+import { ImageFallbackOptions } from '../../types/image';
 
 interface ImageWithFallbackProps {
   imageUrl: string;
   index: number;
+  fallbackUrl?: string;
+  useProxy?: boolean;
+  useCdn?: boolean;
+  width?: number;
+  height?: number;
+  className?: string;
+  alt?: string;
 }
 
 export const ImageWithFallback = ({
   imageUrl,
   index,
+  fallbackUrl = 'default.png',
+  useProxy = true,
+  useCdn = true,
+  width = 725,
+  height = 1024,
+  className = 'w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700',
+  alt,
 }: ImageWithFallbackProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasError, setHasError] = useState(false);
-  const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
 
-  const normalizeImageUrl = (url: string) => {
-    if (!url || url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // Handle relative paths like /asset/img/komikuplus2.jpg
-    if (url.startsWith('/')) {
-      return `${window.location.origin}${url}`;
-    }
-    return `${window.location.origin}/${url}`;
-  };
+  const imageSources = React.useMemo(() => {
+    const options: ImageFallbackOptions = {
+      fallbackUrl,
+      useProxy,
+      useCdn,
+    };
 
-  const normalizedImageUrl = normalizeImageUrl(imageUrl);
-  const fallback = 'default.png';
-  const imageSources = [
-    normalizedImageUrl && normalizedImageUrl.trim() !== ''
-      ? normalizedImageUrl
-      : null,
-    `${BaseUrl}/api/imageproxy?url=${encodeURIComponent(
-      normalizedImageUrl || fallback,
-    )}`,
-  ].filter(Boolean) as string[];
+    return generateImageSources(imageUrl, options);
+  }, [imageUrl, fallbackUrl, useProxy, useCdn]);
 
   useEffect(() => {
-    // Reset state ketika imageUrl berubah
+    // Reset state when imageUrl changes
     setCurrentIndex(0);
     setHasError(false);
   }, [imageUrl]);
@@ -49,6 +52,10 @@ export const ImageWithFallback = ({
       setCurrentIndex((prev) => prev + 1);
       setHasError(true);
     }
+  };
+
+  const handleLoad = () => {
+    setHasError(false);
   };
 
   return (
@@ -62,13 +69,13 @@ export const ImageWithFallback = ({
     >
       <Image
         src={imageSources[currentIndex]}
-        alt={`Chapter Page ${index + 1}`}
-        className="w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700"
-        width={725}
-        height={1024}
+        alt={alt || `Chapter Page ${index + 1}`}
+        className={className}
+        width={width}
+        height={height}
         unoptimized
         onError={handleError}
-        onLoad={() => setHasError(false)}
+        onLoad={handleLoad}
       />
     </div>
   );

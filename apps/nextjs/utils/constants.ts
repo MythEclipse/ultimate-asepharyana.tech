@@ -1,4 +1,5 @@
 import { NavLink } from '../types/types';
+import { getBaseUrlConfig } from './url-utils';
 
 export const navLinks: NavLink[] = [
   { href: '/', label: 'Home' },
@@ -6,4 +7,14 @@ export const navLinks: NavLink[] = [
   { href: '/project', label: 'Project' },
 ];
 
-export const PRODUCTION = process.env.NEXT_PUBLIC_PRODUCTION_URL || 'https://asepharyana.tech';
+// Use centralized URL configuration
+export const PRODUCTION = getBaseUrlConfig().current;
+
+// Re-export other URL constants for convenience
+export {
+  APIURLSERVER,
+  APIURLCLIENT,
+  APIURL,
+  BaseUrl,
+  KOMIK,
+} from '../utils/url-utils';

@@ -10,6 +10,8 @@ interface PosterImageProps {
   width?: number;
   height?: number;
   className?: string;
+  useProxy?: boolean;
+  useCdn?: boolean;
 }
 
 export default function PosterImage({
@@ -18,8 +20,14 @@ export default function PosterImage({
   width = 400,
   height = 600,
   className = 'object-cover w-full aspect-[2/3]',
+  useProxy = true,
+  useCdn = true,
 }: PosterImageProps) {
-  const { src, onError } = useImageFallback({ imageUrl: poster });
+  const { src, onError } = useImageFallback({
+    imageUrl: poster,
+    useProxy,
+    useCdn
+  });
 
   return (
     <Image

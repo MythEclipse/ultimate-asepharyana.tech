@@ -1,13 +1,16 @@
 import { HttpClient } from '../utils/httpClient';
 import logger from '../utils/logger';
+import { toAppError, logError } from '../utils/error-handler';
 
 export class SosmedService {
   static async getPosts() {
     try {
       return await HttpClient.fetchJson('/api/sosmed/posts');
     } catch (error) {
-      logger.error('Failed to fetch posts', { error });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/posts', method: 'GET' });
+      logError(appError);
+      logger.error('Failed to fetch posts', appError);
+      throw appError;
     }
   }
 
@@ -15,8 +18,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/posts', 'POST', data);
     } catch (error) {
-      logger.error('Failed to create post', { error, data });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/posts', method: 'POST', context: data });
+      logError(appError);
+      logger.error('Failed to create post', { error: appError, data });
+      throw appError;
     }
   }
 
@@ -24,8 +29,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/posts', 'PUT', { id, ...data });
     } catch (error) {
-      logger.error('Failed to update post', { error, id, data });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/posts', method: 'PUT', context: { id, ...data } });
+      logError(appError);
+      logger.error('Failed to update post', { error: appError, id, data });
+      throw appError;
     }
   }
 
@@ -33,8 +40,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/posts', 'DELETE', { id });
     } catch (error) {
-      logger.error('Failed to delete post', { error, id });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/posts', method: 'DELETE', context: { id } });
+      logError(appError);
+      logger.error('Failed to delete post', { error: appError, id });
+      throw appError;
     }
   }
 
@@ -42,8 +51,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/likes', 'POST', { postId });
     } catch (error) {
-      logger.error('Failed to like post', { error, postId });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/likes', method: 'POST', context: { postId } });
+      logError(appError);
+      logger.error('Failed to like post', { error: appError, postId });
+      throw appError;
     }
   }
 
@@ -51,8 +62,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/likes', 'DELETE', { postId });
     } catch (error) {
-      logger.error('Failed to unlike post', { error, postId });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/likes', method: 'DELETE', context: { postId } });
+      logError(appError);
+      logger.error('Failed to unlike post', { error: appError, postId });
+      throw appError;
     }
   }
 
@@ -60,8 +73,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/comments', 'POST', data);
     } catch (error) {
-      logger.error('Failed to add comment', { error, data });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/comments', method: 'POST', context: data });
+      logError(appError);
+      logger.error('Failed to add comment', { error: appError, data });
+      throw appError;
     }
   }
 
@@ -69,8 +84,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/comments', 'PUT', { id, ...data });
     } catch (error) {
-      logger.error('Failed to update comment', { error, id, data });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/comments', method: 'PUT', context: { id, ...data } });
+      logError(appError);
+      logger.error('Failed to update comment', { error: appError, id, data });
+      throw appError;
     }
   }
 
@@ -78,8 +95,10 @@ export class SosmedService {
     try {
       return await HttpClient.request('/api/sosmed/comments', 'DELETE', { id });
     } catch (error) {
-      logger.error('Failed to delete comment', { error, id });
-      throw error;
+      const appError = toAppError(error, { url: '/api/sosmed/comments', method: 'DELETE', context: { id } });
+      logError(appError);
+      logger.error('Failed to delete comment', { error: appError, id });
+      throw appError;
     }
   }
 }

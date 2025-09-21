@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { toAppError, logError } from '../../../utils/error-handler';
 
 export async function GET(req: NextRequest) {
   const imageUrl = req.nextUrl.searchParams.get('url');
@@ -26,10 +27,11 @@ export async function GET(req: NextRequest) {
 
     return new NextResponse(arrayBuffer, { headers });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Image proxy error:', error);
-    return new NextResponse(`Image proxy failed: ${message}`, {
-      status: 500,
+    const appError = toAppError(error, { url: imageUrl, method: 'GET', context: { operation: 'imageproxy' } });
+    logError(appError);
+    console.error('Image proxy error:', appError);
+    return new NextResponse(`Image proxy failed: ${appError.message}`, {
+      status: appError.statusCode || 500,
     });
   }
 }

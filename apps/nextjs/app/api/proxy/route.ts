@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { withLogging } from '../../../lib/api-wrapper';
 import { fetchWithProxyOnly } from '../../../lib/fetchWithProxy';
 import logger from '../../../utils/logger';
+import { toAppError, logError } from '../../../utils/error-handler';
 
 async function handler(request: NextRequest) {
   const url = new URL(request.url);
@@ -63,27 +64,28 @@ async function handler(request: NextRequest) {
       },
     );
   } catch (error) {
+    const appError = toAppError(error, { url: slug, method: 'GET', context: { operation: 'proxy' } });
+    logError(appError);
+
     logger.error('Failed to fetch URL', {
-      error: (error as Error).message,
-      stack: (error as Error).stack,
+      error: appError.message,
+      stack: appError.stack,
       url: slug,
+      category: appError.category,
+      statusCode: appError.statusCode,
     });
-    // Narrow error type to safely access custom properties
-    const err = error as Error & {
-      status?: number;
-      response?: unknown;
-      code?: string;
-    };
+
     return NextResponse.json(
       {
         error: 'Failed to fetch URL',
-        details: err.message,
-        stack: err.stack,
-        status: err.status || 500,
-        response: err.response || undefined,
-        code: err.code || undefined,
+        details: appError.message,
+        stack: appError.stack,
+        status: appError.statusCode || 500,
+        response: appError.context || undefined,
+        code: (appError as any).code || undefined,
+        category: appError.category,
       },
-      { status: err.status || 500 },
+      { status: appError.statusCode || 500 },
     );
   }
 }
