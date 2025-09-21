@@ -1,4 +1,4 @@
-import DockKomik from '../../components/komik/DockKomik';
+import DockKomik from '../../components/ui/DockKomik';
 import React, { memo } from 'react';
 import { HiBookmark, HiHome, HiOutlineSearch } from 'react-icons/hi';
 import { FaPencilAlt, FaDragon, FaBook } from 'react-icons/fa';

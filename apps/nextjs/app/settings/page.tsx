@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import Button from '../../components/ui/BaseButton';
+import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/ComponentCard';
 import { Loader2 } from 'lucide-react';
 import { fetchData } from '../../utils/useFetch';
@@ -61,7 +61,7 @@ export default function Settings() {
             />
           </div>
 
-          <Button onClick={handleSave} disabled={saving} className="w-full">
+          <Button onClick={handleSave} disabled={saving} variant="default" size="default" className="w-full">
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (

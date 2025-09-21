@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { cn } from '../../utils/utils';
 import { IconLayoutNavbarCollapse } from '@tabler/icons-react';
-import AnimatedButton from './AnimatedButton'; // Import your custom AnimatedButton
+import { Button } from './button'; // Import unified Button
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
@@ -62,7 +62,10 @@ const FloatingDockMobile = ({
               }`}
               style={{ transitionDelay: `${idx * 0.02}s` }}
             >
-              <AnimatedButton
+              <Button
+                variant="gradient"
+                size="gradientSm"
+                scrollToTop={true}
                 onClick={() => handleNavigation(item.href)}
                 className={cn(
                   'text-center px-3 py-2 rounded-full shadow-md transition-all duration-300 ease-in-out',
@@ -74,12 +77,15 @@ const FloatingDockMobile = ({
                 )}
               >
                 <div className="h-8 w-8">{item.icon}</div>
-              </AnimatedButton>
+              </Button>
             </div>
           ))}
         </div>
       </div>
-      <AnimatedButton
+      <Button
+        variant="gradient"
+        size="gradientSm"
+        scrollToTop={true}
         onClick={() => {
           setOpen(!open);
           handleScrollUp(); // Scroll to the top when clicked
@@ -87,7 +93,7 @@ const FloatingDockMobile = ({
         className="text-blue-500 bg-transparent border-2 border-blue-500 rounded-full shadow-lg hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
       >
         <IconLayoutNavbarCollapse className="h-8 w-8 text-neutral-500 dark:text-neutral-400" />
-      </AnimatedButton>
+      </Button>
     </div>
   );
 };

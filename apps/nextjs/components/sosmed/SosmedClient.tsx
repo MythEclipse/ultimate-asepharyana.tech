@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import PostCard from '../../components/sosmed/PostCard';
 import Card from '../../components/ui/ThemedCard';
 import { Textarea } from '../../components/text/textarea';
-import ButtonA from '../../components/ui/BaseButton';
+import { Button } from '../../components/ui/button';
 import { useSession } from 'next-auth/react';
 import { Loader2, UploadCloud, Lock } from 'lucide-react';
 import useSWR, { mutate } from 'swr';
@@ -143,11 +143,13 @@ export default function SosmedClient() {
                       id="file-input"
                     />
                   </label>
-                  <ButtonA
+                  <Button
                     onClick={handlePostSubmit}
                     disabled={
                       isUploading || isPosting || (!content.trim() && !imageUrl)
                     }
+                    variant="gradient"
+                    size="gradientSm"
                     className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg hover:scale-[1.02] disabled:opacity-70 disabled:pointer-events-none"
                   >
                     {isUploading || isPosting ? (
@@ -163,7 +165,7 @@ export default function SosmedClient() {
                     ) : (
                       'Publish Post'
                     )}
-                  </ButtonA>
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -180,12 +182,14 @@ export default function SosmedClient() {
               Sign in to share your thoughts and engage with the community
             </p>
             <div className="w-full max-w-[150px] sm:max-w-[200px]">
-              <ButtonA
+              <Button
                 href="/login"
+                variant="gradient"
+                size="gradientSm"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
                 Get Started
-              </ButtonA>
+              </Button>
             </div>
           </div>
         </div>

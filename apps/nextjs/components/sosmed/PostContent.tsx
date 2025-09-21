@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Textarea } from '../text/textarea';
-import ButtonA from '../ui/BaseButton';
+import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface PostContentProps {
@@ -36,9 +36,10 @@ export default function PostContent({
             aria-label="Edit post content"
           />
           <div className="flex gap-3">
-            <ButtonA
+            <Button
+              variant="gradient"
+              size="gradientSm"
               onClick={onSave}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
               disabled={isSaving}
               aria-label="Save changes"
             >
@@ -53,14 +54,15 @@ export default function PostContent({
               ) : (
                 'Save Changes'
               )}
-            </ButtonA>
-            <ButtonA
+            </Button>
+            <Button
+              variant="secondary"
+              size="default"
               onClick={onCancelEdit}
-              className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               aria-label="Cancel editing"
             >
               Cancel
-            </ButtonA>
+            </Button>
           </div>
         </div>
       ) : (

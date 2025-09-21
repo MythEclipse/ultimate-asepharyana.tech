@@ -4,7 +4,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
 import Card from '../../components/ui/ThemedCard';
 import { Textarea } from '../../components/ui/textarea';
-import Button from '../../components/ui/BaseButton';
+import { Button } from '../../components/ui/button';
 import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 import { fetchData } from '../../utils/useFetch';
@@ -259,6 +259,8 @@ export default function ChatClient() {
                 disabled={
                   !status.connected || status.sending || status.uploading
                 }
+                variant="gradient"
+                size="gradientSm"
                 className="h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
               >
                 {status.sending ? (

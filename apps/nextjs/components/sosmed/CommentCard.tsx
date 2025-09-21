@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { HiPencil, HiTrash } from 'react-icons/hi';
 import { formatDistanceToNow } from 'date-fns';
 import { Textarea } from '../text/textarea';
-import ButtonA from '../ui/BaseButton';
+import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 import { Comments } from '@asepharyana/services';
 
@@ -91,8 +91,10 @@ export default function CommentCard({
                 aria-label="Edit comment"
               />
               <div className="flex gap-3">
-                <ButtonA
+                <Button
                   onClick={() => onSaveEditComment(comment.id)}
+                  variant="default"
+                  size="default"
                   className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm"
                   disabled={isEditingComment[comment.id]}
                   aria-label="Save comment"
@@ -108,14 +110,16 @@ export default function CommentCard({
                   ) : (
                     'Save'
                   )}
-                </ButtonA>
-                <ButtonA
+                </Button>
+                <Button
                   onClick={onCancelEditComment}
+                  variant="secondary"
+                  size="default"
                   className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm"
                   aria-label="Cancel editing comment"
                 >
                   Cancel
-                </ButtonA>
+                </Button>
               </div>
             </div>
           ) : (

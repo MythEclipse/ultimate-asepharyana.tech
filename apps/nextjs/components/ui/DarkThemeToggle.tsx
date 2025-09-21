@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import ButtonB from './BaseButton';
+import { Button } from './button';
 
 interface ModeToggleProps {
   className?: string;
@@ -28,14 +28,14 @@ export default function ModeToggle({ className }: ModeToggleProps) {
 
   return (
     <div className={className}>
-      <ButtonB className="" onClick={toggleTheme}>
+      <Button variant="gradient" size="gradientSm" className="" onClick={toggleTheme}>
         {resolvedTheme === 'dark' ? (
           <Sun className="h-[1.2rem] w-[1.2rem]" />
         ) : (
           <Moon className="h-[1.2rem] w-[1.2rem]" />
         )}
         <span className="sr-only">Toggle theme</span>
-      </ButtonB>
+      </Button>
     </div>
   );
 }

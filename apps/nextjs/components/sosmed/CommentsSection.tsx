@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Textarea } from '../text/textarea';
-import ButtonA from '../ui/BaseButton';
+import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 import CommentCard from './CommentCard';
 import { Comments } from '@asepharyana/services';
@@ -101,9 +101,10 @@ export default function CommentsSection({
               className="min-h-[100px] border-2 border-blue-200 focus:border-blue-400 dark:border-gray-700 dark:focus:border-blue-500 dark:bg-gray-800 rounded-xl"
               aria-label="Add a comment"
             />
-            <ButtonA
+            <Button
+              variant="gradient"
+              size="gradientSm"
               onClick={onAddComment}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
               disabled={isCommenting}
               aria-label="Post comment"
             >
@@ -118,7 +119,7 @@ export default function CommentsSection({
               ) : (
                 'Post Comment'
               )}
-            </ButtonA>
+            </Button>
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import Link from 'next/link';
+import { BackgroundGradient } from '../background/background-gradient';
 
 import { cn } from '../../utils/utils';
 
@@ -20,12 +22,17 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',
+        gradient:
+          'text-blue-500 bg-transparent border border-blue-500 rounded-full shadow-lg shadow-blue-500/50 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-colors duration-200 ease-in-out',
+        chapter: 'relative flex flex-col items-center justify-center p-4 border-none cursor-pointer w-full h-full bg-transparent',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',
         sm: 'h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5',
         lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
         icon: 'size-9',
+        gradientSm: 'px-3 py-1 text-sm md:px-6 md:py-3 md:text-base',
+        gradientMd: 'px-6 py-3 text-sm md:px-6 md:py-3 md:text-base',
       },
     },
     defaultVariants: {
@@ -46,16 +53,29 @@ function Button({
   asChild = false,
   'aria-label': ariaLabel,
   'aria-pressed': ariaPressed,
+  href,
+  scrollToTop = false,
   ...props
 }: React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
     'aria-label'?: string;
     'aria-pressed'?: boolean;
+    href?: string;
+    scrollToTop?: boolean;
   }) {
   const Comp = asChild ? Slot : 'button';
 
-  return (
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (props.onClick) {
+      props.onClick(event);
+    }
+    if (scrollToTop) {
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const buttonElement = (
     <Comp
       data-slot="button"
       className={cn(
@@ -64,9 +84,26 @@ function Button({
       )}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
+      onClick={handleClick}
       {...props}
     />
   );
+
+  if (href) {
+    return <Link href={href}>{buttonElement}</Link>;
+  }
+
+  if (variant === 'chapter') {
+    return (
+      <div className="relative max-w-xs transform transition-transform duration-200 hover:scale-105 active:scale-95">
+        <BackgroundGradient className="rounded-[22px] overflow-hidden w-full h-full bg-white dark:bg-zinc-900">
+          {buttonElement}
+        </BackgroundGradient>
+      </div>
+    );
+  }
+
+  return buttonElement;
 }
 
 export { Button, buttonVariants };
