@@ -52,7 +52,7 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
       `/api/komik2/manhua?page=${pageNumber}&order=update`,
       revalidate,
       10000
-    );
+    ) as KomikData;
   } catch (err) {
     console.error('Failed to fetch manhua data on server:', err);
     error = 'Failed to load manhua data';

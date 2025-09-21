@@ -147,7 +147,7 @@ export default function ChatClient() {
           'POST',
           undefined,
           formData,
-        );
+        ) as { data: { url: string } };
         const url = response.data.url;
         newMessage.image_message = url;
         setFile(null);

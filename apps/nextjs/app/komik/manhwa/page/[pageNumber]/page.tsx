@@ -52,7 +52,7 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
       `/api/komik2/manhwa?page=${pageNumber}&order=update`,
       revalidate,
       10000
-    );
+    ) as KomikData;
   } catch (err) {
     console.error('Failed to fetch manhwa data on server:', err);
     error = 'Failed to load manhwa data';

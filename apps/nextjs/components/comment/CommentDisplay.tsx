@@ -13,7 +13,7 @@ interface Comment {
 }
 
 async function fetchComments(): Promise<Comment[]> {
-  const response = await fetchData('/api/comment', 'GET', undefined, undefined);
+  const response = await fetchData('/api/comment', 'GET', undefined, undefined) as { status: number; data: Comment[] };
 
   if (response.status && response.status >= 400) {
     throw new Error('Failed to fetch data');

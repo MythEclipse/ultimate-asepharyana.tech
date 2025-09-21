@@ -14,7 +14,7 @@ import { fetchData } from '../../utils/useFetch';
 
 const fetcher = async (url: string) => {
   const response = await fetchData(url);
-  return response.data;
+  return response.data as HomeData;
 };
 
 interface HomeData {

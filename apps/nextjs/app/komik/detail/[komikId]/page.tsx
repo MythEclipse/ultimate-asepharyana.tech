@@ -66,7 +66,7 @@ export default async function DetailMangaPage({
   let mangaData: ApiResponse | null = null;
 
   try {
-    mangaData = await fetchKomikData(`/api/komik2/detail?komik_id=${komikId}`, revalidate, 10000);
+    mangaData = await fetchKomikData(`/api/komik2/detail?komik_id=${komikId}`, revalidate, 10000) as ApiResponse;
   } catch (_e) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">

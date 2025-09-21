@@ -28,7 +28,7 @@ export default async function ChapterPage({
       revalidate,
       10000
     );
-    chapter = response.data;
+    chapter = (response as { data: ChapterDetail }).data;
   } catch (_e) {
     return (
       <main className="min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center">

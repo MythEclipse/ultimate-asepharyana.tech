@@ -34,13 +34,13 @@ async function HomePage() {
       ]);
 
     if (mangaResponse.status === 'fulfilled') {
-      initialManga = mangaResponse.value;
+      initialManga = mangaResponse.value as KomikData;
     }
     if (manhuaResponse.status === 'fulfilled') {
-      initialManhua = manhuaResponse.value;
+      initialManhua = manhuaResponse.value as KomikData;
     }
     if (manhwaResponse.status === 'fulfilled') {
-      initialManhwa = manhwaResponse.value;
+      initialManhwa = manhwaResponse.value as KomikData;
     }
 
     // If all failed, set error
