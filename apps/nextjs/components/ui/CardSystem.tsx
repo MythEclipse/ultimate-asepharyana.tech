@@ -8,6 +8,7 @@ import { CardLink } from '../shared/CardLink';
 import { CardSkeleton } from '../shared/CardSkeleton';
 import { CardBody, CardContainer, CardItem } from './3d-card';
 import { Card as ShadcnCard } from './ComponentCard';
+import { MEDIA_TYPE_COLORS } from '../shared/types';
 
 export type CardVariant = 'base' | '3d' | 'mini-3d' | 'interactive' | 'themed' | 'media';
 
@@ -176,17 +177,7 @@ const CardSystem = memo(({
 
   // Handle media variant (wrapper with badge support)
   if (variant === 'media') {
-    const typeColors: { [key: string]: string } = {
-      Manga: 'bg-red-500 hover:bg-red-600',
-      Manhua: 'bg-green-500 hover:bg-green-600',
-      Manhwa: 'bg-blue-500 hover:bg-blue-600',
-      BD: 'bg-purple-500 hover:bg-purple-500',
-      TV: 'bg-yellow-500 hover:bg-yellow-600',
-      OVA: 'bg-pink-500 hover:bg-pink-600',
-      ONA: 'bg-indigo-500 hover:bg-indigo-600',
-    };
-
-    const badgeColor = badge?.color || typeColors[badge?.text || ''] || 'bg-gray-500 hover:bg-gray-600';
+    const badgeColor = badge?.color || MEDIA_TYPE_COLORS[badge?.text || ''] || 'bg-gray-500 hover:bg-gray-600';
     const badgePosition = badge?.position || 'top-right';
 
     return (

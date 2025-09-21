@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useImageFallback } from '../../utils/hooks/useImageFallback';
+import { useEnhancedImageFallback } from '../../utils/hooks/useEnhancedImageFallback';
 
 interface PosterImageProps {
   poster: string;
@@ -23,7 +23,7 @@ export default function PosterImage({
   useProxy = true,
   useCdn = true,
 }: PosterImageProps) {
-  const { src, onError } = useImageFallback({
+  const { src, onError } = useEnhancedImageFallback({
     imageUrl: poster,
     useProxy,
     useCdn

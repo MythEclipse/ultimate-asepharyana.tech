@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import Image from 'next/image';
 import { StaticImageData } from 'next/image';
-import { generateImageSources } from '../../utils/image-proxy';
-import { ImageFallbackOptions } from '../../types/image';
 import { cn } from '../../utils/utils';
-import { PRODUCTION } from '../../utils/url-utils';
+import { useEnhancedImageFallback } from '../../utils/hooks/useEnhancedImageFallback';
 
 export interface CardImageProps {
   src: string | StaticImageData;
@@ -41,37 +39,19 @@ export const CardImage = React.memo(({
   placeholder = 'empty',
   onLoad,
 }: CardImageProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [hasError, setHasError] = useState(false);
+  const { src: currentSrc, onError, onLoad: handleFallbackLoad } = useEnhancedImageFallback({
+    imageUrl: typeof src === 'string' ? src : undefined,
+    fallbackUrl,
+    useProxy,
+    useCdn,
+    resetOnUrlChange: true,
+    maxRetries: 3,
+  });
 
-  const imageSources = useMemo(() => {
-    // If src is StaticImageData, use it directly
-    if (typeof src === 'object') {
-      return [src];
-    }
-
-    const options: ImageFallbackOptions = {
-      fallbackUrl,
-      useProxy,
-      useCdn,
-    };
-
-    return generateImageSources(src, options);
-  }, [src, fallbackUrl, useProxy, useCdn]);
-
-  const handleError = useCallback(() => {
-    if (!hasError && currentIndex < imageSources.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-      setHasError(true);
-    }
-  }, [hasError, currentIndex, imageSources.length]);
-
-  const handleLoad = useCallback(() => {
-    setHasError(false);
+  const handleImageLoad = useCallback(() => {
+    handleFallbackLoad();
     onLoad?.();
-  }, [onLoad]);
-
-  const currentSrc = imageSources[currentIndex];
+  }, [handleFallbackLoad, onLoad]);
 
   if (fill) {
     return (
@@ -84,8 +64,8 @@ export const CardImage = React.memo(({
           className={cn('object-cover', className)}
           priority={priority}
           unoptimized={unoptimized}
-          onError={handleError}
-          onLoad={handleLoad}
+          onError={onError}
+          onLoad={handleImageLoad}
           placeholder={typeof currentSrc === 'object' ? placeholder : 'empty'}
         />
       </div>
@@ -101,8 +81,8 @@ export const CardImage = React.memo(({
       className={cn('object-cover', className)}
       priority={priority}
       unoptimized={unoptimized}
-      onError={handleError}
-      onLoad={handleLoad}
+      onError={onError}
+      onLoad={handleImageLoad}
       placeholder={typeof currentSrc === 'object' ? placeholder : 'empty'}
     />
   );

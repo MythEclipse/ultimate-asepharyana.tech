@@ -6,15 +6,7 @@ import { Textarea } from '../text/textarea';
 import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 import { Comments } from '@asepharyana/services';
-
-interface ClientUser {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  emailVerified: Date | null;
-  role: string;
-}
+import { ClientUser } from '../shared/types';
 
 interface CommentCardProps {
   comment: Comments & {

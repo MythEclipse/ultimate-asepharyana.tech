@@ -3,16 +3,7 @@
 import React, { memo } from 'react';
 import { cn } from '../../utils/utils';
 import CardSystem, { CardBadge } from '../ui/CardSystem';
-
-const typeColors: { [key: string]: string } = {
-  Manga: 'bg-red-500 hover:bg-red-600',
-  Manhua: 'bg-green-500 hover:bg-green-600',
-  Manhwa: 'bg-blue-500 hover:bg-blue-600',
-  BD: 'bg-purple-500 hover:bg-purple-500',
-  TV: 'bg-yellow-500 hover:bg-yellow-600',
-  OVA: 'bg-pink-500 hover:bg-pink-600',
-  ONA: 'bg-indigo-500 hover:bg-indigo-600',
-};
+import { MEDIA_TYPE_COLORS } from '../shared/types';
 
 type DynamicCardProps = {
   title?: string;
@@ -51,7 +42,7 @@ function MediaCard(props: MediaCardProps) {
 
   const badgeConfig: CardBadge | undefined = badge || type ? {
     text: badge || type || '',
-    color: type ? typeColors[type] : undefined,
+    color: type ? MEDIA_TYPE_COLORS[type] : undefined,
     position: 'top-right'
   } : undefined;
 
