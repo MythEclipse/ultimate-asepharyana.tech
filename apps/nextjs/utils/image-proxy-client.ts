@@ -1,6 +1,6 @@
 /**
- * Centralized image proxy system for the application
- * Provides unified image handling, validation, caching, and fallback mechanisms
+ * Client-side image proxy utilities (no Redis dependencies)
+ * This file provides client-safe versions of image proxy functions
  */
 
 import logger from './logger';
@@ -29,20 +29,13 @@ const DEFAULT_CONFIG: ImageProxyConfig = {
   cacheTtl: 86400, // 24 hours
 };
 
-const DEFAULT_CACHE_CONFIG: ImageCacheConfig = {
-  enabled: true,
-  ttl: 120, // 2 minutes for Redis
-  prefix: 'image:proxy:',
-  fallbackTtl: 3600, // 1 hour for fallback images
-};
-
 const DEFAULT_SERVICE_CONFIG: ImageProxyServiceConfig = {
   baseUrl: process.env.NEXT_PUBLIC_BASE_URL || '',
   proxyEndpoint: '/api/imageproxy',
   cdn1Endpoint: 'https://imagecdn.app/v1/images',
   cdn2Endpoint: 'https://imagecdn.app/v2/images',
   uploadEndpoint: '/api/uploader',
-  enableCache: true,
+  enableCache: false, // Disabled for client-side
   cachePrefix: 'image:proxy:',
 };
 
@@ -166,68 +159,7 @@ export function generateCdnUrl(url: string, cdnVersion: 1 | 2 = 1): string {
 }
 
 /**
- * Get Redis cache key for image
- */
-function getImageCacheKey(url: string, source: ImageSource): string {
-  return `${DEFAULT_CACHE_CONFIG.prefix}${source}:${Buffer.from(url).toString('base64')}`;
-}
-
-/**
- * Get cached image result (server-side only)
- */
-async function getCachedImage(url: string, source: ImageSource): Promise<ImageProcessingResult | null> {
-  if (!DEFAULT_CACHE_CONFIG.enabled || typeof window !== 'undefined') {
-    return null;
-  }
-
-  try {
-    // Dynamic import to avoid client-side issues - only import on server
-    const redisModule = await import('../lib/redis').catch(() => null);
-    if (!redisModule || !redisModule.redis) return null;
-
-    const key = getImageCacheKey(url, source);
-    const cached = await redisModule.redis.get(key);
-
-    if (cached) {
-      logger.info(`[ImageProxy] Cache hit for ${url} (${source})`);
-      return JSON.parse(cached as string);
-    }
-  } catch (error) {
-    logger.warn(`[ImageProxy] Cache retrieval failed:`, error);
-  }
-
-  return null;
-}
-
-/**
- * Cache image result (server-side only)
- */
-async function cacheImage(
-  url: string,
-  source: ImageSource,
-  result: ImageProcessingResult
-): Promise<void> {
-  if (!DEFAULT_CACHE_CONFIG.enabled || typeof window !== 'undefined') {
-    return;
-  }
-
-  try {
-    // Dynamic import to avoid client-side issues - only import on server
-    const redisModule = await import('../lib/redis').catch(() => null);
-    if (!redisModule || !redisModule.redis) return;
-
-    const key = getImageCacheKey(url, source);
-    const ttl = source === 'fallback' ? DEFAULT_CACHE_CONFIG.fallbackTtl : DEFAULT_CACHE_CONFIG.ttl;
-
-    await redisModule.redis.set(key, JSON.stringify(result), { EX: ttl });
-    logger.info(`[ImageProxy] Cached result for ${url} (${source})`);
-  } catch (error) {
-    logger.warn(`[ImageProxy] Cache storage failed:`, error);
-  }
-}
-
-/**
- * Process image from direct URL
+ * Process image from direct URL (client-side version)
  */
 async function processDirectImage(
   url: string,
@@ -286,7 +218,7 @@ async function processDirectImage(
 }
 
 /**
- * Process image from CDN
+ * Process image from CDN (client-side version)
  */
 async function processCdnImage(
   url: string,
@@ -347,7 +279,7 @@ async function processCdnImage(
 }
 
 /**
- * Process image with fallback chain
+ * Process image with fallback chain (client-side version - no Redis)
  */
 export async function processImageWithFallback(
   url: string,
@@ -398,19 +330,11 @@ export async function processImageWithFallback(
     processor: () => processDirectImage(normalizedUrl, processingOptions),
   });
 
-  // Try each source in order
+  // Try each source in order (no cache on client-side)
   for (const { type, processor } of sources.slice(0, maxFallbacks)) {
-    // Check cache first (server-side only)
-    const cached = await getCachedImage(normalizedUrl, type);
-    if (cached && cached.success) {
-      return cached;
-    }
-
     const result = await processor();
 
-    // Cache successful results (server-side only)
     if (result.success) {
-      await cacheImage(normalizedUrl, type, result);
       return result;
     }
 

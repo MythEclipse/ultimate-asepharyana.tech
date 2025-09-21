@@ -1,6 +1,6 @@
 // apps/nextjs/utils/hooks/useImageFallback.ts
 import { useState, useCallback, useMemo } from 'react';
-import { generateImageSources } from '../image-proxy';
+import { generateImageSources } from '../image-proxy-client';
 import { ImageFallbackOptions } from '../../types/image';
 
 interface UseImageFallbackProps {

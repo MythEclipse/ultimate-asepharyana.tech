@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { generateImageSources } from '../../utils/image-proxy';
+import { generateImageSources } from '../../utils/image-proxy-client';
 import { ImageFallbackOptions } from '../../types/image';
 
 interface ImageWithFallbackProps {
