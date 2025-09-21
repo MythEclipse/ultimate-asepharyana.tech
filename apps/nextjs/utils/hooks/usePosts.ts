@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BaseUrl } from '../../lib/url';
+import { BaseUrl } from '../../utils/url-utils';
 import { Posts } from '@asepharyana/services';
 import { buildUrlWithParams } from '../url-utils';
 

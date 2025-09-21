@@ -1,6 +1,9 @@
 /**
- * Centralized image proxy system for the application
+ * Unified image proxy system for the application
  * Provides unified image handling, validation, caching, and fallback mechanisms
+ * Works in both client and server environments with automatic environment detection
+ *
+ * NOTE: Redis caching is only available on server-side. Client-side uses fallback chain only.
  */
 
 import logger from './unified-logger';
@@ -29,25 +32,26 @@ const DEFAULT_CONFIG: ImageProxyConfig = {
   cacheTtl: 86400, // 24 hours
 };
 
-const DEFAULT_CACHE_CONFIG: ImageCacheConfig = {
-  enabled: true,
-  ttl: 120, // 2 minutes for Redis
-  prefix: 'image:proxy:',
-  fallbackTtl: 3600, // 1 hour for fallback images
-};
-
 const DEFAULT_SERVICE_CONFIG: ImageProxyServiceConfig = {
   baseUrl: process.env.NEXT_PUBLIC_BASE_URL || '',
   proxyEndpoint: '/api/imageproxy',
   cdn1Endpoint: 'https://imagecdn.app/v1/images',
   cdn2Endpoint: 'https://imagecdn.app/v2/images',
   uploadEndpoint: '/api/uploader',
-  enableCache: true,
+  enableCache: false, // Disabled for unified client-safe version
   cachePrefix: 'image:proxy:',
 };
 
 /**
+ * Check if we're running in a server environment
+ */
+function isServer(): boolean {
+  return typeof window === 'undefined';
+}
+
+/**
  * Image validation utility
+ * Works in both client and server environments
  */
 export async function validateImage(
   url: string,
@@ -112,6 +116,7 @@ export async function validateImage(
 
 /**
  * Normalize image URL
+ * Works in both client and server environments
  */
 export function normalizeImageUrl(url: string, baseUrl?: string): string {
   if (!url || typeof url !== 'string') {
@@ -144,6 +149,7 @@ export function normalizeImageUrl(url: string, baseUrl?: string): string {
 
 /**
  * Generate image proxy URL
+ * Works in both client and server environments
  */
 export function generateProxyUrl(url: string, config: Partial<ImageProxyServiceConfig> = {}): string {
   const serviceConfig = { ...DEFAULT_SERVICE_CONFIG, ...config };
@@ -158,72 +164,12 @@ export function generateProxyUrl(url: string, config: Partial<ImageProxyServiceC
 
 /**
  * Generate CDN image URL
+ * Works in both client and server environments
  */
 export function generateCdnUrl(url: string, cdnVersion: 1 | 2 = 1): string {
   const config = getImageProxyUrlConfig();
   const endpoint = cdnVersion === 1 ? config.cdn1 : config.cdn2;
   return `${endpoint}/${encodeURIComponent(url)}`;
-}
-
-/**
- * Get Redis cache key for image
- */
-function getImageCacheKey(url: string, source: ImageSource): string {
-  return `${DEFAULT_CACHE_CONFIG.prefix}${source}:${Buffer.from(url).toString('base64')}`;
-}
-
-/**
- * Get cached image result (server-side only)
- */
-async function getCachedImage(url: string, source: ImageSource): Promise<ImageProcessingResult | null> {
-  if (!DEFAULT_CACHE_CONFIG.enabled || typeof window !== 'undefined') {
-    return null;
-  }
-
-  try {
-    // Dynamic import to avoid client-side issues - only import on server
-    const redisModule = await import('../lib/redis').catch(() => null);
-    if (!redisModule || !redisModule.redis) return null;
-
-    const key = getImageCacheKey(url, source);
-    const cached = await redisModule.redis.get(key);
-
-    if (cached) {
-      logger.info(`[ImageProxy] Cache hit for ${url} (${source})`);
-      return JSON.parse(cached as string);
-    }
-  } catch (error) {
-    logger.warn(`[ImageProxy] Cache retrieval failed:`, error);
-  }
-
-  return null;
-}
-
-/**
- * Cache image result (server-side only)
- */
-async function cacheImage(
-  url: string,
-  source: ImageSource,
-  result: ImageProcessingResult
-): Promise<void> {
-  if (!DEFAULT_CACHE_CONFIG.enabled || typeof window !== 'undefined') {
-    return;
-  }
-
-  try {
-    // Dynamic import to avoid client-side issues - only import on server
-    const redisModule = await import('../lib/redis').catch(() => null);
-    if (!redisModule || !redisModule.redis) return;
-
-    const key = getImageCacheKey(url, source);
-    const ttl = source === 'fallback' ? DEFAULT_CACHE_CONFIG.fallbackTtl : DEFAULT_CACHE_CONFIG.ttl;
-
-    await redisModule.redis.set(key, JSON.stringify(result), { EX: ttl });
-    logger.info(`[ImageProxy] Cached result for ${url} (${source})`);
-  } catch (error) {
-    logger.warn(`[ImageProxy] Cache storage failed:`, error);
-  }
 }
 
 /**
@@ -348,6 +294,8 @@ async function processCdnImage(
 
 /**
  * Process image with fallback chain
+ * Works in both client and server environments with appropriate optimizations
+ * NOTE: Redis caching is only available on server-side via separate API endpoints
  */
 export async function processImageWithFallback(
   url: string,
@@ -370,7 +318,7 @@ export async function processImageWithFallback(
   }
 
   const normalizedUrl = normalizeImageUrl(url);
-  const sources: Array<{ type: ImageSource; processor: () => Promise<ImageProcessingResult> }> = [];
+  const sources: Array<{ type: any; processor: () => Promise<ImageProcessingResult> }> = [];
 
   // Build fallback chain
   if (useProxy) {
@@ -398,19 +346,11 @@ export async function processImageWithFallback(
     processor: () => processDirectImage(normalizedUrl, processingOptions),
   });
 
-  // Try each source in order
+  // Try each source in order (no cache on client-side)
   for (const { type, processor } of sources.slice(0, maxFallbacks)) {
-    // Check cache first (server-side only)
-    const cached = await getCachedImage(normalizedUrl, type);
-    if (cached && cached.success) {
-      return cached;
-    }
-
     const result = await processor();
 
-    // Cache successful results (server-side only)
     if (result.success) {
-      await cacheImage(normalizedUrl, type, result);
       return result;
     }
 
@@ -427,6 +367,7 @@ export async function processImageWithFallback(
 
 /**
  * Generate image sources for client-side fallback
+ * Works in both client and server environments
  */
 export function generateImageSources(
   url: string,
@@ -466,32 +407,57 @@ export function generateImageSources(
 }
 
 /**
- * Create NextResponse for image data
+ * Create response for image data
+ * Works in both client and server environments with appropriate return types
  */
 export function createImageResponse(
   result: ImageProcessingResult,
   cacheHeaders: Record<string, string> = {}
-): NextResponse {
+): NextResponse | { blob: Blob; contentType: string; headers: Record<string, string> } {
   if (!result.success || !result.arrayBuffer) {
-    return NextResponse.json(
-      { error: result.error || 'Image processing failed' },
-      { status: 400 }
-    );
+    if (isServer()) {
+      return NextResponse.json(
+        { error: result.error || 'Image processing failed' },
+        { status: 400 }
+      );
+    } else {
+      return {
+        blob: new Blob(),
+        contentType: 'application/json',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Error': result.error || 'Image processing failed',
+        },
+      };
+    }
   }
 
   const blob = new Blob([result.arrayBuffer], { type: result.contentType || 'image/jpeg' });
 
-  return new NextResponse(blob, {
-    headers: {
-      'Content-Type': result.contentType || 'image/jpeg',
-      'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
-      ...cacheHeaders,
-    },
-  });
+  if (isServer()) {
+    return new NextResponse(blob, {
+      headers: {
+        'Content-Type': result.contentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
+        ...cacheHeaders,
+      },
+    });
+  } else {
+    return {
+      blob,
+      contentType: result.contentType || 'image/jpeg',
+      headers: {
+        'Content-Type': result.contentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
+        ...cacheHeaders,
+      },
+    };
+  }
 }
 
 /**
  * Convenience function to get image with fallback (for backward compatibility)
+ * Works in both client and server environments
  */
 export async function getImageWithFallback(
   url: string,

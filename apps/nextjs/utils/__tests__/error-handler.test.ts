@@ -9,7 +9,7 @@ import {
   ErrorHandler,
 } from '../error-handler';
 import { ErrorCategory, ErrorSeverity } from '../../types/error';
-import logger from '../logger';
+import logger from '../unified-logger';
 
 // Mock the logger
 vi.mock('../logger', () => ({

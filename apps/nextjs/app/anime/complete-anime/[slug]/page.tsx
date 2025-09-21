@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
-import { APIURLSERVER } from '../../../../lib/url';
+import { APIURLSERVER } from '../../../../utils/url-utils';
 import {
   CheckCircle,
   AlertTriangle,

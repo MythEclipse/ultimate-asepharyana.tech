@@ -1,5 +1,5 @@
-import { APIURLSERVER } from '../lib/url';
-import { HttpClient } from '../utils/httpClient';
+import { APIURLSERVER } from '../utils/url-utils';
+import { HttpClient } from '../utils/http-client';
 import { getApiUrlConfig, buildUrl } from '../utils/url-utils';
 
 export const fetchKomikData = async (

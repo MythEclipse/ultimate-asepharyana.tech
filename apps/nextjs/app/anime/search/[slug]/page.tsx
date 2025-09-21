@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { APIURLSERVER } from '../../../../lib/url';
+import { APIURLSERVER } from '../../../../utils/url-utils';
 import { SearchDetailData } from '../../../../types/anime';
 import SearchPageClient from './SearchPageClient';
 

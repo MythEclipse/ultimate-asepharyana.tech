@@ -1,6 +1,6 @@
-import { serverSideFetch } from './http-client';
-import { APIURLSERVER } from '../lib/url';
+import { UnifiedHttpClient } from './http-client';
 
 export const serverFetch = async (url: string) => {
-  return serverSideFetch(url);
+  const client = UnifiedHttpClient.createServerSide();
+  return client.fetchJson(url);
 };

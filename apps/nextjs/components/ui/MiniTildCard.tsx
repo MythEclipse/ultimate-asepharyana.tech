@@ -4,7 +4,7 @@ import Image from 'next/image';
 import React, { memo, useState } from 'react';
 import { CardBody, CardContainer, CardItem } from './3d-card';
 import Link from 'next/link';
-import { PRODUCTION } from '../../lib/url';
+import { PRODUCTION } from '../../utils/url-utils';
 
 interface ThreeDCardProps {
   title: string;

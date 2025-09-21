@@ -1,5 +1,5 @@
-import { HttpClient } from '../utils/httpClient';
-import { APIURLSERVER } from '../lib/url';
+import { HttpClient } from '../utils/http-client';
+import { APIURLSERVER } from '../utils/url-utils';
 import { buildKomikUrl, buildKomik2MangaUrl } from '../utils/url-utils';
 
 export class KomikAPI {

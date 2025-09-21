@@ -1,4 +1,4 @@
-import { APIURLSERVER } from '../../../../lib/url';
+import { APIURLSERVER } from '../../../../utils/url-utils';
 export const revalidate = 60;
 
 import { AnimeData } from '../../../../types/anime';

@@ -20,7 +20,7 @@ import {
   Server,
   AlertTriangle,
 } from 'lucide-react';
-import { APIURLSERVER } from '../../../../lib/url';
+import { APIURLSERVER } from '../../../../utils/url-utils';
 
 // --- INTERFACES ---
 interface AnimeResponse {

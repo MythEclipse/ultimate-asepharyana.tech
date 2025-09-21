@@ -1,5 +1,5 @@
-import { HttpClient } from '../utils/httpClient';
-import { APIURLSERVER } from '../lib/url';
+import { HttpClient } from '../utils/http-client';
+import { APIURLSERVER } from '../utils/url-utils';
 import { AnimeData, CompleteAnimeData } from '../types/anime';
 import { buildAnimeUrl } from '../utils/url-utils';
 

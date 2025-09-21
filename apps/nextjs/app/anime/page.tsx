@@ -1,6 +1,6 @@
 import React from 'react';
 import AnimePageClient from './AnimePageClient';
-import { APIURLSERVER } from '../../lib/url';
+import { APIURLSERVER } from '../../utils/url-utils';
 
 export const revalidate = 60;
 

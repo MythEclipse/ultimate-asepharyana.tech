@@ -1,6 +1,6 @@
 // Utility functions for Komik base URL logic
 
-import logger from '../utils/logger';
+import logger from '../utils/unified-logger';
 import { redis } from './redis';
 import * as cheerio from 'cheerio';
 import { fetchWithProxyOnly } from './fetchWithProxy';

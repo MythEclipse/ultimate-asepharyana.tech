@@ -1,9 +1,9 @@
 'use client';
 
-import { HttpClient } from './httpClient';
-import { APIURL } from '../lib/url';
+import { UnifiedHttpClient } from './http-client';
 import { getApiUrlConfig, buildUrl } from './url-utils';
 import { toAppError } from './error-handler';
+import { HttpMethod } from '../types/http';
 
 export const fetchData = async <T = unknown>(
   url: string,
@@ -14,6 +14,8 @@ export const fetchData = async <T = unknown>(
 ) => {
   const base = baseUrl || getApiUrlConfig().client;
   const fullUrl = buildUrl(base, url);
+  const client = UnifiedHttpClient.createClientSide();
+
   try {
     const options: RequestInit = { method };
 
@@ -26,7 +28,7 @@ export const fetchData = async <T = unknown>(
       }
     }
 
-    const data = await HttpClient.request<T>(fullUrl, method, pyld);
+    const data = await client.request<T>(fullUrl, method as HttpMethod, pyld);
     return {
       data,
       status: 200, // HttpClient handles status internally

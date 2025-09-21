@@ -2,7 +2,7 @@ import React from 'react';
 import SearchForm from '../../../../components/misc/SearchForm';
 import CardA from '../../../../components/anime/MediaCard'; // Changed to default import
 import { Info } from 'lucide-react';
-import { APIURLSERVER } from '../../../../lib/url';
+import { APIURLSERVER } from '../../../../utils/url-utils';
 
 interface Genre {
   name: string;

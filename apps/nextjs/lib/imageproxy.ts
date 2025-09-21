@@ -1,5 +1,5 @@
-import logger from '../utils/logger';
-import { BaseUrl } from './url';
+import logger from '../utils/unified-logger';
+import { BaseUrl } from '../utils/url-utils';
 import { NextResponse } from 'next/server';
 import { ImageProcessingOptions } from '../types/image';
 import {

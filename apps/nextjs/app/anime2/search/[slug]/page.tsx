@@ -1,4 +1,4 @@
-import { APIURLSERVER } from '../../../../lib/url';
+import { APIURLSERVER } from '../../../../utils/url-utils';
 import { SearchDetailData } from '../../../../types/anime';
 import SearchPage2Client from './SearchPage2Client';
 

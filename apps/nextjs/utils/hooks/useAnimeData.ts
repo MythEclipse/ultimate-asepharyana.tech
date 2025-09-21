@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { APIURLSERVER } from '../../lib/url';
+import { APIURLSERVER } from '../../utils/url-utils';
 import { AnimeData, CompleteAnimeData } from '../../types/anime';
 import { buildAnimeUrl } from '../url-utils';
 

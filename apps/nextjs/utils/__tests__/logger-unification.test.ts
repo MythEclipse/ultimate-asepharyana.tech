@@ -3,20 +3,16 @@
  * This test ensures backward compatibility and proper functionality
  */
 
-import clientLogger from '../logger';
-import serverLogger from '../serverLogger';
 import unifiedLogger from '../unified-logger';
 import { detectRuntimeEnvironment } from '../unified-logger';
 
 describe('Logger Unification', () => {
-  it('should provide the same interface for all logger instances', () => {
-    // Test that all loggers have the same methods
+  it('should provide the same interface for unified logger', () => {
+    // Test that unified logger has the expected methods
     const expectedMethods = ['error', 'warn', 'info', 'debug', 'verbose', 'silly', 'http'];
 
-    [clientLogger, serverLogger, unifiedLogger].forEach((logger, index) => {
-      expectedMethods.forEach(method => {
-        expect(typeof logger[method as keyof typeof logger]).toBe('function');
-      });
+    expectedMethods.forEach(method => {
+      expect(typeof unifiedLogger[method as keyof typeof unifiedLogger]).toBe('function');
     });
   });
 
@@ -26,23 +22,13 @@ describe('Logger Unification', () => {
     expect(['server', 'client', 'unknown']).toContain(environment);
   });
 
-  it('should maintain backward compatibility with client logger', () => {
-    // Test that client logger methods can be called without errors
+  it('should work with unified logger methods', () => {
+    // Test that unified logger methods can be called without errors
     expect(() => {
-      clientLogger.info('Test info message');
-      clientLogger.warn('Test warning message');
-      clientLogger.error('Test error message');
-      clientLogger.debug('Test debug message');
-    }).not.toThrow();
-  });
-
-  it('should maintain backward compatibility with server logger', () => {
-    // Test that server logger methods can be called without errors
-    expect(() => {
-      serverLogger.info('Test info message');
-      serverLogger.warn('Test warning message');
-      serverLogger.error('Test error message');
-      serverLogger.debug('Test debug message');
+      unifiedLogger.info('Test info message');
+      unifiedLogger.warn('Test warning message');
+      unifiedLogger.error('Test error message');
+      unifiedLogger.debug('Test debug message');
     }).not.toThrow();
   });
 

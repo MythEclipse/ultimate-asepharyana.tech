@@ -1,6 +1,6 @@
 // apps/NextJS/lib/api-wrapper.ts
 import { NextRequest, NextResponse } from 'next/server';
-import logger from '../utils/logger';
+import logger from '../utils/unified-logger';
 import { corsHeaders } from './corsHeaders';
 
 type ApiHandler<T> = (
