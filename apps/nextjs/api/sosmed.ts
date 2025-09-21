@@ -1,4 +1,4 @@
-import { HttpClient } from '../utils/http-client';
+import { HttpClient } from '../utils/unified-http-client';
 import logger from '../utils/unified-logger';
 import { toAppError, logError } from '../utils/error-handler';
 

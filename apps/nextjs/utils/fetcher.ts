@@ -1,4 +1,4 @@
-import { UnifiedHttpClient } from './http-client';
+import { UnifiedHttpClient } from './unified-http-client';
 
 const fetcher = async (url: string) => {
   const token =

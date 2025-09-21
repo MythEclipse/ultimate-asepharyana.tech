@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { format } from 'date-fns';
-import Card from '../../components/ui/ThemedCard';
+import { ThemedCard } from '../../components/ui/CardSystem';
 import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
 import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
@@ -190,7 +190,7 @@ export default function ChatClient() {
         </div>
 
         {/* Chat Messages */}
-        <Card>
+        <ThemedCard>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => (
               <MessageBubble
@@ -271,7 +271,7 @@ export default function ChatClient() {
               </Button>
             </div>
           </div>
-        </Card>
+        </ThemedCard>
       </div>
     </div>
   );

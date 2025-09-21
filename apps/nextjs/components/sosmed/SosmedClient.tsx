@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import PostCard from '../../components/sosmed/PostCard';
-import Card from '../../components/ui/ThemedCard';
+import { ThemedCard } from '../../components/ui/CardSystem';
 import { Textarea } from '../../components/text/textarea';
 import { Button } from '../../components/ui/button';
 import { useSession } from 'next-auth/react';
@@ -109,10 +109,6 @@ export default function SosmedClient() {
 
 
 
-
-
-
-
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl md:py-12 bg-background text-foreground">
       <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -122,7 +118,7 @@ export default function SosmedClient() {
       {session?.user ? (
         <div className="mb-8 md:mb-10 group">
           <div className="relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl">
-            <Card>
+            <ThemedCard>
               <div className="space-y-4">
                 <Textarea
                   placeholder="Share your thoughts..."
@@ -168,7 +164,7 @@ export default function SosmedClient() {
                   </Button>
                 </div>
               </div>
-            </Card>
+            </ThemedCard>
           </div>
         </div>
       ) : (

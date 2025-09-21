@@ -6,16 +6,36 @@
  *
  * This will fill the input, submit the form, and print the resulting HTML.
  */
-import puppeteer, { Browser, Page } from 'puppeteer';
 import logger from '../utils/unified-logger';
-import { performance } from 'perf_hooks'; // Keep for CLI execution timing if needed, but remove from main function
+
+// Type definitions
+type Browser = any;
+type Page = any;
+
+// Conditional imports for Node.js environment only
+let puppeteer: any;
+let browserInstance: Browser | null = null;
+let pageInstance: Page | null = null;
+
+if (typeof window === 'undefined') {
+  // Only import puppeteer in Node.js environment
+  try {
+    const puppeteerModule = require('puppeteer');
+    puppeteer = puppeteerModule.default || puppeteerModule;
+  } catch (error) {
+    logger.warn('Puppeteer not available in this environment');
+  }
+}
+
+// Mock performance for browser environment
+const performance = typeof window !== 'undefined' && window.performance ?
+  window.performance :
+  { now: () => Date.now() };
 
 const CROXY_PROXY_URL = 'https://www.croxyproxy.com/';
 const URL_INPUT_SELECTOR = 'input#url';
 const SUBMIT_BUTTON_SELECTOR = '#requestSubmit';
 const MAX_RETRIES = 3; // Increased for robustness
-let browserInstance: Browser | null = null;
-let pageInstance: Page | null = null;
 
 const BROWSER_ARGS = [
   '--no-sandbox',
@@ -41,6 +61,10 @@ function getRandomUserAgent(): string {
 }
 
 async function getBrowserPage(): Promise<Page> {
+  if (!puppeteer) {
+    throw new Error('Puppeteer is not available in this environment');
+  }
+
   if (!browserInstance) {
     browserInstance = await puppeteer.launch({
       headless: true,
@@ -53,7 +77,7 @@ async function getBrowserPage(): Promise<Page> {
   if (!pageInstance) {
     pageInstance = await browserInstance.newPage();
     await pageInstance.setRequestInterception(true);
-    pageInstance.on('request', (request) => {
+    pageInstance.on('request', (request: any) => {
       const resourceType = request.resourceType();
       if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
         request.abort();
@@ -71,6 +95,12 @@ async function getBrowserPage(): Promise<Page> {
 }
 
 export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
+  // Check if we're in a Node.js environment with Puppeteer available
+  if (typeof window !== 'undefined' || !puppeteer) {
+    logger.warn('Puppeteer scraping is not available in browser environment');
+    throw new Error('Puppeteer scraping is only available in server-side Node.js environment');
+  }
+
   logger.info(`Scraping ${targetUrl} with CroxyProxy`);
   const page = await getBrowserPage();
   let html = '';
@@ -148,7 +178,7 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
 
 // Function to close the browser instance when no longer needed (e.g., on application shutdown)
 export async function closeBrowser() {
-  if (browserInstance) {
+  if (browserInstance && puppeteer) {
     await browserInstance.close();
     browserInstance = null;
     pageInstance = null;
@@ -165,23 +195,41 @@ import { redis } from './redis';
 export async function scrapeCroxyProxyCached(
   targetUrl: string,
 ): Promise<string> {
-  const cacheKey = `scrapeCroxyProxy:${targetUrl}`;
-  const cached = await redis.get(cacheKey);
-  if (typeof cached === 'string' && cached) {
-    logger.info(
-      `[scrapeCroxyProxyCached] Returning cached result for ${targetUrl}`,
-    );
-    return cached;
+  // Check if Redis is available
+  if (!redis) {
+    logger.warn('[scrapeCroxyProxyCached] Redis not available, falling back to direct scraping');
+    return await scrapeCroxyProxy(targetUrl);
   }
+
+  const cacheKey = `scrapeCroxyProxy:${targetUrl}`;
+  try {
+    const cached = await redis.get(cacheKey);
+    if (typeof cached === 'string' && cached) {
+      logger.info(
+        `[scrapeCroxyProxyCached] Returning cached result for ${targetUrl}`,
+      );
+      return cached;
+    }
+  } catch (error) {
+    logger.warn('[scrapeCroxyProxyCached] Redis get failed, continuing with scraping:', error);
+  }
+
   const html = await scrapeCroxyProxy(targetUrl);
-  await redis.set(cacheKey, html, { EX: 3600 });
-  logger.info(
-    `[scrapeCroxyProxyCached] Cached result for ${targetUrl} (1 hour)`,
-  );
+
+  try {
+    await redis.set(cacheKey, html, { EX: 3600 });
+    logger.info(
+      `[scrapeCroxyProxyCached] Cached result for ${targetUrl} (1 hour)`,
+    );
+  } catch (error) {
+    logger.warn('[scrapeCroxyProxyCached] Redis set failed:', error);
+  }
+
   return html;
 }
 
-if (require.main === module) {
+// CLI execution only in Node.js environment
+if (typeof window === 'undefined' && typeof require !== 'undefined' && require.main === module) {
   const [, , inputUrl] = process.argv;
   if (!inputUrl) {
     logger.error('Usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "<url>"');

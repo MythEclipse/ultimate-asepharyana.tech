@@ -2,8 +2,7 @@
 
 import React, { memo } from 'react';
 import { cn } from '../../utils/utils';
-import { Badge } from '../ui/badge';
-import BaseCard from '../ui/BaseCard';
+import CardSystem, { CardBadge } from '../ui/CardSystem';
 
 const typeColors: { [key: string]: string } = {
   Manga: 'bg-red-500 hover:bg-red-600',
@@ -36,51 +35,42 @@ type StaticCardProps = {
 
 type MediaCardProps = DynamicCardProps | StaticCardProps;
 
-const TypeBadge = memo(({ type, badge }: { type?: string; badge?: string }) => {
-  const label = badge || type;
-  if (!label) return null;
-  const colorClass = typeColors[label] || 'bg-gray-500 hover:bg-gray-600';
-  return (
-    <Badge
-      className={cn('absolute top-2 right-2 text-white border-0', colorClass)}
-    >
-      {label}
-    </Badge>
-  );
-});
-TypeBadge.displayName = 'TypeBadge';
-
 function MediaCard(props: MediaCardProps) {
   const { title, description, imageUrl, linkUrl, type, badge, loading } =
     props as DynamicCardProps;
 
   if (loading) {
     return (
-      <BaseCard
-        title="Loading..."
-        description=""
-        imageUrl=""
+      <CardSystem
+        variant="media"
         loading={true}
         className="w-full max-w-sm"
       />
     );
   }
 
+  const badgeConfig: CardBadge | undefined = badge || type ? {
+    text: badge || type || '',
+    color: type ? typeColors[type] : undefined,
+    position: 'top-right'
+  } : undefined;
+
   return (
-    <div className="relative">
-      <BaseCard
-        title={title || ''}
-        description={description || ''}
-        imageUrl={imageUrl || ''}
-        linkUrl={linkUrl}
-        className="w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl"
-        imageClassName="object-cover transition-opacity duration-300"
-        imagePriority={false}
-        imageUnoptimized={true}
-        showImage={true}
-      />
-      <TypeBadge type={type} badge={badge} />
-    </div>
+    <CardSystem
+      variant="media"
+      title={title || ''}
+      description={description || ''}
+      image={{
+        src: imageUrl || '',
+        alt: title || 'Card image',
+        priority: false,
+        unoptimized: true,
+        show: true
+      }}
+      linkUrl={linkUrl}
+      className="w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+      badge={badgeConfig}
+    />
   );
 }
 

@@ -1,4 +1,4 @@
-import { HttpClient } from '../utils/http-client';
+import { HttpClient } from '../utils/unified-http-client';
 import { APIURLSERVER } from '../utils/url-utils';
 import { buildKomikUrl, buildKomik2MangaUrl } from '../utils/url-utils';
 
