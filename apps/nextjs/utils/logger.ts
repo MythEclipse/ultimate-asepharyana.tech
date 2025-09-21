@@ -1,12 +1,18 @@
-// Client-side logger - simple console logging
-const clientLogger = {
-  info: (...args: unknown[]) => console.log(...args),
-  warn: (...args: unknown[]) => console.warn(...args),
-  error: (...args: unknown[]) => console.error(...args),
-  debug: (...args: unknown[]) => console.debug(...args),
-  verbose: (...args: unknown[]) => console.log(...args),
-  silly: (...args: unknown[]) => console.log(...args),
-  http: (...args: unknown[]) => console.log(...args),
-};
+/**
+ * Client-side logger - re-exports from unified logger for backward compatibility
+ *
+ * This module provides a client-side logger that automatically detects the runtime
+ * environment and provides appropriate logging behavior. In the browser, it uses
+ * console methods. On the server, it uses Winston with file rotation and
+ * structured logging.
+ *
+ * @deprecated Use the unified logger directly from 'utils/unified-logger' for new code
+ */
 
-export default clientLogger;
+import unifiedLogger, { logErrorToApi } from './unified-logger';
+
+// Re-export the unified logger as the client logger for backward compatibility
+export default unifiedLogger;
+
+// Re-export the logErrorToApi function for backward compatibility
+export { logErrorToApi };
