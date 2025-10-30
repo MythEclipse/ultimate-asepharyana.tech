@@ -4,41 +4,18 @@ import UnifiedGrid from '../../components/shared/UnifiedGrid';
 import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { memo } from 'react';
-
-interface HomeData {
-  status: string;
-  data: {
-    ongoing_anime: OngoingAnime[];
-    complete_anime: CompleteAnime[];
-  };
-}
-
-interface OngoingAnime {
-  title: string;
-  slug: string;
-  poster: string;
-  current_episode: string;
-  anime_url: string;
-}
-
-interface CompleteAnime {
-  title: string;
-  slug: string;
-  poster: string;
-  episode_count: string;
-  anime_url: string;
-  current_episode: string;
-}
+import { useAnimeHome, type HomeData } from '../../utils/hooks/useAnime';
 
 interface AnimePageClientProps {
-  data: HomeData | null;
-  error: string | null;
+  initialData: HomeData | null;
+  initialError: string | null;
 }
 
-function AnimePageClient({ data, error }: AnimePageClientProps) {
+function AnimePageClient({ initialData, initialError }: AnimePageClientProps) {
   const router = useRouter();
+  const { data, error: swrError } = useAnimeHome(initialData || undefined);
 
-  const displayError = error;
+  const displayError = swrError || initialError;
   const displayData = data;
 
   if (displayError) return <div>Error loading data: {displayError}</div>;

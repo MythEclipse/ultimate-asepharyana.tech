@@ -5,6 +5,7 @@ import SearchForm from '../../../../components/misc/SearchForm';
 import MediaCard from '../../../../components/anime/MediaCard';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
 import { Anime, SearchDetailData } from '../../../../types/anime';
+import { useAnimeSearch } from '../../../../utils/hooks/useAnime';
 
 interface SearchPageClientProps {
   initialData: SearchDetailData | null;
@@ -17,15 +18,20 @@ function SearchPageClient({
   initialError,
   query,
 }: SearchPageClientProps) {
-  if (initialError) {
-    return <ErrorLoadingDisplay type="error" message={initialError} />;
+  const { data: swrData, error: swrError } = useAnimeSearch(query, initialData || undefined);
+
+  const searchResults = swrData || initialData;
+  const displayError = swrError || initialError;
+
+  if (displayError) {
+    return <ErrorLoadingDisplay type="error" message={displayError} />;
   }
 
-  if (!initialData) {
+  if (!searchResults) {
     return <ErrorLoadingDisplay type="loading" skeletonType="grid" />;
   }
 
-  if (!Array.isArray(initialData.data) || initialData.data.length === 0) {
+  if (!Array.isArray(searchResults.data) || searchResults.data.length === 0) {
     return (
       <ErrorLoadingDisplay
         type="no-data"
@@ -34,8 +40,6 @@ function SearchPageClient({
       />
     );
   }
-
-  const searchResults = initialData;
 
   return (
     <main className="p-6">

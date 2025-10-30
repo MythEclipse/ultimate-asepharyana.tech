@@ -36,6 +36,7 @@ import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDispl
 import { AnimeData } from '../../../../types/anime';
 import { useBookmark } from '../../../../utils/hooks/useBookmark';
 import type { AnimeBookmark } from '../../../../lib/bookmarks';
+import { useAnimeDetail } from '../../../../utils/hooks/useAnime';
 
 interface AnimeDetailPageClientProps {
   slug: string;
@@ -49,13 +50,18 @@ function AnimeDetailPageClient({
   initialError,
 }: AnimeDetailPageClientProps) {
   const router = useRouter();
+  const { data: swrData, error: swrError } = useAnimeDetail(slug, initialData || undefined);
+
+  // Use the SWR data if available, otherwise fallback to initialData
+  const animeData = swrData || initialData;
+  const displayError = swrError || initialError;
 
   // Use bookmark hook with anime data
-  const bookmarkData: AnimeBookmark | undefined = initialData
+  const bookmarkData: AnimeBookmark | undefined = animeData
     ? {
         slug,
-        title: initialData.title,
-        poster: initialData.poster,
+        title: animeData.title,
+        poster: animeData.poster,
       }
     : undefined;
 
@@ -66,22 +72,20 @@ function AnimeDetailPageClient({
   );
 
   useEffect(() => {
-    if (initialData?.episode_lists) {
-      initialData.episode_lists.forEach((episode) => {
+    if (animeData?.episode_lists) {
+      animeData.episode_lists.forEach((episode) => {
         router.prefetch(`/anime/full/${episode.slug}`);
       });
     }
-  }, [initialData, router]);
+  }, [animeData, router]);
 
-  if (initialError) {
-    return <ErrorLoadingDisplay type="error" message={initialError} />;
+  if (displayError) {
+    return <ErrorLoadingDisplay type="error" message={displayError} />;
   }
 
-  if (!initialData) {
+  if (!animeData) {
     return <ErrorLoadingDisplay type="loading" skeletonType="detail" />;
   }
-
-  const animeData = initialData;
   const metadata = [
     {
       label: 'Type',

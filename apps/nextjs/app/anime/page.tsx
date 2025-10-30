@@ -61,7 +61,7 @@ async function AnimePage() {
     console.warn('Skipping API fetch in development mode during build.');
   }
 
-  return <AnimePageClient data={initialData} error={error} />;
+  return <AnimePageClient initialData={initialData} initialError={error} />;
 }
 
 export default AnimePage;
