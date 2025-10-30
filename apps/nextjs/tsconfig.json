@@ -18,12 +18,12 @@
         "name": "next"
       }
     ],
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/lib/*": ["./lib/*"],
       "@asepharyana/services": ["../../libs/services/src/index.ts"]
-    },
-    "ignoreDeprecations": "6.0"
+    }
   },
   "include": [
     "**/*.jsx",

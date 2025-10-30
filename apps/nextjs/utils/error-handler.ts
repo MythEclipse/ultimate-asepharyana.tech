@@ -433,7 +433,7 @@ export async function withRetry<T>(
     return operation();
   }
 
-  let lastError: AppError;
+  let lastError: AppError | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
