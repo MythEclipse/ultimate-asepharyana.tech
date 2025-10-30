@@ -6,11 +6,22 @@
   "tags": [],
   "targets": {
     "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "commands": [
+          "nx run services:compile",
+          "node libs/services/fix-exports.js"
+        ],
+        "parallel": false
+      }
+    },
+    "compile": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "libs/services/dist",
-        "tsConfig": "libs/services/tsconfig.json",
+        "tsConfig": "libs/services/tsconfig.lib.json",
         "main": "libs/services/src/index.ts",
         "assets": ["libs/services/*.md"]
       }
