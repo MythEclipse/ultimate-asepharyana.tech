@@ -1,4 +1,4 @@
-// apps/NextJS/app/page.tsx
+// apps/NextJS/app/page.tsx  a
 
 import React from 'react';
 import Bg from '../components/background/Bg';
