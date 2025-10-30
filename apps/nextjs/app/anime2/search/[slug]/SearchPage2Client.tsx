@@ -1,13 +1,14 @@
 'use client';
 
 import React, { memo } from 'react';
+import { getErrorMessage } from '../../../../utils/client-utils';
 import SearchForm from '../../../../components/misc/SearchForm';
 import MediaCard from '../../../../components/anime/MediaCard';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { Anime, SearchDetailData } from '../../../../types/anime';
+import { useAnime2Search, type SearchDetailData2, type Anime2 } from '../../../../utils/hooks/useAnime2';
 
 interface SearchPage2ClientProps {
-  initialData: SearchDetailData | null;
+  initialData: SearchDetailData2 | null;
   initialError: string | null;
   query: string;
 }
@@ -17,15 +18,20 @@ function SearchPage2Client({
   initialError,
   query,
 }: SearchPage2ClientProps) {
-  if (initialError) {
-    return <ErrorLoadingDisplay type="error" message={initialError} />;
+  const { data: swrData, error: swrError } = useAnime2Search(query, initialData || undefined);
+
+  const searchResults = swrData || initialData;
+  const displayError = getErrorMessage(swrError) || initialError;
+
+  if (displayError) {
+    return <ErrorLoadingDisplay type="error" message={displayError} />;
   }
 
-  if (!initialData) {
+  if (!searchResults) {
     return <ErrorLoadingDisplay type="loading" skeletonType="grid" />;
   }
 
-  if (!Array.isArray(initialData.data) || initialData.data.length === 0) {
+  if (!Array.isArray(searchResults.data) || searchResults.data.length === 0) {
     return (
       <ErrorLoadingDisplay
         type="no-data"
@@ -34,8 +40,6 @@ function SearchPage2Client({
       />
     );
   }
-
-  const searchResults = initialData;
 
   return (
     <main className="p-6">
@@ -46,7 +50,7 @@ function SearchPage2Client({
         baseUrl="/anime2"
       />
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
-        {searchResults.data.map((anime: Anime) => (
+        {searchResults.data.map((anime: Anime2) => (
           <MediaCard
             key={anime.slug}
             title={anime.title}

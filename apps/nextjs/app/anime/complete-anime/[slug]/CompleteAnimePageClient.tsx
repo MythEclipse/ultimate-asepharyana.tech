@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
+import { getErrorMessage } from '../../../../utils/client-utils';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -26,7 +27,7 @@ function CompleteAnimePageClient({
   const { data: swrData, error: swrError } = useCompleteAnime(slug, initialData || undefined);
 
   const data = swrData || initialData;
-  const displayError = swrError || initialError;
+  const displayError = getErrorMessage(swrError) || initialError;
 
   if (displayError) {
     return <ErrorLoadingDisplay type="error" message={displayError} />;
@@ -68,10 +69,12 @@ function CompleteAnimePageClient({
   );
 }
 
-const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
+const PaginationComponent = ({ pagination }: { pagination?: Pagination }) => {
+  if (!pagination) return null;
+
   return (
     <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
-      {pagination.has_previous_page && pagination.previous_page !== null && (
+      {pagination?.has_previous_page && pagination?.previous_page !== null && (
         <Link href={`/anime/complete-anime/${pagination.previous_page}`}>
           <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
             <ChevronLeft className="w-5 h-5" />
@@ -81,10 +84,10 @@ const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
       )}
 
       <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-        Page {pagination.current_page} of {pagination.last_visible_page}
+        Page {pagination?.current_page ?? 1} of {pagination?.last_visible_page ?? 1}
       </span>
 
-      {pagination.has_next_page && pagination.next_page !== null && (
+      {pagination?.has_next_page && pagination?.next_page !== null && (
         <Link href={`/anime/complete-anime/${pagination.next_page}`}>
           <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
             Next

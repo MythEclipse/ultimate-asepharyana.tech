@@ -1,37 +1,9 @@
-import React from 'react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import UnifiedGrid from '../../../../../components/shared/UnifiedGrid';
-import { ErrorStateCenter } from '../../../../../components/error/ErrorState';
-import PaginationControls from '../../../../../components/shared/PaginationControls';
-import { BookOpen, AlertTriangle, ChevronRight } from 'lucide-react';
-import { fetchKomikData } from '../../../../../lib/komikFetcher';
+import { fetchWithFallback } from '../../../../../utils/url-utils';
+import ManhwaPageClient from './ManhwaPageClient';
+import type { KomikPaginationData } from '../../../../../utils/hooks/useKomik';
 
 export const revalidate = 60;
-
-interface Pagination {
-  current_page: number;
-  last_visible_page: number;
-  has_next_page: boolean;
-  next_page: number | null;
-  has_previous_page: boolean;
-  previous_page: number | null;
-}
-
-interface KomikData {
-  data: Komik[];
-  pagination: Pagination;
-}
-
-export interface Komik {
-  title: string;
-  poster: string;
-  chapter: string;
-  date: string;
-  reader_count: string;
-  type: string;
-  slug: string;
-}
 
 async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
   const { pageNumber: pageNumberStr } = await params;
@@ -41,72 +13,32 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
     notFound();
   }
 
-  let komikData: KomikData | null = null;
-  let error: string | null = null;
+  let initialData: KomikPaginationData | null = null;
+  let initialError: string | null = null;
 
   try {
-    komikData = await fetchKomikData(
+    const response = await fetchWithFallback(
       `/api/komik2/manhwa?page=${pageNumber}&order=update`,
-      revalidate,
-      10000
-    ) as KomikData;
-  } catch (err) {
-    console.error('Failed to fetch manhwa data on server:', err);
-    error = 'Failed to load manhwa data';
-  }
-
-  if (error || !komikData) {
-    return (
-      <ErrorStateCenter
-        icon={AlertTriangle}
-        title="Gagal Memuat Data"
-        message="Silakan coba kembali beberapa saat lagi"
-        type="error"
-      />
+      {
+        revalidate,
+        signal: AbortSignal.timeout(10000),
+      }
     );
+
+    initialData = await response.json();
+  } catch (error) {
+    initialError =
+      error instanceof Error
+        ? error.message
+        : 'Failed to load manhwa data';
   }
 
   return (
-    <main className="min-h-screen p-6 bg-background dark:bg-dark">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-              <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Latest Manhwa
-              </h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-                Halaman {komikData.pagination.current_page} dari{' '}
-                {komikData.pagination.last_visible_page}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/komik/manhwa/page/1"
-            className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30"
-          >
-            Lihat Semua
-            <ChevronRight className="w-5 h-5" />
-          </Link>
-        </div>
-
-        {/* manhwa Grid */}
-        <div className="flex flex-col items-center p-4">
-          <UnifiedGrid items={komikData.data} itemType="komik" />
-        </div>
-
-        {/* Pagination */}
-        <PaginationControls
-          pagination={komikData.pagination}
-          baseUrl="/komik/manhwa/page"
-          className="mt-8"
-        />
-      </div>
-    </main>
+    <ManhwaPageClient
+      pageNumber={pageNumber}
+      initialData={initialData}
+      initialError={initialError}
+    />
   );
 }
 

@@ -5,6 +5,7 @@ import { Clapperboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { memo } from 'react';
 import { useAnimeHome, type HomeData } from '../../utils/hooks/useAnime';
+import { getErrorMessage } from '../../utils/client-utils';
 
 interface AnimePageClientProps {
   initialData: HomeData | null;
@@ -15,7 +16,7 @@ function AnimePageClient({ initialData, initialError }: AnimePageClientProps) {
   const router = useRouter();
   const { data, error: swrError } = useAnimeHome(initialData || undefined);
 
-  const displayError = swrError || initialError;
+  const displayError = getErrorMessage(swrError) || initialError;
   const displayData = data;
 
   if (displayError) return <div>Error loading data: {displayError}</div>;

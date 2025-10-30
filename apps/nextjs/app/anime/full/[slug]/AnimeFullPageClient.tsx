@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
+import { getErrorMessage } from '../../../../utils/client-utils';
 import Link from 'next/link';
 import ClientPlayer from '../../../../components/misc/ClientPlayer';
 import { Button } from '../../../../components/ui/button';
@@ -39,7 +40,7 @@ function AnimeFullPageClient({
   const { data: swrData, error: swrError } = useAnimeEpisode(slug, initialData || undefined);
 
   const animeData = swrData || initialData;
-  const displayError = swrError || initialError;
+  const displayError = getErrorMessage(swrError) || initialError;
 
   if (displayError) {
     return (

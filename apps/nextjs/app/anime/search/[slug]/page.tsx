@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { APIURLSERVER } from '../../../../utils/url-utils';
+import { fetchWithFallback } from '../../../../utils/url-utils';
 import { SearchDetailData } from '../../../../types/anime';
 import SearchPageClient from './SearchPageClient';
 
@@ -18,19 +18,14 @@ async function SearchPage({ params }: { params: Promise<{ slug: string }> }) {
 
   try {
     const url = `/api/anime/search?q=${encodeURIComponent(query)}`;
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetchWithFallback(url, {
+      revalidate,
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+
     searchResults = await response.json();
   } catch (err) {
-    console.error('Failed to fetch search results on server:', err);
+    console.error('Failed to fetch search results:', err);
     error = 'Failed to load search results';
   }
 

@@ -1,4 +1,4 @@
-import { APIURLSERVER } from '../../../../utils/url-utils';
+import { fetchWithFallback } from '../../../../utils/url-utils';
 import { notFound } from 'next/navigation';
 import AnimeFullPageClient from './AnimeFullPageClient';
 import type { AnimeEpisodeData } from '../../../../utils/hooks/useAnime';
@@ -22,20 +22,15 @@ export default async function WatchAnimePage({
 
   try {
     const url = `/api/anime/full/${slug}`;
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetchWithFallback(url, {
+      revalidate,
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+
     const responseData = await response.json();
     initialData = responseData.data; // Extract nested data
   } catch (err) {
-    console.error('Failed to fetch episode data on server:', err);
+    console.error('Failed to fetch episode data:', err);
     initialError = 'Terjadi kesalahan saat mengambil data. Episode mungkin tidak ada atau link rusak.';
   }
 

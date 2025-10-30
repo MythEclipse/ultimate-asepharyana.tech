@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useEffect, memo } from 'react';
-import { useRouter } from 'next/navigation';
+import { memo } from 'react';
 import { getErrorMessage } from '../../../../utils/client-utils';
-
+import PosterImage from '../../../../components/shared/PosterImage';
+import BookmarkButton from '../BookmarkButton';
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
-import MediaCard from '../../../../components/anime/MediaCard';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import {
@@ -22,91 +21,66 @@ import {
   TooltipTrigger,
 } from '../../../../components/ui/tooltip';
 import {
-  Bookmark,
-  Type,
   CircleDot,
-  Calendar,
-  Video,
+  FileText,
+  Type,
+  User,
   ArrowRight,
-  Film,
-  Popcorn,
-  Clapperboard,
+  AlertTriangle,
 } from 'lucide-react';
-import PosterImage from '../../../../components/shared/PosterImage';
-import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { AnimeData } from '../../../../types/anime';
-import { useBookmark } from '../../../../utils/hooks/useBookmark';
-import type { AnimeBookmark } from '../../../../lib/bookmarks';
-import { useAnimeDetail } from '../../../../utils/hooks/useAnime';
+import { useRouter } from 'next/navigation';
+import { useKomikDetail, type KomikDetail } from '../../../../utils/hooks/useKomik';
 
-interface AnimeDetailPageClientProps {
-  slug: string;
-  initialData: AnimeData | null;
+interface KomikDetailPageClientProps {
+  komikId: string;
+  initialData: KomikDetail | null;
   initialError: string | null;
 }
 
-function AnimeDetailPageClient({
-  slug,
+function KomikDetailPageClient({
+  komikId,
   initialData,
   initialError,
-}: AnimeDetailPageClientProps) {
+}: KomikDetailPageClientProps) {
   const router = useRouter();
-  const { data: swrData, error: swrError } = useAnimeDetail(slug, initialData || undefined);
+  const { data: swrData, error: swrError } = useKomikDetail(komikId, initialData || undefined);
 
-  // Use the SWR data if available, otherwise fallback to initialData
-  const animeData = swrData || initialData;
+  const mangaData = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;
 
-  // Use bookmark hook with anime data
-  const bookmarkData: AnimeBookmark | undefined = animeData
-    ? {
-        slug,
-        title: animeData.title,
-        poster: animeData.poster,
-      }
-    : undefined;
-
-  const { isBookmarked: bookmarked, toggle: handleBookmark } = useBookmark<AnimeBookmark>(
-    'anime',
-    slug,
-    bookmarkData
-  );
-
-  useEffect(() => {
-    if (animeData?.episode_lists) {
-      animeData.episode_lists.forEach((episode) => {
-        router.prefetch(`/anime/full/${episode.slug}`);
-      });
-    }
-  }, [animeData, router]);
-
-  if (displayError) {
-    return <ErrorLoadingDisplay type="error" message={displayError} />;
+  if (displayError || !mangaData) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center">
+        <Card className="max-w-md w-full p-8 text-center">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <CardHeader>
+            <CardTitle className="text-2xl text-destructive">
+              Gagal Memuat Data
+            </CardTitle>
+            <CardDescription>
+              {displayError || 'Terjadi kesalahan saat mengambil data komik.'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
-  if (!animeData) {
-    return <ErrorLoadingDisplay type="loading" skeletonType="detail" />;
-  }
   const metadata = [
     {
       label: 'Type',
-      value: animeData.type,
+      value: mangaData.type,
       icon: <Type className="w-5 h-5 text-blue-500" />,
     },
     {
       label: 'Status',
-      value: animeData.status,
+      value: mangaData.status,
       icon: <CircleDot className="w-5 h-5 text-green-500" />,
     },
     {
-      label: 'Released',
-      value: animeData.release_date,
-      icon: <Calendar className="w-5 h-5 text-red-500" />,
-    },
-    {
-      label: 'Studio',
-      value: animeData.studio,
-      icon: <Video className="w-5 h-5 text-purple-500" />,
+      label: 'Author',
+      value: mangaData.author,
+      icon: <User className="w-5 h-5 text-purple-500" />,
     },
   ];
 
@@ -120,25 +94,27 @@ function AnimeDetailPageClient({
                 <div className="w-full md:w-1/3 flex flex-col gap-4 md:sticky top-8">
                   <Card className="overflow-hidden">
                     <PosterImage
-                      poster={animeData.poster}
-                      title={animeData.title}
+                      poster={mangaData.poster}
+                      title={mangaData.title}
                     />
                   </Card>
-                  <Button
-                    onClick={() => handleBookmark()}
-                    variant={bookmarked ? 'destructive' : 'default'}
-                    size="lg"
-                    className="w-full"
-                  >
-                    <Bookmark className="w-5 h-5 mr-2" />
-                    {bookmarked ? 'Remove from Bookmarks' : 'Add to Bookmarks'}
-                  </Button>
+                  <BookmarkButton
+                    komikId={komikId}
+                    title={mangaData.title}
+                    poster={mangaData.poster}
+                  />
                 </div>
 
                 <div className="w-full md:w-2/3 space-y-6">
                   <h1 className="text-4xl font-bold tracking-tight">
-                    {animeData.title}
+                    {mangaData.title}
                   </h1>
+
+                  {mangaData.alternative_title && (
+                    <p className="text-lg text-muted-foreground">
+                      {mangaData.alternative_title}
+                    </p>
+                  )}
 
                   <Card>
                     <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -164,9 +140,9 @@ function AnimeDetailPageClient({
                   </Card>
 
                   <div className="flex flex-wrap gap-2">
-                    {animeData.genres?.map((genre) => (
-                      <Badge variant="secondary" key={genre.slug}>
-                        {genre.name}
+                    {mangaData.genres?.map((genre) => (
+                      <Badge variant="secondary" key={genre}>
+                        {genre}
                       </Badge>
                     ))}
                   </div>
@@ -177,82 +153,56 @@ function AnimeDetailPageClient({
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground leading-relaxed">
-                        {animeData.synopsis || 'No synopsis available.'}
+                        {mangaData.synopsis || 'No synopsis available.'}
                       </p>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Episodes</CardTitle>
+                      <CardTitle>Chapters</CardTitle>
                       <CardDescription>
-                        Total {animeData.episode_lists?.length ?? 0} episodes
+                        Total {mangaData.chapters?.length ?? 0} chapters
                         available.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {animeData.episode_lists && animeData.episode_lists.length > 0 ? (
-                          animeData.episode_lists.map((episode, index) => (
-                            <Tooltip key={`${episode.slug}-${index}`}>
+                        {mangaData.chapters && mangaData.chapters.length > 0 ? (
+                          mangaData.chapters.map((chapter, index) => (
+                            <Tooltip key={`${chapter.slug}-${index}`}>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   onClick={() =>
-                                    router.push(`/anime/full/${episode.slug}`)
+                                    router.push(`/komik/chapter/${chapter.slug}`)
                                   }
                                   className="justify-between w-full h-full p-3 whitespace-normal"
                                 >
                                   <div className="flex items-start gap-2 min-w-0">
-                                    <Clapperboard className="w-4 h-4 mt-1 flex-shrink-0" />
+                                    <FileText className="w-4 h-4 mt-1 flex-shrink-0" />
                                     <p className="line-clamp-3 text-left">
-                                      {episode.episode}
+                                      {chapter.title}
                                     </p>
                                   </div>
                                   <ArrowRight className="w-4 h-4 self-center flex-shrink-0" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{episode.episode}</p>
+                                <p>{chapter.title}</p>
+                                {chapter.date && <p className="text-xs">{chapter.date}</p>}
                               </TooltipContent>
                             </Tooltip>
                           ))
                         ) : (
                           <div className="col-span-full py-6 text-center text-muted-foreground">
-                            <Film className="mx-auto h-12 w-12 mb-3" />
-                            No episodes available yet.
+                            <FileText className="mx-auto h-12 w-12 mb-3" />
+                            No chapters available yet.
                           </div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
-
-                  <div>
-                    <h2 className="text-2xl font-bold tracking-tight mb-4">
-                      Recommendations
-                    </h2>
-                    <div className="flex overflow-x-auto pb-4 -mx-1 gap-4">
-                      {animeData.recommendations && animeData.recommendations.length > 0 ? (
-                        animeData.recommendations.map((rec, index) => (
-                          <div
-                            key={`${rec.slug}-${index}`}
-                            className="flex-shrink-0 w-40 md:w-48"
-                          >
-                            <MediaCard
-                              title={rec.title}
-                              imageUrl={rec.poster}
-                              linkUrl={`/anime/detail/${rec.slug}`}
-                            />
-                          </div>
-                        ))
-                      ) : (
-                        <div className="w-full py-6 text-center text-muted-foreground">
-                          <Popcorn className="mx-auto h-12 w-12 mb-3" />
-                          No recommendations available.
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -263,4 +213,4 @@ function AnimeDetailPageClient({
   );
 }
 
-export default memo(AnimeDetailPageClient);
+export default memo(KomikDetailPageClient);

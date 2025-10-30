@@ -1,7 +1,7 @@
 'use client';
 
+import { getErrorMessage } from '../../utils/client-utils';
 import UnifiedGrid from '../../components/shared/UnifiedGrid';
-import useSWR from 'swr';
 import {
   ArrowRight,
   CheckCircle,
@@ -9,40 +9,10 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import Link from 'next/link';
-
-import { fetchData } from '../../utils/useFetch';
-
-const fetcher = async (url: string) => {
-  const response = await fetchData(url);
-  return response.data as HomeData;
-};
-
-interface HomeData {
-  status: string;
-  data: {
-    ongoing_anime: OngoingAnime[];
-    complete_anime: CompleteAnime[];
-  };
-}
-
-interface OngoingAnime {
-  title: string;
-  slug: string;
-  poster: string;
-  current_episode: string;
-  anime_url: string;
-}
-
-interface CompleteAnime {
-  title: string;
-  slug: string;
-  poster: string;
-  episode_count: string;
-  anime_url: string;
-}
+import { useAnime2Home, type HomeData2 } from '../../utils/hooks/useAnime2';
 
 interface Anime2PageClientProps {
-  initialData: HomeData | null;
+  initialData: HomeData2 | null;
   initialError: string | null;
 }
 
@@ -50,17 +20,9 @@ function Anime2PageClient({
   initialData,
   initialError,
 }: Anime2PageClientProps) {
-  const { data, error, isLoading, mutate } = useSWR<HomeData>(
-    `/api/anime2`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      fallbackData: initialData || undefined,
-      refreshInterval: 60000,
-    },
-  );
+  const { data, error: swrError, isLoading, mutate } = useAnime2Home(initialData || undefined);
 
-  const displayError = error || initialError;
+  const displayError = getErrorMessage(swrError) || initialError;
   const displayData = data || initialData;
 
   if (isLoading && !displayData) {

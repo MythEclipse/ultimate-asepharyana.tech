@@ -1,22 +1,9 @@
 import React from 'react';
 import KomikPageClient from './KomikPageClient';
 import { fetchKomikData } from '../../lib/komikFetcher';
+import type { KomikData } from '../../utils/hooks/useKomik';
 
 export const revalidate = 60;
-
-export interface Komik {
-  title: string;
-  poster: string;
-  chapter: string;
-  date: string;
-  reader_count: string;
-  type: string;
-  slug: string;
-}
-
-interface KomikData {
-  data: Komik[];
-}
 
 async function HomePage() {
   let initialManga: KomikData | null = null;

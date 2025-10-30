@@ -1,37 +1,10 @@
 import React from 'react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
-import { APIURLSERVER } from '../../../../utils/url-utils';
-import { ErrorState } from '../../../../components/error/ErrorState';
-import {
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
-import { Pagination } from '../../../../types/types';
+import { fetchWithFallback } from '../../../../utils/url-utils';
+import CompleteAnime2PageClient from './CompleteAnime2PageClient';
+import type { CompleteAnimeData2 } from '../../../../utils/hooks/useAnime2';
 
 export const revalidate = 60;
-
-interface Anime {
-  title: string;
-  slug: string;
-  poster: string;
-  episode: string;
-  anime_url: string;
-  rating: string;
-  current_episode: string;
-  release_day: string;
-  newest_release_date: string;
-}
-
-interface CompleteAnimeData {
-  status: string;
-  data: Anime[];
-  pagination: Pagination;
-}
 
 async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -40,97 +13,29 @@ async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
     notFound();
   }
 
-  let data: CompleteAnimeData | null = null;
-  let error: string | null = null;
+  let initialData: CompleteAnimeData2 | null = null;
+  let initialError: string | null = null;
 
   try {
     const url = `/api/anime2/complete-anime/${slug}`;
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
+    const response = await fetchWithFallback(url, {
+      revalidate: 60,
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    data = await response.json();
+
+    initialData = await response.json();
   } catch (err) {
-    console.error('Failed to fetch complete anime2 data on server:', err);
-    error = 'Failed to load complete anime data';
-  }
-
-  if (error || !data) {
-    return (
-      <ErrorState
-        icon={AlertTriangle}
-        title="Error Memuat Data"
-        message="Gagal mengambil data dari API. Silakan coba lagi nanti."
-        type="error"
-      />
-    );
-  }
-
-  if (!Array.isArray(data.data)) {
-    return (
-      <ErrorState
-        icon={Info}
-        title="No Anime Available"
-        type="info"
-      />
-    );
+    console.error('Failed to fetch complete anime2 data:', err);
+    initialError = 'Failed to load complete anime data';
   }
 
   return (
-    <main className="min-h-screen p-6 bg-background dark:bg-dark">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-xl">
-              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-purple-600 bg-clip-text text-transparent">
-              Complete Anime
-            </h2>
-          </div>
-        </div>
-
-        <UnifiedGrid items={data.data} itemType="anime" isAnime2={true} />
-
-        <PaginationComponent pagination={data.pagination} />
-      </div>
-    </main>
+    <CompleteAnime2PageClient
+      initialData={initialData}
+      initialError={initialError}
+      slug={slug}
+    />
   );
 }
-
-const PaginationComponent = ({ pagination }: { pagination: Pagination }) => {
-  return (
-    <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
-      {pagination.has_previous_page && pagination.previous_page !== null && (
-        <Link href={`/anime2/complete-anime/${pagination.previous_page}`}>
-          <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
-            <ChevronLeft className="w-5 h-5" />
-            Sebelumnya
-          </button>
-        </Link>
-      )}
-
-      <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-        Halaman {pagination.current_page} dari {pagination.last_visible_page}
-      </span>
-
-      {pagination.has_next_page && pagination.next_page !== null && (
-        <Link href={`/anime2/complete-anime/${pagination.next_page}`}>
-          <button className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
-            Selanjutnya
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </Link>
-      )}
-    </div>
-  );
-};
 
 export default AnimePage;

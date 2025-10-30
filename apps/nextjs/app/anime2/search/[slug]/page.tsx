@@ -1,6 +1,6 @@
-import { APIURLSERVER } from '../../../../utils/url-utils';
-import { SearchDetailData } from '../../../../types/anime';
+import { fetchWithFallback } from '../../../../utils/url-utils';
 import SearchPage2Client from './SearchPage2Client';
+import type { SearchDetailData2 } from '../../../../utils/hooks/useAnime2';
 
 export const revalidate = 60;
 
@@ -12,22 +12,16 @@ export default async function SearchPage({
   const { slug } = await params;
   const query = decodeURIComponent(slug);
 
-  let searchResults: SearchDetailData | null = null;
+  let searchResults: SearchDetailData2 | null = null;
   let error: string | null = null;
 
   try {
     const url = `/api/anime2/search?q=${encodeURIComponent(query)}`;
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
+    const response = await fetchWithFallback(url, {
+      revalidate: 60,
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+
     searchResults = await response.json();
   } catch (_e) {
     searchResults = { status: 'error', data: [] };

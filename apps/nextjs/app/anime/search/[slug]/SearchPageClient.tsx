@@ -6,6 +6,7 @@ import MediaCard from '../../../../components/anime/MediaCard';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
 import { Anime, SearchDetailData } from '../../../../types/anime';
 import { useAnimeSearch } from '../../../../utils/hooks/useAnime';
+import { getErrorMessage } from '../../../../utils/client-utils';
 
 interface SearchPageClientProps {
   initialData: SearchDetailData | null;
@@ -21,7 +22,7 @@ function SearchPageClient({
   const { data: swrData, error: swrError } = useAnimeSearch(query, initialData || undefined);
 
   const searchResults = swrData || initialData;
-  const displayError = swrError || initialError;
+  const displayError = getErrorMessage(swrError) || initialError;
 
   if (displayError) {
     return <ErrorLoadingDisplay type="error" message={displayError} />;

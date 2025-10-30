@@ -1,6 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { APIURLSERVER } from '../../../../utils/url-utils';
+import { fetchWithFallback } from '../../../../utils/url-utils';
 import { CompleteAnimeData } from '../../../../types/anime';
 import CompleteAnimePageClient from './CompleteAnimePageClient';
 
@@ -18,19 +18,14 @@ async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
 
   try {
     const url = `/api/anime/complete-anime/${slug}`;
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetchWithFallback(url, {
+      revalidate,
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+
     initialData = await response.json();
   } catch (err) {
-    console.error('Failed to fetch complete anime data on server:', err);
+    console.error('Failed to fetch complete anime data:', err);
     initialError = 'Failed to load complete anime data';
   }
 

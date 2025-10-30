@@ -366,3 +366,58 @@ export const UrlUtils = {
   SOCIAL_MEDIA_URLS,
   IMAGE_PROXY_URLS,
 } as const;
+
+// =============================================================================
+// SERVER-SIDE FETCH WITH FALLBACK
+// =============================================================================
+
+/**
+ * Fetch with automatic fallback from server URL to client URL
+ * This ensures the app works even when the server API is unavailable
+ */
+export async function fetchWithFallback(
+  path: string,
+  options?: RequestInit & { revalidate?: number }
+): Promise<Response> {
+  const { revalidate, ...fetchOptions } = options || {};
+
+  // Prepare fetch options
+  const baseOptions: RequestInit = {
+    ...fetchOptions,
+    headers: {
+      'Content-Type': 'application/json',
+      ...fetchOptions?.headers,
+    },
+    ...(revalidate !== undefined && { next: { revalidate } }),
+  };
+
+  // Try server URL first
+  try {
+    const serverUrl = path.startsWith('/') ? `${APIURLSERVER}${path}` : path;
+    const response = await fetch(serverUrl, baseOptions);
+
+    if (response.ok) {
+      return response;
+    }
+
+    // If server responds but with error status, try client URL
+    throw new Error(`Server responded with status: ${response.status}`);
+  } catch (serverError) {
+    // Fallback to client URL
+    try {
+      const clientUrl = path.startsWith('/') ? `${APIURL}${path}` : path;
+      const response = await fetch(clientUrl, baseOptions);
+
+      if (!response.ok) {
+        throw new Error(`Client responded with status: ${response.status}`);
+      }
+
+      return response;
+    } catch (clientError) {
+      // Both failed, throw combined error
+      throw new Error(
+        `Both server and client fetch failed. Server: ${serverError instanceof Error ? serverError.message : 'Unknown error'}. Client: ${clientError instanceof Error ? clientError.message : 'Unknown error'}`
+      );
+    }
+  }
+}

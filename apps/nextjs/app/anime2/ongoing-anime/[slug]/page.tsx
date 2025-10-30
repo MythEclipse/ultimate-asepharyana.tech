@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { APIURLSERVER } from '../../../../utils/url-utils';
-import { CompleteAnimeData } from '../../../../types/anime';
+import { fetchWithFallback } from '../../../../utils/url-utils';
 import OngoingAnime2PageClient from './OngoingAnime2PageClient';
+import type { CompleteAnimeData2 } from '../../../../utils/hooks/useAnime2';
 
 export const revalidate = 60;
 
@@ -12,25 +12,19 @@ export default async function AnimePage({ params }: { params: Promise<{ slug: st
     notFound();
   }
 
-  let initialData: CompleteAnimeData | null = null;
+  let initialData: CompleteAnimeData2 | null = null;
   let initialError: string | null = null;
 
   try {
     const url = `/api/anime2/ongoing-anime/${slug}`;
-    const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 60 },
+    const response = await fetchWithFallback(url, {
+      revalidate: 60,
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+
     initialData = await response.json();
   } catch (err) {
-    console.error('Failed to fetch ongoing anime2 data on server:', err);
+    console.error('Failed to fetch ongoing anime2 data:', err);
     initialError = 'Failed to load ongoing anime data';
   }
 

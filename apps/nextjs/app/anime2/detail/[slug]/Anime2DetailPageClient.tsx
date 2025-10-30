@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
+import { getErrorMessage } from '../../../../utils/client-utils';
 import {
   Accordion,
   AccordionContent,
@@ -29,15 +30,16 @@ import {
   Package,
 } from 'lucide-react';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { AnimeData, DownloadResolution } from '../../../../types/anime';
+import { useAnime2Detail, type Anime2Data, type DownloadResolution2 } from '../../../../utils/hooks/useAnime2';
 
 interface Anime2DetailPageClientProps {
-  initialData: AnimeData | null;
+  slug: string;
+  initialData: Anime2Data | null;
   initialError: string | null;
 }
 
-const processDownloads = (downloads: DownloadResolution[] = []) => {
-  const episodes: Record<string, DownloadResolution[]> = {};
+const processDownloads = (downloads: DownloadResolution2[] = []) => {
+  const episodes: Record<string, DownloadResolution2[]> = {};
   downloads.forEach((download) => {
     let episodeNumber = 'unknown';
     for (const link of download.links) {
@@ -54,18 +56,22 @@ const processDownloads = (downloads: DownloadResolution[] = []) => {
 };
 
 function Anime2DetailPageClient({
+  slug,
   initialData,
   initialError,
 }: Anime2DetailPageClientProps) {
-  if (initialError) {
-    return <ErrorLoadingDisplay type="error" message={initialError} />;
+  const { data: swrData, error: swrError } = useAnime2Detail(slug, initialData || undefined);
+
+  const anime = swrData || initialData;
+  const displayError = getErrorMessage(swrError) || initialError;
+
+  if (displayError) {
+    return <ErrorLoadingDisplay type="error" message={displayError} />;
   }
 
-  if (!initialData) {
+  if (!anime) {
     return <ErrorLoadingDisplay type="loading" skeletonType="detail" />;
   }
-
-  const anime = initialData;
   const groupedDownloads = processDownloads(anime.downloads || []);
 
   const metadata = [

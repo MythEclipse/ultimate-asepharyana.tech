@@ -5,20 +5,7 @@ import Link from 'next/link';
 import UnifiedGrid from '../../components/shared/UnifiedGrid';
 import { ErrorState } from '../../components/error/ErrorState';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
-
-export interface Komik {
-  title: string;
-  poster: string;
-  chapter: string;
-  date: string;
-  reader_count: string;
-  type: string;
-  slug: string;
-}
-
-interface KomikData {
-  data: Komik[];
-}
+import { useMangaList, useManhuaList, useManhwaList, type Komik, type KomikData } from '../../utils/hooks/useKomik';
 
 interface KomikPageClientProps {
   manga: KomikData | null;
@@ -33,17 +20,21 @@ function KomikPageClient({
   manhwa,
   error,
 }: KomikPageClientProps) {
+  const { data: mangaData } = useMangaList(1, 'update', manga || undefined);
+  const { data: manhuaData } = useManhuaList(1, 'update', manhua || undefined);
+  const { data: manhwaData } = useManhwaList(1, 'update', manhwa || undefined);
+
   // Menentukan status loading untuk setiap kategori
   const isLoading = {
-    Manga: !manga && !error,
-    Manhua: !manhua && !error,
-    Manhwa: !manhwa && !error,
+    Manga: !mangaData && !error,
+    Manhua: !manhuaData && !error,
+    Manhwa: !manhwaData && !error,
   };
 
   const komiksData = {
-    Manga: manga?.data,
-    Manhua: manhua?.data,
-    Manhwa: manhwa?.data,
+    Manga: mangaData?.data || manga?.data,
+    Manhua: manhuaData?.data || manhua?.data,
+    Manhwa: manhwaData?.data || manhwa?.data,
   };
 
   return (

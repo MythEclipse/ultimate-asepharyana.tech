@@ -1,6 +1,6 @@
 import React from 'react';
 import AnimePageClient from './AnimePageClient';
-import { APIURLSERVER } from '../../utils/url-utils';
+import { fetchWithFallback } from '../../utils/url-utils';
 
 export const revalidate = 60;
 
@@ -41,20 +41,14 @@ async function AnimePage() {
 
   if (process.env.NODE_ENV === 'production') {
     try {
-      const url = '/api/anime';
-      const fullUrl = url.startsWith('/') ? `${APIURLSERVER}${url}` : url;
-      const response = await fetch(fullUrl, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetchWithFallback('/api/anime', {
+        revalidate,
         signal: AbortSignal.timeout(10000),
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+
       initialData = await response.json();
     } catch (err) {
-      console.error('Failed to fetch anime data on server:', err);
+      console.error('Failed to fetch anime data:', err);
       error = 'Failed to load anime data';
     }
   } else {
