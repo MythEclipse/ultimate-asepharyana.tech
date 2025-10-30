@@ -11,11 +11,11 @@ interface ApiResponse {
     type: string;
     status: string;
     author: string;
-    synopsis: string;
+    description: string; // API uses 'description' not 'synopsis'
     genres: string[];
     chapters: {
-      title: string;
-      slug: string;
+      chapter: string; // API uses 'chapter' not 'title'
+      chapter_id: string; // API uses 'chapter_id' not 'slug'
       date: string;
     }[];
   };
@@ -51,9 +51,13 @@ export default async function DetailMangaPage({
         type: result.data.type,
         status: result.data.status,
         author: result.data.author,
-        synopsis: result.data.synopsis,
+        synopsis: result.data.description, // Map 'description' to 'synopsis'
         genres: result.data.genres,
-        chapters: result.data.chapters,
+        chapters: result.data.chapters.map(ch => ({
+          title: `Chapter ${ch.chapter}`, // Transform 'chapter' to 'title'
+          slug: ch.chapter_id, // Map 'chapter_id' to 'slug'
+          date: ch.date,
+        })),
       };
     } else {
       initialError = 'Data tidak tersedia';

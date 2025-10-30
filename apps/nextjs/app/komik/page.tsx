@@ -1,6 +1,6 @@
 import React from 'react';
 import KomikPageClient from './KomikPageClient';
-import { fetchKomikData } from '../../lib/komikFetcher';
+import { fetchWithFallback } from '../../utils/url-utils';
 import type { KomikData } from '../../utils/hooks/useKomik';
 
 export const revalidate = 60;
@@ -15,19 +15,32 @@ async function HomePage() {
     // Fetch all three endpoints concurrently
     const [mangaResponse, manhuaResponse, manhwaResponse] =
       await Promise.allSettled([
-        fetchKomikData('/api/komik2/manga?page=1&order=update', revalidate, 10000),
-        fetchKomikData('/api/komik2/manhua?page=1&order=update', revalidate, 10000),
-        fetchKomikData('/api/komik2/manhwa?page=1&order=update', revalidate, 10000),
+        fetchWithFallback('/api/komik2/manga?page=1&order=update', {
+          revalidate,
+          signal: AbortSignal.timeout(10000),
+        }),
+        fetchWithFallback('/api/komik2/manhua?page=1&order=update', {
+          revalidate,
+          signal: AbortSignal.timeout(10000),
+        }),
+        fetchWithFallback('/api/komik2/manhwa?page=1&order=update', {
+          revalidate,
+          signal: AbortSignal.timeout(10000),
+        }),
       ]);
 
     if (mangaResponse.status === 'fulfilled') {
-      initialManga = mangaResponse.value as KomikData;
+      const data = await mangaResponse.value.json();
+      // Extract only the data array, not the pagination
+      initialManga = { data: data.data };
     }
     if (manhuaResponse.status === 'fulfilled') {
-      initialManhua = manhuaResponse.value as KomikData;
+      const data = await manhuaResponse.value.json();
+      initialManhua = { data: data.data };
     }
     if (manhwaResponse.status === 'fulfilled') {
-      initialManhwa = manhwaResponse.value as KomikData;
+      const data = await manhwaResponse.value.json();
+      initialManhwa = { data: data.data };
     }
 
     // If all failed, set error

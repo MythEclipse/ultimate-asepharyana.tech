@@ -39,6 +39,17 @@ function ManhwaPageClient({
     );
   }
 
+  if (!komikData.data || komikData.data.length === 0) {
+    return (
+      <ErrorStateCenter
+        icon={AlertTriangle}
+        title="Tidak Ada Data"
+        message="Tidak ada manhwa yang ditemukan"
+        type="error"
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen p-6 bg-background dark:bg-dark">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -53,7 +64,7 @@ function ManhwaPageClient({
                 Latest Manhwa
               </h1>
               <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-                Halaman {komikData.current_page} dari {komikData.last_page}
+                Halaman {komikData.pagination.current_page} dari {komikData.pagination.last_visible_page}
               </p>
             </div>
           </div>
@@ -73,14 +84,7 @@ function ManhwaPageClient({
 
         {/* Pagination */}
         <PaginationControls
-          pagination={{
-            current_page: komikData.current_page,
-            last_visible_page: komikData.last_page,
-            has_next_page: komikData.current_page < komikData.last_page,
-            next_page: komikData.current_page < komikData.last_page ? komikData.current_page + 1 : null,
-            has_previous_page: komikData.current_page > 1,
-            previous_page: komikData.current_page > 1 ? komikData.current_page - 1 : null,
-          }}
+          pagination={komikData.pagination}
           baseUrl="/komik/manhwa/page"
           className="mt-8"
         />

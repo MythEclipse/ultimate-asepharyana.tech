@@ -40,6 +40,17 @@ function MangaPageClient({
     );
   }
 
+  if (!komikData.data || komikData.data.length === 0) {
+    return (
+      <ErrorStateCenter
+        icon={AlertTriangle}
+        title="Tidak Ada Data"
+        message="Tidak ada manga yang ditemukan"
+        type="error"
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen p-6 bg-background dark:bg-dark">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -47,7 +58,7 @@ function MangaPageClient({
         <SectionHeader
           icon={BookOpen}
           title="Latest Manga"
-          subtitle={`Halaman ${komikData.current_page} dari ${komikData.last_page}`}
+          subtitle={`Halaman ${komikData.pagination.current_page} dari ${komikData.pagination.last_visible_page}`}
           color="purple"
           action={
             <Link
@@ -67,14 +78,7 @@ function MangaPageClient({
 
         {/* Pagination */}
         <PaginationControls
-          pagination={{
-            current_page: komikData.current_page,
-            last_visible_page: komikData.last_page,
-            has_next_page: komikData.current_page < komikData.last_page,
-            next_page: komikData.current_page < komikData.last_page ? komikData.current_page + 1 : null,
-            has_previous_page: komikData.current_page > 1,
-            previous_page: komikData.current_page > 1 ? komikData.current_page - 1 : null,
-          }}
+          pagination={komikData.pagination}
           baseUrl="/komik/manga/page"
           className="mt-8"
         />

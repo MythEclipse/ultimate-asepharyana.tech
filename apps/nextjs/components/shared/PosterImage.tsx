@@ -29,10 +29,13 @@ export default function PosterImage({
     useCdn
   });
 
+  // Ensure alt text is never empty
+  const altText = title || 'Poster image';
+
   return (
     <Image
       src={src}
-      alt={title}
+      alt={altText}
       width={width}
       height={height}
       className={className}

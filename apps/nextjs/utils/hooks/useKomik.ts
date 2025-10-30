@@ -18,10 +18,14 @@ export interface KomikData {
 
 export interface KomikPaginationData {
   data: Komik[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
+  pagination: {
+    current_page: number;
+    last_visible_page: number;
+    has_next_page: boolean;
+    next_page: number | null;
+    has_previous_page: boolean;
+    previous_page: number | null;
+  };
 }
 
 export interface KomikDetail {
@@ -69,6 +73,63 @@ const fetcher = async (url: string) => {
   }
 
   return response.json();
+};
+
+// API response interface for komik detail
+interface KomikDetailApiResponse {
+  status: boolean;
+  data: {
+    title: string;
+    alternative_title?: string;
+    poster: string;
+    type: string;
+    status: string;
+    author: string;
+    description: string;
+    genres: string[];
+    chapters: {
+      chapter: string;
+      chapter_id: string;
+      date: string;
+    }[];
+  };
+}
+
+// Fetcher for komik detail with data transformation
+const detailFetcher = async (url: string): Promise<KomikDetail> => {
+  const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
+  const response = await fetch(fullUrl, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const result: KomikDetailApiResponse = await response.json();
+
+  // Transform API response to match KomikDetail interface
+  if (result.status && result.data) {
+    return {
+      title: result.data.title,
+      alternative_title: result.data.alternative_title,
+      poster: result.data.poster,
+      type: result.data.type,
+      status: result.data.status,
+      author: result.data.author,
+      synopsis: result.data.description, // Map 'description' to 'synopsis'
+      genres: result.data.genres,
+      chapters: result.data.chapters.map((ch) => ({
+        title: `Chapter ${ch.chapter}`, // Transform 'chapter' to 'title'
+        slug: ch.chapter_id, // Map 'chapter_id' to 'slug'
+        date: ch.date,
+      })),
+    };
+  }
+
+  throw new Error('Invalid response structure');
 };
 
 // Hook for manga list
@@ -200,8 +261,8 @@ export function useManhwaPage(pageNumber: number, initialData?: KomikPaginationD
 // Hook for komik detail
 export function useKomikDetail(komikId: string, initialData?: KomikDetail) {
   const { data, error, isLoading, mutate } = useSWR<KomikDetail>(
-    komikId ? `/api/komik2/detail/${komikId}` : null,
-    fetcher,
+    komikId ? `/api/komik2/detail?komik_id=${komikId}` : null,
+    detailFetcher, // Use detailFetcher for automatic transformation
     {
       fallbackData: initialData,
       revalidateOnFocus: false,
@@ -221,7 +282,7 @@ export function useKomikDetail(komikId: string, initialData?: KomikDetail) {
 // Hook for chapter detail
 export function useChapterDetail(chapterId: string, initialData?: ChapterDetail) {
   const { data, error, isLoading, mutate } = useSWR<ChapterDetail>(
-    chapterId ? `/api/komik2/chapter/${chapterId}` : null,
+    chapterId ? `/api/komik2/chapter?chapter_url=${chapterId}` : null,
     fetcher,
     {
       fallbackData: initialData,
