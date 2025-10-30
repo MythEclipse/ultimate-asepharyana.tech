@@ -10,15 +10,11 @@ import {
   KomikUrlConfig,
   SocialMediaUrlConfig,
   ImageProxyConfig,
-  QueryParams,
   SearchQueryParams,
   UrlBuildOptions,
   UrlValidationOptions,
   AnimeEndpoint,
   KomikEndpoint,
-  ApiVersion,
-  KomikBaseUrlOptions,
-  KomikUrlBuilderOptions,
   UrlEnvironmentConfig,
 } from '../types/url';
 

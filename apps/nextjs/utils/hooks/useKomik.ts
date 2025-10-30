@@ -95,6 +95,18 @@ interface KomikDetailApiResponse {
   };
 }
 
+// API response interface for chapter detail
+interface ChapterDetailApiResponse {
+  status: boolean;
+  data: {
+    title: string;
+    images: string[];
+    next_chapter_id?: string;
+    prev_chapter_id?: string;
+    list_chapter: string;
+  };
+}
+
 // Fetcher for komik detail with data transformation
 const detailFetcher = async (url: string): Promise<KomikDetail> => {
   const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
@@ -126,6 +138,35 @@ const detailFetcher = async (url: string): Promise<KomikDetail> => {
         slug: ch.chapter_id, // Map 'chapter_id' to 'slug'
         date: ch.date,
       })),
+    };
+  }
+
+  throw new Error('Invalid response structure');
+};
+
+// Fetcher for chapter detail with data transformation
+const chapterFetcher = async (url: string): Promise<ChapterDetail> => {
+  const fullUrl = url.startsWith('/') ? `${APIURL}${url}` : url;
+  const response = await fetch(fullUrl, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const result: ChapterDetailApiResponse = await response.json();
+
+  if (result?.data) {
+    return {
+      title: result.data.title,
+      images: result.data.images,
+      has_next: !!result.data.next_chapter_id,
+      has_prev: !!result.data.prev_chapter_id,
+      next_chapter: result.data.next_chapter_id || undefined,
+      prev_chapter: result.data.prev_chapter_id || undefined,
     };
   }
 
@@ -283,7 +324,7 @@ export function useKomikDetail(komikId: string, initialData?: KomikDetail) {
 export function useChapterDetail(chapterId: string, initialData?: ChapterDetail) {
   const { data, error, isLoading, mutate } = useSWR<ChapterDetail>(
     chapterId ? `/api/komik2/chapter?chapter_url=${chapterId}` : null,
-    fetcher,
+    chapterFetcher,
     {
       fallbackData: initialData,
       revalidateOnFocus: false,

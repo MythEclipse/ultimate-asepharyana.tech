@@ -22,7 +22,8 @@
     "paths": {
       "@/lib/*": ["./lib/*"],
       "@asepharyana/services": ["../../libs/services/src/index.ts"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "**/*.jsx",
