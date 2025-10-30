@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
+import { SectionHeader } from '../../components/shared/SectionHeader';
+import { FolderKanban } from 'lucide-react';
 
 // Import local images
 import webAnimeL from '../../public/webAnimeL.png';
@@ -17,169 +19,158 @@ import webChat from '../../public/webChat.png';
 import webCompressorL from '../../public/WebCompressorL.png';
 import webCompressor from '../../public/WebCompressor.png';
 
-// Regular Card component
-interface CardProps {
+// Types
+interface ProjectImage {
+  light: import('next/image').StaticImageData;
+  dark: import('next/image').StaticImageData;
+}
+
+interface Project {
   title: string;
   description: string;
-  image: {
-    src: string | import('next/image').StaticImageData;
-    alt: string;
-    priority?: boolean;
-    unoptimized?: boolean;
-  };
+  images: ProjectImage;
   linkUrl: string;
 }
 
-const Card = ({ title, description, image, linkUrl }: CardProps) => (
-  <Link href={linkUrl} className="block">
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-      <div className="relative h-48">
+interface CardProps {
+  title: string;
+  description: string;
+  imageSrc: import('next/image').StaticImageData;
+  linkUrl: string;
+}
+
+// Project data configuration
+const PROJECTS: Project[] = [
+  {
+    title: 'Anime',
+    description: 'Anime scraping dari otakudesu.cloud',
+    images: { light: webAnimeL, dark: webAnime },
+    linkUrl: '/anime',
+  },
+  {
+    title: 'Anime2',
+    description: 'Anime scraping dari alqanime.net',
+    images: { light: webAnimeL, dark: webAnime },
+    linkUrl: '/anime2',
+  },
+  {
+    title: 'Komik',
+    description: 'Komik scraping dari komikindo1.com',
+    images: { light: webKomikL, dark: webKomik },
+    linkUrl: '/komik',
+  },
+  {
+    title: 'Sosmed',
+    description: 'Autentikasi & CRUD dasar',
+    images: { light: webSosmedL, dark: webSosmed },
+    linkUrl: '/sosmed',
+  },
+  {
+    title: 'Chat',
+    description: 'Chat realtime dengan WebSocket',
+    images: { light: webChatL, dark: webChat },
+    linkUrl: '/chat',
+  },
+  {
+    title: 'Compressor',
+    description: 'Kompressor gambar dan video',
+    images: { light: webCompressorL, dark: webCompressor },
+    linkUrl: '/compressor',
+  },
+];
+
+// Components
+const ProjectCard = React.memo(({ title, description, imageSrc, linkUrl }: CardProps) => (
+  <Link href={linkUrl} className="block group">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform group-hover:scale-[1.02]">
+      <div className="relative h-48 overflow-hidden">
         <Image
-          src={image.src}
-          alt={image.alt}
+          src={imageSrc}
+          alt={title}
           fill
-          className="object-cover"
-          priority={image.priority}
-          unoptimized={image.unoptimized}
+          className="object-cover transition-transform duration-300 group-hover:scale-110"
+          priority
+          unoptimized
         />
       </div>
-      <div className="p-4">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <div className="p-6">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {title}
         </h3>
-        <p className="text-gray-600 dark:text-gray-300">
+        <p className="text-gray-600 dark:text-gray-300 text-sm">
           {description}
         </p>
       </div>
     </div>
   </Link>
-);
+));
 
-// Simple Skeleton component for Card
-const CardSkeleton = () => (
-  <div className="bg-gray-200 dark:bg-gray-700 rounded-lg shadow-lg p-4 animate-pulse">
-    <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded mb-4"></div>
-    <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
-    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+ProjectCard.displayName = 'ProjectCard';
+
+const CardSkeleton = React.memo(() => (
+  <div className="bg-gray-200 dark:bg-gray-700 rounded-xl shadow-lg overflow-hidden animate-pulse">
+    <div className="h-48 bg-gray-300 dark:bg-gray-600"></div>
+    <div className="p-6 space-y-3">
+      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+    </div>
   </div>
-);
+));
+
+CardSkeleton.displayName = 'CardSkeleton';
 
 export default function Page() {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme } = useTheme();
 
-  // useEffect only runs on client-side after component mount
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Header can be rendered directly because it doesn't depend on theme-changing images
-  const headerContent = (
-    <div className="w-full">
-      <div className="mx-auto mb-16 max-w-xl text-center">
-        <h2 className="mb-4 text-3xl font-bold text-dark dark:text-white">
-          Project terbaru
-        </h2>
-        <p className="text-md font-medium text-secondary dark:text-white">
-          Berikut adalah kumpulan Project yang saya buat
-        </p>
-      </div>
-    </div>
-  );
+  const isLightTheme = resolvedTheme === 'light';
 
-  // If not mounted, show skeleton or null to avoid flash
+  // Show skeleton while mounting to prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="container mx-auto p-4">
-        {headerContent}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
-          {/* Show skeleton for each card */}
-          {Array(6)
-            .fill(0)
-            .map((_, index) => (
-              <div key={`skeleton-${index}`}>
-                <CardSkeleton />
-              </div>
+      <main className="min-h-screen p-6 bg-background dark:bg-dark">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <SectionHeader
+            icon={FolderKanban}
+            title="Project Terbaru"
+            subtitle="Berikut adalah kumpulan project yang saya buat"
+            color="blue"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <CardSkeleton key={`skeleton-${index}`} />
             ))}
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
-  // After mounted, resolvedTheme is accurate
-  const isLightTheme = resolvedTheme === 'light';
-
   return (
-    <div className="container mx-auto p-4">
-      {headerContent}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
-        <Card
-          title="Anime"
-          description="Anime scrapping dari otakudesu.cloud"
-          image={{
-            src: isLightTheme ? webAnimeL : webAnime,
-            alt: 'Anime',
-            priority: true,
-            unoptimized: true
-          }}
-          linkUrl="/anime"
+    <main className="min-h-screen p-6 bg-background dark:bg-dark">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <SectionHeader
+          icon={FolderKanban}
+          title="Project Terbaru"
+          subtitle="Berikut adalah kumpulan project yang saya buat"
+          color="blue"
         />
-        <Card
-          title="Anime2"
-          description="Anime scrapping dari alqanime.net"
-          image={{
-            src: isLightTheme ? webAnimeL : webAnime,
-            alt: 'Anime2',
-            priority: true,
-            unoptimized: true
-          }}
-          linkUrl="/anime2"
-        />
-        <Card
-          title="Komik"
-          description="Komik scraping dari komikindo1.com"
-          image={{
-            src: isLightTheme ? webKomikL : webKomik,
-            alt: 'Komik',
-            priority: true,
-            unoptimized: true
-          }}
-          linkUrl="/komik"
-        />
-        <Card
-          title="Sosmed"
-          description="Autentikasi & crud dasar"
-          image={{
-            src: isLightTheme ? webSosmedL : webSosmed,
-            alt: 'Sosmed',
-            priority: true,
-            unoptimized: true
-          }}
-          linkUrl="/sosmed"
-        />
-        <Card
-          title="Chat"
-          description="Chat dengan websocket"
-          image={{
-            src: isLightTheme ? webChatL : webChat,
-            alt: 'Chat',
-            priority: true,
-            unoptimized: true
-          }}
-          linkUrl="/chat"
-        />
-        <Card
-          title="Compressor"
-          description="Compressor image dan video"
-          image={{
-            src: isLightTheme ? webCompressorL : webCompressor,
-            alt: 'Compressor',
-            priority: true,
-            unoptimized: true
-          }}
-          linkUrl="/compressor"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          {PROJECTS.map((project) => (
+            <ProjectCard
+              key={project.linkUrl}
+              title={project.title}
+              description={project.description}
+              imageSrc={isLightTheme ? project.images.light : project.images.dark}
+              linkUrl={project.linkUrl}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
