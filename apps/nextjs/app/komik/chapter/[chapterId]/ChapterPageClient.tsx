@@ -6,7 +6,10 @@ import NavigationButtons from '../NavigationButtons';
 import { ImageWithFallback } from '../../../../components/shared/ImageWithFallback';
 import { ErrorStateCenter } from '../../../../components/error/ErrorState';
 import { AlertTriangle } from 'lucide-react';
-import { useChapterDetail, type ChapterDetail } from '../../../../utils/hooks/useKomik';
+import {
+  useChapterDetail,
+  type ChapterDetail,
+} from '../../../../utils/hooks/useKomik';
 
 interface ChapterPageClientProps {
   chapterId: string;
@@ -21,7 +24,7 @@ function ChapterPageClient({
 }: ChapterPageClientProps) {
   const { data: swrData, error: swrError } = useChapterDetail(
     chapterId,
-    initialData || undefined
+    initialData || undefined,
   );
 
   const chapter = swrData || initialData;

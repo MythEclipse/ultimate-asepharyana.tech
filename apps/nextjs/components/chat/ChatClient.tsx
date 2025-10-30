@@ -142,12 +142,12 @@ export default function ChatClient() {
         setStatus((prev) => ({ ...prev, uploading: true }));
         const formData = new FormData();
         formData.append('file', file);
-        const response = await fetchData(
+        const response = (await fetchData(
           '/api/uploader',
           'POST',
           undefined,
           formData,
-        ) as { data: { url: string } };
+        )) as { data: { url: string } };
         const url = response.data.url;
         newMessage.image_message = url;
         setFile(null);

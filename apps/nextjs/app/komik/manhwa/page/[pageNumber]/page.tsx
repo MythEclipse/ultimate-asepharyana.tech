@@ -22,15 +22,13 @@ async function Page({ params }: { params: Promise<{ pageNumber: string }> }) {
       {
         revalidate,
         signal: AbortSignal.timeout(10000),
-      }
+      },
     );
 
     initialData = await response.json();
   } catch (error) {
     initialError =
-      error instanceof Error
-        ? error.message
-        : 'Failed to load manhwa data';
+      error instanceof Error ? error.message : 'Failed to load manhwa data';
   }
 
   return (

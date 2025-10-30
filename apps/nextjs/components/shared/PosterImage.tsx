@@ -26,7 +26,7 @@ export default function PosterImage({
   const { src, onError } = useEnhancedImageFallback({
     imageUrl: poster,
     useProxy,
-    useCdn
+    useCdn,
   });
 
   // Ensure alt text is never empty

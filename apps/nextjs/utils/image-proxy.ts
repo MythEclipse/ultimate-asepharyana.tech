@@ -8,23 +8,19 @@
 
 import logger from './unified-logger';
 import {
-  ImageSource,
   ImageProxyConfig,
-  ImageSourceConfig,
   ImageValidationResult,
   ImageValidationOptions,
   ImageFallbackOptions,
-  ImageProxyResult,
   ImageProcessingResult,
   ImageProcessingOptions,
-  ImageCacheConfig,
-  ImageProxyServiceConfig
+  ImageProxyServiceConfig,
 } from '../types/image';
 import { getImageProxyUrlConfig, sanitizeUrl, isValidUrl } from './url-utils';
 import { NextResponse } from 'next/server';
 
 // Default configuration
-const DEFAULT_CONFIG: ImageProxyConfig = {
+const _DEFAULT_CONFIG: ImageProxyConfig = {
   enabled: true,
   fallbackEnabled: true,
   maxRetries: 3,
@@ -55,12 +51,18 @@ function isServer(): boolean {
  */
 export async function validateImage(
   url: string,
-  options: ImageValidationOptions = {}
+  options: ImageValidationOptions = {},
 ): Promise<ImageValidationResult> {
   try {
     const {
-      allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
-      requireImageContent = true
+      allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ],
+      requireImageContent = true,
     } = options;
 
     // Validate URL format
@@ -79,7 +81,7 @@ export async function validateImage(
       try {
         const response = await fetch(sanitizedUrl, {
           method: 'HEAD',
-          signal: controller.signal
+          signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
@@ -93,8 +95,11 @@ export async function validateImage(
           return { isValid: false, error: 'URL does not point to an image' };
         }
 
-        if (!allowedTypes.some(type => contentType.includes(type))) {
-          return { isValid: false, error: `Unsupported image type: ${contentType}` };
+        if (!allowedTypes.some((type) => contentType.includes(type))) {
+          return {
+            isValid: false,
+            error: `Unsupported image type: ${contentType}`,
+          };
         }
 
         return { isValid: true, contentType };
@@ -130,7 +135,8 @@ export function normalizeImageUrl(url: string, baseUrl?: string): string {
 
   // Handle relative paths
   if (url.startsWith('/')) {
-    const origin = typeof window !== 'undefined' ? window.location.origin : (baseUrl || '');
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : baseUrl || '';
     return `${origin}${url}`;
   }
 
@@ -151,7 +157,10 @@ export function normalizeImageUrl(url: string, baseUrl?: string): string {
  * Generate image proxy URL
  * Works in both client and server environments
  */
-export function generateProxyUrl(url: string, config: Partial<ImageProxyServiceConfig> = {}): string {
+export function generateProxyUrl(
+  url: string,
+  config: Partial<ImageProxyServiceConfig> = {},
+): string {
   const serviceConfig = { ...DEFAULT_SERVICE_CONFIG, ...config };
   const normalizedUrl = normalizeImageUrl(url, serviceConfig.baseUrl);
 
@@ -177,10 +186,13 @@ export function generateCdnUrl(url: string, cdnVersion: 1 | 2 = 1): string {
  */
 async function processDirectImage(
   url: string,
-  options: ImageProcessingOptions = {}
+  options: ImageProcessingOptions = {},
 ): Promise<ImageProcessingResult> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    options.timeout || 10000,
+  );
 
   try {
     const response = await fetch(url, {
@@ -237,12 +249,15 @@ async function processDirectImage(
 async function processCdnImage(
   url: string,
   cdnVersion: 1 | 2,
-  options: ImageProcessingOptions = {}
+  options: ImageProcessingOptions = {},
 ): Promise<ImageProcessingResult> {
   const cdnUrl = generateCdnUrl(url, cdnVersion);
   const source = cdnVersion === 1 ? 'cdn1' : 'cdn2';
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    options.timeout || 10000,
+  );
 
   try {
     const response = await fetch(cdnUrl, {
@@ -300,7 +315,7 @@ async function processCdnImage(
 export async function processImageWithFallback(
   url: string,
   options: ImageFallbackOptions = {},
-  processingOptions: ImageProcessingOptions = {}
+  processingOptions: ImageProcessingOptions = {},
 ): Promise<ImageProcessingResult> {
   const {
     fallbackUrl = '/default.png',
@@ -318,13 +333,17 @@ export async function processImageWithFallback(
   }
 
   const normalizedUrl = normalizeImageUrl(url);
-  const sources: Array<{ type: any; processor: () => Promise<ImageProcessingResult> }> = [];
+  const sources: Array<{
+    type: string;
+    processor: () => Promise<ImageProcessingResult>;
+  }> = [];
 
   // Build fallback chain
   if (useProxy) {
     sources.push({
       type: 'proxy',
-      processor: () => processDirectImage(generateProxyUrl(url), processingOptions),
+      processor: () =>
+        processDirectImage(generateProxyUrl(url), processingOptions),
     });
   }
 
@@ -337,7 +356,7 @@ export async function processImageWithFallback(
       {
         type: 'cdn2',
         processor: () => processCdnImage(normalizedUrl, 2, processingOptions),
-      }
+      },
     );
   }
 
@@ -371,7 +390,7 @@ export async function processImageWithFallback(
  */
 export function generateImageSources(
   url: string,
-  options: ImageFallbackOptions = {}
+  options: ImageFallbackOptions = {},
 ): string[] {
   const {
     fallbackUrl = '/default.png',
@@ -412,13 +431,15 @@ export function generateImageSources(
  */
 export function createImageResponse(
   result: ImageProcessingResult,
-  cacheHeaders: Record<string, string> = {}
-): NextResponse | { blob: Blob; contentType: string; headers: Record<string, string> } {
+  cacheHeaders: Record<string, string> = {},
+):
+  | NextResponse
+  | { blob: Blob; contentType: string; headers: Record<string, string> } {
   if (!result.success || !result.arrayBuffer) {
     if (isServer()) {
       return NextResponse.json(
         { error: result.error || 'Image processing failed' },
-        { status: 400 }
+        { status: 400 },
       );
     } else {
       return {
@@ -432,13 +453,16 @@ export function createImageResponse(
     }
   }
 
-  const blob = new Blob([result.arrayBuffer], { type: result.contentType || 'image/jpeg' });
+  const blob = new Blob([result.arrayBuffer], {
+    type: result.contentType || 'image/jpeg',
+  });
 
   if (isServer()) {
     return new NextResponse(blob, {
       headers: {
         'Content-Type': result.contentType || 'image/jpeg',
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
+        'Cache-Control':
+          'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
         ...cacheHeaders,
       },
     });
@@ -448,7 +472,8 @@ export function createImageResponse(
       contentType: result.contentType || 'image/jpeg',
       headers: {
         'Content-Type': result.contentType || 'image/jpeg',
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
+        'Cache-Control':
+          'public, max-age=86400, stale-while-revalidate=3600, s-maxage=0',
         ...cacheHeaders,
       },
     };
@@ -461,7 +486,7 @@ export function createImageResponse(
  */
 export async function getImageWithFallback(
   url: string,
-  fallbackUrl?: string
+  fallbackUrl?: string,
 ): Promise<string> {
   const result = await processImageWithFallback(url, { fallbackUrl });
   return result.url;

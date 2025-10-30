@@ -31,7 +31,8 @@ export default async function WatchAnimePage({
     initialData = responseData.data; // Extract nested data
   } catch (err) {
     console.error('Failed to fetch episode data:', err);
-    initialError = 'Terjadi kesalahan saat mengambil data. Episode mungkin tidak ada atau link rusak.';
+    initialError =
+      'Terjadi kesalahan saat mengambil data. Episode mungkin tidak ada atau link rusak.';
   }
 
   return (

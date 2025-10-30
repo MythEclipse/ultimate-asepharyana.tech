@@ -50,13 +50,17 @@ export default function BookmarkPage() {
       <div className="flex justify-between mt-8">
         <div className="flex gap-4">
           {pagination.hasPreviousPage && (
-            <ButtonA onClick={() => handlePageChange(pagination.currentPage - 1)}>
+            <ButtonA
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+            >
               Previous
             </ButtonA>
           )}
 
           {pagination.hasNextPage && (
-            <ButtonA onClick={() => handlePageChange(pagination.currentPage + 1)}>
+            <ButtonA
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+            >
               Next
             </ButtonA>
           )}

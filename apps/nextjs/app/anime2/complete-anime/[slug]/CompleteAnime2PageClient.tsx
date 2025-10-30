@@ -3,14 +3,14 @@
 import React, { memo } from 'react';
 import { getErrorMessage } from '../../../../utils/client-utils';
 import Link from 'next/link';
-import {
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { useCompleteAnime2, type CompleteAnimeData2, type Pagination2 } from '../../../../utils/hooks/useAnime2';
+import {
+  useCompleteAnime2,
+  type CompleteAnimeData2,
+  type Pagination2,
+} from '../../../../utils/hooks/useAnime2';
 
 interface CompleteAnime2PageClientProps {
   initialData: CompleteAnimeData2 | null;
@@ -23,7 +23,10 @@ function CompleteAnime2PageClient({
   initialError,
   slug,
 }: CompleteAnime2PageClientProps) {
-  const { data: swrData, error: swrError } = useCompleteAnime2(slug, initialData || undefined);
+  const { data: swrData, error: swrError } = useCompleteAnime2(
+    slug,
+    initialData || undefined,
+  );
 
   const data = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;
@@ -83,7 +86,8 @@ const PaginationComponent = ({ pagination }: { pagination?: Pagination2 }) => {
       )}
 
       <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-        Halaman {pagination?.current_page ?? 1} dari {pagination?.last_visible_page ?? 1}
+        Halaman {pagination?.current_page ?? 1} dari{' '}
+        {pagination?.last_visible_page ?? 1}
       </span>
 
       {pagination?.has_next_page && pagination?.next_page !== null && (

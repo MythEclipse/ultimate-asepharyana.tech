@@ -3,11 +3,7 @@
 import React, { memo } from 'react';
 import { getErrorMessage } from '../../../../utils/client-utils';
 import Link from 'next/link';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clapperboard,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clapperboard } from 'lucide-react';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
 import { CompleteAnimeData, Pagination } from '../../../../types/anime';
@@ -24,7 +20,10 @@ function OngoingAnimePageClient({
   initialError,
   slug,
 }: OngoingAnimePageClientProps) {
-  const { data: swrData, error: swrError } = useOngoingAnime(slug, initialData || undefined);
+  const { data: swrData, error: swrError } = useOngoingAnime(
+    slug,
+    initialData || undefined,
+  );
 
   const data = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;
@@ -82,7 +81,8 @@ const PaginationComponent = ({ pagination }: { pagination?: Pagination }) => {
       )}
 
       <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-        Page {pagination?.current_page ?? 1} of {pagination?.last_visible_page ?? 1}
+        Page {pagination?.current_page ?? 1} of{' '}
+        {pagination?.last_visible_page ?? 1}
       </span>
 
       {pagination?.has_next_page && pagination?.next_page !== null && (

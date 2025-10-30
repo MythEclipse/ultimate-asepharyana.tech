@@ -74,9 +74,9 @@ export default function Compressor() {
 
     try {
       setLoading(true);
-      const response = await fetchData(
+      const response = (await fetchData(
         `/api/compress?url=${encodeURIComponent(url)}&size=${size}`,
-      ) as { status: number; data: { status: string; data: Result } };
+      )) as { status: number; data: { status: string; data: Result } };
       const data = response.data;
 
       console.log(stringify(data));

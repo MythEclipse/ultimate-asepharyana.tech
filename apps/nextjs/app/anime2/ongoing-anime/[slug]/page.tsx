@@ -5,7 +5,11 @@ import type { CompleteAnimeData2 } from '../../../../utils/hooks/useAnime2';
 
 export const revalidate = 60;
 
-export default async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function AnimePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
 
   if (!slug) {

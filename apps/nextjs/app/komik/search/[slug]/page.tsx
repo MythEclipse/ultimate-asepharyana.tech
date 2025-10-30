@@ -21,7 +21,7 @@ export default async function SearchPage({
       {
         revalidate,
         signal: AbortSignal.timeout(10000),
-      }
+      },
     );
 
     const result = await response.json();

@@ -9,10 +9,20 @@ import { detectRuntimeEnvironment } from '../unified-logger';
 describe('Logger Unification', () => {
   it('should provide the same interface for unified logger', () => {
     // Test that unified logger has the expected methods
-    const expectedMethods = ['error', 'warn', 'info', 'debug', 'verbose', 'silly', 'http'];
+    const expectedMethods = [
+      'error',
+      'warn',
+      'info',
+      'debug',
+      'verbose',
+      'silly',
+      'http',
+    ];
 
-    expectedMethods.forEach(method => {
-      expect(typeof unifiedLogger[method as keyof typeof unifiedLogger]).toBe('function');
+    expectedMethods.forEach((method) => {
+      expect(typeof unifiedLogger[method as keyof typeof unifiedLogger]).toBe(
+        'function',
+      );
     });
   });
 

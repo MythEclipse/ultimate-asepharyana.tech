@@ -5,6 +5,7 @@ interface CustomError extends Error {
 }
 
 // Type definition for Redis client
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RedisClientType = any;
 
 // Conditional Redis client initialization

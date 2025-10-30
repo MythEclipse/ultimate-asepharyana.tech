@@ -75,7 +75,11 @@ export class UrlManager {
 
       return url;
     } catch (error) {
-      logError(toAppError(error), { operation: 'buildUrl', baseUrl: this.config.baseUrl, path });
+      logError(toAppError(error), {
+        operation: 'buildUrl',
+        baseUrl: this.config.baseUrl,
+        path,
+      });
       throw error;
     }
   }
@@ -133,7 +137,7 @@ export class UrlManager {
       }
 
       return result;
-    } catch (error) {
+    } catch (_error) {
       result.isValid = false;
       result.errors.push('URL parsing failed');
       return result;
@@ -171,7 +175,10 @@ export class UrlManager {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        this.config.timeout,
+      );
 
       const response = await fetch(url, {
         method: 'HEAD',
@@ -184,9 +191,13 @@ export class UrlManager {
 
       // Cache result
       try {
-        await redis.set(cacheKey, String(isAccessible), { EX: this.config.cacheTtl });
+        await redis.set(cacheKey, String(isAccessible), {
+          EX: this.config.cacheTtl,
+        });
       } catch (error) {
-        logger.warn(`[UrlManager] Cache storage failed for URL check: ${url}`, { error });
+        logger.warn(`[UrlManager] Cache storage failed for URL check: ${url}`, {
+          error,
+        });
       }
 
       return isAccessible;
@@ -195,9 +206,14 @@ export class UrlManager {
 
       // Cache failure result for shorter time
       try {
-        await redis.set(cacheKey, 'false', { EX: Math.min(this.config.cacheTtl, 300) });
+        await redis.set(cacheKey, 'false', {
+          EX: Math.min(this.config.cacheTtl, 300),
+        });
       } catch (cacheError) {
-        logger.warn(`[UrlManager] Cache storage failed for URL check failure: ${url}`, { cacheError });
+        logger.warn(
+          `[UrlManager] Cache storage failed for URL check failure: ${url}`,
+          { cacheError },
+        );
       }
 
       return false;
@@ -311,7 +327,10 @@ export class UrlManager {
       try {
         await redis.del(cacheKey);
       } catch (error) {
-        logger.warn(`[UrlManager] Failed to clear ${operation} cache for ${url}`, { error });
+        logger.warn(
+          `[UrlManager] Failed to clear ${operation} cache for ${url}`,
+          { error },
+        );
       }
     }
 
@@ -327,7 +346,9 @@ export class UrlManager {
       const keys = await redis.keys(pattern);
       if (keys.length > 0) {
         await redis.del(keys);
-        logger.info(`[UrlManager] All URL cache cleared`, { keysCount: keys.length });
+        logger.info(`[UrlManager] All URL cache cleared`, {
+          keysCount: keys.length,
+        });
       }
     } catch (error) {
       logger.warn(`[UrlManager] Failed to clear all URL cache`, { error });
@@ -338,26 +359,35 @@ export class UrlManager {
 /**
  * Factory function to create URL manager instances
  */
-export function createUrlManager(baseUrl: string, config?: Partial<UrlConfig>): UrlManager {
+export function createUrlManager(
+  baseUrl: string,
+  config?: Partial<UrlConfig>,
+): UrlManager {
   return new UrlManager(baseUrl, config);
 }
 
 /**
  * Pre-configured URL manager instances for common use cases
  */
-export const animeUrlManager = createUrlManager('https://api.asepharyana.tech', {
-  cacheTtl: 1800, // 30 minutes
-  validateSsl: true,
-});
+export const animeUrlManager = createUrlManager(
+  'https://api.asepharyana.tech',
+  {
+    cacheTtl: 1800, // 30 minutes
+    validateSsl: true,
+  },
+);
 
 export const komikUrlManager = createUrlManager('https://komikindo.cz', {
   cacheTtl: 3600, // 1 hour
   validateSsl: false, // Some komik sites don't have SSL
 });
 
-export const sosmedUrlManager = createUrlManager('https://sosmed.asepharyana.tech', {
-  cacheTtl: 300, // 5 minutes
-  validateSsl: true,
-});
+export const sosmedUrlManager = createUrlManager(
+  'https://sosmed.asepharyana.tech',
+  {
+    cacheTtl: 300, // 5 minutes
+    validateSsl: true,
+  },
+);
 
 export default UrlManager;

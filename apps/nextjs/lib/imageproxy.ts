@@ -1,10 +1,9 @@
 import logger from '../utils/unified-logger';
-import { BaseUrl } from '../utils/url-utils';
 import { NextResponse } from 'next/server';
 import { ImageProcessingOptions } from '../types/image';
 import {
   processImageWithFallback,
-  createImageResponse
+  createImageResponse,
 } from '../utils/image-proxy';
 
 export const revalidate = 0;
@@ -20,7 +19,7 @@ export async function imageProxy(url: string) {
       logger.error('Invalid URL parameter provided to imageProxy');
       return NextResponse.json(
         { error: 'Invalid URL parameter' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,10 +32,12 @@ export async function imageProxy(url: string) {
     const result = await processImageWithFallback(url, {}, processingOptions);
 
     if (!result.success) {
-      logger.error(`Failed to process image from URL: ${url}, Error: ${result.error}`);
+      logger.error(
+        `Failed to process image from URL: ${url}, Error: ${result.error}`,
+      );
       return NextResponse.json(
         { error: result.error || 'Failed to process image' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,10 +47,13 @@ export async function imageProxy(url: string) {
     logger.error(`Image proxy internal error: ${(error as Error).message}`);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // Re-export for backward compatibility
-export { processImageWithFallback, createImageResponse } from '../utils/image-proxy';
+export {
+  processImageWithFallback,
+  createImageResponse,
+} from '../utils/image-proxy';

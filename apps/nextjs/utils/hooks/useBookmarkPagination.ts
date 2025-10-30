@@ -19,7 +19,7 @@ export function useBookmarkPagination<T = unknown>(storageKey: string) {
   useEffect(() => {
     try {
       const storedBookmarks = JSON.parse(
-        localStorage.getItem(storageKey) || '[]'
+        localStorage.getItem(storageKey) || '[]',
       );
       setBookmarks(storedBookmarks);
     } catch (error) {

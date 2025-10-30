@@ -5,7 +5,11 @@ import { getErrorMessage } from '../../../../utils/client-utils';
 import SearchForm from '../../../../components/misc/SearchForm';
 import MediaCard from '../../../../components/anime/MediaCard';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { useAnime2Search, type SearchDetailData2, type Anime2 } from '../../../../utils/hooks/useAnime2';
+import {
+  useAnime2Search,
+  type SearchDetailData2,
+  type Anime2,
+} from '../../../../utils/hooks/useAnime2';
 
 interface SearchPage2ClientProps {
   initialData: SearchDetailData2 | null;
@@ -18,7 +22,10 @@ function SearchPage2Client({
   initialError,
   query,
 }: SearchPage2ClientProps) {
-  const { data: swrData, error: swrError } = useAnime2Search(query, initialData || undefined);
+  const { data: swrData, error: swrError } = useAnime2Search(
+    query,
+    initialData || undefined,
+  );
 
   const searchResults = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;

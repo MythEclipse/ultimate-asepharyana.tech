@@ -8,7 +8,10 @@ import { ErrorStateCenter } from '../../../../../components/error/ErrorState';
 import PaginationControls from '../../../../../components/shared/PaginationControls';
 import { SectionHeader } from '../../../../../components/shared/SectionHeader';
 import { BookOpen, AlertTriangle, ChevronRight } from 'lucide-react';
-import { useMangaPage, type KomikPaginationData } from '../../../../../utils/hooks/useKomik';
+import {
+  useMangaPage,
+  type KomikPaginationData,
+} from '../../../../../utils/hooks/useKomik';
 
 interface MangaPageClientProps {
   pageNumber: number;
@@ -23,7 +26,7 @@ function MangaPageClient({
 }: MangaPageClientProps) {
   const { data: swrData, error: swrError } = useMangaPage(
     pageNumber,
-    initialData || undefined
+    initialData || undefined,
   );
 
   const komikData = swrData || initialData;

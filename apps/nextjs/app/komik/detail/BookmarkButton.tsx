@@ -28,11 +28,8 @@ export default function BookmarkButton({
     komik_id: komikId,
   };
 
-  const { isBookmarked: bookmarked, toggle: handleBookmark } = useBookmark<KomikBookmark>(
-    'komik',
-    komikId,
-    bookmarkData
-  );
+  const { isBookmarked: bookmarked, toggle: handleBookmark } =
+    useBookmark<KomikBookmark>('komik', komikId, bookmarkData);
 
   return (
     <Button

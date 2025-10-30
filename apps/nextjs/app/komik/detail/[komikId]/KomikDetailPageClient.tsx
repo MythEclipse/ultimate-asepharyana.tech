@@ -29,7 +29,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useKomikDetail, type KomikDetail } from '../../../../utils/hooks/useKomik';
+import {
+  useKomikDetail,
+  type KomikDetail,
+} from '../../../../utils/hooks/useKomik';
 
 interface KomikDetailPageClientProps {
   komikId: string;
@@ -43,7 +46,10 @@ function KomikDetailPageClient({
   initialError,
 }: KomikDetailPageClientProps) {
   const router = useRouter();
-  const { data: swrData, error: swrError } = useKomikDetail(komikId, initialData || undefined);
+  const { data: swrData, error: swrError } = useKomikDetail(
+    komikId,
+    initialData || undefined,
+  );
 
   const mangaData = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;
@@ -175,7 +181,9 @@ function KomikDetailPageClient({
                                 <Button
                                   variant="ghost"
                                   onClick={() =>
-                                    router.push(`/komik/chapter/${chapter.slug}`)
+                                    router.push(
+                                      `/komik/chapter/${chapter.slug}`,
+                                    )
                                   }
                                   className="justify-between w-full h-full p-3 whitespace-normal"
                                 >
@@ -190,7 +198,9 @@ function KomikDetailPageClient({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>{chapter.title}</p>
-                                {chapter.date && <p className="text-xs">{chapter.date}</p>}
+                                {chapter.date && (
+                                  <p className="text-xs">{chapter.date}</p>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           ))

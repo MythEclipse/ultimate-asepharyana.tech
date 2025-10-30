@@ -3,14 +3,14 @@ import logger from './unified-logger';
 import { DEFAULT_HEADERS } from './DHead';
 import { scrapeCroxyProxy } from '../lib/scrapeCroxyProxy';
 import { redis } from '../lib/redis';
-import { HttpClientConfig, FetchResult, HttpError } from '../types/http';
+import { HttpClientConfig, FetchResult } from '../types/http';
+import { AppError } from '../types/error';
 import {
   createNetworkError,
   createHttpError,
   toAppError,
   logError,
 } from './error-handler';
-import { ErrorCategory } from '../types/error';
 
 export interface CustomError extends Error {
   code?: string;
@@ -68,7 +68,9 @@ export class ProxyHttpClient {
           const parsed = JSON.parse(
             typeof cached === 'string' ? cached : JSON.stringify(cached),
           );
-          logger.info(`[ProxyHttpClient] Returning cached response for ${slug}`);
+          logger.info(
+            `[ProxyHttpClient] Returning cached response for ${slug}`,
+          );
           return parsed;
         } catch {
           // ignore parse error, fallback to fetch
@@ -85,7 +87,10 @@ export class ProxyHttpClient {
           tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
         },
       });
-      logger.warn(`[ProxyHttpClient] Redis get failed for ${slug}:`, networkError);
+      logger.warn(
+        `[ProxyHttpClient] Redis get failed for ${slug}:`,
+        networkError,
+      );
       // ignore Redis error, fallback to fetch
     }
     return null;
@@ -97,7 +102,9 @@ export class ProxyHttpClient {
   private async setCachedFetch(slug: string, value: FetchResult) {
     try {
       const key = this.getFetchCacheKey(slug);
-      await redis.set(key, JSON.stringify(value), { EX: this.config.cache?.ttl || 120 });
+      await redis.set(key, JSON.stringify(value), {
+        EX: this.config.cache?.ttl || 120,
+      });
     } catch (redisError) {
       const networkError = createNetworkError('Redis connection failed', {
         originalError: redisError,
@@ -109,7 +116,10 @@ export class ProxyHttpClient {
           tokenLength: process.env.UPSTASH_REDIS_REST_TOKEN?.length,
         },
       });
-      logger.warn(`[ProxyHttpClient] Redis set failed for ${slug}:`, networkError);
+      logger.warn(
+        `[ProxyHttpClient] Redis set failed for ${slug}:`,
+        networkError,
+      );
       // ignore Redis error, continue without caching
     }
   }
@@ -154,11 +164,15 @@ export class ProxyHttpClient {
       return result;
     }
 
-    throw createHttpError(`${source} fetch failed with status ${res.status}`, res.status, {
-      statusText: res.statusText,
-      url: slug,
-      context: { source },
-    });
+    throw createHttpError(
+      `${source} fetch failed with status ${res.status}`,
+      res.status,
+      {
+        statusText: res.statusText,
+        url: slug,
+        context: { source },
+      },
+    );
   }
 
   /**
@@ -190,12 +204,15 @@ export class ProxyHttpClient {
     const cached = await this.getCachedFetch(slug);
     if (cached) return cached;
 
-    let directError: Error | undefined;
+    let directError: AppError | undefined;
     try {
       return await this.attemptAxiosFetch(slug);
     } catch (error: unknown) {
-      directError = toAppError(error, { url: slug, method: 'attemptAxiosFetch' });
-      logError(directError as any);
+      directError = toAppError(error, {
+        url: slug,
+        method: 'attemptAxiosFetch',
+      });
+      logError(directError);
       logger.warn(`Direct axios fetch failed for ${slug}:`, directError);
       logger.error('Direct axios fetch failed, trying scrapeCroxyProxy');
     }
@@ -203,8 +220,11 @@ export class ProxyHttpClient {
     try {
       return await this.attemptCroxyProxyFetch(slug);
     } catch (croxyError: unknown) {
-      const croxyAppError = toAppError(croxyError, { url: slug, method: 'attemptCroxyProxyFetch' });
-      logError(croxyAppError as any);
+      const croxyAppError = toAppError(croxyError, {
+        url: slug,
+        method: 'attemptCroxyProxyFetch',
+      });
+      logError(croxyAppError);
 
       const combinedError = createNetworkError(
         `Both direct axios fetch and proxy failed for ${slug}`,
@@ -215,7 +235,7 @@ export class ProxyHttpClient {
             croxyError: croxyAppError.message,
             url: slug,
           },
-        }
+        },
       );
       throw combinedError;
     }
@@ -228,12 +248,15 @@ export class ProxyHttpClient {
     const cached = await this.getCachedFetch(slug);
     if (cached) return cached;
 
-    let croxyError: Error | undefined;
+    let croxyError: AppError | undefined;
     try {
       return await this.attemptCroxyProxyFetch(slug);
     } catch (error: unknown) {
-      croxyError = toAppError(error, { url: slug, method: 'attemptCroxyProxyFetch' });
-      logError(croxyError as any);
+      croxyError = toAppError(error, {
+        url: slug,
+        method: 'attemptCroxyProxyFetch',
+      });
+      logError(croxyError);
       logger.warn(`[ProxyHttpClient] scrapeCroxyProxy failed:`, croxyError);
       logger.warn('Trying direct axios fetch as final fallback...', {
         url: slug,
@@ -247,8 +270,11 @@ export class ProxyHttpClient {
       });
       return this.handleAxiosResponse(slug, res, 'Final direct axios fallback');
     } catch (finalError: unknown) {
-      const finalAppError = toAppError(finalError, { url: slug, method: 'finalAxiosFallback' });
-      logError(finalAppError as any);
+      const finalAppError = toAppError(finalError, {
+        url: slug,
+        method: 'finalAxiosFallback',
+      });
+      logError(finalAppError);
 
       const combinedError = createNetworkError(
         `All fetch methods failed for ${slug}`,
@@ -259,9 +285,12 @@ export class ProxyHttpClient {
             finalError: finalAppError.message,
             url: slug,
           },
-        }
+        },
       );
-      logger.error('Final direct axios fetch fallback also failed:', combinedError);
+      logger.error(
+        'Final direct axios fetch fallback also failed:',
+        combinedError,
+      );
       throw combinedError;
     }
   }
@@ -273,7 +302,9 @@ export const fetchWithProxy = async (slug: string): Promise<FetchResult> => {
   return client.fetchWithProxy(slug);
 };
 
-export const fetchWithProxyOnly = async (slug: string): Promise<FetchResult> => {
+export const fetchWithProxyOnly = async (
+  slug: string,
+): Promise<FetchResult> => {
   const client = new ProxyHttpClient();
   return client.fetchWithProxyOnly(slug);
 };

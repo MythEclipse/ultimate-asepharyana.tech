@@ -64,7 +64,11 @@ async function handler(request: NextRequest) {
       },
     );
   } catch (error) {
-    const appError = toAppError(error, { url: slug, method: 'GET', context: { operation: 'proxy' } });
+    const appError = toAppError(error, {
+      url: slug,
+      method: 'GET',
+      context: { operation: 'proxy' },
+    });
     logError(appError);
 
     logger.error('Failed to fetch URL', {
@@ -82,7 +86,7 @@ async function handler(request: NextRequest) {
         stack: appError.stack,
         status: appError.statusCode || 500,
         response: appError.context || undefined,
-        code: (appError as any).code || undefined,
+        code: (appError as { code?: string }).code || undefined,
         category: appError.category,
       },
       { status: appError.statusCode || 500 },

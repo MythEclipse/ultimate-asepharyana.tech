@@ -48,7 +48,10 @@ export class ApiService {
   /**
    * Generate cache key for a specific request
    */
-  private getCacheKey(endpoint: string, params?: Record<string, any>): string {
+  private getCacheKey(
+    endpoint: string,
+    params?: Record<string, unknown>,
+  ): string {
     const paramsStr = params ? `:${JSON.stringify(params)}` : '';
     return `api:${this.config.serviceName}:${endpoint}${paramsStr}`;
   }
@@ -58,8 +61,8 @@ export class ApiService {
    */
   async get<T>(
     endpoint: string,
-    params?: Record<string, any>,
-    options?: ApiRequestOptions
+    params?: Record<string, unknown>,
+    options?: ApiRequestOptions,
   ): Promise<T> {
     const startTime = Date.now();
     const cacheKey = this.getCacheKey(endpoint, params);
@@ -72,22 +75,32 @@ export class ApiService {
         try {
           const cached = await redis.get(cacheKey);
           if (cached) {
-            logger.info(`[${this.config.serviceName}] Cache hit for ${endpoint}`, {
-              endpoint,
-              cacheKey,
-              duration: Date.now() - startTime,
-            });
-            return JSON.parse(typeof cached === 'string' ? cached : JSON.stringify(cached));
+            logger.info(
+              `[${this.config.serviceName}] Cache hit for ${endpoint}`,
+              {
+                endpoint,
+                cacheKey,
+                duration: Date.now() - startTime,
+              },
+            );
+            return JSON.parse(
+              typeof cached === 'string' ? cached : JSON.stringify(cached),
+            );
           }
         } catch (error) {
-          logger.warn(`[${this.config.serviceName}] Cache check failed for ${endpoint}:`, error);
+          logger.warn(
+            `[${this.config.serviceName}] Cache check failed for ${endpoint}:`,
+            error,
+          );
         }
       }
 
       // Build URL with query parameters
       let url = `${this.config.baseUrl}${endpoint}`;
       if (params && Object.keys(params).length > 0) {
-        const queryString = new URLSearchParams(params).toString();
+        const queryString = new URLSearchParams(
+          params as Record<string, string>,
+        ).toString();
         url += `?${queryString}`;
       }
 
@@ -110,7 +123,10 @@ export class ApiService {
             EX: cacheTtl,
           });
         } catch (error) {
-          logger.warn(`[${this.config.serviceName}] Cache storage failed for ${endpoint}:`, error);
+          logger.warn(
+            `[${this.config.serviceName}] Cache storage failed for ${endpoint}:`,
+            error,
+          );
         }
       }
 
@@ -124,7 +140,11 @@ export class ApiService {
     } catch (error) {
       const duration = Date.now() - startTime;
       const appError = toAppError(error);
-      logError(appError, { service: this.config.serviceName, endpoint, duration });
+      logError(appError, {
+        service: this.config.serviceName,
+        endpoint,
+        duration,
+      });
 
       throw appError;
     }
@@ -135,21 +155,26 @@ export class ApiService {
    */
   async post<T, R = T>(
     endpoint: string,
-    data?: any,
-    options?: ApiRequestOptions
+    data?: unknown,
+    options?: ApiRequestOptions,
   ): Promise<R> {
     const startTime = Date.now();
 
     try {
       const url = `${this.config.baseUrl}${endpoint}`;
-      const timeout = options?.timeout ?? this.config.defaultTimeout;
-      const headers = {
+      const _timeout = options?.timeout ?? this.config.defaultTimeout;
+      const _headers = {
         'Content-Type': 'application/json',
         ...this.config.headers,
         ...options?.headers,
       };
 
-      const response = await this.httpClient.request<R>(url, 'POST', data, undefined);
+      const response = await this.httpClient.request<R>(
+        url,
+        'POST',
+        data,
+        undefined,
+      );
 
       logger.info(`[${this.config.serviceName}] POST ${endpoint} successful`, {
         endpoint,
@@ -160,7 +185,11 @@ export class ApiService {
     } catch (error) {
       const duration = Date.now() - startTime;
       const appError = toAppError(error);
-      logError(appError, { service: this.config.serviceName, endpoint, duration });
+      logError(appError, {
+        service: this.config.serviceName,
+        endpoint,
+        duration,
+      });
 
       throw appError;
     }
@@ -171,21 +200,26 @@ export class ApiService {
    */
   async put<T, R = T>(
     endpoint: string,
-    data?: any,
-    options?: ApiRequestOptions
+    data?: unknown,
+    options?: ApiRequestOptions,
   ): Promise<R> {
     const startTime = Date.now();
 
     try {
       const url = `${this.config.baseUrl}${endpoint}`;
-      const timeout = options?.timeout ?? this.config.defaultTimeout;
-      const headers = {
+      const _timeout = options?.timeout ?? this.config.defaultTimeout;
+      const _headers = {
         'Content-Type': 'application/json',
         ...this.config.headers,
         ...options?.headers,
       };
 
-      const response = await this.httpClient.request<R>(url, 'PUT', data, undefined);
+      const response = await this.httpClient.request<R>(
+        url,
+        'PUT',
+        data,
+        undefined,
+      );
 
       logger.info(`[${this.config.serviceName}] PUT ${endpoint} successful`, {
         endpoint,
@@ -199,7 +233,11 @@ export class ApiService {
     } catch (error) {
       const duration = Date.now() - startTime;
       const appError = toAppError(error);
-      logError(appError, { service: this.config.serviceName, endpoint, duration });
+      logError(appError, {
+        service: this.config.serviceName,
+        endpoint,
+        duration,
+      });
 
       throw appError;
     }
@@ -208,26 +246,31 @@ export class ApiService {
   /**
    * Generic DELETE method with error handling
    */
-  async delete<T>(
-    endpoint: string,
-    options?: ApiRequestOptions
-  ): Promise<T> {
+  async delete<T>(endpoint: string, options?: ApiRequestOptions): Promise<T> {
     const startTime = Date.now();
 
     try {
       const url = `${this.config.baseUrl}${endpoint}`;
-      const timeout = options?.timeout ?? this.config.defaultTimeout;
-      const headers = {
+      const _timeout = options?.timeout ?? this.config.defaultTimeout;
+      const _headers = {
         ...this.config.headers,
         ...options?.headers,
       };
 
-      const response = await this.httpClient.request<T>(url, 'DELETE', undefined, undefined);
+      const response = await this.httpClient.request<T>(
+        url,
+        'DELETE',
+        undefined,
+        undefined,
+      );
 
-      logger.info(`[${this.config.serviceName}] DELETE ${endpoint} successful`, {
-        endpoint,
-        duration: Date.now() - startTime,
-      });
+      logger.info(
+        `[${this.config.serviceName}] DELETE ${endpoint} successful`,
+        {
+          endpoint,
+          duration: Date.now() - startTime,
+        },
+      );
 
       // Invalidate cache for this endpoint
       await this.invalidateCache(endpoint);
@@ -236,7 +279,11 @@ export class ApiService {
     } catch (error) {
       const duration = Date.now() - startTime;
       const appError = toAppError(error);
-      logError(appError, { service: this.config.serviceName, endpoint, duration });
+      logError(appError, {
+        service: this.config.serviceName,
+        endpoint,
+        duration,
+      });
 
       throw appError;
     }
@@ -245,19 +292,27 @@ export class ApiService {
   /**
    * Invalidate cache for specific endpoint
    */
-  async invalidateCache(endpoint: string, params?: Record<string, any>): Promise<void> {
+  async invalidateCache(
+    endpoint: string,
+    params?: Record<string, unknown>,
+  ): Promise<void> {
     if (!redis) {
-      logger.warn(`[${this.config.serviceName}] Redis not available for cache invalidation`);
+      logger.warn(
+        `[${this.config.serviceName}] Redis not available for cache invalidation`,
+      );
       return;
     }
 
     const cacheKey = this.getCacheKey(endpoint, params);
     try {
       await redis.del(cacheKey);
-      logger.info(`[${this.config.serviceName}] Cache invalidated for ${endpoint}`, {
-        endpoint,
-        cacheKey,
-      });
+      logger.info(
+        `[${this.config.serviceName}] Cache invalidated for ${endpoint}`,
+        {
+          endpoint,
+          cacheKey,
+        },
+      );
     } catch (error) {
       logger.warn(`[${this.config.serviceName}] Failed to invalidate cache`, {
         endpoint,
@@ -272,7 +327,9 @@ export class ApiService {
    */
   async invalidateAllCache(): Promise<void> {
     if (!redis) {
-      logger.warn(`[${this.config.serviceName}] Redis not available for cache invalidation`);
+      logger.warn(
+        `[${this.config.serviceName}] Redis not available for cache invalidation`,
+      );
       return;
     }
 
@@ -286,9 +343,12 @@ export class ApiService {
         });
       }
     } catch (error) {
-      logger.warn(`[${this.config.serviceName}] Failed to invalidate all cache`, {
-        error,
-      });
+      logger.warn(
+        `[${this.config.serviceName}] Failed to invalidate all cache`,
+        {
+          error,
+        },
+      );
     }
   }
 
@@ -333,7 +393,8 @@ export const komikApiService = createApiService({
 });
 
 export const sosmedApiService = createApiService({
-  baseUrl: process.env.NEXT_PUBLIC_SOSMED_API_URL || 'https://sosmed.asepharyana.tech',
+  baseUrl:
+    process.env.NEXT_PUBLIC_SOSMED_API_URL || 'https://sosmed.asepharyana.tech',
   serviceName: 'sosmed',
   cacheTtl: 300, // 5 minutes
 });

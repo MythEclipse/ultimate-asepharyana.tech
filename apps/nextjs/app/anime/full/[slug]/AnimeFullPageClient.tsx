@@ -24,7 +24,11 @@ import {
   Server,
   AlertTriangle,
 } from 'lucide-react';
-import { useAnimeEpisode, type AnimeEpisodeData, type DownloadLink } from '../../../../utils/hooks/useAnime';
+import {
+  useAnimeEpisode,
+  type AnimeEpisodeData,
+  type DownloadLink,
+} from '../../../../utils/hooks/useAnime';
 
 interface AnimeFullPageClientProps {
   slug: string;
@@ -37,7 +41,10 @@ function AnimeFullPageClient({
   initialData,
   initialError,
 }: AnimeFullPageClientProps) {
-  const { data: swrData, error: swrError } = useAnimeEpisode(slug, initialData || undefined);
+  const { data: swrData, error: swrError } = useAnimeEpisode(
+    slug,
+    initialData || undefined,
+  );
 
   const animeData = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;
@@ -48,9 +55,7 @@ function AnimeFullPageClient({
         <Alert variant="destructive" className="max-w-lg">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Gagal Memuat Episode</AlertTitle>
-          <AlertDescription>
-            {displayError}
-          </AlertDescription>
+          <AlertDescription>{displayError}</AlertDescription>
         </Alert>
       </main>
     );
@@ -61,9 +66,7 @@ function AnimeFullPageClient({
       <main className="p-4 md:p-8 flex items-center justify-center min-h-[70vh]">
         <Alert className="max-w-lg">
           <AlertTitle>Loading...</AlertTitle>
-          <AlertDescription>
-            Sedang memuat data episode...
-          </AlertDescription>
+          <AlertDescription>Sedang memuat data episode...</AlertDescription>
         </Alert>
       </main>
     );

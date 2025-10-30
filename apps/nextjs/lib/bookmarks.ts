@@ -57,7 +57,7 @@ export function getBookmarks<T = Bookmark>(type: 'anime' | 'komik'): T[] {
  */
 export function saveBookmarks<T = Bookmark>(
   type: 'anime' | 'komik',
-  bookmarks: T[]
+  bookmarks: T[],
 ): void {
   if (typeof window === 'undefined') return;
   try {
@@ -74,7 +74,7 @@ export function saveBookmarks<T = Bookmark>(
  */
 export function addBookmark<T = Bookmark>(
   type: 'anime' | 'komik',
-  bookmark: T
+  bookmark: T,
 ): void {
   const bookmarks = getBookmarks<T>(type);
   bookmarks.push(bookmark);
@@ -113,7 +113,7 @@ export function isBookmarked(type: 'anime' | 'komik', slug: string): boolean {
 export function toggleBookmark<T extends Bookmark>(
   type: 'anime' | 'komik',
   slug: string,
-  bookmark: T
+  bookmark: T,
 ): boolean {
   if (isBookmarked(type, slug)) {
     removeBookmark(type, slug);

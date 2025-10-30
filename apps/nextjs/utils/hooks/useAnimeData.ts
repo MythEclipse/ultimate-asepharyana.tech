@@ -36,7 +36,11 @@ export function useAnimeData<T = AnimeData | CompleteAnimeData>(
 
         if (type === 'anime') {
           // Use centralized URL builder for anime
-          fullUrl = buildAnimeUrl(endpoint as any, slug, query);
+          fullUrl = buildAnimeUrl(
+            endpoint as 'detail' | 'complete-anime' | 'ongoing-anime' | 'search',
+            slug,
+            query,
+          );
         } else {
           // Fallback to legacy URL building for anime2
           let urlPath = '';
@@ -47,7 +51,9 @@ export function useAnimeData<T = AnimeData | CompleteAnimeData>(
           } else {
             throw new Error('Invalid options for fetching data.');
           }
-          fullUrl = urlPath.startsWith('/') ? `${APIURLSERVER}${urlPath}` : urlPath;
+          fullUrl = urlPath.startsWith('/')
+            ? `${APIURLSERVER}${urlPath}`
+            : urlPath;
         }
 
         const response = await fetch(fullUrl, {

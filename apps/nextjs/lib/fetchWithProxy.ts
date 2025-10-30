@@ -6,11 +6,7 @@ export {
   ProxyHttpClient,
 } from '../utils/unified-http-client';
 
-export type {
-  CustomError,
-} from '../utils/unified-http-client';
+export type { CustomError } from '../utils/unified-http-client';
 
 // Import types for backward compatibility
-export type {
-  FetchResult,
-} from '../types/http';
+export type { FetchResult } from '../types/http';

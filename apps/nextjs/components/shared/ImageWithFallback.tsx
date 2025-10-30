@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { useEnhancedImageFallback } from '../../utils/hooks/useEnhancedImageFallback';
 
@@ -27,7 +27,11 @@ export const ImageWithFallback = ({
   className = 'w-full h-auto rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700',
   alt,
 }: ImageWithFallbackProps) => {
-  const { src: currentSrc, onError, onLoad } = useEnhancedImageFallback({
+  const {
+    src: currentSrc,
+    onError,
+    onLoad,
+  } = useEnhancedImageFallback({
     imageUrl,
     fallbackUrl,
     useProxy,

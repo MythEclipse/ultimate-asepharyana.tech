@@ -110,17 +110,28 @@ export class RedisClient {
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         await this.client.connect();
-        logger.info(`[RedisClient] Connected successfully on attempt ${attempt}`);
+        logger.info(
+          `[RedisClient] Connected successfully on attempt ${attempt}`,
+        );
         return;
       } catch (error) {
-        logger.error(`[RedisClient] Connection attempt ${attempt} failed:`, error);
+        logger.error(
+          `[RedisClient] Connection attempt ${attempt} failed:`,
+          error,
+        );
 
         if (attempt === this.config.maxRetries) {
-          throw toAppError(error, { operation: 'connect', attempt, maxRetries: this.config.maxRetries });
+          throw toAppError(error, {
+            operation: 'connect',
+            attempt,
+            maxRetries: this.config.maxRetries,
+          });
         }
 
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * attempt));
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.config.retryDelay * attempt),
+        );
       }
     }
   }
@@ -151,7 +162,7 @@ export class RedisClient {
   private async executeOperation<T>(
     operation: () => Promise<T>,
     operationName: string,
-    key?: string
+    key?: string,
   ): Promise<RedisOperationResult<T>> {
     try {
       if (!this.isReady()) {
@@ -174,7 +185,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.get(key) as Promise<string | null>,
       'get',
-      key
+      key,
     );
 
     if (result.success && result.data !== null && result.data !== undefined) {
@@ -191,13 +202,21 @@ export class RedisClient {
   /**
    * Set value in Redis with optional expiration
    */
-  async set(key: string, value: any, options?: { EX?: number; PX?: number; NX?: boolean; XX?: boolean }): Promise<boolean> {
-    const serializedValue = typeof value === 'string' ? value : JSON.stringify(value);
+  async set(
+    key: string,
+    value: unknown,
+    options?: { EX?: number; PX?: number; NX?: boolean; XX?: boolean },
+  ): Promise<boolean> {
+    const serializedValue =
+      typeof value === 'string' ? value : JSON.stringify(value);
 
     const result = await this.executeOperation(
-      () => this.client.set(key, serializedValue, options) as Promise<string | null>,
+      () =>
+        this.client.set(key, serializedValue, options) as Promise<
+          string | null
+        >,
       'set',
-      key
+      key,
     );
 
     return result.success && result.data === 'OK';
@@ -212,7 +231,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.del(keys) as Promise<number>,
       'del',
-      keys.join(',')
+      keys.join(','),
     );
 
     return result.success ? result.data || 0 : 0;
@@ -225,7 +244,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.exists(key) as Promise<number>,
       'exists',
-      key
+      key,
     );
 
     return result.success ? (result.data || 0) > 0 : false;
@@ -238,7 +257,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.expire(key, seconds) as Promise<number>,
       'expire',
-      key
+      key,
     );
 
     return result.success ? (result.data || 0) > 0 : false;
@@ -251,7 +270,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.ttl(key) as Promise<number>,
       'ttl',
-      key
+      key,
     );
 
     return result.success ? result.data || -2 : -2;
@@ -264,7 +283,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.keys(pattern) as Promise<string[]>,
       'keys',
-      pattern
+      pattern,
     );
 
     return result.success ? result.data || [] : [];
@@ -277,7 +296,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.incr(key) as Promise<number>,
       'incr',
-      key
+      key,
     );
 
     return result.success ? result.data || 0 : 0;
@@ -290,7 +309,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.decr(key) as Promise<number>,
       'decr',
-      key
+      key,
     );
 
     return result.success ? result.data || 0 : 0;
@@ -305,7 +324,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.sAdd(key, memberArray) as Promise<number>,
       'sadd',
-      key
+      key,
     );
 
     return result.success ? result.data || 0 : 0;
@@ -318,7 +337,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.sMembers(key) as Promise<string[]>,
       'smembers',
-      key
+      key,
     );
 
     return result.success ? result.data || [] : [];
@@ -331,7 +350,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.sIsMember(key, member) as Promise<number>,
       'sismember',
-      key
+      key,
     );
 
     return result.success ? (result.data || 0) > 0 : false;
@@ -346,7 +365,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.lPush(key, valueArray) as Promise<number>,
       'lpush',
-      key
+      key,
     );
 
     return result.success ? result.data || 0 : 0;
@@ -359,7 +378,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.lRange(key, start, stop) as Promise<string[]>,
       'lrange',
-      key
+      key,
     );
 
     return result.success ? result.data || [] : [];
@@ -372,7 +391,7 @@ export class RedisClient {
     const result = await this.executeOperation(
       () => this.client.lLen(key) as Promise<number>,
       'llen',
-      key
+      key,
     );
 
     return result.success ? result.data || 0 : 0;
@@ -381,11 +400,13 @@ export class RedisClient {
   /**
    * Execute a transaction (multi/exec)
    */
-  async transaction(operations: Array<() => Promise<any>>): Promise<any[]> {
+  async transaction(
+    operations: Array<() => Promise<unknown>>,
+  ): Promise<unknown[]> {
     const result = await this.executeOperation(async () => {
       const multi = this.client.multi();
 
-      operations.forEach(operation => {
+      operations.forEach((operation) => {
         operation();
       });
 
@@ -401,7 +422,7 @@ export class RedisClient {
   async flushdb(): Promise<boolean> {
     const result = await this.executeOperation(
       () => this.client.flushDb() as Promise<string>,
-      'flushdb'
+      'flushdb',
     );
 
     return result.success && result.data === 'OK';
@@ -447,7 +468,7 @@ export class RedisClient {
   async info(): Promise<string> {
     const result = await this.executeOperation(
       () => this.client.info() as Promise<string>,
-      'info'
+      'info',
     );
 
     return result.success ? result.data || '' : '';

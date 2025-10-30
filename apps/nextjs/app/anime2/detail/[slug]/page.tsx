@@ -13,7 +13,13 @@ export default async function DetailAnimePage({
   const { slug } = await params;
 
   if (!slug) {
-    return <ErrorLoadingDisplay type="error" title="Invalid URL" message="The slug is missing." />;
+    return (
+      <ErrorLoadingDisplay
+        type="error"
+        title="Invalid URL"
+        message="The slug is missing."
+      />
+    );
   }
 
   let initialData: Anime2Data | null = null;
@@ -34,6 +40,10 @@ export default async function DetailAnimePage({
   }
 
   return (
-    <Anime2DetailPageClient slug={slug} initialData={initialData} initialError={initialError} />
+    <Anime2DetailPageClient
+      slug={slug}
+      initialData={initialData}
+      initialError={initialError}
+    />
   );
 }

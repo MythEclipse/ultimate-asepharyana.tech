@@ -20,7 +20,9 @@ const ThreeDCard: React.FC<ThreeDCardProps> = memo(
 
     const handleImageError = () => {
       if (!hasError) {
-        setCurrentImageSrc(`${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`);
+        setCurrentImageSrc(
+          `${PRODUCTION}/api/imageproxy?url=${encodeURIComponent(imageUrl)}`,
+        );
         setHasError(true);
       }
     };

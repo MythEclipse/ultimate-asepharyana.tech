@@ -73,7 +73,11 @@ export const getEnvironmentConfig = (): UrlEnvironmentConfig => {
   return {
     isDevelopment,
     isProduction,
-    currentEnvironment: isDevelopment ? 'development' : isProduction ? 'production' : 'test',
+    currentEnvironment: isDevelopment
+      ? 'development'
+      : isProduction
+        ? 'production'
+        : 'test',
   };
 };
 
@@ -82,7 +86,9 @@ export const getEnvironmentConfig = (): UrlEnvironmentConfig => {
  */
 export const getBaseUrlConfig = (): BaseUrlConfig => {
   const env = getEnvironmentConfig();
-  const config = env.isDevelopment ? URL_CONFIG.development : URL_CONFIG.production;
+  const config = env.isDevelopment
+    ? URL_CONFIG.development
+    : URL_CONFIG.production;
 
   return {
     production: URL_CONFIG.production.base,
@@ -96,7 +102,9 @@ export const getBaseUrlConfig = (): BaseUrlConfig => {
  */
 export const getApiUrlConfig = (): ApiUrlConfig => {
   const env = getEnvironmentConfig();
-  const config = env.isDevelopment ? URL_CONFIG.development : URL_CONFIG.production;
+  const config = env.isDevelopment
+    ? URL_CONFIG.development
+    : URL_CONFIG.production;
 
   return {
     client: config.api.client,
@@ -118,7 +126,9 @@ export const buildUrl = (base: string, path: string): string => {
   }
 
   const cleanBase = base.replace(/\/$/, '');
-  const cleanPath = path.startsWith('/') ? path.replace(/\/$/, '') : `/${path.replace(/\/$/, '')}`;
+  const cleanPath = path.startsWith('/')
+    ? path.replace(/\/$/, '')
+    : `/${path.replace(/\/$/, '')}`;
 
   return `${cleanBase}${cleanPath}`;
 };
@@ -157,7 +167,11 @@ export const buildUrlWithParams = (options: UrlBuildOptions): string => {
 /**
  * Build search URL with query parameters
  */
-export const buildSearchUrl = (baseUrl: string, query: string, additionalParams?: SearchQueryParams): string => {
+export const buildSearchUrl = (
+  baseUrl: string,
+  query: string,
+  additionalParams?: SearchQueryParams,
+): string => {
   const params: SearchQueryParams = { q: query, ...additionalParams };
   return buildUrlWithParams({
     baseUrl,
@@ -173,7 +187,10 @@ export const buildSearchUrl = (baseUrl: string, query: string, additionalParams?
 /**
  * Validate URL format
  */
-export const isValidUrl = (url: string, options: UrlValidationOptions = {}): boolean => {
+export const isValidUrl = (
+  url: string,
+  options: UrlValidationOptions = {},
+): boolean => {
   const {
     requireProtocol = true,
     allowedProtocols = ['http:', 'https:'],
@@ -189,7 +206,8 @@ export const isValidUrl = (url: string, options: UrlValidationOptions = {}): boo
 
     if (validateDomain) {
       // Basic domain validation - can be extended
-      const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+      const domainPattern =
+        /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
       if (!domainPattern.test(urlObj.hostname)) {
         return false;
       }
@@ -270,7 +288,11 @@ export const getImageProxyUrlConfig = (): ImageProxyConfig => {
 /**
  * Build anime API URL
  */
-export const buildAnimeUrl = (endpoint: AnimeEndpoint, slug?: string, query?: string): string => {
+export const buildAnimeUrl = (
+  endpoint: AnimeEndpoint,
+  slug?: string,
+  query?: string,
+): string => {
   const config = getAnimeUrlConfig();
 
   switch (endpoint) {
@@ -290,7 +312,11 @@ export const buildAnimeUrl = (endpoint: AnimeEndpoint, slug?: string, query?: st
 /**
  * Build komik API URL
  */
-export const buildKomikUrl = (endpoint: KomikEndpoint, slug?: string, query?: string): string => {
+export const buildKomikUrl = (
+  endpoint: KomikEndpoint,
+  slug?: string,
+  query?: string,
+): string => {
   const config = getKomikUrlConfig();
 
   switch (endpoint) {
@@ -373,7 +399,7 @@ export const UrlUtils = {
  */
 export async function fetchWithFallback(
   path: string,
-  options?: RequestInit & { revalidate?: number }
+  options?: RequestInit & { revalidate?: number },
 ): Promise<Response> {
   const { revalidate, ...fetchOptions } = options || {};
 
@@ -412,7 +438,7 @@ export async function fetchWithFallback(
     } catch (clientError) {
       // Both failed, throw combined error
       throw new Error(
-        `Both server and client fetch failed. Server: ${serverError instanceof Error ? serverError.message : 'Unknown error'}. Client: ${clientError instanceof Error ? clientError.message : 'Unknown error'}`
+        `Both server and client fetch failed. Server: ${serverError instanceof Error ? serverError.message : 'Unknown error'}. Client: ${clientError instanceof Error ? clientError.message : 'Unknown error'}`,
       );
     }
   }

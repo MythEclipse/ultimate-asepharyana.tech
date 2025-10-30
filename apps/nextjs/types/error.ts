@@ -126,11 +126,15 @@ export const isValidationError = (error: unknown): error is ValidationError => {
   return isAppError(error) && error.category === ErrorCategory.VALIDATION;
 };
 
-export const isAuthenticationError = (error: unknown): error is AuthenticationError => {
+export const isAuthenticationError = (
+  error: unknown,
+): error is AuthenticationError => {
   return isAppError(error) && error.category === ErrorCategory.AUTHENTICATION;
 };
 
-export const isAuthorizationError = (error: unknown): error is AuthorizationError => {
+export const isAuthorizationError = (
+  error: unknown,
+): error is AuthorizationError => {
   return isAppError(error) && error.category === ErrorCategory.AUTHORIZATION;
 };
 
@@ -179,12 +183,16 @@ export const RETRYABLE_NETWORK_CODES = new Set([
 
 // Default error messages for different categories
 export const DEFAULT_ERROR_MESSAGES: Record<ErrorCategory, string> = {
-  [ErrorCategory.NETWORK]: 'Network error occurred. Please check your connection and try again.',
+  [ErrorCategory.NETWORK]:
+    'Network error occurred. Please check your connection and try again.',
   [ErrorCategory.HTTP]: 'Request failed. Please try again later.',
   [ErrorCategory.TIMEOUT]: 'Request timed out. Please try again.',
-  [ErrorCategory.VALIDATION]: 'Invalid input. Please check your data and try again.',
-  [ErrorCategory.AUTHENTICATION]: 'Authentication required. Please log in and try again.',
-  [ErrorCategory.AUTHORIZATION]: 'You do not have permission to perform this action.',
+  [ErrorCategory.VALIDATION]:
+    'Invalid input. Please check your data and try again.',
+  [ErrorCategory.AUTHENTICATION]:
+    'Authentication required. Please log in and try again.',
+  [ErrorCategory.AUTHORIZATION]:
+    'You do not have permission to perform this action.',
   [ErrorCategory.SERVER]: 'Server error occurred. Please try again later.',
   [ErrorCategory.UNKNOWN]: 'An unexpected error occurred. Please try again.',
 };

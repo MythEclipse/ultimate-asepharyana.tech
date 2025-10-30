@@ -1,7 +1,6 @@
 'use client';
 
 import React, { memo } from 'react';
-import { cn } from '../../utils/utils';
 import CardSystem, { CardBadge } from '../ui/CardSystem';
 import { MEDIA_TYPE_COLORS } from '../shared/types';
 
@@ -32,19 +31,18 @@ function MediaCard(props: MediaCardProps) {
 
   if (loading) {
     return (
-      <CardSystem
-        variant="media"
-        loading={true}
-        className="w-full max-w-sm"
-      />
+      <CardSystem variant="media" loading={true} className="w-full max-w-sm" />
     );
   }
 
-  const badgeConfig: CardBadge | undefined = badge || type ? {
-    text: badge || type || '',
-    color: type ? MEDIA_TYPE_COLORS[type] : undefined,
-    position: 'top-right'
-  } : undefined;
+  const badgeConfig: CardBadge | undefined =
+    badge || type
+      ? {
+          text: badge || type || '',
+          color: type ? MEDIA_TYPE_COLORS[type] : undefined,
+          position: 'top-right',
+        }
+      : undefined;
 
   return (
     <CardSystem
@@ -56,7 +54,7 @@ function MediaCard(props: MediaCardProps) {
         alt: title || 'Card image',
         priority: false,
         unoptimized: true,
-        show: true
+        show: true,
       }}
       linkUrl={linkUrl}
       className="w-full max-w-sm overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl"

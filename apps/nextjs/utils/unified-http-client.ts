@@ -15,32 +15,20 @@ import logger from './unified-logger';
 import { DEFAULT_HEADERS } from './DHead';
 import {
   HttpClientConfig,
-  HttpResponse,
-  HttpError,
   HttpMethod,
   FetchResult,
   ClientSideConfig,
   ServerSideConfig,
   ProxyConfig,
 } from '../types/http';
-import {
-  getApiUrlConfig,
-  buildUrl,
-  getImageProxyUrlConfig,
-  isValidUrl,
-  sanitizeUrl,
-} from './url-utils';
+import { getApiUrlConfig, buildUrl } from './url-utils';
 import {
   createHttpError,
-  createTimeoutError,
-  createNetworkError,
   handleFetchResponse,
-  handleNetworkError,
   toAppError,
   withRetry,
   logError,
 } from './error-handler';
-import { ErrorCategory } from '../types/error';
 import {
   ImageProcessingOptions,
   ImageProcessingResult,
@@ -144,7 +132,13 @@ export class UnifiedHttpClient {
       imageProcessing: {
         enabled: false,
         validateContent: true,
-        allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+        allowedTypes: [
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+        ],
         maxSize: 10 * 1024 * 1024, // 10MB
       },
       ...config,
@@ -172,7 +166,10 @@ export class UnifiedHttpClient {
   // AUTHENTICATION AND HEADERS
   // =============================================================================
 
-  private createHeaders(customHeaders?: Record<string, string>, token?: string | null): Headers {
+  private createHeaders(
+    customHeaders?: Record<string, string>,
+    token?: string | null,
+  ): Headers {
     const headers = new Headers({
       ...this.config.headers,
       ...customHeaders,
@@ -194,7 +191,10 @@ export class UnifiedHttpClient {
     return `${prefix}${method}:${url}`;
   }
 
-  private async getCachedResponse<T>(url: string, method = 'GET'): Promise<T | null> {
+  private async getCachedResponse<T>(
+    url: string,
+    method = 'GET',
+  ): Promise<T | null> {
     if (!this.config.cache?.enabled) return null;
 
     const key = this.getCacheKey(url, method);
@@ -206,20 +206,29 @@ export class UnifiedHttpClient {
         const cached = await redis.get(key);
         if (cached) {
           logger.info(`[UnifiedHttpClient] Cache hit for ${url}`);
-          return JSON.parse(typeof cached === 'string' ? cached : JSON.stringify(cached));
+          return JSON.parse(
+            typeof cached === 'string' ? cached : JSON.stringify(cached),
+          );
         }
       } else {
         // Client-side memory/session storage would go here
         // For now, we'll skip client-side caching
       }
     } catch (error) {
-      logger.warn(`[UnifiedHttpClient] Cache retrieval failed for ${url}:`, error);
+      logger.warn(
+        `[UnifiedHttpClient] Cache retrieval failed for ${url}:`,
+        error,
+      );
     }
 
     return null;
   }
 
-  private async setCachedResponse<T>(url: string, data: T, method = 'GET'): Promise<void> {
+  private async setCachedResponse<T>(
+    url: string,
+    data: T,
+    method = 'GET',
+  ): Promise<void> {
     if (!this.config.cache?.enabled) return;
 
     const key = this.getCacheKey(url, method);
@@ -235,7 +244,10 @@ export class UnifiedHttpClient {
         // Client-side caching would go here
       }
     } catch (error) {
-      logger.warn(`[UnifiedHttpClient] Cache storage failed for ${url}:`, error);
+      logger.warn(
+        `[UnifiedHttpClient] Cache storage failed for ${url}:`,
+        error,
+      );
     }
   }
 
@@ -258,11 +270,19 @@ export class UnifiedHttpClient {
   /**
    * Attempt direct fetch with axios (for proxy functionality)
    */
-  private async attemptDirectFetch(url: string, options: RequestConfig = {}): Promise<Response> {
-    const headers = { ...DEFAULT_HEADERS, ...(options.headers as Record<string, string>) };
+  private async attemptDirectFetch(
+    url: string,
+    options: RequestConfig = {},
+  ): Promise<Response> {
+    const headers = {
+      ...DEFAULT_HEADERS,
+      ...(options.headers as Record<string, string>),
+    };
     const response = await fetch(url, {
       headers,
-      signal: AbortSignal.timeout(options.timeout || this.config.timeout || 10000),
+      signal: AbortSignal.timeout(
+        options.timeout || this.config.timeout || 10000,
+      ),
     });
     return response;
   }
@@ -281,7 +301,10 @@ export class UnifiedHttpClient {
       logger.info(`[UnifiedHttpClient] Using scrapeCroxyProxy for ${url}`);
       return scrapeCroxyProxy(url);
     } catch (error) {
-      logger.error(`[UnifiedHttpClient] Failed to import scrapeCroxyProxy:`, error);
+      logger.error(
+        `[UnifiedHttpClient] Failed to import scrapeCroxyProxy:`,
+        error,
+      );
       throw new Error('Proxy functionality not available');
     }
   }
@@ -291,7 +314,7 @@ export class UnifiedHttpClient {
    */
   private async fetchWithProxySupport<T = string>(
     url: string,
-    options: RequestConfig = {}
+    options: RequestConfig = {},
   ): Promise<ProxyRequestResult<T>> {
     const startTime = Date.now();
 
@@ -368,9 +391,14 @@ export class UnifiedHttpClient {
           return result;
         }
 
-        logger.warn(`[UnifiedHttpClient] Direct fetch blocked, trying proxy for ${url}`);
+        logger.warn(
+          `[UnifiedHttpClient] Direct fetch blocked, trying proxy for ${url}`,
+        );
       } catch (error) {
-        logger.warn(`[UnifiedHttpClient] Direct fetch failed for ${url}:`, error);
+        logger.warn(
+          `[UnifiedHttpClient] Direct fetch failed for ${url}:`,
+          error,
+        );
       }
     }
 
@@ -390,7 +418,10 @@ export class UnifiedHttpClient {
         await this.setCachedResponse(url, result.data);
         return result;
       } catch (proxyError) {
-        logger.error(`[UnifiedHttpClient] Proxy fetch failed for ${url}:`, proxyError);
+        logger.error(
+          `[UnifiedHttpClient] Proxy fetch failed for ${url}:`,
+          proxyError,
+        );
 
         if (proxyConfig.preferDirect) {
           // Already tried direct, return proxy error
@@ -421,7 +452,7 @@ export class UnifiedHttpClient {
 
             await this.setCachedResponse(url, result.data);
             return result;
-          } catch (directError) {
+          } catch (_directError) {
             return {
               success: false,
               error: proxyError as Error,
@@ -449,13 +480,18 @@ export class UnifiedHttpClient {
     url: string,
     options: RequestConfig = {},
     method: HttpMethod = 'GET',
-    body?: unknown
+    body?: unknown,
   ): Promise<T> {
     const fullUrl = this.buildFullUrl(url);
     const requestOptions: RequestInit = {
       method,
-      headers: this.createHeaders(options.headers as Record<string, string>, this.config.auth?.token),
-      signal: options.signal || AbortSignal.timeout(options.timeout || this.config.timeout || 10000),
+      headers: this.createHeaders(
+        options.headers as Record<string, string>,
+        this.config.auth?.token,
+      ),
+      signal:
+        options.signal ||
+        AbortSignal.timeout(options.timeout || this.config.timeout || 10000),
     };
 
     if (body) {
@@ -518,16 +554,22 @@ export class UnifiedHttpClient {
   // PUBLIC API METHODS
   // =============================================================================
 
-  async fetchJson<T = unknown>(url: string, options: RequestConfig = {}): Promise<T> {
+  async fetchJson<T = unknown>(
+    url: string,
+    options: RequestConfig = {},
+  ): Promise<T> {
     return this.executeRequest<T>(url, options, 'GET');
   }
 
   async fetchWithAuth<T = unknown>(
     url: string,
     token?: string | null,
-    options: RequestConfig = {}
+    options: RequestConfig = {},
   ): Promise<T> {
-    const headers = this.createHeaders(options.headers as Record<string, string>, token);
+    const headers = this.createHeaders(
+      options.headers as Record<string, string>,
+      token,
+    );
     return this.executeRequest<T>(url, { ...options, headers }, 'GET');
   }
 
@@ -536,25 +578,47 @@ export class UnifiedHttpClient {
     method: HttpMethod,
     body?: unknown,
     token?: string | null,
-    options: RequestConfig = {}
+    options: RequestConfig = {},
   ): Promise<T> {
-    const headers = this.createHeaders(options.headers as Record<string, string>, token);
+    const headers = this.createHeaders(
+      options.headers as Record<string, string>,
+      token,
+    );
     return this.executeRequest<T>(url, { ...options, headers }, method, body);
   }
 
-  async post<T = unknown>(url: string, body?: unknown, token?: string | null, options: RequestConfig = {}): Promise<T> {
+  async post<T = unknown>(
+    url: string,
+    body?: unknown,
+    token?: string | null,
+    options: RequestConfig = {},
+  ): Promise<T> {
     return this.request<T>(url, 'POST', body, token, options);
   }
 
-  async put<T = unknown>(url: string, body?: unknown, token?: string | null, options: RequestConfig = {}): Promise<T> {
+  async put<T = unknown>(
+    url: string,
+    body?: unknown,
+    token?: string | null,
+    options: RequestConfig = {},
+  ): Promise<T> {
     return this.request<T>(url, 'PUT', body, token, options);
   }
 
-  async patch<T = unknown>(url: string, body?: unknown, token?: string | null, options: RequestConfig = {}): Promise<T> {
+  async patch<T = unknown>(
+    url: string,
+    body?: unknown,
+    token?: string | null,
+    options: RequestConfig = {},
+  ): Promise<T> {
     return this.request<T>(url, 'PATCH', body, token, options);
   }
 
-  async delete<T = unknown>(url: string, token?: string | null, options: RequestConfig = {}): Promise<T> {
+  async delete<T = unknown>(
+    url: string,
+    token?: string | null,
+    options: RequestConfig = {},
+  ): Promise<T> {
     return this.request<T>(url, 'DELETE', undefined, token, options);
   }
 
@@ -562,7 +626,10 @@ export class UnifiedHttpClient {
   // PROXY-SPECIFIC METHODS
   // =============================================================================
 
-  async fetchWithProxy<T = string>(url: string, options: RequestConfig = {}): Promise<T> {
+  async fetchWithProxy<T = string>(
+    url: string,
+    options: RequestConfig = {},
+  ): Promise<T> {
     const result = await this.fetchWithProxySupport<T>(url, options);
 
     if (!result.success) {
@@ -572,7 +639,10 @@ export class UnifiedHttpClient {
     return result.data as T;
   }
 
-  async fetchWithProxyOnly<T = string>(url: string, options: RequestConfig = {}): Promise<T> {
+  async fetchWithProxyOnly<T = string>(
+    url: string,
+    options: RequestConfig = {},
+  ): Promise<T> {
     const proxyConfig = { ...this.config.proxy, preferDirect: false };
     const tempConfig = { ...this.config, proxy: proxyConfig };
     const tempClient = new UnifiedHttpClient(tempConfig);
@@ -587,7 +657,7 @@ export class UnifiedHttpClient {
   async processImage(
     url: string,
     fallbackOptions: ImageFallbackOptions = {},
-    processingOptions: ImageProcessingOptions = {}
+    processingOptions: ImageProcessingOptions = {},
   ): Promise<ImageProcessingResult> {
     if (!this.config.imageProcessing?.enabled) {
       // Fallback to basic image processing
@@ -595,16 +665,23 @@ export class UnifiedHttpClient {
     }
 
     // Use advanced image processing with proxy support
-    return this.advancedImageProcessing(url, fallbackOptions, processingOptions);
+    return this.advancedImageProcessing(
+      url,
+      fallbackOptions,
+      processingOptions,
+    );
   }
 
   private async basicImageProcessing(
     url: string,
-    fallbackOptions: ImageFallbackOptions = {},
-    processingOptions: ImageProcessingOptions = {}
+    _fallbackOptions: ImageFallbackOptions = {},
+    processingOptions: ImageProcessingOptions = {},
   ): Promise<ImageProcessingResult> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), processingOptions.timeout || 10000);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      processingOptions.timeout || 10000,
+    );
 
     try {
       const response = await fetch(url, {
@@ -658,7 +735,7 @@ export class UnifiedHttpClient {
   private async advancedImageProcessing(
     url: string,
     fallbackOptions: ImageFallbackOptions = {},
-    processingOptions: ImageProcessingOptions = {}
+    processingOptions: ImageProcessingOptions = {},
   ): Promise<ImageProcessingResult> {
     // This would integrate with the existing image-proxy.ts functionality
     // For now, we'll use the basic processing as a starting point
@@ -696,12 +773,20 @@ export class UnifiedHttpClient {
     });
   }
 
-  static createImageProxyClient(config: UnifiedHttpClientConfig = {}): UnifiedHttpClient {
+  static createImageProxyClient(
+    config: UnifiedHttpClientConfig = {},
+  ): UnifiedHttpClient {
     return new UnifiedHttpClient({
       imageProcessing: {
         enabled: true,
         validateContent: true,
-        allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+        allowedTypes: [
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+        ],
         maxSize: 10 * 1024 * 1024, // 10MB
       },
       proxy: { enabled: true, fallback: true },
@@ -715,24 +800,29 @@ export class UnifiedHttpClient {
 // CONVENIENCE FUNCTIONS (BACKWARD COMPATIBILITY)
 // =============================================================================
 
-export const createHttpClient = (config?: UnifiedHttpClientConfig) => new UnifiedHttpClient(config);
+export const createHttpClient = (config?: UnifiedHttpClientConfig) =>
+  new UnifiedHttpClient(config);
 
 export const clientSideFetch = async <T = unknown>(
   url: string,
   token?: string | null,
-  options: RequestConfig = {}
+  options: RequestConfig = {},
 ): Promise<T> => {
   const client = UnifiedHttpClient.createClientSide();
-  const fullUrl = client['baseUrl'] ? UnifiedHttpClient.buildUrl(client['baseUrl'], url) : url;
+  const fullUrl = client['baseUrl']
+    ? UnifiedHttpClient.buildUrl(client['baseUrl'], url)
+    : url;
   return client.fetchWithAuth<T>(fullUrl, token, options);
 };
 
 export const serverSideFetch = async <T = unknown>(
   url: string,
-  options: RequestConfig = {}
+  options: RequestConfig = {},
 ): Promise<T> => {
   const client = UnifiedHttpClient.createServerSide();
-  const fullUrl = client['baseUrl'] ? UnifiedHttpClient.buildUrl(client['baseUrl'], url) : url;
+  const fullUrl = client['baseUrl']
+    ? UnifiedHttpClient.buildUrl(client['baseUrl'], url)
+    : url;
   return client.fetchJson<T>(fullUrl, options);
 };
 
@@ -758,11 +848,20 @@ export const HttpClient = {
     const client = new UnifiedHttpClient();
     return client.fetchJson<T>(url, options);
   },
-  fetchWithAuth: async <T = unknown>(url: string, token?: string | null, options: RequestConfig = {}) => {
+  fetchWithAuth: async <T = unknown>(
+    url: string,
+    token?: string | null,
+    options: RequestConfig = {},
+  ) => {
     const client = new UnifiedHttpClient();
     return client.fetchWithAuth<T>(url, token, options);
   },
-  request: async <T = unknown>(url: string, method: string, body?: unknown, token?: string | null) => {
+  request: async <T = unknown>(
+    url: string,
+    method: string,
+    body?: unknown,
+    token?: string | null,
+  ) => {
     const client = new UnifiedHttpClient();
     return client.request<T>(url, method as HttpMethod, body, token);
   },

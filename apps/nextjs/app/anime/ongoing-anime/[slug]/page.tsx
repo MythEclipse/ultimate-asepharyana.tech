@@ -5,7 +5,7 @@ import OngoingAnimePageClient from './OngoingAnimePageClient';
 
 export const revalidate = 60;
 
-async function AnimePage({ params }: { params: Promise<{ slug: string }>; }) {
+async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   if (!slug) {

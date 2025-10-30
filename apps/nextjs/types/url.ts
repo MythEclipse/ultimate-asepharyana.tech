@@ -72,7 +72,11 @@ export interface UrlValidationOptions {
 }
 
 // Domain-specific URL types
-export type AnimeEndpoint = 'detail' | 'complete-anime' | 'ongoing-anime' | 'search';
+export type AnimeEndpoint =
+  | 'detail'
+  | 'complete-anime'
+  | 'ongoing-anime'
+  | 'search';
 export type KomikEndpoint = 'detail' | 'chapter' | 'search';
 export type ApiVersion = 'v1' | 'v2';
 

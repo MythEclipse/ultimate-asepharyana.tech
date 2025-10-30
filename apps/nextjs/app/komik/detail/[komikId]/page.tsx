@@ -38,7 +38,7 @@ export default async function DetailMangaPage({
       `/api/komik2/detail?komik_id=${komikId}`,
       {
         revalidate,
-      }
+      },
     );
 
     const result: ApiResponse = await response.json();
@@ -53,7 +53,7 @@ export default async function DetailMangaPage({
         author: result.data.author,
         synopsis: result.data.description, // Map 'description' to 'synopsis'
         genres: result.data.genres,
-        chapters: result.data.chapters.map(ch => ({
+        chapters: result.data.chapters.map((ch) => ({
           title: `Chapter ${ch.chapter}`, // Transform 'chapter' to 'title'
           slug: ch.chapter_id, // Map 'chapter_id' to 'slug'
           date: ch.date,
@@ -63,7 +63,10 @@ export default async function DetailMangaPage({
       initialError = 'Data tidak tersedia';
     }
   } catch (error) {
-    initialError = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengambil data manga';
+    initialError =
+      error instanceof Error
+        ? error.message
+        : 'Terjadi kesalahan saat mengambil data manga';
   }
 
   return (

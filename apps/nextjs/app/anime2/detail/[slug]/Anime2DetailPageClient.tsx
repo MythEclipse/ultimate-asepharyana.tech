@@ -30,7 +30,11 @@ import {
   Package,
 } from 'lucide-react';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
-import { useAnime2Detail, type Anime2Data, type DownloadResolution2 } from '../../../../utils/hooks/useAnime2';
+import {
+  useAnime2Detail,
+  type Anime2Data,
+  type DownloadResolution2,
+} from '../../../../utils/hooks/useAnime2';
 
 interface Anime2DetailPageClientProps {
   slug: string;
@@ -60,7 +64,10 @@ function Anime2DetailPageClient({
   initialData,
   initialError,
 }: Anime2DetailPageClientProps) {
-  const { data: swrData, error: swrError } = useAnime2Detail(slug, initialData || undefined);
+  const { data: swrData, error: swrError } = useAnime2Detail(
+    slug,
+    initialData || undefined,
+  );
 
   const anime = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;

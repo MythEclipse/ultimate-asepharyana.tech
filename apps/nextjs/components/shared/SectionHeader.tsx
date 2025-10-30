@@ -42,7 +42,7 @@ export function SectionHeader({
     <div
       className={cn(
         'flex flex-col md:flex-row justify-between items-start md:items-center gap-4',
-        className
+        className,
       )}
     >
       <div className="flex items-center gap-4">
@@ -52,7 +52,7 @@ export function SectionHeader({
             className={cn(
               'text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent',
               gradientFrom,
-              gradientTo
+              gradientTo,
             )}
           >
             {title}

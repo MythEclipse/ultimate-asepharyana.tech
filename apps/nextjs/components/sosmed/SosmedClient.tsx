@@ -48,7 +48,6 @@ export default function SosmedClient() {
     },
   );
 
-
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setContent(e.target.value);
 
@@ -98,16 +97,6 @@ export default function SosmedClient() {
         });
     }
   };
-
-
-
-
-
-
-
-
-
-
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl md:py-12 bg-background text-foreground">

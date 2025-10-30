@@ -19,7 +19,10 @@ function SearchPageClient({
   initialError,
   query,
 }: SearchPageClientProps) {
-  const { data: swrData, error: swrError } = useAnimeSearch(query, initialData || undefined);
+  const { data: swrData, error: swrError } = useAnimeSearch(
+    query,
+    initialData || undefined,
+  );
 
   const searchResults = swrData || initialData;
   const displayError = getErrorMessage(swrError) || initialError;

@@ -40,9 +40,17 @@ export interface HttpError extends Error {
   response?: Response;
 }
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+export type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'HEAD'
+  | 'OPTIONS';
 
-export interface RequestOptions extends Omit<RequestInit, 'method' | 'body' | 'cache'> {
+export interface RequestOptions
+  extends Omit<RequestInit, 'method' | 'body' | 'cache'> {
   timeout?: number;
   retry?: boolean;
   cache?: boolean;

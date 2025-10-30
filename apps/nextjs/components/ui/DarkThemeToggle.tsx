@@ -28,7 +28,12 @@ export default function ModeToggle({ className }: ModeToggleProps) {
 
   return (
     <div className={className}>
-      <Button variant="gradient" size="gradientSm" className="" onClick={toggleTheme}>
+      <Button
+        variant="gradient"
+        size="gradientSm"
+        className=""
+        onClick={toggleTheme}
+      >
         {resolvedTheme === 'dark' ? (
           <Sun className="h-[1.2rem] w-[1.2rem]" />
         ) : (

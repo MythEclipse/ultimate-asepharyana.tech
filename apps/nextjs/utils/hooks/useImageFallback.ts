@@ -14,7 +14,7 @@ export function useImageFallback({
   imageUrl,
   fallbackUrl = '/default.png',
   useProxy = true,
-  useCdn = true
+  useCdn = true,
 }: UseImageFallbackProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 

@@ -5,7 +5,10 @@ import { getErrorMessage } from '../../../../utils/client-utils';
 import SearchForm from '../../../../components/misc/SearchForm';
 import CardA from '../../../../components/anime/MediaCard';
 import { Info } from 'lucide-react';
-import { useKomikSearch, type KomikSearchData } from '../../../../utils/hooks/useKomik';
+import {
+  useKomikSearch,
+  type KomikSearchData,
+} from '../../../../utils/hooks/useKomik';
 
 interface SearchPageClientProps {
   query: string;
@@ -20,7 +23,7 @@ function SearchPageClient({
 }: SearchPageClientProps) {
   const { data: swrData, error: swrError } = useKomikSearch(
     query,
-    initialData || undefined
+    initialData || undefined,
   );
 
   const searchResults = swrData || initialData;

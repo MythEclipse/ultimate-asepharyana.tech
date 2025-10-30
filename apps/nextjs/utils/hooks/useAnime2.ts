@@ -123,7 +123,7 @@ export function useAnime2Home(initialData?: HomeData2) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000, // 1 minute
-    }
+    },
   );
 
   return {
@@ -144,7 +144,7 @@ export function useAnime2Detail(slug: string, initialData?: Anime2Data) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -156,7 +156,10 @@ export function useAnime2Detail(slug: string, initialData?: Anime2Data) {
 }
 
 // Hook for anime2 search
-export function useAnime2Search(query: string, initialData?: SearchDetailData2) {
+export function useAnime2Search(
+  query: string,
+  initialData?: SearchDetailData2,
+) {
   const { data, error, isLoading, mutate } = useSWR<SearchDetailData2>(
     query ? `/api/anime2/search?q=${encodeURIComponent(query)}` : null,
     fetcher,
@@ -165,7 +168,7 @@ export function useAnime2Search(query: string, initialData?: SearchDetailData2) 
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 30000, // 30 seconds for search
-    }
+    },
   );
 
   return {
@@ -177,7 +180,10 @@ export function useAnime2Search(query: string, initialData?: SearchDetailData2) 
 }
 
 // Hook for ongoing anime2 list
-export function useOngoingAnime2(page: string, initialData?: CompleteAnimeData2) {
+export function useOngoingAnime2(
+  page: string,
+  initialData?: CompleteAnimeData2,
+) {
   const { data, error, isLoading, mutate } = useSWR<CompleteAnimeData2>(
     page ? `/api/anime2/ongoing-anime/${page}` : null,
     fetcher,
@@ -186,7 +192,7 @@ export function useOngoingAnime2(page: string, initialData?: CompleteAnimeData2)
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -198,7 +204,10 @@ export function useOngoingAnime2(page: string, initialData?: CompleteAnimeData2)
 }
 
 // Hook for complete anime2 list
-export function useCompleteAnime2(page: string, initialData?: CompleteAnimeData2) {
+export function useCompleteAnime2(
+  page: string,
+  initialData?: CompleteAnimeData2,
+) {
   const { data, error, isLoading, mutate } = useSWR<CompleteAnimeData2>(
     page ? `/api/anime2/complete-anime/${page}` : null,
     fetcher,
@@ -207,7 +216,7 @@ export function useCompleteAnime2(page: string, initialData?: CompleteAnimeData2
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {

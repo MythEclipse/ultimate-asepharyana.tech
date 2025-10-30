@@ -71,7 +71,6 @@ const GridPageSkeleton = () => (
   </main>
 );
 
-
 export default function ErrorLoadingDisplay({
   type,
   message,
@@ -79,7 +78,11 @@ export default function ErrorLoadingDisplay({
   skeletonType = 'detail',
 }: ErrorLoadingDisplayProps) {
   if (type === 'loading') {
-    return skeletonType === 'detail' ? <DetailPageSkeleton /> : <GridPageSkeleton />;
+    return skeletonType === 'detail' ? (
+      <DetailPageSkeleton />
+    ) : (
+      <GridPageSkeleton />
+    );
   }
 
   if (type === 'error') {
@@ -93,7 +96,8 @@ export default function ErrorLoadingDisplay({
                 {title || 'Error Loading Data'}
               </h1>
               <p className="text-red-700 dark:text-red-300">
-                {message || 'Could not fetch data from the API. Please try again later.'}
+                {message ||
+                  'Could not fetch data from the API. Please try again later.'}
               </p>
             </div>
           </div>
@@ -112,8 +116,8 @@ export default function ErrorLoadingDisplay({
               {title || 'No Data Available'}
             </h1>
             <p className="text-blue-700 dark:text-blue-300">
-                {message || 'There is no data to display at this time.'}
-              </p>
+              {message || 'There is no data to display at this time.'}
+            </p>
           </div>
         </div>
       </main>

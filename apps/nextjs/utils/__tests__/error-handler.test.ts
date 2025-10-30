@@ -145,7 +145,7 @@ describe('Error Handler', () => {
       const appError = toAppError(originalError, {
         url: '/api/test',
         method: 'POST',
-        userId: '123'
+        userId: '123',
       });
 
       expect(appError.context).toMatchObject({
@@ -162,13 +162,16 @@ describe('Error Handler', () => {
       const error = createError('Test error', ErrorCategory.HTTP);
       logError(error);
 
-      expect(logger.error).toHaveBeenCalledWith('High severity error occurred', expect.objectContaining({
-        message: 'Test error',
-        category: 'HTTP',
-        severity: 'HIGH',
-        statusCode: undefined,
-        timestamp: expect.any(String),
-      }));
+      expect(logger.error).toHaveBeenCalledWith(
+        'High severity error occurred',
+        expect.objectContaining({
+          message: 'Test error',
+          category: 'HTTP',
+          severity: 'HIGH',
+          statusCode: undefined,
+          timestamp: expect.any(String),
+        }),
+      );
     });
 
     it('should include additional context', () => {
@@ -177,10 +180,13 @@ describe('Error Handler', () => {
       });
       logError(error, { userId: '123' });
 
-      expect(logger.error).toHaveBeenCalledWith('Medium severity error occurred', expect.objectContaining({
-        userId: '123',
-        url: 'https://api.example.com',
-      }));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Medium severity error occurred',
+        expect.objectContaining({
+          userId: '123',
+          url: 'https://api.example.com',
+        }),
+      );
     });
   });
 
@@ -200,7 +206,8 @@ describe('Error Handler', () => {
     });
 
     it('should retry on failure and succeed', async () => {
-      const operation = vi.fn()
+      const operation = vi
+        .fn()
         .mockRejectedValueOnce(new Error('First fail'))
         .mockResolvedValueOnce('success');
 
@@ -217,33 +224,42 @@ describe('Error Handler', () => {
     });
 
     it('should throw after max attempts', async () => {
-      const operation = vi.fn().mockRejectedValue(new Error('Persistent failure'));
+      const operation = vi
+        .fn()
+        .mockRejectedValue(new Error('Persistent failure'));
 
-      await expect(withRetry(operation, {
-        enabled: true,
-        maxAttempts: 3,
-        delayMs: 10,
-        backoffMultiplier: 2,
-        maxDelayMs: 5000,
-      })).rejects.toThrow('Persistent failure');
+      await expect(
+        withRetry(operation, {
+          enabled: true,
+          maxAttempts: 3,
+          delayMs: 10,
+          backoffMultiplier: 2,
+          maxDelayMs: 5000,
+        }),
+      ).rejects.toThrow('Persistent failure');
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
     it('should not retry when disabled', async () => {
-      const operation = vi.fn().mockRejectedValue(new Error('Should not retry'));
+      const operation = vi
+        .fn()
+        .mockRejectedValue(new Error('Should not retry'));
 
-      await expect(withRetry(operation, {
-        enabled: false,
-        maxAttempts: 3,
-        delayMs: 10,
-        backoffMultiplier: 2,
-        maxDelayMs: 5000,
-      })).rejects.toThrow('Should not retry');
+      await expect(
+        withRetry(operation, {
+          enabled: false,
+          maxAttempts: 3,
+          delayMs: 10,
+          backoffMultiplier: 2,
+          maxDelayMs: 5000,
+        }),
+      ).rejects.toThrow('Should not retry');
       expect(operation).toHaveBeenCalledTimes(1);
     });
 
     it('should use custom retry delay', async () => {
-      const operation = vi.fn()
+      const operation = vi
+        .fn()
         .mockRejectedValueOnce(new Error('First fail'))
         .mockResolvedValueOnce('success');
 

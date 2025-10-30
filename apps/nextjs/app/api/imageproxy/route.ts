@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
 
     return new NextResponse(arrayBuffer, { headers });
   } catch (error: unknown) {
-    const appError = toAppError(error, { url: imageUrl, method: 'GET', context: { operation: 'imageproxy' } });
+    const appError = toAppError(error, {
+      url: imageUrl,
+      method: 'GET',
+      context: { operation: 'imageproxy' },
+    });
     logError(appError);
     console.error('Image proxy error:', appError);
     return new NextResponse(`Image proxy failed: ${appError.message}`, {

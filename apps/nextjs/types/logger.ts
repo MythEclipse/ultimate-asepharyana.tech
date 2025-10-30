@@ -1,7 +1,14 @@
 /**
  * Log levels supported by the unified logger
  */
-export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'verbose' | 'silly' | 'http';
+export type LogLevel =
+  | 'error'
+  | 'warn'
+  | 'info'
+  | 'debug'
+  | 'verbose'
+  | 'silly'
+  | 'http';
 
 /**
  * Logger interface that provides consistent API across client and server environments

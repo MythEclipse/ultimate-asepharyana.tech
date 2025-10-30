@@ -51,7 +51,10 @@ function AnimeDetailPageClient({
   initialError,
 }: AnimeDetailPageClientProps) {
   const router = useRouter();
-  const { data: swrData, error: swrError } = useAnimeDetail(slug, initialData || undefined);
+  const { data: swrData, error: swrError } = useAnimeDetail(
+    slug,
+    initialData || undefined,
+  );
 
   // Use the SWR data if available, otherwise fallback to initialData
   const animeData = swrData || initialData;
@@ -66,11 +69,8 @@ function AnimeDetailPageClient({
       }
     : undefined;
 
-  const { isBookmarked: bookmarked, toggle: handleBookmark } = useBookmark<AnimeBookmark>(
-    'anime',
-    slug,
-    bookmarkData
-  );
+  const { isBookmarked: bookmarked, toggle: handleBookmark } =
+    useBookmark<AnimeBookmark>('anime', slug, bookmarkData);
 
   useEffect(() => {
     if (animeData?.episode_lists) {
@@ -192,7 +192,8 @@ function AnimeDetailPageClient({
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {animeData.episode_lists && animeData.episode_lists.length > 0 ? (
+                        {animeData.episode_lists &&
+                        animeData.episode_lists.length > 0 ? (
                           animeData.episode_lists.map((episode, index) => (
                             <Tooltip key={`${episode.slug}-${index}`}>
                               <TooltipTrigger asChild>
@@ -232,7 +233,8 @@ function AnimeDetailPageClient({
                       Recommendations
                     </h2>
                     <div className="flex overflow-x-auto pb-4 -mx-1 gap-4">
-                      {animeData.recommendations && animeData.recommendations.length > 0 ? (
+                      {animeData.recommendations &&
+                      animeData.recommendations.length > 0 ? (
                         animeData.recommendations.map((rec, index) => (
                           <div
                             key={`${rec.slug}-${index}`}

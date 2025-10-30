@@ -77,10 +77,7 @@ function UnifiedGrid<T extends Anime | Komik>({
           key={anime.slug}
           title={anime.title}
           description={
-            anime.current_episode ||
-            anime.episode ||
-            anime.episode_count ||
-            ''
+            anime.current_episode || anime.episode || anime.episode_count || ''
           }
           imageUrl={anime.poster || ''}
           linkUrl={`${link}/${anime.slug}`}
@@ -103,7 +100,10 @@ function UnifiedGrid<T extends Anime | Komik>({
   // Loading state for grid
   if (loading) {
     return (
-      <div className={gridClassName || DEFAULT_GRID_CLASS} style={{ padding: '1rem' }}>
+      <div
+        className={gridClassName || DEFAULT_GRID_CLASS}
+        style={{ padding: '1rem' }}
+      >
         {loadingCards}
       </div>
     );
@@ -112,7 +112,10 @@ function UnifiedGrid<T extends Anime | Komik>({
   // Items array mode
   if (items && items.length > 0) {
     return (
-      <div className={gridClassName || DEFAULT_GRID_CLASS} style={{ padding: '1rem' }}>
+      <div
+        className={gridClassName || DEFAULT_GRID_CLASS}
+        style={{ padding: '1rem' }}
+      >
         {items.map((item) => {
           if (itemType === 'anime') {
             const anime = item as Anime;
@@ -159,6 +162,7 @@ function UnifiedGrid<T extends Anime | Komik>({
 }
 
 const MemoizedUnifiedGrid = memo(UnifiedGrid) as typeof UnifiedGrid;
-(MemoizedUnifiedGrid as any).displayName = 'UnifiedGrid';
+(MemoizedUnifiedGrid as unknown as { displayName: string }).displayName =
+  'UnifiedGrid';
 
 export default MemoizedUnifiedGrid;

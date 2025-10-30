@@ -80,41 +80,53 @@ const PROJECTS: Project[] = [
 ];
 
 // Components
-const ProjectCard = React.memo(({ title, description, imageSrc, linkUrl }: CardProps) => (
-  <Link href={linkUrl} className="block group">
-    <article className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-500 transform group-hover:scale-[1.03] group-hover:-translate-y-1">
-      {/* Image Container with Overlay */}
-      <div className="relative h-56 overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
-        <Image
-          src={imageSrc}
-          alt={title}
-          fill
-          className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-          priority
-          unoptimized
-        />
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300"></div>
-      </div>
+const ProjectCard = React.memo(
+  ({ title, description, imageSrc, linkUrl }: CardProps) => (
+    <Link href={linkUrl} className="block group">
+      <article className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-500 transform group-hover:scale-[1.03] group-hover:-translate-y-1">
+        {/* Image Container with Overlay */}
+        <div className="relative h-56 overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
+          <Image
+            src={imageSrc}
+            alt={title}
+            fill
+            className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+            priority
+            unoptimized
+          />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300"></div>
+        </div>
 
-      {/* Content */}
-      <div className="p-6 space-y-3">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center gap-2">
-          {title}
-          <svg className="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-          {description}
-        </p>
-      </div>
+        {/* Content */}
+        <div className="p-6 space-y-3">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center gap-2">
+            {title}
+            <svg
+              className="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
+            </svg>
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+            {description}
+          </p>
+        </div>
 
-      {/* Bottom Accent Line */}
-      <div className="h-1 w-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 ease-out"></div>
-    </article>
-  </Link>
-));
+        {/* Bottom Accent Line */}
+        <div className="h-1 w-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 ease-out"></div>
+      </article>
+    </Link>
+  ),
+);
 
 ProjectCard.displayName = 'ProjectCard';
 
@@ -179,7 +191,9 @@ export default function Page() {
               key={project.linkUrl}
               title={project.title}
               description={project.description}
-              imageSrc={isLightTheme ? project.images.light : project.images.dark}
+              imageSrc={
+                isLightTheme ? project.images.light : project.images.dark
+              }
               linkUrl={project.linkUrl}
             />
           ))}

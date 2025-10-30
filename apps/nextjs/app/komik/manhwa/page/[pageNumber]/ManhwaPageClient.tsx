@@ -7,7 +7,10 @@ import UnifiedGrid from '../../../../../components/shared/UnifiedGrid';
 import { ErrorStateCenter } from '../../../../../components/error/ErrorState';
 import PaginationControls from '../../../../../components/shared/PaginationControls';
 import { BookOpen, AlertTriangle, ChevronRight } from 'lucide-react';
-import { useManhwaPage, type KomikPaginationData } from '../../../../../utils/hooks/useKomik';
+import {
+  useManhwaPage,
+  type KomikPaginationData,
+} from '../../../../../utils/hooks/useKomik';
 
 interface ManhwaPageClientProps {
   pageNumber: number;
@@ -22,7 +25,7 @@ function ManhwaPageClient({
 }: ManhwaPageClientProps) {
   const { data: swrData, error: swrError } = useManhwaPage(
     pageNumber,
-    initialData || undefined
+    initialData || undefined,
   );
 
   const komikData = swrData || initialData;
@@ -64,7 +67,8 @@ function ManhwaPageClient({
                 Latest Manhwa
               </h1>
               <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-                Halaman {komikData.pagination.current_page} dari {komikData.pagination.last_visible_page}
+                Halaman {komikData.pagination.current_page} dari{' '}
+                {komikData.pagination.last_visible_page}
               </p>
             </div>
           </div>

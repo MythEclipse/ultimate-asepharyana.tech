@@ -131,10 +131,13 @@ export const getDynamicKomikBaseUrl = async (): Promise<string> => {
       // Validate and sanitize the URL before caching
       const sanitizedUrl = sanitizeUrl(orgLink.replace(/\/$/, ''));
       if (!isValidUrl(sanitizedUrl)) {
-        logger.error('[getDynamicKomikBaseUrl] Invalid URL after sanitization', {
-          original: orgLink,
-          sanitized: sanitizedUrl,
-        });
+        logger.error(
+          '[getDynamicKomikBaseUrl] Invalid URL after sanitization',
+          {
+            original: orgLink,
+            sanitized: sanitizedUrl,
+          },
+        );
         throw new Error('Invalid komik base URL after sanitization');
       }
 
@@ -164,7 +167,10 @@ export const getCachedKomikBaseUrl = async (
       if (isValidUrl(cached)) {
         return cached;
       } else {
-        logger.warn('[getCachedKomikBaseUrl] Cached URL is invalid, refreshing', { cached });
+        logger.warn(
+          '[getCachedKomikBaseUrl] Cached URL is invalid, refreshing',
+          { cached },
+        );
       }
     }
   }
@@ -182,7 +188,9 @@ export const getCachedKomikBaseUrl = async (
   }
 
   await redis.set(KOMIK_BASE_URL_KEY, sanitizedUrl, { EX: 60 * 60 * 24 * 30 });
-  logger.info('[getCachedKomikBaseUrl] Refreshed and cached base URL', { url: sanitizedUrl });
+  logger.info('[getCachedKomikBaseUrl] Refreshed and cached base URL', {
+    url: sanitizedUrl,
+  });
   return sanitizedUrl;
 };
 

@@ -23,69 +23,75 @@ export interface CardImageProps {
   onLoad?: () => void;
 }
 
-export const CardImage = React.memo(({
-  src,
-  alt,
-  width = 300,
-  height = 400,
-  className,
-  priority = false,
-  unoptimized = false,
-  useProxy = true,
-  useCdn = true,
-  fallbackUrl = '/default.png',
-  fill = false,
-  sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
-  placeholder = 'empty',
-  onLoad,
-}: CardImageProps) => {
-  const { src: currentSrc, onError, onLoad: handleFallbackLoad } = useEnhancedImageFallback({
-    imageUrl: typeof src === 'string' ? src : undefined,
-    fallbackUrl,
-    useProxy,
-    useCdn,
-    resetOnUrlChange: true,
-    maxRetries: 3,
-  });
+export const CardImage = React.memo(
+  ({
+    src,
+    alt,
+    width = 300,
+    height = 400,
+    className,
+    priority = false,
+    unoptimized = false,
+    useProxy = true,
+    useCdn = true,
+    fallbackUrl = '/default.png',
+    fill = false,
+    sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
+    placeholder = 'empty',
+    onLoad,
+  }: CardImageProps) => {
+    const {
+      src: currentSrc,
+      onError,
+      onLoad: handleFallbackLoad,
+    } = useEnhancedImageFallback({
+      imageUrl: typeof src === 'string' ? src : undefined,
+      fallbackUrl,
+      useProxy,
+      useCdn,
+      resetOnUrlChange: true,
+      maxRetries: 3,
+    });
 
-  const handleImageLoad = useCallback(() => {
-    handleFallbackLoad();
-    onLoad?.();
-  }, [handleFallbackLoad, onLoad]);
+    const handleImageLoad = useCallback(() => {
+      handleFallbackLoad();
+      onLoad?.();
+    }, [handleFallbackLoad, onLoad]);
 
-  if (fill) {
+    if (fill) {
+      return (
+        <div className="relative w-full h-full">
+          <Image
+            src={currentSrc}
+            alt={alt}
+            fill
+            sizes={sizes}
+            className={cn('object-cover', className)}
+            priority={priority}
+            unoptimized={unoptimized}
+            onError={onError}
+            onLoad={handleImageLoad}
+            placeholder={typeof currentSrc === 'object' ? placeholder : 'empty'}
+          />
+        </div>
+      );
+    }
+
     return (
-      <div className="relative w-full h-full">
-        <Image
-          src={currentSrc}
-          alt={alt}
-          fill
-          sizes={sizes}
-          className={cn('object-cover', className)}
-          priority={priority}
-          unoptimized={unoptimized}
-          onError={onError}
-          onLoad={handleImageLoad}
-          placeholder={typeof currentSrc === 'object' ? placeholder : 'empty'}
-        />
-      </div>
+      <Image
+        src={currentSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        className={cn('object-cover', className)}
+        priority={priority}
+        unoptimized={unoptimized}
+        onError={onError}
+        onLoad={handleImageLoad}
+        placeholder={typeof currentSrc === 'object' ? placeholder : 'empty'}
+      />
     );
-  }
-
-  return (
-    <Image
-      src={currentSrc}
-      alt={alt}
-      width={width}
-      height={height}
-      className={cn('object-cover', className)}
-      priority={priority}
-      unoptimized={unoptimized}
-      onError={onError}
-      onLoad={handleImageLoad}
-      placeholder={typeof currentSrc === 'object' ? placeholder : 'empty'}
-    />
-  );
-});
+  },
+);
 
 CardImage.displayName = 'CardImage';

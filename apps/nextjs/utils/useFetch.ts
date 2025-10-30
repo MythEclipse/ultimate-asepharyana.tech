@@ -71,9 +71,9 @@ export const fetchDataMultiple = async (
       ? errors.map((err) => String(err)).join('; ')
       : String(errors);
     const appError = toAppError(errors, {
-      url: endpoints.map(e => e.url).join(', '),
+      url: endpoints.map((e) => e.url).join(', '),
       method,
-      context: { errorMessages }
+      context: { errorMessages },
     });
     throw appError;
   }

@@ -15,62 +15,68 @@ export interface CardLinkProps {
   rel?: string;
 }
 
-export const CardLink = memo(({
-  href,
-  children,
-  prefetch = true,
-  scroll = true,
-  onClick,
-  className,
-  target,
-  rel,
-}: CardLinkProps) => {
-  const router = useRouter();
+export const CardLink = memo(
+  ({
+    href,
+    children,
+    prefetch = true,
+    scroll = true,
+    onClick,
+    className,
+    target,
+    rel,
+  }: CardLinkProps) => {
+    const _router = useRouter();
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (onClick) {
-      e.preventDefault();
-      onClick();
+    const handleClick = (e: React.MouseEvent) => {
+      if (onClick) {
+        e.preventDefault();
+        onClick();
+      }
+    };
+
+    if (!href && !onClick) {
+      return <>{children}</>;
     }
-  };
 
-  if (!href && !onClick) {
-    return <>{children}</>;
-  }
+    if (onClick && !href) {
+      return (
+        <div
+          className={className}
+          onClick={handleClick}
+          style={{ cursor: 'pointer' }}
+        >
+          {children}
+        </div>
+      );
+    }
 
-  if (onClick && !href) {
+    if (target === '_blank' || (href && href.startsWith('http'))) {
+      return (
+        <a
+          href={href}
+          target={target}
+          rel={rel || 'noopener noreferrer'}
+          className={className}
+          onClick={handleClick}
+        >
+          {children}
+        </a>
+      );
+    }
+
     return (
-      <div className={className} onClick={handleClick} style={{ cursor: 'pointer' }}>
-        {children}
-      </div>
-    );
-  }
-
-  if (target === '_blank' || (href && href.startsWith('http'))) {
-    return (
-      <a
-        href={href}
-        target={target}
-        rel={rel || 'noopener noreferrer'}
+      <Link
+        href={href ?? '#'}
+        prefetch={prefetch}
+        scroll={scroll}
         className={className}
         onClick={handleClick}
       >
         {children}
-      </a>
+      </Link>
     );
-  }
-
-  return (
-    <Link
-      href={href!}
-      prefetch={prefetch}
-      scroll={scroll}
-      className={className}
-      onClick={handleClick}
-    >
-      {children}
-    </Link>
-  );
-});
+  },
+);
 
 CardLink.displayName = 'CardLink';

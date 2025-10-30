@@ -20,7 +20,12 @@ function Anime2PageClient({
   initialData,
   initialError,
 }: Anime2PageClientProps) {
-  const { data, error: swrError, isLoading, mutate } = useAnime2Home(initialData || undefined);
+  const {
+    data,
+    error: swrError,
+    isLoading,
+    mutate,
+  } = useAnime2Home(initialData || undefined);
 
   const displayError = getErrorMessage(swrError) || initialError;
   const displayData = data || initialData;
@@ -53,7 +58,12 @@ function Anime2PageClient({
               </Link>
             </div>
 
-            <UnifiedGrid items={[]} loading={true} itemType="anime" isAnime2={true} />
+            <UnifiedGrid
+              items={[]}
+              loading={true}
+              itemType="anime"
+              isAnime2={true}
+            />
           </section>
 
           {/* Complete Anime Section */}
@@ -76,7 +86,12 @@ function Anime2PageClient({
               </Link>
             </div>
 
-            <UnifiedGrid items={[]} loading={true} itemType="anime" isAnime2={true} />
+            <UnifiedGrid
+              items={[]}
+              loading={true}
+              itemType="anime"
+              isAnime2={true}
+            />
           </section>
         </div>
       </main>

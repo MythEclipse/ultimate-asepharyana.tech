@@ -5,7 +5,13 @@ import Link from 'next/link';
 import UnifiedGrid from '../../components/shared/UnifiedGrid';
 import { ErrorState } from '../../components/error/ErrorState';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
-import { useMangaList, useManhuaList, useManhwaList, type Komik, type KomikData } from '../../utils/hooks/useKomik';
+import {
+  useMangaList,
+  useManhuaList,
+  useManhwaList,
+  type Komik,
+  type KomikData,
+} from '../../utils/hooks/useKomik';
 
 interface KomikPageClientProps {
   manga: KomikData | null;

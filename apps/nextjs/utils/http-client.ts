@@ -1,10 +1,5 @@
-import logger from './unified-logger';
 import {
   HttpClientConfig,
-  HttpResponse,
-  HttpError,
-  RequestOptions,
-  FetchResult,
   HttpMethod,
   ClientSideConfig,
   ServerSideConfig,
@@ -12,15 +7,11 @@ import {
 } from '../types/http';
 import { getApiUrlConfig, buildUrl } from './url-utils';
 import {
-  createHttpError,
-  createTimeoutError,
   handleFetchResponse,
-  handleNetworkError,
   toAppError,
   withRetry,
   logError,
 } from './error-handler';
-import { ErrorCategory } from '../types/error';
 
 export class UnifiedHttpClient {
   protected config: HttpClientConfig;
@@ -46,7 +37,10 @@ export class UnifiedHttpClient {
     return AbortSignal.timeout(timeoutMs);
   }
 
-  private createHeaders(customHeaders?: Record<string, string>, token?: string | null): Headers {
+  private createHeaders(
+    customHeaders?: Record<string, string>,
+    token?: string | null,
+  ): Headers {
     const headers = new Headers({
       ...this.config.headers,
       ...customHeaders,
@@ -74,7 +68,7 @@ export class UnifiedHttpClient {
   async fetchJson<T = unknown>(
     url: string,
     options: RequestInit = {},
-    configOverride?: HttpClientConfig
+    configOverride?: HttpClientConfig,
   ): Promise<T> {
     const config = { ...this.config, ...configOverride };
 
@@ -84,7 +78,7 @@ export class UnifiedHttpClient {
         ...options,
         headers: this.createHeaders(
           options.headers as Record<string, string>,
-          config.auth?.token
+          config.auth?.token,
         ),
         signal: this.createAbortSignal(config.timeout),
       });
@@ -109,14 +103,21 @@ export class UnifiedHttpClient {
     url: string,
     token?: string | null,
     options: RequestInit = {},
-    configOverride?: HttpClientConfig
+    configOverride?: HttpClientConfig,
   ): Promise<T> {
-    const headers = this.createHeaders(options.headers as Record<string, string>, token);
+    const headers = this.createHeaders(
+      options.headers as Record<string, string>,
+      token,
+    );
 
-    return this.fetchJson<T>(url, {
-      ...options,
-      headers,
-    }, configOverride);
+    return this.fetchJson<T>(
+      url,
+      {
+        ...options,
+        headers,
+      },
+      configOverride,
+    );
   }
 
   async request<T = unknown>(
@@ -124,7 +125,7 @@ export class UnifiedHttpClient {
     method: HttpMethod,
     body?: unknown,
     token?: string | null,
-    configOverride?: HttpClientConfig
+    configOverride?: HttpClientConfig,
   ): Promise<T> {
     const options: RequestInit = { method };
 
@@ -161,24 +162,29 @@ export class UnifiedHttpClient {
 }
 
 // Convenience functions that maintain backward compatibility
-export const createHttpClient = (config?: HttpClientConfig) => new UnifiedHttpClient(config);
+export const createHttpClient = (config?: HttpClientConfig) =>
+  new UnifiedHttpClient(config);
 
 export const clientSideFetch = async <T = unknown>(
   url: string,
   token?: string | null,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> => {
   const client = UnifiedHttpClient.createClientSide();
-  const fullUrl = client['config']?.baseUrl ? UnifiedHttpClient.buildUrl(client['config'].baseUrl, url) : url;
+  const fullUrl = client['config']?.baseUrl
+    ? UnifiedHttpClient.buildUrl(client['config'].baseUrl, url)
+    : url;
   return client.fetchWithAuth<T>(fullUrl, token, options);
 };
 
 export const serverSideFetch = async <T = unknown>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> => {
   const client = UnifiedHttpClient.createServerSide();
-  const fullUrl = client['config']?.baseUrl ? UnifiedHttpClient.buildUrl(client['config'].baseUrl, url) : url;
+  const fullUrl = client['config']?.baseUrl
+    ? UnifiedHttpClient.buildUrl(client['config'].baseUrl, url)
+    : url;
   return client.fetchJson<T>(fullUrl, options);
 };
 
@@ -189,11 +195,20 @@ export const HttpClient = {
     const client = new UnifiedHttpClient();
     return client.fetchJson<T>(url, options);
   },
-  fetchWithAuth: async <T = unknown>(url: string, token?: string | null, options: RequestInit = {}) => {
+  fetchWithAuth: async <T = unknown>(
+    url: string,
+    token?: string | null,
+    options: RequestInit = {},
+  ) => {
     const client = new UnifiedHttpClient();
     return client.fetchWithAuth<T>(url, token, options);
   },
-  request: async <T = unknown>(url: string, method: string, body?: unknown, token?: string | null) => {
+  request: async <T = unknown>(
+    url: string,
+    method: string,
+    body?: unknown,
+    token?: string | null,
+  ) => {
     const client = new UnifiedHttpClient();
     return client.request<T>(url, method as HttpMethod, body, token);
   },

@@ -137,8 +137,8 @@ export class ProxyManager {
     if (!this.config.enabled) {
       // Direct fetch only
       const result = await this.attemptDirectFetch(url);
-      if (result.success) {
-        return result.data!;
+      if (result.success && result.data) {
+        return result.data;
       }
       throw result.error || new Error('Direct fetch failed');
     }
@@ -163,7 +163,9 @@ export class ProxyManager {
       result = await this.attemptDirectFetch(url);
 
       if (!result.success && this.config.fallbackEnabled) {
-        logger.info(`[ProxyManager] Direct fetch failed, trying proxy for ${url}`);
+        logger.info(
+          `[ProxyManager] Direct fetch failed, trying proxy for ${url}`,
+        );
         result = await this.attemptProxyFetch(url);
       }
     } else {
@@ -171,7 +173,9 @@ export class ProxyManager {
       result = await this.attemptProxyFetch(url);
 
       if (!result.success && this.config.fallbackEnabled) {
-        logger.info(`[ProxyManager] Proxy fetch failed, trying direct for ${url}`);
+        logger.info(
+          `[ProxyManager] Proxy fetch failed, trying direct for ${url}`,
+        );
         result = await this.attemptDirectFetch(url);
       }
     }
@@ -182,7 +186,9 @@ export class ProxyManager {
         await redis.set(cacheKey, result.data, { EX: this.config.cacheTtl });
         logger.info(`[ProxyManager] Cached result for ${url}`);
       } catch (error) {
-        logger.warn(`[ProxyManager] Cache storage failed for ${url}`, { error });
+        logger.warn(`[ProxyManager] Cache storage failed for ${url}`, {
+          error,
+        });
       }
 
       return result.data;
@@ -260,7 +266,9 @@ export class ProxyManager {
       const keys = await redis.keys(pattern);
       if (keys.length > 0) {
         await redis.del(keys);
-        logger.info(`[ProxyManager] All proxy cache cleared`, { keysCount: keys.length });
+        logger.info(`[ProxyManager] All proxy cache cleared`, {
+          keysCount: keys.length,
+        });
       }
     } catch (error) {
       logger.warn(`[ProxyManager] Failed to clear all proxy cache`, { error });
@@ -271,7 +279,9 @@ export class ProxyManager {
 /**
  * Factory function to create proxy manager instances
  */
-export function createProxyManager(config?: Partial<ProxyConfig>): ProxyManager {
+export function createProxyManager(
+  config?: Partial<ProxyConfig>,
+): ProxyManager {
   return new ProxyManager(config);
 }
 

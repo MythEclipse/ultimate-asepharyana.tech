@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { isBookmarked, toggleBookmark, type Bookmark } from '../../lib/bookmarks';
+import {
+  isBookmarked,
+  toggleBookmark,
+  type Bookmark,
+} from '../../lib/bookmarks';
 
 /**
  * Custom hook for managing bookmark state
@@ -15,7 +19,7 @@ import { isBookmarked, toggleBookmark, type Bookmark } from '../../lib/bookmarks
 export function useBookmark<T extends Bookmark>(
   type: 'anime' | 'komik',
   slug: string,
-  bookmarkData?: T
+  bookmarkData?: T,
 ) {
   const [isMarked, setIsMarked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +49,7 @@ export function useBookmark<T extends Bookmark>(
       const wasAdded = toggleBookmark(type, slug, dataToUse);
       setIsMarked(wasAdded);
     },
-    [type, slug, bookmarkData]
+    [type, slug, bookmarkData],
   );
 
   return {

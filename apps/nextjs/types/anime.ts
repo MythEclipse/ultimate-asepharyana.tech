@@ -70,4 +70,3 @@ export interface Anime {
   release_day?: string;
   newest_release_date?: string;
 }
-

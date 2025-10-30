@@ -30,7 +30,7 @@ export default async function ChapterPage({
       `/api/komik2/chapter?chapter_url=${chapterId}`,
       {
         revalidate,
-      }
+      },
     );
 
     const result: ApiResponse = await response.json();

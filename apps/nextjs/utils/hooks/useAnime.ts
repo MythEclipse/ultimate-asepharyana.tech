@@ -1,6 +1,10 @@
 import useSWR from 'swr';
 import { APIURL } from '../url-utils';
-import type { AnimeData, SearchDetailData, CompleteAnimeData } from '../../types/anime';
+import type {
+  AnimeData,
+  SearchDetailData,
+  CompleteAnimeData,
+} from '../../types/anime';
 
 // Types for API responses
 export interface HomeData {
@@ -73,7 +77,7 @@ export function useAnimeHome(initialData?: HomeData) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000, // 1 minute
-    }
+    },
   );
 
   return {
@@ -94,7 +98,7 @@ export function useAnimeDetail(slug: string, initialData?: AnimeData) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -115,7 +119,7 @@ export function useAnimeSearch(query: string, initialData?: SearchDetailData) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 30000, // 30 seconds for search
-    }
+    },
   );
 
   return {
@@ -136,7 +140,7 @@ export function useOngoingAnime(page: string, initialData?: CompleteAnimeData) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -148,7 +152,10 @@ export function useOngoingAnime(page: string, initialData?: CompleteAnimeData) {
 }
 
 // Hook for complete anime list
-export function useCompleteAnime(page: string, initialData?: CompleteAnimeData) {
+export function useCompleteAnime(
+  page: string,
+  initialData?: CompleteAnimeData,
+) {
   const { data, error, isLoading, mutate } = useSWR<CompleteAnimeData>(
     page ? `/api/anime/complete-anime/${page}` : null,
     fetcher,
@@ -157,7 +164,7 @@ export function useCompleteAnime(page: string, initialData?: CompleteAnimeData) 
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -178,7 +185,7 @@ export function useAnimeEpisode(slug: string, initialData?: AnimeEpisodeData) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {

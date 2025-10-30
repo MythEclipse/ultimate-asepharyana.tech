@@ -1,4 +1,8 @@
-import type { ILogger, LoggerConfig, RuntimeEnvironment, ErrorInfo } from '../types/logger';
+import type {
+  ILogger,
+  LoggerConfig,
+  RuntimeEnvironment,
+} from '../types/logger';
 
 /**
  * Detects the current runtime environment
@@ -10,7 +14,11 @@ function detectRuntimeEnvironment(): RuntimeEnvironment {
   }
 
   // Check if we're in a Node.js environment
-  if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+  if (
+    typeof process !== 'undefined' &&
+    process.versions &&
+    process.versions.node
+  ) {
     return 'server';
   }
 
@@ -37,9 +45,8 @@ function createClientLogger(): ILogger {
  * This avoids importing Winston and file system modules that cause client-side issues
  */
 function createServerLogger(config: LoggerConfig = {}): ILogger {
-  const {
-    level = process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  } = config;
+  const { level = process.env.NODE_ENV === 'production' ? 'info' : 'debug' } =
+    config;
 
   // Map log levels to numbers for filtering
   const logLevels = {
@@ -60,11 +67,13 @@ function createServerLogger(config: LoggerConfig = {}): ILogger {
 
   function formatMessage(level: string, args: unknown[]): string {
     const timestamp = new Date().toISOString();
-    const message = args.map(arg =>
-      typeof arg === 'object' && arg !== null
-        ? JSON.stringify(arg, null, 2)
-        : String(arg)
-    ).join(' ');
+    const message = args
+      .map((arg) =>
+        typeof arg === 'object' && arg !== null
+          ? JSON.stringify(arg, null, 2)
+          : String(arg),
+      )
+      .join(' ');
     return `${timestamp} [${level.toUpperCase()}]: ${message}`;
   }
 
@@ -122,7 +131,9 @@ function createUnifiedLogger(config?: LoggerConfig): ILogger {
 
     default:
       // Fallback to client logger for unknown environments
-      console.warn('Unknown runtime environment, falling back to client logger');
+      console.warn(
+        'Unknown runtime environment, falling back to client logger',
+      );
       return createClientLogger();
   }
 }
@@ -159,10 +170,17 @@ export async function logErrorToApi(
           errorPayload = JSON.stringify(error);
         } catch {
           // Use util.inspect for better object representation as a fallback if available
-          if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+          if (
+            typeof process !== 'undefined' &&
+            process.versions &&
+            process.versions.node
+          ) {
             try {
               const util = require('util');
-              errorPayload = util.inspect(error, { depth: 3, breakLength: 120 });
+              errorPayload = util.inspect(error, {
+                depth: 3,
+                breakLength: 120,
+              });
             } catch {
               errorPayload = String(error);
             }

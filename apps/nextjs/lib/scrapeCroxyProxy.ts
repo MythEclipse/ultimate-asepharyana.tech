@@ -9,10 +9,13 @@
 import logger from '../utils/unified-logger';
 
 // Type definitions
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Browser = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Page = any;
 
 // Conditional imports for Node.js environment only
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let puppeteer: any;
 let browserInstance: Browser | null = null;
 let pageInstance: Page | null = null;
@@ -22,15 +25,16 @@ if (typeof window === 'undefined') {
   try {
     const puppeteerModule = require('puppeteer');
     puppeteer = puppeteerModule.default || puppeteerModule;
-  } catch (error) {
+  } catch (_error) {
     logger.warn('Puppeteer not available in this environment');
   }
 }
 
 // Mock performance for browser environment
-const performance = typeof window !== 'undefined' && window.performance ?
-  window.performance :
-  { now: () => Date.now() };
+const performance =
+  typeof window !== 'undefined' && window.performance
+    ? window.performance
+    : { now: () => Date.now() };
 
 const CROXY_PROXY_URL = 'https://www.croxyproxy.com/';
 const URL_INPUT_SELECTOR = 'input#url';
@@ -77,6 +81,7 @@ async function getBrowserPage(): Promise<Page> {
   if (!pageInstance) {
     pageInstance = await browserInstance.newPage();
     await pageInstance.setRequestInterception(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pageInstance.on('request', (request: any) => {
       const resourceType = request.resourceType();
       if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
@@ -98,7 +103,9 @@ export async function scrapeCroxyProxy(targetUrl: string): Promise<string> {
   // Check if we're in a Node.js environment with Puppeteer available
   if (typeof window !== 'undefined' || !puppeteer) {
     logger.warn('Puppeteer scraping is not available in browser environment');
-    throw new Error('Puppeteer scraping is only available in server-side Node.js environment');
+    throw new Error(
+      'Puppeteer scraping is only available in server-side Node.js environment',
+    );
   }
 
   logger.info(`Scraping ${targetUrl} with CroxyProxy`);
@@ -197,7 +204,9 @@ export async function scrapeCroxyProxyCached(
 ): Promise<string> {
   // Check if Redis is available
   if (!redis) {
-    logger.warn('[scrapeCroxyProxyCached] Redis not available, falling back to direct scraping');
+    logger.warn(
+      '[scrapeCroxyProxyCached] Redis not available, falling back to direct scraping',
+    );
     return await scrapeCroxyProxy(targetUrl);
   }
 
@@ -211,7 +220,10 @@ export async function scrapeCroxyProxyCached(
       return cached;
     }
   } catch (error) {
-    logger.warn('[scrapeCroxyProxyCached] Redis get failed, continuing with scraping:', error);
+    logger.warn(
+      '[scrapeCroxyProxyCached] Redis get failed, continuing with scraping:',
+      error,
+    );
   }
 
   const html = await scrapeCroxyProxy(targetUrl);
@@ -229,7 +241,11 @@ export async function scrapeCroxyProxyCached(
 }
 
 // CLI execution only in Node.js environment
-if (typeof window === 'undefined' && typeof require !== 'undefined' && require.main === module) {
+if (
+  typeof window === 'undefined' &&
+  typeof require !== 'undefined' &&
+  require.main === module
+) {
   const [, , inputUrl] = process.argv;
   if (!inputUrl) {
     logger.error('Usage: bun run apps/NextJS/lib/scrapeCroxyProxy.ts "<url>"');

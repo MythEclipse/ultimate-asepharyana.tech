@@ -1,10 +1,9 @@
-import { ErrorCategory, ErrorSeverity } from '../types/error';
+import { ErrorCategory } from '../types/error';
 import {
   createError,
   createNetworkError,
   createHttpError,
   toAppError,
-  logError,
   withRetry,
   ErrorHandler,
 } from './error-handler';
@@ -55,7 +54,7 @@ console.log('\n4️⃣ Testing toAppError:');
 const regularError = new Error('Regular error');
 const convertedError = toAppError(regularError, {
   url: '/api/test',
-  method: 'POST'
+  method: 'POST',
 });
 console.log('✅ Error converted:', {
   originalMessage: regularError.message,
@@ -105,13 +104,15 @@ async function testRetry() {
 // Test 7: Error response creation
 console.log('\n7️⃣ Testing error response creation:');
 const errorResponse = ErrorHandler.createErrorResponse(
-  createError('API Error', ErrorCategory.HTTP, { statusCode: 500 })
+  createError('API Error', ErrorCategory.HTTP, { statusCode: 500 }),
 );
 console.log('✅ Error response created:', errorResponse);
 
 // Run async tests
-testRetry().then(() => {
-  console.log('\n🎉 All error handler tests completed!');
-}).catch((error) => {
-  console.error('❌ Error during testing:', error);
-});
+testRetry()
+  .then(() => {
+    console.log('\n🎉 All error handler tests completed!');
+  })
+  .catch((error) => {
+    console.error('❌ Error during testing:', error);
+  });

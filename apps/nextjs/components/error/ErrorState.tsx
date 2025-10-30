@@ -73,7 +73,9 @@ export function ErrorState({
 
   if (fullScreen) {
     return (
-      <main className={`min-h-screen p-6 bg-background dark:bg-dark ${className}`}>
+      <main
+        className={`min-h-screen p-6 bg-background dark:bg-dark ${className}`}
+      >
         <div className="max-w-7xl mx-auto mt-12">{content}</div>
       </main>
     );
@@ -95,8 +97,12 @@ export function ErrorStateCenter({
   const colors = colorConfig[type];
 
   return (
-    <div className={`min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center ${className}`}>
-      <div className={`p-6 ${colors.bg} rounded-2xl flex items-center gap-4 max-w-2xl`}>
+    <div
+      className={`min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center ${className}`}
+    >
+      <div
+        className={`p-6 ${colors.bg} rounded-2xl flex items-center gap-4 max-w-2xl`}
+      >
         <Icon className={`w-8 h-8 flex-shrink-0 ${colors.icon}`} />
         <div>
           <h1 className={`text-2xl font-bold ${colors.title} mb-2`}>{title}</h1>

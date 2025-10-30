@@ -37,7 +37,7 @@ export function createError(
     severity?: ErrorSeverity;
     userMessage?: string;
     retryable?: boolean;
-  } = {}
+  } = {},
 ): AppError {
   const {
     originalError,
@@ -55,7 +55,8 @@ export function createError(
   error.originalError = originalError;
   error.context = context || {};
   error.timestamp = new Date();
-  error.userMessage = userMessage || getDefaultUserMessage(category, statusCode);
+  error.userMessage =
+    userMessage || getDefaultUserMessage(category, statusCode);
   error.retryable = retryable ?? isRetryableByDefault(category, statusCode);
 
   // Preserve stack trace from original error if available
@@ -76,7 +77,7 @@ export function createNetworkError(
     url?: string;
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): NetworkError {
   const { code, url, originalError, context } = options;
 
@@ -104,7 +105,7 @@ export function createHttpError(
     response?: Response;
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): HttpError {
   const { statusText, url, response, originalError, context } = options;
 
@@ -132,7 +133,7 @@ export function createTimeoutError(
     url?: string;
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): TimeoutError {
   const { url, originalError, context } = options;
 
@@ -158,7 +159,7 @@ export function createValidationError(
     value?: unknown;
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): ValidationError {
   const { field, value, originalError, context } = options;
 
@@ -182,7 +183,7 @@ export function createAuthenticationError(
   options: {
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): AuthenticationError {
   const { originalError, context } = options;
   return createError(message, ErrorCategory.AUTHENTICATION, {
@@ -202,7 +203,7 @@ export function createAuthorizationError(
     requiredRole?: string;
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): AuthorizationError {
   const { requiredRole, originalError, context } = options;
 
@@ -228,7 +229,7 @@ export function createServerError(
     statusCode?: number;
     originalError?: unknown;
     context?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): ServerError {
   const { serverMessage, statusCode = 500, originalError, context } = options;
 
@@ -246,7 +247,10 @@ export function createServerError(
 /**
  * Determines if an error is retryable by default based on category and status code
  */
-function isRetryableByDefault(category: ErrorCategory, statusCode?: number): boolean {
+function isRetryableByDefault(
+  category: ErrorCategory,
+  statusCode?: number,
+): boolean {
   switch (category) {
     case ErrorCategory.NETWORK:
     case ErrorCategory.TIMEOUT:
@@ -265,7 +269,10 @@ function isRetryableByDefault(category: ErrorCategory, statusCode?: number): boo
 /**
  * Gets the default severity for an error based on category and status code
  */
-function getDefaultSeverity(category: ErrorCategory, statusCode?: number): ErrorSeverity {
+function getDefaultSeverity(
+  category: ErrorCategory,
+  statusCode?: number,
+): ErrorSeverity {
   if (statusCode && HTTP_STATUS_TO_SEVERITY[statusCode]) {
     return HTTP_STATUS_TO_SEVERITY[statusCode];
   }
@@ -291,17 +298,26 @@ function getDefaultSeverity(category: ErrorCategory, statusCode?: number): Error
 /**
  * Gets the default user-friendly message for an error
  */
-function getDefaultUserMessage(category: ErrorCategory, statusCode?: number): string {
+function getDefaultUserMessage(
+  category: ErrorCategory,
+  statusCode?: number,
+): string {
   if (statusCode && DEFAULT_ERROR_MESSAGES[category]) {
     return DEFAULT_ERROR_MESSAGES[category];
   }
-  return DEFAULT_ERROR_MESSAGES[category] || DEFAULT_ERROR_MESSAGES[ErrorCategory.UNKNOWN];
+  return (
+    DEFAULT_ERROR_MESSAGES[category] ||
+    DEFAULT_ERROR_MESSAGES[ErrorCategory.UNKNOWN]
+  );
 }
 
 /**
  * Logs an error using the unified logger with appropriate context
  */
-export function logError(error: AppError, context?: Record<string, unknown>): void {
+export function logError(
+  error: AppError,
+  context?: Record<string, unknown>,
+): void {
   const logData = {
     message: error.message,
     category: error.category,
@@ -339,7 +355,10 @@ export function logError(error: AppError, context?: Record<string, unknown>): vo
 /**
  * Converts an unknown error to an AppError
  */
-export function toAppError(error: unknown, context?: Record<string, unknown>): AppError {
+export function toAppError(
+  error: unknown,
+  context?: Record<string, unknown>,
+): AppError {
   if (isAppError(error)) {
     return error;
   }
@@ -347,13 +366,19 @@ export function toAppError(error: unknown, context?: Record<string, unknown>): A
   if (error instanceof Error) {
     // Try to infer category from error name or message
     let category = ErrorCategory.UNKNOWN;
-    let statusCode: number | undefined;
+    let _statusCode: number | undefined;
 
     if (error.name === 'AbortError' || error.message.includes('timeout')) {
       category = ErrorCategory.TIMEOUT;
-    } else if (error.message.includes('network') || error.message.includes('fetch')) {
+    } else if (
+      error.message.includes('network') ||
+      error.message.includes('fetch')
+    ) {
       category = ErrorCategory.NETWORK;
-    } else if (error.message.includes('validation') || error.message.includes('invalid')) {
+    } else if (
+      error.message.includes('validation') ||
+      error.message.includes('invalid')
+    ) {
       category = ErrorCategory.VALIDATION;
     } else if (error.message.includes('auth')) {
       category = ErrorCategory.AUTHENTICATION;
@@ -366,7 +391,8 @@ export function toAppError(error: unknown, context?: Record<string, unknown>): A
   }
 
   // Handle non-Error objects
-  const message = typeof error === 'string' ? error : 'An unknown error occurred';
+  const message =
+    typeof error === 'string' ? error : 'An unknown error occurred';
   return createError(message, ErrorCategory.UNKNOWN, {
     originalError: error,
     context,
@@ -378,7 +404,7 @@ export function toAppError(error: unknown, context?: Record<string, unknown>): A
  */
 export function createErrorResponse(
   error: AppError,
-  requestId?: string
+  requestId?: string,
 ): ErrorResponse {
   return {
     error: {
@@ -398,9 +424,10 @@ export function createErrorResponse(
 export async function withRetry<T>(
   operation: () => Promise<T>,
   config: RetryConfig,
-  onRetry?: (attempt: number, error: AppError) => void
+  onRetry?: (attempt: number, error: AppError) => void,
 ): Promise<T> {
-  const { enabled, maxAttempts, delayMs, backoffMultiplier, maxDelayMs } = config;
+  const { enabled, maxAttempts, delayMs, backoffMultiplier, maxDelayMs } =
+    config;
 
   if (!enabled) {
     return operation();
@@ -427,7 +454,7 @@ export async function withRetry<T>(
       // Calculate delay with exponential backoff
       const delay = Math.min(
         delayMs * Math.pow(backoffMultiplier, attempt - 1),
-        maxDelayMs
+        maxDelayMs,
       );
 
       if (onRetry) {
@@ -435,11 +462,14 @@ export async function withRetry<T>(
       }
 
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError!;
+  if (!lastError) {
+    throw new Error('Operation failed without error information');
+  }
+  throw lastError;
 }
 
 /**
@@ -447,7 +477,7 @@ export async function withRetry<T>(
  */
 export function withErrorHandling<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => TReturn,
-  config: ErrorHandlerConfig = {}
+  config: ErrorHandlerConfig = {},
 ) {
   return async (...args: TArgs): Promise<TReturn> => {
     const {
@@ -455,8 +485,8 @@ export function withErrorHandling<TArgs extends unknown[], TReturn>(
       onError,
       onRetry,
       retry,
-      includeStackTrace = true,
-      includeContext = true,
+      includeStackTrace: _includeStackTrace = true,
+      includeContext: _includeContext = true,
     } = config;
 
     try {
@@ -495,14 +525,17 @@ export function withErrorHandling<TArgs extends unknown[], TReturn>(
 export async function handleFetchResponse(
   response: Response,
   url: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<void> {
   if (!response.ok) {
     let errorMessage: string;
 
     try {
-      const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      errorMessage = errorData.message || response.statusText || 'Request failed';
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: response.statusText }));
+      errorMessage =
+        errorData.message || response.statusText || 'Request failed';
     } catch {
       errorMessage = response.statusText || 'Request failed';
     }
@@ -522,7 +555,7 @@ export async function handleFetchResponse(
 export function handleNetworkError(
   error: unknown,
   url: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): NetworkError {
   const originalError = error as Error & { code?: string };
   const message = originalError.message || 'Network error occurred';
@@ -542,12 +575,16 @@ export function handleNetworkError(
 export function handleTimeoutError(
   timeoutMs: number,
   url: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): TimeoutError {
-  return createTimeoutError(`Request timed out after ${timeoutMs}ms`, timeoutMs, {
-    url,
-    context,
-  });
+  return createTimeoutError(
+    `Request timed out after ${timeoutMs}ms`,
+    timeoutMs,
+    {
+      url,
+      context,
+    },
+  );
 }
 
 // Export all error creation functions and utilities

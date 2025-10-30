@@ -26,7 +26,8 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
         gradient:
           'text-blue-500 bg-transparent border border-blue-500 rounded-full shadow-lg shadow-blue-500/50 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-colors duration-200 ease-in-out',
-        chapter: 'relative flex flex-col items-center justify-center p-4 border-none cursor-pointer w-full h-full bg-transparent',
+        chapter:
+          'relative flex flex-col items-center justify-center p-4 border-none cursor-pointer w-full h-full bg-transparent',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

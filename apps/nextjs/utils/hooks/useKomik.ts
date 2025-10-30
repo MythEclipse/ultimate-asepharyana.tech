@@ -174,7 +174,11 @@ const chapterFetcher = async (url: string): Promise<ChapterDetail> => {
 };
 
 // Hook for manga list
-export function useMangaList(page = 1, order = 'update', initialData?: KomikData) {
+export function useMangaList(
+  page = 1,
+  order = 'update',
+  initialData?: KomikData,
+) {
   const { data, error, isLoading, mutate } = useSWR<KomikData>(
     `/api/komik2/manga?page=${page}&order=${order}`,
     fetcher,
@@ -183,7 +187,7 @@ export function useMangaList(page = 1, order = 'update', initialData?: KomikData
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -195,7 +199,11 @@ export function useMangaList(page = 1, order = 'update', initialData?: KomikData
 }
 
 // Hook for manhua list
-export function useManhuaList(page = 1, order = 'update', initialData?: KomikData) {
+export function useManhuaList(
+  page = 1,
+  order = 'update',
+  initialData?: KomikData,
+) {
   const { data, error, isLoading, mutate } = useSWR<KomikData>(
     `/api/komik2/manhua?page=${page}&order=${order}`,
     fetcher,
@@ -204,7 +212,7 @@ export function useManhuaList(page = 1, order = 'update', initialData?: KomikDat
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -216,7 +224,11 @@ export function useManhuaList(page = 1, order = 'update', initialData?: KomikDat
 }
 
 // Hook for manhwa list
-export function useManhwaList(page = 1, order = 'update', initialData?: KomikData) {
+export function useManhwaList(
+  page = 1,
+  order = 'update',
+  initialData?: KomikData,
+) {
   const { data, error, isLoading, mutate } = useSWR<KomikData>(
     `/api/komik2/manhwa?page=${page}&order=${order}`,
     fetcher,
@@ -225,7 +237,7 @@ export function useManhwaList(page = 1, order = 'update', initialData?: KomikDat
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -237,7 +249,10 @@ export function useManhwaList(page = 1, order = 'update', initialData?: KomikDat
 }
 
 // Hook for manga pagination
-export function useMangaPage(pageNumber: number, initialData?: KomikPaginationData) {
+export function useMangaPage(
+  pageNumber: number,
+  initialData?: KomikPaginationData,
+) {
   const { data, error, isLoading, mutate } = useSWR<KomikPaginationData>(
     pageNumber ? `/api/komik2/manga?page=${pageNumber}&order=update` : null,
     fetcher,
@@ -246,7 +261,7 @@ export function useMangaPage(pageNumber: number, initialData?: KomikPaginationDa
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -258,7 +273,10 @@ export function useMangaPage(pageNumber: number, initialData?: KomikPaginationDa
 }
 
 // Hook for manhua pagination
-export function useManhuaPage(pageNumber: number, initialData?: KomikPaginationData) {
+export function useManhuaPage(
+  pageNumber: number,
+  initialData?: KomikPaginationData,
+) {
   const { data, error, isLoading, mutate } = useSWR<KomikPaginationData>(
     pageNumber ? `/api/komik2/manhua?page=${pageNumber}&order=update` : null,
     fetcher,
@@ -267,7 +285,7 @@ export function useManhuaPage(pageNumber: number, initialData?: KomikPaginationD
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -279,7 +297,10 @@ export function useManhuaPage(pageNumber: number, initialData?: KomikPaginationD
 }
 
 // Hook for manhwa pagination
-export function useManhwaPage(pageNumber: number, initialData?: KomikPaginationData) {
+export function useManhwaPage(
+  pageNumber: number,
+  initialData?: KomikPaginationData,
+) {
   const { data, error, isLoading, mutate } = useSWR<KomikPaginationData>(
     pageNumber ? `/api/komik2/manhwa?page=${pageNumber}&order=update` : null,
     fetcher,
@@ -288,7 +309,7 @@ export function useManhwaPage(pageNumber: number, initialData?: KomikPaginationD
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -309,7 +330,7 @@ export function useKomikDetail(komikId: string, initialData?: KomikDetail) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -321,7 +342,10 @@ export function useKomikDetail(komikId: string, initialData?: KomikDetail) {
 }
 
 // Hook for chapter detail
-export function useChapterDetail(chapterId: string, initialData?: ChapterDetail) {
+export function useChapterDetail(
+  chapterId: string,
+  initialData?: ChapterDetail,
+) {
   const { data, error, isLoading, mutate } = useSWR<ChapterDetail>(
     chapterId ? `/api/komik2/chapter?chapter_url=${chapterId}` : null,
     chapterFetcher,
@@ -330,7 +354,7 @@ export function useChapterDetail(chapterId: string, initialData?: ChapterDetail)
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -351,7 +375,7 @@ export function useKomikSearch(query: string, initialData?: KomikSearchData) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 30000, // 30 seconds for search
-    }
+    },
   );
 
   return {

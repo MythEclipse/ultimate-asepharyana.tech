@@ -2,6 +2,7 @@
 import React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { MEDIA_TYPE_COLORS } from '../shared/types';
 
 /**
  * Combines class names with tailwind-merge for conflict resolution
@@ -14,7 +15,9 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Generates skeleton variants based on component type
  */
-export function getSkeletonVariant(variant: 'default' | 'compact' | 'mini' | '3d'): {
+export function getSkeletonVariant(
+  variant: 'default' | 'compact' | 'mini' | '3d',
+): {
   container: string;
   imageHeight: string;
 } {
@@ -62,7 +65,15 @@ export function getRelAttribute(target?: string, rel?: string): string {
 /**
  * Creates a media badge configuration
  */
-export function createMediaBadge(text?: string, type?: string, position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' = 'top-right') {
+export function createMediaBadge(
+  text?: string,
+  type?: string,
+  position:
+    | 'top-left'
+    | 'top-right'
+    | 'bottom-left'
+    | 'bottom-right' = 'top-right',
+) {
   if (!text && !type) return undefined;
 
   return {
@@ -89,9 +100,6 @@ export const IMAGE_PLACEHOLDER_CLASSES = {
   dark: 'dark:bg-gray-700',
   combined: 'bg-gray-200 dark:bg-gray-700',
 };
-
-// Import media type colors from shared types
-import { MEDIA_TYPE_COLORS } from '../shared/types';
 
 /**
  * Common card styling classes
@@ -164,7 +172,7 @@ export function safeJsonParse<T>(str: string, fallback: T): T {
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
   return (...args: Parameters<T>) => {
@@ -178,7 +186,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  */
 export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
-  limit: number
+  limit: number,
 ): (...args: Parameters<T>) => void {
   let inThrottle = false;
   return (...args: Parameters<T>) => {
