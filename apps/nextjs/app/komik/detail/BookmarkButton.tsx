@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '../../../components/ui/button';
 import { Bookmark } from 'lucide-react';
+import { useBookmark } from '../../../utils/hooks/useBookmark';
+import type { KomikBookmark } from '../../../lib/bookmarks';
 
 interface BookmarkButtonProps {
   komikId: string;
@@ -15,43 +17,26 @@ export default function BookmarkButton({
   title,
   poster,
 }: BookmarkButtonProps) {
-  const [bookmarked, setBookmarked] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && komikId) {
-      const bookmarks = JSON.parse(
-        localStorage.getItem('bookmarks-komik') || '[]',
-      );
-      setBookmarked(
-        bookmarks.some((item: { slug: string }) => item.slug === komikId),
-      );
-    }
-  }, [komikId]);
-
-  const handleBookmark = () => {
-    let bookmarks = JSON.parse(localStorage.getItem('bookmarks-komik') || '[]');
-    const isBookmarked = bookmarks.some(
-      (item: { slug: string }) => item.slug === komikId,
-    );
-
-    if (isBookmarked) {
-      bookmarks = bookmarks.filter(
-        (item: { slug: string }) => item.slug !== komikId,
-      );
-    } else {
-      bookmarks.push({
-        slug: komikId,
-        title,
-        poster,
-      });
-    }
-    localStorage.setItem('bookmarks-komik', JSON.stringify(bookmarks));
-    setBookmarked(!isBookmarked);
+  const bookmarkData: KomikBookmark = {
+    slug: komikId,
+    title,
+    poster,
+    chapter: '',
+    score: '',
+    date: '',
+    type: '',
+    komik_id: komikId,
   };
+
+  const { isBookmarked: bookmarked, toggle: handleBookmark } = useBookmark<KomikBookmark>(
+    'komik',
+    komikId,
+    bookmarkData
+  );
 
   return (
     <Button
-      onClick={handleBookmark}
+      onClick={() => handleBookmark()}
       variant={bookmarked ? 'destructive' : 'default'}
       size="lg"
       className="w-full"

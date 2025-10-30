@@ -1,5 +1,6 @@
 import NavigationButtons from '../NavigationButtons';
 import { ImageWithFallback } from '../../../../components/shared/ImageWithFallback';
+import { ErrorStateCenter } from '../../../../components/error/ErrorState';
 import { AlertTriangle } from 'lucide-react';
 import { fetchKomikData } from '../../../../lib/komikFetcher';
 
@@ -31,37 +32,23 @@ export default async function ChapterPage({
     chapter = (response as { data: ChapterDetail }).data;
   } catch (_e) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center">
-        <div className="max-w-md text-center">
-          <div className="p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex flex-col items-center gap-4">
-            <AlertTriangle className="w-12 h-12 text-red-600 dark:text-red-400" />
-            <h1 className="text-2xl font-bold text-red-800 dark:text-red-200">
-              Gagal Memuat Chapter
-            </h1>
-            <p className="text-red-700 dark:text-red-300">
-              Silakan coba kembali beberapa saat lagi
-            </p>
-          </div>
-        </div>
-      </main>
+      <ErrorStateCenter
+        icon={AlertTriangle}
+        title="Gagal Memuat Chapter"
+        message="Silakan coba kembali beberapa saat lagi"
+        type="error"
+      />
     );
   }
 
   if (!chapter) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark flex items-center justify-center">
-        <div className="max-w-md text-center">
-          <div className="p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex flex-col items-center gap-4">
-            <AlertTriangle className="w-12 h-12 text-red-600 dark:text-red-400" />
-            <h1 className="text-2xl font-bold text-red-800 dark:text-red-200">
-              Gagal Memuat Chapter
-            </h1>
-            <p className="text-red-700 dark:text-red-300">
-              Chapter tidak ditemukan
-            </p>
-          </div>
-        </div>
-      </main>
+      <ErrorStateCenter
+        icon={AlertTriangle}
+        title="Gagal Memuat Chapter"
+        message="Chapter tidak ditemukan"
+        type="error"
+      />
     );
   }
 

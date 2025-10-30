@@ -1,41 +1,20 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import BookmarkLoadingSkeleton from '../../../../components/skeleton/BookmarkLoadingSkeleton';
 import EmptyBookmarkMessage from '../../../../components/misc/EmptyBookmarkMessage';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
-import { usePagination } from '../../../../utils/hooks/usePagination';
-
-interface BookmarkItem {
-  slug: string;
-  title: string;
-  poster: string;
-}
+import { useBookmarkPagination } from '../../../../utils/hooks/useBookmarkPagination';
+import type { AnimeBookmark } from '../../../../lib/bookmarks';
 
 export default function BookmarkPage() {
-  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { pagination, handlePageChange, ITEMS_PER_PAGE } = usePagination();
-
-  useEffect(() => {
-    const storedBookmarks = JSON.parse(
-      localStorage.getItem('bookmarks-anime') || '[]',
-    );
-    setBookmarks(storedBookmarks);
-    setIsLoading(false);
-  }, []);
-
-  const totalPages = Math.ceil(bookmarks.length / ITEMS_PER_PAGE);
-  const current_page = pagination.currentPage;
-  const last_visible_page = totalPages;
-  const has_next_page = current_page < totalPages;
-  const has_previous_page = current_page > 1;
-
-  const getPaginatedBookmarks = () => {
-    const start = (current_page - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return bookmarks.slice(start, end);
-  };
+  const {
+    bookmarks,
+    isLoading,
+    pagination,
+    handlePageChange,
+    getPaginatedBookmarks,
+  } = useBookmarkPagination<AnimeBookmark>('bookmarks-anime');
 
   if (isLoading) {
     return <BookmarkLoadingSkeleton />;
@@ -61,9 +40,9 @@ export default function BookmarkPage() {
 
             <div className="flex flex-wrap gap-4 justify-between items-center mt-8">
               <div className="flex gap-4">
-                {has_previous_page && (
+                {pagination.hasPreviousPage && (
                   <button
-                    onClick={() => handlePageChange(current_page - 1)}
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
                     className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -71,9 +50,9 @@ export default function BookmarkPage() {
                   </button>
                 )}
 
-                {has_next_page && (
+                {pagination.hasNextPage && (
                   <button
-                    onClick={() => handlePageChange(current_page + 1)}
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
                     className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
                   >
                     Next
@@ -83,7 +62,7 @@ export default function BookmarkPage() {
               </div>
 
               <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mx-4">
-                Page {current_page} of {last_visible_page}
+                Page {pagination.currentPage} of {pagination.lastVisiblePage}
               </span>
             </div>
           </>

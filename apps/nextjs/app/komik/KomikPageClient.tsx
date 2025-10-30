@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import Link from 'next/link';
 import UnifiedGrid from '../../components/shared/UnifiedGrid';
+import { ErrorState } from '../../components/error/ErrorState';
 import { BookOpen, AlertTriangle, Info, ArrowRight } from 'lucide-react';
 
 export interface Komik {
@@ -58,17 +59,13 @@ function KomikPageClient({
         </div>
 
         {error ? (
-          <div className="p-4 sm:p-6 bg-red-100 dark:bg-red-900/30 rounded-xl sm:rounded-2xl flex items-center gap-3 sm:gap-4">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
-            <div>
-              <h2 className="text-lg sm:text-xl font-medium text-red-800 dark:text-red-200 mb-1 sm:mb-2">
-                Error Loading Data
-              </h2>
-              <p className="text-red-700 dark:text-red-300">
-                Failed to fetch comic data. Please try again later.
-              </p>
-            </div>
-          </div>
+          <ErrorState
+            icon={AlertTriangle}
+            title="Error Loading Data"
+            message="Failed to fetch comic data. Please try again later."
+            type="error"
+            fullScreen={false}
+          />
         ) : (
           <div className="space-y-12">
             {['Manga', 'Manhua', 'Manhwa'].map((type) => {

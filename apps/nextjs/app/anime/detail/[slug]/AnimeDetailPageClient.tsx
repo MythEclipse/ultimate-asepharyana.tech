@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { BackgroundGradient } from '../../../../components/background/background-gradient';
@@ -34,6 +34,8 @@ import {
 import PosterImage from '../../../../components/shared/PosterImage';
 import ErrorLoadingDisplay from '../../../../components/shared/ErrorLoadingDisplay';
 import { AnimeData } from '../../../../types/anime';
+import { useBookmark } from '../../../../utils/hooks/useBookmark';
+import type { AnimeBookmark } from '../../../../lib/bookmarks';
 
 interface AnimeDetailPageClientProps {
   slug: string;
@@ -48,7 +50,20 @@ function AnimeDetailPageClient({
 }: AnimeDetailPageClientProps) {
   const router = useRouter();
 
-  const [bookmarked, setBookmarked] = useState(false);
+  // Use bookmark hook with anime data
+  const bookmarkData: AnimeBookmark | undefined = initialData
+    ? {
+        slug,
+        title: initialData.title,
+        poster: initialData.poster,
+      }
+    : undefined;
+
+  const { isBookmarked: bookmarked, toggle: handleBookmark } = useBookmark<AnimeBookmark>(
+    'anime',
+    slug,
+    bookmarkData
+  );
 
   useEffect(() => {
     if (initialData?.episode_lists) {
@@ -57,38 +72,6 @@ function AnimeDetailPageClient({
       });
     }
   }, [initialData, router]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const bookmarks = JSON.parse(
-        localStorage.getItem('bookmarks-anime') || '[]',
-      );
-      setBookmarked(
-        bookmarks.some((item: { slug: string }) => item.slug === slug),
-      );
-    }
-  }, [slug]);
-
-  const handleBookmark = () => {
-    let bookmarks = JSON.parse(localStorage.getItem('bookmarks-anime') || '[]');
-    const isBookmarked = bookmarks.some(
-      (item: { slug: string }) => item.slug === slug,
-    );
-
-    if (isBookmarked) {
-      bookmarks = bookmarks.filter(
-        (item: { slug: string }) => item.slug !== slug,
-      );
-    } else if (initialData) {
-      bookmarks.push({
-        slug,
-        title: initialData.title,
-        poster: initialData.poster,
-      });
-    }
-    localStorage.setItem('bookmarks-anime', JSON.stringify(bookmarks));
-    setBookmarked(!isBookmarked);
-  };
 
   if (initialError) {
     return <ErrorLoadingDisplay type="error" message={initialError} />;
@@ -137,7 +120,7 @@ function AnimeDetailPageClient({
                     />
                   </Card>
                   <Button
-                    onClick={handleBookmark}
+                    onClick={() => handleBookmark()}
                     variant={bookmarked ? 'destructive' : 'default'}
                     size="lg"
                     className="w-full"

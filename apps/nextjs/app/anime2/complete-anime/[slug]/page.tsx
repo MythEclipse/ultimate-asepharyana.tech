@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import { APIURLSERVER } from '../../../../utils/url-utils';
+import { ErrorState } from '../../../../components/error/ErrorState';
 import {
   AlertTriangle,
   Info,
@@ -63,36 +64,22 @@ async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
 
   if (error || !data) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center gap-4">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
-            <div>
-              <h1 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-2">
-                Error Memuat Data
-              </h1>
-              <p className="text-red-700 dark:text-red-300">
-                Gagal mengambil data dari API. Silakan coba lagi nanti.
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
+      <ErrorState
+        icon={AlertTriangle}
+        title="Error Memuat Data"
+        message="Gagal mengambil data dari API. Silakan coba lagi nanti."
+        type="error"
+      />
     );
   }
 
   if (!Array.isArray(data.data)) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="p-6 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center gap-4">
-            <Info className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-200">
-              No Anime Available
-            </h1>
-          </div>
-        </div>
-      </main>
+      <ErrorState
+        icon={Info}
+        title="No Anime Available"
+        type="info"
+      />
     );
   }
 

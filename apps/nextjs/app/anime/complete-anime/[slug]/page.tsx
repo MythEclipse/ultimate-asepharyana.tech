@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import UnifiedGrid from '../../../../components/shared/UnifiedGrid';
 import { APIURLSERVER } from '../../../../utils/url-utils';
+import { ErrorState } from '../../../../components/error/ErrorState';
 import {
   CheckCircle,
   AlertTriangle,
@@ -70,21 +71,12 @@ async function AnimePage({ params }: { params: Promise<{ slug: string }> }) {
 
   if (error || !data) {
     return (
-      <main className="min-h-screen p-6 bg-background dark:bg-dark">
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="p-6 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center gap-4">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
-            <div>
-              <h1 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-2">
-                Error Loading Data
-              </h1>
-              <p className="text-red-700 dark:text-red-300">
-                Could not fetch data from the API. Please try again later.
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
+      <ErrorState
+        icon={AlertTriangle}
+        title="Error Loading Data"
+        message="Could not fetch data from the API. Please try again later."
+        type="error"
+      />
     );
   }
 

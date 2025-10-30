@@ -1,20 +1,9 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-
 import DesktopNavLinks from './DesktopNavLinks';
 import MobileNav from './MobileNav';
-
-const Logo = () => (
-  <Link href="/" className="flex items-center gap-2">
-    <Image src="/Logo.svg" alt="Logo" width={28} height={28} />
-    <span className="hidden text-base font-semibold sm:inline-block md:text-lg">
-      Asep Haryana
-    </span>
-  </Link>
-);
+import Logo from '../logo/Logo';
 
 export default function Navbar() {
   return (

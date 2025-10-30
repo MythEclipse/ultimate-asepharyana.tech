@@ -3,23 +3,13 @@
 
 import React, { memo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
 import { Button } from '../ui/button';
 import { navLinks } from '../../utils/constants';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
-
-const Logo = memo(() => (
-  <Link href="/" className="flex items-center gap-2">
-    <Image src="/Logo.svg" alt="Logo" width={28} height={28} />
-    <span className="hidden text-base font-semibold sm:inline-block md:text-lg">
-      Asep Haryana
-    </span>
-  </Link>
-));
-Logo.displayName = 'Logo';
+import Logo from '../logo/Logo';
 
 function MobileNav() {
   const isOpen = useGlobalStore((s) => s.isMobileNavOpen);
