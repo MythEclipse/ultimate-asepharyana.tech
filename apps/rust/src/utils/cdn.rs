@@ -1,5 +1,5 @@
-use reqwest::multipart;
 use mime_guess::from_path;
+use reqwest::multipart;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -9,7 +9,10 @@ struct RyzenCDNResponse {
     url: Option<String>,
 }
 
-pub async fn ryzen_cdn(buffer: &[u8], filename: Option<&str>) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn ryzen_cdn(
+    buffer: &[u8],
+    filename: Option<&str>,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
 
     // Determine MIME type
@@ -38,7 +41,11 @@ pub async fn ryzen_cdn(buffer: &[u8], filename: Option<&str>) -> Result<String, 
     let json: RyzenCDNResponse = response.json().await?;
 
     if !json.success {
-        return Err(format!("Upload failed: {}", json.message.unwrap_or_else(|| "Unknown error".to_string())).into());
+        return Err(format!(
+            "Upload failed: {}",
+            json.message.unwrap_or_else(|| "Unknown error".to_string())
+        )
+        .into());
     }
 
     json.url.ok_or_else(|| "No URL in response".into())

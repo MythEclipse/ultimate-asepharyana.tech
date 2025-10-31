@@ -1,6 +1,6 @@
-use std::process::Command;
-use std::fs;
 use std::env;
+use std::fs;
+use std::process::Command;
 
 fn main() -> std::io::Result<()> {
     println!("🧪 Starting Scaffold System Test");
@@ -19,11 +19,7 @@ fn main() -> std::io::Result<()> {
     ])?;
 
     println!("\n📝 Test 1: Creating static routes...");
-    run_scaffold_batch(&[
-        "test/v1/list",
-        "test/v1/search",
-        "test/v1/users/list",
-    ])?;
+    run_scaffold_batch(&["test/v1/list", "test/v1/search", "test/v1/users/list"])?;
 
     println!("\n📝 Test 2: Creating dynamic routes... (using new single-file dynamic routing)");
     run_scaffold_batch(&[
@@ -118,22 +114,21 @@ fn run_scaffold_batch(routes: &[&str]) -> std::io::Result<()> {
 fn run_scaffold_batch_protected(routes: &[&str]) -> std::io::Result<()> {
     for route in routes {
         println!("🔒 Creating protected scaffold route: {}", route);
-        run_command("cargo", &["run", "--bin", "scaffold", "--", "--protected", route])?;
+        run_command(
+            "cargo",
+            &["run", "--bin", "scaffold", "--", "--protected", route],
+        )?;
     }
     Ok(())
 }
 
 fn run_command(command: &str, args: &[&str]) -> std::io::Result<()> {
     println!("Running: {} {}", command, args.join(" "));
-    let output = Command::new(command)
-        .args(args)
-        .output()?;
+    let output = Command::new(command).args(args).output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(std::io::Error::other(
-          format!("Command failed: {}", stderr)
-      ));
+        return Err(std::io::Error::other(format!("Command failed: {}", stderr)));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -148,7 +143,12 @@ fn verify_file_exists(path: &str) -> std::io::Result<()> {
     // Determine base API directory so this can be run from workspace root or from apps/rust
     let cwd = env::current_dir()?;
     let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
-    let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+    let candidate_b = cwd
+        .join("apps")
+        .join("rust")
+        .join("src")
+        .join("routes")
+        .join("api"); // when running from workspace root
 
     let base_api_dir = if candidate_a.exists() {
         candidate_a
@@ -156,7 +156,11 @@ fn verify_file_exists(path: &str) -> std::io::Result<()> {
         candidate_b
     } else if cwd.join("apps").join("rust").exists() {
         // workspace root but api dir not present yet -> prefer apps/rust path
-        cwd.join("apps").join("rust").join("src").join("routes").join("api")
+        cwd.join("apps")
+            .join("rust")
+            .join("src")
+            .join("routes")
+            .join("api")
     } else {
         // fallback to the local src path
         cwd.join("src").join("routes").join("api")
@@ -177,7 +181,10 @@ fn verify_file_exists(path: &str) -> std::io::Result<()> {
         Ok(())
     } else {
         println!("❌ File missing: {}", path);
-        Err(std::io::Error::new(std::io::ErrorKind::NotFound, "File not found"))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "File not found",
+        ))
     }
 }
 
@@ -185,7 +192,12 @@ fn verify_protected_content(path: &str) -> std::io::Result<()> {
     // Determine base API directory so this can be run from workspace root or from apps/rust
     let cwd = env::current_dir()?;
     let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
-    let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+    let candidate_b = cwd
+        .join("apps")
+        .join("rust")
+        .join("src")
+        .join("routes")
+        .join("api"); // when running from workspace root
 
     let base_api_dir = if candidate_a.exists() {
         candidate_a
@@ -193,7 +205,11 @@ fn verify_protected_content(path: &str) -> std::io::Result<()> {
         candidate_b
     } else if cwd.join("apps").join("rust").exists() {
         // workspace root but api dir not present yet -> prefer apps/rust path
-        cwd.join("apps").join("rust").join("src").join("routes").join("api")
+        cwd.join("apps")
+            .join("rust")
+            .join("src")
+            .join("routes")
+            .join("api")
     } else {
         // fallback to the local src path
         cwd.join("src").join("routes").join("api")
@@ -209,15 +225,25 @@ fn verify_protected_content(path: &str) -> std::io::Result<()> {
         file_path.set_extension("rs");
     }
 
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not read file {}: {}", path, e)))?;
+    let content = fs::read_to_string(&file_path).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Could not read file {}: {}", path, e),
+        )
+    })?;
 
     // Check for required authentication boilerplate
     let checks = [
-        ("AuthMiddleware import", "use crate::middleware::auth::AuthMiddleware;"),
+        (
+            "AuthMiddleware import",
+            "use crate::middleware::auth::AuthMiddleware;",
+        ),
         ("Claims import", "use crate::utils::auth::Claims;"),
         ("Extension import", "use axum::Extension;"),
-        ("Extension<Claims> parameter", "Extension(claims): Extension<Claims>"),
+        (
+            "Extension<Claims> parameter",
+            "Extension(claims): Extension<Claims>",
+        ),
         ("AuthMiddleware::layer()", "AuthMiddleware::layer()"),
         ("security scheme", "security("),
         ("ApiKeyAuth", "(\"ApiKeyAuth\" = [])"),
@@ -226,7 +252,10 @@ fn verify_protected_content(path: &str) -> std::io::Result<()> {
     for (description, expected) in &checks {
         if !content.contains(expected) {
             println!("❌ {} missing in {}: {}", description, path, expected);
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{} not found in protected route", description)));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("{} not found in protected route", description),
+            ));
         }
     }
 
@@ -238,17 +267,29 @@ fn verify_openapi_security_schemes() -> std::io::Result<()> {
     println!("🔍 Verifying OpenAPI documentation includes security schemes...");
 
     // Get the OpenAPI spec from OUT_DIR (generated during build)
-    let out_dir = env::var("OUT_DIR").map_err(|_| std::io::Error::new(std::io::ErrorKind::NotFound, "OUT_DIR environment variable not set"))?;
+    let out_dir = env::var("OUT_DIR").map_err(|_| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "OUT_DIR environment variable not set",
+        )
+    })?;
     let openapi_path = std::path::Path::new(&out_dir).join("openapi_spec.json");
 
-    if !fs::metadata(&openapi_path).is_ok() {
-        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "OpenAPI spec file not found in OUT_DIR"));
+    if fs::metadata(&openapi_path).is_err() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "OpenAPI spec file not found in OUT_DIR",
+        ));
     }
 
     // Read and parse the OpenAPI JSON
     let openapi_content = fs::read_to_string(&openapi_path)?;
-    let openapi: serde_json::Value = serde_json::from_str(&openapi_content)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to parse OpenAPI JSON: {}", e)))?;
+    let openapi: serde_json::Value = serde_json::from_str(&openapi_content).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("Failed to parse OpenAPI JSON: {}", e),
+        )
+    })?;
 
     // Check for security at the root level
     if let Some(security) = openapi.get("security") {
@@ -256,24 +297,39 @@ fn verify_openapi_security_schemes() -> std::io::Result<()> {
 
         // Check for ApiKeyAuth in security
         if let Some(security_array) = security.as_array() {
-            if let Some(first_security) = security_array.get(0) {
+            if let Some(first_security) = security_array.first() {
                 if let Some(api_key_auth) = first_security.get("ApiKeyAuth") {
                     if api_key_auth.is_array() && api_key_auth.as_array().unwrap().is_empty() {
                         println!("✅ Found ApiKeyAuth security requirement");
                     } else {
-                        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "ApiKeyAuth security requirement is not an empty array"));
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "ApiKeyAuth security requirement is not an empty array",
+                        ));
                     }
                 } else {
-                    return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "ApiKeyAuth not found in security"));
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        "ApiKeyAuth not found in security",
+                    ));
                 }
             } else {
-                return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No security requirements found"));
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "No security requirements found",
+                ));
             }
         } else {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "security is not an array"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "security is not an array",
+            ));
         }
     } else {
-        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "security not found at OpenAPI root"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "security not found at OpenAPI root",
+        ));
     }
 
     println!("✅ OpenAPI security schemes verification completed successfully");
@@ -284,7 +340,12 @@ fn cleanup_files(paths: &[&str]) -> std::io::Result<()> {
     // Determine base API directory so this can be run from workspace root or from apps/rust
     let cwd = env::current_dir()?;
     let candidate_a = cwd.join("src").join("routes").join("api"); // when running from apps/rust
-    let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api"); // when running from workspace root
+    let candidate_b = cwd
+        .join("apps")
+        .join("rust")
+        .join("src")
+        .join("routes")
+        .join("api"); // when running from workspace root
 
     let base_api_dir = if candidate_a.exists() {
         candidate_a
@@ -292,7 +353,11 @@ fn cleanup_files(paths: &[&str]) -> std::io::Result<()> {
         candidate_b
     } else if cwd.join("apps").join("rust").exists() {
         // workspace root but api dir not present yet -> prefer apps/rust path
-        cwd.join("apps").join("rust").join("src").join("routes").join("api")
+        cwd.join("apps")
+            .join("rust")
+            .join("src")
+            .join("routes")
+            .join("api")
     } else {
         // fallback to the local src path
         cwd.join("src").join("routes").join("api")

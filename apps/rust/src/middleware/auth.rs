@@ -1,11 +1,11 @@
 // JWT Authentication middleware for Axum
 
+use crate::utils::auth::{decode_jwt, Claims};
 use axum::{
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
 };
-use crate::utils::auth::{decode_jwt, Claims};
 
 pub struct AuthMiddleware(pub Claims);
 

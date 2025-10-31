@@ -1,18 +1,27 @@
-use axum::{ extract::Query, response::IntoResponse, routing::get, Json, Router };
-use axum::http::StatusCode;
+// Standard library imports
 use std::sync::Arc;
-use crate::routes::AppState;
-use serde::{ Deserialize, Serialize };
-use utoipa::ToSchema;
-use scraper::{ Html, Selector };
-use regex::Regex;
-use crate::fetch_with_proxy::fetch_with_proxy;
-use lazy_static::lazy_static;
-use backoff::{ future::retry, ExponentialBackoff };
-use tracing::{ info, error };
-use axum::extract::State;
-use crate::urls::get_otakudesu_url;
+
+// External crate imports
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::get,
+    Json, Router,
+};
+use backoff::{future::retry, ExponentialBackoff};
 use deadpool_redis::redis::AsyncCommands;
+use lazy_static::lazy_static;
+use regex::Regex;
+use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
+use tracing::{error, info};
+use utoipa::ToSchema;
+
+// Internal imports
+use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::routes::AppState;
+use crate::urls::get_otakudesu_url;
 
 #[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
@@ -29,47 +38,47 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct AnimeItem {
-  pub title: String,
-  pub slug: String,
-  pub poster: String,
-  pub episode: String,
-  pub anime_url: String,
-  pub genres: Vec<String>,
-  pub status: String,
-  pub rating: String,
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub episode: String,
+    pub anime_url: String,
+    pub genres: Vec<String>,
+    pub status: String,
+    pub rating: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Pagination {
-  pub current_page: u32,
-  pub last_visible_page: u32,
-  pub has_next_page: bool,
-  pub next_page: Option<u32>,
-  pub has_previous_page: bool,
-  pub previous_page: Option<u32>,
+    pub current_page: u32,
+    pub last_visible_page: u32,
+    pub has_next_page: bool,
+    pub next_page: Option<u32>,
+    pub has_previous_page: bool,
+    pub previous_page: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct SearchResponse {
-  pub status: String,
-  pub data: Vec<AnimeItem>,
-  pub pagination: Pagination,
+    pub status: String,
+    pub data: Vec<AnimeItem>,
+    pub pagination: Pagination,
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct SearchQuery {
-  pub q: Option<String>,
+    pub q: Option<String>,
 }
 
 lazy_static! {
-  pub static ref ITEM_SELECTOR: Selector = Selector::parse("#venkonten .chivsrc li").unwrap();
-  pub static ref TITLE_SELECTOR: Selector = Selector::parse("h2 a").unwrap();
-  pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-  pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-  pub static ref GENRE_SELECTOR: Selector = Selector::parse(".set a").unwrap();
-  pub static ref STATUS_SELECTOR: Selector = Selector::parse(".set").unwrap();
-  pub static ref NEXT_SELECTOR: Selector = Selector::parse(".hpage .r").unwrap();
-  pub static ref EPISODE_REGEX: Regex = Regex::new(r"\(([^)]+)\)").unwrap();
+    pub static ref ITEM_SELECTOR: Selector = Selector::parse("#venkonten .chivsrc li").unwrap();
+    pub static ref TITLE_SELECTOR: Selector = Selector::parse("h2 a").unwrap();
+    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+    pub static ref GENRE_SELECTOR: Selector = Selector::parse(".set a").unwrap();
+    pub static ref STATUS_SELECTOR: Selector = Selector::parse(".set").unwrap();
+    pub static ref NEXT_SELECTOR: Selector = Selector::parse(".hpage .r").unwrap();
+    pub static ref EPISODE_REGEX: Regex = Regex::new(r"\(([^)]+)\)").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -87,201 +96,242 @@ const CACHE_TTL: u64 = 300; // 5 minutes
     )
 )]
 pub async fn search(
-  State(app_state): State<Arc<AppState>>,
-  Query(params): Query<SearchQuery>
+    State(app_state): State<Arc<AppState>>,
+    Query(params): Query<SearchQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-  let start = std::time::Instant::now();
-  let query = params.q.unwrap_or_else(|| "one".to_string());
-  info!("Starting search for query: {}", query);
+    let start = std::time::Instant::now();
+    let query = params.q.unwrap_or_else(|| "one".to_string());
+    info!("Starting search for query: {}", query);
 
-  let cache_key = format!("anime:search:{}", query);
-  let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-    error!("Failed to get Redis connection: {:?}", e);
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
-  })?;
-
-  // Check cache first
-  let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-    error!("Failed to get data from Redis: {:?}", e);
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
-  })?;
-
-  if let Some(json_data_string) = cached_response {
-    info!("Cache hit for key: {}", cache_key);
-    let search_response: SearchResponse = serde_json::from_str(&json_data_string).map_err(|e| {
-      error!("Failed to deserialize cached data: {:?}", e);
-      (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    let cache_key = format!("anime:search:{}", query);
+    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
+        error!("Failed to get Redis connection: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Redis error: {}", e),
+        )
     })?;
-    return Ok(Json(search_response).into_response());
-  }
 
-  let url = format!("{}/?s={}&post_type=anime", get_otakudesu_url(), urlencoding::encode(&query));
+    // Check cache first
+    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
+        error!("Failed to get data from Redis: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Redis error: {}", e),
+        )
+    })?;
 
-  match fetch_and_parse_search(&url, query.clone()).await {
-    Ok((data, pagination)) => {
-      let response = SearchResponse {
-        status: "Ok".to_string(),
-        data,
-        pagination,
-      };
-      let json_data = serde_json::to_string(&response).map_err(|e| {
-        error!("Failed to serialize response for caching: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
-      })?;
-
-      // Cache the result
-      conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL).await.map_err(|e| {
-        error!("Failed to set data in Redis: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
-      })?;
-      info!("Cache set for key: {}", cache_key);
-
-      let duration = start.elapsed();
-      info!("Fetched and parsed search for query: {}, duration: {:?}", query, duration);
-      Ok(Json(response).into_response())
+    if let Some(json_data_string) = cached_response {
+        info!("Cache hit for key: {}", cache_key);
+        let search_response: SearchResponse =
+            serde_json::from_str(&json_data_string).map_err(|e| {
+                error!("Failed to deserialize cached data: {:?}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Serialization error: {}", e),
+                )
+            })?;
+        return Ok(Json(search_response).into_response());
     }
-    Err(e) => {
-      let duration = start.elapsed();
-      error!("Error searching for query: {}, error: {:?}, duration: {:?}", query, e, duration);
-      Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
+
+    let url = format!(
+        "{}/?s={}&post_type=anime",
+        get_otakudesu_url(),
+        urlencoding::encode(&query)
+    );
+
+    match fetch_and_parse_search(&url, query.clone()).await {
+        Ok((data, pagination)) => {
+            let response = SearchResponse {
+                status: "Ok".to_string(),
+                data,
+                pagination,
+            };
+            let json_data = serde_json::to_string(&response).map_err(|e| {
+                error!("Failed to serialize response for caching: {:?}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Serialization error: {}", e),
+                )
+            })?;
+
+            // Cache the result
+            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
+                .await
+                .map_err(|e| {
+                    error!("Failed to set data in Redis: {:?}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Redis error: {}", e),
+                    )
+                })?;
+            info!("Cache set for key: {}", cache_key);
+
+            let duration = start.elapsed();
+            info!(
+                "Fetched and parsed search for query: {}, duration: {:?}",
+                query, duration
+            );
+            Ok(Json(response).into_response())
+        }
+        Err(e) => {
+            let duration = start.elapsed();
+            error!(
+                "Error searching for query: {}, error: {:?}, duration: {:?}",
+                query, e, duration
+            );
+            Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
+        }
     }
-  }
 }
 
 async fn fetch_and_parse_search(
-  url: &str,
-  query: String
+    url: &str,
+    query: String,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-  let operation = || async {
-    let response = fetch_with_proxy(url).await?;
-    Ok(response.data)
-  };
+    let operation = || async {
+        let response = fetch_with_proxy(url).await?;
+        Ok(response.data)
+    };
 
-  let backoff = ExponentialBackoff::default();
-  let html = retry(backoff, operation).await?;
-  let html_clone = html.clone(); // Clone the html string
-  let query_clone = query.clone();
+    let backoff = ExponentialBackoff::default();
+    let html = retry(backoff, operation).await?;
+    let html_clone = html.clone(); // Clone the html string
+    let query_clone = query.clone();
 
-  let parse_result = tokio::task::spawn_blocking(move || {
-    let document = Html::parse_document(&html_clone);
+    let parse_result = tokio::task::spawn_blocking(move || {
+        let document = Html::parse_document(&html_clone);
 
-    let mut data = Vec::new();
+        let mut data = Vec::new();
 
-    for element in document.select(&ITEM_SELECTOR) {
-      let title = element
-        .select(&TITLE_SELECTOR)
-        .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .unwrap_or_default();
+        for element in document.select(&ITEM_SELECTOR) {
+            let title = element
+                .select(&TITLE_SELECTOR)
+                .next()
+                .map(|e| e.text().collect::<String>().trim().to_string())
+                .unwrap_or_default();
 
-      let slug = element
-        .select(&LINK_SELECTOR)
-        .next()
-        .and_then(|e| e.value().attr("href"))
-        .and_then(|href| href.split('/').nth(4))
-        .unwrap_or("")
-        .to_string();
+            let slug = element
+                .select(&LINK_SELECTOR)
+                .next()
+                .and_then(|e| e.value().attr("href"))
+                .and_then(|href| href.split('/').nth(4))
+                .unwrap_or("")
+                .to_string();
 
-      let poster = element
-        .select(&IMG_SELECTOR)
-        .next()
-        .and_then(|e| e.value().attr("src"))
-        .unwrap_or("")
-        .to_string();
+            let poster = element
+                .select(&IMG_SELECTOR)
+                .next()
+                .and_then(|e| e.value().attr("src"))
+                .unwrap_or("")
+                .to_string();
 
-      let episode_text = element
-        .select(&TITLE_SELECTOR)
-        .next()
-        .map(|e| e.text().collect::<String>())
-        .unwrap_or_default();
+            let episode_text = element
+                .select(&TITLE_SELECTOR)
+                .next()
+                .map(|e| e.text().collect::<String>())
+                .unwrap_or_default();
 
-      let episode = EPISODE_REGEX.captures(&episode_text)
-        .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str().to_string())
-        .unwrap_or_else(|| "Ongoing".to_string());
+            let episode = EPISODE_REGEX
+                .captures(&episode_text)
+                .and_then(|cap| cap.get(1))
+                .map(|m| m.as_str().to_string())
+                .unwrap_or_else(|| "Ongoing".to_string());
 
-      let anime_url = element
-        .select(&LINK_SELECTOR)
-        .next()
-        .and_then(|e| e.value().attr("href"))
-        .unwrap_or("")
-        .to_string();
+            let anime_url = element
+                .select(&LINK_SELECTOR)
+                .next()
+                .and_then(|e| e.value().attr("href"))
+                .unwrap_or("")
+                .to_string();
 
-      let genres: Vec<String> = element
-        .select(&STATUS_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Genres"))
-        .map(|set|
-          set
-            .select(&GENRE_SELECTOR)
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .collect()
-        )
-        .unwrap_or_default();
+            let genres: Vec<String> = element
+                .select(&STATUS_SELECTOR)
+                .find(|e| e.text().collect::<String>().contains("Genres"))
+                .map(|set| {
+                    set.select(&GENRE_SELECTOR)
+                        .map(|e| e.text().collect::<String>().trim().to_string())
+                        .collect()
+                })
+                .unwrap_or_default();
 
-      let status = element
-        .select(&STATUS_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Status"))
-        .map(|e| e.text().collect::<String>().replace("Status :", "").trim().to_string())
-        .unwrap_or_default();
+            let status = element
+                .select(&STATUS_SELECTOR)
+                .find(|e| e.text().collect::<String>().contains("Status"))
+                .map(|e| {
+                    e.text()
+                        .collect::<String>()
+                        .replace("Status :", "")
+                        .trim()
+                        .to_string()
+                })
+                .unwrap_or_default();
 
-      let rating = element
-        .select(&STATUS_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Rating"))
-        .map(|e| e.text().collect::<String>().replace("Rating :", "").trim().to_string())
-        .unwrap_or_default();
+            let rating = element
+                .select(&STATUS_SELECTOR)
+                .find(|e| e.text().collect::<String>().contains("Rating"))
+                .map(|e| {
+                    e.text()
+                        .collect::<String>()
+                        .replace("Rating :", "")
+                        .trim()
+                        .to_string()
+                })
+                .unwrap_or_default();
 
-      if !title.is_empty() {
-        data.push(AnimeItem {
-          title,
-          slug,
-          poster,
-          episode,
-          anime_url,
-          genres,
-          status,
-          rating,
-        });
-      }
-    }
+            if !title.is_empty() {
+                data.push(AnimeItem {
+                    title,
+                    slug,
+                    poster,
+                    episode,
+                    anime_url,
+                    genres,
+                    status,
+                    rating,
+                });
+            }
+        }
 
-    let pagination = parse_pagination(&document, &query_clone);
+        let pagination = parse_pagination(&document, &query_clone);
+
+        Ok((data, pagination))
+    })
+    .await;
+
+    let (data, pagination) = match parse_result {
+        Ok(Ok(res)) => res,
+        Ok(Err(e)) | Err(e) => {
+            return Err(Box::new(e));
+        }
+    };
 
     Ok((data, pagination))
-  }).await;
-
-  let (data, pagination) = match parse_result {
-    Ok(Ok(res)) => res,
-    Ok(Err(e)) | Err(e) => {
-      return Err(Box::new(e));
-    }
-  };
-
-  Ok((data, pagination))
 }
 
 fn parse_pagination(document: &Html, _query: &str) -> Pagination {
-  let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
-  let last_visible_page = 57;
+    let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
+    let last_visible_page = 57;
 
-  let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
-  let has_previous_page = document.select(&NEXT_SELECTOR).next().is_some(); // Simplified, as Next.js uses parseInt(slug, 10) || 1
+    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_previous_page = document.select(&NEXT_SELECTOR).next().is_some(); // Simplified, as Next.js uses parseInt(slug, 10) || 1
 
-  Pagination {
-    current_page: page_num,
-    last_visible_page,
-    has_next_page,
-    next_page: if has_next_page {
-      Some(page_num + 1)
-    } else {
-      None
-    },
-    has_previous_page,
-    previous_page: if has_previous_page {
-      Some(page_num - 1)
-    } else {
-      None
-    },
-  }
+    Pagination {
+        current_page: page_num,
+        last_visible_page,
+        has_next_page,
+        next_page: if has_next_page {
+            Some(page_num + 1)
+        } else {
+            None
+        },
+        has_previous_page,
+        previous_page: if has_previous_page {
+            Some(page_num - 1)
+        } else {
+            None
+        },
+    }
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

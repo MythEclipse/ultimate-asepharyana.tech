@@ -1,7 +1,6 @@
 use anyhow::Result;
 use reqwest::Client;
 use serde_json::Value;
-use tokio;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt; // Add this for Windows-specific process creation flags
@@ -21,7 +20,11 @@ async fn test_anime_flow() -> Result<()> {
     println!("Status for /api/anime: {}", anime_list_status);
     println!("Body for /api/anime: {}", anime_list_body);
 
-    assert!(anime_list_status.is_success(), "API call to /api/anime failed with status: {}", anime_list_status);
+    assert!(
+        anime_list_status.is_success(),
+        "API call to /api/anime failed with status: {}",
+        anime_list_status
+    );
 
     let anime_list_json: Value = serde_json::from_str(&anime_list_body)?;
     let mut anime_slug: Option<String> = None;
@@ -45,7 +48,8 @@ async fn test_anime_flow() -> Result<()> {
         }
     }
 
-    let slug = anime_slug.expect("No anime slug found in /api/anime response. Cannot proceed with detail test.");
+    let slug = anime_slug
+        .expect("No anime slug found in /api/anime response. Cannot proceed with detail test.");
     println!("Extracted slug: {}", slug);
 
     // 2. Test /api/anime/detail/{slug} endpoint using the extracted slug
@@ -55,16 +59,33 @@ async fn test_anime_flow() -> Result<()> {
     let anime_detail_status = anime_detail_response.status();
     let anime_detail_body = anime_detail_response.text().await?;
 
-    println!("Status for /api/anime/detail/{}: {}", slug, anime_detail_status);
+    println!(
+        "Status for /api/anime/detail/{}: {}",
+        slug, anime_detail_status
+    );
     println!("Body for /api/anime/detail/{}: {}", slug, anime_detail_body);
 
-    assert!(anime_detail_status.is_success(), "API call to /api/anime/detail/{} failed with status: {}", slug, anime_detail_status);
+    assert!(
+        anime_detail_status.is_success(),
+        "API call to /api/anime/detail/{} failed with status: {}",
+        slug,
+        anime_detail_status
+    );
 
     let anime_detail_json: Value = serde_json::from_str(&anime_detail_body)?;
-    assert!(anime_detail_json["data"].is_object(), "Detail data is not an object");
-    assert!(anime_detail_json["data"]["title"].is_string(), "Detail data does not contain a title");
+    assert!(
+        anime_detail_json["data"].is_object(),
+        "Detail data is not an object"
+    );
+    assert!(
+        anime_detail_json["data"]["title"].is_string(),
+        "Detail data does not contain a title"
+    );
 
-    println!("Successfully retrieved details for anime with slug: {}", slug);
+    println!(
+        "Successfully retrieved details for anime with slug: {}",
+        slug
+    );
 
     Ok(())
 }
@@ -78,7 +99,7 @@ async fn main() -> Result<()> {
     println!("Starting server with cargo run...");
 
     let mut command = Command::new("cargo");
-    command.args(&["run", "--bin", "rust"]);
+    command.args(["run", "--bin", "rust"]);
 
     #[cfg(target_os = "windows")]
     {

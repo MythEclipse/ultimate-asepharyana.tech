@@ -1,9 +1,9 @@
 // Loads and exposes all environment variables as a static, dynamic HashMap using dotenv and once_cell.
 // This approach is fully dynamic: all env vars are available at runtime via CONFIG_MAP.
 
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::env;
-use once_cell::sync::Lazy;
 
 // Static config map, loaded once at startup
 pub static CONFIG_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {

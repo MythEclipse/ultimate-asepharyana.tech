@@ -1,8 +1,8 @@
-use reqwest::Client;
-use tracing::{info, error};
-use bytes::Bytes;
 use crate::utils::error::AppError;
-use crate::utils::headers::{common_image_headers}; // Import the new common_headers and common_image_headers functions
+use crate::utils::headers::common_image_headers;
+use bytes::Bytes;
+use reqwest::Client;
+use tracing::{error, info}; // Import the new common_headers and common_image_headers functions
 
 pub struct ImageProxyResult {
     pub data: Bytes,
@@ -35,7 +35,9 @@ pub async fn image_proxy(url: &str) -> Result<ImageProxyResult, AppError> {
     // This part cannot be directly re-implemented without knowing the Rust equivalent of the uploader service
     // For now, return an error if all previous attempts fail.
     error!("All image proxy attempts failed for URL: {}", url);
-    Err(AppError::Other("Failed to proxy image after all attempts".to_string()))
+    Err(AppError::Other(
+        "Failed to proxy image after all attempts".to_string(),
+    ))
 }
 
 async fn fetch_cdn_image(url: &str, version: u8) -> Result<ImageProxyResult, AppError> {
@@ -48,7 +50,9 @@ async fn fetch_cdn_image(url: &str, version: u8) -> Result<ImageProxyResult, App
     match client.get(&cdn_url).headers(headers).send().await {
         Ok(response) => {
             let status = response.status().as_u16();
-            let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
+            let content_type = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
                 .and_then(|h| h.to_str().ok())
                 .map(|s| s.to_string());
 
@@ -56,18 +60,36 @@ async fn fetch_cdn_image(url: &str, version: u8) -> Result<ImageProxyResult, App
                 if let Some(ct) = &content_type {
                     if ct.starts_with("image/") {
                         let data = response.bytes().await?;
-                        return Ok(ImageProxyResult { data, content_type, status });
+                        return Ok(ImageProxyResult {
+                            data,
+                            content_type,
+                            status,
+                        });
                     } else {
                         error!("CDN URL does not point to an image: {}", url);
-                        return Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status: 400 });
+                        return Ok(ImageProxyResult {
+                            data: Bytes::new(),
+                            content_type: None,
+                            status: 400,
+                        });
                     }
                 }
             }
-            error!("Failed to fetch image from CDN v{}: {}, Status: {}", version, url, status);
-            Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status })
-        },
+            error!(
+                "Failed to fetch image from CDN v{}: {}, Status: {}",
+                version, url, status
+            );
+            Ok(ImageProxyResult {
+                data: Bytes::new(),
+                content_type: None,
+                status,
+            })
+        }
         Err(e) => {
-            error!("Internal server error during CDN v{} fetch for {}: {}", version, url, e);
+            error!(
+                "Internal server error during CDN v{} fetch for {}: {}",
+                version, url, e
+            );
             Err(AppError::ReqwestError(e))
         }
     }
@@ -80,7 +102,9 @@ async fn fetch_manual(url: &str) -> Result<ImageProxyResult, AppError> {
     match client.get(url).headers(headers).send().await {
         Ok(response) => {
             let status = response.status().as_u16();
-            let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
+            let content_type = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
                 .and_then(|h| h.to_str().ok())
                 .map(|s| s.to_string());
 
@@ -88,18 +112,36 @@ async fn fetch_manual(url: &str) -> Result<ImageProxyResult, AppError> {
                 if let Some(ct) = &content_type {
                     if ct.starts_with("image/") {
                         let data = response.bytes().await?;
-                        return Ok(ImageProxyResult { data, content_type, status });
+                        return Ok(ImageProxyResult {
+                            data,
+                            content_type,
+                            status,
+                        });
                     } else {
                         error!("URL does not point to an image: {}", url);
-                        return Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status: 400 });
+                        return Ok(ImageProxyResult {
+                            data: Bytes::new(),
+                            content_type: None,
+                            status: 400,
+                        });
                     }
                 }
             }
-            error!("Failed to fetch image manually from URL: {}, Status: {}", url, status);
-            Ok(ImageProxyResult { data: Bytes::new(), content_type: None, status })
-        },
+            error!(
+                "Failed to fetch image manually from URL: {}, Status: {}",
+                url, status
+            );
+            Ok(ImageProxyResult {
+                data: Bytes::new(),
+                content_type: None,
+                status,
+            })
+        }
         Err(e) => {
-            error!("Internal server error during manual fetch for {}: {}", url, e);
+            error!(
+                "Internal server error during manual fetch for {}: {}",
+                url, e
+            );
             Err(AppError::ReqwestError(e))
         }
     }

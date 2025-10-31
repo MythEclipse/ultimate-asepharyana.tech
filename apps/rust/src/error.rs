@@ -1,21 +1,22 @@
 // Error module for crate-wide error handling
 
-use thiserror::Error;
-use axum::{
-  http::StatusCode,
-  response::{IntoResponse, Response},
-  Json,
-};
-use serde_json::json;
-use serde::{Deserialize, Serialize};
 use crate::utils::error::AppError;
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use thiserror::Error;
 use tokio::task::JoinError;
 
 #[derive(Error, Debug)]
 pub enum LibError {
-  #[error("An unknown error occurred")]
-  Unknown,
-  #[error("Fantoccini error: {0}")] FantocciniError(String),
+    #[error("An unknown error occurred")]
+    Unknown,
+    #[error("Fantoccini error: {0}")]
+    FantocciniError(String),
 }
 
 impl From<JoinError> for LibError {
@@ -37,29 +38,39 @@ impl From<AppError> for ErrorResponse {
     }
 }
 impl IntoResponse for ErrorResponse {
-  fn into_response(self) -> Response {
-    let (status, error_message) = match self.error.as_str() {
-      _ if self.error.contains("Environment variable not found") =>
-        (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-      _ if self.error.contains("Redis error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-      _ if self.error.contains("Reqwest error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-      _ if self.error.contains("JSON serialization/deserialization error") =>
-        (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-      _ if self.error.contains("URL parsing error") => (StatusCode::BAD_REQUEST, self.error),
-      _ if self.error.contains("JWT error") => (StatusCode::UNAUTHORIZED, self.error),
-      _ if self.error.contains("Scraper error") => (StatusCode::BAD_GATEWAY, self.error),
-      _ if self.error.contains("Fantoccini error") => (StatusCode::BAD_GATEWAY, self.error),
-      _ if self.error.contains("IO error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-      _ if self.error.contains("Timeout error") => (StatusCode::REQUEST_TIMEOUT, self.error),
-      _ if self.error.contains("Join error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-      _ => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-    };
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self.error.as_str() {
+            _ if self.error.contains("Environment variable not found") => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
+            }
+            _ if self.error.contains("Redis error") => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
+            }
+            _ if self.error.contains("Reqwest error") => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
+            }
+            _ if self
+                .error
+                .contains("JSON serialization/deserialization error") =>
+            {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
+            }
+            _ if self.error.contains("URL parsing error") => (StatusCode::BAD_REQUEST, self.error),
+            _ if self.error.contains("JWT error") => (StatusCode::UNAUTHORIZED, self.error),
+            _ if self.error.contains("Scraper error") => (StatusCode::BAD_GATEWAY, self.error),
+            _ if self.error.contains("Fantoccini error") => (StatusCode::BAD_GATEWAY, self.error),
+            _ if self.error.contains("IO error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
+            _ if self.error.contains("Timeout error") => (StatusCode::REQUEST_TIMEOUT, self.error),
+            _ if self.error.contains("Join error") => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
+            }
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
+        };
 
-    let body = Json(json!({
+        let body = Json(json!({
             "error": error_message,
         }));
 
-    (status, body).into_response()
-  }
+        (status, body).into_response()
+    }
 }
-

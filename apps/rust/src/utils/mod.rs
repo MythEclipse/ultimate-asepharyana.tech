@@ -1,6 +1,5 @@
-pub mod http;
 pub mod auth;
-pub mod error;
 pub mod cdn;
+pub mod error;
 pub mod headers;
-
+pub mod http;

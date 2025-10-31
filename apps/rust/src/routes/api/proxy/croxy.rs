@@ -1,8 +1,13 @@
-use axum::{ extract::{ Query, State }, response::Response, routing::get, Router };
+use axum::{
+    extract::{Query, State},
+    response::Response,
+    routing::get,
+    Router,
+};
 use http::StatusCode;
 use serde::Deserialize;
-use utoipa::ToSchema;
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::routes::AppState;
@@ -23,7 +28,7 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Vec<u8>";
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ProxyParams {
-  url: String,
+    url: String,
 }
 
 /// Handles GET requests for the proxy endpoint.
@@ -41,25 +46,28 @@ pub struct ProxyParams {
     )
 )]
 pub async fn fetch_with_proxy_only(
-  _state: State<Arc<AppState>>,
-  Query(params): Query<ProxyParams>
+    _state: State<Arc<AppState>>,
+    Query(params): Query<ProxyParams>,
 ) -> Result<Response, AppError> {
-  let slug = params.url;
-  match fetch_with_proxy(&slug).await {
-    Ok(fetch_result) => {
-      let mut response_builder = Response::builder().status(StatusCode::OK);
+    let slug = params.url;
+    match fetch_with_proxy(&slug).await {
+        Ok(fetch_result) => {
+            let mut response_builder = Response::builder().status(StatusCode::OK);
 
-      if let Some(content_type) = fetch_result.content_type {
-        response_builder = response_builder.header("Content-Type", content_type);
-      }
+            if let Some(content_type) = fetch_result.content_type {
+                response_builder = response_builder.header("Content-Type", content_type);
+            }
 
-      Ok(response_builder.body(fetch_result.data.into())?)
+            Ok(response_builder.body(fetch_result.data.into())?)
+        }
+        Err(e) => {
+            eprintln!("Proxy fetch error: {:?}", e);
+            Err(AppError::Other(format!(
+                "Failed to fetch URL via proxy: {}",
+                e
+            )))
+        }
     }
-    Err(e) => {
-      eprintln!("Proxy fetch error: {:?}", e);
-      Err(AppError::Other(format!("Failed to fetch URL via proxy: {}", e)))
-    }
-  }
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

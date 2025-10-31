@@ -1,8 +1,14 @@
-use regex::Regex;
-use crate::build_utils::path_utils::{generate_default_description, sanitize_operation_id, sanitize_tag};
 use crate::build_utils::constants::DYNAMIC_REGEX;
+use crate::build_utils::path_utils::{
+    generate_default_description, sanitize_operation_id, sanitize_tag,
+};
+use regex::Regex;
 
-pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::path::Path, protected: bool) -> anyhow::Result<String> {
+pub fn generate_template_content(
+    path: &std::path::Path,
+    root_api_path: &std::path::Path,
+    protected: bool,
+) -> anyhow::Result<String> {
     let file_stem = path
         .file_stem()
         .and_then(|s| s.to_str())
@@ -20,7 +26,10 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
         .replace(std::path::MAIN_SEPARATOR, "/");
 
     if route_path_str.ends_with("/index") {
-        route_path_str = route_path_str.strip_suffix("/index").unwrap_or("").to_string();
+        route_path_str = route_path_str
+            .strip_suffix("/index")
+            .unwrap_or("")
+            .to_string();
         if route_path_str.is_empty() {
             route_path_str = "/".to_string();
         }
@@ -39,7 +48,11 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
     let default_description = generate_default_description(&axum_path, "get");
     let default_tag = {
         let tag_str = sanitize_tag(&route_path_str);
-        if tag_str.is_empty() { "api".to_string() } else { tag_str }
+        if tag_str.is_empty() {
+            "api".to_string()
+        } else {
+            tag_str
+        }
     };
     let operation_id = sanitize_operation_id(&route_path_str);
 
@@ -48,11 +61,11 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
 
     let path_params = extract_path_params_from_route(&route_path_str);
 
-    let func_signature = build_function_signature(&func_name, &path_params, protected);
+    let func_signature = build_function_signature(func_name, &path_params, protected);
 
-    let response_data = build_response_data(&response_struct_name, &path_params);
+    let response_data = build_response_data(response_struct_name, &path_params);
 
-    let message_content = build_message_content(&func_name, &path_params);
+    let message_content = build_message_content(func_name, &path_params);
 
     let imports = build_imports(&path_params, protected);
 
@@ -61,18 +74,24 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
     security(
         ("ApiKeyAuth" = [])
     ),"#
-    } else { "" };
+    } else {
+        ""
+    };
     let middleware_layer = if protected {
         "let router = router.layer(AuthMiddleware::layer());"
-    } else { "" };
+    } else {
+        ""
+    };
 
     let auth_verification = if protected {
         r#"
     "#
-    } else { "" };
+    } else {
+        ""
+    };
 
     let template = format!(
-      r#"//! Handler for the {} endpoint.
+        r#"//! Handler for the {} endpoint.
     #![allow(dead_code)]
 
     {}
@@ -132,9 +151,14 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
         pascal_case_name,
         response_struct_name,
         response_fields,
-        if path_params.is_empty() { "".to_string() } else {
-            path_params.iter()
-                .map(|(name, _)| format!(r#"("{}" = String, Path, description = "Parameter")"#, name))
+        if path_params.is_empty() {
+            "".to_string()
+        } else {
+            path_params
+                .iter()
+                .map(|(name, _)| {
+                    format!(r#"("{}" = String, Path, description = "Parameter")"#, name)
+                })
                 .collect::<Vec<_>>()
                 .join(",\n        ")
         },
@@ -152,14 +176,16 @@ pub fn generate_template_content(path: &std::path::Path, root_api_path: &std::pa
         response_data,
         default_description,
         func_name
-      );
+    );
 
     Ok(template)
 }
 
 pub fn get_response_struct_info(axum_path: &str) -> (&str, &str, &str) {
     if axum_path.contains("/search") {
-        ("SearchResponse", r#"
+        (
+            "SearchResponse",
+            r#"
     /// Success message
     pub message: String,
     /// Search results - replace with actual Vec<T> where T implements ToSchema
@@ -169,21 +195,31 @@ pub fn get_response_struct_info(axum_path: &str) -> (&str, &str, &str) {
     /// Current page
     pub page: Option<u32>,
     /// Results per page
-    pub per_page: Option<u32>,"#, "Json<SearchResponse>")
+    pub per_page: Option<u32>,"#,
+            "Json<SearchResponse>",
+        )
     } else if axum_path.contains('{') || axum_path.contains("/detail") {
-        ("DetailResponse", r#"
+        (
+            "DetailResponse",
+            r#"
     /// Success message
     pub message: String,
     /// Detailed data - replace with actual T where T implements ToSchema
-    pub data: serde_json::Value,"#, "Json<DetailResponse>")
+    pub data: serde_json::Value,"#,
+            "Json<DetailResponse>",
+        )
     } else {
-        ("ListResponse", r#"
+        (
+            "ListResponse",
+            r#"
     /// Success message
     pub message: String,
     /// List of items - replace with actual Vec<T> where T implements ToSchema
     pub data: Vec<serde_json::Value>,
     /// Total number of items
-    pub total: Option<u64>,"#, "Json<ListResponse>")
+    pub total: Option<u64>,"#,
+            "Json<ListResponse>",
+        )
     }
 }
 
@@ -216,7 +252,11 @@ pub fn extract_path_params_from_route(route_path_str: &str) -> Vec<(String, Stri
     path_params
 }
 
-pub fn build_function_signature(func_name: &str, path_params: &[(String, String)], protected: bool) -> String {
+pub fn build_function_signature(
+    func_name: &str,
+    path_params: &[(String, String)],
+    protected: bool,
+) -> String {
     let mut params = Vec::new();
 
     if protected {
@@ -227,15 +267,24 @@ pub fn build_function_signature(func_name: &str, path_params: &[(String, String)
         if params.is_empty() {
             format!("pub async fn {}() -> impl IntoResponse", func_name)
         } else {
-            format!("pub async fn {}({}) -> impl IntoResponse", func_name, params.join(", "))
+            format!(
+                "pub async fn {}({}) -> impl IntoResponse",
+                func_name,
+                params.join(", ")
+            )
         }
     } else {
-        let path_params_str = path_params.iter()
+        let path_params_str = path_params
+            .iter()
             .map(|(name, typ)| format!("Path({}): Path<{}>", name, typ))
             .collect::<Vec<_>>()
             .join(", ");
         params.push(path_params_str);
-        format!("pub async fn {}({}) -> impl IntoResponse", func_name, params.join(", "))
+        format!(
+            "pub async fn {}({}) -> impl IntoResponse",
+            func_name,
+            params.join(", ")
+        )
     }
 }
 
@@ -246,27 +295,37 @@ pub fn build_response_data(response_struct_name: &str, path_params: &[(String, S
             data: vec![],
             total: None,
             page: None,
-            per_page: None,"#.to_string()
+            per_page: None,"#
+                .to_string()
         } else if response_struct_name == "ListResponse" {
             r#"
             data: vec![],
-            total: None,"#.to_string()
+            total: None,"#
+                .to_string()
         } else {
             r#"
-            data: serde_json::json!(null),"#.to_string()
+            data: serde_json::json!(null),"#
+                .to_string()
         }
     } else {
-        let param_assignments = path_params.iter()
+        let param_assignments = path_params
+            .iter()
             .map(|(name, _)| format!("\"{}\": \"{}\"", name, name))
             .collect::<Vec<_>>()
             .join(", ");
         if response_struct_name == "ListResponse" || response_struct_name == "SearchResponse" {
-            format!(r#"
+            format!(
+                r#"
             data: vec![serde_json::json!({{{}}})],
-            total: Some(1),"#, param_assignments)
+            total: Some(1),"#,
+                param_assignments
+            )
         } else {
-            format!(r#"
-            data: serde_json::json!({{{}}}),"#, param_assignments)
+            format!(
+                r#"
+            data: serde_json::json!({{{}}}),"#,
+                param_assignments
+            )
         }
     }
 }
@@ -275,11 +334,15 @@ pub fn build_message_content(func_name: &str, path_params: &[(String, String)]) 
     if path_params.is_empty() {
         format!("\"Hello from {}!\".to_string()", func_name)
     } else {
-        let param_info = path_params.iter()
+        let param_info = path_params
+            .iter()
             .map(|(name, _)| format!("{}: {{{}}}", name, name))
             .collect::<Vec<_>>()
             .join(", ");
-        format!("format!(\"Hello from {} with parameters: {}\")", func_name, param_info)
+        format!(
+            "format!(\"Hello from {} with parameters: {}\")",
+            func_name, param_info
+        )
     }
 }
 
@@ -295,7 +358,10 @@ pub fn build_imports(path_params: &[(String, String)], protected: bool) -> Strin
     if path_params.is_empty() {
         imports.push("use axum::{response::IntoResponse, routing::get, Json, Router};".to_string());
     } else {
-        imports.push("use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};".to_string());
+        imports.push(
+            "use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};"
+                .to_string(),
+        );
     }
 
     imports.join("\n")

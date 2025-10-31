@@ -1,9 +1,8 @@
+use clap::Parser;
+use rust::build_utils::template_generator;
 use std::env;
 use std::fs;
 use std::process;
-use anyhow;
-use clap::Parser;
-use rust::build_utils::template_generator;
 
 #[derive(Parser)]
 #[command(name = "scaffold")]
@@ -18,43 +17,60 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
-  let args = Args::parse();
+    let args = Args::parse();
 
-  let full_route_path = args.route_path.clone();
+    let full_route_path = args.route_path.clone();
 
-  let base_api_dir = get_base_api_dir()?;
-  let mut file_path = base_api_dir.join(&full_route_path);
-  file_path.set_extension("rs");
+    let base_api_dir = get_base_api_dir()?;
+    let mut file_path = base_api_dir.join(&full_route_path);
+    file_path.set_extension("rs");
 
-  if file_path.exists() {
-    println!("⚠️ File already exists at {}. No changes were made.", file_path.display());
-    process::exit(0);
-  }
+    if file_path.exists() {
+        println!(
+            "⚠️ File already exists at {}. No changes were made.",
+            file_path.display()
+        );
+        process::exit(0);
+    }
 
-  let parent_dir = file_path.parent().unwrap();
-  fs::create_dir_all(parent_dir)?;
+    let parent_dir = file_path.parent().unwrap();
+    fs::create_dir_all(parent_dir)?;
 
-  let template_content = template_generator::generate_template_content(&file_path, &base_api_dir, args.protected)?;
+    let template_content =
+        template_generator::generate_template_content(&file_path, &base_api_dir, args.protected)?;
 
-  fs::write(&file_path, template_content)?;
+    fs::write(&file_path, template_content)?;
 
-  println!("✅ Full handler template generated successfully at: {}", file_path.display());
+    println!(
+        "✅ Full handler template generated successfully at: {}",
+        file_path.display()
+    );
 
-  Ok(())
+    Ok(())
 }
 
 fn get_base_api_dir() -> std::io::Result<std::path::PathBuf> {
-  let cwd = env::current_dir()?;
-  let candidate_a = cwd.join("src").join("routes").join("api");
-  let candidate_b = cwd.join("apps").join("rust").join("src").join("routes").join("api");
+    let cwd = env::current_dir()?;
+    let candidate_a = cwd.join("src").join("routes").join("api");
+    let candidate_b = cwd
+        .join("apps")
+        .join("rust")
+        .join("src")
+        .join("routes")
+        .join("api");
 
-  if candidate_a.exists() {
-    Ok(candidate_a)
-  } else if candidate_b.exists() {
-    Ok(candidate_b)
-  } else if cwd.join("apps").join("rust").exists() {
-    Ok(cwd.join("apps").join("rust").join("src").join("routes").join("api"))
-  } else {
-    Ok(cwd.join("src").join("routes").join("api"))
-  }
+    if candidate_a.exists() {
+        Ok(candidate_a)
+    } else if candidate_b.exists() {
+        Ok(candidate_b)
+    } else if cwd.join("apps").join("rust").exists() {
+        Ok(cwd
+            .join("apps")
+            .join("rust")
+            .join("src")
+            .join("routes")
+            .join("api"))
+    } else {
+        Ok(cwd.join("src").join("routes").join("api"))
+    }
 }
