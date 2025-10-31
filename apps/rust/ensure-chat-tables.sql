@@ -33,13 +33,16 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create indexes if not exist
-CREATE INDEX IF NOT EXISTS idx_chat_messages_room_id ON chat_messages(room_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_room_members_room_id ON room_members(room_id);
-CREATE INDEX IF NOT EXISTS idx_room_members_user_id ON room_members(user_id);
-CREATE INDEX IF NOT EXISTS idx_chat_rooms_updated_at ON chat_rooms(updated_at DESC);
-
--- Show tables
+-- Show tables (indexes will be created by migrations)
+SELECT 'Chat tables:' as info;
 SHOW TABLES LIKE '%chat%';
+SELECT 'Room tables:' as info;
 SHOW TABLES LIKE '%room%';
+
+-- Verify table structures
+SELECT 'chat_rooms structure:' as info;
+DESCRIBE chat_rooms;
+SELECT 'room_members structure:' as info;
+DESCRIBE room_members;
+SELECT 'chat_messages structure:' as info;
+DESCRIBE chat_messages;
