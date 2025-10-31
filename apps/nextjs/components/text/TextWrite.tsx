@@ -75,19 +75,17 @@ export const AnimatedHeader = memo(
     const fullText = words.map((w) => w.text).join(' ');
 
     return (
-      <header className={cn('py-8', className)}>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-          <span className="sr-only">{fullText}</span>
-          {renderWords()}
-          <span
-            className={cn(
-              'inline-block rounded-sm w-[3px] h-7 bg-blue-500 animate-blink ml-1',
-              cursorClassName,
-            )}
-            aria-hidden="true"
-          ></span>
-        </h1>
-      </header>
+      <span className={cn('inline-block', className)}>
+        <span className="sr-only">{fullText}</span>
+        {renderWords()}
+        <span
+          className={cn(
+            'inline-block rounded-sm w-[3px] h-7 bg-blue-500 animate-blink ml-1',
+            cursorClassName,
+          )}
+          aria-hidden="true"
+        ></span>
+      </span>
     );
   },
 );

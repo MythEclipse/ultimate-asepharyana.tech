@@ -1,4 +1,3 @@
-// 'use client'
 // apps/NextJS/app/layout.tsx
 
 import type { Metadata } from 'next';
@@ -6,10 +5,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
-import { ThemeProvider } from '../components/providers/theme-provider';
-import { AuthProvider } from '../lib/auth-context';
-import Navbar from '../components/navbar/Navbar';
-import { Toaster } from 'sonner';
+import { ClientLayout } from '../components/layout/ClientLayout';
+
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://asepharyana.tech'),
   title: 'Asepharyana',
@@ -27,18 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <Navbar />
-            {children}
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        <ClientLayout>{children}</ClientLayout>
         {/* <Analytics /> */}
         {/* <SpeedInsights /> */}
       </body>
