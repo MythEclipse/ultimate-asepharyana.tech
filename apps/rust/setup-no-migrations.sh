@@ -1,7 +1,10 @@
 #!/bin/bash
-# Force reset migration - No questions asked
+# One-time database setup - No migrations needed
 
 cd "$(dirname "$0")"
+
+echo "=== Database Setup (No Migrations) ==="
+echo ""
 
 # Load .env
 if [ -f ".env" ]; then
@@ -15,29 +18,24 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
     DB_HOST="${BASH_REMATCH[3]}"
     DB_PORT="${BASH_REMATCH[5]:-3306}"
     DB_NAME="${BASH_REMATCH[6]}"
-
-    echo "=== Force Migration Reset ==="
+    
     echo "Database: $DB_NAME @ $DB_HOST:$DB_PORT"
     echo ""
-
-    # Drop and recreate migration table for complete reset
-    echo "Resetting migration table..."
-    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql
-    echo "✓ Migration table reset"    echo ""
+    
+    echo "Creating all tables..."
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < setup-database.sql
+    
+    echo ""
+    echo "✓ Database setup completed!"
+    echo ""
     echo "Restarting Rust app..."
     pm2 restart 3
-
-    echo ""
-    echo "Waiting for app to start..."
+    
     sleep 3
-
     echo ""
-    echo "Recent logs:"
+    echo "App logs:"
     pm2 logs 3 --lines 30 --nostream
-
-    echo ""
-    echo "Done! Check if migrations ran successfully above."
-
+    
 else
     echo "Error: Invalid DATABASE_URL"
     exit 1

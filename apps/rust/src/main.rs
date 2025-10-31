@@ -59,13 +59,8 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Database connection established");
 
-    // Run migrations
-    sqlx::migrate!("./migrations")
-        .run(&db)
-        .await
-        .expect("Failed to run migrations");
-
-    tracing::info!("Database migrations completed");
+    // Migrations disabled - tables should exist in database already
+    tracing::info!("Skipping migrations (disabled for stability)");
 
     // Seed default chat data if tables are empty
     if let Err(e) = rust::seed::seed_chat_data_if_empty(&db).await {
