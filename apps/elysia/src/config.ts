@@ -1,5 +1,5 @@
 export const config = {
-  port: parseInt(process.env.PORT || '3002'),
+  port: 4092,
   env: process.env.NODE_ENV || 'development',
   isDevelopment: process.env.NODE_ENV !== 'production',
   isProduction: process.env.NODE_ENV === 'production',

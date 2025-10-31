@@ -1,0 +1,164 @@
+name: Deploy ElysiaJS to VPS
+
+on:
+  workflow_dispatch: # Manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/elysia/**'
+      - '.github/workflows/deploy-elysia.yml'
+
+jobs:
+  build-and-deploy-elysia:
+    name: Build and Deploy ElysiaJS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Get Bun cache directory
+        id: bun-cache
+        shell: bash
+        run: |
+          echo "BUN_INSTALL_CACHE_DIR=$(bun pm cache)" >> $GITHUB_OUTPUT
+
+      - name: Setup Bun cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.bun-cache.outputs.BUN_INSTALL_CACHE_DIR }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('apps/elysia/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Prepare .env file for production
+        env:
+          ENV_FILE_PRODUCTION: ${{ secrets.ELYSIA_ENV_FILE_PRODUCTION }}
+        run: |
+          if [ -n "$ENV_FILE_PRODUCTION" ]; then
+            echo "$ENV_FILE_PRODUCTION" > apps/elysia/.env
+          fi
+
+      - name: Install Dependencies
+        working-directory: apps/elysia
+        run: bun install --frozen-lockfile
+
+      - name: Build Application
+        working-directory: apps/elysia
+        run: bun run build
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r apps/elysia/src deploy/
+          cp -r apps/elysia/dist deploy/ || true
+          cp apps/elysia/package.json deploy/
+          cp apps/elysia/bun.lockb deploy/ || true
+          cp apps/elysia/.env deploy/ || true
+          cp apps/elysia/ecosystem.config.cjs deploy/ || true
+          tar -czf elysia-deploy.tar.gz -C deploy .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: elysia-deployment
+          path: elysia-deploy.tar.gz
+          retention-days: 1
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          source: 'elysia-deploy.tar.gz'
+          target: '/tmp/'
+
+      - name: Execute deployment on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          script: |
+            set -e
+
+            # Define variables
+            APP_DIR="/opt/elysia-app"
+            DEPLOY_DIR="/tmp/elysia-deploy"
+
+            # Create app directory if not exists
+            sudo mkdir -p $APP_DIR
+            sudo chown $USER:$USER $APP_DIR
+
+            # Extract deployment package
+            rm -rf $DEPLOY_DIR
+            mkdir -p $DEPLOY_DIR
+            tar -xzf /tmp/elysia-deploy.tar.gz -C $DEPLOY_DIR
+
+            # Stop existing service
+            if pm2 list | grep -q "elysia-app"; then
+              pm2 stop elysia-app
+              pm2 delete elysia-app
+            fi
+
+            # Backup current version
+            if [ -d "$APP_DIR/current" ]; then
+              rm -rf $APP_DIR/backup
+              mv $APP_DIR/current $APP_DIR/backup
+            fi
+
+            # Deploy new version
+            mkdir -p $APP_DIR/current
+            cp -r $DEPLOY_DIR/* $APP_DIR/current/
+
+            # Install Bun if not installed
+            if ! command -v bun &> /dev/null; then
+              curl -fsSL https://bun.sh/install | bash
+              export BUN_INSTALL="$HOME/.bun"
+              export PATH="$BUN_INSTALL/bin:$PATH"
+            fi
+
+            # Install dependencies
+            cd $APP_DIR/current
+            bun install --production
+
+            # Install PM2 if not installed
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+
+            # Start application with PM2
+            pm2 start ecosystem.config.cjs
+            pm2 save
+
+            # Setup PM2 startup
+            sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp /home/$USER || true
+
+            # Cleanup
+            rm -rf $DEPLOY_DIR
+            rm -f /tmp/elysia-deploy.tar.gz
+
+            echo "ElysiaJS deployment completed successfully!"
+            pm2 status
+
+      - name: Health Check
+        run: |
+          sleep 10
+          for i in {1..5}; do
+            if curl -f -s http://${{ secrets.VPS_HOST }}:4092/health; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Health check attempt $i failed, retrying..."
+            sleep 5
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
