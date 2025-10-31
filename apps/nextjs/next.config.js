@@ -76,11 +76,10 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
-  // Skip prerendering for routes to avoid React compatibility issues with error pages
-  skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
   // Force standalone output to skip static optimization
   output: 'standalone',
+  // Disable generating error pages
+  generateEtags: false,
   webpack: (config) => {
     config.resolve.alias['@/lib'] = path.join(__dirname, 'lib');
     return config;
