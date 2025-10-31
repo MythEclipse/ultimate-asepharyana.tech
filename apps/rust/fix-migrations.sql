@@ -1,5 +1,5 @@
--- Fix migration history - Complete reset for clean state
--- This script safely cleans up migration state and allows fresh re-run
+-- Fix migration history - Force clean state
+-- This script completely resets migration state
 
 -- Step 1: Show current migration state
 SELECT 'Current migration state:' as info;
@@ -7,13 +7,18 @@ SELECT version, description, success, checksum, execution_time
 FROM _sqlx_migrations
 ORDER BY version;
 
--- Step 2: Delete ALL migration records to force fresh re-run
--- This is safe because:
--- 1. Tables already exist (created with CREATE TABLE IF NOT EXISTS)
--- 2. Seed data uses INSERT IGNORE (won't duplicate)
--- 3. Allows sqlx to re-run migrations cleanly
-DELETE FROM _sqlx_migrations;
+-- Step 2: Drop and recreate _sqlx_migrations table for complete reset
+DROP TABLE IF EXISTS _sqlx_migrations;
 
--- Step 3: Show updated migration state
-SELECT 'Migration table cleared - will be repopulated on next app start:' as info;
+CREATE TABLE _sqlx_migrations (
+    version BIGINT NOT NULL PRIMARY KEY,
+    description TEXT NOT NULL,
+    installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    success BOOLEAN NOT NULL,
+    checksum BLOB NOT NULL,
+    execution_time BIGINT NOT NULL
+);
+
+-- Step 3: Verify clean state
+SELECT 'Migration table reset - completely clean:' as info;
 SELECT COUNT(*) as remaining_records FROM _sqlx_migrations;

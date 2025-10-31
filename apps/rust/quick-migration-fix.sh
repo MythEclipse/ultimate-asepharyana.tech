@@ -42,12 +42,12 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
     pm2 restart 3
     echo "✓ App restarted"
     echo ""
-    
+
     # Step 4: Check status
     echo "Checking app status in 3 seconds..."
     sleep 3
     pm2 logs 3 --lines 20 --nostream
-    
+
     echo ""
     echo "✓ Migration fix completed!"
     echo ""
