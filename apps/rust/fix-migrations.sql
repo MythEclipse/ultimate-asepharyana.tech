@@ -1,5 +1,5 @@
--- Fix migration history - Remove invalid/dirty migrations
--- This script safely cleans up migration state
+-- Fix migration history - Complete reset for clean state
+-- This script safely cleans up migration state and allows fresh re-run
 
 -- Step 1: Show current migration state
 SELECT 'Current migration state:' as info;
@@ -7,27 +7,13 @@ SELECT version, description, success, checksum, execution_time
 FROM _sqlx_migrations
 ORDER BY version;
 
--- Step 2: Delete migrations that don't exist in code
-DELETE FROM _sqlx_migrations
-WHERE version NOT IN (
-    20251031162909,
-    20251031180000,
-    20251031190000,
-    20251101013643
-);
+-- Step 2: Delete ALL migration records to force fresh re-run
+-- This is safe because:
+-- 1. Tables already exist (created with CREATE TABLE IF NOT EXISTS)
+-- 2. Seed data uses INSERT IGNORE (won't duplicate)
+-- 3. Allows sqlx to re-run migrations cleanly
+DELETE FROM _sqlx_migrations;
 
--- Step 3: Fix dirty migrations (set success = true)
-UPDATE _sqlx_migrations
-SET success = true
-WHERE version IN (
-    20251031162909,
-    20251031180000,
-    20251031190000,
-    20251101013643
-) AND success = false;
-
--- Step 4: Show updated migration state
-SELECT 'Updated migration state:' as info;
-SELECT version, description, success, checksum, execution_time
-FROM _sqlx_migrations
-ORDER BY version;
+-- Step 3: Show updated migration state
+SELECT 'Migration table cleared - will be repopulated on next app start:' as info;
+SELECT COUNT(*) as remaining_records FROM _sqlx_migrations;
