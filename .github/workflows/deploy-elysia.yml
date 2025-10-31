@@ -48,117 +48,58 @@ jobs:
         working-directory: apps/elysia
         run: bun install --frozen-lockfile
 
-      - name: Build Application
-        working-directory: apps/elysia
-        run: bun run build
-
-      - name: Create deployment package
+      - name: Sync Build Artifacts to VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          mkdir -p deploy
-          cp -r apps/elysia/src deploy/
-          cp -r apps/elysia/dist deploy/ || true
-          cp apps/elysia/package.json deploy/
-          cp apps/elysia/bun.lockb deploy/ || true
-          cp apps/elysia/.env deploy/ || true
-          cp apps/elysia/ecosystem.config.cjs deploy/ || true
-          tar -czf elysia-deploy.tar.gz -C deploy .
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: elysia-deployment
-          path: elysia-deploy.tar.gz
-          retention-days: 1
+          # Sync source files
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/src/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/src/
 
-      - name: Deploy to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT }}
-          source: 'elysia-deploy.tar.gz'
-          target: '/tmp/'
+          # Sync package.json
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/package.json \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/package.json
 
-      - name: Execute deployment on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT }}
-          script: |
-            set -e
+          # Sync ecosystem config
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/ecosystem.config.cjs \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/ecosystem.config.cjs
 
-            # Define variables
-            APP_DIR="/opt/elysia-app"
-            DEPLOY_DIR="/tmp/elysia-deploy"
+          # Sync .env file
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/.env \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/.env
 
-            # Create app directory if not exists
-            sudo mkdir -p $APP_DIR
-            sudo chown $USER:$USER $APP_DIR
+          rm -f /tmp/deploy_key
 
-            # Extract deployment package
-            rm -rf $DEPLOY_DIR
-            mkdir -p $DEPLOY_DIR
-            tar -xzf /tmp/elysia-deploy.tar.gz -C $DEPLOY_DIR
+      - name: Deploy on VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            # Set up the environment
+            export PATH=$PATH:/root/.local/share/pnpm
+            export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
+            export PATH=$PATH:/home/asephs/.bun/bin
+            export PATH="$HOME/.cargo/bin:$PATH"
 
-            # Stop existing service
-            if pm2 list | grep -q "elysia-app"; then
-              pm2 stop elysia-app
-              pm2 delete elysia-app
-            fi
+            # Navigate to the app directory
+            cd ${{ secrets.VPS_TARGET_DIR }}/apps/elysia
 
-            # Backup current version
-            if [ -d "$APP_DIR/current" ]; then
-              rm -rf $APP_DIR/backup
-              mv $APP_DIR/current $APP_DIR/backup
-            fi
+            # Pull the latest code (optional, as rsync is the source of truth)
+            git reset --hard origin/main || true
 
-            # Deploy new version
-            mkdir -p $APP_DIR/current
-            cp -r $DEPLOY_DIR/* $APP_DIR/current/
-
-            # Install Bun if not installed
-            if ! command -v bun &> /dev/null; then
-              curl -fsSL https://bun.sh/install | bash
-              export BUN_INSTALL="$HOME/.bun"
-              export PATH="$BUN_INSTALL/bin:$PATH"
-            fi
-
-            # Install dependencies
-            cd $APP_DIR/current
+            # Install production dependencies
             bun install --production
 
-            # Install PM2 if not installed
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
+            # Restart the application with PM2
+            pm2 startOrRestart ecosystem.config.cjs
 
-            # Start application with PM2
-            pm2 start ecosystem.config.cjs
-            pm2 save
-
-            # Setup PM2 startup
-            sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp /home/$USER || true
-
-            # Cleanup
-            rm -rf $DEPLOY_DIR
-            rm -f /tmp/elysia-deploy.tar.gz
-
-            echo "ElysiaJS deployment completed successfully!"
-            pm2 status
-
-      - name: Health Check
-        run: |
-          sleep 10
-          for i in {1..5}; do
-            if curl -f -s http://${{ secrets.VPS_HOST }}:4092/health; then
-              echo "Health check passed!"
-              exit 0
-            fi
-            echo "Health check attempt $i failed, retrying..."
-            sleep 5
-          done
-          echo "Health check failed after 5 attempts"
-          exit 1
+            echo "ElysiaJS Deployment successful!"
+          '
+          rm -f /tmp/deploy_key
