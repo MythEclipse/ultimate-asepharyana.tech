@@ -128,9 +128,22 @@ jobs:
             git reset --hard origin/main
             bash scripts/2updateenv.sh
 
-            # Fix migration history if needed
-            if [ -f "fix-migrations.sql" ]; then
-              mysql -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < fix-migrations.sql 2>/dev/null || echo "Migration fix skipped"
+            # Load environment variables
+            export $(cat .env | grep -v "^#" | xargs)
+
+            # Parse DATABASE_URL
+            if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; then
+              DB_USER="${BASH_REMATCH[1]}"
+              DB_PASS="${BASH_REMATCH[2]}"
+              DB_HOST="${BASH_REMATCH[3]}"
+              DB_PORT="${BASH_REMATCH[5]:-3306}"
+              DB_NAME="${BASH_REMATCH[6]}"
+
+              # Fix dirty/invalid migration history
+              if [ -f "fix-migrations.sql" ]; then
+                echo "Cleaning migration history..."
+                mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql 2>/dev/null || echo "Migration cleanup completed"
+              fi
             fi
 
             # Restart the application with PM2
