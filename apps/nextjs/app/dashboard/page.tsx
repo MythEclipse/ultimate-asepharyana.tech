@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '../../components/ui/ComponentCard';
 import { getBookmarks } from '../../lib/bookmarks';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 
 export default function DashboardPage() {
   const [animeCount, setAnimeCount] = useState(0);
@@ -19,7 +20,8 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <main className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+    <ProtectedRoute>
+      <main className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
       <Card className="shadow-lg rounded-2xl w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
@@ -41,5 +43,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </main>
+    </ProtectedRoute>
   );
 }

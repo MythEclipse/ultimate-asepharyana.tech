@@ -67,10 +67,20 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Database migrations completed");
 
+    // Seed default chat data if tables are empty
+    if let Err(e) = rust::seed::seed_chat_data_if_empty(&db).await {
+        tracing::warn!("Failed to seed chat data: {}", e);
+    }
+
+    // Create broadcast channel for WebSocket chat messages
+    let (chat_tx, _) = tokio::sync::broadcast::channel(1000);
+
     let app_state = Arc::new(AppState {
         jwt_secret,
         redis_pool: REDIS_POOL.clone(),
-        db,
+        db: db.clone(),
+        pool: db.clone(),
+        chat_tx,
     });
 
     tracing::info!("Building application routes...");
@@ -81,6 +91,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .merge(create_api_routes().with_state(app_state.clone()))
+        .merge(rust::routes::ws::register_routes(Router::new()).with_state(app_state.clone()))
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .layer(cors);
 

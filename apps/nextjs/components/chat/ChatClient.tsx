@@ -1,361 +1,233 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import ReconnectingWebSocket from 'reconnecting-websocket';
-import { format } from 'date-fns';
-import { ThemedCard } from '../../components/ui/CardSystem';
-import { Textarea } from '../../components/ui/textarea';
-import { Button } from '../../components/ui/button';
-import { AlertCircle, Loader2, Paperclip, Wifi, WifiOff } from 'lucide-react';
-import Image from 'next/image';
-import { fetchData } from '../../utils/useFetch';
 
-type RawChatMessage = {
-  id: string; // Required in RustExpress
-  user_id: string; // Required
-  text: string; // Required
-  email?: string; // Optional
-  image_profile?: string; // Optional
-  image_message?: string; // Optional
-  role: string; // Required
-  timestamp: string; // Required
-};
+import React, { useState, useEffect, useCallback } from 'react';
+import { Users, Settings, MessageCircle as MessageCircleIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
-type NormalizedChatMessage = {
-  id: string; // String ID from RustExpress
-  user: string; // Will map from user_id
-  text: string;
-  email: string;
-  imageProfile: string;
-  imageMessage: string;
-  role: string;
-  timestamp: number; // Convert from string to number for display
-};
+import RoomList from './RoomList';
+import MessageList from './MessageList';
+import MessageInput from './MessageInput';
+import { Button } from '../ui/button';
+import {
+  ChatRoom,
+  ChatMessage,
+  getRooms,
+  getMessages,
+  sendMessage as apiSendMessage,
+  joinRoom as apiJoinRoom,
+  createRoom as apiCreateRoom,
+  connectWebSocket,
+  WsMessage,
+} from '../../lib/chat-api';
 
-const normalizeChatMessage = (
-  message: RawChatMessage,
-): NormalizedChatMessage => {
-  const timestamp = message.timestamp
-    ? Date.parse(message.timestamp)
-    : Date.now();
+export default function NewChatClient() {
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
-  return {
-    id: message.id || crypto.randomUUID(), // Use string ID as is
-    user: message.user_id,
-    text: message.text,
-    email: message.email || '',
-    imageProfile: message.image_profile || '/profile-circle-svgrepo-com.svg',
-    imageMessage: message.image_message || '',
-    role: message.role,
-    timestamp: isNaN(timestamp) ? Date.now() : timestamp,
-  };
-};
-
-export default function ChatClient() {
-  const [messages, setMessages] = useState<NormalizedChatMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState({
-    connected: false,
-    sending: false,
-    uploading: false,
-  });
-  const [error, setError] = useState<string | null>(null);
-
-  const ws = useRef<ReconnectingWebSocket | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host =
-      process.env.NODE_ENV === 'development'
-        ? 'localhost:4091'
-        : 'ws.asepharyana.tech';
-    ws.current = new ReconnectingWebSocket(`${protocol}//${host}/ws`);
-
-    const handleHistory = (data: { messages: RawChatMessage[] }) => {
-      if (Array.isArray(data.messages)) {
-        const normalizedMessages = data.messages.map(normalizeChatMessage);
-        setMessages(normalizedMessages);
-      }
-    };
-
-    const handleMessage = (raw: string) => {
-      try {
-        const wsMessage = JSON.parse(raw);
-        if (wsMessage.type === 'history') {
-          handleHistory(wsMessage);
-        } else if (wsMessage.type === 'error') {
-          setError(wsMessage.message || 'An error occurred');
-        } else if (wsMessage.type === 'new_message') {
-          const message = wsMessage.message;
-          const normalizedMessage: NormalizedChatMessage =
-            normalizeChatMessage(message);
-          setMessages((prev) => {
-            const exists = prev.some((m) => m.id === normalizedMessage.id);
-            return exists ? prev : [...prev, normalizedMessage];
-          });
-        }
-      } catch {
-        console.error('Failed to parse message:', raw);
-      }
-    };
-
-    ws.current.onmessage = (e) => handleMessage(e.data);
-    ws.current.onopen = () => {
-      setStatus((prev) => ({ ...prev, connected: true }));
-      ws.current?.send(JSON.stringify({ type: 'requestHistory' }));
-    };
-    ws.current.onclose = () =>
-      setStatus((prev) => ({ ...prev, connected: false }));
-    ws.current.onerror = () => {
-      setError('Connection error');
-    };
-
-    return () => {
-      ws.current?.close();
-    };
+  // Load rooms
+  const loadRooms = useCallback(async () => {
+    try {
+      const fetchedRooms = await getRooms();
+      setRooms(fetchedRooms);
+    } catch (error) {
+      console.error('Error loading rooms:', error);
+      toast.error('Failed to load chat rooms');
+    }
   }, []);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Load messages for selected room
+  const loadMessages = useCallback(async (roomId: string) => {
+    try {
+      setLoading(true);
+      const response = await getMessages(roomId);
+      setMessages(response.messages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast.error('Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const sendMessage = useCallback(async () => {
-    if ((!input.trim() && !file) || status.sending) return;
-
-    const newMessage: RawChatMessage = {
-      id: crypto.randomUUID(),
-      user_id: 'Anonymous',
-      text: input,
-      email: 'anonymous@example.com',
-      image_profile: '/profile-circle-svgrepo-com.svg',
-      image_message: '',
-      role: 'user',
-      timestamp: new Date().toISOString(),
-    };
+  // Send message
+  const handleSendMessage = useCallback(async () => {
+    if (!selectedRoomId || !inputValue.trim()) return;
 
     try {
-      setStatus((prev) => ({ ...prev, sending: true }));
-      setError(null);
+      const message = await apiSendMessage(selectedRoomId, inputValue.trim());
+      setInputValue('');
+      
+      // Message will be added via WebSocket
+      // But add it immediately for better UX
+      setMessages((prev) => [...prev, message]);
 
-      if (file) {
-        setStatus((prev) => ({ ...prev, uploading: true }));
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = (await fetchData(
-          '/api/uploader',
-          'POST',
-          undefined,
-          formData,
-        )) as { data: { url: string } };
-        const url = response.data.url;
-        newMessage.image_message = url;
-        setFile(null);
-        setStatus((prev) => ({ ...prev, uploading: false }));
+      // Broadcast via WebSocket
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: 'message',
+            room_id: selectedRoomId,
+            message,
+          })
+        );
       }
-
-      ws.current?.send(JSON.stringify(newMessage));
-      setInput('');
-    } catch {
-      setError('Failed to send message');
-    } finally {
-      setStatus((prev) => ({ ...prev, sending: false }));
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
     }
-  }, [input, file, status.sending]);
+  }, [selectedRoomId, inputValue, ws]);
 
-  return (
-    <div className="mx-auto p-4 max-w-3xl h-screen flex flex-col">
-      <div className="flex flex-col gap-4 flex-1">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Community Chat
-          </h1>
+  // Select room
+  const handleSelectRoom = useCallback(
+    async (roomId: string) => {
+      setSelectedRoomId(roomId);
+      await loadMessages(roomId);
 
-          {/* Status Connection */}
-          <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
-            <div
-              className={`p-1.5 rounded-full ${status.connected ? 'bg-green-400' : 'bg-red-400'}`}
-            >
-              {status.connected ? (
-                <Wifi className="w-4 h-4 text-white" />
-              ) : (
-                <WifiOff className="w-4 h-4 text-white" />
-              )}
-            </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {status.connected ? 'Connected to chat' : 'Connecting...'}
-            </span>
-          </div>
-        </div>
-
-        {/* Chat Messages */}
-        <ThemedCard>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwn={message.email === 'anonymous@example.com'}
-              />
-            ))}
-            <div ref={endRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-            {error && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-                <AlertCircle className="w-5 h-5" />
-                <span className="text-sm">{error}</span>
-              </div>
-            )}
-
-            <div className="flex flex-col md:flex-row gap-2 items-stretch">
-              <div className="relative flex-1">
-                <Textarea
-                  value={input}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                    setInput(e.target.value)
-                  }
-                  onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                  placeholder="Type your message..."
-                  className="min-h-[100px] md:min-h-[60px] pr-16 resize-none"
-                  rows={1}
-                  disabled={!status.connected}
-                />
-                <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
-                  <input
-                    type="file"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="file-input"
-                    disabled={!status.connected || status.uploading}
-                  />
-                  <label
-                    htmlFor="file-input"
-                    className={`p-1.5 rounded-md cursor-pointer ${
-                      status.uploading
-                        ? 'text-gray-400'
-                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {status.uploading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Paperclip className="w-5 h-5" />
-                    )}
-                  </label>
-                </div>
-              </div>
-
-              <Button
-                onClick={sendMessage}
-                disabled={
-                  !status.connected || status.sending || status.uploading
-                }
-                variant="gradient"
-                size="gradientSm"
-                className="h-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
-              >
-                {status.sending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  'Send'
-                )}
-              </Button>
-            </div>
-          </div>
-        </ThemedCard>
-      </div>
-    </div>
+      // Join room via API
+      try {
+        await apiJoinRoom(roomId);
+        
+        // Notify via WebSocket
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: 'join',
+              room_id: roomId,
+              user_id: 'user_123', // TODO: Get from auth
+              user_name: 'User 123',
+            })
+          );
+        }
+      } catch (error) {
+        console.error('Error joining room:', error);
+      }
+    },
+    [loadMessages, ws]
   );
-}
 
-function MessageBubble({
-  message,
-  isOwn,
-}: {
-  message: NormalizedChatMessage;
-  isOwn: boolean;
-}) {
-  const safeTimestamp = message.timestamp;
+  // Create room
+  const handleCreateRoom = useCallback(async () => {
+    const name = prompt('Enter room name:');
+    if (!name) return;
+
+    const description = prompt('Enter room description (optional):');
+
+    try {
+      const room = await apiCreateRoom(name, description || undefined);
+      setRooms((prev) => [room, ...prev]);
+      toast.success('Room created successfully');
+      handleSelectRoom(room.id);
+    } catch (error) {
+      console.error('Error creating room:', error);
+      toast.error('Failed to create room');
+    }
+  }, [handleSelectRoom]);
+
+  // WebSocket message handler
+  const handleWsMessage = useCallback((data: WsMessage) => {
+    switch (data.type) {
+      case 'message':
+        if (data.message && data.room_id === selectedRoomId) {
+          setMessages((prev) => {
+            // Avoid duplicates
+            if (prev.some((m) => m.id === data.message?.id)) {
+              return prev;
+            }
+            return data.message ? [...prev, data.message] : prev;
+          });
+        }
+        break;
+      case 'user_joined':
+        if (data.room_id === selectedRoomId) {
+          toast.info(`${data.user_name} joined the room`);
+        }
+        break;
+      case 'user_left':
+        if (data.room_id === selectedRoomId) {
+          toast.info(`${data.user_name} left the room`);
+        }
+        break;
+      case 'error':
+        console.error('WebSocket error:', data);
+        break;
+    }
+  }, [selectedRoomId]);
+
+  // Initialize
+  useEffect(() => {
+    loadRooms();
+
+    // Setup WebSocket
+    const websocket = connectWebSocket(handleWsMessage);
+    setWs(websocket);
+
+    return () => {
+      websocket.close();
+    };
+  }, [loadRooms, handleWsMessage]);
+
+  const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
 
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} items-start gap-3 max-w-[90%]`}
-      >
-        <div className="relative">
-          <Image
-            src={message.imageProfile || '/profile-circle-svgrepo-com.svg'}
-            alt={message.user}
-            width={40}
-            height={40}
-            className="rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
-          />
-          {message.role === 'admin' && (
-            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-          )}
-        </div>
+    <div className="flex h-screen bg-background">
+      {/* Room List */}
+      <RoomList
+        rooms={rooms}
+        selectedRoomId={selectedRoomId || undefined}
+        onSelectRoom={handleSelectRoom}
+        onCreateRoom={handleCreateRoom}
+      />
 
-        <div
-          className={`p-4 rounded-2xl shadow-sm transition-all ${
-            isOwn
-              ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
-              : 'bg-gray-100 dark:bg-gray-800'
-          }`}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <span className="font-medium text-sm">
-              {isOwn ? 'You' : message.user}
-            </span>
-            <span
-              className={`text-xs ${
-                isOwn ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-              }`}
-            >
-              {format(new Date(safeTimestamp), 'HH:mm')}
-            </span>
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedRoom ? (
+          <>
+            {/* Chat Header */}
+            <div className="h-16 border-b flex items-center justify-between px-6 bg-background">
+              <div>
+                <h2 className="font-semibold">{selectedRoom.name}</h2>
+                {selectedRoom.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedRoom.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                  <Users className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <MessageList messages={messages} currentUserId="user_123" />
+
+            {/* Input */}
+            <MessageInput
+              value={inputValue}
+              onChange={setInputValue}
+              onSend={handleSendMessage}
+              disabled={loading}
+            />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <MessageCircleIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No room selected</p>
+              <p className="text-sm mt-1">
+                Select a room or create a new one to start chatting
+              </p>
+            </div>
           </div>
-
-          {message.text && (
-            <p className="text-sm leading-relaxed break-words">
-              {message.text}
-            </p>
-          )}
-
-          {message.imageMessage && (
-            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-              <Image
-                src={message.imageMessage}
-                alt="Attachment"
-                width={240}
-                height={135}
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

@@ -10,10 +10,13 @@ import { Button } from '../ui/button';
 import { navLinks } from '../../utils/constants';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 import Logo from '../logo/Logo';
+import ThemeToggle from '../theme/ThemeToggle';
+import { useAuth } from '../../lib/auth-context';
 
 function MobileNav() {
   const isOpen = useGlobalStore((s) => s.isMobileNavOpen);
   const setIsOpen = useGlobalStore((s) => s.setMobileNavOpen);
+  const { user, logout } = useAuth();
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +149,37 @@ function MobileNav() {
                     </motion.li>
                   ))}
                 </motion.ul>
+
+                {/* Theme Toggle and Auth */}
+                <div className="mt-6 flex flex-col items-center gap-4 border-t pt-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Theme:</span>
+                    <ThemeToggle />
+                  </div>
+                  {user ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {user.name}
+                      </span>
+                      <Button onClick={() => { logout(); toggleMenu(); }} variant="outline" size="sm" className="w-full">
+                        Logout
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 w-full">
+                      <Link href="/login" onClick={toggleMenu} className="w-full">
+                        <Button variant="outline" size="sm" className="w-full">
+                          Login
+                        </Button>
+                      </Link>
+                      <Link href="/register" onClick={toggleMenu} className="w-full">
+                        <Button variant="default" size="sm" className="w-full">
+                          Register
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>

@@ -10,6 +10,7 @@ pub mod middleware;
 pub mod ratelimit;
 pub mod redis_client;
 pub mod ryzen_cdn;
+pub mod seed;
 pub mod urls;
 pub mod utils;
 
