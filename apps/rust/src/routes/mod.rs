@@ -12,4 +12,5 @@ use tracing::info;
 pub struct AppState {
     pub jwt_secret: String,
     pub redis_pool: Pool,
+    pub db: sqlx::MySqlPool,
 }

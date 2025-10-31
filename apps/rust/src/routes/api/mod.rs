@@ -7,6 +7,7 @@ use crate::routes::AppState;
 
 pub mod anime;
 pub mod anime2;
+pub mod auth;
 pub mod compress;
 pub mod drivepng;
 pub mod komik;
@@ -58,9 +59,13 @@ use crate::routes::api::anime::search::AnimeItem as AnimeItem_1;
 use crate::routes::api::anime::search::Pagination as Pagination_5;
 use crate::routes::api::anime::search::SearchQuery as SearchQuery_1;
 use crate::routes::api::anime::search::SearchResponse as SearchResponse_1;
+use crate::routes::api::auth::login::ListResponse as ListResponse_2;
+use crate::routes::api::auth::logout::ListResponse as ListResponse_3;
+use crate::routes::api::auth::register::ListResponse as ListResponse_4;
+use crate::routes::api::auth::verify::ListResponse as ListResponse_5;
 use crate::routes::api::compress::CompressQuery;
 use crate::routes::api::compress::CompressResponse;
-use crate::routes::api::drivepng::ListResponse as ListResponse_2;
+use crate::routes::api::drivepng::ListResponse as ListResponse_6;
 use crate::routes::api::komik2::chapter::ChapterData;
 use crate::routes::api::komik2::chapter::ChapterQuery;
 use crate::routes::api::komik2::chapter::ChapterResponse;
@@ -109,7 +114,7 @@ use crate::routes::api::komik::search::Pagination as Pagination_13;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_3;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_3;
 use crate::routes::api::proxy::croxy::ProxyParams;
-use crate::routes::api::uploader::ListResponse as ListResponse_3;
+use crate::routes::api::uploader::ListResponse as ListResponse_7;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -124,6 +129,10 @@ paths(
               crate::routes::api::anime2::index::anime2,
               crate::routes::api::anime2::ongoing_anime::slug::slug,
               crate::routes::api::anime2::search::search,
+              crate::routes::api::auth::login::login,
+              crate::routes::api::auth::logout::logout,
+              crate::routes::api::auth::register::register,
+              crate::routes::api::auth::verify::verify,
               crate::routes::api::compress::compress,
               crate::routes::api::drivepng::drivepng,
               crate::routes::api::komik::chapter::chapter,
@@ -187,9 +196,13 @@ components(
                   Pagination_5,
                   SearchQuery_1,
                   SearchResponse_1,
+                  ListResponse_2,
+                  ListResponse_3,
+                  ListResponse_4,
+                  ListResponse_5,
                   CompressQuery,
                   CompressResponse,
-                  ListResponse_2,
+                  ListResponse_6,
                   ChapterData,
                   ChapterQuery,
                   ChapterResponse,
@@ -238,7 +251,7 @@ components(
                   SearchQuery_3,
                   SearchResponse_3,
                   ProxyParams,
-                  ListResponse_3
+                  ListResponse_7
             )
         ),
         security((
@@ -260,6 +273,7 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();
     router = anime::register_routes(router);
     router = anime2::register_routes(router);
+    router = auth::register_routes(router);
     router = compress::register_routes(router);
     router = drivepng::register_routes(router);
     router = komik::register_routes(router);

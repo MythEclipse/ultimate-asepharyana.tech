@@ -4,7 +4,7 @@ import PostCard from '../../components/sosmed/PostCard';
 import { ThemedCard } from '../../components/ui/CardSystem';
 import { Textarea } from '../../components/text/textarea';
 import { Button } from '../../components/ui/button';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '../../lib/auth-context';
 import { Loader2, UploadCloud, Lock } from 'lucide-react';
 import useSWR, { mutate } from 'swr';
 import { fetchData } from '../../utils/useFetch';
@@ -17,7 +17,7 @@ const fetcher = async (url: string) => {
 };
 
 export default function SosmedClient() {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -38,7 +38,7 @@ export default function SosmedClient() {
   } = useSosmedActions();
 
   const { data: postsData } = useSWR(
-    session?.user?.email ? `/api/sosmed/posts` : null,
+    user?.email ? `/api/sosmed/posts` : null,
     fetcher,
     {
       refreshInterval: 1000,
@@ -53,7 +53,7 @@ export default function SosmedClient() {
 
   const handlePostSubmit = async () => {
     if ((!content.trim() && !imageUrl) || isPosting) return;
-    if (!session?.user?.email) {
+    if (!user?.email) {
       console.error('User not authenticated to create post.');
       return;
     }
@@ -104,7 +104,7 @@ export default function SosmedClient() {
         Community Hub
       </h1>
 
-      {session?.user ? (
+      {user ? (
         <div className="mb-8 md:mb-10 group">
           <div className="relative bg-gradient-to-br from-white/50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1 shadow-lg transition-all hover:shadow-xl">
             <ThemedCard>

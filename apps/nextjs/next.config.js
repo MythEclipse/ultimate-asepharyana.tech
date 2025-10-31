@@ -7,7 +7,8 @@ const { composePlugins, withNx } = require('@nx/next');
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
 const nextConfig = {
-  output: process.env.DOCKER === 'enable' ? 'standalone' : undefined,
+  // Force standalone to skip static error page generation
+  // output: process.env.DOCKER === 'enable' ? 'standalone' : undefined,
   images: {
     remotePatterns: [
       {
@@ -69,9 +70,17 @@ const nextConfig = {
   compress: true,
   productionBrowserSourceMaps: true,
   transpilePackages: ['swagger-ui', '@asepharyana/services'],
+  experimental: {
+    optimizePackageImports: ['@asepharyana/services'],
+  },
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: { svgr: false },
+  // Skip prerendering for routes to avoid React compatibility issues with error pages
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+  // Force standalone output to skip static optimization
+  output: 'standalone',
   webpack: (config) => {
     config.resolve.alias['@/lib'] = path.join(__dirname, 'lib');
     return config;

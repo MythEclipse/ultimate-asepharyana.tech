@@ -44,9 +44,33 @@ async fn main() -> anyhow::Result<()> {
 
     let _ = REDIS_POOL.get().await; // Initialize the pool early
 
+    // Setup MySQL connection pool
+    let database_url = CONFIG_MAP
+        .get("DATABASE_URL")
+        .cloned()
+        .unwrap_or_else(|| {
+            tracing::warn!("DATABASE_URL not set, using default");
+            "mysql://root:password@localhost/mydb".to_string()
+        });
+
+    let db = sqlx::MySqlPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to MySQL database");
+
+    tracing::info!("Database connection established");
+
+    // Run migrations
+    sqlx::migrate!("./migrations")
+        .run(&db)
+        .await
+        .expect("Failed to run migrations");
+
+    tracing::info!("Database migrations completed");
+
     let app_state = Arc::new(AppState {
         jwt_secret,
         redis_pool: REDIS_POOL.clone(),
+        db,
     });
 
     tracing::info!("Building application routes...");

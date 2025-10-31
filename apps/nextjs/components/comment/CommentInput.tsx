@@ -2,15 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '../../lib/auth-context';
 import { fetchData } from '../../utils/useFetch';
 
 export default function CommentPage() {
   const { push } = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { data: session } = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

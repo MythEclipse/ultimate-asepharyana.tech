@@ -2,10 +2,14 @@
 // apps/NextJS/app/layout.tsx
 
 import type { Metadata } from 'next';
+
+// Force dynamic rendering for all routes to avoid prerender issues
+export const dynamic = 'force-dynamic';
 import './globals.css';
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '../components/providers/theme-provider';
+import { AuthProvider } from '../lib/auth-context';
 import Navbar from '../components/navbar/Navbar';
 import { Toaster } from 'sonner';
 export const metadata: Metadata = {
@@ -31,9 +35,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          {children}
-          <Toaster />
+          <AuthProvider>
+            <Navbar />
+            {children}
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
         {/* <Analytics /> */}
         {/* <SpeedInsights /> */}

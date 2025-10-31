@@ -1,10 +1,10 @@
-import { useSession } from 'next-auth/react';
-import type { Session } from 'next-auth';
+import { useAuth } from '../../lib/auth-context';
+import type { User } from '../../types/auth';
 
-export function useRequireAuth(): Session {
-  const { data: session } = useSession();
-  if (!session?.user) {
+export function useRequireAuth(): User {
+  const { user } = useAuth();
+  if (!user) {
     throw new Error('Authentication required');
   }
-  return session;
+  return user;
 }

@@ -1,7 +1,7 @@
 'use client';
 import React, { useMemo, useState } from 'react';
 import { Posts, Comments, Likes } from '@asepharyana/services';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '../../lib/auth-context';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 import PostHeader from './PostHeader';
 import PostContent from './PostContent';
@@ -58,14 +58,14 @@ export default function PostCard({
   const [editedPostContent, setEditedPostContent] = useState(post.content);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState('');
-  const { data: session } = useSession();
+  const { user } = useAuth();
 
   const showComments = useGlobalStore((s) => s.showComments[post.id] || false);
   const setShowComments = useGlobalStore((s) => s.setShowComments);
   const newComment = useGlobalStore((s) => s.newComments[post.id] || '');
   const setNewComment = useGlobalStore((s) => s.setNewComment);
 
-  const authenticatedUserId = session?.user?.id;
+  const authenticatedUserId = user?.id;
 
   const userHasLiked = useMemo(
     () => post.likes.some((like) => like.userId === authenticatedUserId),
@@ -157,7 +157,7 @@ export default function PostCard({
           onDeleteComment={handleDeleteComment}
           isEditingComment={isEditingComment}
           isDeletingComment={isDeletingComment}
-          sessionUserImage={session?.user?.image}
+          sessionUserImage={user?.image}
         />
       )}
     </article>
