@@ -38,7 +38,7 @@ jobs:
 
       - name: Prepare .env file for production
         env:
-          ENV_FILE_PRODUCTION: ${{ secrets.ELYSIA_ENV_FILE_PRODUCTION }}
+          ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
         run: |
           if [ -n "$ENV_FILE_PRODUCTION" ]; then
             echo "$ENV_FILE_PRODUCTION" > apps/elysia/.env
