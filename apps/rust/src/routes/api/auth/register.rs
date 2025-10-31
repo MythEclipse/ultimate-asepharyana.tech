@@ -9,10 +9,10 @@
     use utoipa::ToSchema;
 
     pub const ENDPOINT_METHOD: &str = "get";
-    pub const ENDPOINT_PATH: &str = "/auth/register";
+    pub const ENDPOINT_PATH: &str = "/api/auth/register";
     pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the auth/register endpoint.";
-    pub const ENDPOINT_TAG: &str = "auth/register";
-    pub const OPERATION_ID: &str = "auth/register";
+    pub const ENDPOINT_TAG: &str = "auth";
+    pub const OPERATION_ID: &str = "auth_register";
     pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
     /// Response structure for the Register endpoint.
@@ -29,9 +29,9 @@
 
     #[utoipa::path(
     get,
-    path = "/api//auth/register",
-    tag = "auth/register",
-    operation_id = "auth/register",
+    path = "/api/auth/register",
+    tag = "auth",
+    operation_id = "auth_register",
     responses(
         (status = 200, description = "Handles GET requests for the auth/register endpoint.", body = ListResponse),
         (status = 500, description = "Internal Server Error", body = String)

@@ -9,10 +9,10 @@
     use utoipa::ToSchema;
 
     pub const ENDPOINT_METHOD: &str = "get";
-    pub const ENDPOINT_PATH: &str = "/auth/logout";
+    pub const ENDPOINT_PATH: &str = "/api/auth/logout";
     pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the auth/logout endpoint.";
-    pub const ENDPOINT_TAG: &str = "auth/logout";
-    pub const OPERATION_ID: &str = "auth/logout";
+    pub const ENDPOINT_TAG: &str = "auth";
+    pub const OPERATION_ID: &str = "auth_logout";
     pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
     /// Response structure for the Logout endpoint.
@@ -29,9 +29,9 @@
 
     #[utoipa::path(
     get,
-    path = "/api//auth/logout",
-    tag = "auth/logout",
-    operation_id = "auth/logout",
+    path = "/api/auth/logout",
+    tag = "auth",
+    operation_id = "auth_logout",
     responses(
         (status = 200, description = "Handles GET requests for the auth/logout endpoint.", body = ListResponse),
         (status = 500, description = "Internal Server Error", body = String)
