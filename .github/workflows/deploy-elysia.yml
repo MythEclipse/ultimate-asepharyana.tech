@@ -89,16 +89,21 @@ jobs:
             export PATH="$HOME/.cargo/bin:$PATH"
 
             # Navigate to the app directory
-            cd ${{ secrets.VPS_TARGET_DIR }}/apps/elysia
+            cd ${{ secrets.VPS_TARGET_DIR }}
 
             # Pull the latest code (optional, as rsync is the source of truth)
             git reset --hard origin/main || true
 
+            # Create logs directory
+            mkdir -p apps/elysia/logs
+
             # Install production dependencies
+            cd apps/elysia
             bun install --production
 
             # Restart the application with PM2
-            pm2 startOrRestart ecosystem.config.cjs
+            cd ${{ secrets.VPS_TARGET_DIR }}
+            pm2 startOrRestart apps/elysia/ecosystem.config.cjs
 
             echo "ElysiaJS Deployment successful!"
           '
