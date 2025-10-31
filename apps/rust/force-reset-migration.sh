@@ -20,11 +20,10 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
     echo "Database: $DB_NAME @ $DB_HOST:$DB_PORT"
     echo ""
 
-    # Delete ALL migration records
-    echo "Deleting all migration records..."
-    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "DELETE FROM _sqlx_migrations; SELECT 'Migration history cleared' as status;"
-
-    echo ""
+    # Drop and recreate migration table for complete reset
+    echo "Resetting migration table..."
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql
+    echo "✓ Migration table reset"    echo ""
     echo "Restarting Rust app..."
     pm2 restart 3
 
