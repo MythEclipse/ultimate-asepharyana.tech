@@ -7,6 +7,7 @@ pub mod image_proxy;
 pub mod jwt;
 pub mod komik_base_url;
 pub mod middleware;
+pub mod models;
 pub mod ratelimit;
 pub mod redis_client;
 pub mod ryzen_cdn;

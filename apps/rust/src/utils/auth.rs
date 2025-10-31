@@ -4,7 +4,7 @@ use crate::config::CONFIG_MAP;
 use crate::utils::error::AppError;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Claims {
     pub user_id: String,
     pub email: String,

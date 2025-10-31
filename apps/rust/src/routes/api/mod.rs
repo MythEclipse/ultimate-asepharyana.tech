@@ -59,13 +59,30 @@ use crate::routes::api::anime::search::AnimeItem as AnimeItem_1;
 use crate::routes::api::anime::search::Pagination as Pagination_5;
 use crate::routes::api::anime::search::SearchQuery as SearchQuery_1;
 use crate::routes::api::anime::search::SearchResponse as SearchResponse_1;
-use crate::routes::api::auth::login::ListResponse as ListResponse_2;
-use crate::routes::api::auth::logout::ListResponse as ListResponse_3;
-use crate::routes::api::auth::register::ListResponse as ListResponse_4;
-use crate::routes::api::auth::verify::ListResponse as ListResponse_5;
+use crate::routes::api::auth::change_password::ChangePasswordRequest;
+use crate::routes::api::auth::change_password::ChangePasswordResponse;
+use crate::routes::api::auth::delete_account::DeleteAccountRequest;
+use crate::routes::api::auth::delete_account::DeleteAccountResponse;
+use crate::routes::api::auth::forgot_password::ForgotPasswordRequest;
+use crate::routes::api::auth::forgot_password::ForgotPasswordResponse;
+use crate::routes::api::auth::login::LoginMetadata;
+use crate::routes::api::auth::login::LoginRequest;
+use crate::routes::api::auth::logout::LogoutRequest;
+use crate::routes::api::auth::logout::LogoutResponse;
+use crate::routes::api::auth::profile::UpdateProfileRequest;
+use crate::routes::api::auth::profile::UpdateProfileResponse;
+use crate::routes::api::auth::refresh_token::RefreshRequest;
+use crate::routes::api::auth::refresh_token::RefreshResponse;
+use crate::routes::api::auth::register::RegisterRequest;
+use crate::routes::api::auth::register::RegisterResponse;
+use crate::routes::api::auth::reset_password::ResetPasswordRequest;
+use crate::routes::api::auth::reset_password::ResetPasswordResponse;
+use crate::routes::api::auth::verify::ResendVerificationRequest;
+use crate::routes::api::auth::verify::VerifyQuery;
+use crate::routes::api::auth::verify::VerifyResponse;
 use crate::routes::api::compress::CompressQuery;
 use crate::routes::api::compress::CompressResponse;
-use crate::routes::api::drivepng::ListResponse as ListResponse_6;
+use crate::routes::api::drivepng::ListResponse as ListResponse_2;
 use crate::routes::api::komik2::chapter::ChapterData;
 use crate::routes::api::komik2::chapter::ChapterQuery;
 use crate::routes::api::komik2::chapter::ChapterResponse;
@@ -114,7 +131,7 @@ use crate::routes::api::komik::search::Pagination as Pagination_13;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_3;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_3;
 use crate::routes::api::proxy::croxy::ProxyParams;
-use crate::routes::api::uploader::ListResponse as ListResponse_7;
+use crate::routes::api::uploader::ListResponse as ListResponse_3;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
@@ -129,9 +146,16 @@ paths(
               crate::routes::api::anime2::index::anime2,
               crate::routes::api::anime2::ongoing_anime::slug::slug,
               crate::routes::api::anime2::search::search,
+              crate::routes::api::auth::change_password::change_password,
+              crate::routes::api::auth::delete_account::delete_account,
+              crate::routes::api::auth::forgot_password::forgot_password,
               crate::routes::api::auth::login::login,
               crate::routes::api::auth::logout::logout,
+              crate::routes::api::auth::me::get_me,
+              crate::routes::api::auth::profile::update_profile,
+              crate::routes::api::auth::refresh_token::refresh,
               crate::routes::api::auth::register::register,
+              crate::routes::api::auth::reset_password::reset_password,
               crate::routes::api::auth::verify::verify,
               crate::routes::api::compress::compress,
               crate::routes::api::drivepng::drivepng,
@@ -196,13 +220,30 @@ components(
                   Pagination_5,
                   SearchQuery_1,
                   SearchResponse_1,
-                  ListResponse_2,
-                  ListResponse_3,
-                  ListResponse_4,
-                  ListResponse_5,
+                  ChangePasswordRequest,
+                  ChangePasswordResponse,
+                  DeleteAccountRequest,
+                  DeleteAccountResponse,
+                  ForgotPasswordRequest,
+                  ForgotPasswordResponse,
+                  LoginMetadata,
+                  LoginRequest,
+                  LogoutRequest,
+                  LogoutResponse,
+                  UpdateProfileRequest,
+                  UpdateProfileResponse,
+                  RefreshRequest,
+                  RefreshResponse,
+                  RegisterRequest,
+                  RegisterResponse,
+                  ResetPasswordRequest,
+                  ResetPasswordResponse,
+                  ResendVerificationRequest,
+                  VerifyQuery,
+                  VerifyResponse,
                   CompressQuery,
                   CompressResponse,
-                  ListResponse_6,
+                  ListResponse_2,
                   ChapterData,
                   ChapterQuery,
                   ChapterResponse,
@@ -251,7 +292,7 @@ components(
                   SearchQuery_3,
                   SearchResponse_3,
                   ProxyParams,
-                  ListResponse_7
+                  ListResponse_3
             )
         ),
         security((
