@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../../utils/database';
 import type { RowDataPacket } from 'mysql2';
 

@@ -1,12 +1,13 @@
 import { Elysia, t } from 'elysia';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../../utils/database';
+import { signJWT } from '../../utils/jwt';
 import type { RowDataPacket } from 'mysql2';
 
 export const refreshTokenRoute = new Elysia()
   .post(
     '/api/auth/refresh-token',
-    async ({ body, jwt, set }) => {
+    async ({ body, set }) => {
       const { refresh_token } = body as { refresh_token: string };
 
       const db = await getDatabase();
@@ -50,14 +51,12 @@ export const refreshTokenRoute = new Elysia()
 
       // Generate new access token
       const token_expiry = 24 * 3600; // 24 hours
-      const exp = Math.floor(Date.now() / 1000) + token_expiry;
 
-      const access_token = await jwt.sign({
+      const access_token = await signJWT({
         user_id: user.id,
         email: user.email,
         name: user.username,
-        exp,
-      });
+      }, token_expiry);
 
       // Generate new refresh token
       const new_refresh_token = uuidv4();

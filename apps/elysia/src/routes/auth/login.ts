@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../../utils/database';
+import { signJWT } from '../../utils/jwt';
 import { toUserResponse, type User, type LoginResponse } from '../../models/user';
 import type { RowDataPacket } from 'mysql2';
 
@@ -12,10 +13,9 @@ interface LoginBody {
 }
 
 export const loginRoute = new Elysia()
-  .derive(({ jwt }) => ({ jwt }))
   .post(
     '/api/auth/login',
-    async ({ body, jwt, set }): Promise<LoginResponse> => {
+    async ({ body, set }): Promise<LoginResponse> => {
       const { login, password, remember_me } = body as LoginBody;
 
       const db = await getDatabase();
@@ -54,14 +54,12 @@ export const loginRoute = new Elysia()
 
       // Generate JWT tokens
       const token_expiry = remember_me ? 30 * 24 * 3600 : 24 * 3600; // 30 days or 24 hours
-      const exp = Math.floor(Date.now() / 1000) + token_expiry;
 
-      const access_token = await jwt.sign({
+      const access_token = await signJWT({
         user_id: user.id,
         email: user.email,
         name: user.username,
-        exp,
-      });
+      }, token_expiry);
 
       // Generate refresh token
       const refresh_token = uuidv4();
@@ -101,7 +99,7 @@ export const loginRoute = new Elysia()
   );
 
 async function logLoginAttempt(
-  db: any,
+  db: Awaited<ReturnType<typeof getDatabase>>,
   user_id: string | null,
   success: boolean,
   failure_reason: string | null

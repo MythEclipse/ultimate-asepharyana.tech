@@ -5,6 +5,7 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "ignoreDeprecations": "6.0",
     "types": [
       "node",
       "@nx/react/typings/cssmodule.d.ts",

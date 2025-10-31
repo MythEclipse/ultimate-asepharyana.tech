@@ -1,7 +1,5 @@
-import { Elysia, t } from 'elysia';
-import { getDatabase } from '../../utils/database';
+import { Elysia } from 'elysia';
 import { blacklistToken } from '../../utils/redis';
-import type { RowDataPacket } from 'mysql2';
 
 export const logoutRoute = new Elysia()
   .post(

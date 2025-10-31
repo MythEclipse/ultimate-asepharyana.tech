@@ -1,6 +1,6 @@
-import { Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
-import { jwt } from '@elysiajs/jwt';
+import Elysia from 'elysia';
+import cors from '@elysiajs/cors';
+import jwt from '@elysiajs/jwt';
 import { apiRoutes } from './routes/api';
 import { authRoutes } from './routes/auth';
 import { logger } from './middleware';
@@ -56,9 +56,18 @@ export const app = new Elysia()
   .onError(({ error, set }) => {
     console.error('Error:', error);
     set.status = 500;
+
+    // Handle different error types
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Internal server error';
+
     return {
       success: false,
-      error: error.message || 'Internal server error',
+      error: errorMessage,
     };
   });
 

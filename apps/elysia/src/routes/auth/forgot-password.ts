@@ -7,7 +7,7 @@ import type { RowDataPacket } from 'mysql2';
 export const forgotPasswordRoute = new Elysia()
   .post(
     '/api/auth/forgot-password',
-    async ({ body, set }) => {
+    async ({ body }) => {
       const { email } = body as { email: string };
 
       const db = await getDatabase();

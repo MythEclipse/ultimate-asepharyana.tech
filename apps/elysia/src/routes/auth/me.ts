@@ -1,11 +1,12 @@
 import { Elysia } from 'elysia';
 import { getDatabase } from '../../utils/database';
+import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
 import { toUserResponse, type User } from '../../models/user';
 import type { RowDataPacket } from 'mysql2';
 
 export const meRoute = new Elysia()
-  .get('/api/auth/me', async ({ headers, jwt, set }) => {
+  .get('/api/auth/me', async ({ headers, set }) => {
     const authHeader = headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       set.status = 401;
@@ -22,7 +23,7 @@ export const meRoute = new Elysia()
     }
 
     // Verify JWT
-    const payload = await jwt.verify(token);
+    const payload = await verifyJWT(token);
     if (!payload) {
       set.status = 401;
       throw new Error('Invalid token');
