@@ -101,9 +101,13 @@ jobs:
             cd apps/elysia
             bun install --production
 
-            # Restart the application with PM2
+            # Stop and delete old PM2 instance
+            pm2 delete elysia-app || true
+
+            # Start the application with PM2
             cd ${{ secrets.VPS_TARGET_DIR }}
-            pm2 startOrRestart apps/elysia/ecosystem.config.cjs
+            pm2 start apps/elysia/ecosystem.config.cjs
+            pm2 save
 
             echo "ElysiaJS Deployment successful!"
           '
