@@ -128,6 +128,11 @@ jobs:
             git reset --hard origin/main
             bash scripts/2updateenv.sh
 
+            # Fix migration history if needed
+            if [ -f "fix-migrations.sql" ]; then
+              mysql -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < fix-migrations.sql 2>/dev/null || echo "Migration fix skipped"
+            fi
+
             # Restart the application with PM2
             pm2 startOrRestart rust.config.cjs
 
