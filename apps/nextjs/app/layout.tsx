@@ -3,8 +3,6 @@
 
 import type { Metadata } from 'next';
 
-// Force dynamic rendering for all routes to avoid prerender issues
-export const dynamic = 'force-dynamic';
 import './globals.css';
 // import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next';
