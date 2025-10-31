@@ -15,30 +15,30 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
     DB_HOST="${BASH_REMATCH[3]}"
     DB_PORT="${BASH_REMATCH[5]:-3306}"
     DB_NAME="${BASH_REMATCH[6]}"
-    
+
     echo "=== Force Migration Reset ==="
     echo "Database: $DB_NAME @ $DB_HOST:$DB_PORT"
     echo ""
-    
+
     # Delete ALL migration records
     echo "Deleting all migration records..."
     mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "DELETE FROM _sqlx_migrations; SELECT 'Migration history cleared' as status;"
-    
+
     echo ""
     echo "Restarting Rust app..."
     pm2 restart 3
-    
+
     echo ""
     echo "Waiting for app to start..."
     sleep 3
-    
+
     echo ""
     echo "Recent logs:"
     pm2 logs 3 --lines 30 --nostream
-    
+
     echo ""
     echo "Done! Check if migrations ran successfully above."
-    
+
 else
     echo "Error: Invalid DATABASE_URL"
     exit 1

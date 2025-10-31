@@ -57,8 +57,8 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
     echo "Backup saved to: $backup_file"
     echo ""
     echo "Next steps:"
-    echo "1. Restart the Rust app: pm2 restart RustExpr"
-    echo "2. Check logs: pm2 logs RustExpr"
+    echo "1. Restart the Rust app: pm2 restart 3"
+    echo "2. Check logs: pm2 logs 3"
 
 else
     echo "Invalid DATABASE_URL format!"

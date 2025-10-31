@@ -39,21 +39,19 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
 
     # Step 3: Restart app
     echo "Step 3: Restarting Rust app..."
-    pm2 restart RustExpr
+    pm2 restart 3
     echo "✓ App restarted"
     echo ""
-
+    
     # Step 4: Check status
     echo "Checking app status in 3 seconds..."
     sleep 3
-    pm2 logs RustExpr --lines 20 --nostream
-
+    pm2 logs 3 --lines 20 --nostream
+    
     echo ""
     echo "✓ Migration fix completed!"
     echo ""
-    echo "Monitor logs with: pm2 logs RustExpr"
-
-else
+    echo "Monitor logs with: pm2 logs 3"else
     echo "Error: Invalid DATABASE_URL format"
     exit 1
 fi
