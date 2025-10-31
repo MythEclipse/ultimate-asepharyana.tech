@@ -22,17 +22,18 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
     DB_NAME="${BASH_REMATCH[6]}"
 
     echo "Database: $DB_NAME @ $DB_HOST:$DB_PORT"
+    echo "User: $DB_USER"
     echo ""
 
     # Step 1: Ensure tables exist
     echo "Step 1: Ensuring all chat tables exist..."
-    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < ensure-chat-tables.sql
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < ensure-chat-tables.sql
     echo "✓ Tables verified"
     echo ""
 
     # Step 2: Clear migration history
     echo "Step 2: Clearing migration history..."
-    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql
     echo "✓ Migration history cleared"
     echo ""
 

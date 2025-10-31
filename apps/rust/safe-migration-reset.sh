@@ -35,21 +35,21 @@ if [[ $DATABASE_URL =~ mysql://([^:]+):([^@]+)@([^:/]+)(:([0-9]+))?/(.+) ]]; the
 
     # Create backup
     backup_file="migration_backup_$(date +%Y%m%d_%H%M%S).sql"
-    mysqldump -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" _sqlx_migrations > "$backup_file" 2>/dev/null || true
+    mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" _sqlx_migrations > "$backup_file" 2>/dev/null || true
 
     # Show current state
     echo "Current migrations:"
-    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT * FROM _sqlx_migrations ORDER BY version;"
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT * FROM _sqlx_migrations ORDER BY version;"
 
     echo ""
     echo "Step 2: Cleaning migration history..."
 
     # Run fix-migrations.sql
-    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql
 
     echo ""
     echo "Step 3: Verifying migration state..."
-    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT * FROM _sqlx_migrations ORDER BY version;"
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "SELECT * FROM _sqlx_migrations ORDER BY version;"
 
     echo ""
     echo "✓ Migration history cleaned successfully!"

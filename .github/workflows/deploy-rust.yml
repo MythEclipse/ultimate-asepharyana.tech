@@ -142,13 +142,13 @@ jobs:
               # Step 1: Ensure all tables exist (safe with IF NOT EXISTS)
               if [ -f "ensure-chat-tables.sql" ]; then
                 echo "Ensuring chat tables exist..."
-                mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < ensure-chat-tables.sql 2>/dev/null || echo "Table creation completed"
+                mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < ensure-chat-tables.sql 2>/dev/null || echo "Table creation completed"
               fi
 
               # Step 2: Clean migration history for fresh re-run
               if [ -f "fix-migrations.sql" ]; then
                 echo "Cleaning migration history for fresh start..."
-                mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql 2>/dev/null || echo "Migration cleanup completed"
+                mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" < fix-migrations.sql 2>/dev/null || echo "Migration cleanup completed"
               fi
             fi
 
