@@ -1,6 +1,7 @@
 import Elysia from 'elysia';
 import cors from '@elysiajs/cors';
 import jwt from '@elysiajs/jwt';
+import { swagger } from '@elysiajs/swagger';
 import { apiRoutes } from './routes/api';
 import { authRoutes } from './routes/auth';
 import { logger } from './middleware';
@@ -24,6 +25,28 @@ const initializeConnections = async () => {
 
 export const app = new Elysia()
   .use(cors())
+  .use(
+    swagger({
+      documentation: {
+        info: {
+          title: 'ElysiaJS Auth API Documentation',
+          version: '1.0.0',
+          description: 'API documentation for ElysiaJS authentication service with Redis caching',
+        },
+        tags: [
+          { name: 'Health', description: 'Health check endpoints' },
+          { name: 'Auth', description: 'Authentication endpoints' },
+          { name: 'API', description: 'General API endpoints' },
+        ],
+        servers: [
+          {
+            url: `http://localhost:${config.port}`,
+            description: 'Development server',
+          },
+        ],
+      },
+    })
+  )
   .use(
     jwt({
       name: 'jwt',
@@ -83,4 +106,5 @@ initializeConnections().then(() => {
   );
   console.log(`📝 Environment: ${config.env}`);
   console.log(`🔐 Auth endpoints: http://${app.server?.hostname}:${app.server?.port}/api/auth`);
+  console.log(`📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/swagger`);
 });
