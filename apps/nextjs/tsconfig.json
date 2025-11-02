@@ -5,15 +5,10 @@
     "strict": true,
     "noEmit": true,
     "emitDeclarationOnly": false,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "ignoreDeprecations": "6.0",
+    "moduleResolution": "bundler",
     "plugins": [
       {
         "name": "next"

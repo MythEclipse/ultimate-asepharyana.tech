@@ -5,8 +5,8 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": true,
-    "target": "esnext",
-    "module": "esnext",
+    "target": "ES2022",
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -14,14 +14,17 @@
     "allowJs": true,
     "strict": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
-    "lib": ["es2020", "dom"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@asepharyana/services": ["libs/services/src/index.ts"],
-      "@asepharyana/storybook-ui": ["storybook-ui/src/index.ts"]
+      "@asepharyana/services": ["./libs/services/src/index.ts"],
+      "@asepharyana/storybook-ui": ["./storybook-ui/src/index.ts"]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": ["node_modules", "tmp", "dist", "**/*.spec.ts", "**/*.test.ts"]
 }
