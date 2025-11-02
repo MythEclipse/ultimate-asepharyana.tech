@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { prisma } from '../../utils/prisma';
-import { verifyJWT } from '../../utils/jwt';
+import { prisma } from '../utils/prisma';
+import { verifyJWT } from '../utils/jwt';
 
 export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
   // Get all posts with comments and likes
