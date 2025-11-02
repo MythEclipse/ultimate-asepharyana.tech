@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.bun-cache.outputs.BUN_INSTALL_CACHE_DIR }}
-          key: ${{ runner.os }}-bun-${{ hashFiles('apps/elysia/bun.lockb') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('apps/elysia/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
@@ -74,6 +74,16 @@ jobs:
             apps/elysia/.env \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/.env
 
+          # Sync Prisma schema and migrations
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/prisma/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/prisma/
+
+          # Sync Prisma config
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/prisma.config.ts \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/prisma.config.ts
+
           rm -f /tmp/deploy_key
 
       - name: Deploy on VPS
@@ -98,6 +108,10 @@ jobs:
             # Install production dependencies
             cd apps/elysia
             bun install --production
+
+            # Run Prisma migrations and generate client
+            bun x prisma migrate deploy
+            bun x prisma generate
 
             # Stop and delete old PM2 instance
             pm2 delete elysia-app || true
