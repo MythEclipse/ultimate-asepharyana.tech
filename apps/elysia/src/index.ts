@@ -36,6 +36,7 @@ export const app = new Elysia()
   .use(cors())
   .use(
     swagger({
+      path: '/docs',
       documentation: {
         info: {
           title: 'ElysiaJS Auth API Documentation',
@@ -119,5 +120,5 @@ initializeConnections().then(() => {
   );
   console.log(`📝 Environment: ${config.env}`);
   console.log(`🔐 Auth endpoints: http://${app.server?.hostname}:${app.server?.port}/api/auth`);
-  console.log(`📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/swagger`);
+  console.log(`📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/docs`);
 });

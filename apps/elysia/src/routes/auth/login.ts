@@ -9,7 +9,7 @@ interface LoginBody {
   rememberMe?: boolean;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
   success: boolean;
   user: {
     id: string;

@@ -16,7 +16,7 @@ interface RegisterBody {
   password: string;
 }
 
-interface RegisterResponse {
+export interface RegisterResponse {
   success: boolean;
   message: string;
   user: {
