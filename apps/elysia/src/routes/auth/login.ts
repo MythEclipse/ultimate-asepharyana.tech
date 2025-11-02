@@ -1,114 +1,91 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
-import { getDatabase } from '../../utils/database';
+import { prisma } from '../../utils/prisma';
 import { signJWT } from '../../utils/jwt';
-import { toUserResponse, type User, type LoginResponse } from '../../models/user';
-import type { RowDataPacket } from 'mysql2';
 
 interface LoginBody {
-  login: string;
+  email: string;
   password: string;
-  remember_me?: boolean;
+  rememberMe?: boolean;
+}
+
+interface LoginResponse {
+  success: boolean;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    isVerified: boolean;
+  };
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
 }
 
 export const loginRoute = new Elysia()
   .post(
     '/api/auth/login',
     async ({ body, set }): Promise<LoginResponse> => {
-      const { login, password, remember_me } = body as LoginBody;
+      const { email, password, rememberMe } = body as LoginBody;
 
-      const db = await getDatabase();
+      // Find user by email
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
 
-      // Find user by email or username
-      const [users] = await db.query<(User & RowDataPacket)[]>(
-        `SELECT id, email, username, password_hash, full_name, avatar_url,
-                email_verified, is_active, role, last_login_at, created_at, updated_at
-         FROM users
-         WHERE email = ? OR username = ?`,
-        [login, login]
-      );
-
-      if (users.length === 0) {
-        // Log failed login attempt
-        await logLoginAttempt(db, null, false, 'User not found');
+      if (!user) {
         set.status = 401;
         throw new Error('Invalid credentials');
       }
-
-      const user = users[0];
 
       // Verify password
-      const passwordValid = await bcrypt.compare(password, user.password_hash);
+      const passwordValid = await bcrypt.compare(password, user.password);
       if (!passwordValid) {
-        await logLoginAttempt(db, user.id, false, 'Invalid password');
         set.status = 401;
         throw new Error('Invalid credentials');
-      }
-
-      // Check if account is active
-      if (!user.is_active) {
-        set.status = 403;
-        throw new Error('Account is inactive');
       }
 
       // Generate JWT tokens
-      const token_expiry = remember_me ? 30 * 24 * 3600 : 24 * 3600; // 30 days or 24 hours
+      const tokenExpiry = rememberMe ? 30 * 24 * 3600 : 24 * 3600; // 30 days or 24 hours
 
-      const access_token = await signJWT({
+      const accessToken = await signJWT({
         user_id: user.id,
         email: user.email,
-        name: user.username,
-      }, token_expiry);
+        name: user.name || '',
+      }, tokenExpiry);
 
       // Generate refresh token
-      const refresh_token = uuidv4();
-      const refresh_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-      // Store refresh token
-      await db.query(
-        `INSERT INTO refresh_tokens (id, user_id, token, expires_at, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [uuidv4(), user.id, refresh_token, refresh_expires_at, new Date()]
-      );
-
-      // Update last login
-      await db.query(
-        'UPDATE users SET last_login_at = ? WHERE id = ?',
-        [new Date(), user.id]
-      );
-
-      // Log successful login
-      await logLoginAttempt(db, user.id, true, null);
+      // Store refresh token in database
+      const session = await prisma.session.create({
+        data: {
+          userId: user.id,
+          token: accessToken,
+          expiresAt: refreshExpiresAt,
+        },
+      });
 
       return {
-        user: toUserResponse(user),
-        access_token,
-        refresh_token,
-        token_type: 'Bearer',
-        expires_in: token_expiry,
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isVerified: user.isVerified,
+        },
+        accessToken,
+        refreshToken: session.token,
+        tokenType: 'Bearer',
+        expiresIn: tokenExpiry,
       };
     },
     {
       body: t.Object({
-        login: t.String(),
+        email: t.String({ format: 'email' }),
         password: t.String(),
-        remember_me: t.Optional(t.Boolean()),
+        rememberMe: t.Optional(t.Boolean()),
       }),
     }
   );
-
-async function logLoginAttempt(
-  db: Awaited<ReturnType<typeof getDatabase>>,
-  user_id: string | null,
-  success: boolean,
-  failure_reason: string | null
-): Promise<void> {
-  if (!user_id) return;
-
-  await db.query(
-    `INSERT INTO login_history (id, user_id, success, failure_reason, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [uuidv4(), user_id, success, failure_reason, new Date()]
-  );
-}

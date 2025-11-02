@@ -1,9 +1,7 @@
 import { Elysia } from 'elysia';
-import { getDatabase } from '../../utils/database';
+import { prisma } from '../../utils/prisma';
 import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
-import { toUserResponse, type User } from '../../models/user';
-import type { RowDataPacket } from 'mysql2';
 
 export const meRoute = new Elysia()
   .get('/api/auth/me', async ({ headers, set }) => {
@@ -29,30 +27,26 @@ export const meRoute = new Elysia()
       throw new Error('Invalid token');
     }
 
-    const db = await getDatabase();
+    // Fetch user using Prisma
+    const user = await prisma.user.findUnique({
+      where: { id: payload.user_id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    // Fetch user
-    const [users] = await db.query<(User & RowDataPacket)[]>(
-      `SELECT id, email, username, password_hash, full_name, avatar_url,
-              email_verified, is_active, role, last_login_at, created_at, updated_at
-       FROM users WHERE id = ?`,
-      [payload.user_id]
-    );
-
-    if (users.length === 0) {
+    if (!user) {
       set.status = 404;
       throw new Error('User not found');
     }
 
-    const user = users[0];
-
-    if (!user.is_active) {
-      set.status = 403;
-      throw new Error('Account is inactive');
-    }
-
     return {
       success: true,
-      user: toUserResponse(user),
+      user,
     };
   });

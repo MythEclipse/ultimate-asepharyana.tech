@@ -4,24 +4,33 @@ import jwt from '@elysiajs/jwt';
 import { swagger } from '@elysiajs/swagger';
 import { apiRoutes } from './routes/api';
 import { authRoutes } from './routes/auth';
+import { sosmedRoutes } from './routes/sosmed';
+import { chatRoutes } from './routes/chat';
 import { logger } from './middleware';
 import { config } from './config';
-import { getDatabase } from './utils/database';
+import { connectDatabase, prisma } from './utils/prisma';
 import { getRedis } from './utils/redis';
 
 // Initialize database and Redis connections
 const initializeConnections = async () => {
   try {
-    if (config.databaseUrl) {
-      await getDatabase();
-    }
+    // Connect to Prisma database
+    await connectDatabase();
 
+    // Connect to Redis
     const redis = getRedis();
     await redis.connect();
   } catch (error) {
     console.error('Failed to initialize connections:', error);
   }
 };
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
 
 export const app = new Elysia()
   .use(cors())
@@ -37,6 +46,8 @@ export const app = new Elysia()
           { name: 'Health', description: 'Health check endpoints' },
           { name: 'Auth', description: 'Authentication endpoints' },
           { name: 'API', description: 'General API endpoints' },
+          { name: 'Social Media', description: 'Social media posts, comments, and likes' },
+          { name: 'Chat', description: 'Chat rooms and messages' },
         ],
         servers: [
           {
@@ -76,6 +87,8 @@ export const app = new Elysia()
   }))
   .use(authRoutes)
   .use(apiRoutes)
+  .use(sosmedRoutes)
+  .use(chatRoutes)
   .onError(({ error, set }) => {
     console.error('Error:', error);
     set.status = 500;

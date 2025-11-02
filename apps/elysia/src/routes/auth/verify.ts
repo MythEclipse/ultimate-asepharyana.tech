@@ -1,6 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { getDatabase } from '../../utils/database';
-import type { RowDataPacket } from 'mysql2';
+import { prisma } from '../../utils/prisma';
 
 export const verifyRoute = new Elysia()
   .get(
@@ -13,30 +12,31 @@ export const verifyRoute = new Elysia()
         throw new Error('Verification token is required');
       }
 
-      const db = await getDatabase();
+      // Find verification token that hasn't expired
+      const verificationToken = await prisma.emailVerificationToken.findUnique({
+        where: { token },
+      });
 
-      // Find verification token
-      const [tokens] = await db.query<RowDataPacket[]>(
-        `SELECT user_id, expires_at FROM email_verification_tokens
-         WHERE token = ? AND expires_at > NOW()`,
-        [token]
-      );
-
-      if (tokens.length === 0) {
+      if (!verificationToken) {
         set.status = 400;
-        throw new Error('Invalid or expired verification token');
+        throw new Error('Invalid verification token');
       }
 
-      const { user_id } = tokens[0];
+      if (verificationToken.expiresAt < new Date()) {
+        set.status = 400;
+        throw new Error('Verification token has expired');
+      }
 
-      // Update user email_verified
-      await db.query(
-        'UPDATE users SET email_verified = TRUE, updated_at = NOW() WHERE id = ?',
-        [user_id]
-      );
+      // Update user isVerified status
+      await prisma.user.update({
+        where: { id: verificationToken.userId },
+        data: { isVerified: true },
+      });
 
       // Delete used token
-      await db.query('DELETE FROM email_verification_tokens WHERE token = ?', [token]);
+      await prisma.emailVerificationToken.delete({
+        where: { id: verificationToken.id },
+      });
 
       return {
         success: true,

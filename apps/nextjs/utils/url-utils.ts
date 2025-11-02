@@ -22,20 +22,42 @@ import {
 // CENTRALIZED CONSTANTS
 // =============================================================================
 
+// API Fallback Priority List
+// 1. localhost:4091 (Rust)
+// 2. localhost:3002 (Elysia)
+// 3. ws.asepharyana.tech (Production Rust)
+// 4. elysia.asepharyana.tech (Production Elysia)
+export const API_FALLBACK_URLS = {
+  client: [
+    process.env.NEXT_PUBLIC_API_URL_1 || 'http://localhost:4091',
+    process.env.NEXT_PUBLIC_API_URL_2 || 'http://localhost:3002',
+    process.env.NEXT_PUBLIC_API_URL_3 || 'https://ws.asepharyana.tech',
+    process.env.NEXT_PUBLIC_API_URL_4 || 'https://elysia.asepharyana.tech',
+  ],
+  server: [
+    process.env.API_URL_SERVER_1 || 'http://localhost:4091',
+    process.env.API_URL_SERVER_2 || 'http://localhost:3002',
+    process.env.API_URL_SERVER_3 || 'https://ws.asepharyana.tech',
+    process.env.API_URL_SERVER_4 || 'https://elysia.asepharyana.tech',
+  ],
+} as const;
+
 // Environment-based URL configurations
 export const URL_CONFIG = {
   production: {
     base: process.env.NEXT_PUBLIC_PRODUCTION_URL || 'https://asepharyana.tech',
     api: {
-      client: process.env.NEXT_PUBLIC_API_URL || 'https://ws.asepharyana.tech',
-      server: process.env.API_URL_SERVER || 'http://localhost:4091',
+      client: API_FALLBACK_URLS.client[0], // Primary: localhost:4091
+      server: API_FALLBACK_URLS.server[0], // Primary: localhost:4091
+      fallback: API_FALLBACK_URLS, // All fallback URLs
     },
   },
   development: {
-    base: process.env.NEXT_PUBLIC_PRODUCTION_URL || 'https://asepharyana.tech',
+    base: process.env.NEXT_PUBLIC_PRODUCTION_URL || 'http://localhost:3000',
     api: {
-      client: process.env.NEXT_PUBLIC_API_URL || 'https://ws.asepharyana.tech',
-      server: process.env.API_URL_SERVER || 'http://localhost:4091',
+      client: API_FALLBACK_URLS.client[0], // Primary: localhost:4091
+      server: API_FALLBACK_URLS.server[0], // Primary: localhost:4091
+      fallback: API_FALLBACK_URLS, // All fallback URLs
     },
   },
 } as const;

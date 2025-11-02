@@ -1,16 +1,31 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
-import { getDatabase } from '../../utils/database';
+import { prisma } from '../../utils/prisma';
 import { sendVerificationEmail } from '../../utils/email';
-import { toUserResponse, type User, type RegisterResponse } from '../../models/user';
-import type { RowDataPacket } from 'mysql2';
+
+// Generate secure random token
+function generateToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
 
 interface RegisterBody {
   email: string;
-  username: string;
+  name?: string;
   password: string;
-  full_name?: string;
+}
+
+interface RegisterResponse {
+  success: boolean;
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    isVerified: boolean;
+    createdAt: Date;
+  };
 }
 
 function validatePassword(password: string): string | null {
@@ -38,7 +53,7 @@ export const registerRoute = new Elysia()
   .post(
     '/api/auth/register',
     async ({ body, set }): Promise<RegisterResponse> => {
-      const { email, username, password, full_name } = body as RegisterBody;
+      const { email, name, password } = body as RegisterBody;
 
       // Validate password strength
       const passwordError = validatePassword(password);
@@ -47,84 +62,66 @@ export const registerRoute = new Elysia()
         throw new Error(passwordError);
       }
 
-      const db = await getDatabase();
-
       // Check if email exists
-      const [emailCheck] = await db.query<RowDataPacket[]>(
-        'SELECT EXISTS(SELECT 1 FROM users WHERE email = ?) as exists',
-        [email]
-      );
-      if (emailCheck[0].exists) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
         set.status = 400;
         throw new Error('Email already exists');
       }
 
-      // Check if username exists
-      const [usernameCheck] = await db.query<RowDataPacket[]>(
-        'SELECT EXISTS(SELECT 1 FROM users WHERE username = ?) as exists',
-        [username]
-      );
-      if (usernameCheck[0].exists) {
-        set.status = 400;
-        throw new Error('Username already exists');
-      }
-
       // Hash password
-      const password_hash = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Generate user ID
-      const user_id = uuidv4();
-      const now = new Date();
-
-      // Insert user
-      await db.query(
-        `INSERT INTO users (
-          id, email, username, password_hash, full_name,
-          email_verified, is_active, role, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, email, username, password_hash, full_name || null, false, true, 'user', now, now]
-      );
+      // Create user
+      const user = await prisma.user.create({
+        data: {
+          email,
+          name: name || null,
+          password: hashedPassword,
+          isVerified: false,
+        },
+      });
 
       // Generate verification token
-      const verification_token = uuidv4();
-      const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const verificationToken = generateToken();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-      await db.query(
-        `INSERT INTO email_verification_tokens (id, user_id, token, expires_at, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [uuidv4(), user_id, verification_token, expires_at, now]
-      );
+      // Create email verification token
+      await prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          token: verificationToken,
+          expiresAt,
+        },
+      });
 
       // Send verification email
       try {
-        await sendVerificationEmail(email, username, verification_token);
+        await sendVerificationEmail(email, name || 'User', verificationToken);
       } catch (error) {
         console.error('Failed to send verification email:', error);
       }
 
-      // Fetch created user
-      const [users] = await db.query<(User & RowDataPacket)[]>(
-        `SELECT id, email, username, password_hash, full_name, avatar_url,
-                email_verified, is_active, role, last_login_at, created_at, updated_at
-         FROM users WHERE id = ?`,
-        [user_id]
-      );
-
-      const user = users[0];
-
       return {
         success: true,
         message: 'User registered successfully. Please check your email to verify your account.',
-        user: toUserResponse(user),
-        verification_token: verification_token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isVerified: user.isVerified,
+          createdAt: user.createdAt,
+        },
       };
     },
     {
       body: t.Object({
         email: t.String({ format: 'email' }),
-        username: t.String({ minLength: 3, maxLength: 50 }),
         password: t.String({ minLength: 8 }),
-        full_name: t.Optional(t.String()),
+        name: t.Optional(t.String()),
       }),
     }
   );

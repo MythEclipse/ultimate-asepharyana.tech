@@ -1,11 +1,17 @@
-# ElysiaJS Application
+# ElysiaJS Auth API with Prisma
 
-A high-performance web server built with [ElysiaJS](https://elysiajs.com/) and Bun runtime.
+A high-performance authentication API built with [ElysiaJS](https://elysiajs.com/), Bun runtime, and Prisma ORM.
 
 ## Features
 
 - ⚡ Ultra-fast performance with Bun runtime
 - 🦊 ElysiaJS framework for building web servers
+- 🗄️ Prisma ORM for type-safe database access
+- 🔐 JWT authentication with refresh tokens
+- 📧 Email verification system
+- 🔄 Password reset functionality
+- 🚀 Redis caching support
+- 📚 Swagger/OpenAPI documentation
 - 🔥 Hot reload in development mode
 - 📦 Built-in TypeScript support
 
@@ -26,8 +32,48 @@ curl -fsSL https://bun.sh/install | bash
 ### Install dependencies
 
 ```bash
-bun install
+pnpm install
 ```
+
+### Setup Database
+
+1. **Configure environment variables:**
+
+Create `.env` file (copy from `.env.example`):
+
+```env
+PORT=3002
+NODE_ENV=development
+DATABASE_URL="mysql://root:password@localhost:3306/elysia_auth"
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
+REDIS_URL=redis://localhost:6379
+```
+
+2. **Create MySQL database:**
+
+```sql
+CREATE DATABASE elysia_auth;
+```
+
+3. **Generate Prisma Client:**
+
+```bash
+pnpm prisma:generate
+```
+
+4. **Run database migrations:**
+
+```bash
+pnpm prisma:migrate
+```
+
+5. **(Optional) Seed database:**
+
+```bash
+pnpm prisma:seed
+```
+
+📖 **See [PRISMA_SETUP.md](./PRISMA_SETUP.md) for detailed setup instructions**
 
 ### Development
 
@@ -39,6 +85,23 @@ nx serve elysia
 
 # Or directly with bun
 bun run dev
+# or
+pnpm dev
+```
+
+The server will start at `http://localhost:3002`
+
+### View API Documentation
+
+Open Swagger UI at:
+```
+http://localhost:3002/swagger
+```
+
+### Prisma Studio (Database GUI)
+
+```bash
+pnpm prisma:studio
 ```
 
 ### Build
@@ -51,6 +114,8 @@ nx build elysia
 
 # Or directly with bun
 bun run build
+# or
+pnpm build
 ```
 
 ### Production
@@ -58,11 +123,9 @@ bun run build
 Start the production server:
 
 ```bash
-# Using nx
-nx start elysia
-
-# Or directly with bun
 bun run start
+# or
+pnpm start
 ```
 
 ## API Endpoints

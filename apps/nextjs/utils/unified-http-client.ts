@@ -21,7 +21,7 @@ import {
   ServerSideConfig,
   ProxyConfig,
 } from '../types/http';
-import { getApiUrlConfig, buildUrl } from './url-utils';
+import { getApiUrlConfig, buildUrl, API_FALLBACK_URLS } from './url-utils';
 import {
   createHttpError,
   handleFetchResponse,
@@ -550,6 +550,75 @@ export class UnifiedHttpClient {
     }
   }
 
+  /**
+   * Execute request with API fallback
+   * Priority: localhost:4091 -> localhost:3002 -> ws.asepharyana.tech -> elysia.asepharyana.tech
+   */
+  private async executeRequestWithFallback<T = unknown>(
+    path: string,
+    options: RequestConfig = {},
+    method: HttpMethod = 'GET',
+    body?: unknown,
+  ): Promise<T> {
+    const isServer = typeof window === 'undefined';
+    const fallbackUrls = isServer ? API_FALLBACK_URLS.server : API_FALLBACK_URLS.client;
+
+    let lastError: Error | null = null;
+
+    for (let i = 0; i < fallbackUrls.length; i++) {
+      const baseUrl = fallbackUrls[i];
+      const fullUrl = buildUrl(baseUrl, path);
+
+      try {
+        logger.info(`[API Fallback] Trying ${baseUrl} (${i + 1}/${fallbackUrls.length})`);
+
+        const requestOptions: RequestInit = {
+          method,
+          headers: this.createHeaders(
+            options.headers as Record<string, string>,
+            this.config.auth?.token,
+          ),
+          signal:
+            options.signal ||
+            AbortSignal.timeout(options.timeout || 5000), // Shorter timeout for fallback
+        };
+
+        if (body) {
+          requestOptions.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(fullUrl, requestOptions);
+
+        if (response.ok || (options.validateStatus && options.validateStatus(response.status))) {
+          logger.info(`[API Fallback] Success with ${baseUrl}`);
+          const result = await this.handleResponse<T>(response, fullUrl);
+          return result;
+        }
+
+        throw createHttpError(`HTTP ${response.status}`, response.status, {
+          statusText: response.statusText,
+          url: fullUrl,
+          context: { url: fullUrl, method, baseUrl },
+        });
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        logger.warn(`[API Fallback] Failed with ${baseUrl}:`, lastError.message);
+
+        // If it's the last URL, throw the error
+        if (i === fallbackUrls.length - 1) {
+          logger.error('[API Fallback] All endpoints failed');
+          throw lastError;
+        }
+
+        // Otherwise, continue to next fallback
+        continue;
+      }
+    }
+
+    throw lastError || new Error('All API endpoints failed');
+  }
+
   // =============================================================================
   // PUBLIC API METHODS
   // =============================================================================
@@ -558,6 +627,10 @@ export class UnifiedHttpClient {
     url: string,
     options: RequestConfig = {},
   ): Promise<T> {
+    // Use fallback for API endpoints
+    if (url.startsWith('/api/')) {
+      return this.executeRequestWithFallback<T>(url, options, 'GET');
+    }
     return this.executeRequest<T>(url, options, 'GET');
   }
 
@@ -570,6 +643,10 @@ export class UnifiedHttpClient {
       options.headers as Record<string, string>,
       token,
     );
+    // Use fallback for API endpoints
+    if (url.startsWith('/api/')) {
+      return this.executeRequestWithFallback<T>(url, { ...options, headers }, 'GET');
+    }
     return this.executeRequest<T>(url, { ...options, headers }, 'GET');
   }
 
@@ -584,6 +661,10 @@ export class UnifiedHttpClient {
       options.headers as Record<string, string>,
       token,
     );
+    // Use fallback for API endpoints
+    if (url.startsWith('/api/')) {
+      return this.executeRequestWithFallback<T>(url, { ...options, headers }, method, body);
+    }
     return this.executeRequest<T>(url, { ...options, headers }, method, body);
   }
 

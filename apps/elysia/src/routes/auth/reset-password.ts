@@ -1,7 +1,6 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDatabase } from '../../utils/database';
-import type { RowDataPacket } from 'mysql2';
+import { prisma } from '../../utils/prisma';
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) {
@@ -37,46 +36,40 @@ export const resetPasswordRoute = new Elysia()
         throw new Error(passwordError);
       }
 
-      const db = await getDatabase();
-
       // Find reset token
-      const [tokens] = await db.query<RowDataPacket[]>(
-        `SELECT user_id, expires_at, used FROM password_reset_tokens
-         WHERE token = ?`,
-        [token]
-      );
+      const resetToken = await prisma.passwordResetToken.findUnique({
+        where: { token },
+      });
 
-      if (tokens.length === 0) {
+      if (!resetToken) {
         set.status = 400;
         throw new Error('Invalid reset token');
       }
-
-      const resetToken = tokens[0];
 
       if (resetToken.used) {
         set.status = 400;
         throw new Error('Reset token has already been used');
       }
 
-      if (new Date(resetToken.expires_at) < new Date()) {
+      if (resetToken.expiresAt < new Date()) {
         set.status = 400;
         throw new Error('Reset token has expired');
       }
 
       // Hash new password
-      const password_hash = await bcrypt.hash(new_password, 10);
+      const hashedPassword = await bcrypt.hash(new_password, 10);
 
-      // Update password
-      await db.query(
-        'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
-        [password_hash, resetToken.user_id]
-      );
-
-      // Mark token as used
-      await db.query(
-        'UPDATE password_reset_tokens SET used = TRUE WHERE token = ?',
-        [token]
-      );
+      // Update password and mark token as used in a transaction
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: resetToken.userId },
+          data: { password: hashedPassword },
+        }),
+        prisma.passwordResetToken.update({
+          where: { id: resetToken.id },
+          data: { used: true },
+        }),
+      ]);
 
       return {
         success: true,

@@ -1,8 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { v4 as uuidv4 } from 'uuid';
-import { getDatabase } from '../../utils/database';
+import { prisma } from '../../utils/prisma';
 import { sendPasswordResetEmail } from '../../utils/email';
-import type { RowDataPacket } from 'mysql2';
+
+// Generate secure random token
+function generateToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
 
 export const forgotPasswordRoute = new Elysia()
   .post(
@@ -10,37 +15,41 @@ export const forgotPasswordRoute = new Elysia()
     async ({ body }) => {
       const { email } = body as { email: string };
 
-      const db = await getDatabase();
-
       // Find user
-      const [users] = await db.query<RowDataPacket[]>(
-        'SELECT id, username FROM users WHERE email = ?',
-        [email]
-      );
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
 
       // Always return success to prevent email enumeration
-      if (users.length === 0) {
+      if (!user) {
         return {
           success: true,
           message: 'If the email exists, a password reset link has been sent',
         };
       }
 
-      const user = users[0];
+      // Generate reset token (secure random token)
+      const resetToken = generateToken();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-      // Generate reset token
-      const reset_token = uuidv4();
-      const expires_at = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-      await db.query(
-        `INSERT INTO password_reset_tokens (id, user_id, token, expires_at, used, created_at)
-         VALUES (?, ?, ?, ?, FALSE, NOW())`,
-        [uuidv4(), user.id, reset_token, expires_at]
-      );
+      // Create password reset token
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          token: resetToken,
+          expiresAt,
+          used: false,
+        },
+      });
 
       // Send reset email
       try {
-        await sendPasswordResetEmail(email, user.username, reset_token);
+        await sendPasswordResetEmail(email, user.name || 'User', resetToken);
       } catch (error) {
         console.error('Failed to send password reset email:', error);
       }
