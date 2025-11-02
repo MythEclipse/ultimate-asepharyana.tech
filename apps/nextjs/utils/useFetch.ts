@@ -1,7 +1,6 @@
 'use client';
 
-import { UnifiedHttpClient } from './http-client';
-import { getApiUrlConfig, buildUrl } from './url-utils';
+import { UnifiedHttpClient } from './unified-http-client';
 import { toAppError } from './error-handler';
 import { HttpMethod } from '../types/http';
 
@@ -10,10 +9,10 @@ export const fetchData = async <T = unknown>(
   method = 'GET',
   pyld?: Record<string, unknown>,
   formDataObj?: FormData,
-  baseUrl?: string,
+  _baseUrl?: string, // Deprecated: UnifiedHttpClient handles fallback now
 ) => {
-  const base = baseUrl || getApiUrlConfig().client;
-  const fullUrl = buildUrl(base, url);
+  // Don't build full URL here - let UnifiedHttpClient handle fallback
+  // Only use path like '/api/sosmed/posts'
   const client = UnifiedHttpClient.createClientSide();
 
   try {
@@ -28,13 +27,15 @@ export const fetchData = async <T = unknown>(
       }
     }
 
-    const data = await client.request<T>(fullUrl, method as HttpMethod, pyld);
+    // Pass only the path, not full URL
+    // UnifiedHttpClient will handle fallback automatically
+    const data = await client.request<T>(url, method as HttpMethod, pyld);
     return {
       data,
       status: 200, // HttpClient handles status internally
     };
   } catch (error: unknown) {
-    const appError = toAppError(error, { url: fullUrl, method });
+    const appError = toAppError(error, { url, method });
     throw appError;
   }
 };
@@ -49,10 +50,13 @@ export const fetchDataMultiple = async (
     throw new Error('No endpoints provided');
   }
 
+  // NOTE: UnifiedHttpClient now handles automatic fallback
+  // This function is kept for backward compatibility but may be redundant
+
   // Use AbortController to cancel remaining requests after first success
   const controllers = endpoints.map(() => new AbortController());
-  const fetchPromises = endpoints.map(({ url, baseUrl }, index) =>
-    fetchData(url, method, pyld, formDataObj, baseUrl).then((result) => {
+  const fetchPromises = endpoints.map(({ url }, index) =>
+    fetchData(url, method, pyld, formDataObj).then((result) => {
       // Abort all other requests
       controllers.forEach((ctrl, i) => {
         if (i !== index) ctrl.abort();

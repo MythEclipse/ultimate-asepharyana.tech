@@ -96,7 +96,10 @@ export class ApiService {
       }
 
       // Build URL with query parameters
-      let url = `${this.config.baseUrl}${endpoint}`;
+      // DRY: For internal app endpoints (/api/...), let HttpClient handle base + fallback
+      let url = endpoint.startsWith('/api/')
+        ? endpoint
+        : `${this.config.baseUrl}${endpoint}`;
       if (params && Object.keys(params).length > 0) {
         const queryString = new URLSearchParams(
           params as Record<string, string>,
@@ -161,7 +164,9 @@ export class ApiService {
     const startTime = Date.now();
 
     try {
-      const url = `${this.config.baseUrl}${endpoint}`;
+      const url = endpoint.startsWith('/api/')
+        ? endpoint
+        : `${this.config.baseUrl}${endpoint}`;
       const _timeout = options?.timeout ?? this.config.defaultTimeout;
       const _headers = {
         'Content-Type': 'application/json',
@@ -206,7 +211,9 @@ export class ApiService {
     const startTime = Date.now();
 
     try {
-      const url = `${this.config.baseUrl}${endpoint}`;
+      const url = endpoint.startsWith('/api/')
+        ? endpoint
+        : `${this.config.baseUrl}${endpoint}`;
       const _timeout = options?.timeout ?? this.config.defaultTimeout;
       const _headers = {
         'Content-Type': 'application/json',
@@ -250,7 +257,9 @@ export class ApiService {
     const startTime = Date.now();
 
     try {
-      const url = `${this.config.baseUrl}${endpoint}`;
+      const url = endpoint.startsWith('/api/')
+        ? endpoint
+        : `${this.config.baseUrl}${endpoint}`;
       const _timeout = options?.timeout ?? this.config.defaultTimeout;
       const _headers = {
         ...this.config.headers,

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { UnifiedHttpClient } from '../utils/unified-http-client';
 import { API_FALLBACK_URLS } from '../utils/url-utils';
 
 // API Fallback Priority:
@@ -11,34 +11,7 @@ const API_BASE_URLS = typeof window === 'undefined' ? API_FALLBACK_URLS.server :
 // WebSocket URLs (same priority)
 const WS_BASE_URLS = API_BASE_URLS.map(url => url.replace('https://', 'wss://').replace('http://', 'ws://'));
 
-// Helper function to try fetch with fallback
-async function fetchWithFallback<T>(
-  endpoint: string,
-  options?: Parameters<typeof axios>[1]
-): Promise<T> {
-  let lastError: Error | null = null;
-
-  for (let i = 0; i < API_BASE_URLS.length; i++) {
-    try {
-      const response = await axios({
-        ...options,
-        url: `${API_BASE_URLS[i]}${endpoint}`,
-        timeout: 5000,
-      });
-      console.log(`[Chat API] Success with ${API_BASE_URLS[i]}`);
-      return response.data;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`[Chat API] Failed with ${API_BASE_URLS[i]}:`, lastError.message);
-
-      if (i === API_BASE_URLS.length - 1) {
-        throw lastError;
-      }
-    }
-  }
-
-  throw lastError || new Error('All chat API endpoints failed');
-}
+const client = UnifiedHttpClient.createClientSide();
 
 export interface ChatRoom {
   id: string;
@@ -81,68 +54,61 @@ export interface MessagesResponse {
 
 // Room APIs
 export const createRoom = async (name: string, description?: string) => {
-  const response = await fetchWithFallback<{ success: boolean; room: ChatRoom }>(
+  const res = await client.request<{ success: boolean; room: ChatRoom }>(
     `/api/chat/rooms`,
-    { method: 'POST', data: { name, description } }
+    'POST',
+    { name, description }
   );
-  return response.room;
+  return res.room;
 };
 
 export const getRooms = async () => {
-  const response = await fetchWithFallback<{ success: boolean; rooms: ChatRoom[] }>(
-    `/api/chat/rooms`,
-    { method: 'GET' }
+  const res = await client.fetchJson<{ success: boolean; rooms: ChatRoom[] }>(
+    `/api/chat/rooms`
   );
-  return response.rooms;
+  return res.rooms;
 };
 
 export const getRoom = async (roomId: string) => {
-  const response = await fetchWithFallback<RoomResponse>(
-    `/api/chat/rooms/${roomId}`,
-    { method: 'GET' }
-  );
-  return response;
+  return client.fetchJson<RoomResponse>(`/api/chat/rooms/${roomId}`);
 };
 
 export const joinRoom = async (roomId: string) => {
-  const response = await fetchWithFallback<{ success: boolean; message: string }>(
+  return client.request<{ success: boolean; message: string }>(
     `/api/chat/rooms/${roomId}/join`,
-    { method: 'POST' }
+    'POST'
   );
-  return response;
 };
 
 export const leaveRoom = async (roomId: string) => {
-  const response = await fetchWithFallback<{ success: boolean; message: string }>(
+  return client.request<{ success: boolean; message: string }>(
     `/api/chat/rooms/${roomId}/leave`,
-    { method: 'POST' }
+    'POST'
   );
-  return response;
 };
 
 export const getRoomMembers = async (roomId: string) => {
-  const response = await fetchWithFallback<{ success: boolean; members: RoomMember[] }>(
-    `/api/chat/rooms/${roomId}/members`,
-    { method: 'GET' }
+  const res = await client.fetchJson<{ success: boolean; members: RoomMember[] }>(
+    `/api/chat/rooms/${roomId}/members`
   );
-  return response.members;
+  return res.members;
 };
 
 // Message APIs
 export const sendMessage = async (roomId: string, content: string, messageType = 'text') => {
-  const response = await fetchWithFallback<{ success: boolean; message: ChatMessage }>(
+  const res = await client.request<{ success: boolean; message: ChatMessage }>(
     `/api/chat/rooms/${roomId}/messages`,
-    { method: 'POST', data: { content, message_type: messageType } }
+    'POST',
+    { content, message_type: messageType }
   );
-  return response.message;
+  return res.message;
 };
 
 export const getMessages = async (roomId: string, page = 1, pageSize = 50) => {
-  const response = await fetchWithFallback<MessagesResponse>(
-    `/api/chat/rooms/${roomId}/messages`,
-    { method: 'GET', params: { page, page_size: pageSize } }
+  const query = new URLSearchParams({ page: String(page), page_size: String(pageSize) }).toString();
+  return client.fetchJson<MessagesResponse>(
+    `/api/chat/rooms/${roomId}/messages?${query}`
   );
-  return response;
 };
 
 // WebSocket message type

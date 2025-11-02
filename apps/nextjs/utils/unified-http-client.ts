@@ -483,10 +483,13 @@ export class UnifiedHttpClient {
     body?: unknown,
   ): Promise<T> {
     const fullUrl = this.buildFullUrl(url);
+    const { cache: _cache, retry: _retry, proxy: _proxy, validateStatus: _validateStatus, timeout: _timeout, ...restOptions } = options as Record<string, unknown> as RequestConfig;
     const requestOptions: RequestInit = {
+      // Spread provided fetch options (excluding non-RequestInit fields)
+      ...(restOptions as RequestInit),
       method,
       headers: this.createHeaders(
-        options.headers as Record<string, string>,
+        (options.headers as Record<string, string>) || (restOptions.headers as Record<string, string>),
         this.config.auth?.token,
       ),
       signal:
@@ -890,10 +893,8 @@ export const clientSideFetch = async <T = unknown>(
   options: RequestConfig = {},
 ): Promise<T> => {
   const client = UnifiedHttpClient.createClientSide();
-  const fullUrl = client['baseUrl']
-    ? UnifiedHttpClient.buildUrl(client['baseUrl'], url)
-    : url;
-  return client.fetchWithAuth<T>(fullUrl, token, options);
+  // Pass only the path; UnifiedHttpClient will handle base URL + fallback
+  return client.fetchWithAuth<T>(url, token, options);
 };
 
 export const serverSideFetch = async <T = unknown>(
@@ -901,10 +902,8 @@ export const serverSideFetch = async <T = unknown>(
   options: RequestConfig = {},
 ): Promise<T> => {
   const client = UnifiedHttpClient.createServerSide();
-  const fullUrl = client['baseUrl']
-    ? UnifiedHttpClient.buildUrl(client['baseUrl'], url)
-    : url;
-  return client.fetchJson<T>(fullUrl, options);
+  // Pass only the path; UnifiedHttpClient will handle base URL + fallback
+  return client.fetchJson<T>(url, options);
 };
 
 export const fetchWithProxy = async (url: string): Promise<FetchResult> => {

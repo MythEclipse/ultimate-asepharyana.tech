@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { UnifiedHttpClient } from '../utils/unified-http-client';
 import type { User, LoginCredentials, RegisterData } from '../types/auth';
 
 interface AuthContextType {
@@ -14,7 +15,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4091';
+const client = UnifiedHttpClient.createClientSide();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -22,16 +23,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
+      const data = await client.fetchJson<{ user: User | null }>(
+        `/api/auth/verify`,
+        { credentials: 'include' }
+      );
+      setUser(data.user ?? null);
     } catch (error) {
       console.error('Failed to verify session:', error);
       setUser(null);
@@ -43,48 +39,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
-    }
-
-    const data = await response.json();
+    const data = await client.request<{ user: User }>(
+      `/api/auth/login`,
+      'POST',
+      credentials,
+      undefined,
+      { credentials: 'include' }
+    );
     setUser(data.user);
   };
 
   const register = async (data: RegisterData) => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
-    }
-
-    await response.json();
+    await client.request(
+      `/api/auth/register`,
+      'POST',
+      data,
+      undefined,
+      { credentials: 'include' }
+    );
     // After registration, login automatically
     await login({ email: data.email, password: data.password });
   };
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
+      await client.request(`/api/auth/logout`, 'POST', undefined, undefined, {
         credentials: 'include',
       });
     } catch (error) {
