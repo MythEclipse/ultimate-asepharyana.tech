@@ -17,27 +17,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
+          bun-version: 1.2.18
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
+      - name: Setup Bun cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-bun-
 
       - name: Prepare .env file for production
         env:
@@ -48,13 +39,13 @@ jobs:
           fi
 
       - name: Install Dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Build Services Package (Kysely)
-        run: pnpm run service:build
+        run: bun run service:build
 
       - name: Build Next.js
-        run: pnpm run nextjs:build
+        run: bun run nextjs:build
 
       - name: Sync Build Artifacts to VPS
         env:
@@ -79,9 +70,7 @@ jobs:
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
             # Set up the environment
-            export PATH=$PATH:/root/.local/share/pnpm
-            export PATH=$PATH:/home/asephs/.nvm/versions/node/v22.17.1/bin
-            export PATH=$PATH:/home/asephs/.bun/bin/bun
+            export PATH=$PATH:/home/asephs/.bun/bin
             export PATH="$HOME/.cargo/bin:$PATH"
 
             # Navigate to the app directory
@@ -91,7 +80,7 @@ jobs:
             git reset --hard origin/main
 
             # Install production dependencies
-            pnpm install --prod --filter=@asepharyana/nextjs
+            bun install --production
 
             # Restart the application with PM2
             pm2 startOrRestart apps/nextjs/nextjs.config.cjs

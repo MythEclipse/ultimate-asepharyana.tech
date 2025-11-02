@@ -2,6 +2,10 @@
   "name": "@asepharyana/source",
   "version": "0.0.0",
   "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
   "scripts": {
     "nextjs:dev": "nx serve nextjs",
     "nextjs:build": "nx build nextjs",
@@ -53,7 +57,6 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tabler/icons-react": "^3.34.1",
-    "@testing-library/jest-dom": "^6.8.0",
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.3",
     "autoprefixer": "^10.4.21",
@@ -190,27 +193,25 @@
     "vite-plugin-dts": "~4.5.4",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@scarf/scarf",
-      "@swc/core",
-      "@tailwindcss/oxide",
-      "@tree-sitter-grammars/tree-sitter-yaml",
-      "bcrypt",
-      "core-js-pure",
-      "esbuild",
-      "nx",
-      "oxc-resolver",
-      "puppeteer",
-      "sharp",
-      "sleep",
-      "tree-sitter",
-      "tree-sitter-json",
-      "unrs-resolver"
-    ]
-  },
+  "packageManager": "bun@1.2.18",
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "@scarf/scarf",
+    "@swc/core",
+    "@tailwindcss/oxide",
+    "@tree-sitter-grammars/tree-sitter-yaml",
+    "bcrypt",
+    "core-js-pure",
+    "esbuild",
+    "nx",
+    "oxc-resolver",
+    "puppeteer",
+    "sharp",
+    "sleep",
+    "tree-sitter",
+    "tree-sitter-json",
+    "unrs-resolver"
+  ],
   "nx": {
     "includedScripts": [],
     "targets": {

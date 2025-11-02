@@ -1,26 +1,23 @@
-# Use a Node.js base image
-FROM node:22-alpine
+# Use a Node.js base image with Bun
+FROM oven/bun:1.2.18-alpine
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and pnpm-lock.yaml
-COPY package.json pnpm-lock.yaml ./
-
-# Install pnpm globally
-RUN npm install -g pnpm
+# Copy package.json and bun.lock
+COPY package.json bun.lock ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # Copy the rest of the application code
 COPY . .
 
 # Build the Next.js application
-RUN pnpm run nextjs:build
+RUN bun run nextjs:build
 
 # Expose the port Next.js runs on
 EXPOSE 4090
 
 # Command to run the application
-CMD ["pnpm", "start"]
+CMD ["bun", "start"]

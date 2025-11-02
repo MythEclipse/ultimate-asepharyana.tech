@@ -7,7 +7,7 @@ out-tsc
 error.log
 # dependencies
 node_modules
-
+.bun/**
 # IDEs and editors
 /.idea
 .project
@@ -56,3 +56,4 @@ vitest.config.*.timestamp*
 
 
 storybook-static
+~/.bun/**

@@ -5,7 +5,7 @@
 find . -name "package.json" -not -path "*/node_modules/*" -not -path "*/dist/*" | while read filename; do
   dir=$(dirname "$filename")
   echo "Updating dependencies in $dir"
-  (cd "$dir" && ncu -u && pnpm install)
+  (cd "$dir" && ncu -u && bun install)
 done
 
 echo "All dependencies updated."

@@ -1,0 +1,15 @@
+# Bun workspace configuration
+# https://bun.sh/docs/install/workspaces
+
+[install]
+# Optimize for production
+production = false
+
+# Cache configuration
+cache = "~/.bun/install/cache"
+
+# Logging level
+loglevel = "info"
+
+[install.scopes]
+# Add any private registries here if needed
