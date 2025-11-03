@@ -120,6 +120,7 @@ jobs:
             # Set up the environment
             export PATH=$PATH:/home/asephs/.bun/bin
             export PATH="$HOME/.cargo/bin:$PATH"
+            export PATH="$HOME/.nvm/versions/node/v22.17.1/bin:$PATH"
 
             # Navigate to the app directory and update
             cd ${{ secrets.VPS_TARGET_DIR }}/apps/rust

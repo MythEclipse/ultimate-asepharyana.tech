@@ -6,8 +6,8 @@ on:
     branches:
       - main
     paths:
-      - 'apps/nextjs/**'
-      - '.github/workflows/deploy-nextjs.yml'
+      - "apps/nextjs/**"
+      - ".github/workflows/deploy-nextjs.yml"
 
 jobs:
   build-and-deploy-nextjs:
@@ -72,6 +72,7 @@ jobs:
             # Set up the environment
             export PATH=$PATH:/home/asephs/.bun/bin
             export PATH="$HOME/.cargo/bin:$PATH"
+            export PATH="$HOME/.nvm/versions/node/v22.17.1/bin:$PATH"
 
             # Navigate to the app directory
             cd ${{ secrets.VPS_TARGET_DIR }}
