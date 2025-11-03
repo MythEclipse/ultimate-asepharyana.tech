@@ -83,7 +83,6 @@
   },
   "packageManager": "bun@1.2.18",
   "scripts": {
-    "start": "next start",
-    "dev": "next dev"
+    "start": "next start"
   }
 }

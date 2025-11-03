@@ -9,6 +9,7 @@
     "allowJs": true,
     "incremental": true,
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
     "plugins": [
       {
         "name": "next"
