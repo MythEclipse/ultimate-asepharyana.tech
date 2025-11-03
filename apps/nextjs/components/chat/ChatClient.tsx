@@ -60,7 +60,7 @@ export default function NewChatClient() {
     try {
       const message = await apiSendMessage(selectedRoomId, inputValue.trim());
       setInputValue('');
-      
+
       // Message will be added via WebSocket
       // But add it immediately for better UX
       setMessages((prev) => [...prev, message]);
@@ -90,7 +90,7 @@ export default function NewChatClient() {
       // Join room via API
       try {
         await apiJoinRoom(roomId);
-        
+
         // Notify via WebSocket
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(
@@ -166,7 +166,7 @@ export default function NewChatClient() {
     setWs(websocket);
 
     return () => {
-      websocket.close();
+      websocket?.close();
     };
   }, [loadRooms, handleWsMessage]);
 
