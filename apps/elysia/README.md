@@ -185,13 +185,28 @@ bun test
 Test all API endpoints automatically:
 
 ```bash
-# Bash (Linux/Mac/Git Bash)
+# Bash (Linux/Mac/Git Bash) - with running server
 chmod +x test-all-api.sh
 ./test-all-api.sh
 
-# PowerShell (Windows)
+# Bash - auto-start server for testing
+./test-all-api.sh -s
+
+# PowerShell (Windows) - with running server
 .\test-all-api.ps1
+
+# PowerShell - auto-start server for testing
+.\test-all-api.ps1 -s
 ```
+
+**Options:**
+- Without `-s`: Requires server to be already running on port 4092
+- With `-s`: Automatically starts server, runs tests, then stops server
+
+**Prerequisites for `-s` option:**
+- Redis must be running (start with `docker run -d -p 6379:6379 redis` or local redis-server)
+- Database must be accessible and migrated
+- Port 4092 must be available
 
 The test script will automatically:
 - Test all health and basic endpoints

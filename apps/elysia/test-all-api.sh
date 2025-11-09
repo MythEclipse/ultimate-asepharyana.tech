@@ -5,10 +5,30 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+
+# Parse command line arguments
+START_SERVER=false
+while getopts "s" opt; do
+    case $opt in
+        s)
+            START_SERVER=true
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            echo "Usage: $0 [-s]"
+            echo "  -s: Start server automatically before testing"
+            exit 1
+            ;;
+    esac
+done
 
 # API Base URL
 BASE_URL="${API_URL:-http://localhost:4092}"
+
+# Variable to track server PID
+SERVER_PID=""
 
 # Test counters
 TOTAL_TESTS=0
@@ -98,12 +118,66 @@ test_api() {
     fi
 }
 
+# Function to start server
+start_server() {
+    echo -e "\n${CYAN}>>> Starting ElysiaJS server...${NC}"
+
+    # Start server in background
+    bun run dev > server-output.log 2> server-error.log &
+    SERVER_PID=$!
+
+    echo -e "${GREEN}Server started with PID: $SERVER_PID${NC}"
+    echo -e "${YELLOW}Waiting for server to be ready...${NC}"
+
+    # Wait for server to be ready (max 30 seconds)
+    local max_retries=30
+    local retry_count=0
+    local server_ready=false
+
+    while [ $retry_count -lt $max_retries ] && [ "$server_ready" = false ]; do
+        sleep 1
+        if curl -s "$BASE_URL/health" > /dev/null 2>&1; then
+            server_ready=true
+            echo -e "${GREEN}Server is ready!${NC}"
+        else
+            ((retry_count++))
+            echo -n "."
+        fi
+    done
+
+    echo ""
+
+    if [ "$server_ready" = false ]; then
+        echo -e "${RED}Server failed to start within 30 seconds${NC}"
+        stop_server
+        exit 1
+    fi
+}
+
+# Function to stop server
+stop_server() {
+    if [ -n "$SERVER_PID" ]; then
+        echo -e "\n${CYAN}>>> Stopping server...${NC}"
+        kill $SERVER_PID 2>/dev/null
+        echo -e "${GREEN}Server stopped (PID: $SERVER_PID)${NC}"
+    fi
+}
+
+# Trap to ensure server is stopped on exit
+trap stop_server EXIT
+
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}  ElysiaJS API Testing Script${NC}"
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}Base URL: $BASE_URL${NC}"
 echo -e "${BLUE}Test Email: $TEST_EMAIL${NC}"
+echo -e "${BLUE}Auto-start server: $(if [ "$START_SERVER" = true ]; then echo "Yes"; else echo "No"; fi)${NC}"
 echo ""
+
+# Start server if -s flag is provided
+if [ "$START_SERVER" = true ]; then
+    start_server
+fi
 
 # ========================
 # 1. Health & Basic Tests

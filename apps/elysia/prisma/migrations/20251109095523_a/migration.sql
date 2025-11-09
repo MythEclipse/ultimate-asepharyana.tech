@@ -17,13 +17,12 @@ CREATE TABLE `users` (
 CREATE TABLE `sessions` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
-    `token` VARCHAR(191) NOT NULL,
+    `token` VARCHAR(500) NOT NULL,
     `expiresAt` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `sessions_token_key`(`token`),
     INDEX `sessions_userId_idx`(`userId`),
-    INDEX `sessions_token_idx`(`token`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

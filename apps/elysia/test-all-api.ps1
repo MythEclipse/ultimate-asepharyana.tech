@@ -1,10 +1,21 @@
 # ElysiaJS API Testing Script (PowerShell Version)
 # Usage: .\test-all-api.ps1
+# Usage with auto-start server: .\test-all-api.ps1 -s
 # Optional: $env:API_URL = "http://localhost:4092"; .\test-all-api.ps1
 
 param(
-    [string]$BaseUrl = $env:API_URL ?? "http://localhost:4092"
+    [string]$BaseUrl = "http://localhost:4092",
+    [switch]$s
 )
+
+# Use environment variable if set
+if ($env:API_URL) {
+    $BaseUrl = $env:API_URL
+}
+
+# Variable to track if we started the server
+$script:ServerStarted = $false
+$script:ServerProcess = $null
 
 # Test counters
 $script:TotalTests = 0
@@ -38,21 +49,21 @@ function Write-Status {
 
     switch ($Status) {
         "PASS" {
-            Write-Host "✓ PASS: " -ForegroundColor Green -NoNewline
+            Write-Host "[PASS] " -ForegroundColor Green -NoNewline
             Write-Host $Message
             $script:PassedTests++
         }
         "FAIL" {
-            Write-Host "✗ FAIL: " -ForegroundColor Red -NoNewline
+            Write-Host "[FAIL] " -ForegroundColor Red -NoNewline
             Write-Host $Message
             $script:FailedTests++
         }
         "INFO" {
-            Write-Host "ℹ INFO: " -ForegroundColor Blue -NoNewline
+            Write-Host "[INFO] " -ForegroundColor Blue -NoNewline
             Write-Host $Message
         }
         "WARN" {
-            Write-Host "⚠ WARN: " -ForegroundColor Yellow -NoNewline
+            Write-Host "[WARN] " -ForegroundColor Yellow -NoNewline
             Write-Host $Message
         }
     }
@@ -107,55 +118,142 @@ function Test-Api {
 
         if ($statusCode -eq $ExpectedStatus) {
             Write-Status -Status "PASS" -Message "$Description (HTTP $statusCode)"
-            if ($content) {
-                Write-Host $content -ForegroundColor Gray
-            }
-            return $true, $content
+            return $content
         }
         else {
             Write-Status -Status "FAIL" -Message "$Description (Expected: $ExpectedStatus, Got: $statusCode)"
             Write-Host "Response: $content" -ForegroundColor Gray
-            return $false, $content
+            return $null
         }
     }
     catch {
-        $statusCode = $_.Exception.Response.StatusCode.value__
-        $errorBody = ""
+        $statusCode = 0
+        $errorBody = $_.Exception.Message
 
         if ($_.Exception.Response) {
-            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-            $errorBody = $reader.ReadToEnd()
-            $reader.Close()
+            $statusCode = [int]$_.Exception.Response.StatusCode
+            try {
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $errorBody = $reader.ReadToEnd()
+                $reader.Close()
+            }
+            catch {
+                $errorBody = $_.Exception.Message
+            }
         }
 
         if ($statusCode -eq $ExpectedStatus) {
             Write-Status -Status "PASS" -Message "$Description (HTTP $statusCode)"
-            return $true, $errorBody
+            return $errorBody
         }
         else {
             Write-Status -Status "FAIL" -Message "$Description (Expected: $ExpectedStatus, Got: $statusCode)"
             Write-Host "Error: $errorBody" -ForegroundColor Gray
-            return $false, $errorBody
+            return $null
         }
     }
 }
+# Function to start server
+function Start-Server {
+    Write-Host "`n>>> Starting ElysiaJS server..." -ForegroundColor Cyan
+
+    try {
+        # Start server in background
+        $script:ServerProcess = Start-Process -FilePath "bun" -ArgumentList "run", "dev" -PassThru -NoNewWindow -RedirectStandardOutput "server-output.log" -RedirectStandardError "server-error.log"
+        $script:ServerStarted = $true
+
+        Write-Host "Server started with PID: $($script:ServerProcess.Id)" -ForegroundColor Green
+        Write-Host "Waiting for server to be ready..." -ForegroundColor Yellow
+
+        # Wait for server to be ready (max 30 seconds)
+        $maxRetries = 30
+        $retryCount = 0
+        $serverReady = $false
+
+        while ($retryCount -lt $maxRetries -and -not $serverReady) {
+            Start-Sleep -Seconds 1
+            try {
+                $response = Invoke-WebRequest -Uri "$BaseUrl/health" -Method GET -TimeoutSec 2 -ErrorAction SilentlyContinue
+                if ($response.StatusCode -eq 200) {
+                    $serverReady = $true
+                    Write-Host "Server is ready!" -ForegroundColor Green
+                }
+            }
+            catch {
+                $retryCount++
+                Write-Host "." -NoNewline
+            }
+        }
+
+        if (-not $serverReady) {
+            Write-Host "`nServer failed to start within 30 seconds" -ForegroundColor Red
+
+            # Show error logs if available
+            if (Test-Path "server-error.log") {
+                $errorContent = Get-Content "server-error.log" -Tail 10 -ErrorAction SilentlyContinue
+                if ($errorContent) {
+                    Write-Host "`nServer Error Log (last 10 lines):" -ForegroundColor Red
+                    $errorContent | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+                    Write-Host "`nCommon issues:" -ForegroundColor Yellow
+                    Write-Host "  - Redis not running (ECONNREFUSED 127.0.0.1:6379)" -ForegroundColor Yellow
+                    Write-Host "  - Database not accessible" -ForegroundColor Yellow
+                    Write-Host "  - Port 4092 already in use" -ForegroundColor Yellow
+                }
+            }
+
+            Stop-Server
+            exit 1
+        }
+
+        Write-Host ""
+    }
+    catch {
+        Write-Host "Failed to start server: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
+    }
+}
+# Function to stop server
+function Stop-Server {
+    if ($script:ServerStarted -and $script:ServerProcess) {
+        Write-Host "`n>>> Stopping server..." -ForegroundColor Cyan
+        try {
+            Stop-Process -Id $script:ServerProcess.Id -Force -ErrorAction SilentlyContinue
+            Write-Host "Server stopped (PID: $($script:ServerProcess.Id))" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to stop server: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+}
+
+# Cleanup on exit
+$scriptBlock = {
+    Stop-Server
+}
+Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action $scriptBlock | Out-Null
 
 Write-Host "================================" -ForegroundColor Blue
 Write-Host "  ElysiaJS API Testing Script" -ForegroundColor Blue
 Write-Host "================================" -ForegroundColor Blue
 Write-Host "Base URL: $BaseUrl" -ForegroundColor Blue
 Write-Host "Test Email: $script:TestEmail" -ForegroundColor Blue
+Write-Host "Auto-start server: $(if ($s) { 'Yes' } else { 'No' })" -ForegroundColor Blue
 Write-Host ""
+
+# Start server if -s flag is provided
+if ($s) {
+    Start-Server
+}
 
 # ========================
 # 1. Health & Basic Tests
 # ========================
 Write-Host "`n=== Health & Basic Endpoints ===" -ForegroundColor Yellow
 
-Test-Api -Method "GET" -Endpoint "/" -ExpectedStatus 200 -Description "Root endpoint"
-Test-Api -Method "GET" -Endpoint "/health" -ExpectedStatus 200 -Description "Health check endpoint"
-Test-Api -Method "GET" -Endpoint "/api/hello/World" -ExpectedStatus 200 -Description "Hello endpoint with parameter"
-Test-Api -Method "POST" -Endpoint "/api/echo" -Body '{"test":"data"}' -ExpectedStatus 200 -Description "Echo endpoint"
+$null = Test-Api -Method "GET" -Endpoint "/" -ExpectedStatus 200 -Description "Root endpoint"
+$null = Test-Api -Method "GET" -Endpoint "/health" -ExpectedStatus 200 -Description "Health check endpoint"
+$null = Test-Api -Method "GET" -Endpoint "/api/hello/World" -ExpectedStatus 200 -Description "Hello endpoint with parameter"
+$null = Test-Api -Method "POST" -Endpoint "/api/echo" -Body '{"test":"data"}' -ExpectedStatus 200 -Description "Echo endpoint"
 
 # ========================
 # 2. Authentication Tests
@@ -168,7 +266,6 @@ $registerBody = @{
     email = $script:TestEmail
     password = $script:TestPassword
     name = "Test User"
-    username = $script:TestUsername
 } | ConvertTo-Json
 
 try {
@@ -225,12 +322,12 @@ catch {
 
 # Get current user info
 Write-Host "`n>>> Getting current user info..." -ForegroundColor Blue
-Test-Api -Method "GET" -Endpoint "/api/auth/me" -ExpectedStatus 200 -Description "Get current user info" -AuthToken $script:AccessToken
+$null = Test-Api -Method "GET" -Endpoint "/api/auth/me" -ExpectedStatus 200 -Description "Get current user info" -AuthToken $script:AccessToken
 
 # Refresh token
 Write-Host "`n>>> Refreshing token..." -ForegroundColor Blue
 $refreshBody = @{
-    refreshToken = $script:RefreshToken
+    refresh_token = $script:RefreshToken
 } | ConvertTo-Json
 
 try {
@@ -245,13 +342,16 @@ try {
     }
     else {
         Write-Status -Status "FAIL" -Message "Token refresh"
+        Write-Host "Response: $($refreshResponse | ConvertTo-Json -Compress)" -ForegroundColor Gray
     }
 }
 catch {
     Write-Status -Status "FAIL" -Message "Token refresh"
     Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Gray
+    if ($_.ErrorDetails.Message) {
+        Write-Host "Details: $($_.ErrorDetails.Message)" -ForegroundColor Gray
+    }
 }
-
 # ========================
 # 3. Social Media Tests
 # ========================
@@ -273,23 +373,26 @@ try {
         } `
         -Body $postBody
 
-    if ($postResponse.id) {
+    if ($postResponse.post -and $postResponse.post.id) {
         Write-Status -Status "PASS" -Message "Create post"
-        $script:PostId = $postResponse.id
+        $script:PostId = $postResponse.post.id
         Write-Host "Post ID: $($script:PostId)" -ForegroundColor Gray
     }
     else {
         Write-Status -Status "FAIL" -Message "Create post"
+        Write-Host "Response: $($postResponse | ConvertTo-Json -Compress)" -ForegroundColor Gray
     }
 }
 catch {
     Write-Status -Status "FAIL" -Message "Create post"
     Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Gray
+    if ($_.ErrorDetails.Message) {
+        Write-Host "Details: $($_.ErrorDetails.Message)" -ForegroundColor Gray
+    }
 }
-
 # Get all posts
 Write-Host "`n>>> Getting all posts..." -ForegroundColor Blue
-Test-Api -Method "GET" -Endpoint "/api/sosmed/posts" -ExpectedStatus 200 -Description "Get all posts" -AuthToken $script:AccessToken
+$null = Test-Api -Method "GET" -Endpoint "/api/sosmed/posts" -ExpectedStatus 200 -Description "Get all posts" -AuthToken $script:AccessToken
 
 # Update post
 if ($script:PostId) {
@@ -297,25 +400,24 @@ if ($script:PostId) {
     $updateBody = @{
         content = "Updated test post content"
     } | ConvertTo-Json
-    Test-Api -Method "PUT" -Endpoint "/api/sosmed/posts/$($script:PostId)" -Body $updateBody -ExpectedStatus 200 -Description "Update post" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "PUT" -Endpoint "/api/sosmed/posts/$($script:PostId)" -Body $updateBody -ExpectedStatus 200 -Description "Update post" -AuthToken $script:AccessToken
 }
 
 # Like post
 if ($script:PostId) {
     Write-Host "`n>>> Liking post..." -ForegroundColor Blue
-    Test-Api -Method "POST" -Endpoint "/api/sosmed/posts/$($script:PostId)/like" -ExpectedStatus 200 -Description "Like post" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "POST" -Endpoint "/api/sosmed/posts/$($script:PostId)/like" -ExpectedStatus 200 -Description "Like post" -AuthToken $script:AccessToken
 }
 
 # Create comment
 if ($script:PostId) {
     Write-Host "`n>>> Creating comment..." -ForegroundColor Blue
     $commentBody = @{
-        postId = $script:PostId
         content = "This is a test comment!"
     } | ConvertTo-Json
 
     try {
-        $commentResponse = Invoke-RestMethod -Uri "$BaseUrl/api/sosmed/comments" `
+        $commentResponse = Invoke-RestMethod -Uri "$BaseUrl/api/sosmed/posts/$($script:PostId)/comments" `
             -Method POST `
             -Headers @{
                 "Authorization" = "Bearer $($script:AccessToken)"
@@ -323,7 +425,12 @@ if ($script:PostId) {
             } `
             -Body $commentBody
 
-        if ($commentResponse.id) {
+        if ($commentResponse.comment -and $commentResponse.comment.id) {
+            Write-Status -Status "PASS" -Message "Create comment"
+            $script:CommentId = $commentResponse.comment.id
+            Write-Host "Comment ID: $($script:CommentId)" -ForegroundColor Gray
+        }
+        elseif ($commentResponse.id) {
             Write-Status -Status "PASS" -Message "Create comment"
             $script:CommentId = $commentResponse.id
             Write-Host "Comment ID: $($script:CommentId)" -ForegroundColor Gray
@@ -337,34 +444,32 @@ if ($script:PostId) {
         Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Gray
     }
 }
-
 # Update comment
 if ($script:CommentId) {
     Write-Host "`n>>> Updating comment..." -ForegroundColor Blue
     $updateCommentBody = @{
         content = "Updated comment content"
     } | ConvertTo-Json
-    Test-Api -Method "PUT" -Endpoint "/api/sosmed/comments/$($script:CommentId)" -Body $updateCommentBody -ExpectedStatus 200 -Description "Update comment" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "PUT" -Endpoint "/api/sosmed/comments/$($script:CommentId)" -Body $updateCommentBody -ExpectedStatus 200 -Description "Update comment" -AuthToken $script:AccessToken
 }
 
 # Delete comment
 if ($script:CommentId) {
     Write-Host "`n>>> Deleting comment..." -ForegroundColor Blue
-    Test-Api -Method "DELETE" -Endpoint "/api/sosmed/comments/$($script:CommentId)" -ExpectedStatus 200 -Description "Delete comment" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "DELETE" -Endpoint "/api/sosmed/comments/$($script:CommentId)" -ExpectedStatus 200 -Description "Delete comment" -AuthToken $script:AccessToken
 }
 
 # Unlike post
 if ($script:PostId) {
     Write-Host "`n>>> Unliking post..." -ForegroundColor Blue
-    Test-Api -Method "DELETE" -Endpoint "/api/sosmed/posts/$($script:PostId)/like" -ExpectedStatus 200 -Description "Unlike post" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "DELETE" -Endpoint "/api/sosmed/posts/$($script:PostId)/like" -ExpectedStatus 200 -Description "Unlike post" -AuthToken $script:AccessToken
 }
 
 # Delete post
 if ($script:PostId) {
     Write-Host "`n>>> Deleting post..." -ForegroundColor Blue
-    Test-Api -Method "DELETE" -Endpoint "/api/sosmed/posts/$($script:PostId)" -ExpectedStatus 200 -Description "Delete post" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "DELETE" -Endpoint "/api/sosmed/posts/$($script:PostId)" -ExpectedStatus 200 -Description "Delete post" -AuthToken $script:AccessToken
 }
-
 # ========================
 # 4. Chat Tests
 # ========================
@@ -386,28 +491,31 @@ try {
         } `
         -Body $roomBody
 
-    if ($roomResponse.id) {
+    if ($roomResponse.room -and $roomResponse.room.id) {
         Write-Status -Status "PASS" -Message "Create chat room"
-        $script:RoomId = $roomResponse.id
+        $script:RoomId = $roomResponse.room.id
         Write-Host "Room ID: $($script:RoomId)" -ForegroundColor Gray
     }
     else {
         Write-Status -Status "FAIL" -Message "Create chat room"
+        Write-Host "Response: $($roomResponse | ConvertTo-Json -Compress)" -ForegroundColor Gray
     }
 }
 catch {
     Write-Status -Status "FAIL" -Message "Create chat room"
     Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Gray
+    if ($_.ErrorDetails.Message) {
+        Write-Host "Details: $($_.ErrorDetails.Message)" -ForegroundColor Gray
+    }
 }
-
 # Get all rooms
 Write-Host "`n>>> Getting all chat rooms..." -ForegroundColor Blue
-Test-Api -Method "GET" -Endpoint "/api/chat/rooms" -ExpectedStatus 200 -Description "Get all chat rooms" -AuthToken $script:AccessToken
+$null = Test-Api -Method "GET" -Endpoint "/api/chat/rooms" -ExpectedStatus 200 -Description "Get all chat rooms" -AuthToken $script:AccessToken
 
 # Join chat room
 if ($script:RoomId) {
     Write-Host "`n>>> Joining chat room..." -ForegroundColor Blue
-    Test-Api -Method "POST" -Endpoint "/api/chat/rooms/$($script:RoomId)/join" -ExpectedStatus 200 -Description "Join chat room" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "POST" -Endpoint "/api/chat/rooms/$($script:RoomId)/join" -ExpectedStatus 200 -Description "Join chat room" -AuthToken $script:AccessToken
 }
 
 # Send message
@@ -426,7 +534,12 @@ if ($script:RoomId) {
             } `
             -Body $messageBody
 
-        if ($messageResponse.id) {
+        if ($messageResponse.message -and $messageResponse.message.id) {
+            Write-Status -Status "PASS" -Message "Send message"
+            $script:MessageId = $messageResponse.message.id
+            Write-Host "Message ID: $($script:MessageId)" -ForegroundColor Gray
+        }
+        elseif ($messageResponse.id) {
             Write-Status -Status "PASS" -Message "Send message"
             $script:MessageId = $messageResponse.id
             Write-Host "Message ID: $($script:MessageId)" -ForegroundColor Gray
@@ -444,21 +557,20 @@ if ($script:RoomId) {
 # Get messages
 if ($script:RoomId) {
     Write-Host "`n>>> Getting messages..." -ForegroundColor Blue
-    Test-Api -Method "GET" -Endpoint "/api/chat/rooms/$($script:RoomId)/messages" -ExpectedStatus 200 -Description "Get messages" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "GET" -Endpoint "/api/chat/rooms/$($script:RoomId)/messages" -ExpectedStatus 200 -Description "Get messages" -AuthToken $script:AccessToken
 }
 
 # Leave chat room
 if ($script:RoomId) {
     Write-Host "`n>>> Leaving chat room..." -ForegroundColor Blue
-    Test-Api -Method "POST" -Endpoint "/api/chat/rooms/$($script:RoomId)/leave" -ExpectedStatus 200 -Description "Leave chat room" -AuthToken $script:AccessToken
+    $null = Test-Api -Method "POST" -Endpoint "/api/chat/rooms/$($script:RoomId)/leave" -ExpectedStatus 200 -Description "Leave chat room" -AuthToken $script:AccessToken
 }
 
 # ========================
 # 5. Logout
 # ========================
 Write-Host "`n=== Logout ===" -ForegroundColor Yellow
-Test-Api -Method "POST" -Endpoint "/api/auth/logout" -ExpectedStatus 200 -Description "User logout" -AuthToken $script:AccessToken
-
+$null = Test-Api -Method "POST" -Endpoint "/api/auth/logout" -ExpectedStatus 200 -Description "User logout" -AuthToken $script:AccessToken
 # ========================
 # Test Summary
 # ========================
@@ -469,11 +581,16 @@ Write-Host "Total Tests: $($script:TotalTests)"
 Write-Host "Passed: $($script:PassedTests)" -ForegroundColor Green
 Write-Host "Failed: $($script:FailedTests)" -ForegroundColor Red
 
+# Stop server if we started it
+if ($script:ServerStarted) {
+    Stop-Server
+}
+
 if ($script:FailedTests -eq 0) {
-    Write-Host "`n✓ All tests passed!" -ForegroundColor Green
+    Write-Host "`nAll tests passed!" -ForegroundColor Green
     exit 0
 }
 else {
-    Write-Host "`n✗ Some tests failed!" -ForegroundColor Red
+    Write-Host "`nSome tests failed!" -ForegroundColor Red
     exit 1
 }

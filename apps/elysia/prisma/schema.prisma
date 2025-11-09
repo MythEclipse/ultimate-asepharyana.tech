@@ -43,14 +43,13 @@ model User {
 model Session {
   id        String   @id @default(uuid())
   userId    String
-  token     String   @unique
+  token     String   @unique @db.VarChar(500)
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([token])
   @@map("sessions")
 }
 

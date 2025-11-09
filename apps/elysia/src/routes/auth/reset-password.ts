@@ -25,7 +25,7 @@ function validatePassword(password: string): string | null {
 
 export const resetPasswordRoute = new Elysia()
   .post(
-    '/api/auth/reset-password',
+    '/reset-password',
     async ({ body, set }) => {
       const { token, new_password } = body as { token: string; new_password: string };
 

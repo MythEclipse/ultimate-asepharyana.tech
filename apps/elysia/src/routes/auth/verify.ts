@@ -3,7 +3,7 @@ import { prisma } from '../../utils/prisma';
 
 export const verifyRoute = new Elysia()
   .get(
-    '/api/auth/verify',
+    '/verify',
     async ({ query, set }) => {
       const { token } = query;
 

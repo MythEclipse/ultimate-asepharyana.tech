@@ -25,9 +25,9 @@ export interface LoginResponse {
 
 export const loginRoute = new Elysia()
   .post(
-    '/api/auth/login',
+    '/login',
     async ({ body, set }): Promise<LoginResponse> => {
-      const { email, password, rememberMe } = body as LoginBody;
+      const { email, password, rememberMe} = body as LoginBody;
 
       // Find user by email
       const user = await prisma.user.findUnique({

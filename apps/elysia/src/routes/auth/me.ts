@@ -4,7 +4,7 @@ import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
 
 export const meRoute = new Elysia()
-  .get('/api/auth/me', async ({ headers, set }) => {
+  .get('/me', async ({ headers, set }) => {
     const authHeader = headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       set.status = 401;

@@ -11,7 +11,7 @@ function generateToken(): string {
 
 export const forgotPasswordRoute = new Elysia()
   .post(
-    '/api/auth/forgot-password',
+    '/forgot-password',
     async ({ body }) => {
       const { email } = body as { email: string };
 

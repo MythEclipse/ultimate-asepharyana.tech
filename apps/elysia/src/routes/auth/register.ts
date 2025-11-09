@@ -51,7 +51,7 @@ function validatePassword(password: string): string | null {
 
 export const registerRoute = new Elysia()
   .post(
-    '/api/auth/register',
+    '/register',
     async ({ body, set }): Promise<RegisterResponse> => {
       const { email, name, password } = body as RegisterBody;
 

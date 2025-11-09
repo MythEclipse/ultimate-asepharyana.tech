@@ -3,7 +3,7 @@ import { blacklistToken } from '../../utils/redis';
 
 export const logoutRoute = new Elysia()
   .post(
-    '/api/auth/logout',
+    '/logout',
     async ({ headers, set }) => {
       const authHeader = headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {

@@ -4,7 +4,7 @@ import { signJWT } from '../../utils/jwt';
 
 export const refreshTokenRoute = new Elysia()
   .post(
-    '/api/auth/refresh-token',
+    '/refresh-token',
     async ({ body, set }) => {
       const { refresh_token } = body as { refresh_token: string };
 
