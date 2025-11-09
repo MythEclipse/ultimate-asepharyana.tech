@@ -9,10 +9,18 @@ import { Loader2, UploadCloud, Lock } from 'lucide-react';
 import useSWR, { mutate } from 'swr';
 import { fetchData } from '../../utils/useFetch';
 import { useSosmedActions } from '../../utils/hooks/useSosmedActions';
-import type { Posts, Likes, Comments, ClientUser } from '../../types';
+import type { Post, Like, Comment } from '@asepharyana/services';
+import type { ClientUser } from '../../types';
+
+// Type for posts with populated relations from API
+type PostWithRelations = Post & {
+  user: ClientUser;
+  likes: Like[];
+  comments: (Comment & { user: ClientUser })[];
+};
 
 const fetcher = async (url: string) => {
-  const response = await fetchData<{ posts: Posts[] }>(url);
+  const response = await fetchData<{ posts: PostWithRelations[] }>(url);
   return response.data;
 };
 
@@ -181,43 +189,36 @@ export default function SosmedClient() {
       )}
 
       <div className="grid gap-8">
-        {postsData?.posts?.map(
-          (
-            post: Posts & {
-              user: ClientUser;
-              likes: Likes[];
-              comments: Comments[];
-            },
-          ) => (
-            <PostCard
-              key={post.id}
-              post={{
-                ...post,
-                user: post.user || {
-                  id: '',
-                  name: null,
-                  email: null,
-                  image: null,
-                  emailVerified: null,
-                  role: '',
-                },
-                likes: post.likes || [],
-                comments:
-                  post.comments?.map(
-                    (comment: Comments & { user?: ClientUser }) => ({
-                      ...comment,
-                      user: comment.user || {
-                        id: '',
-                        name: null,
-                        email: null,
-                        image: null,
-                        emailVerified: null,
-                        role: '',
-                      },
-                    }),
-                  ) || [],
-              }}
-              handleLike={handleLike}
+        {postsData?.posts?.map((post: PostWithRelations) => (
+          <PostCard
+            key={post.id}
+            post={{
+              ...post,
+              user: post.user || {
+                id: '',
+                name: null,
+                email: null,
+                image: null,
+                emailVerified: null,
+                role: '',
+              },
+              likes: post.likes || [],
+              comments:
+                post.comments?.map(
+                  (comment: Comment & { user?: ClientUser }) => ({
+                    ...comment,
+                    user: comment.user || {
+                      id: '',
+                      name: null,
+                      email: null,
+                      image: null,
+                      emailVerified: null,
+                      role: '',
+                    },
+                  }),
+                ) || [],
+            }}
+            handleLike={handleLike}
               handleUnlike={handleUnlike}
               handleAddComment={handleAddComment}
               handleEditPost={handleEditPost}

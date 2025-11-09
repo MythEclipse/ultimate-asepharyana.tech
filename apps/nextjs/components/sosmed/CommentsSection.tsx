@@ -4,7 +4,7 @@ import { Textarea } from '../text/textarea';
 import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 import CommentCard from './CommentCard';
-import { Comments } from '@asepharyana/services';
+import { Comment } from '@asepharyana/services';
 
 interface ClientUser {
   id: string;
@@ -16,7 +16,7 @@ interface ClientUser {
 }
 
 interface CommentsSectionProps {
-  comments: (Comments & {
+  comments: (Comment & {
     id: string;
     created_at: Date;
     updated_at: Date;
@@ -33,7 +33,7 @@ interface CommentsSectionProps {
   onSaveEditComment: (commentId: string) => void;
   onCancelEditComment: () => void;
   onStartEditComment: (
-    comment: Comments & {
+    comment: Comment & {
       id: string;
       created_at: Date;
       updated_at: Date;

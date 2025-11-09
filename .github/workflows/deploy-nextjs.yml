@@ -41,11 +41,12 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Build Services Package (Kysely)
+      - name: Build Services Package (Drizzle)
         run: bun run service:build
 
       - name: Build Next.js
-        run: bun run nextjs:build
+        working-directory: apps/nextjs
+        run: npm run build
 
       - name: Sync Build Artifacts to VPS
         env:

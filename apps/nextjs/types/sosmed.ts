@@ -1,33 +1,12 @@
 import { ClientUser } from './ClientUser';
+import { Post, Like, Comment } from '@asepharyana/services';
 
-export interface Posts {
-  id: string;
-  content: string;
-  userId: string;
-  postId: string;
-  created_at: Date;
-  updated_at: Date;
-  authorId: string;
-  image_url: string | null;
+// Re-export with extended types if needed
+export type { Post, Like, Comment };
+
+// Extended post type with populated relations
+export interface PostWithRelations extends Post {
   user: ClientUser;
-  likes: Likes[];
-  comments: Comments[];
-}
-
-export interface Likes {
-  id: string;
-  userId: string;
-  postId: string;
-  created_at: Date;
-}
-
-export interface Comments {
-  id: string;
-  content: string;
-  userId: string;
-  postId: string;
-  created_at: Date;
-  updated_at: Date;
-  authorId: string;
-  user: ClientUser;
+  likes: Like[];
+  comments: (Comment & { user: ClientUser })[];
 }

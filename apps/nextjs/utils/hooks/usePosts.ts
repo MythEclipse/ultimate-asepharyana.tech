@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '../../utils/url-utils';
-import { Posts } from '@asepharyana/services';
+import { Post } from '@asepharyana/services';
 import { buildUrlWithParams } from '../url-utils';
 
 export const usePosts = () => {
-  const [posts, setPosts] = useState<Posts[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   const fetchPosts = async () => {
     try {

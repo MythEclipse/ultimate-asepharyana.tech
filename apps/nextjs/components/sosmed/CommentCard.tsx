@@ -5,11 +5,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { Textarea } from '../text/textarea';
 import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
-import { Comments } from '@asepharyana/services';
+import { Comment } from '@asepharyana/services';
 import { ClientUser } from '../shared/types';
 
 interface CommentCardProps {
-  comment: Comments & {
+  comment: Comment & {
     id: string;
     created_at: Date;
     updated_at: Date;
@@ -22,7 +22,7 @@ interface CommentCardProps {
   onSaveEditComment: (commentId: string) => void;
   onCancelEditComment: () => void;
   onStartEditComment: (
-    comment: Comments & {
+    comment: Comment & {
       id: string;
       created_at: Date;
       updated_at: Date;

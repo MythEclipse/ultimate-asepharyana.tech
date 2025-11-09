@@ -1,6 +1,6 @@
 'use client';
 import React, { useMemo, useState } from 'react';
-import { Posts, Comments, Likes } from '@asepharyana/services';
+import { Post, Comment, Like } from '@asepharyana/services';
 import { useAuth } from '../../lib/auth-context';
 import { useGlobalStore } from '../../utils/hooks/useGlobalStore';
 import PostHeader from './PostHeader';
@@ -10,13 +10,13 @@ import CommentsSection from './CommentsSection';
 import { ClientUser } from '../../types/ClientUser';
 
 interface PostCardProps {
-  readonly post: Posts & {
+  readonly post: Post & {
     id: string;
     created_at: Date;
     updated_at: Date;
     readonly user: ClientUser;
-    readonly likes: readonly (Likes & { postId: string; userId: string })[];
-    readonly comments: readonly (Comments & {
+    readonly likes: readonly (Like & { postId: string; userId: string })[];
+    readonly comments: readonly (Comment & {
       id: string;
       created_at: Date;
       updated_at: Date;
@@ -133,7 +133,7 @@ export default function PostCard({
       {showComments && (
         <CommentsSection
           comments={
-            post.comments as (Comments & {
+            post.comments as (Comment & {
               id: string;
               created_at: Date;
               updated_at: Date;
