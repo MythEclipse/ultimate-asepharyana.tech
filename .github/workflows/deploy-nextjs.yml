@@ -81,19 +81,22 @@ jobs:
             # Pull the latest code (optional, as rsync is the source of truth for build artifacts)
             git reset --hard origin/main
 
-            # Clean old node_modules to remove Prisma remnants
+            # Clean old node_modules to remove Prisma remnants (force remove)
             echo "Cleaning old dependencies..."
-            rm -rf node_modules
+            rm -rf node_modules/.bin
             rm -rf apps/nextjs/node_modules
             rm -rf libs/services/node_modules
 
-            # Install all dependencies
+            # Remove bun lockfile to force fresh install
+            rm -f bun.lockb
+
+            # Install all dependencies with force
             echo "Installing dependencies..."
-            bun install
+            bun install --force
 
             # Build services
             echo "Building services..."
-            bun run service:build
+            bunx nx build services
 
             # Restart the application with PM2
             pm2 startOrRestart apps/nextjs/ecosystem.config.cjs
