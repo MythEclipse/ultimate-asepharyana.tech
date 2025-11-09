@@ -42,7 +42,7 @@ pnpm install
 Create `.env` file (copy from `.env.example`):
 
 ```env
-PORT=3002
+PORT=4092
 NODE_ENV=development
 DATABASE_URL="mysql://root:password@localhost:3306/elysia_auth"
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
@@ -89,13 +89,13 @@ bun run dev
 pnpm dev
 ```
 
-The server will start at `http://localhost:3002`
+The server will start at `http://localhost:4092`
 
 ### View API Documentation
 
 Open Swagger UI at:
 ```
-http://localhost:3002/swagger
+http://localhost:4092/docs
 ```
 
 ### Prisma Studio (Database GUI)
@@ -155,20 +155,22 @@ pnpm start
 
 ```bash
 # Health check
-curl http://localhost:3001/health
+curl http://localhost:4092/health
 
 # Personalized greeting
-curl http://localhost:3001/api/hello/World
+curl http://localhost:4092/api/hello/World
 
 # Echo endpoint
-curl -X POST http://localhost:3001/api/echo \
+curl -X POST http://localhost:4092/api/echo \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello"}'
 ```
 
 ## Testing
 
-Run tests:
+### Unit Tests
+
+Run unit tests:
 
 ```bash
 # Using nx
@@ -177,6 +179,29 @@ nx test elysia
 # Or directly with bun
 bun test
 ```
+
+### API Integration Tests
+
+Test all API endpoints automatically:
+
+```bash
+# Bash (Linux/Mac/Git Bash)
+chmod +x test-all-api.sh
+./test-all-api.sh
+
+# PowerShell (Windows)
+.\test-all-api.ps1
+```
+
+The test script will automatically:
+- Test all health and basic endpoints
+- Register a new user and login
+- Test all authentication endpoints
+- Test social media features (posts, comments, likes)
+- Test chat features (rooms, messages)
+- Clean up test data
+
+For detailed testing documentation, see the test script comments.
 
 ## Learn More
 
