@@ -41,25 +41,14 @@ export type NewReply = InferInsertModel<typeof schema.replies>;
 export type ChatMessage = InferSelectModel<typeof schema.chatMessages>;
 export type NewChatMessage = InferInsertModel<typeof schema.chatMessages>;
 
-// Legacy compatibility exports (mapped to new types)
-export type { User as Users };
-export type { Post as Posts };
-export type { Comment as Comments };
-export type { Like as Likes };
-export type { Reply as Replies };
+export type EmailVerificationToken = InferSelectModel<typeof schema.emailVerificationTokens>;
+export type NewEmailVerificationToken = InferInsertModel<typeof schema.emailVerificationTokens>;
 
-// Database type for backward compatibility
-export interface DB {
-  Account: Account;
-  Session: Session;
-  User: User;
-  Role: Role;
-  Permission: Permission;
-  UserRole: UserRole;
-  RolePermission: RolePermission;
-  Comments: Comment;
-  Likes: Like;
-  Posts: Post;
-  Replies: Reply;
-  ChatMessage: ChatMessage;
-}
+export type PasswordResetToken = InferSelectModel<typeof schema.passwordResetTokens>;
+export type NewPasswordResetToken = InferInsertModel<typeof schema.passwordResetTokens>;
+
+export type ChatRoom = InferSelectModel<typeof schema.chatRooms>;
+export type NewChatRoom = InferInsertModel<typeof schema.chatRooms>;
+
+export type ChatRoomMember = InferSelectModel<typeof schema.chatRoomMembers>;
+export type NewChatRoomMember = InferInsertModel<typeof schema.chatRoomMembers>;

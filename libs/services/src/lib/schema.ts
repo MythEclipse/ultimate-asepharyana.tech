@@ -219,6 +219,102 @@ export const chatMessages = mysqlTable(
   })
 );
 
+// EmailVerificationToken table
+export const emailVerificationTokens = mysqlTable(
+  'EmailVerificationToken',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    userId: varchar('userId', { length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: varchar('token', { length: 255 }).notNull().unique(),
+    expiresAt: timestamp('expiresAt').notNull(),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index('userId_idx').on(table.userId),
+    tokenIdx: index('token_idx').on(table.token),
+  })
+);
+
+// PasswordResetToken table
+export const passwordResetTokens = mysqlTable(
+  'PasswordResetToken',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    userId: varchar('userId', { length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: varchar('token', { length: 255 }).notNull().unique(),
+    expiresAt: timestamp('expiresAt').notNull(),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    used: int('used').notNull().default(0),
+  },
+  (table) => ({
+    userIdIdx: index('userId_idx').on(table.userId),
+    tokenIdx: index('token_idx').on(table.token),
+  })
+);
+
+// ChatRoom table
+export const chatRooms = mysqlTable(
+  'ChatRoom',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    isPrivate: int('isPrivate').notNull().default(0),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => ({
+    createdAtIdx: index('createdAt_idx').on(table.createdAt),
+  })
+);
+
+// Update ChatMessage table to reference ChatRoom
+export const chatMessagesWithRoom = mysqlTable(
+  'ChatMessage_room',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    roomId: varchar('roomId', { length: 255 })
+      .notNull()
+      .references(() => chatRooms.id, { onDelete: 'cascade' }),
+    userId: varchar('userId', { length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    content: text('content').notNull(),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => ({
+    roomIdIdx: index('roomId_idx').on(table.roomId),
+    userIdIdx: index('userId_idx').on(table.userId),
+    createdAtIdx: index('createdAt_idx').on(table.createdAt),
+  })
+);
+
+// ChatRoomMember table
+export const chatRoomMembers = mysqlTable(
+  'ChatRoomMember',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    roomId: varchar('roomId', { length: 255 })
+      .notNull()
+      .references(() => chatRooms.id, { onDelete: 'cascade' }),
+    userId: varchar('userId', { length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: varchar('role', { length: 50 }).notNull().default('member'),
+    joinedAt: timestamp('joinedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.roomId, table.userId] }),
+    roomIdIdx: index('roomId_idx').on(table.roomId),
+    userIdIdx: index('userId_idx').on(table.userId),
+  })
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -229,6 +325,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   replies: many(replies),
   chatMessages: many(chatMessages),
   userRoles: many(userRoles),
+  emailVerificationTokens: many(emailVerificationTokens),
+  passwordResetTokens: many(passwordResetTokens),
+  chatRoomMembers: many(chatRoomMembers),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -333,6 +432,59 @@ export const rolePermissionsRelations = relations(
     permission: one(permissions, {
       fields: [rolePermissions.permissionId],
       references: [permissions.id],
+    }),
+  })
+);
+
+export const emailVerificationTokensRelations = relations(
+  emailVerificationTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [emailVerificationTokens.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const passwordResetTokensRelations = relations(
+  passwordResetTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [passwordResetTokens.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const chatRoomsRelations = relations(chatRooms, ({ many }) => ({
+  messages: many(chatMessagesWithRoom),
+  members: many(chatRoomMembers),
+}));
+
+export const chatMessagesWithRoomRelations = relations(
+  chatMessagesWithRoom,
+  ({ one }) => ({
+    room: one(chatRooms, {
+      fields: [chatMessagesWithRoom.roomId],
+      references: [chatRooms.id],
+    }),
+    user: one(users, {
+      fields: [chatMessagesWithRoom.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const chatRoomMembersRelations = relations(
+  chatRoomMembers,
+  ({ one }) => ({
+    room: one(chatRooms, {
+      fields: [chatRoomMembers.roomId],
+      references: [chatRooms.id],
+    }),
+    user: one(users, {
+      fields: [chatRoomMembers.userId],
+      references: [users.id],
     }),
   })
 );

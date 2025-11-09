@@ -1,10 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { prisma } from '../../utils/prisma';
+import { getDatabase } from '../../utils/prisma';
+import { users, emailVerificationTokens } from '@asepharyana/services';
+import { eq } from 'drizzle-orm';
 
 export const verifyRoute = new Elysia()
   .get(
     '/verify',
     async ({ query, set }) => {
+      const db = getDatabase();
       const { token } = query;
 
       if (!token) {
@@ -12,10 +15,13 @@ export const verifyRoute = new Elysia()
         throw new Error('Verification token is required');
       }
 
-      // Find verification token that hasn't expired
-      const verificationToken = await prisma.emailVerificationToken.findUnique({
-        where: { token },
-      });
+      const result = await db
+        .select()
+        .from(emailVerificationTokens)
+        .where(eq(emailVerificationTokens.token, token))
+        .limit(1);
+
+      const verificationToken = result[0];
 
       if (!verificationToken) {
         set.status = 400;
@@ -27,16 +33,14 @@ export const verifyRoute = new Elysia()
         throw new Error('Verification token has expired');
       }
 
-      // Update user isVerified status
-      await prisma.user.update({
-        where: { id: verificationToken.userId },
-        data: { isVerified: true },
-      });
+      await db
+        .update(users)
+        .set({ emailVerified: new Date() })
+        .where(eq(users.id, verificationToken.userId));
 
-      // Delete used token
-      await prisma.emailVerificationToken.delete({
-        where: { id: verificationToken.id },
-      });
+      await db
+        .delete(emailVerificationTokens)
+        .where(eq(emailVerificationTokens.id, verificationToken.id));
 
       return {
         success: true,

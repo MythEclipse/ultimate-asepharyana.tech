@@ -1,6 +1,8 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { prisma } from '../../utils/prisma';
+import { getDatabase } from '../../utils/prisma';
+import { users, passwordResetTokens } from '@asepharyana/services';
+import { eq } from 'drizzle-orm';
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) {
@@ -27,26 +29,29 @@ export const resetPasswordRoute = new Elysia()
   .post(
     '/reset-password',
     async ({ body, set }) => {
+      const db = getDatabase();
       const { token, new_password } = body as { token: string; new_password: string };
 
-      // Validate password
       const passwordError = validatePassword(new_password);
       if (passwordError) {
         set.status = 400;
         throw new Error(passwordError);
       }
 
-      // Find reset token
-      const resetToken = await prisma.passwordResetToken.findUnique({
-        where: { token },
-      });
+      const resetTokenResult = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token))
+        .limit(1);
+
+      const resetToken = resetTokenResult[0];
 
       if (!resetToken) {
         set.status = 400;
         throw new Error('Invalid reset token');
       }
 
-      if (resetToken.used) {
+      if (resetToken.used !== 0) {
         set.status = 400;
         throw new Error('Reset token has already been used');
       }
@@ -56,20 +61,17 @@ export const resetPasswordRoute = new Elysia()
         throw new Error('Reset token has expired');
       }
 
-      // Hash new password
       const hashedPassword = await bcrypt.hash(new_password, 10);
 
-      // Update password and mark token as used in a transaction
-      await prisma.$transaction([
-        prisma.user.update({
-          where: { id: resetToken.userId },
-          data: { password: hashedPassword },
-        }),
-        prisma.passwordResetToken.update({
-          where: { id: resetToken.id },
-          data: { used: true },
-        }),
-      ]);
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, resetToken.userId));
+
+      await db
+        .update(passwordResetTokens)
+        .set({ used: 1 })
+        .where(eq(passwordResetTokens.id, resetToken.id));
 
       return {
         success: true,

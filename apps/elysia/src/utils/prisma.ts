@@ -1,23 +1,24 @@
-import { PrismaClient } from '@prisma/client';
+import { initializeDb, getDb, closeDb } from '@asepharyana/services';
+import { config } from '../config';
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+let isInitialized = false;
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+export function getDatabase() {
+  if (!isInitialized) {
+    throw new Error('Database not initialized. Call connectDatabase first.');
+  }
+  return getDb();
 }
 
-// Test database connection
 export async function connectDatabase() {
   try {
-    await prisma.$connect();
+    if (isInitialized) {
+      console.log('✅ Database already connected');
+      return true;
+    }
+
+    initializeDb(config.databaseUrl);
+    isInitialized = true;
     console.log('✅ Database connected successfully');
     return true;
   } catch (error) {
@@ -26,10 +27,10 @@ export async function connectDatabase() {
   }
 }
 
-// Graceful shutdown
 export async function disconnectDatabase() {
   try {
-    await prisma.$disconnect();
+    await closeDb();
+    isInitialized = false;
     console.log('✅ Database disconnected successfully');
   } catch (error) {
     console.error('❌ Database disconnection failed:', error);

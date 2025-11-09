@@ -10,13 +10,13 @@ import { logger } from './middleware';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimit } from './middleware/rateLimit';
 import { config } from './config';
-import { connectDatabase, prisma } from './utils/prisma';
+import { connectDatabase, disconnectDatabase } from './utils/prisma';
 import { getRedis } from './utils/redis';
 
 // Initialize database and Redis connections
 const initializeConnections = async () => {
   try {
-    // Connect to Prisma database
+    // Connect to database
     await connectDatabase();
 
     // Connect to Redis
@@ -30,7 +30,7 @@ const initializeConnections = async () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down gracefully...');
-  await prisma.$disconnect();
+  await disconnectDatabase();
   process.exit(0);
 });
 

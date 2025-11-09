@@ -1,11 +1,13 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { prisma } from '../../utils/prisma';
+import { getDatabase } from '../../utils/prisma';
+import { users, emailVerificationTokens } from '@asepharyana/services';
+import type { NewUser, NewEmailVerificationToken } from '@asepharyana/services';
+import { eq } from 'drizzle-orm';
 import { sendVerificationEmail } from '../../utils/email';
 import { rateLimit } from '../../middleware/rateLimit';
 import { sanitizeEmail, sanitizeString } from '../../utils/validation';
 
-// Generate secure random token
 function generateToken(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -25,8 +27,7 @@ export interface RegisterResponse {
     id: string;
     email: string;
     name: string | null;
-    isVerified: boolean;
-    createdAt: Date;
+    emailVerified: Date | null;
   };
 }
 
@@ -54,70 +55,70 @@ function validatePassword(password: string): string | null {
 export const registerRoute = new Elysia()
   .use(
     rateLimit({
-      max: 10, // 10 registration attempts
-      window: 60 * 60 * 1000, // per hour
+      max: 10,
+      window: 60 * 60 * 1000,
       message: 'Too many registration attempts, please try again later',
     })
   )
   .post(
     '/register',
     async ({ body, set }): Promise<RegisterResponse> => {
+      const db = getDatabase();
       const { email, name, password } = body as RegisterBody;
 
-      // Sanitize and validate email
       const sanitizedEmail = sanitizeEmail(email);
       if (!sanitizedEmail) {
         set.status = 400;
         throw new Error('Invalid email format');
       }
 
-      // Sanitize name if provided
       const sanitizedName = name ? sanitizeString(name) : null;
 
-      // Validate password strength
       const passwordError = validatePassword(password);
       if (passwordError) {
         set.status = 400;
         throw new Error(passwordError);
       }
 
-      // Check if email exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email: sanitizedEmail },
-      });
+      const existingUserResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, sanitizedEmail))
+        .limit(1);
 
-      if (existingUser) {
+      if (existingUserResult.length > 0) {
         set.status = 400;
         throw new Error('Email already exists');
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      // Create user
-      const user = await prisma.user.create({
-        data: {
-          email: sanitizedEmail,
-          name: sanitizedName,
-          password: hashedPassword,
-          isVerified: false,
-        },
-      });
+      const newUser: NewUser = {
+        id: userId,
+        email: sanitizedEmail,
+        name: sanitizedName,
+        password: hashedPassword,
+        emailVerified: null,
+        image: null,
+        refreshToken: null,
+        role: 'user',
+      };
 
-      // Generate verification token
+      await db.insert(users).values(newUser);
+
       const verificationToken = generateToken();
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      // Create email verification token
-      await prisma.emailVerificationToken.create({
-        data: {
-          userId: user.id,
-          token: verificationToken,
-          expiresAt,
-        },
-      });
+      const newToken: NewEmailVerificationToken = {
+        id: `evt_${Date.now()}_${userId}`,
+        userId: userId,
+        token: verificationToken,
+        expiresAt: expiresAt,
+      };
 
-      // Send verification email
+      await db.insert(emailVerificationTokens).values(newToken);
+
       try {
         await sendVerificationEmail(email, name || 'User', verificationToken);
       } catch (error) {
@@ -128,11 +129,10 @@ export const registerRoute = new Elysia()
         success: true,
         message: 'User registered successfully. Please check your email to verify your account.',
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isVerified: user.isVerified,
-          createdAt: user.createdAt,
+          id: userId,
+          email: sanitizedEmail,
+          name: sanitizedName,
+          emailVerified: null,
         },
       };
     },

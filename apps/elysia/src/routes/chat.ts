@@ -1,6 +1,14 @@
 import { Elysia, t } from 'elysia';
-import { prisma } from '../utils/prisma';
+import { getDatabase } from '../utils/prisma';
 import { verifyJWT } from '../utils/jwt';
+import {
+  chatRooms,
+  chatRoomMembers,
+  chatMessagesWithRoom,
+  NewChatRoom,
+  NewChatRoomMember,
+} from '@asepharyana/services';
+import { eq, and } from 'drizzle-orm';
 
 export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   // Get all chat rooms
@@ -19,45 +27,37 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         throw new Error('Invalid token');
       }
 
-      const rooms = await prisma.chatRoom.findMany({
-        include: {
+      const db = getDatabase();
+
+      const rooms = await db.query.chatRooms.findMany({
+        orderBy: (chatRooms, { desc }) => [desc(chatRooms.updatedAt)],
+        with: {
           members: {
-            include: {
+            with: {
               user: {
-                select: {
+                columns: {
                   id: true,
                   name: true,
                   email: true,
-                  avatar: true,
+                  image: true,
                 },
               },
             },
           },
           messages: {
-            take: 1,
-            orderBy: {
-              createdAt: 'desc',
-            },
-            include: {
+            limit: 1,
+            orderBy: (messages, { desc }) => [desc(messages.createdAt)],
+            with: {
               user: {
-                select: {
+                columns: {
                   id: true,
                   name: true,
                   email: true,
-                  avatar: true,
+                  image: true,
                 },
               },
             },
           },
-          _count: {
-            select: {
-              messages: true,
-              members: true,
-            },
-          },
-        },
-        orderBy: {
-          updatedAt: 'desc',
         },
       });
 
@@ -104,27 +104,42 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
           throw new Error('Room name is required');
         }
 
-        const room = await prisma.chatRoom.create({
-          data: {
-            name,
-            description,
-            isPrivate: isPrivate || false,
+        const db = getDatabase();
+        const roomId = `room_${Date.now()}_${payload.user_id}`;
+        const memberId = `member_${Date.now()}_${payload.user_id}`;
+
+        // Create room
+        const newRoom: NewChatRoom = {
+          id: roomId,
+          name,
+          description: description || null,
+          isPrivate: isPrivate ? 1 : 0,
+        };
+
+        await db.insert(chatRooms).values(newRoom);
+
+        // Add creator as admin member
+        const newMember: NewChatRoomMember = {
+          id: memberId,
+          roomId,
+          userId: payload.user_id,
+          role: 'admin',
+        };
+
+        await db.insert(chatRoomMembers).values(newMember);
+
+        // Query with relations
+        const room = await db.query.chatRooms.findFirst({
+          where: (chatRooms, { eq }) => eq(chatRooms.id, roomId),
+          with: {
             members: {
-              create: {
-                userId: payload.user_id,
-                role: 'admin',
-              },
-            },
-          },
-          include: {
-            members: {
-              include: {
+              with: {
                 user: {
-                  select: {
+                  columns: {
                     id: true,
                     name: true,
                     email: true,
-                    avatar: true,
+                    image: true,
                   },
                 },
               },
@@ -170,15 +185,16 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         throw new Error('Invalid token');
       }
 
-      // Check if user is a member of the room
-      const membership = await prisma.chatRoomMember.findFirst({
-        where: {
-          roomId,
-          userId: payload.user_id,
-        },
-      });
+      const db = getDatabase();
 
-      if (!membership) {
+      // Check if user is a member of the room
+      const membershipResult = await db
+        .select()
+        .from(chatRoomMembers)
+        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .limit(1);
+
+      if (membershipResult.length === 0) {
         set.status = 403;
         throw new Error('Not a member of this chat room');
       }
@@ -186,30 +202,28 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       const limit = query.limit ? parseInt(query.limit as string) : 50;
       const before = query.before as string | undefined;
 
-      const messages = await prisma.chatMessage.findMany({
-        where: {
-          roomId,
-          ...(before && {
-            createdAt: {
-              lt: new Date(before),
-            },
-          }),
-        },
-        include: {
+      const messagesQuery = db.query.chatMessagesWithRoom.findMany({
+        where: before
+          ? and(
+              eq(chatMessagesWithRoom.roomId, roomId),
+              // lt(chatMessagesWithRoom.createdAt, new Date(before))
+            )
+          : eq(chatMessagesWithRoom.roomId, roomId),
+        with: {
           user: {
-            select: {
+            columns: {
               id: true,
               name: true,
               email: true,
-              avatar: true,
+              image: true,
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: limit,
+        orderBy: (messages, { desc }) => [desc(messages.createdAt)],
+        limit,
       });
+
+      const messages = await messagesQuery;
 
       return {
         success: true,
@@ -250,42 +264,49 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
           throw new Error('Message content is required');
         }
 
-        // Check if user is a member of the room
-        const membership = await prisma.chatRoomMember.findFirst({
-          where: {
-            roomId,
-            userId: payload.user_id,
-          },
-        });
+        const db = getDatabase();
 
-        if (!membership) {
+        // Check if user is a member of the room
+        const membershipResult = await db
+          .select()
+          .from(chatRoomMembers)
+          .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+          .limit(1);
+
+        if (membershipResult.length === 0) {
           set.status = 403;
           throw new Error('Not a member of this chat room');
         }
 
-        const message = await prisma.chatMessage.create({
-          data: {
-            roomId,
-            userId: payload.user_id,
-            content,
-          },
-          include: {
+        const messageId = `msg_${Date.now()}_${payload.user_id}`;
+        const newMessage = {
+          id: messageId,
+          roomId,
+          userId: payload.user_id,
+          content,
+        };
+
+        await db.insert(chatMessagesWithRoom).values(newMessage);
+
+        const message = await db.query.chatMessagesWithRoom.findFirst({
+          where: (messages, { eq }) => eq(messages.id, messageId),
+          with: {
             user: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 email: true,
-                avatar: true,
+                image: true,
               },
             },
           },
         });
 
         // Update room's updatedAt
-        await prisma.chatRoom.update({
-          where: { id: roomId },
-          data: { updatedAt: new Date() },
-        });
+        await db
+          .update(chatRooms)
+          .set({ updatedAt: new Date() })
+          .where(eq(chatRooms.id, roomId));
 
         return {
           success: true,
@@ -323,45 +344,54 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         throw new Error('Invalid token');
       }
 
-      // Check if room exists
-      const room = await prisma.chatRoom.findUnique({
-        where: { id: roomId },
-      });
+      const db = getDatabase();
 
-      if (!room) {
+      // Check if room exists
+      const roomResult = await db
+        .select()
+        .from(chatRooms)
+        .where(eq(chatRooms.id, roomId))
+        .limit(1);
+
+      if (roomResult.length === 0) {
         set.status = 404;
         throw new Error('Chat room not found');
       }
 
       // Check if already a member
-      const existingMember = await prisma.chatRoomMember.findFirst({
-        where: {
-          roomId,
-          userId: payload.user_id,
-        },
-      });
+      const existingMemberResult = await db
+        .select()
+        .from(chatRoomMembers)
+        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .limit(1);
 
-      if (existingMember) {
+      if (existingMemberResult.length > 0) {
         return {
           success: true,
           message: 'Already a member',
-          member: existingMember,
+          member: existingMemberResult[0],
         };
       }
 
-      const member = await prisma.chatRoomMember.create({
-        data: {
-          roomId,
-          userId: payload.user_id,
-          role: 'member',
-        },
-        include: {
+      const memberId = `member_${Date.now()}_${payload.user_id}_${roomId}`;
+      const newMember: NewChatRoomMember = {
+        id: memberId,
+        roomId,
+        userId: payload.user_id,
+        role: 'member',
+      };
+
+      await db.insert(chatRoomMembers).values(newMember);
+
+      const member = await db.query.chatRoomMembers.findFirst({
+        where: (members, { eq }) => eq(members.id, memberId),
+        with: {
           user: {
-            select: {
+            columns: {
               id: true,
               name: true,
               email: true,
-              avatar: true,
+              image: true,
             },
           },
         },
@@ -398,24 +428,23 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         throw new Error('Invalid token');
       }
 
-      // Find membership
-      const membership = await prisma.chatRoomMember.findFirst({
-        where: {
-          roomId,
-          userId: payload.user_id,
-        },
-      });
+      const db = getDatabase();
 
-      if (!membership) {
+      // Find membership
+      const membershipResult = await db
+        .select()
+        .from(chatRoomMembers)
+        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .limit(1);
+
+      if (membershipResult.length === 0) {
         set.status = 404;
         throw new Error('Not a member of this chat room');
       }
 
-      await prisma.chatRoomMember.delete({
-        where: {
-          id: membership.id,
-        },
-      });
+      await db
+        .delete(chatRoomMembers)
+        .where(eq(chatRoomMembers.id, membershipResult[0].id));
 
       return {
         success: true,
@@ -447,35 +476,38 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         throw new Error('Invalid token');
       }
 
-      // Find message
-      const message = await prisma.chatMessage.findUnique({
-        where: { id: messageId },
-      });
+      const db = getDatabase();
 
-      if (!message) {
+      // Find message
+      const messageResult = await db
+        .select()
+        .from(chatMessagesWithRoom)
+        .where(eq(chatMessagesWithRoom.id, messageId))
+        .limit(1);
+
+      if (messageResult.length === 0) {
         set.status = 404;
         throw new Error('Message not found');
       }
 
+      const message = messageResult[0];
+
       // Check if user is the sender or room admin
-      const membership = await prisma.chatRoomMember.findFirst({
-        where: {
-          roomId: message.roomId,
-          userId: payload.user_id,
-        },
-      });
+      const membershipResult = await db
+        .select()
+        .from(chatRoomMembers)
+        .where(and(eq(chatRoomMembers.roomId, message.roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .limit(1);
 
       const isOwner = message.userId === payload.user_id;
-      const isAdmin = membership?.role === 'admin';
+      const isAdmin = membershipResult.length > 0 && membershipResult[0].role === 'admin';
 
       if (!isOwner && !isAdmin) {
         set.status = 403;
         throw new Error('Not authorized to delete this message');
       }
 
-      await prisma.chatMessage.delete({
-        where: { id: messageId },
-      });
+      await db.delete(chatMessagesWithRoom).where(eq(chatMessagesWithRoom.id, messageId));
 
       return {
         success: true,

@@ -1,41 +1,46 @@
 import { Elysia } from 'elysia';
-import { prisma } from '../utils/prisma';
+import { getDatabase } from '../utils/prisma';
+import { users } from '@asepharyana/services';
+import { eq, desc } from 'drizzle-orm';
 
 export const apiRoutes = new Elysia({ prefix: '/api' })
   .get('/users', async () => {
-    // Get all users (excluding password)
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        isVerified: true,
-        createdAt: true,
-      },
-      take: 50, // Limit to 50 users
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const db = getDatabase();
+    const allUsers = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        emailVerified: users.emailVerified,
+        image: users.image,
+        role: users.role,
+      })
+      .from(users)
+      .limit(50)
+      .orderBy(desc(users.id));
 
     return {
       success: true,
-      count: users.length,
-      users,
+      count: allUsers.length,
+      users: allUsers,
     };
   })
   .get('/users/:id', async ({ params: { id }, set }) => {
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        isVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const db = getDatabase();
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        emailVerified: users.emailVerified,
+        image: users.image,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    const user = result[0];
 
     if (!user) {
       set.status = 404;

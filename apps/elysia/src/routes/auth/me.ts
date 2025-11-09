@@ -1,5 +1,7 @@
 import { Elysia } from 'elysia';
-import { prisma } from '../../utils/prisma';
+import { getDatabase } from '../../utils/prisma';
+import { users } from '@asepharyana/services';
+import { eq } from 'drizzle-orm';
 import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
 
@@ -13,32 +15,33 @@ export const meRoute = new Elysia()
 
     const token = authHeader.substring(7);
 
-    // Check if token is blacklisted
     const isBlacklisted = await isTokenBlacklisted(token);
     if (isBlacklisted) {
       set.status = 401;
       throw new Error('Token has been revoked');
     }
 
-    // Verify JWT
     const payload = await verifyJWT(token);
     if (!payload) {
       set.status = 401;
       throw new Error('Invalid token');
     }
 
-    // Fetch user using Prisma
-    const user = await prisma.user.findUnique({
-      where: { id: payload.user_id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        isVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const db = getDatabase();
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        emailVerified: users.emailVerified,
+        image: users.image,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.id, payload.user_id))
+      .limit(1);
+
+    const user = result[0];
 
     if (!user) {
       set.status = 404;

@@ -1,5 +1,8 @@
 import { Elysia, t } from 'elysia';
-import { prisma } from '../utils/prisma';
+import { getDatabase } from '../utils/prisma';
+import { posts, comments, likes } from '@asepharyana/services';
+import type { NewPost, NewComment, NewLike } from '@asepharyana/services';
+import { eq, desc, and } from 'drizzle-orm';
 import { verifyJWT } from '../utils/jwt';
 
 export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
@@ -19,35 +22,36 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      const posts = await prisma.post.findMany({
-        include: {
+      const db = getDatabase();
+
+      const postsList = await db.query.posts.findMany({
+        orderBy: desc(posts.created_at),
+        with: {
           user: {
-            select: {
+            columns: {
               id: true,
               name: true,
               email: true,
-              avatar: true,
+              image: true,
             },
           },
           comments: {
-            include: {
+            orderBy: desc(comments.created_at),
+            with: {
               user: {
-                select: {
+                columns: {
                   id: true,
                   name: true,
                   email: true,
-                  avatar: true,
+                  image: true,
                 },
               },
-            },
-            orderBy: {
-              createdAt: 'desc',
             },
           },
           likes: {
-            include: {
+            with: {
               user: {
-                select: {
+                columns: {
                   id: true,
                   name: true,
                   email: true,
@@ -55,15 +59,12 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
               },
             },
           },
-        },
-        orderBy: {
-          createdAt: 'desc',
         },
       });
 
       return {
         success: true,
-        posts,
+        posts: postsList,
       };
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -100,19 +101,28 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Content or image is required');
         }
 
-        const post = await prisma.post.create({
-          data: {
-            userId: payload.user_id,
-            content: content || '',
-            imageUrl,
-          },
-          include: {
+        const db = getDatabase();
+        const postId = `post_${Date.now()}_${payload.user_id}`;
+
+        const newPost: NewPost = {
+          id: postId,
+          userId: payload.user_id,
+          authorId: payload.user_id,
+          content: content || '',
+          image_url: imageUrl || null,
+        };
+
+        await db.insert(posts).values(newPost);
+
+        const createdPost = await db.query.posts.findFirst({
+          where: eq(posts.id, postId),
+          with: {
             user: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 email: true,
-                avatar: true,
+                image: true,
               },
             },
             comments: true,
@@ -122,7 +132,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
 
         return {
           success: true,
-          post,
+          post: createdPost,
         };
       } catch (error) {
         console.error('Error creating post:', error);
@@ -161,10 +171,14 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
 
         const { content, imageUrl } = body as { content: string; imageUrl?: string };
 
-        // Check if post belongs to user
-        const existingPost = await prisma.post.findUnique({
-          where: { id },
-        });
+        const db = getDatabase();
+        const existingPostResult = await db
+          .select()
+          .from(posts)
+          .where(eq(posts.id, id))
+          .limit(1);
+
+        const existingPost = existingPostResult[0];
 
         if (!existingPost) {
           set.status = 404;
@@ -176,19 +190,23 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Not authorized to edit this post');
         }
 
-        const post = await prisma.post.update({
-          where: { id },
-          data: {
+        await db
+          .update(posts)
+          .set({
             content,
-            imageUrl,
-          },
-          include: {
+            image_url: imageUrl || null,
+          })
+          .where(eq(posts.id, id));
+
+        const updatedPost = await db.query.posts.findFirst({
+          where: eq(posts.id, id),
+          with: {
             user: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 email: true,
-                avatar: true,
+                image: true,
               },
             },
             comments: true,
@@ -198,7 +216,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
 
         return {
           success: true,
-          post,
+          post: updatedPost,
         };
       } catch (error) {
         console.error('Error updating post:', error);
@@ -233,10 +251,14 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      // Check if post belongs to user
-      const existingPost = await prisma.post.findUnique({
-        where: { id },
-      });
+      const db = getDatabase();
+      const existingPostResult = await db
+        .select()
+        .from(posts)
+        .where(eq(posts.id, id))
+        .limit(1);
+
+      const existingPost = existingPostResult[0];
 
       if (!existingPost) {
         set.status = 404;
@@ -248,9 +270,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Not authorized to delete this post');
       }
 
-      await prisma.post.delete({
-        where: { id },
-      });
+      await db.delete(posts).where(eq(posts.id, id));
 
       return {
         success: true,
@@ -291,19 +311,28 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Comment content is required');
         }
 
-        const comment = await prisma.comment.create({
-          data: {
-            postId: id,
-            userId: payload.user_id,
-            content,
-          },
-          include: {
+        const db = getDatabase();
+        const commentId = `comment_${Date.now()}_${payload.user_id}`;
+        const newComment: NewComment = {
+          id: commentId,
+          postId: id,
+          userId: payload.user_id,
+          authorId: payload.user_id,
+          content,
+          created_at: new Date(),
+        };
+
+        await db.insert(comments).values(newComment);
+
+        const comment = await db.query.comments.findFirst({
+          where: eq(comments.id, commentId),
+          with: {
             user: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 email: true,
-                avatar: true,
+                image: true,
               },
             },
           },
@@ -349,10 +378,14 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
 
         const { content } = body as { content: string };
 
-        // Check if comment belongs to user
-        const existingComment = await prisma.comment.findUnique({
-          where: { id },
-        });
+        const db = getDatabase();
+        const existingCommentResult = await db
+          .select()
+          .from(comments)
+          .where(eq(comments.id, id))
+          .limit(1);
+
+        const existingComment = existingCommentResult[0];
 
         if (!existingComment) {
           set.status = 404;
@@ -364,16 +397,20 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Not authorized to edit this comment');
         }
 
-        const comment = await prisma.comment.update({
-          where: { id },
-          data: { content },
-          include: {
+        await db
+          .update(comments)
+          .set({ content })
+          .where(eq(comments.id, id));
+
+        const comment = await db.query.comments.findFirst({
+          where: eq(comments.id, id),
+          with: {
             user: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 email: true,
-                avatar: true,
+                image: true,
               },
             },
           },
@@ -415,10 +452,14 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      // Check if comment belongs to user
-      const existingComment = await prisma.comment.findUnique({
-        where: { id },
-      });
+      const db = getDatabase();
+      const existingCommentResult = await db
+        .select()
+        .from(comments)
+        .where(eq(comments.id, id))
+        .limit(1);
+
+      const existingComment = existingCommentResult[0];
 
       if (!existingComment) {
         set.status = 404;
@@ -430,9 +471,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Not authorized to delete this comment');
       }
 
-      await prisma.comment.delete({
-        where: { id },
-      });
+      await db.delete(comments).where(eq(comments.id, id));
 
       return {
         success: true,
@@ -464,15 +503,16 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      // Check if already liked
-      const existingLike = await prisma.like.findFirst({
-        where: {
-          postId: id,
-          userId: payload.user_id,
-        },
-      });
+      const db = getDatabase();
 
-      if (existingLike) {
+      // Check if already liked
+      const existingLikeResult = await db
+        .select()
+        .from(likes)
+        .where(and(eq(likes.postId, id), eq(likes.userId, payload.user_id)))
+        .limit(1);
+
+      if (existingLikeResult.length > 0) {
         set.status = 400;
         return {
           success: false,
@@ -480,14 +520,18 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         };
       }
 
-      const like = await prisma.like.create({
-        data: {
-          postId: id,
-          userId: payload.user_id,
-        },
-        include: {
+      const newLike: NewLike = {
+        postId: id,
+        userId: payload.user_id,
+      };
+
+      await db.insert(likes).values(newLike);
+
+      const like = await db.query.likes.findFirst({
+        where: and(eq(likes.postId, id), eq(likes.userId, payload.user_id)),
+        with: {
           user: {
-            select: {
+            columns: {
               id: true,
               name: true,
               email: true,
@@ -526,15 +570,16 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      // Find the like
-      const existingLike = await prisma.like.findFirst({
-        where: {
-          postId: id,
-          userId: payload.user_id,
-        },
-      });
+      const db = getDatabase();
 
-      if (!existingLike) {
+      // Find the like
+      const existingLikeResult = await db
+        .select()
+        .from(likes)
+        .where(and(eq(likes.postId, id), eq(likes.userId, payload.user_id)))
+        .limit(1);
+
+      if (existingLikeResult.length === 0) {
         set.status = 404;
         return {
           success: false,
@@ -542,11 +587,9 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         };
       }
 
-      await prisma.like.delete({
-        where: {
-          id: existingLike.id,
-        },
-      });
+      await db
+        .delete(likes)
+        .where(and(eq(likes.postId, id), eq(likes.userId, payload.user_id)));
 
       return {
         success: true,

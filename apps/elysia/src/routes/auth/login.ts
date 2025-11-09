@@ -1,9 +1,11 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { prisma } from '../../utils/prisma';
+import { getDatabase } from '../../utils/prisma';
+import { users, sessions } from '@asepharyana/services';
+import type { NewSession } from '@asepharyana/services';
+import { eq } from 'drizzle-orm';
 import { signJWT } from '../../utils/jwt';
 import { rateLimit } from '../../middleware/rateLimit';
-import { successResponse, errorResponse } from '../../utils/response';
 import { sanitizeEmail } from '../../utils/validation';
 
 interface LoginBody {
@@ -18,7 +20,7 @@ export interface LoginResponse {
     id: string;
     email: string;
     name: string | null;
-    isVerified: boolean;
+    emailVerified: Date | null;
   };
   accessToken: string;
   refreshToken: string;
@@ -37,63 +39,64 @@ export const loginRoute = new Elysia()
   .post(
     '/login',
     async ({ body, set }): Promise<LoginResponse> => {
+      const db = getDatabase();
       const { email, password, rememberMe } = body as LoginBody;
 
-      // Sanitize and validate email
       const sanitizedEmail = sanitizeEmail(email);
       if (!sanitizedEmail) {
         set.status = 400;
         throw new Error('Invalid email format');
       }
 
-      // Find user by email
-      const user = await prisma.user.findUnique({
-        where: { email: sanitizedEmail },
-      });
+      const result = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, sanitizedEmail))
+        .limit(1);
 
-      if (!user) {
+      const user = result[0];
+
+      if (!user || !user.password) {
         set.status = 401;
         throw new Error('Invalid credentials');
       }
 
-      // Verify password
       const passwordValid = await bcrypt.compare(password, user.password);
       if (!passwordValid) {
         set.status = 401;
         throw new Error('Invalid credentials');
       }
 
-      // Generate JWT tokens
-      const tokenExpiry = rememberMe ? 30 * 24 * 3600 : 24 * 3600; // 30 days or 24 hours
+      const tokenExpiry = rememberMe ? 30 * 24 * 3600 : 24 * 3600;
 
       const accessToken = await signJWT({
         user_id: user.id,
-        email: user.email,
+        email: user.email || '',
         name: user.name || '',
       }, tokenExpiry);
 
-      // Generate refresh token
-      const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const sessionToken = `session_${user.id}_${Date.now()}`;
 
-      // Store refresh token in database
-      const session = await prisma.session.create({
-        data: {
-          userId: user.id,
-          token: accessToken,
-          expiresAt: refreshExpiresAt,
-        },
-      });
+      const newSession: NewSession = {
+        id: `sess_${Date.now()}_${user.id}`,
+        userId: user.id,
+        sessionToken: sessionToken,
+        expires: refreshExpiresAt,
+      };
+
+      await db.insert(sessions).values(newSession);
 
       return {
         success: true,
         user: {
           id: user.id,
-          email: user.email,
+          email: user.email || '',
           name: user.name,
-          isVerified: user.isVerified,
+          emailVerified: user.emailVerified,
         },
         accessToken,
-        refreshToken: session.token,
+        refreshToken: sessionToken,
         tokenType: 'Bearer',
         expiresIn: tokenExpiry,
       };

@@ -1,8 +1,10 @@
 import { Elysia, t } from 'elysia';
-import { prisma } from '../../utils/prisma';
+import { getDatabase } from '../../utils/prisma';
+import { users, passwordResetTokens } from '@asepharyana/services';
+import type { NewPasswordResetToken } from '@asepharyana/services';
+import { eq } from 'drizzle-orm';
 import { sendPasswordResetEmail } from '../../utils/email';
 
-// Generate secure random token
 function generateToken(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -13,19 +15,17 @@ export const forgotPasswordRoute = new Elysia()
   .post(
     '/forgot-password',
     async ({ body }) => {
+      const db = getDatabase();
       const { email } = body as { email: string };
 
-      // Find user
-      const user = await prisma.user.findUnique({
-        where: { email },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      });
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
 
-      // Always return success to prevent email enumeration
+      const user = userResult[0];
+
       if (!user) {
         return {
           success: true,
@@ -33,21 +33,19 @@ export const forgotPasswordRoute = new Elysia()
         };
       }
 
-      // Generate reset token (secure random token)
       const resetToken = generateToken();
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-      // Create password reset token
-      await prisma.passwordResetToken.create({
-        data: {
-          userId: user.id,
-          token: resetToken,
-          expiresAt,
-          used: false,
-        },
-      });
+      const newToken: NewPasswordResetToken = {
+        id: `prt_${Date.now()}_${user.id}`,
+        userId: user.id,
+        token: resetToken,
+        expiresAt: expiresAt,
+        used: 0,
+      };
 
-      // Send reset email
+      await db.insert(passwordResetTokens).values(newToken);
+
       try {
         await sendPasswordResetEmail(email, user.name || 'User', resetToken);
       } catch (error) {

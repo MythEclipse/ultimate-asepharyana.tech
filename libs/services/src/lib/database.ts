@@ -1,11 +1,13 @@
-import { drizzle } from 'drizzle-orm/mysql2';
+import { drizzle, MySql2Database } from 'drizzle-orm/mysql2';
 import { createPool, Pool } from 'mysql2/promise';
 import * as schema from './schema';
 
-let dbInstance: ReturnType<typeof drizzle> | null = null;
+export type Database = MySql2Database<typeof schema>;
+
+let dbInstance: Database | null = null;
 let poolInstance: Pool | null = null;
 
-export function initializeDb(databaseUrl: string) {
+export function initializeDb(databaseUrl: string): Database {
   if (dbInstance) {
     return dbInstance;
   }
@@ -17,7 +19,7 @@ export function initializeDb(databaseUrl: string) {
   return dbInstance;
 }
 
-export function getDb() {
+export function getDb(): Database {
   if (!dbInstance) {
     throw new Error('Database not initialized. Call initializeDb first.');
   }
