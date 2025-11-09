@@ -84,7 +84,7 @@ jobs:
             bun install --production
 
             # Restart the application with PM2
-            pm2 startOrRestart apps/nextjs/nextjs.config.cjs
+            pm2 startOrRestart apps/nextjs/ecosystem.config.cjs
 
             echo "Next.js Deployment successful!"
           '

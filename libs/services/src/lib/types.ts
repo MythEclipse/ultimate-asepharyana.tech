@@ -1,102 +1,54 @@
-export interface Account {
-  id: string;
-  userId: string;
-  type: string;
-  provider: string;
-  providerAccountId: string;
-  refresh_token: string | null;
-  access_token: string | null;
-  expires_at: number | null;
-  token_type: string | null;
-  scope: string | null;
-  id_token: string | null;
-  session_state: string | null;
-}
+import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import * as schema from './schema';
 
-export interface Session {
-  id: string;
-  sessionToken: string;
-  userId: string;
-  expires: Date;
-}
+// Export schema for use in applications
+export * from './schema';
 
-export interface User {
-  id?: string;
-  name: string | null;
-  email: string | null;
-  emailVerified: Date | null;
-  image: string | null;
-  password: string | null;
-  refreshToken: string | null;
-  role: string;
-}
+// Infer types from schema
+export type User = InferSelectModel<typeof schema.users>;
+export type NewUser = InferInsertModel<typeof schema.users>;
 
-export interface Role {
-  id: string;
-  name: string;
-  description: string | null;
-}
+export type Account = InferSelectModel<typeof schema.accounts>;
+export type NewAccount = InferInsertModel<typeof schema.accounts>;
 
-export interface Permission {
-  id: string;
-  name: string;
-  description: string | null;
-}
+export type Session = InferSelectModel<typeof schema.sessions>;
+export type NewSession = InferInsertModel<typeof schema.sessions>;
 
-export interface UserRole {
-  userId: string;
-  roleId: string;
-}
+export type Role = InferSelectModel<typeof schema.roles>;
+export type NewRole = InferInsertModel<typeof schema.roles>;
 
-export interface RolePermission {
-  roleId: string;
-  permissionId: string;
-}
+export type Permission = InferSelectModel<typeof schema.permissions>;
+export type NewPermission = InferInsertModel<typeof schema.permissions>;
 
-export interface Comments {
-  id?: string;
-  userId: string;
-  postId: string;
-  authorId: string;
-  content: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
+export type UserRole = InferSelectModel<typeof schema.userRoles>;
+export type NewUserRole = InferInsertModel<typeof schema.userRoles>;
 
-export interface Likes {
-  userId: string;
-  postId: string;
-}
+export type RolePermission = InferSelectModel<typeof schema.rolePermissions>;
+export type NewRolePermission = InferInsertModel<typeof schema.rolePermissions>;
 
-export interface Posts {
-  id?: string;
-  userId: string;
-  content: string;
-  image_url: string | null;
-  created_at?: Date;
-  updated_at?: Date;
-  authorId: string;
-}
+export type Post = InferSelectModel<typeof schema.posts>;
+export type NewPost = InferInsertModel<typeof schema.posts>;
 
-export interface Replies {
-  id?: string;
-  userId: string;
-  commentId: string;
-  content: string;
-  created_at?: Date;
-}
+export type Comment = InferSelectModel<typeof schema.comments>;
+export type NewComment = InferInsertModel<typeof schema.comments>;
 
-export interface ChatMessage {
-  id?: string;
-  userId: string;
-  text: string;
-  email: string | null;
-  imageProfile: string | null;
-  imageMessage: string | null;
-  role: string | null;
-  timestamp?: Date;
-}
+export type Like = InferSelectModel<typeof schema.likes>;
+export type NewLike = InferInsertModel<typeof schema.likes>;
 
+export type Reply = InferSelectModel<typeof schema.replies>;
+export type NewReply = InferInsertModel<typeof schema.replies>;
+
+export type ChatMessage = InferSelectModel<typeof schema.chatMessages>;
+export type NewChatMessage = InferInsertModel<typeof schema.chatMessages>;
+
+// Legacy compatibility exports (mapped to new types)
+export type { User as Users };
+export type { Post as Posts };
+export type { Comment as Comments };
+export type { Like as Likes };
+export type { Reply as Replies };
+
+// Database type for backward compatibility
 export interface DB {
   Account: Account;
   Session: Session;
@@ -105,9 +57,9 @@ export interface DB {
   Permission: Permission;
   UserRole: UserRole;
   RolePermission: RolePermission;
-  Comments: Comments;
-  Likes: Likes;
-  Posts: Posts;
-  Replies: Replies;
+  Comments: Comment;
+  Likes: Like;
+  Posts: Post;
+  Replies: Reply;
   ChatMessage: ChatMessage;
 }

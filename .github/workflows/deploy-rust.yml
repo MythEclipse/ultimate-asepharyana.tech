@@ -128,7 +128,7 @@ jobs:
             bash scripts/2updateenv.sh
 
             # Restart the application with PM2
-            pm2 startOrRestart rust.config.cjs
+            pm2 startOrRestart ecosystem.config.cjs
 
             echo "Rust Deployment successful!"
           '

@@ -1,26 +1,18 @@
-import { Kysely, MysqlDialect, MysqlPool } from 'kysely';
-import { createPool } from 'mysql2';
-import { DB } from './types';
+import { drizzle } from 'drizzle-orm/mysql2';
+import { createPool, Pool } from 'mysql2/promise';
+import * as schema from './schema';
 
-let dbInstance: Kysely<DB> | null = null;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
+let poolInstance: Pool | null = null;
 
 export function initializeDb(databaseUrl: string) {
   if (dbInstance) {
     return dbInstance;
   }
 
-  const dialect = new MysqlDialect({
-    pool: async () =>
-      Promise.resolve(
-        createPool({
-          uri: databaseUrl,
-        }) as unknown as MysqlPool,
-      ),
-  });
+  poolInstance = createPool(databaseUrl);
 
-  dbInstance = new Kysely<DB>({
-    dialect,
-  });
+  dbInstance = drizzle(poolInstance, { schema, mode: 'default' });
 
   return dbInstance;
 }
@@ -30,4 +22,12 @@ export function getDb() {
     throw new Error('Database not initialized. Call initializeDb first.');
   }
   return dbInstance;
+}
+
+export async function closeDb() {
+  if (poolInstance) {
+    await poolInstance.end();
+    poolInstance = null;
+    dbInstance = null;
+  }
 }
