@@ -1,7 +1,7 @@
 name: Deploy ElysiaJS to VPS
 
 on:
-  workflow_dispatch: # Manual triggeraa
+  workflow_dispatch: # Manual triggeraaa
   push:
     branches:
       - main
@@ -101,7 +101,7 @@ jobs:
             cd ${{ secrets.VPS_TARGET_DIR }}
 
             # Pull the latest code (optional, as rsync is the source of truth)
-            git reset --hard origin/main || true
+            git reset --hard origin/main
 
             # Create logs directory
             mkdir -p apps/elysia/logs
