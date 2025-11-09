@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: 'pnpm',
+      script: 'bun',
       args: 'run start',
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       error_file: 'logs/nextjs-error.log',
