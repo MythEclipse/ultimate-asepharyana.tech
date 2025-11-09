@@ -75,15 +75,8 @@ const nextConfig = {
   },
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
-  nx: { svgr: false },
   // Force standalone output to skip static optimization
   output: 'standalone',
-  // Disable generating error pages
-  generateEtags: false,
-  webpack: (config) => {
-    config.resolve.alias['@/lib'] = path.join(__dirname, 'lib');
-    return config;
-  },
 };
 
 const plugins = [
