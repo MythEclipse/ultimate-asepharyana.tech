@@ -1,15 +1,19 @@
-import { PrismaClient } from '@prisma/client';
+import { initializeDb, getDb, closeDb } from '@asepharyana/services';
+import { config } from '../src/config';
 
 async function main() {
-  const prisma = new PrismaClient();
   try {
-    console.log('Connecting and listing tables...');
-    const rows = await prisma.$queryRaw<any[]>`SHOW TABLES`;
+    console.log('Connecting to database...');
+    initializeDb(config.databaseUrl);
+    const db = getDb();
+
+    console.log('Listing tables...');
+    const rows = await db.execute<any>('SHOW TABLES');
     console.log('Tables:', rows);
   } catch (err) {
     console.error('Error querying tables:', err);
   } finally {
-    await prisma.$disconnect();
+    await closeDb();
   }
 }
 

@@ -48,11 +48,23 @@ jobs:
         working-directory: apps/elysia
         run: bun install --frozen-lockfile
 
+      - name: Build Services Package (Drizzle)
+        run: bun run service:build
+
       - name: Sync Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+
+          # Sync libs/services (Drizzle schemas)
+          rsync -avz --progress -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            libs/services/dist/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/libs/services/dist/
+
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            libs/services/package.json \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/libs/services/package.json
 
           # Sync source files
           rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
@@ -73,16 +85,6 @@ jobs:
           rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             apps/elysia/.env \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/.env
-
-          # Sync Prisma schema and migrations
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/prisma/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/prisma/
-
-          # Sync Prisma config
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/prisma.config.ts \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/prisma.config.ts
 
           rm -f /tmp/deploy_key
 
@@ -106,12 +108,13 @@ jobs:
             # Create logs directory
             mkdir -p apps/elysia/logs
 
-            # Install production dependencies
+            # Build services package with Drizzle
+            cd ${{ secrets.VPS_TARGET_DIR }}
+            bun run service:build
+
+            # Install production dependencies for Elysia
             cd apps/elysia
             bun install --production
-
-            # Generate Prisma Client first (required before migration)
-            bunx prisma generate
 
             # Stop and delete old PM2 instance
             pm2 delete elysia-app || true
