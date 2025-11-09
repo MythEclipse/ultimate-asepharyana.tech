@@ -7,6 +7,8 @@ import { authRoutes } from './routes/auth';
 import { sosmedRoutes } from './routes/sosmed';
 import { chatRoutes } from './routes/chat';
 import { logger } from './middleware';
+import { errorHandler } from './middleware/errorHandler';
+import { rateLimit } from './middleware/rateLimit';
 import { config } from './config';
 import { connectDatabase, prisma } from './utils/prisma';
 import { getRedis } from './utils/redis';
@@ -33,6 +35,14 @@ process.on('SIGINT', async () => {
 });
 
 export const app = new Elysia()
+  .use(errorHandler) // Global error handling
+  .use(
+    rateLimit({
+      // Global rate limit: 100 requests per minute
+      max: 100,
+      window: 60 * 1000,
+    })
+  )
   .use(cors())
   .use(
     swagger({
@@ -89,24 +99,7 @@ export const app = new Elysia()
   .use(authRoutes)
   .use(apiRoutes)
   .use(sosmedRoutes)
-  .use(chatRoutes)
-  .onError(({ error, set }) => {
-    console.error('Error:', error);
-    set.status = 500;
-
-    // Handle different error types
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-        ? error
-        : 'Internal server error';
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  });
+  .use(chatRoutes);
 
 // Start the server
 initializeConnections().then(() => {

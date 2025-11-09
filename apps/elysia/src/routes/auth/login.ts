@@ -2,6 +2,9 @@ import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../utils/prisma';
 import { signJWT } from '../../utils/jwt';
+import { rateLimit } from '../../middleware/rateLimit';
+import { successResponse, errorResponse } from '../../utils/response';
+import { sanitizeEmail } from '../../utils/validation';
 
 interface LoginBody {
   email: string;
@@ -24,14 +27,28 @@ export interface LoginResponse {
 }
 
 export const loginRoute = new Elysia()
+  .use(
+    rateLimit({
+      max: 20, // 20 login attempts
+      window: 15 * 60 * 1000, // per 15 minutes
+      message: 'Too many login attempts, please try again in 15 minutes',
+    })
+  )
   .post(
     '/login',
     async ({ body, set }): Promise<LoginResponse> => {
-      const { email, password, rememberMe} = body as LoginBody;
+      const { email, password, rememberMe } = body as LoginBody;
+
+      // Sanitize and validate email
+      const sanitizedEmail = sanitizeEmail(email);
+      if (!sanitizedEmail) {
+        set.status = 400;
+        throw new Error('Invalid email format');
+      }
 
       // Find user by email
       const user = await prisma.user.findUnique({
-        where: { email },
+        where: { email: sanitizedEmail },
       });
 
       if (!user) {

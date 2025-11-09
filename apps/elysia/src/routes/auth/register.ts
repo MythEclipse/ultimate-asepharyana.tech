@@ -2,6 +2,8 @@ import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../utils/prisma';
 import { sendVerificationEmail } from '../../utils/email';
+import { rateLimit } from '../../middleware/rateLimit';
+import { sanitizeEmail, sanitizeString } from '../../utils/validation';
 
 // Generate secure random token
 function generateToken(): string {
@@ -50,10 +52,27 @@ function validatePassword(password: string): string | null {
 }
 
 export const registerRoute = new Elysia()
+  .use(
+    rateLimit({
+      max: 10, // 10 registration attempts
+      window: 60 * 60 * 1000, // per hour
+      message: 'Too many registration attempts, please try again later',
+    })
+  )
   .post(
     '/register',
     async ({ body, set }): Promise<RegisterResponse> => {
       const { email, name, password } = body as RegisterBody;
+
+      // Sanitize and validate email
+      const sanitizedEmail = sanitizeEmail(email);
+      if (!sanitizedEmail) {
+        set.status = 400;
+        throw new Error('Invalid email format');
+      }
+
+      // Sanitize name if provided
+      const sanitizedName = name ? sanitizeString(name) : null;
 
       // Validate password strength
       const passwordError = validatePassword(password);
@@ -64,7 +83,7 @@ export const registerRoute = new Elysia()
 
       // Check if email exists
       const existingUser = await prisma.user.findUnique({
-        where: { email },
+        where: { email: sanitizedEmail },
       });
 
       if (existingUser) {
@@ -78,8 +97,8 @@ export const registerRoute = new Elysia()
       // Create user
       const user = await prisma.user.create({
         data: {
-          email,
-          name: name || null,
+          email: sanitizedEmail,
+          name: sanitizedName,
           password: hashedPassword,
           isVerified: false,
         },
