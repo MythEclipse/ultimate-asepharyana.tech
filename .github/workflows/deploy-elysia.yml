@@ -110,9 +110,8 @@ jobs:
             cd apps/elysia
             bun install --production
 
-            # Run Prisma migrations and generate client
-            bun x prisma migrate deploy
-            bun x prisma generate
+            # Generate Prisma Client first (required before migration)
+            bunx prisma generate
 
             # Stop and delete old PM2 instance
             pm2 delete elysia-app || true
