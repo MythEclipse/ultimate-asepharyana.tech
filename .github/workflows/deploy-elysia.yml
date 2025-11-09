@@ -105,13 +105,20 @@ jobs:
             # Pull the latest code (optional, as rsync is the source of truth)
             git reset --hard origin/main
 
+            # Clean old node_modules with Prisma remnants
+            echo "Cleaning old dependencies..."
+            rm -rf node_modules
+            rm -rf apps/elysia/node_modules
+            rm -rf libs/services/node_modules
+
+            # Install all dependencies from root
+            echo "Installing dependencies..."
+            bun install
+
             # Build services package with Drizzle
+            echo "Building services..."
             cd ${{ secrets.VPS_TARGET_DIR }}
             bun run service:build
-
-            # Install production dependencies for Elysia
-            cd apps/elysia
-            bun install --production
 
             # Stop and delete old PM2 instance
             pm2 delete elysia-app || true
