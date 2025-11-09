@@ -105,9 +105,6 @@ jobs:
             # Pull the latest code (optional, as rsync is the source of truth)
             git reset --hard origin/main
 
-            # Create logs directory
-            mkdir -p apps/elysia/logs
-
             # Build services package with Drizzle
             cd ${{ secrets.VPS_TARGET_DIR }}
             bun run service:build

@@ -20,12 +20,6 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 4092,
       },
-      error_file: './apps/elysia/logs/error.log',
-      out_file: './apps/elysia/logs/out.log',
-      log_file: './apps/elysia/logs/combined.log',
-      time: true,
-      merge_logs: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
   ],
 };
