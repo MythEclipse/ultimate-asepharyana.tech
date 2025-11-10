@@ -39,6 +39,10 @@ jobs:
           fi
 
       - name: Install Dependencies
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
         run: bun install
 
       - name: Build Services Package (Drizzle)
@@ -90,6 +94,17 @@ jobs:
             # Remove bun lockfile to force fresh install
             rm -f bun.lockb
 
+            # Clean browser caches
+            echo "Cleaning browser caches..."
+            rm -rf ~/.cache/puppeteer
+            rm -rf ~/.cache/ms-playwright
+
+            # Set environment variables to skip browser downloads
+            export PUPPETEER_SKIP_DOWNLOAD=true
+            export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+            export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
             # Install all dependencies with force
             echo "Installing dependencies..."
             bun install --force
@@ -99,7 +114,8 @@ jobs:
             bunx nx build services
 
             # Restart the application with PM2
-            pm2 startOrRestart apps/nextjs/ecosystem.config.cjs
+            export VPS_TARGET_DIR=${{ secrets.VPS_TARGET_DIR }}
+            pm2 startOrRestart apps/nextjs/ecosystem.config.cjs --env production
 
             echo "Next.js Deployment successful!"
           '

@@ -3,10 +3,9 @@ module.exports = {
   apps: [
     {
       name: 'elysia-app',
-      script: 'bun',
-      args: 'run dist/index.js',
-      cwd: './apps/elysia',
-      interpreter: 'none',
+      script: 'dist/index.js',
+      interpreter: 'bun',
+      cwd: process.env.VPS_TARGET_DIR ? `${process.env.VPS_TARGET_DIR}/apps/elysia` : '/home/asephs/asepharyana.tech/apps/elysia',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

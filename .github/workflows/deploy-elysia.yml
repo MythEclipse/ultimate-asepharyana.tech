@@ -148,7 +148,8 @@ jobs:
 
             # Start the application with PM2 (runs from dist folder)
             cd ${{ secrets.VPS_TARGET_DIR }}
-            pm2 start apps/elysia/ecosystem.config.cjs
+            export VPS_TARGET_DIR=${{ secrets.VPS_TARGET_DIR }}
+            pm2 start apps/elysia/ecosystem.config.cjs --env production
             pm2 save
 
             echo "ElysiaJS Deployment successful!"

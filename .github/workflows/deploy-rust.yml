@@ -128,7 +128,9 @@ jobs:
             bash scripts/2updateenv.sh
 
             # Restart the application with PM2
-            pm2 startOrRestart ecosystem.config.cjs
+            export VPS_TARGET_DIR=${{ secrets.VPS_TARGET_DIR }}
+            cd ${{ secrets.VPS_TARGET_DIR }}
+            pm2 startOrRestart apps/rust/ecosystem.config.cjs --env production
 
             echo "Rust Deployment successful!"
           '
