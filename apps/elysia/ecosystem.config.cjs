@@ -4,7 +4,7 @@ module.exports = {
     {
       name: 'elysia-app',
       script: 'bun',
-      args: 'run src/index.ts',
+      args: 'run dist/index.js',
       cwd: './apps/elysia',
       interpreter: 'none',
       instances: 1,

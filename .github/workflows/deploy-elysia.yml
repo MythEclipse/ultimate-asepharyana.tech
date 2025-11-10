@@ -1,7 +1,7 @@
 name: Deploy ElysiaJS to VPS
 
 on:
-  workflow_dispatch: # Manual triggeraaaaa
+  workflow_dispatch: # Manual triggeraaaaaa
   push:
     branches:
       - main
@@ -51,6 +51,10 @@ jobs:
       - name: Build Services Package (Drizzle)
         run: bun run service:build
 
+      - name: Build ElysiaJS Application
+        working-directory: apps/elysia
+        run: bun run build
+
       - name: Sync Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -66,7 +70,12 @@ jobs:
             libs/services/package.json \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/libs/services/package.json
 
-          # Sync source files
+          # Sync build output (dist folder)
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/elysia/dist/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/dist/
+
+          # Sync source files (for reference/debugging)
           rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             apps/elysia/src/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/src/
@@ -118,15 +127,13 @@ jobs:
             echo "Installing dependencies..."
             bun install --force
 
-            # Build services package with Drizzle
-            echo "Building services..."
-            cd ${{ secrets.VPS_TARGET_DIR }}
-            bunx nx build services
+            # Note: Build is already done in GitHub Actions
+            # The dist folder has been synced, so we don't need to build again
 
             # Stop and delete old PM2 instance
             pm2 delete elysia-app || true
 
-            # Start the application with PM2
+            # Start the application with PM2 (runs from dist folder)
             cd ${{ secrets.VPS_TARGET_DIR }}
             pm2 start apps/elysia/ecosystem.config.cjs
             pm2 save
