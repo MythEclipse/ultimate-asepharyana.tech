@@ -136,12 +136,12 @@ jobs:
             export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
             export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-            # Install all dependencies from root
+            # Install all dependencies from root (allow optional failures)
             echo "Installing dependencies..."
-            bun install --no-cache
+            bun install --no-cache || bun install --ignore-scripts --no-cache
 
             # Note: Build is already done in GitHub Actions
-            # The dist folder has been synced, so we don't need to build again
+            # The dist folder has been synced, so we don not need to build again
 
             # Stop and delete old PM2 instance
             pm2 delete elysia-app || true

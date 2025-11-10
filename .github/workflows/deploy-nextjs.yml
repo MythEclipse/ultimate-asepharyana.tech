@@ -105,9 +105,9 @@ jobs:
             export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
             export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-            # Install all dependencies with force
+            # Install all dependencies (allow optional failures)
             echo "Installing dependencies..."
-            bun install --force
+            bun install --no-cache || bun install --ignore-scripts --no-cache
 
             # Build services
             echo "Building services..."
