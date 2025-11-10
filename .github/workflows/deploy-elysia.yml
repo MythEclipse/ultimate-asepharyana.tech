@@ -1,7 +1,7 @@
 name: Deploy ElysiaJS to VPS
 
 on:
-  workflow_dispatch: # Manual triggeraaaaaaa
+  workflow_dispatch: # Manual triggeraaaaaaaa
   push:
     branches:
       - main

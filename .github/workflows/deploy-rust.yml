@@ -1,7 +1,7 @@
 name: Deploy Rust to VPS
 
 on:
-  workflow_dispatch: # Manual triggeraaa
+  workflow_dispatch: # Manual triggeraaaa
   push:
     branches:
       - main
