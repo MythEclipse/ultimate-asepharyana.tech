@@ -20,13 +20,19 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.2.18
+          bun-version: latest
+
+      - name: Get Bun cache directory
+        id: bun-cache
+        shell: bash
+        run: |
+          echo "BUN_INSTALL_CACHE_DIR=$(bun pm cache)" >> $GITHUB_OUTPUT
 
       - name: Setup Bun cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          path: ${{ steps.bun-cache.outputs.BUN_INSTALL_CACHE_DIR }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('apps/nextjs/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
@@ -50,73 +56,78 @@ jobs:
 
       - name: Build Next.js
         working-directory: apps/nextjs
-        run: npm run build
+        run: bun run build
 
       - name: Sync Build Artifacts to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+
+          # Sync libs/services (Drizzle schemas)
+          rsync -avz --progress -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            libs/services/dist/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/libs/services/dist/
+
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            libs/services/package.json \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/libs/services/package.json
+
+          # Sync build output (.next folder)
           rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             apps/nextjs/.next/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.next/
+
+          # Sync package.json
           rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             apps/nextjs/package.json \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/package.json
+
+          # Sync ecosystem config
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/nextjs/ecosystem.config.cjs \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/ecosystem.config.cjs
+
+          # Sync .env file
           rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             apps/nextjs/.env.production \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/nextjs/.env.production
+
           rm -f /tmp/deploy_key
 
-      - name: Deploy on VPS
+      - name: Install dependencies on VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
-            # Set up the environment
             export PATH=$PATH:/home/asephs/.bun/bin
-            export PATH="$HOME/.cargo/bin:$PATH"
-            export PATH="$HOME/.nvm/versions/node/v22.17.1/bin:$PATH"
-
-            # Navigate to the app directory
-            cd ${{ secrets.VPS_TARGET_DIR }}
-
-            # Pull the latest code (optional, as rsync is the source of truth for build artifacts)
-            git reset --hard origin/main
-
-            # Clean old node_modules (force remove)
-            echo "Cleaning old dependencies..."
-            rm -rf node_modules/.bin
-            rm -rf apps/nextjs/node_modules
-            rm -rf libs/services/node_modules
-
-            # Remove bun lockfile to force fresh install
-            rm -f bun.lockb
-
-            # Clean browser caches
-            echo "Cleaning browser caches..."
-            rm -rf ~/.cache/puppeteer
-            rm -rf ~/.cache/ms-playwright
-
-            # Set environment variables to skip browser downloads
             export PUPPETEER_SKIP_DOWNLOAD=true
             export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
             export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-            export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-            # Install all dependencies (allow optional failures)
+            cd ${{ secrets.VPS_TARGET_DIR }}
             echo "Installing dependencies..."
             bun install --no-cache || bun install --ignore-scripts --no-cache
+          '
+          rm -f /tmp/deploy_key
 
-            # Build services
-            echo "Building services..."
-            bunx nx build services
-
-            # Restart the application with PM2
-            export VPS_TARGET_DIR=${{ secrets.VPS_TARGET_DIR }}
-            pm2 startOrRestart apps/nextjs/ecosystem.config.cjs --env production
-
-            echo "Next.js Deployment successful!"
+      - name: Restart NextJS with PM2
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            export PATH=$PATH:/home/asephs/.bun/bin
+            cd ${{ secrets.VPS_TARGET_DIR }}
+            
+            # Stop existing PM2 process
+            pm2 delete asepharyana.tech || true
+            
+            # Start NextJS with PM2
+            pm2 start apps/nextjs/ecosystem.config.cjs --env production
+            pm2 save
+            
+            echo "✅ Next.js deployment successful!"
           '
           rm -f /tmp/deploy_key
