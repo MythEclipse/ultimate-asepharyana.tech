@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
 import { getDatabase } from '../../utils/prisma';
 import { users, passwordResetTokens } from '@asepharyana/services';
-import { eq } from 'drizzle-orm';
+import { eq } from '@asepharyana/services';
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) {

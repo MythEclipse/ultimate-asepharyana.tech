@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { getDatabase } from '../../utils/prisma';
 import { users, sessions } from '@asepharyana/services';
 import type { NewSession } from '@asepharyana/services';
-import { eq } from 'drizzle-orm';
+import { eq } from '@asepharyana/services';
 import { signJWT } from '../../utils/jwt';
 import { rateLimit } from '../../middleware/rateLimit';
 import { sanitizeEmail } from '../../utils/validation';

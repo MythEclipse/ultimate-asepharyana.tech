@@ -15,28 +15,44 @@ const distDir = join(__dirname, 'dist');
 
 // Fix index.js
 const indexJsPath = join(distDir, 'index.js');
-const indexJsContent = readFileSync(indexJsPath, 'utf-8');
+let indexJsContent = readFileSync(indexJsPath, 'utf-8');
 
 if (!indexJsContent.includes('./src/lib/types.js')) {
-  const fixedContent = indexJsContent.replace(
+  indexJsContent = indexJsContent.replace(
     /export \* from '\.\/src\/lib\/database\.js';/,
     "export * from './src/lib/database.js';\nexport * from './src/lib/types.js';"
   );
-  writeFileSync(indexJsPath, fixedContent, 'utf-8');
-  console.log('✅ Fixed dist/index.js exports');
 }
+
+if (!indexJsContent.includes('drizzle-orm')) {
+  indexJsContent = indexJsContent.replace(
+    /(export \* from '\.\/src\/lib\/types\.js';)/,
+    "$1\n\n// Re-export commonly used drizzle-orm operators\nexport { eq, ne, gt, gte, lt, lte, isNull, isNotNull, inArray, notInArray, exists, notExists, between, notBetween, like, notLike, ilike, notIlike, and, or, not, sql, desc, asc } from 'drizzle-orm';"
+  );
+}
+
+writeFileSync(indexJsPath, indexJsContent, 'utf-8');
+console.log('✅ Fixed dist/index.js exports');
 
 // Fix index.d.ts
 const indexDtsPath = join(distDir, 'index.d.ts');
-const indexDtsContent = readFileSync(indexDtsPath, 'utf-8');
+let indexDtsContent = readFileSync(indexDtsPath, 'utf-8');
 
 if (!indexDtsContent.includes('./src/lib/types.js')) {
-  const fixedContent = indexDtsContent.replace(
+  indexDtsContent = indexDtsContent.replace(
     /export \* from '\.\/src\/lib\/database\.js';/,
     "export * from './src/lib/database.js';\nexport * from './src/lib/types.js';"
   );
-  writeFileSync(indexDtsPath, fixedContent, 'utf-8');
-  console.log('✅ Fixed dist/index.d.ts exports');
 }
+
+if (!indexDtsContent.includes('drizzle-orm')) {
+  indexDtsContent = indexDtsContent.replace(
+    /(export \* from '\.\/src\/lib\/types\.js';)/,
+    "$1\nexport { eq, ne, gt, gte, lt, lte, isNull, isNotNull, inArray, notInArray, exists, notExists, between, notBetween, like, notLike, ilike, notIlike, and, or, not, sql, desc, asc } from 'drizzle-orm';"
+  );
+}
+
+writeFileSync(indexDtsPath, indexDtsContent, 'utf-8');
+console.log('✅ Fixed dist/index.d.ts exports');
 
 console.log('✅ Export fix completed successfully');

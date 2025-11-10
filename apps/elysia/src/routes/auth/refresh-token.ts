@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { getDatabase } from '../../utils/prisma';
 import { users, sessions } from '@asepharyana/services';
 import type { NewSession } from '@asepharyana/services';
-import { eq } from 'drizzle-orm';
+import { eq } from '@asepharyana/services';
 import { signJWT } from '../../utils/jwt';
 
 export const refreshTokenRoute = new Elysia()

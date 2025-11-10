@@ -1,7 +1,6 @@
 import { Elysia } from 'elysia';
 import { getDatabase } from '../utils/prisma';
-import { users } from '@asepharyana/services';
-import { eq, desc } from 'drizzle-orm';
+import { users, eq, desc } from '@asepharyana/services';
 
 export const apiRoutes = new Elysia({ prefix: '/api' })
   .get('/users', async () => {

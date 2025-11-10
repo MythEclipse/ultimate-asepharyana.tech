@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { getDatabase } from '../../utils/prisma';
 import { users } from '@asepharyana/services';
-import { eq } from 'drizzle-orm';
+import { eq } from '@asepharyana/services';
 import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
 

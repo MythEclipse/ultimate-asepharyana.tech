@@ -1,8 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { getDatabase } from '../../utils/prisma';
-import { users, passwordResetTokens } from '@asepharyana/services';
+import { users, passwordResetTokens, eq } from '@asepharyana/services';
 import type { NewPasswordResetToken } from '@asepharyana/services';
-import { eq } from 'drizzle-orm';
 import { sendPasswordResetEmail } from '../../utils/email';
 
 function generateToken(): string {

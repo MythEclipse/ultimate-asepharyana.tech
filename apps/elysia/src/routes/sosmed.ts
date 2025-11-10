@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { getDatabase } from '../utils/prisma';
 import { posts, comments, likes } from '@asepharyana/services';
 import type { NewPost, NewComment, NewLike } from '@asepharyana/services';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and } from '@asepharyana/services';
 import { verifyJWT } from '../utils/jwt';
 
 export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })

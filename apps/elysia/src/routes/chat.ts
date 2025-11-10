@@ -8,7 +8,7 @@ import {
   NewChatRoom,
   NewChatRoomMember,
 } from '@asepharyana/services';
-import { eq, and } from 'drizzle-orm';
+import { eq, and } from '@asepharyana/services';
 
 export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   // Get all chat rooms

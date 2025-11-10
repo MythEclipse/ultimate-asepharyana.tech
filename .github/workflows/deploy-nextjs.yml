@@ -85,7 +85,7 @@ jobs:
             # Pull the latest code (optional, as rsync is the source of truth for build artifacts)
             git reset --hard origin/main
 
-            # Clean old node_modules to remove Prisma remnants (force remove)
+            # Clean old node_modules (force remove)
             echo "Cleaning old dependencies..."
             rm -rf node_modules/.bin
             rm -rf apps/nextjs/node_modules

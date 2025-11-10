@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { getDatabase } from '../../utils/prisma';
 import { users, emailVerificationTokens } from '@asepharyana/services';
-import { eq } from 'drizzle-orm';
+import { eq } from '@asepharyana/services';
 
 export const verifyRoute = new Elysia()
   .get(
