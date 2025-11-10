@@ -11,5 +11,11 @@ cache = "~/.bun/install/cache"
 # Logging level
 loglevel = "info"
 
+# Skip browser downloads for Puppeteer and Playwright
+[install.env]
+PUPPETEER_SKIP_DOWNLOAD = "true"
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+
 [install.scopes]
 # Add any private registries here if needed

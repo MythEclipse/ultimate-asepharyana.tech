@@ -46,6 +46,10 @@ jobs:
 
       - name: Install Dependencies
         working-directory: apps/elysia
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
         run: bun install --frozen-lockfile
 
       - name: Build Services Package (Drizzle)
@@ -114,18 +118,27 @@ jobs:
             # Pull the latest code (optional, as rsync is the source of truth)
             git reset --hard origin/main
 
-            # Clean old node_modules with Prisma remnants (force remove)
+            # Clean old node_modules completely (force remove)
             echo "Cleaning old dependencies..."
-            rm -rf node_modules/.bin
-            rm -rf apps/elysia/node_modules
-            rm -rf libs/services/node_modules
+            rm -rf node_modules
+            rm -rf apps/*/node_modules
+            rm -rf libs/*/node_modules
+            rm -rf bun.lockb
 
-            # Remove bun lockfile to force fresh install
-            rm -f bun.lockb
+            # Clean Puppeteer/Playwright cache
+            echo "Cleaning browser caches..."
+            rm -rf ~/.cache/puppeteer
+            rm -rf ~/.cache/ms-playwright
 
-            # Install all dependencies from root with force
+            # Set environment variables to skip browser downloads
+            export PUPPETEER_SKIP_DOWNLOAD=true
+            export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+            export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
+            # Install all dependencies from root
             echo "Installing dependencies..."
-            bun install --force
+            bun install --no-cache
 
             # Note: Build is already done in GitHub Actions
             # The dist folder has been synced, so we don't need to build again
