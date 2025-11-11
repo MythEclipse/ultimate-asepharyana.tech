@@ -9,6 +9,7 @@ pub struct EmailConfig {
     pub smtp_port: u16,
     pub smtp_username: String,
     pub smtp_password: String,
+    pub smtp_secure: bool, // true for SSL (port 465), false for STARTTLS (port 587)
     pub from_email: String,
     pub from_name: String,
 }
@@ -17,21 +18,29 @@ impl EmailConfig {
     pub fn from_env() -> Self {
         EmailConfig {
             smtp_host: CONFIG_MAP
-                .get("SMTP_HOST")
+                .get("MAIL_HOST")
+                .or_else(|| CONFIG_MAP.get("SMTP_HOST"))
                 .cloned()
                 .unwrap_or_else(|| "smtp.gmail.com".to_string()),
             smtp_port: CONFIG_MAP
-                .get("SMTP_PORT")
+                .get("MAIL_PORT")
+                .or_else(|| CONFIG_MAP.get("SMTP_PORT"))
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(587),
             smtp_username: CONFIG_MAP
-                .get("SMTP_USERNAME")
+                .get("MAIL_USER")
+                .or_else(|| CONFIG_MAP.get("SMTP_USERNAME"))
                 .cloned()
                 .unwrap_or_else(|| "noreply@example.com".to_string()),
             smtp_password: CONFIG_MAP
-                .get("SMTP_PASSWORD")
+                .get("MAIL_PASSWORD")
+                .or_else(|| CONFIG_MAP.get("SMTP_PASSWORD"))
                 .cloned()
                 .unwrap_or_default(),
+            smtp_secure: CONFIG_MAP
+                .get("MAIL_SECURE")
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(false),
             from_email: CONFIG_MAP
                 .get("FROM_EMAIL")
                 .cloned()
@@ -390,12 +399,22 @@ impl EmailService {
             self.config.smtp_password.clone(),
         );
 
-        // Build SMTP transport with TLS
-        let mailer = SmtpTransport::relay(&self.config.smtp_host)
-            .map_err(|e| AppError::Other(format!("Failed to create SMTP transport: {}", e)))?
-            .credentials(creds)
-            .port(self.config.smtp_port)
-            .build();
+        // Build SMTP transport with SSL or STARTTLS based on configuration
+        let mailer = if self.config.smtp_secure {
+            // Use direct SSL connection (port 465)
+            SmtpTransport::relay(&self.config.smtp_host)
+                .map_err(|e| AppError::Other(format!("Failed to create SMTP transport: {}", e)))?
+                .credentials(creds)
+                .port(self.config.smtp_port)
+                .build()
+        } else {
+            // Use STARTTLS (port 587)
+            SmtpTransport::starttls_relay(&self.config.smtp_host)
+                .map_err(|e| AppError::Other(format!("Failed to create SMTP transport: {}", e)))?
+                .credentials(creds)
+                .port(self.config.smtp_port)
+                .build()
+        };
 
         // Send the email
         mailer
