@@ -89,7 +89,7 @@ pub async fn update_profile(
         )
         .bind(new_username)
         .bind(&claims.user_id)
-        .fetch_one(&state.db)
+        .fetch_one(&state.sqlx_pool)
         .await?;
 
         if username_exists {
@@ -135,7 +135,7 @@ pub async fn update_profile(
     }
     query_builder = query_builder.bind(now).bind(&claims.user_id);
 
-    query_builder.execute(&state.db).await?;
+    query_builder.execute(&state.sqlx_pool).await?;
 
     // Fetch updated user
     let user: User = sqlx::query_as(
@@ -146,7 +146,7 @@ pub async fn update_profile(
         "#,
     )
     .bind(&claims.user_id)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     Ok(Json(UpdateProfileResponse {

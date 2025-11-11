@@ -58,3 +58,4 @@ async fn websocket_connection(socket: WebSocket, state: Arc<AppState>) {
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router.route("/ws/chat", get(chat_websocket_handler))
 }
+

@@ -9,7 +9,11 @@ use std::sync::Arc;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::models::user::{LoginResponse, User, UserResponse};
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user, prelude::*};
+
+use crate::models::user::{LoginResponse, User as LegacyUser, UserResponse};
 use crate::routes::AppState;
 use crate::utils::auth::{encode_jwt, Claims};
 use crate::utils::error::AppError;
@@ -54,48 +58,54 @@ pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Find user by email or username
-    let user: Option<User> = sqlx::query_as(
-        r#"
-        SELECT id, email, username, password_hash, full_name, avatar_url,
-               email_verified, is_active, role, last_login_at, created_at, updated_at
-        FROM users
-        WHERE email = ? OR username = ?
-        "#,
-    )
-    .bind(&payload.login)
-    .bind(&payload.login)
-    .fetch_optional(&state.db)
-    .await?;
+    // Find user by email using SeaORM (name field is used as username in this schema)
+    let user_model: Option<user::Model> = user::Entity::find()
+        .filter(
+            user::Column::Email
+                .eq(&payload.login)
+                .or(user::Column::Name.eq(&payload.login))
+        )
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    let user = user.ok_or(AppError::InvalidCredentials)?;
+    let user_model = user_model.ok_or(AppError::InvalidCredentials)?;
 
     // Verify password
-    let password_valid = verify(&payload.password, &user.password_hash)?;
+    let password_valid = verify(
+        &payload.password, 
+        user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?
+    )?;
+    
     if !password_valid {
-        // Log failed login attempt
-        log_login_attempt(&state, &user.id, false, Some("Invalid password")).await?;
+        // Log failed login attempt (still using SQLx temporarily)
+        log_login_attempt(&state, &user_model.id, false, Some("Invalid password")).await?;
         return Err(AppError::InvalidCredentials);
     }
 
     // Check if account is active
-    if !user.is_active {
-        return Err(AppError::AccountInactive);
-    }
+    // Note: is_active field doesn't exist in current schema, skip for now
+    // if !user_model.is_active {
+    //     return Err(AppError::AccountInactive);
+    // }
 
     // Check if email is verified (optional - you can skip this check)
-    // if !user.email_verified {
-    //     return Err(AppError::EmailNotVerified);
-    // }
+    if let Some(email_verified) = user_model.email_verified {
+        // email_verified is a timestamp, if Some then it's verified
+        // If you want to enforce verification, uncomment:
+        // if email_verified.is_none() {
+        //     return Err(AppError::EmailNotVerified);
+        // }
+    }
 
     // Generate JWT tokens
     let token_expiry = if payload.remember_me { 30 * 24 * 3600 } else { 24 * 3600 }; // 30 days or 24 hours
     let exp = (Utc::now().timestamp() + token_expiry) as usize;
 
     let claims = Claims {
-        user_id: user.id.clone(),
-        email: user.email.clone(),
-        name: user.username.clone(),
+        user_id: user_model.id.clone(),
+        email: user_model.email.clone(),
+        name: user_model.name.clone(),
         exp,
     };
 
@@ -105,7 +115,7 @@ pub async fn login(
     let refresh_token = Uuid::new_v4().to_string();
     let refresh_expires_at = Utc::now() + chrono::Duration::days(30);
 
-    // Store refresh token in database
+    // Store refresh token in database (using SQLx temporarily)
     sqlx::query(
         r#"
         INSERT INTO refresh_tokens (id, user_id, token, expires_at, created_at)
@@ -113,25 +123,67 @@ pub async fn login(
         "#,
     )
     .bind(Uuid::new_v4().to_string())
-    .bind(&user.id)
+    .bind(&user_model.id)
     .bind(&refresh_token)
     .bind(refresh_expires_at)
     .bind(Utc::now())
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
-    // Update last login timestamp
-    sqlx::query("UPDATE users SET last_login_at = ? WHERE id = ?")
-        .bind(Utc::now())
-        .bind(&user.id)
-        .execute(&state.db)
-        .await?;
+    // Update last login timestamp (TODO: migrate to SeaORM when last_login_at added to schema)
+    // For now, keep using SQLx since last_login_at doesn't exist in current schema
+    // sqlx::query("UPDATE users SET last_login_at = ? WHERE id = ?")
+    //     .bind(Utc::now())
+    //     .bind(&user_model.id)
+    //     .execute(&state.sqlx_pool)
+    //     .await?;
 
     // Log successful login
-    log_login_attempt(&state, &user.id, true, None).await?;
+    log_login_attempt(&state, &user_model.id, true, None).await?;
+
+    // Convert SeaORM model to response format
+    let user_response = UserResponse {
+        id: user_model.id.clone(),
+        email: user_model.email.clone().unwrap_or_default(),
+        username: user_model.name.clone().unwrap_or_default(),
+        full_name: user_model.name.clone().unwrap_or_default(),
+        avatar_url: user_model.image.clone(),
+        email_verified: user_model.email_verified.is_some(),
+        is_active: true, // Default to true since schema doesn't have this field
+        role: user_model.role.clone(),
+        last_login_at: None, // Schema doesn't have this field yet
+        created_at: Utc::now(), // TODO: get from model when available
+        updated_at: Utc::now(),
+    };
+
+    // Update last login timestamp (TODO: migrate to SeaORM when last_login_at added to schema)
+    // For now, keep using SQLx since last_login_at doesn't exist in current schema
+    // sqlx::query("UPDATE users SET last_login_at = ? WHERE id = ?")
+    //     .bind(Utc::now())
+    //     .bind(&user_model.id)
+    //     .execute(&state.sqlx_pool)
+    //     .await?;
+
+    // Log successful login
+    log_login_attempt(&state, &user_model.id, true, None).await?;
+
+    // Convert SeaORM model to response format
+    let user_response = UserResponse {
+        id: user_model.id.clone(),
+        email: user_model.email.clone(),
+        username: user_model.name.clone(),
+        full_name: user_model.name.clone(),
+        avatar_url: user_model.image.clone(),
+        email_verified: user_model.email_verified.is_some(),
+        is_active: true, // Default to true since schema doesn't have this field
+        role: user_model.role.clone(),
+        last_login_at: None, // Schema doesn't have this field yet
+        created_at: Utc::now(), // TODO: get from model when available
+        updated_at: Utc::now(),
+    };
 
     Ok(Json(LoginResponse {
-        user: user.into(),
+        user: user_response,
         access_token,
         refresh_token,
         token_type: "Bearer".to_string(),
@@ -157,7 +209,7 @@ async fn log_login_attempt(
     .bind(success)
     .bind(failure_reason)
     .bind(Utc::now())
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     Ok(())

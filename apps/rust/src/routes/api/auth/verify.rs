@@ -74,7 +74,7 @@ pub async fn verify(
         "#,
     )
     .bind(&query.token)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     let (token_id, user_id, expires_at) = token_data.ok_or(AppError::InvalidToken)?;
@@ -89,7 +89,7 @@ pub async fn verify(
         "SELECT email_verified FROM users WHERE id = ?"
     )
     .bind(&user_id)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     if already_verified {
@@ -106,13 +106,13 @@ pub async fn verify(
     sqlx::query("UPDATE users SET email_verified = TRUE, updated_at = ? WHERE id = ?")
         .bind(Utc::now())
         .bind(&user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Delete used verification token
     sqlx::query("DELETE FROM email_verification_tokens WHERE id = ?")
         .bind(&token_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Get user info for welcome email
@@ -120,7 +120,7 @@ pub async fn verify(
         "SELECT email, COALESCE(full_name, username) as name FROM users WHERE id = ?"
     )
     .bind(&user_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     // Send welcome email
@@ -163,7 +163,7 @@ pub async fn resend_verification(
         "SELECT id, email_verified FROM users WHERE email = ?"
     )
     .bind(&payload.email)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     let (user_id, email_verified) = user_data.ok_or(AppError::UserNotFound)?;
@@ -176,7 +176,7 @@ pub async fn resend_verification(
     // Delete old verification tokens for this user
     sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = ?")
         .bind(&user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Generate new verification token
@@ -194,7 +194,7 @@ pub async fn resend_verification(
     .bind(&verification_token)
     .bind(expires_at)
     .bind(Utc::now())
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     // Get user info for email
@@ -202,7 +202,7 @@ pub async fn resend_verification(
         "SELECT COALESCE(full_name, username) FROM users WHERE id = ?"
     )
     .bind(&user_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     // Send verification email
@@ -229,3 +229,4 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
         .route(ENDPOINT_PATH, get(verify))
         .route("/api/auth/verify/resend", post(resend_verification))
 }
+

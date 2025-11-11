@@ -58,7 +58,7 @@ pub async fn refresh(
         "#,
     )
     .bind(&payload.refresh_token)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     let (user_id, expires_at, revoked) = token_data.ok_or(AppError::InvalidToken)?;
@@ -78,7 +78,7 @@ pub async fn refresh(
         "SELECT email, username FROM users WHERE id = ? AND is_active = TRUE"
     )
     .bind(&user_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     let (email, username) = user_data.ok_or(AppError::UserNotFound)?;
@@ -105,7 +105,7 @@ pub async fn refresh(
         "UPDATE refresh_tokens SET revoked = TRUE WHERE token = ?"
     )
     .bind(&payload.refresh_token)
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     // Store new refresh token
@@ -120,7 +120,7 @@ pub async fn refresh(
     .bind(&new_refresh_token)
     .bind(refresh_expires_at)
     .bind(Utc::now())
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     Ok(Json(RefreshResponse {

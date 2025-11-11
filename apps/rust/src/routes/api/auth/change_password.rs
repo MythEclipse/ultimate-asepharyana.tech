@@ -102,7 +102,7 @@ pub async fn change_password(
         "SELECT password_hash FROM users WHERE id = ?"
     )
     .bind(&claims.user_id)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     // Verify current password
@@ -121,13 +121,13 @@ pub async fn change_password(
     .bind(&new_password_hash)
     .bind(Utc::now())
     .bind(&claims.user_id)
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     // Optionally revoke all refresh tokens for security
     sqlx::query("UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ?")
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Send password changed notification email

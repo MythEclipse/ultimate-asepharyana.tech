@@ -81,7 +81,7 @@ pub async fn reset_password(
         "#,
     )
     .bind(&payload.token)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     let (token_id, user_id, expires_at, used) = token_data.ok_or(AppError::InvalidToken)?;
@@ -106,19 +106,19 @@ pub async fn reset_password(
     .bind(&password_hash)
     .bind(Utc::now())
     .bind(&user_id)
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     // Mark token as used
     sqlx::query("UPDATE password_reset_tokens SET used = TRUE WHERE id = ?")
         .bind(&token_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Revoke all refresh tokens for security
     sqlx::query("UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ?")
         .bind(&user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Get user info for notification email
@@ -126,7 +126,7 @@ pub async fn reset_password(
         "SELECT email, COALESCE(full_name, username) FROM users WHERE id = ?"
     )
     .bind(&user_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     // Send password changed notification email

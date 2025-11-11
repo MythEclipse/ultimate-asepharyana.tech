@@ -78,7 +78,7 @@ pub async fn get_me(
         "#,
     )
     .bind(&claims.user_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?
     .ok_or(AppError::UserNotFound)?;
 

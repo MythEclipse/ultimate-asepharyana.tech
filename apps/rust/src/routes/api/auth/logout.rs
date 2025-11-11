@@ -104,7 +104,7 @@ pub async fn logout(
         )
         .bind(refresh_token)
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
     }
 
@@ -118,7 +118,7 @@ pub async fn logout(
             "#,
         )
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
     }
 

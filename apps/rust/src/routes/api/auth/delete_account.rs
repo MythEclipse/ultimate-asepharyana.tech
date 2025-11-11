@@ -85,7 +85,7 @@ pub async fn delete_account(
         "SELECT password_hash FROM users WHERE id = ?"
     )
     .bind(&claims.user_id)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     // Verify password
@@ -100,31 +100,31 @@ pub async fn delete_account(
     // Delete email verification tokens
     sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = ?")
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Delete password reset tokens
     sqlx::query("DELETE FROM password_reset_tokens WHERE user_id = ?")
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Delete refresh tokens
     sqlx::query("DELETE FROM refresh_tokens WHERE user_id = ?")
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Delete login history
     sqlx::query("DELETE FROM login_history WHERE user_id = ?")
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Finally, delete the user
     sqlx::query("DELETE FROM users WHERE id = ?")
         .bind(&claims.user_id)
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
     // Blacklist the current token

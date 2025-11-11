@@ -53,7 +53,7 @@ pub async fn forgot_password(
         "SELECT id FROM users WHERE email = ? AND is_active = TRUE"
     )
     .bind(&payload.email)
-    .fetch_optional(&state.db)
+    .fetch_optional(&state.sqlx_pool)
     .await?;
 
     // Always return success to prevent user enumeration
@@ -62,7 +62,7 @@ pub async fn forgot_password(
         // Delete old password reset tokens for this user
         sqlx::query("DELETE FROM password_reset_tokens WHERE user_id = ?")
             .bind(&user_id)
-            .execute(&state.db)
+            .execute(&state.sqlx_pool)
             .await?;
 
         // Generate password reset token
@@ -80,7 +80,7 @@ pub async fn forgot_password(
         .bind(&reset_token)
         .bind(expires_at)
         .bind(Utc::now())
-        .execute(&state.db)
+        .execute(&state.sqlx_pool)
         .await?;
 
         // Get user name for email
@@ -88,7 +88,7 @@ pub async fn forgot_password(
             "SELECT COALESCE(full_name, username) FROM users WHERE id = ?"
         )
         .bind(&user_id)
-        .fetch_optional(&state.db)
+        .fetch_optional(&state.sqlx_pool)
         .await?;
 
         // Send password reset email

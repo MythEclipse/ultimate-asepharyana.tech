@@ -1,37 +1,45 @@
-# RustExpress - Rust Migration of Express.js API
+# RustExpress - Rust API with SeaORM
 
-A high-performance Rust migration of the existing Express.js application, built with Axum framework. This provides the same API compatibility while leveraging Rust's performance and safety benefits.
+A high-performance Rust API built with Axum framework and SeaORM. This provides type-safe database operations with excellent performance.
 
-## 🔄 Migration Overview
+## 🔄 Recent Updates
 
-This RustExpress application is a **direct migration** from the existing Express.js application (`../Express/`). It maintains API compatibility while offering:
+**✨ Now using SeaORM!**
+- **Type-safe queries** with compile-time checking
+- **Database pull** support - generate entities from existing schema
+- **Better performance** and ergonomics
+- **Migration support** with sea-orm-cli
 
-- **🚀 Better Performance** - Rust's zero-cost abstractions and memory safety
-- **🔒 Enhanced Safety** - Compile-time guarantees and error handling
-- **⚡ Lower Resource Usage** - Reduced memory footprint and CPU usage
-- **🌐 Same API Interface** - Drop-in replacement for the Express.js version
+See [SEAORM.md](./SEAORM.md) for detailed SeaORM usage guide.
 
 ## Features
 
-- **REST API** with Axum framework (compatible with Express.js routes)
+- **REST API** with Axum framework
 - **Real-time chat** via WebSockets
-- **PDF merging** functionality (same API as Express version)
-- **SQLite database** with automatic migrations
-- **Environment-based configuration** (shared with Express app)
+- **SeaORM** for type-safe database operations
+- **MySQL database** support
+- **Entity generation** from database schema
+- **Environment-based configuration**
 - **Structured logging** with tracing
+- **Redis integration** for caching
 
 ## Prerequisites
 
 - Rust 1.70+
 - Cargo
-- SQLite
+- MySQL 8.0+
+- sea-orm-cli (for database operations)
+
+```bash
+cargo install sea-orm-cli
+```
 
 ## Setup
 
 1. **Clone and navigate to the project:**
 
    ```bash
-   cd apps/RustExpress
+   cd apps/rust
    ```
 
 2. **Install dependencies:**
@@ -47,16 +55,26 @@ This RustExpress application is a **direct migration** from the existing Express
    cp .env.example .env
    ```
 
-   Default configuration:
+   Example configuration:
 
    ```env
-   PORT=3001
-   DATABASE_URL=sqlite:./chat.db
+   DATABASE_URL=mysql://user:password@localhost:3306/database
    RUST_LOG=info
+   JWT_SECRET=your_secret_key
+   REDIS_URL=redis://localhost:6379
    ```
 
-4. **Run database migrations:**
-   The application will automatically run migrations on startup.
+4. **Generate entities from database:**
+
+   ```bash
+   # Windows
+   .\generate-entities.ps1
+   
+   # Linux/Mac
+   ./generate-entities.sh
+   ```
+
+   This will create entities in `src/entities/` based on your database schema.
 
 ## Running the Application
 

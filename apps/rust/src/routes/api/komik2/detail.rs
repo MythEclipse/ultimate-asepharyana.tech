@@ -742,3 +742,4 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
         .route(ENDPOINT_PATH, get(detail))
         .route("/ws/komik2/detail", get(ws_handler))
 }
+

@@ -110,10 +110,10 @@ pub async fn auth_layer(
         return Err(AuthError::TokenRevoked.into_response());
     }
 
-    // Verify user is still active in database
+    // Verify user is still active in database (using SQLx temporarily)
     let user_active: Option<bool> = sqlx::query_scalar("SELECT is_active FROM users WHERE id = ?")
         .bind(&claims.user_id)
-        .fetch_optional(&state.db)
+        .fetch_optional(&state.sqlx_pool)
         .await
         .ok()
         .flatten();
@@ -148,11 +148,11 @@ pub async fn optional_auth_layer(
                     .unwrap_or(false);
 
                 if !is_blacklisted {
-                    // Check if user is active
+                    // Check if user is active (using SQLx temporarily)
                     if let Ok(Some(true)) =
                         sqlx::query_scalar::<_, bool>("SELECT is_active FROM users WHERE id = ?")
                             .bind(&claims.user_id)
-                            .fetch_optional(&state.db)
+                            .fetch_optional(&state.sqlx_pool)
                             .await
                     {
                         // Add claims to request extensions

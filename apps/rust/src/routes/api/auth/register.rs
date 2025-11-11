@@ -102,7 +102,7 @@ pub async fn register(
         "SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)"
     )
     .bind(&payload.email)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     if email_exists {
@@ -114,7 +114,7 @@ pub async fn register(
         "SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)"
     )
     .bind(&payload.username)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     if username_exists {
@@ -147,7 +147,7 @@ pub async fn register(
     .bind("user")
     .bind(now)
     .bind(now)
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     // Generate email verification token
@@ -165,7 +165,7 @@ pub async fn register(
     .bind(&verification_token)
     .bind(expires_at)
     .bind(now)
-    .execute(&state.db)
+    .execute(&state.sqlx_pool)
     .await?;
 
     // Fetch the created user
@@ -177,7 +177,7 @@ pub async fn register(
         "#,
     )
     .bind(&user_id)
-    .fetch_one(&state.db)
+    .fetch_one(&state.sqlx_pool)
     .await?;
 
     // Send verification email

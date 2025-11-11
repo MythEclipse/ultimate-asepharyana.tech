@@ -13,6 +13,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
+use sea_orm::{Database, DatabaseConnection};
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
@@ -44,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
 
     let _ = REDIS_POOL.get().await; // Initialize the pool early
 
-    // Setup MySQL connection pool
+    // Setup database connections
     let database_url = CONFIG_MAP
         .get("DATABASE_URL")
         .cloned()
@@ -53,17 +54,20 @@ async fn main() -> anyhow::Result<()> {
             "mysql://root:password@localhost/mydb".to_string()
         });
 
-    let db = sqlx::MySqlPool::connect(&database_url)
+    // SeaORM connection (new)
+    let db: DatabaseConnection = Database::connect(&database_url)
         .await
-        .expect("Failed to connect to MySQL database");
+        .expect("Failed to connect to MySQL database with SeaORM");
+    tracing::info!("✓ SeaORM database connection established");
 
-    tracing::info!("Database connection established");
-
-    // Migrations disabled - tables should exist in database already
-    tracing::info!("Skipping migrations (disabled for stability)");
+    // SQLx connection pool (temporary for gradual migration)
+    let sqlx_pool = sqlx::MySqlPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to MySQL database with SQLx");
+    tracing::info!("✓ SQLx pool created (temporary for migration)");
 
     // Seed default chat data if tables are empty
-    if let Err(e) = rust::seed::seed_chat_data_if_empty(&db).await {
+    if let Err(e) = rust::seed::seed_chat_data_if_empty(&sqlx_pool).await {
         tracing::warn!("Failed to seed chat data: {}", e);
     }
 
@@ -75,6 +79,7 @@ async fn main() -> anyhow::Result<()> {
         redis_pool: REDIS_POOL.clone(),
         db: db.clone(),
         pool: db.clone(),
+        sqlx_pool: sqlx_pool.clone(),
         chat_tx,
     });
 
