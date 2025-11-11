@@ -25,7 +25,7 @@ impl AppState {
     pub fn sea_orm(&self) -> &DatabaseConnection {
         &self.db
     }
-    
+
     /// Get SQLx pool (deprecated, use sea_orm() instead)
     pub fn sqlx(&self) -> &sqlx::MySqlPool {
         &self.sqlx_pool

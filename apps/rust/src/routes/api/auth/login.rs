@@ -73,10 +73,10 @@ pub async fn login(
 
     // Verify password
     let password_valid = verify(
-        &payload.password, 
+        &payload.password,
         user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?
     )?;
-    
+
     if !password_valid {
         // Log failed login attempt (still using SQLx temporarily)
         log_login_attempt(&state, &user_model.id, false, Some("Invalid password")).await?;
