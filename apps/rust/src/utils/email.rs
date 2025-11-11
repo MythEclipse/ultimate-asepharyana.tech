@@ -75,7 +75,7 @@ impl EmailService {
         let app_url = CONFIG_MAP
             .get("APP_URL")
             .cloned()
-            .unwrap_or_else(|| "http://localhost:3000".to_string());
+            .unwrap_or_else(|| "https://elysia.asepharyana.tech".to_string());
 
         EmailService {
             config: EmailConfig::from_env(),

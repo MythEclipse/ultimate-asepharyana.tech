@@ -295,20 +295,41 @@ components(
                   ListResponse_3
             )
         ),
-        security((
-            "ApiKeyAuth" = []
+modifiers(&SecurityAddon),
+security((
+            "bearer_auth" = []
         )),
 info(
-            title = "Freefire",
+            title = "Freefire API",
             version = "0.0.1",
-            description = "api gratis"
+            description = "Free API for anime, manga, and more"
         ),
 tags(
-            (name = "api", description = "Main API")
+            (name = "api", description = "Main API"),
+            (name = "auth", description = "Authentication endpoints")
         )
 )]
 #[allow(dead_code)]
 pub struct ApiDoc;
+
+struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+        fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+            use utoipa::openapi::security::*;
+            if let Some(components) = openapi.components.as_mut() {
+                components.add_security_scheme(
+                    "bearer_auth",
+                    SecurityScheme::Http(
+                        HttpBuilder::new()
+                            .scheme(HttpAuthScheme::Bearer)
+                            .bearer_format("JWT")
+                            .build()
+                    ),
+                )
+            }
+        }
+    }
 
 pub fn create_api_routes() -> Router<Arc<AppState>> {
     let mut router = Router::new();

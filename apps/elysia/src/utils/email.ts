@@ -63,7 +63,7 @@ export async function sendVerificationEmail(
   username: string,
   token: string
 ): Promise<void> {
-  const verificationUrl = `${process.env.APP_URL || 'http://localhost:3002'}/api/auth/verify?token=${token}`;
+  const verificationUrl = `${process.env.APP_URL || 'https://elysia.asepharyana.tech'}/api/auth/verify?token=${token}`;
 
   const subject = 'Verify Your Email Address';
   const text = `Hello ${username},\n\nPlease verify your email by clicking: ${verificationUrl}\n\nThis link expires in 24 hours.`;
@@ -85,7 +85,7 @@ export async function sendPasswordResetEmail(
   username: string,
   token: string
 ): Promise<void> {
-  const resetUrl = `${process.env.APP_URL || 'http://localhost:3002'}/reset-password?token=${token}`;
+  const resetUrl = `${process.env.APP_URL || 'https://elysia.asepharyana.tech'}/reset-password?token=${token}`;
 
   const subject = 'Reset Your Password';
   const text = `Hello ${username},\n\nReset your password by clicking: ${resetUrl}\n\nThis link expires in 1 hour.\nIf you didn't request this, please ignore this email.`;

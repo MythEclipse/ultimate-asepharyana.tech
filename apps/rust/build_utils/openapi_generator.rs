@@ -52,13 +52,16 @@ fn generate_root_api_mod_internal(
       "#[derive(utoipa::OpenApi)]\n\
     #[openapi(\n\
         paths(\n{}\n        ),\n\
-        components(\n            schemas(\n{}\n            )\n        ),
-        security((\n            \"ApiKeyAuth\" = []\n        )),\n\
-        info(\n            title = \"Freefire\",\n            version = \"0.0.1\",\n            description = \"api gratis\"\n        ),\n\
-        tags(\n            (name = \"api\", description = \"Main API\")\n        )\n\
+        components(\n            schemas(\n{}\n            )\n        ),\n\
+        modifiers(&SecurityAddon),\n\
+        security((\n            \"bearer_auth\" = []\n        )),\n\
+        info(\n            title = \"Freefire API\",\n            version = \"0.0.1\",\n            description = \"Free API for anime, manga, and more\"\n        ),\n\
+        tags(\n            (name = \"api\", description = \"Main API\"),\n            (name = \"auth\", description = \"Authentication endpoints\")\n        )\n\
     )]\n\
     #[allow(dead_code)]\n\
-    pub struct ApiDoc;\n\n",
+    pub struct ApiDoc;\n\n\
+    struct SecurityAddon;\n\n\
+    impl utoipa::Modify for SecurityAddon {{\n        fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {{\n            use utoipa::openapi::security::*;\n            if let Some(components) = openapi.components.as_mut() {{\n                components.add_security_scheme(\n                    \"bearer_auth\",\n                    SecurityScheme::Http(\n                        HttpBuilder::new()\n                            .scheme(HttpAuthScheme::Bearer)\n                            .bearer_format(\"JWT\")\n                            .build()\n                    ),\n                )\n            }}\n        }}\n    }}\n\n",
       handler_paths,
       schema_list
     )
@@ -71,8 +74,25 @@ fn generate_root_api_mod_internal(
     Ok({
         use utoipa::OpenApi; // Bring OpenApi trait into scope for TempApiDoc
         #[derive(utoipa::OpenApi)]
-        #[openapi(paths(), components(schemas()), security(("ApiKeyAuth" = [])), tags((name = "api", description = "Main API")))]
+        #[openapi(paths(), components(schemas()), modifiers(&SecurityAddon), security(("bearer_auth" = [])), tags((name = "api", description = "Main API")))]
         struct TempApiDoc;
+        struct SecurityAddon;
+        impl utoipa::Modify for SecurityAddon {
+            fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+                if let Some(components) = openapi.components.as_mut() {
+                    use utoipa::openapi::security::*;
+                    components.add_security_scheme(
+                        "bearer_auth",
+                        SecurityScheme::Http(
+                            HttpBuilder::new()
+                                .scheme(HttpAuthScheme::Bearer)
+                                .bearer_format("JWT")
+                                .build()
+                        ),
+                    )
+                }
+            }
+        }
         TempApiDoc::openapi()
     })
 }
