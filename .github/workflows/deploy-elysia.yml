@@ -65,6 +65,9 @@ jobs:
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
 
+          # Create necessary directories on VPS
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/{libs/services/dist,apps/elysia/dist,apps/elysia/src}"
+
           # Sync libs/services (Drizzle schemas)
           rsync -avz --progress -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             libs/services/dist/ \
@@ -75,7 +78,7 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/libs/services/package.json
 
           # Sync build output (dist folder)
-          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+          rsync -avz --progress -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
             apps/elysia/dist/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/dist/
 
