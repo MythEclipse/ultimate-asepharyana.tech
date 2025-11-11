@@ -5,7 +5,7 @@ import { verifyJWT } from '../utils/jwt';
  * Authentication middleware
  * Verifies JWT token and adds user info to context
  */
-export const authMiddleware = new Elysia()
+export const authMiddleware = new Elysia({ name: 'auth' })
   .derive(async ({ headers, set }) => {
     const authHeader = headers.authorization;
 
@@ -35,7 +35,7 @@ export const authMiddleware = new Elysia()
  * Optional auth middleware
  * Adds user info if token is present, but doesn't require it
  */
-export const optionalAuthMiddleware = new Elysia()
+export const optionalAuthMiddleware = new Elysia({ name: 'optional-auth' })
   .derive(async ({ headers }) => {
     const authHeader = headers.authorization;
 

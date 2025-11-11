@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { getDatabase } from '../utils/prisma';
-import { verifyJWT } from '../utils/jwt';
+import { authMiddleware } from '../middleware/auth';
 import {
   chatRooms,
   chatRoomMembers,
@@ -10,23 +10,18 @@ import {
 } from '@asepharyana/services';
 import { eq, and } from '@asepharyana/services';
 
-export const chatRoutes = new Elysia({ prefix: '/api/chat' })
+// Type for authenticated user from middleware
+type AuthUser = {
+  id: string;
+  email: string;
+  name: string;
+};
+
+export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware).group('', (app) => app
   // Get all chat rooms
-  .get('/rooms', async ({ headers, set }) => {
+  .get('/rooms', async (context) => {
+    const { set } = context as typeof context & { user: AuthUser };
     try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        throw new Error('Unauthorized');
-      }
-
-      const token = authHeader.substring(7);
-      const payload = await verifyJWT(token);
-      if (!payload) {
-        set.status = 401;
-        throw new Error('Invalid token');
-      }
-
       const db = getDatabase();
 
       const rooms = await db.query.chatRooms.findMany({
@@ -67,6 +62,12 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       };
     } catch (error) {
       console.error('Error fetching chat rooms:', error);
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
       set.status = 500;
       return {
         success: false,
@@ -78,21 +79,9 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   // Create a new chat room
   .post(
     '/rooms',
-    async ({ body, headers, set }) => {
+    async (context) => {
+      const { body, user, set } = context as typeof context & { user: AuthUser };
       try {
-        const authHeader = headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          set.status = 401;
-          throw new Error('Unauthorized');
-        }
-
-        const token = authHeader.substring(7);
-        const payload = await verifyJWT(token);
-        if (!payload) {
-          set.status = 401;
-          throw new Error('Invalid token');
-        }
-
         const { name, description, isPrivate } = body as {
           name: string;
           description?: string;
@@ -105,8 +94,8 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         }
 
         const db = getDatabase();
-        const roomId = `room_${Date.now()}_${payload.user_id}`;
-        const memberId = `member_${Date.now()}_${payload.user_id}`;
+        const roomId = `room_${Date.now()}_${user.id}`;
+        const memberId = `member_${Date.now()}_${user.id}`;
 
         // Create room
         const newRoom: NewChatRoom = {
@@ -122,7 +111,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         const newMember: NewChatRoomMember = {
           id: memberId,
           roomId,
-          userId: payload.user_id,
+          userId: user.id,
           role: 'admin',
         };
 
@@ -153,6 +142,12 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         };
       } catch (error) {
         console.error('Error creating chat room:', error);
+        if (error instanceof Error && error.message.includes('Unauthorized')) {
+          return {
+            success: false,
+            error: error.message,
+          };
+        }
         set.status = 500;
         return {
           success: false,
@@ -170,28 +165,16 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   )
 
   // Get messages from a chat room
-  .get('/rooms/:roomId/messages', async ({ params: { roomId }, query, headers, set }) => {
+  .get('/rooms/:roomId/messages', async (context) => {
+    const { params: { roomId }, query, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        throw new Error('Unauthorized');
-      }
-
-      const token = authHeader.substring(7);
-      const payload = await verifyJWT(token);
-      if (!payload) {
-        set.status = 401;
-        throw new Error('Invalid token');
-      }
-
       const db = getDatabase();
 
       // Check if user is a member of the room
       const membershipResult = await db
         .select()
         .from(chatRoomMembers)
-        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, user.id)))
         .limit(1);
 
       if (membershipResult.length === 0) {
@@ -231,6 +214,12 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       };
     } catch (error) {
       console.error('Error fetching messages:', error);
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
       set.status = 500;
       return {
         success: false,
@@ -242,21 +231,9 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   // Send a message to a chat room
   .post(
     '/rooms/:roomId/messages',
-    async ({ params: { roomId }, body, headers, set }) => {
+    async (context) => {
+      const { params: { roomId }, body, user, set } = context as typeof context & { user: AuthUser };
       try {
-        const authHeader = headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          set.status = 401;
-          throw new Error('Unauthorized');
-        }
-
-        const token = authHeader.substring(7);
-        const payload = await verifyJWT(token);
-        if (!payload) {
-          set.status = 401;
-          throw new Error('Invalid token');
-        }
-
         const { content } = body as { content: string };
 
         if (!content.trim()) {
@@ -270,7 +247,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         const membershipResult = await db
           .select()
           .from(chatRoomMembers)
-          .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+          .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, user.id)))
           .limit(1);
 
         if (membershipResult.length === 0) {
@@ -278,11 +255,11 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
           throw new Error('Not a member of this chat room');
         }
 
-        const messageId = `msg_${Date.now()}_${payload.user_id}`;
+        const messageId = `msg_${Date.now()}_${user.id}`;
         const newMessage = {
           id: messageId,
           roomId,
-          userId: payload.user_id,
+          userId: user.id,
           content,
         };
 
@@ -314,6 +291,12 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         };
       } catch (error) {
         console.error('Error sending message:', error);
+        if (error instanceof Error && error.message.includes('Unauthorized')) {
+          return {
+            success: false,
+            error: error.message,
+          };
+        }
         set.status = 500;
         return {
           success: false,
@@ -329,21 +312,9 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   )
 
   // Join a chat room
-  .post('/rooms/:roomId/join', async ({ params: { roomId }, headers, set }) => {
+  .post('/rooms/:roomId/join', async (context) => {
+    const { params: { roomId }, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        throw new Error('Unauthorized');
-      }
-
-      const token = authHeader.substring(7);
-      const payload = await verifyJWT(token);
-      if (!payload) {
-        set.status = 401;
-        throw new Error('Invalid token');
-      }
-
       const db = getDatabase();
 
       // Check if room exists
@@ -362,7 +333,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       const existingMemberResult = await db
         .select()
         .from(chatRoomMembers)
-        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, user.id)))
         .limit(1);
 
       if (existingMemberResult.length > 0) {
@@ -373,11 +344,11 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
         };
       }
 
-      const memberId = `member_${Date.now()}_${payload.user_id}_${roomId}`;
+      const memberId = `member_${Date.now()}_${user.id}_${roomId}`;
       const newMember: NewChatRoomMember = {
         id: memberId,
         roomId,
-        userId: payload.user_id,
+        userId: user.id,
         role: 'member',
       };
 
@@ -404,6 +375,12 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       };
     } catch (error) {
       console.error('Error joining chat room:', error);
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
       set.status = 500;
       return {
         success: false,
@@ -413,28 +390,16 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   })
 
   // Leave a chat room
-  .post('/rooms/:roomId/leave', async ({ params: { roomId }, headers, set }) => {
+  .post('/rooms/:roomId/leave', async (context) => {
+    const { params: { roomId }, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        throw new Error('Unauthorized');
-      }
-
-      const token = authHeader.substring(7);
-      const payload = await verifyJWT(token);
-      if (!payload) {
-        set.status = 401;
-        throw new Error('Invalid token');
-      }
-
       const db = getDatabase();
 
       // Find membership
       const membershipResult = await db
         .select()
         .from(chatRoomMembers)
-        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, user.id)))
         .limit(1);
 
       if (membershipResult.length === 0) {
@@ -452,6 +417,12 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       };
     } catch (error) {
       console.error('Error leaving chat room:', error);
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
       set.status = 500;
       return {
         success: false,
@@ -461,21 +432,9 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
   })
 
   // Delete a message (only by sender or room admin)
-  .delete('/messages/:messageId', async ({ params: { messageId }, headers, set }) => {
+  .delete('/messages/:messageId', async (context) => {
+    const { params: { messageId }, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        throw new Error('Unauthorized');
-      }
-
-      const token = authHeader.substring(7);
-      const payload = await verifyJWT(token);
-      if (!payload) {
-        set.status = 401;
-        throw new Error('Invalid token');
-      }
-
       const db = getDatabase();
 
       // Find message
@@ -496,10 +455,10 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       const membershipResult = await db
         .select()
         .from(chatRoomMembers)
-        .where(and(eq(chatRoomMembers.roomId, message.roomId), eq(chatRoomMembers.userId, payload.user_id)))
+        .where(and(eq(chatRoomMembers.roomId, message.roomId), eq(chatRoomMembers.userId, user.id)))
         .limit(1);
 
-      const isOwner = message.userId === payload.user_id;
+      const isOwner = message.userId === user.id;
       const isAdmin = membershipResult.length > 0 && membershipResult[0].role === 'admin';
 
       if (!isOwner && !isAdmin) {
@@ -515,10 +474,17 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' })
       };
     } catch (error) {
       console.error('Error deleting message:', error);
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
       set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to delete message',
       };
     }
-  });
+  })
+);
