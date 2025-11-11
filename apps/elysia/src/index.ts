@@ -62,8 +62,27 @@ export const app = new Elysia()
         ],
         servers: [
           {
+            url: 'https://elysia.asepharyana.tech',
+            description: 'Production server',
+          },
+          {
             url: `http://localhost:${config.port}`,
             description: 'Development server',
+          },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'Enter your JWT token',
+            },
+          },
+        },
+        security: [
+          {
+            bearerAuth: [],
           },
         ],
       },
