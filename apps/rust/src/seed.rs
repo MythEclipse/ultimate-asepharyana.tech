@@ -46,7 +46,7 @@ pub async fn seed_chat_data_if_empty(db: &DatabaseConnection) -> Result<(), sea_
         // Note: ChatMessage table doesn't have room_id or username fields in current schema
         // If you need to seed messages, the schema needs to be updated first
         // Current ChatMessage schema: id, userId, text, email, imageProfile, imageMessage, role, timestamp
-        
+
         info!("✅ Default chat data seeded successfully!");
     } else {
         info!("Chat data already exists, skipping seed");

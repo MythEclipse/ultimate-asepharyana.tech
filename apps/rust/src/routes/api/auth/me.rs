@@ -15,7 +15,7 @@ use utoipa::ToSchema;
 use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
 use crate::entities::{user, prelude::*};
 
-use crate::models::user::{User as LegacyUser, UserResponse};
+use crate::models::user::UserResponse;
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;

@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatRoom {
     pub id: String,
     pub name: String,
@@ -13,7 +12,7 @@ pub struct ChatRoom {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatMessage {
     pub id: String,
     pub room_id: String,
@@ -24,7 +23,7 @@ pub struct ChatMessage {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RoomMember {
     pub room_id: String,
     pub user_id: String,

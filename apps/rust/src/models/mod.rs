@@ -1,3 +1,4 @@
 pub mod user;
 
-pub use user::User;
+// Re-export commonly used types
+pub use user::{UserResponse, LoginResponse};

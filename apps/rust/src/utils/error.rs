@@ -103,12 +103,6 @@ impl From<tokio::task::JoinError> for AppError {
     }
 }
 
-impl From<sqlx::Error> for AppError {
-    fn from(err: sqlx::Error) -> Self {
-        AppError::DatabaseError(err.to_string())
-    }
-}
-
 impl From<bcrypt::BcryptError> for AppError {
     fn from(err: bcrypt::BcryptError) -> Self {
         AppError::BcryptError(err.to_string())

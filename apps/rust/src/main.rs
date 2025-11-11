@@ -54,19 +54,13 @@ async fn main() -> anyhow::Result<()> {
             "mysql://root:password@localhost/mydb".to_string()
         });
 
-    // SeaORM connection (new)
+    // SeaORM connection
     let db: DatabaseConnection = Database::connect(&database_url)
         .await
         .expect("Failed to connect to MySQL database with SeaORM");
     tracing::info!("✓ SeaORM database connection established");
 
-    // SQLx connection pool (temporary for gradual migration)
-    let sqlx_pool = sqlx::MySqlPool::connect(&database_url)
-        .await
-        .expect("Failed to connect to MySQL database with SQLx");
-    tracing::info!("✓ SQLx pool created (temporary for migration)");
-
-    // Seed default chat data if tables are empty (using SeaORM)
+    // Seed default chat data if tables are empty
     if let Err(e) = rust::seed::seed_chat_data_if_empty(&db).await {
         tracing::warn!("Failed to seed chat data: {}", e);
     }
@@ -79,7 +73,6 @@ async fn main() -> anyhow::Result<()> {
         redis_pool: REDIS_POOL.clone(),
         db: db.clone(),
         pool: db.clone(),
-        sqlx_pool: sqlx_pool.clone(),
         chat_tx,
     });
 

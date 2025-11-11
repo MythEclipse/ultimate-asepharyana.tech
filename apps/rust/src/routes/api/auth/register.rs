@@ -14,7 +14,7 @@ use validator::Validate;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use crate::entities::{user, email_verification_token, prelude::*};
 
-use crate::models::user::{User as LegacyUser, UserResponse};
+use crate::models::user::UserResponse;
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
 use crate::utils::error::AppError;

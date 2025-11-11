@@ -28,7 +28,7 @@ dotenvy = "0.15"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1.0"
-sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "mysql", "macros", "migrate", "chrono"] }
+# sqlx removed - SeaORM uses it internally via sqlx-mysql feature
 sea-orm = { version = "1.1.4", features = ["sqlx-mysql", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"] }
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }

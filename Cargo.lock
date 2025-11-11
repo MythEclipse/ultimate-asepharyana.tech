@@ -3840,7 +3840,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha1",
- "sqlx",
  "tempfile",
  "thiserror 2.0.17",
  "time",

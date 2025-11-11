@@ -13,7 +13,7 @@ use uuid::Uuid;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use crate::entities::{user, prelude::*};
 
-use crate::models::user::{LoginResponse, User as LegacyUser, UserResponse};
+use crate::models::user::{LoginResponse, UserResponse};
 use crate::routes::AppState;
 use crate::utils::auth::{encode_jwt, Claims};
 use crate::utils::error::AppError;

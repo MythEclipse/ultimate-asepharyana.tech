@@ -152,7 +152,7 @@ pub async fn optional_auth_layer(
                     // Check if user still exists using SeaORM
                     use crate::entities::user;
                     use sea_orm::EntityTrait;
-                    
+
                     if let Ok(Some(_)) = user::Entity::find_by_id(&claims.user_id)
                         .one(state.sea_orm())
                         .await
