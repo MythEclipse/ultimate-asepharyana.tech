@@ -33,7 +33,7 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<VerifyResponse>";
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct VerifyQuery {
     /// Email verification token
-    pub token: String,
+    pub token: Option<String>,
 }
 
 /// Verify email response
@@ -68,17 +68,20 @@ pub async fn verify(
     State(state): State<Arc<AppState>>,
     Query(query): Query<VerifyQuery>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Validate token is provided (like Elysia)
+    let token = query.token.ok_or_else(|| AppError::Other("Verification token is required".to_string()))?;
+
     // Find verification token using SeaORM
     let token_model = email_verification_token::Entity::find()
-        .filter(email_verification_token::Column::Token.eq(&query.token))
+        .filter(email_verification_token::Column::Token.eq(&token))
         .one(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?
-        .ok_or(AppError::InvalidToken)?;
+        .ok_or_else(|| AppError::Other("Invalid verification token".to_string()))?;
 
-    // Check if token is expired
+    // Check if token is expired (like Elysia)
     if token_model.expires_at < Utc::now() {
-        return Err(AppError::TokenExpired);
+        return Err(AppError::Other("Verification token has expired".to_string()));
     }
 
     // Find user

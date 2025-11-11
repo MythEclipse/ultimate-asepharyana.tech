@@ -75,22 +75,22 @@ pub async fn reset_password(
     // Validate password strength
     validate_password_strength(&payload.new_password)?;
 
-    // Find password reset token using SeaORM
+    // Find password reset token using SeaORM (like Elysia)
     let token_model = password_reset_token::Entity::find()
         .filter(password_reset_token::Column::Token.eq(&payload.token))
         .one(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?
-        .ok_or(AppError::InvalidToken)?;
+        .ok_or_else(|| AppError::Other("Invalid reset token".to_string()))?;
 
-    // Check if token is already used
+    // Check if token is already used (like Elysia)
     if token_model.used != 0 {
-        return Err(AppError::InvalidToken);
+        return Err(AppError::Other("Reset token has already been used".to_string()));
     }
 
-    // Check if token is expired
+    // Check if token is expired (like Elysia)
     if token_model.expires_at < Utc::now() {
-        return Err(AppError::TokenExpired);
+        return Err(AppError::Other("Reset token has expired".to_string()));
     }
 
     // Hash new password
