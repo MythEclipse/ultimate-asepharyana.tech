@@ -110,22 +110,23 @@ pub async fn auth_layer(
         return Err(AuthError::TokenRevoked.into_response());
     }
 
-    // Verify user is still active in database (using SQLx temporarily)
-    let user_active: Option<bool> = sqlx::query_scalar("SELECT is_active FROM users WHERE id = ?")
-        .bind(&claims.user_id)
-        .fetch_optional(&state.sqlx_pool)
+    // Verify user still exists in database using SeaORM
+    use crate::entities::{user};
+    use sea_orm::EntityTrait;
+
+    let user_exists = user::Entity::find_by_id(&claims.user_id)
+        .one(state.sea_orm())
         .await
         .ok()
-        .flatten();
+        .flatten()
+        .is_some();
 
-    match user_active {
-        Some(true) => {
-            // User is active, add claims to request extensions
-            req.extensions_mut().insert(claims);
-            Ok(next.run(req).await)
-        }
-        Some(false) => Err(AuthError::AccountInactive.into_response()),
-        None => Err(AuthError::UserNotFound.into_response()),
+    if user_exists {
+        // User exists, add claims to request extensions
+        req.extensions_mut().insert(claims);
+        Ok(next.run(req).await)
+    } else {
+        Err(AuthError::UserNotFound.into_response())
     }
 }
 
@@ -148,12 +149,13 @@ pub async fn optional_auth_layer(
                     .unwrap_or(false);
 
                 if !is_blacklisted {
-                    // Check if user is active (using SQLx temporarily)
-                    if let Ok(Some(true)) =
-                        sqlx::query_scalar::<_, bool>("SELECT is_active FROM users WHERE id = ?")
-                            .bind(&claims.user_id)
-                            .fetch_optional(&state.sqlx_pool)
-                            .await
+                    // Check if user still exists using SeaORM
+                    use crate::entities::user;
+                    use sea_orm::EntityTrait;
+                    
+                    if let Ok(Some(_)) = user::Entity::find_by_id(&claims.user_id)
+                        .one(state.sea_orm())
+                        .await
                     {
                         // Add claims to request extensions
                         req.extensions_mut().insert(claims);

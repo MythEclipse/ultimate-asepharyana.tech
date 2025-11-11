@@ -151,58 +151,49 @@ pub async fn resend_verification(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<ResendVerificationRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Find user by email
-    let user_data: Option<(String, bool)> = sqlx::query_as(
-        "SELECT id, email_verified FROM users WHERE email = ?"
-    )
-    .bind(&payload.email)
-    .fetch_optional(&state.sqlx_pool)
-    .await?;
-
-    let (user_id, email_verified) = user_data.ok_or(AppError::UserNotFound)?;
+    // Find user by email using SeaORM
+    let user_model = user::Entity::find()
+        .filter(user::Column::Email.eq(&payload.email))
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?;
 
     // Check if already verified
-    if email_verified {
+    if user_model.email_verified.is_some() {
         return Err(AppError::Other("Email already verified".to_string()));
     }
 
-    // Delete old verification tokens for this user
-    sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = ?")
-        .bind(&user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    // Delete old verification tokens for this user using SeaORM
+    email_verification_token::Entity::delete_many()
+        .filter(email_verification_token::Column::UserId.eq(&user_model.id))
+        .exec(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Generate new verification token
     let verification_token = Uuid::new_v4().to_string();
     let expires_at = Utc::now() + chrono::Duration::hours(24);
 
-    sqlx::query(
-        r#"
-        INSERT INTO email_verification_tokens (id, user_id, token, expires_at, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        "#,
-    )
-    .bind(Uuid::new_v4().to_string())
-    .bind(&user_id)
-    .bind(&verification_token)
-    .bind(expires_at)
-    .bind(Utc::now())
-    .execute(&state.sqlx_pool)
-    .await?;
+    // Insert new verification token using SeaORM
+    let new_token = email_verification_token::ActiveModel {
+        id: Set(Uuid::new_v4().to_string()),
+        user_id: Set(user_model.id.clone()),
+        token: Set(verification_token.clone()),
+        expires_at: Set(expires_at),
+        created_at: Set(Utc::now()),
+    };
+    new_token.insert(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Get user info for email
-    let user_name: Option<String> = sqlx::query_scalar(
-        "SELECT COALESCE(full_name, username) FROM users WHERE id = ?"
-    )
-    .bind(&user_id)
-    .fetch_optional(&state.sqlx_pool)
-    .await?;
+    // Get user name (use name field, fallback to "User")
+    let user_name = user_model.name.as_deref().unwrap_or("User");
 
     // Send verification email
     let email_service = EmailService::new();
-    let name = user_name.as_deref().unwrap_or("User");
     if let Err(e) = email_service
-        .send_verification_email(&payload.email, name, &verification_token)
+        .send_verification_email(&payload.email, user_name, &verification_token)
         .await
     {
         tracing::warn!("Failed to send verification email: {}", e);

@@ -28,8 +28,8 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<LoginResponse>";
 /// Login request payload
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct LoginRequest {
-    /// Email or username
-    pub login: String,
+    /// User email address
+    pub email: String,
     /// User password
     pub password: String,
     /// Remember me option (extends token expiry)
@@ -58,13 +58,9 @@ pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Find user by email using SeaORM (name field is used as username in this schema)
+    // Find user by email using SeaORM
     let user_model: Option<user::Model> = user::Entity::find()
-        .filter(
-            user::Column::Email
-                .eq(&payload.login)
-                .or(user::Column::Name.eq(&payload.login))
-        )
+        .filter(user::Column::Email.eq(&payload.email))
         .one(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
@@ -90,7 +86,7 @@ pub async fn login(
     // }
 
     // Check if email is verified (optional - you can skip this check)
-    if let Some(email_verified) = user_model.email_verified {
+    if let Some(_email_verified) = user_model.email_verified {
         // email_verified is a timestamp, if Some then it's verified
         // If you want to enforce verification, uncomment:
         // if email_verified.is_none() {
@@ -113,30 +109,13 @@ pub async fn login(
 
     // Generate refresh token
     let refresh_token = Uuid::new_v4().to_string();
-    let refresh_expires_at = Utc::now() + chrono::Duration::days(30);
 
-    // Store refresh token in database (using SQLx temporarily)
-    sqlx::query(
-        r#"
-        INSERT INTO refresh_tokens (id, user_id, token, expires_at, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        "#,
-    )
-    .bind(Uuid::new_v4().to_string())
-    .bind(&user_model.id)
-    .bind(&refresh_token)
-    .bind(refresh_expires_at)
-    .bind(Utc::now())
-    .execute(&state.sqlx_pool)
-    .await?;
-
-    // Update last login timestamp (TODO: migrate to SeaORM when last_login_at added to schema)
-    // For now, skip since last_login_at doesn't exist in current schema
-    // sqlx::query("UPDATE users SET last_login_at = ? WHERE id = ?")
-    //     .bind(Utc::now())
-    //     .bind(&user_model.id)
-    //     .execute(&state.sqlx_pool)
-    //     .await?;
+    // Store refresh token in User table (not separate refresh_tokens table)
+    let mut user_active: user::ActiveModel = user_model.clone().into();
+    user_active.refresh_token = Set(Some(refresh_token.clone()));
+    user_active.update(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Log successful login
     log_login_attempt(&state, &user_model.id, true, None).await?;
@@ -153,27 +132,21 @@ pub async fn login(
     }))
 }
 
-/// Log login attempt for security tracking
+/// Log login attempt for security tracking (optional, no-op if table doesn't exist)
 async fn log_login_attempt(
-    state: &AppState,
-    user_id: &str,
-    success: bool,
-    failure_reason: Option<&str>,
+    _state: &AppState,
+    _user_id: &str,
+    _success: bool,
+    _failure_reason: Option<&str>,
 ) -> Result<(), AppError> {
-    sqlx::query(
-        r#"
-        INSERT INTO login_history (id, user_id, success, failure_reason, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        "#,
-    )
-    .bind(Uuid::new_v4().to_string())
-    .bind(user_id)
-    .bind(success)
-    .bind(failure_reason)
-    .bind(Utc::now())
-    .execute(&state.sqlx_pool)
-    .await?;
-
+    // TODO: Implement login history tracking if needed
+    // For now, just log to console
+    tracing::info!(
+        "Login attempt - user_id: {}, success: {}, reason: {:?}",
+        _user_id,
+        _success,
+        _failure_reason
+    );
     Ok(())
 }
 

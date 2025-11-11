@@ -66,8 +66,8 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to connect to MySQL database with SQLx");
     tracing::info!("✓ SQLx pool created (temporary for migration)");
 
-    // Seed default chat data if tables are empty
-    if let Err(e) = rust::seed::seed_chat_data_if_empty(&sqlx_pool).await {
+    // Seed default chat data if tables are empty (using SeaORM)
+    if let Err(e) = rust::seed::seed_chat_data_if_empty(&db).await {
         tracing::warn!("Failed to seed chat data: {}", e);
     }
 
