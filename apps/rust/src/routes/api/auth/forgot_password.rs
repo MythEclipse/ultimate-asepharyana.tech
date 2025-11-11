@@ -4,10 +4,13 @@
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
 use std::sync::Arc;
 use utoipa::ToSchema;
 use uuid::Uuid;
+
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user, password_reset_token, prelude::*};
 
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
@@ -48,54 +51,47 @@ pub async fn forgot_password(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<ForgotPasswordRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Find user by email
-    let user_id: Option<String> = sqlx::query_scalar(
-        "SELECT id FROM users WHERE email = ? AND is_active = TRUE"
-    )
-    .bind(&payload.email)
-    .fetch_optional(&state.sqlx_pool)
-    .await?;
+    // Find user by email using SeaORM
+    let user_model = user::Entity::find()
+        .filter(user::Column::Email.eq(&payload.email))
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Always return success to prevent user enumeration
     // But only actually send email if user exists
-    if let Some(user_id) = user_id {
+    if let Some(user_model) = user_model {
         // Delete old password reset tokens for this user
-        sqlx::query("DELETE FROM password_reset_tokens WHERE user_id = ?")
-            .bind(&user_id)
-            .execute(&state.sqlx_pool)
-            .await?;
+        password_reset_token::Entity::delete_many()
+            .filter(password_reset_token::Column::UserId.eq(&user_model.id))
+            .exec(state.sea_orm())
+            .await
+            .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
         // Generate password reset token
         let reset_token = Uuid::new_v4().to_string();
         let expires_at = Utc::now() + chrono::Duration::hours(1); // 1 hour expiry
 
-        sqlx::query(
-            r#"
-            INSERT INTO password_reset_tokens (id, user_id, token, expires_at, created_at)
-            VALUES (?, ?, ?, ?, ?)
-            "#,
-        )
-        .bind(Uuid::new_v4().to_string())
-        .bind(&user_id)
-        .bind(&reset_token)
-        .bind(expires_at)
-        .bind(Utc::now())
-        .execute(&state.sqlx_pool)
-        .await?;
+        let new_reset_token = password_reset_token::ActiveModel {
+            id: Set(Uuid::new_v4().to_string()),
+            user_id: Set(user_model.id.clone()),
+            token: Set(reset_token.clone()),
+            expires_at: Set(expires_at),
+            created_at: Set(Utc::now()),
+            used: Set(0),
+        };
 
-        // Get user name for email
-        let user_name: Option<String> = sqlx::query_scalar(
-            "SELECT COALESCE(full_name, username) FROM users WHERE id = ?"
-        )
-        .bind(&user_id)
-        .fetch_optional(&state.sqlx_pool)
-        .await?;
+        new_reset_token.insert(state.sea_orm())
+            .await
+            .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
         // Send password reset email
         let email_service = EmailService::new();
-        let name = user_name.as_deref().unwrap_or("User");
+        let name = user_model.name.as_deref().unwrap_or("User");
+        let email = user_model.email.as_deref().unwrap_or(&payload.email);
+
         if let Err(e) = email_service
-            .send_password_reset_email(&payload.email, name, &reset_token)
+            .send_password_reset_email(email, name, &reset_token)
             .await
         {
             tracing::warn!("Failed to send password reset email: {}", e);

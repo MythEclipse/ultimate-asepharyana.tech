@@ -5,9 +5,12 @@ use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
 use std::sync::Arc;
 use utoipa::ToSchema;
+
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user, password_reset_token, session, prelude::*};
 
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
@@ -72,67 +75,70 @@ pub async fn reset_password(
     // Validate password strength
     validate_password_strength(&payload.new_password)?;
 
-    // Find password reset token
-    let token_data: Option<(String, String, chrono::DateTime<Utc>, bool)> = sqlx::query_as(
-        r#"
-        SELECT id, user_id, expires_at, used
-        FROM password_reset_tokens
-        WHERE token = ?
-        "#,
-    )
-    .bind(&payload.token)
-    .fetch_optional(&state.sqlx_pool)
-    .await?;
-
-    let (token_id, user_id, expires_at, used) = token_data.ok_or(AppError::InvalidToken)?;
+    // Find password reset token using SeaORM
+    let token_model = password_reset_token::Entity::find()
+        .filter(password_reset_token::Column::Token.eq(&payload.token))
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::InvalidToken)?;
 
     // Check if token is already used
-    if used {
+    if token_model.used != 0 {
         return Err(AppError::InvalidToken);
     }
 
     // Check if token is expired
-    if expires_at < Utc::now() {
+    if token_model.expires_at < Utc::now() {
         return Err(AppError::TokenExpired);
     }
 
     // Hash new password
     let password_hash = hash(&payload.new_password, DEFAULT_COST)?;
 
+    // Find user
+    let user_model = user::Entity::find_by_id(&token_model.user_id)
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?;
+
+    // Get user info for notification email before updating
+    let user_email = user_model.email.clone().unwrap_or_default();
+    let user_name = user_model.name.clone().unwrap_or_else(|| "User".to_string());
+
     // Update user's password
-    sqlx::query(
-        "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?"
-    )
-    .bind(&password_hash)
-    .bind(Utc::now())
-    .bind(&user_id)
-    .execute(&state.sqlx_pool)
-    .await?;
+    let mut user_active: user::ActiveModel = user_model.into();
+    user_active.password = Set(Some(password_hash));
+    user_active.update(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Mark token as used
-    sqlx::query("UPDATE password_reset_tokens SET used = TRUE WHERE id = ?")
-        .bind(&token_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    let token_user_id = token_model.user_id.clone();
+    let mut token_active: password_reset_token::ActiveModel = token_model.into();
+    token_active.used = Set(1);
+    token_active.update(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Revoke all refresh tokens for security
-    sqlx::query("UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ?")
-        .bind(&user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
-
-    // Get user info for notification email
-    let user_info: Option<(String, String)> = sqlx::query_as(
-        "SELECT email, COALESCE(full_name, username) FROM users WHERE id = ?"
-    )
-    .bind(&user_id)
-    .fetch_optional(&state.sqlx_pool)
-    .await?;
+    // Revoke all refresh tokens for security (clear refreshToken field)
+    // Since refreshToken is a field in User table, we just clear it
+    let mut user_update: user::ActiveModel = user::Entity::find_by_id(&token_user_id)
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?
+        .into();
+    user_update.refresh_token = Set(None);
+    user_update.update(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Send password changed notification email
-    if let Some((email, name)) = user_info {
+    if !user_email.is_empty() {
         let email_service = EmailService::new();
-        if let Err(e) = email_service.send_password_changed_email(&email, &name).await {
+        if let Err(e) = email_service.send_password_changed_email(&user_email, &user_name).await {
             tracing::warn!("Failed to send password changed notification: {}", e);
         }
     }

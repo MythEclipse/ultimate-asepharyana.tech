@@ -11,7 +11,11 @@ use axum::{
 use std::sync::Arc;
 use utoipa::ToSchema;
 
-use crate::models::user::{User, UserResponse};
+// SeaORM imports
+use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
+use crate::entities::{user, prelude::*};
+
+use crate::models::user::{User as LegacyUser, UserResponse};
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
@@ -68,21 +72,18 @@ pub async fn get_me(
         return Err(AppError::InvalidToken);
     }
 
-    // Fetch user from database
-    let user: User = sqlx::query_as(
-        r#"
-        SELECT id, email, username, password_hash, full_name, avatar_url,
-               email_verified, is_active, role, last_login_at, created_at, updated_at
-        FROM users
-        WHERE id = ? AND is_active = TRUE
-        "#,
-    )
-    .bind(&claims.user_id)
-    .fetch_optional(&state.sqlx_pool)
-    .await?
-    .ok_or(AppError::UserNotFound)?;
+    // Fetch user from database using SeaORM
+    let user_model = user::Entity::find()
+        .filter(user::Column::Id.eq(&claims.user_id))
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?;
 
-    Ok(Json(UserResponse::from(user)))
+    // Convert to UserResponse
+    let user_response: UserResponse = user_model.into();
+
+    Ok(Json(user_response))
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

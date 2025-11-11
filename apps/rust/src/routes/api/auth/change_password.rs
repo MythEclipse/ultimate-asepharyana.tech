@@ -14,6 +14,10 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user, session, prelude::*};
+
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::email::EmailService;
@@ -97,16 +101,16 @@ pub async fn change_password(
     // Validate new password strength
     validate_password_strength(&payload.new_password)?;
 
-    // Get current password hash
-    let current_password_hash: String = sqlx::query_scalar(
-        "SELECT password_hash FROM users WHERE id = ?"
-    )
-    .bind(&claims.user_id)
-    .fetch_one(&state.sqlx_pool)
-    .await?;
+    // Get user using SeaORM
+    let user_model = user::Entity::find_by_id(&claims.user_id)
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?;
 
     // Verify current password
-    let password_valid = verify(&payload.current_password, &current_password_hash)?;
+    let current_password_hash = user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?;
+    let password_valid = verify(&payload.current_password, current_password_hash)?;
     if !password_valid {
         return Err(AppError::InvalidCredentials);
     }
@@ -115,20 +119,12 @@ pub async fn change_password(
     let new_password_hash = hash(&payload.new_password, DEFAULT_COST)?;
 
     // Update password
-    sqlx::query(
-        "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?"
-    )
-    .bind(&new_password_hash)
-    .bind(Utc::now())
-    .bind(&claims.user_id)
-    .execute(&state.sqlx_pool)
-    .await?;
-
-    // Optionally revoke all refresh tokens for security
-    sqlx::query("UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ?")
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    let mut user_active: user::ActiveModel = user_model.into();
+    user_active.password = Set(Some(new_password_hash));
+    user_active.refresh_token = Set(None); // Clear refresh token for security
+    user_active.update(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Send password changed notification email
     let email_service = EmailService::new();

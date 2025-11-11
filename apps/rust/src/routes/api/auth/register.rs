@@ -5,13 +5,16 @@ use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
 use std::sync::Arc;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::models::user::{User, UserResponse};
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user, email_verification_token, prelude::*};
+
+use crate::models::user::{User as LegacyUser, UserResponse};
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
 use crate::utils::error::AppError;
@@ -97,25 +100,25 @@ pub async fn register(
     // Validate password strength
     validate_password_strength(&payload.password)?;
 
-    // Check if email already exists
-    let email_exists: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)"
-    )
-    .bind(&payload.email)
-    .fetch_one(&state.sqlx_pool)
-    .await?;
+    // Check if email already exists using SeaORM
+    let email_exists = user::Entity::find()
+        .filter(user::Column::Email.eq(&payload.email))
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .is_some();
 
     if email_exists {
         return Err(AppError::EmailAlreadyExists);
     }
 
-    // Check if username already exists
-    let username_exists: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)"
-    )
-    .bind(&payload.username)
-    .fetch_one(&state.sqlx_pool)
-    .await?;
+    // Check if name/username already exists using SeaORM
+    let username_exists = user::Entity::find()
+        .filter(user::Column::Name.eq(&payload.username))
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .is_some();
 
     if username_exists {
         return Err(AppError::UsernameAlreadyExists);
@@ -126,65 +129,51 @@ pub async fn register(
 
     // Generate user ID
     let user_id = Uuid::new_v4().to_string();
-    let now = Utc::now();
 
-    // Insert user into database
-    sqlx::query(
-        r#"
-        INSERT INTO users (
-            id, email, username, password_hash, full_name,
-            email_verified, is_active, role, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        "#,
-    )
-    .bind(&user_id)
-    .bind(&payload.email)
-    .bind(&payload.username)
-    .bind(&password_hash)
-    .bind(&payload.full_name)
-    .bind(false)
-    .bind(true)
-    .bind("user")
-    .bind(now)
-    .bind(now)
-    .execute(&state.sqlx_pool)
-    .await?;
+    // Insert user into database using SeaORM
+    let new_user = user::ActiveModel {
+        id: Set(user_id.clone()),
+        email: Set(Some(payload.email.clone())),
+        name: Set(Some(payload.username.clone())),
+        password: Set(Some(password_hash)),
+        email_verified: Set(None), // Will be set after verification
+        image: Set(None),
+        refresh_token: Set(None),
+        role: Set("user".to_string()),
+    };
 
-    // Generate email verification token
+    let inserted_user = new_user.insert(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
+
+    // Generate email verification token using SeaORM
     let verification_token = Uuid::new_v4().to_string();
     let expires_at = Utc::now() + chrono::Duration::hours(24);
+    let now = Utc::now();
 
-    sqlx::query(
-        r#"
-        INSERT INTO email_verification_tokens (id, user_id, token, expires_at, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        "#,
-    )
-    .bind(Uuid::new_v4().to_string())
-    .bind(&user_id)
-    .bind(&verification_token)
-    .bind(expires_at)
-    .bind(now)
-    .execute(&state.sqlx_pool)
-    .await?;
+    let verification_token_model = email_verification_token::ActiveModel {
+        id: Set(Uuid::new_v4().to_string()),
+        user_id: Set(user_id.clone()),
+        token: Set(verification_token.clone()),
+        expires_at: Set(expires_at),
+        created_at: Set(now),
+    };
 
-    // Fetch the created user
-    let user: User = sqlx::query_as(
-        r#"
-        SELECT id, email, username, password_hash, full_name, avatar_url,
-               email_verified, is_active, role, last_login_at, created_at, updated_at
-        FROM users WHERE id = ?
-        "#,
-    )
-    .bind(&user_id)
-    .fetch_one(&state.sqlx_pool)
-    .await?;
+    verification_token_model
+        .insert(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Send verification email
+    // Convert to UserResponse
+    let user_response: UserResponse = inserted_user.into();
+
+        // Send verification email
     let email_service = EmailService::new();
-    let user_name = payload.full_name.as_deref().unwrap_or(&payload.username);
+    let user_name = user_response.name.clone().unwrap_or_else(|| "User".to_string());
+    let user_email = user_response.email.clone().unwrap_or_else(|| payload.email.clone());
+
     if let Err(e) = email_service
-        .send_verification_email(&user.email, user_name, &verification_token)
+        .send_verification_email(&user_email, &user_name, &verification_token)
         .await
     {
         tracing::warn!("Failed to send verification email: {}", e);
@@ -196,7 +185,7 @@ pub async fn register(
         Json(RegisterResponse {
             success: true,
             message: "User registered successfully. Please check your email to verify your account.".to_string(),
-            user: user.into(),
+            user: user_response,
             verification_token: Some(verification_token),
         }),
     ))

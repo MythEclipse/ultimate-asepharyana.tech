@@ -104,8 +104,8 @@ pub async fn login(
 
     let claims = Claims {
         user_id: user_model.id.clone(),
-        email: user_model.email.clone(),
-        name: user_model.name.clone(),
+        email: user_model.email.clone().unwrap_or_else(|| "".to_string()),
+        name: user_model.name.clone().unwrap_or_else(|| "".to_string()),
         exp,
     };
 
@@ -131,7 +131,7 @@ pub async fn login(
     .await?;
 
     // Update last login timestamp (TODO: migrate to SeaORM when last_login_at added to schema)
-    // For now, keep using SQLx since last_login_at doesn't exist in current schema
+    // For now, skip since last_login_at doesn't exist in current schema
     // sqlx::query("UPDATE users SET last_login_at = ? WHERE id = ?")
     //     .bind(Utc::now())
     //     .bind(&user_model.id)
@@ -141,46 +141,8 @@ pub async fn login(
     // Log successful login
     log_login_attempt(&state, &user_model.id, true, None).await?;
 
-    // Convert SeaORM model to response format
-    let user_response = UserResponse {
-        id: user_model.id.clone(),
-        email: user_model.email.clone().unwrap_or_default(),
-        username: user_model.name.clone().unwrap_or_default(),
-        full_name: user_model.name.clone().unwrap_or_default(),
-        avatar_url: user_model.image.clone(),
-        email_verified: user_model.email_verified.is_some(),
-        is_active: true, // Default to true since schema doesn't have this field
-        role: user_model.role.clone(),
-        last_login_at: None, // Schema doesn't have this field yet
-        created_at: Utc::now(), // TODO: get from model when available
-        updated_at: Utc::now(),
-    };
-
-    // Update last login timestamp (TODO: migrate to SeaORM when last_login_at added to schema)
-    // For now, keep using SQLx since last_login_at doesn't exist in current schema
-    // sqlx::query("UPDATE users SET last_login_at = ? WHERE id = ?")
-    //     .bind(Utc::now())
-    //     .bind(&user_model.id)
-    //     .execute(&state.sqlx_pool)
-    //     .await?;
-
-    // Log successful login
-    log_login_attempt(&state, &user_model.id, true, None).await?;
-
-    // Convert SeaORM model to response format
-    let user_response = UserResponse {
-        id: user_model.id.clone(),
-        email: user_model.email.clone(),
-        username: user_model.name.clone(),
-        full_name: user_model.name.clone(),
-        avatar_url: user_model.image.clone(),
-        email_verified: user_model.email_verified.is_some(),
-        is_active: true, // Default to true since schema doesn't have this field
-        role: user_model.role.clone(),
-        last_login_at: None, // Schema doesn't have this field yet
-        created_at: Utc::now(), // TODO: get from model when available
-        updated_at: Utc::now(),
-    };
+    // Convert SeaORM model to response format using From trait
+    let user_response: UserResponse = user_model.into();
 
     Ok(Json(LoginResponse {
         user: user_response,

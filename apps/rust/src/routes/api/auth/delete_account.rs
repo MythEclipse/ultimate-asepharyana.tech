@@ -15,6 +15,10 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
+use crate::entities::{user, email_verification_token, password_reset_token, session, prelude::*};
+
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
@@ -80,16 +84,16 @@ pub async fn delete_account(
         ));
     }
 
-    // Get current password hash
-    let current_password_hash: String = sqlx::query_scalar(
-        "SELECT password_hash FROM users WHERE id = ?"
-    )
-    .bind(&claims.user_id)
-    .fetch_one(&state.sqlx_pool)
-    .await?;
+    // Get user using SeaORM
+    let user_model = user::Entity::find_by_id(&claims.user_id)
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?;
 
     // Verify password
-    let password_valid = verify(&payload.password, &current_password_hash)?;
+    let current_password_hash = user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?;
+    let password_valid = verify(&payload.password, current_password_hash)?;
     if !password_valid {
         return Err(AppError::InvalidCredentials);
     }
@@ -98,34 +102,31 @@ pub async fn delete_account(
     // The foreign keys should handle cascading, but we can be explicit
 
     // Delete email verification tokens
-    sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = ?")
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    email_verification_token::Entity::delete_many()
+        .filter(email_verification_token::Column::UserId.eq(&claims.user_id))
+        .exec(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Delete password reset tokens
-    sqlx::query("DELETE FROM password_reset_tokens WHERE user_id = ?")
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    password_reset_token::Entity::delete_many()
+        .filter(password_reset_token::Column::UserId.eq(&claims.user_id))
+        .exec(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Delete refresh tokens
-    sqlx::query("DELETE FROM refresh_tokens WHERE user_id = ?")
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    // Delete sessions
+    session::Entity::delete_many()
+        .filter(session::Column::UserId.eq(&claims.user_id))
+        .exec(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Delete login history
-    sqlx::query("DELETE FROM login_history WHERE user_id = ?")
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
-
-    // Finally, delete the user
-    sqlx::query("DELETE FROM users WHERE id = ?")
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+    // Finally, delete the user (refresh token is a field in user, will be deleted with user)
+    user::Entity::delete_by_id(&claims.user_id)
+        .exec(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     // Blacklist the current token
     let now = Utc::now().timestamp() as usize;

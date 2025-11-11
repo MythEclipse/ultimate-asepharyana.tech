@@ -14,7 +14,11 @@ use std::sync::Arc;
 use utoipa::ToSchema;
 use validator::Validate;
 
-use crate::models::user::{User, UserResponse};
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set, ActiveValue};
+use crate::entities::{user, prelude::*};
+
+use crate::models::user::UserResponse;
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
@@ -29,11 +33,11 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<UpdateProfileResponse>";
 /// Update profile request
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct UpdateProfileRequest {
-    pub full_name: Option<String>,
-    pub avatar_url: Option<String>,
+    pub name: Option<String>, // Changed from full_name to name
+    pub image: Option<String>, // Changed from avatar_url to image
 
-    #[validate(length(min = 3, max = 50, message = "Username must be between 3 and 50 characters"))]
-    pub username: Option<String>,
+    #[validate(email)]
+    pub email: Option<String>,
 }
 
 /// Update profile response
@@ -82,77 +86,60 @@ pub async fn update_profile(
         .validate()
         .map_err(|e| AppError::Other(format!("Validation error: {}", e)))?;
 
-    // Check if username is being changed and if it's already taken
-    if let Some(ref new_username) = payload.username {
-        let username_exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM users WHERE username = ? AND id != ?)"
-        )
-        .bind(new_username)
-        .bind(&claims.user_id)
-        .fetch_one(&state.sqlx_pool)
-        .await?;
+    // Check if email is being changed and if it's already taken
+    if let Some(ref new_email) = payload.email {
+        let email_exists = user::Entity::find()
+            .filter(user::Column::Email.eq(new_email))
+            .filter(user::Column::Id.ne(&claims.user_id))
+            .one(state.sea_orm())
+            .await
+            .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-        if username_exists {
-            return Err(AppError::UsernameAlreadyExists);
+        if email_exists.is_some() {
+            return Err(AppError::EmailAlreadyExists);
         }
     }
 
-    // Build update query dynamically
-    let mut updates = Vec::new();
-    let mut values: Vec<String> = Vec::new();
+    // Get current user
+    let user_model = user::Entity::find_by_id(&claims.user_id)
+        .one(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?
+        .ok_or(AppError::UserNotFound)?;
 
-    if let Some(ref full_name) = payload.full_name {
-        updates.push("full_name = ?");
-        values.push(full_name.clone());
+    // Update user fields
+    let mut user_active: user::ActiveModel = user_model.into();
+    let mut has_updates = false;
+
+    if let Some(name) = payload.name {
+        user_active.name = Set(Some(name));
+        has_updates = true;
     }
 
-    if let Some(ref avatar_url) = payload.avatar_url {
-        updates.push("avatar_url = ?");
-        values.push(avatar_url.clone());
+    if let Some(image) = payload.image {
+        user_active.image = Set(Some(image));
+        has_updates = true;
     }
 
-    if let Some(ref username) = payload.username {
-        updates.push("username = ?");
-        values.push(username.clone());
+    if let Some(email) = payload.email {
+        user_active.email = Set(Some(email));
+        user_active.email_verified = Set(None); // Reset verification when email changes
+        has_updates = true;
     }
 
-    if updates.is_empty() {
+    if !has_updates {
         return Err(AppError::Other("No fields to update".to_string()));
     }
 
-    updates.push("updated_at = ?");
-    let now = Utc::now();
-
-    // Execute update
-    let query = format!(
-        "UPDATE users SET {} WHERE id = ?",
-        updates.join(", ")
-    );
-
-    let mut query_builder = sqlx::query(&query);
-    for value in values {
-        query_builder = query_builder.bind(value);
-    }
-    query_builder = query_builder.bind(now).bind(&claims.user_id);
-
-    query_builder.execute(&state.sqlx_pool).await?;
-
-    // Fetch updated user
-    let user: User = sqlx::query_as(
-        r#"
-        SELECT id, email, username, password_hash, full_name, avatar_url,
-               email_verified, is_active, role, last_login_at, created_at, updated_at
-        FROM users WHERE id = ?
-        "#,
-    )
-    .bind(&claims.user_id)
-    .fetch_one(&state.sqlx_pool)
-    .await?;
+    // Save changes
+    let updated_user = user_active.update(state.sea_orm())
+        .await
+        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
     Ok(Json(UpdateProfileResponse {
         success: true,
         message: "Profile updated successfully".to_string(),
-        user: user.into(),
+        user: updated_user.into(),
     }))
 }
 

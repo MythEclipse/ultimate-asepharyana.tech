@@ -14,6 +14,10 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
+// SeaORM imports
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user, session, prelude::*};
+
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
@@ -93,33 +97,38 @@ pub async fn logout(
             .map_err(|e| AppError::RedisError(e))?;
     }
 
-    // Revoke refresh token if provided
+    // Revoke refresh token if provided (clear refreshToken in User table)
     if let Some(ref refresh_token) = payload.refresh_token {
-        sqlx::query(
-            r#"
-            UPDATE refresh_tokens
-            SET revoked = TRUE
-            WHERE token = ? AND user_id = ?
-            "#,
-        )
-        .bind(refresh_token)
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+        let user_model = user::Entity::find()
+            .filter(user::Column::RefreshToken.eq(refresh_token))
+            .filter(user::Column::Id.eq(&claims.user_id))
+            .one(state.sea_orm())
+            .await
+            .map_err(|e| AppError::DatabaseError(e.to_string()))?;
+
+        if let Some(user) = user_model {
+            let mut user_active: user::ActiveModel = user.into();
+            user_active.refresh_token = Set(None);
+            user_active.update(state.sea_orm())
+                .await
+                .map_err(|e| AppError::DatabaseError(e.to_string()))?;
+        }
     }
 
-    // If logout_all is true, revoke all refresh tokens for the user
+    // If logout_all is true, clear refresh token for this user
     if payload.logout_all {
-        sqlx::query(
-            r#"
-            UPDATE refresh_tokens
-            SET revoked = TRUE
-            WHERE user_id = ? AND revoked = FALSE
-            "#,
-        )
-        .bind(&claims.user_id)
-        .execute(&state.sqlx_pool)
-        .await?;
+        let user_model = user::Entity::find_by_id(&claims.user_id)
+            .one(state.sea_orm())
+            .await
+            .map_err(|e| AppError::DatabaseError(e.to_string()))?;
+
+        if let Some(user) = user_model {
+            let mut user_active: user::ActiveModel = user.into();
+            user_active.refresh_token = Set(None);
+            user_active.update(state.sea_orm())
+                .await
+                .map_err(|e| AppError::DatabaseError(e.to_string()))?;
+        }
     }
 
     Ok((
