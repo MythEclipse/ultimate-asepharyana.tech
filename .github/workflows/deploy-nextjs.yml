@@ -95,23 +95,6 @@ jobs:
 
           rm -f /tmp/deploy_key
 
-      - name: Install dependencies on VPS
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
-            export PATH=$PATH:/home/asephs/.bun/bin
-            export PUPPETEER_SKIP_DOWNLOAD=true
-            export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-
-            cd ${{ secrets.VPS_TARGET_DIR }}
-            echo "Installing dependencies..."
-            bun install --no-cache || bun install --ignore-scripts --no-cache
-          '
-          rm -f /tmp/deploy_key
-
       - name: Restart NextJS with PM2
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -120,14 +103,14 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
             export PATH=$PATH:/home/asephs/.bun/bin
             cd ${{ secrets.VPS_TARGET_DIR }}
-
+            
             # Stop existing PM2 process
             pm2 delete asepharyana.tech || true
-
+            
             # Start NextJS with PM2
             pm2 start apps/nextjs/ecosystem.config.cjs --env production
             pm2 save
-
+            
             echo "✅ Next.js deployment successful!"
           '
           rm -f /tmp/deploy_key

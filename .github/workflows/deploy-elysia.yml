@@ -101,57 +101,22 @@ jobs:
 
           rm -f /tmp/deploy_key
 
-      - name: Deploy on VPS
+      - name: Restart Elysia with PM2
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
-            # Set up the environment
             export PATH=$PATH:/home/asephs/.bun/bin
-            export PATH="$HOME/.cargo/bin:$PATH"
-            export PATH="$HOME/.nvm/versions/node/v22.17.1/bin:$PATH"
-
-            # Navigate to the app directory
             cd ${{ secrets.VPS_TARGET_DIR }}
-
-            # Pull the latest code (optional, as rsync is the source of truth)
-            git reset --hard origin/main
-
-            # Clean old node_modules completely (force remove)
-            echo "Cleaning old dependencies..."
-            rm -rf node_modules
-            rm -rf apps/*/node_modules
-            rm -rf libs/*/node_modules
-            rm -rf bun.lockb
-
-            # Clean Puppeteer/Playwright cache
-            echo "Cleaning browser caches..."
-            rm -rf ~/.cache/puppeteer
-            rm -rf ~/.cache/ms-playwright
-
-            # Set environment variables to skip browser downloads
-            export PUPPETEER_SKIP_DOWNLOAD=true
-            export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-            export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-
-            # Install all dependencies from root (allow optional failures)
-            echo "Installing dependencies..."
-            bun install --no-cache || bun install --ignore-scripts --no-cache
-
-            # Note: Build is already done in GitHub Actions
-            # The dist folder has been synced, so we don not need to build again
-
-            # Stop and delete old PM2 instance
+            
+            # Stop existing PM2 process
             pm2 delete elysia-app || true
-
-            # Start the application with PM2 (runs from dist folder)
-            cd ${{ secrets.VPS_TARGET_DIR }}
-            export VPS_TARGET_DIR=${{ secrets.VPS_TARGET_DIR }}
+            
+            # Start Elysia with PM2
             pm2 start apps/elysia/ecosystem.config.cjs --env production
             pm2 save
-
-            echo "ElysiaJS Deployment successful!"
+            
+            echo "✅ Elysia deployment successful!"
           '
           rm -f /tmp/deploy_key
