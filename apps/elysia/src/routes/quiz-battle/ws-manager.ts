@@ -66,8 +66,17 @@ export class QuizBattleWSManager {
     return Array.from(this.connections.values());
   }
 
-  getActiveConnectionsCount(): number {
+  getConnectionsCount(): number {
     return this.connections.size;
+  }
+
+  getSessionIdByConnection(connection: WSConnection): string | undefined {
+    for (const [sessionId, conn] of this.connections.entries()) {
+      if (conn === connection) {
+        return sessionId;
+      }
+    }
+    return undefined;
   }
 
   // ===== MATCH MANAGEMENT =====
@@ -278,10 +287,15 @@ export class QuizBattleWSManager {
     }
   }
 
-  sendToSession(sessionId: string, message: WSMessage): void {
+  sendToSession(sessionId: string, typeOrMessage: string | WSMessage, payload?: unknown): void {
     const connection = this.connections.get(sessionId);
     if (connection && connection.ws) {
       try {
+        // Support both formats: sendToSession(id, message) and sendToSession(id, type, payload)
+        const message: WSMessage = typeof typeOrMessage === 'string'
+          ? { type: typeOrMessage, payload: payload || {} }
+          : typeOrMessage;
+
         connection.ws.send(JSON.stringify(message));
       } catch (error) {
         console.error(`[WS] Error sending message to session ${sessionId}:`, error);
@@ -386,7 +400,7 @@ export class QuizBattleWSManager {
 
   getStats() {
     return {
-      activeConnections: this.getActiveConnectionsCount(),
+      activeConnections: this.getConnectionsCount(),
       activeMatches: this.getActiveMatchesCount(),
       activeLobbies: this.getActiveLobbiesCount(),
       queueSize: this.getQueueSize(),

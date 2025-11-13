@@ -233,38 +233,38 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
 
           case 'lobby.list.sync':
             if (sessionId) {
-              handleLobbyListSync(sessionId, message.payload as any);
+              handleLobbyListSync(sessionId);
             }
             break;
 
           // ===== CHAT SYSTEM =====
-          case 'chat.global.send':
+          case 'chat:global:send':
             if (sessionId) {
-              handleChatGlobalSend(sessionId, message.payload as any);
+              handleChatGlobalSend(sessionId, message as any);
             }
             break;
 
-          case 'chat.private.send':
+          case 'chat:private:send':
             if (sessionId) {
-              handleChatPrivateSend(sessionId, message.payload as any);
+              handleChatPrivateSend(sessionId, message as any);
             }
             break;
 
-          case 'chat.history.sync':
+          case 'chat:history:sync':
             if (sessionId) {
-              handleChatHistorySync(sessionId, message.payload as any);
+              handleChatHistorySync(sessionId, message as any);
             }
             break;
 
-          case 'chat.typing':
+          case 'chat:typing':
             if (sessionId) {
-              handleChatTyping(sessionId, message.payload as any);
+              handleChatTyping(sessionId, message as any);
             }
             break;
 
-          case 'chat.mark.read':
+          case 'chat:mark:read':
             if (sessionId) {
-              handleChatMarkRead(sessionId, message.payload as any);
+              handleChatMarkRead(sessionId, message as any);
             }
             break;
 

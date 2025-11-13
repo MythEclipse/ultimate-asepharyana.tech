@@ -13,14 +13,12 @@ import type {
   LobbyStartPayload,
   LobbyGameStartingPayload,
   LobbyLeavePayload,
-  LobbyPlayerLeftPayload,
   LobbyKickPayload,
-  LobbyPlayerKickedPayload,
-  LobbyListSyncPayload,
   LobbyListDataPayload,
   LobbyPlayer,
   LobbyInfo,
   LobbyState,
+  Difficulty,
 } from '../types';
 import {
   getDb,
@@ -103,8 +101,8 @@ export async function handleLobbyCreate(
       status: 'waiting',
       difficulty: payload.gameSettings.difficulty,
       category: payload.gameSettings.category || 'General',
-      totalQuestions: payload.gameSettings.questionsCount,
-      timePerQuestion: payload.gameSettings.questionTime,
+      totalQuestions: payload.gameSettings.totalQuestions,
+      timePerQuestion: payload.gameSettings.timePerQuestion,
       createdAt: new Date(),
       expiresAt: getExpiryTime(),
     });
@@ -424,8 +422,7 @@ export async function handleLobbyKick(
  * Handle lobby list request
  */
 export async function handleLobbyListSync(
-  sessionId: string,
-  payload: LobbyListSyncPayload
+  sessionId: string
 ): Promise<void> {
   try {
     const db = getDb();
@@ -453,10 +450,10 @@ export async function handleLobbyListSync(
         maxPlayers: lobby.maxPlayers,
         isPrivate: lobby.isPrivate === 1,
         gameSettings: {
-          difficulty: lobby.difficulty,
+          difficulty: lobby.difficulty as Difficulty,
           category: lobby.category,
-          questionsCount: lobby.totalQuestions,
-          questionTime: lobby.timePerQuestion,
+          totalQuestions: lobby.totalQuestions,
+          timePerQuestion: lobby.timePerQuestion,
         },
       });
     }
