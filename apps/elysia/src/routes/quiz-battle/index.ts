@@ -376,6 +376,221 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
       summary: 'Get Quiz Battle WebSocket statistics',
       description: 'Returns current statistics about active connections, matches, lobbies, and queue',
     },
+  })
+  .get('/lobbies', () => {
+    // Get list of all active lobbies
+    const lobbies = Array.from(wsManager['activeLobbies'].values()).map(lobby => ({
+      lobbyId: lobby.lobbyId,
+      lobbyCode: lobby.lobbyCode,
+      hostId: lobby.hostId,
+      memberCount: lobby.members.size,
+      difficulty: lobby.gameSettings.difficulty,
+      totalQuestions: lobby.gameSettings.totalQuestions,
+      timePerQuestion: lobby.gameSettings.timePerQuestion,
+      category: lobby.gameSettings.category,
+      status: lobby.status,
+    }));
+
+    return {
+      success: true,
+      data: lobbies,
+      total: lobbies.length,
+    };
+  }, {
+    detail: {
+      tags: ['Quiz Battle'],
+      summary: 'Get all active lobbies',
+      description: 'Returns list of all currently active game lobbies',
+      responses: {
+        200: {
+          description: 'Successfully retrieved lobbies',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        lobbyId: { type: 'string' },
+                        lobbyCode: { type: 'string' },
+                        hostId: { type: 'string' },
+                        memberCount: { type: 'number' },
+                        difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+                        totalQuestions: { type: 'number' },
+                        timePerQuestion: { type: 'number' },
+                        category: { type: 'string' },
+                        status: { type: 'string', enum: ['waiting', 'starting', 'playing', 'finished'] },
+                      },
+                    },
+                  },
+                  total: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  .get('/matches', () => {
+    // Get list of all active matches
+    const matches = Array.from(wsManager['activeMatches'].values()).map(match => ({
+      matchId: match.matchId,
+      player1Id: match.player1Id,
+      player2Id: match.player2Id,
+      currentQuestion: match.gameState.currentQuestionIndex,
+      totalQuestions: match.questions.length,
+      player1Score: match.gameState.playerScore || 0,
+      player2Score: match.gameState.opponentScore || 0,
+      status: match.status,
+    }));
+
+    return {
+      success: true,
+      data: matches,
+      total: matches.length,
+    };
+  }, {
+    detail: {
+      tags: ['Quiz Battle'],
+      summary: 'Get all active matches',
+      description: 'Returns list of all currently active quiz battle matches',
+      responses: {
+        200: {
+          description: 'Successfully retrieved matches',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        matchId: { type: 'string' },
+                        player1Id: { type: 'string' },
+                        player2Id: { type: 'string' },
+                        currentQuestion: { type: 'number' },
+                        totalQuestions: { type: 'number' },
+                        player1Score: { type: 'number' },
+                        player2Score: { type: 'number' },
+                        status: { type: 'string', enum: ['waiting', 'playing', 'finished', 'cancelled'] },
+                      },
+                    },
+                  },
+                  total: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  .get('/queue', () => {
+    // Get matchmaking queue info
+    const queue = Array.from(wsManager['matchmakingQueue'].values()).map(entry => ({
+      userId: entry.userId,
+      username: entry.username,
+      gameMode: entry.gameMode,
+      difficulty: entry.difficulty,
+      category: entry.category,
+      points: entry.points,
+      timestamp: entry.timestamp,
+    }));
+
+    return {
+      success: true,
+      data: queue,
+      total: queue.length,
+    };
+  }, {
+    detail: {
+      tags: ['Quiz Battle'],
+      summary: 'Get matchmaking queue',
+      description: 'Returns list of players currently in matchmaking queue',
+      responses: {
+        200: {
+          description: 'Successfully retrieved queue',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        userId: { type: 'string' },
+                        username: { type: 'string' },
+                        gameMode: { type: 'string', enum: ['ranked', 'casual', 'friend'] },
+                        difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+                        category: { type: 'string' },
+                        points: { type: 'number' },
+                        timestamp: { type: 'number' },
+                      },
+                    },
+                  },
+                  total: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  .get('/connection-info', () => {
+    // Get WebSocket connection info
+    return {
+      success: true,
+      data: {
+        endpoint: '/api/quiz/battle',
+        protocol: 'WebSocket',
+        messageFormat: 'JSON',
+        description: 'Connect to this WebSocket endpoint for real-time Quiz Battle features',
+        documentation: 'See API_DOCUMENTATION.md for complete WebSocket message types',
+      },
+    };
+  }, {
+    detail: {
+      tags: ['Quiz Battle'],
+      summary: 'Get WebSocket connection information',
+      description: 'Returns information about how to connect to Quiz Battle WebSocket',
+      responses: {
+        200: {
+          description: 'Connection information',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      endpoint: { type: 'string' },
+                      protocol: { type: 'string' },
+                      messageFormat: { type: 'string' },
+                      description: { type: 'string' },
+                      documentation: { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
 // Cleanup task yang berjalan setiap 5 menit
