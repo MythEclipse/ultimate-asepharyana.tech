@@ -1,7 +1,6 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDatabase } from '../../utils/prisma';
-import { users, emailVerificationTokens } from '@asepharyana/services';
+import { getDb, users, emailVerificationTokens } from '@asepharyana/services';
 import type { NewUser, NewEmailVerificationToken } from '@asepharyana/services';
 import { eq } from '@asepharyana/services';
 import { sendVerificationEmail } from '../../utils/email';
@@ -63,7 +62,7 @@ export const registerRoute = new Elysia()
   .post(
     '/register',
     async ({ body, set }): Promise<RegisterResponse> => {
-      const db = getDatabase();
+      const db = getDb();
       const { email, name, password } = body as RegisterBody;
 
       const sanitizedEmail = sanitizeEmail(email);

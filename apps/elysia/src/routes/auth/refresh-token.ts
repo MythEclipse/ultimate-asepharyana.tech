@@ -1,15 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { getDatabase } from '../../utils/prisma';
-import { users, sessions } from '@asepharyana/services';
+import { getDb, users, sessions, eq } from '@asepharyana/services';
 import type { NewSession } from '@asepharyana/services';
-import { eq } from '@asepharyana/services';
 import { signJWT } from '../../utils/jwt';
 
 export const refreshTokenRoute = new Elysia()
   .post(
     '/refresh-token',
     async ({ body, set }) => {
-      const db = getDatabase();
+      const db = getDb();
       const { refresh_token } = body as { refresh_token: string };
 
       const sessionResult = await db

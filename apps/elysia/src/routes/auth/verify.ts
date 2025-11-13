@@ -1,13 +1,11 @@
 import { Elysia, t } from 'elysia';
-import { getDatabase } from '../../utils/prisma';
-import { users, emailVerificationTokens } from '@asepharyana/services';
-import { eq } from '@asepharyana/services';
+import { getDb, users, emailVerificationTokens, eq } from '@asepharyana/services';
 
 export const verifyRoute = new Elysia()
   .get(
     '/verify',
     async ({ query, set }) => {
-      const db = getDatabase();
+      const db = getDb();
       const { token } = query;
 
       if (!token) {

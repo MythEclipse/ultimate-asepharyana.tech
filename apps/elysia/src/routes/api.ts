@@ -1,10 +1,9 @@
 import { Elysia } from 'elysia';
-import { getDatabase } from '../utils/prisma';
-import { users, eq, desc } from '@asepharyana/services';
+import { getDb, users, eq, desc } from '@asepharyana/services';
 
 export const apiRoutes = new Elysia({ prefix: '/api' })
   .get('/users', async () => {
-    const db = getDatabase();
+    const db = getDb();
     const allUsers = await db
       .select({
         id: users.id,
@@ -25,7 +24,7 @@ export const apiRoutes = new Elysia({ prefix: '/api' })
     };
   })
   .get('/users/:id', async ({ params: { id }, set }) => {
-    const db = getDatabase();
+    const db = getDb();
     const result = await db
       .select({
         id: users.id,

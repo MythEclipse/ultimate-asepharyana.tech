@@ -18,6 +18,7 @@ export default [
             'uuid',
             'ioredis',
             'nodemailer',
+            '@asepharyana/services',
           ],
         },
       ],

@@ -1,8 +1,6 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDatabase } from '../../utils/prisma';
-import { users, passwordResetTokens } from '@asepharyana/services';
-import { eq } from '@asepharyana/services';
+import { getDb, users, passwordResetTokens, eq } from '@asepharyana/services';
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) {
@@ -29,7 +27,7 @@ export const resetPasswordRoute = new Elysia()
   .post(
     '/reset-password',
     async ({ body, set }) => {
-      const db = getDatabase();
+      const db = getDb();
       const { token, new_password } = body as { token: string; new_password: string };
 
       const passwordError = validatePassword(new_password);

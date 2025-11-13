@@ -1,7 +1,6 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDatabase } from '../../utils/prisma';
-import { users, sessions } from '@asepharyana/services';
+import { getDb, users, sessions } from '@asepharyana/services';
 import type { NewSession } from '@asepharyana/services';
 import { eq } from '@asepharyana/services';
 import { signJWT } from '../../utils/jwt';
@@ -39,7 +38,7 @@ export const loginRoute = new Elysia()
   .post(
     '/login',
     async ({ body, set }): Promise<LoginResponse> => {
-      const db = getDatabase();
+      const db = getDb();
       const { email, password, rememberMe } = body as LoginBody;
 
       const sanitizedEmail = sanitizeEmail(email);

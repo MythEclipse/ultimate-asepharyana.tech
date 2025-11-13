@@ -1,7 +1,5 @@
 import { Elysia } from 'elysia';
-import { getDatabase } from '../../utils/prisma';
-import { users } from '@asepharyana/services';
-import { eq } from '@asepharyana/services';
+import { getDb, users, eq } from '@asepharyana/services';
 import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
 
@@ -27,7 +25,7 @@ export const meRoute = new Elysia()
       throw new Error('Invalid token');
     }
 
-    const db = getDatabase();
+    const db = getDb();
     const result = await db
       .select({
         id: users.id,

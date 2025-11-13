@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { getDatabase } from '../utils/prisma';
+import { getDb } from '@asepharyana/services';
 import { authMiddleware } from '../middleware/auth';
 import {
   chatRooms,
@@ -22,7 +22,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
   .get('/rooms', async (context) => {
     const { set } = context as typeof context & { user: AuthUser };
     try {
-      const db = getDatabase();
+      const db = getDb();
 
       const rooms = await db.query.chatRooms.findMany({
         orderBy: (chatRooms, { desc }) => [desc(chatRooms.updatedAt)],
@@ -93,7 +93,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
           throw new Error('Room name is required');
         }
 
-        const db = getDatabase();
+        const db = getDb();
         const roomId = `room_${Date.now()}_${user.id}`;
         const memberId = `member_${Date.now()}_${user.id}`;
 
@@ -168,7 +168,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
   .get('/rooms/:roomId/messages', async (context) => {
     const { params: { roomId }, query, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const db = getDatabase();
+      const db = getDb();
 
       // Check if user is a member of the room
       const membershipResult = await db
@@ -241,7 +241,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
           throw new Error('Message content is required');
         }
 
-        const db = getDatabase();
+        const db = getDb();
 
         // Check if user is a member of the room
         const membershipResult = await db
@@ -315,7 +315,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
   .post('/rooms/:roomId/join', async (context) => {
     const { params: { roomId }, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const db = getDatabase();
+      const db = getDb();
 
       // Check if room exists
       const roomResult = await db
@@ -393,7 +393,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
   .post('/rooms/:roomId/leave', async (context) => {
     const { params: { roomId }, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const db = getDatabase();
+      const db = getDb();
 
       // Find membership
       const membershipResult = await db
@@ -435,7 +435,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
   .delete('/messages/:messageId', async (context) => {
     const { params: { messageId }, user, set } = context as typeof context & { user: AuthUser };
     try {
-      const db = getDatabase();
+      const db = getDb();
 
       // Find message
       const messageResult = await db

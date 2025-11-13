@@ -1,6 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { getDatabase } from '../../utils/prisma';
-import { users, passwordResetTokens, eq } from '@asepharyana/services';
+import { getDb, users, passwordResetTokens, eq } from '@asepharyana/services';
 import type { NewPasswordResetToken } from '@asepharyana/services';
 import { sendPasswordResetEmail } from '../../utils/email';
 
@@ -14,7 +13,7 @@ export const forgotPasswordRoute = new Elysia()
   .post(
     '/forgot-password',
     async ({ body }) => {
-      const db = getDatabase();
+      const db = getDb();
       const { email } = body as { email: string };
 
       const userResult = await db

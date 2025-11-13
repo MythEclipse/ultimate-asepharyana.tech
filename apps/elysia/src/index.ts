@@ -6,18 +6,25 @@ import { apiRoutes } from './routes/api';
 import { authRoutes } from './routes/auth';
 import { sosmedRoutes } from './routes/sosmed';
 import { chatRoutes } from './routes/chat';
+import { quizBattleWS } from './routes/quiz-battle';
 import { logger } from './middleware';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimit } from './middleware/rateLimit';
 import { config } from './config';
-import { connectDatabase, disconnectDatabase } from './utils/prisma';
+import { initializeDb, closeDb } from '@asepharyana/services';
 import { getRedis } from './utils/redis';
+
+let isDbInitialized = false;
 
 // Initialize database and Redis connections
 const initializeConnections = async () => {
   try {
     // Connect to database
-    await connectDatabase();
+    if (!isDbInitialized) {
+      initializeDb(config.databaseUrl);
+      isDbInitialized = true;
+      console.log('✅ Database connected successfully');
+    }
 
     // Connect to Redis
     const redis = getRedis();
@@ -30,7 +37,7 @@ const initializeConnections = async () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down gracefully...');
-  await disconnectDatabase();
+  await closeDb();
   process.exit(0);
 });
 
@@ -59,6 +66,7 @@ export const app = new Elysia()
           { name: 'API', description: 'General API endpoints' },
           { name: 'Social Media', description: 'Social media posts, comments, and likes' },
           { name: 'Chat', description: 'Chat rooms and messages' },
+          { name: 'Quiz Battle', description: 'Quiz Battle game WebSocket and REST endpoints' },
         ],
         servers: [
           {
@@ -118,7 +126,20 @@ export const app = new Elysia()
   .use(authRoutes)
   .use(apiRoutes)
   .use(sosmedRoutes)
-  .use(chatRoutes);
+  .use(chatRoutes)
+  .use(quizBattleWS);
+
+// Graceful shutdown handler
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, closing gracefully...');
+  try {
+    await closeDb();
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+});
 
 // Start the server
 initializeConnections().then(() => {
@@ -132,5 +153,6 @@ initializeConnections().then(() => {
   );
   console.log(`📝 Environment: ${config.env}`);
   console.log(`🔐 Auth endpoints: http://${app.server?.hostname}:${app.server?.port}/api/auth`);
+  console.log(`🎮 Quiz Battle WS: ws://${app.server?.hostname}:${app.server?.port}/api/quiz/battle`);
   console.log(`📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/docs`);
 });

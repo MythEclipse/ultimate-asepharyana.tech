@@ -1,8 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { getDatabase } from '../utils/prisma';
-import { posts, comments, likes } from '@asepharyana/services';
+import { getDb, posts, comments, likes, eq, desc, and } from '@asepharyana/services';
 import type { NewPost, NewComment, NewLike } from '@asepharyana/services';
-import { eq, desc, and } from '@asepharyana/services';
 import { verifyJWT } from '../utils/jwt';
 
 export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
@@ -22,7 +20,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      const db = getDatabase();
+      const db = getDb();
 
       const postsList = await db.query.posts.findMany({
         orderBy: desc(posts.created_at),
@@ -101,7 +99,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Content or image is required');
         }
 
-        const db = getDatabase();
+        const db = getDb();
         const postId = `post_${Date.now()}_${payload.user_id}`;
 
         const newPost: NewPost = {
@@ -171,7 +169,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
 
         const { content, imageUrl } = body as { content: string; imageUrl?: string };
 
-        const db = getDatabase();
+        const db = getDb();
         const existingPostResult = await db
           .select()
           .from(posts)
@@ -251,7 +249,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      const db = getDatabase();
+      const db = getDb();
       const existingPostResult = await db
         .select()
         .from(posts)
@@ -311,7 +309,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Comment content is required');
         }
 
-        const db = getDatabase();
+        const db = getDb();
         const commentId = `comment_${Date.now()}_${payload.user_id}`;
         const newComment: NewComment = {
           id: commentId,
@@ -378,7 +376,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
 
         const { content } = body as { content: string };
 
-        const db = getDatabase();
+        const db = getDb();
         const existingCommentResult = await db
           .select()
           .from(comments)
@@ -452,7 +450,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      const db = getDatabase();
+      const db = getDb();
       const existingCommentResult = await db
         .select()
         .from(comments)
@@ -503,7 +501,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      const db = getDatabase();
+      const db = getDb();
 
       // Check if already liked
       const existingLikeResult = await db
@@ -570,7 +568,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         throw new Error('Invalid token');
       }
 
-      const db = getDatabase();
+      const db = getDb();
 
       // Find the like
       const existingLikeResult = await db
