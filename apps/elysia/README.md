@@ -47,6 +47,14 @@ NODE_ENV=development
 DATABASE_URL="mysql://root:password@localhost:3306/elysia_auth"
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
 REDIS_URL=redis://localhost:6379
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=avatars
+MINIO_PUBLIC_URL=http://localhost:9000
+MINIO_AVATAR_PREFIX=avatars
 ```
 
 2. **Create MySQL database:**
@@ -138,6 +146,7 @@ pnpm start
 - `GET /api/hello/:name` - Personalized greeting
 - `POST /api/echo` - Echo back the request body
 - `GET /api/users` - List all users (demo)
+  - `POST /api/users/avatar` - Upload user avatar (multipart/form-data; requires auth; stores in MinIO)
 
 ### Authentication (Full System)
 - `POST /api/auth/register` - Register new user
