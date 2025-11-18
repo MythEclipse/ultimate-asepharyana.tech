@@ -122,7 +122,7 @@ jobs:
             cd ${{ secrets.VPS_TARGET_DIR }}
 
             # Stop existing PM2 process
-            pm2 delete rust-app || true
+            pm2 delete RustExpress || true
 
             # Start Rust with PM2
             pm2 start apps/rust/ecosystem.config.cjs --env production
