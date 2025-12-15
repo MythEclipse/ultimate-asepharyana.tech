@@ -243,7 +243,7 @@ test_api "GET" "/api/auth/me" "" "200" "Get current user info" "$ACCESS_TOKEN"
 echo -e "\n${BLUE}>>> Refreshing token...${NC}"
 REFRESH_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/auth/refresh-token" \
     -H "Content-Type: application/json" \
-    -d "{\"refreshToken\": \"$REFRESH_TOKEN\"}")
+    -d "{\"refresh_token\": \"$REFRESH_TOKEN\"}")
 
 if echo "$REFRESH_RESPONSE" | grep -q "accessToken"; then
     print_status "PASS" "Token refresh"
@@ -297,11 +297,10 @@ fi
 # Create comment
 if [ -n "$POST_ID" ]; then
     echo -e "\n${BLUE}>>> Creating comment...${NC}"
-    COMMENT_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/sosmed/comments" \
+    COMMENT_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/sosmed/posts/$POST_ID/comments" \
         -H "Authorization: Bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -d "{
-            \"postId\": \"$POST_ID\",
             \"content\": \"This is a test comment!\"
         }")
 
