@@ -2,10 +2,11 @@
 // Run: bun run apps/elysia/scripts/test-quiz-client.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const WS_URL = 'ws://localhost:3000/api/quiz/battle';
+const WS_URL = 'ws://localhost:4092/api/quiz/battle';
 
 // Simulated JWT token (replace with real token in production)
-const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0X3VzZXJfMSIsInVzZXJuYW1lIjoiVGVzdFBsYXllcjEifQ.test';
+const TEST_TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0X3VzZXJfMSIsInVzZXJuYW1lIjoiVGVzdFBsYXllcjEifQ.test';
 
 interface WSMessage {
   type: string;
@@ -69,27 +70,58 @@ class QuizBattleClient {
 
       switch (message.type) {
         case 'auth.connected':
-          if (typeof message.payload === 'object' && message.payload && 'sessionId' in message.payload) {
-            this.sessionId = (message.payload as { sessionId: string }).sessionId;
-            console.log(`🔐 [${this.username}] Authenticated! Session: ${this.sessionId}`);
+          if (
+            typeof message.payload === 'object' &&
+            message.payload &&
+            'sessionId' in message.payload
+          ) {
+            this.sessionId = (
+              message.payload as { sessionId: string }
+            ).sessionId;
+            console.log(
+              `🔐 [${this.username}] Authenticated! Session: ${this.sessionId}`,
+            );
           }
           break;
 
         case 'auth.error':
-          if (typeof message.payload === 'object' && message.payload && 'message' in message.payload) {
-            console.error(`❌ [${this.username}] Auth error:`, (message.payload as { message: string }).message);
+          if (
+            typeof message.payload === 'object' &&
+            message.payload &&
+            'message' in message.payload
+          ) {
+            console.error(
+              `❌ [${this.username}] Auth error:`,
+              (message.payload as { message: string }).message,
+            );
           }
           break;
 
         case 'matchmaking.searching':
-          if (typeof message.payload === 'object' && message.payload && 'playersInQueue' in message.payload) {
-            console.log(`🔍 [${this.username}] Searching for match... Queue size: ${(message.payload as { playersInQueue: number }).playersInQueue}`);
+          if (
+            typeof message.payload === 'object' &&
+            message.payload &&
+            'playersInQueue' in message.payload
+          ) {
+            console.log(
+              `🔍 [${this.username}] Searching for match... Queue size: ${(message.payload as { playersInQueue: number }).playersInQueue}`,
+            );
           }
           break;
 
         case 'matchmaking.found':
-          if (typeof message.payload === 'object' && message.payload && 'matchId' in message.payload && 'opponent' in message.payload && 'startIn' in message.payload) {
-            const payload = message.payload as { matchId: string; opponent: { username: string }; startIn: number };
+          if (
+            typeof message.payload === 'object' &&
+            message.payload &&
+            'matchId' in message.payload &&
+            'opponent' in message.payload &&
+            'startIn' in message.payload
+          ) {
+            const payload = message.payload as {
+              matchId: string;
+              opponent: { username: string };
+              startIn: number;
+            };
             this.currentMatchId = payload.matchId;
             console.log(`🎮 [${this.username}] Match found!`);
             console.log(`   Opponent: ${payload.opponent.username}`);
@@ -98,18 +130,38 @@ class QuizBattleClient {
           break;
 
         case 'game.started':
-          if (typeof message.payload === 'object' && message.payload && 'matchId' in message.payload && 'gameState' in message.payload) {
-            const payload = message.payload as { matchId: string; gameState: { totalQuestions: number } };
+          if (
+            typeof message.payload === 'object' &&
+            message.payload &&
+            'matchId' in message.payload &&
+            'gameState' in message.payload
+          ) {
+            const payload = message.payload as {
+              matchId: string;
+              gameState: { totalQuestions: number };
+            };
             console.log(`🚀 [${this.username}] Game started!`);
             console.log(`   Match ID: ${payload.matchId}`);
-            console.log(`   Total Questions: ${payload.gameState.totalQuestions}`);
+            console.log(
+              `   Total Questions: ${payload.gameState.totalQuestions}`,
+            );
           }
           break;
 
         case 'game.question.new':
-          if (typeof message.payload === 'object' && message.payload && 'questionIndex' in message.payload && 'question' in message.payload) {
-            const payload = message.payload as { questionIndex: number; question: { text: string; answers: string[] } };
-            console.log(`❓ [${this.username}] New question ${payload.questionIndex + 1}:`);
+          if (
+            typeof message.payload === 'object' &&
+            message.payload &&
+            'questionIndex' in message.payload &&
+            'question' in message.payload
+          ) {
+            const payload = message.payload as {
+              questionIndex: number;
+              question: { text: string; answers: string[] };
+            };
+            console.log(
+              `❓ [${this.username}] New question ${payload.questionIndex + 1}:`,
+            );
             console.log(`   ${payload.question.text}`);
             payload.question.answers.forEach((answer: string, idx: number) => {
               console.log(`   ${idx}: ${answer}`);
@@ -120,33 +172,52 @@ class QuizBattleClient {
           break;
 
         case 'game.answer.received': {
-          const result = (message.payload as any).isCorrect ? '✅ Correct!' : '❌ Wrong!';
+          const result = (message.payload as any).isCorrect
+            ? '✅ Correct!'
+            : '❌ Wrong!';
           console.log(`${result} [${this.username}] Answer result:`);
           console.log(`   Points earned: ${(message.payload as any).points}`);
-          console.log(`   Answer time: ${(message.payload as any).answerTime.toFixed(2)}s`);
+          console.log(
+            `   Answer time: ${(message.payload as any).answerTime.toFixed(2)}s`,
+          );
           break;
         }
 
         case 'game.opponent.answered': {
           const oppResult = (message.payload as any).isCorrect ? '✅' : '❌';
-          console.log(`${oppResult} [${this.username}] Opponent answered in ${(message.payload as any).answerTime.toFixed(2)}s`);
+          console.log(
+            `${oppResult} [${this.username}] Opponent answered in ${(message.payload as any).answerTime.toFixed(2)}s`,
+          );
           break;
         }
 
         case 'game.battle.update':
           console.log(`⚔️ [${this.username}] Battle update:`);
-          console.log(`   Your Health: ${(message.payload as any).gameState.playerHealth}`);
-          console.log(`   Opponent Health: ${(message.payload as any).gameState.opponentHealth}`);
+          console.log(
+            `   Your Health: ${(message.payload as any).gameState.playerHealth}`,
+          );
+          console.log(
+            `   Opponent Health: ${(message.payload as any).gameState.opponentHealth}`,
+          );
           break;
 
         case 'game.over': {
-          const isWinner = (message.payload as any).winner.userId === this.userId;
-          console.log(`\n${isWinner ? '🏆' : '😢'} [${this.username}] Game Over! ${isWinner ? 'YOU WIN!' : 'You Lost'}`);
+          const isWinner =
+            (message.payload as any).winner.userId === this.userId;
+          console.log(
+            `\n${isWinner ? '🏆' : '😢'} [${this.username}] Game Over! ${isWinner ? 'YOU WIN!' : 'You Lost'}`,
+          );
           console.log(`   Winner: ${(message.payload as any).winner.username}`);
-          console.log(`   Your Score: ${isWinner ? (message.payload as any).winner.finalScore : (message.payload as any).loser.finalScore}`);
-          console.log(`   Correct Answers: ${isWinner ? (message.payload as any).winner.correctAnswers : (message.payload as any).loser.correctAnswers}/${isWinner ? (message.payload as any).winner.totalAnswers : (message.payload as any).loser.totalAnswers}`);
+          console.log(
+            `   Your Score: ${isWinner ? (message.payload as any).winner.finalScore : (message.payload as any).loser.finalScore}`,
+          );
+          console.log(
+            `   Correct Answers: ${isWinner ? (message.payload as any).winner.correctAnswers : (message.payload as any).loser.correctAnswers}/${isWinner ? (message.payload as any).winner.totalAnswers : (message.payload as any).loser.totalAnswers}`,
+          );
           console.log(`   Rewards:`);
-          const rewards = isWinner ? (message.payload as any).rewards.winner : (message.payload as any).rewards.loser;
+          const rewards = isWinner
+            ? (message.payload as any).rewards.winner
+            : (message.payload as any).rewards.loser;
           console.log(`     Points: +${rewards.points}`);
           console.log(`     Experience: +${rewards.experience}`);
           console.log(`     Coins: +${rewards.coins}`);
@@ -154,11 +225,18 @@ class QuizBattleClient {
         }
 
         case 'error':
-          console.error(`❌ [${this.username}] Error:`, (message.payload as any).message);
+          console.error(
+            `❌ [${this.username}] Error:`,
+            (message.payload as any).message,
+          );
           break;
 
         default:
-          console.log(`📨 [${this.username}] Unhandled message:`, message.type, message.payload);
+          console.log(
+            `📨 [${this.username}] Unhandled message:`,
+            message.type,
+            message.payload,
+          );
       }
     } catch (error) {
       console.error(`❌ [${this.username}] Error handling message:`, error);
@@ -167,7 +245,7 @@ class QuizBattleClient {
 
   private authenticate(): void {
     this.send({
-      type: 'auth.connect',
+      type: 'auth:connect',
       payload: {
         token: TEST_TOKEN,
         userId: this.userId,
@@ -211,16 +289,30 @@ class QuizBattleClient {
       if (shouldAnswerCorrect) {
         // Get correct answer from question (in real scenario, client doesn't know correct answer)
         // For testing, we'll just pick random
-        answerIndex = Math.floor(Math.random() * payload.question.answers.length);
+        answerIndex = Math.floor(
+          Math.random() * payload.question.answers.length,
+        );
       } else {
-        answerIndex = Math.floor(Math.random() * payload.question.answers.length);
+        answerIndex = Math.floor(
+          Math.random() * payload.question.answers.length,
+        );
       }
 
-      this.submitAnswer(payload.questionIndex, payload.question.id, answerIndex, thinkingTime);
+      this.submitAnswer(
+        payload.questionIndex,
+        payload.question.id,
+        answerIndex,
+        thinkingTime,
+      );
     }, thinkingTime);
   }
 
-  submitAnswer(questionIndex: number, questionId: string, answerIndex: number, answerTime: number): void {
+  submitAnswer(
+    questionIndex: number,
+    questionId: string,
+    answerIndex: number,
+    answerTime: number,
+  ): void {
     if (!this.currentMatchId) {
       console.error(`❌ [${this.username}] No active match`);
       return;
@@ -268,27 +360,26 @@ async function runTest() {
     // Connect both players
     console.log('📡 Connecting players...\n');
     await player1.connect();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     await player2.connect();
 
     // Wait for authentication
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Start matchmaking for both
     console.log('\n🔍 Starting matchmaking...\n');
     player1.findMatch('casual', 'easy', 'all');
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     player2.findMatch('casual', 'easy', 'all');
 
     // Let the game run (questions will be auto-answered)
     console.log('\n⏳ Waiting for match to complete...\n');
-    await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 60 seconds
+    await new Promise((resolve) => setTimeout(resolve, 60000)); // Wait 60 seconds
 
     // Cleanup
     console.log('\n🧹 Cleaning up...');
     player1.disconnect();
     player2.disconnect();
-
   } catch (error) {
     console.error('❌ Test failed:', error);
   }

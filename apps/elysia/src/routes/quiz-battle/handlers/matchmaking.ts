@@ -13,7 +13,13 @@ import type {
   MatchState,
 } from '../types';
 import { wsManager } from '../ws-manager';
-import { getDb, users, quizUserStats, quizMatches, eq } from '@asepharyana/services';
+import {
+  getDb,
+  users,
+  quizUserStats,
+  quizMatches,
+  eq,
+} from '@asepharyana/services';
 
 // Generate unique match ID
 function generateMatchId(): string {
@@ -55,11 +61,17 @@ async function getOpponentInfo(userId: string): Promise<OpponentInfo | null> {
 
 export async function handleMatchmakingFind(
   sessionId: string,
-  payload: MatchmakingFindPayload
+  payload: MatchmakingFindPayload,
 ): Promise<void> {
   try {
-    const connection = wsManager.getConnection(sessionId);
-    if (!connection) return;
+    // Use userId from payload to find connection (sessionId from index.ts is unreliable)
+    const connection = wsManager.getConnectionByUserId(payload.userId);
+    if (!connection) {
+      console.log(
+        `[Matchmaking] No connection found for user ${payload.userId}`,
+      );
+      return;
+    }
 
     // Check if user is already in match or lobby
     if (connection.currentMatchId || connection.currentLobbyId) {
@@ -90,7 +102,7 @@ export async function handleMatchmakingFind(
       payload.gameMode,
       payload.difficulty,
       payload.category,
-      payload.gameMode === 'ranked' ? userPoints : undefined
+      payload.gameMode === 'ranked' ? userPoints : undefined,
     );
 
     if (matchFound) {
@@ -98,7 +110,9 @@ export async function handleMatchmakingFind(
       wsManager.removeFromQueue(matchFound.userId);
 
       // Get opponent connection
-      const opponentConnection = wsManager.getConnectionByUserId(matchFound.userId);
+      const opponentConnection = wsManager.getConnectionByUserId(
+        matchFound.userId,
+      );
       if (!opponentConnection) {
         // Opponent disconnected, add user to queue instead
         await addUserToQueue(payload, userPoints);
@@ -191,7 +205,9 @@ export async function handleMatchmakingFind(
       wsManager.sendToUser(payload.userId, matchFoundMsgPlayer1);
       wsManager.sendToUser(matchFound.userId, matchFoundMsgPlayer2);
 
-      console.log(`[Matchmaking] Match found: ${connection.username} vs ${opponentConnection.username}`);
+      console.log(
+        `[Matchmaking] Match found: ${connection.username} vs ${opponentConnection.username}`,
+      );
 
       // Start game after 5 seconds
       setTimeout(() => {
@@ -208,7 +224,7 @@ export async function handleMatchmakingFind(
 
 async function addUserToQueue(
   payload: MatchmakingFindPayload,
-  points: number
+  points: number,
 ): Promise<void> {
   const queueEntry: MatchmakingQueueEntry = {
     userId: payload.userId,
@@ -238,7 +254,7 @@ async function addUserToQueue(
 
 export function handleMatchmakingCancel(
   sessionId: string,
-  payload: MatchmakingCancelPayload
+  payload: MatchmakingCancelPayload,
 ): void {
   try {
     wsManager.removeFromQueue(payload.userId);
