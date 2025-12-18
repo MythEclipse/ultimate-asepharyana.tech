@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'RustExpress',
       script: 'target/release/rust',
-      cwd: process.env.VPS_TARGET_DIR ? `${process.env.VPS_TARGET_DIR}/apps/rust` : '/home/asephs/ultimate-asepharyana.cloud/apps/rust',
+      cwd: process.env.VPS_TARGET_DIR ? `${process.env.VPS_TARGET_DIR}/apps/rust` : '/root/ultimate-asepharyana.cloud/apps/rust',
       interpreter: 'none',
       exec_mode: 'fork',
       autorestart: true,

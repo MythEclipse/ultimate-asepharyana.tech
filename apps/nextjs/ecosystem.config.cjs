@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'asepharyana.tech',
-      script: '/home/asephs/.bun/bin/bun',
+      script: '/root/.bun/bin/bun',
       args: 'run start',
-      cwd: process.env.VPS_TARGET_DIR ? `${process.env.VPS_TARGET_DIR}/apps/nextjs` : '/home/asephs/ultimate-asepharyana.cloud/apps/nextjs',
+      cwd: process.env.VPS_TARGET_DIR ? `${process.env.VPS_TARGET_DIR}/apps/nextjs` : '/root/ultimate-asepharyana.cloud/apps/nextjs',
       interpreter: 'none',
       exec_mode: 'fork',
       autorestart: true,
