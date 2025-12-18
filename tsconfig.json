@@ -10,7 +10,7 @@
       "path": "./apps/nextjs"
     },
     {
-      "path": "./libs/services"
+      "path": "./packages/services"
     }
   ],
   "ts-node": {

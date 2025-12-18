@@ -1,14 +1,9 @@
 //@ts-check
 
-const path = require('path');
-const { composePlugins, withNx } = require('@nx/next');
-
 /**
- * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
+ * @type {import('next').NextConfig}
  **/
 const nextConfig = {
-  // Force standalone to skip static error page generation
-  // output: process.env.DOCKER === 'enable' ? 'standalone' : undefined,
   images: {
     remotePatterns: [
       {
@@ -73,15 +68,8 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@asepharyana/services'],
   },
-  // Use this to set Nx-specific options
-  // See: https://nx.dev/recipes/next/next-config-setup
-  // Force standalone output to skip static optimization
   output: 'standalone',
 };
 
-const plugins = [
-  // Add more Next.js plugins to this list if needed.
-  withNx,
-];
+module.exports = nextConfig;
 
-module.exports = composePlugins(...plugins)(nextConfig);

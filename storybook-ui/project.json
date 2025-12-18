@@ -1,7 +1,0 @@
-{
-  "name": "storybook-ui",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "storybook-ui/src",
-  "projectType": "library",
-  "tags": []
-}

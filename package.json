@@ -4,33 +4,33 @@
   "license": "MIT",
   "workspaces": [
     "apps/*",
-    "libs/*"
+    "packages/*"
   ],
   "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
     "clean:nm": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/clean-node-modules.ps1 -Yes",
     "clean:deep": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/clean-node-modules.ps1 -IncludeCache -IncludeLock -PruneStore -Yes",
-    "nextjs:dev": "nx serve nextjs",
-    "nextjs:build": "nx build nextjs",
-    "nextjs:lint": "nx lint nextjs --fix",
-    "nextjs:start": "nx start nextjs",
-    "rust:build": "nx build rust",
-    "rust:dev": "nx serve rust",
-    "rust:start": "nx start rust",
-    "rust:lint": "nx lint rust",
-    "rust:test": "nx test rust",
-    "rust:format": "nx format rust",
-    "elysia:dev": "nx serve elysia",
-    "elysia:build": "nx build elysia",
-    "elysia:start": "nx start elysia",
-    "elysia:test": "nx test elysia",
-    "service:dev": "nx serve services",
-    "service:build": "nx build services",
-    "service:lint": "nx lint services --fix",
-    "service:start": "nx start services"
+    "nextjs:dev": "turbo run dev --filter=@asepharyana/nextjs",
+    "nextjs:build": "turbo run build --filter=@asepharyana/nextjs",
+    "nextjs:lint": "turbo run lint --filter=@asepharyana/nextjs",
+    "nextjs:start": "cd apps/nextjs && bun run start",
+    "elysia:dev": "turbo run dev --filter=@asepharyana/elysia",
+    "elysia:build": "turbo run build --filter=@asepharyana/elysia",
+    "elysia:start": "cd apps/elysia && bun run start",
+    "elysia:test": "turbo run test --filter=@asepharyana/elysia",
+    "rust:build": "cargo build --release --manifest-path apps/rust/Cargo.toml",
+    "rust:dev": "cargo run --manifest-path apps/rust/Cargo.toml",
+    "service:build": "turbo run build --filter=@asepharyana/services",
+    "copyenv": "node -e \"const fs = require('fs'); const path = require('path'); const rootEnv = path.join(__dirname, '.env'); if (!fs.existsSync(rootEnv)) { console.error('Root .env file not found'); process.exit(1); } const appsDir = path.join(__dirname, 'apps'); fs.readdirSync(appsDir).forEach(dir => { const fullDir = path.join(appsDir, dir); if (fs.statSync(fullDir).isDirectory() && !['node_modules', '.turbo', '.next', 'dist', 'target'].includes(dir)) { const dest = path.join(fullDir, '.env'); fs.copyFileSync(rootEnv, dest); console.log('Copied .env to ' + dest); } });\""
   },
   "private": true,
   "dependencies": {
-    "@nx/storybook": "22.0.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -132,18 +132,7 @@
     "@eslint/compat": "^1.4.1",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.39.0",
-    "@monodon/rust": "^2.3.0",
     "@next/eslint-plugin-next": "^16.0.1",
-    "@nx/devkit": "22.0.2",
-    "@nx/eslint": "22.0.2",
-    "@nx/eslint-plugin": "22.0.2",
-    "@nx/js": "22.0.2",
-    "@nx/next": "22.0.2",
-    "@nx/playwright": "22.0.2",
-    "@nx/react": "22.0.2",
-    "@nx/vite": "22.0.2",
-    "@nx/web": "22.0.2",
-    "@nx/workspace": "22.0.2",
     "@playwright/test": "^1.56.1",
     "@swc-node/register": "~1.11.1",
     "@swc/cli": "0.7.8",
@@ -179,7 +168,7 @@
     "jiti": "2.6.1",
     "jsdom": "~27.1.0",
     "jsonc-eslint-parser": "^2.4.1",
-    "nx": "22.0.2",
+    "turbo": "^2.6.3",
     "openapi-typescript": "^7.10.1",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
@@ -205,25 +194,11 @@
     "bcrypt",
     "core-js-pure",
     "esbuild",
-    "nx",
     "oxc-resolver",
     "sharp",
     "sleep",
     "tree-sitter",
     "tree-sitter-json",
     "unrs-resolver"
-  ],
-  "nx": {
-    "includedScripts": [],
-    "targets": {
-      "local-registry": {
-        "executor": "@nx/js:verdaccio",
-        "options": {
-          "port": 4873,
-          "config": ".verdaccio/config.yml",
-          "storage": "tmp/local-registry/storage"
-        }
-      }
-    }
-  }
+  ]
 }

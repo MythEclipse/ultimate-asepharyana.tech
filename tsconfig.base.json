@@ -14,7 +14,11 @@
     "allowJs": true,
     "strict": true,
     "esModuleInterop": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "resolveJsonModule": true,
@@ -22,9 +26,19 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@asepharyana/services": ["./libs/services/src/index.ts"],
-      "@asepharyana/storybook-ui": ["./storybook-ui/src/index.ts"]
+      "@asepharyana/services": [
+        "./packages/services/src/index.ts"
+      ],
+      "@asepharyana/storybook-ui": [
+        "./storybook-ui/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp", "dist", "**/*.spec.ts", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "tmp",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }

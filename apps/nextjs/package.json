@@ -86,6 +86,7 @@
     "dev": "next dev -p 4090",
     "build": "next build",
     "start": "next start -p 4090",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check-types": "tsc --noEmit"
   }
 }

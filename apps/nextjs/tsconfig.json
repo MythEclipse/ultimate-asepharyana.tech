@@ -5,7 +5,11 @@
     "strict": true,
     "noEmit": true,
     "emitDeclarationOnly": false,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
     "allowJs": true,
     "incremental": true,
     "moduleResolution": "bundler",
@@ -16,8 +20,12 @@
       }
     ],
     "paths": {
-      "@/lib/*": ["./lib/*"],
-      "@asepharyana/services": ["../../libs/services/src/index.ts"]
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@asepharyana/services": [
+        "../../packages/services/src/index.ts"
+      ]
     }
   },
   "include": [
@@ -33,5 +41,10 @@
     "postcss.config.mjs",
     "../../apps/nextjs/.next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "jest.config.ts", "**/*.spec.ts", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "jest.config.ts",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }

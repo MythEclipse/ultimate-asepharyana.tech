@@ -7,7 +7,6 @@ on:
       - main
     paths:
       - 'apps/rust/**'
-      - 'libs/rust/**'
       - '.github/workflows/deploy-rust.yml'
 
 jobs:
@@ -105,9 +104,14 @@ jobs:
             rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" "$file" "$target"
           done
 
-          # Sync Rust binary
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release"
+          # Sync Rust binary and create logs directory
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/rust/{target/release,logs}"
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" apps/rust/target/release/rust ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/rust/target/release/rust
+
+          # Sync ecosystem config
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/rust/ecosystem.config.cjs \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/rust/ecosystem.config.cjs
 
           rm -f /tmp/deploy_key
 
