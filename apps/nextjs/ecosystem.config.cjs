@@ -2,7 +2,7 @@
 module.exports = {
   apps: [
     {
-      name: 'asepharyana.tech',
+      name: 'ultimate-nextjs',
       script: '/root/.bun/bin/bun',
       args: 'run start',
       cwd: process.env.VPS_TARGET_DIR

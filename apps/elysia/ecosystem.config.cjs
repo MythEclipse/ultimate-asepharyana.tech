@@ -2,7 +2,7 @@
 module.exports = {
   apps: [
     {
-      name: 'elysia-app',
+      name: 'ultimate-elysia',
       script: 'dist/index.js',
       interpreter: '/root/.bun/bin/bun',
       cwd: process.env.VPS_TARGET_DIR

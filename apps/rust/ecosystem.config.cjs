@@ -2,7 +2,7 @@
 module.exports = {
   apps: [
     {
-      name: 'RustExpress',
+      name: 'ultimate-rust',
       script: 'target/release/rust',
       cwd: process.env.VPS_TARGET_DIR
         ? `${process.env.VPS_TARGET_DIR}/apps/rust`
