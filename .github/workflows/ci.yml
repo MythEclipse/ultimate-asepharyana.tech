@@ -36,4 +36,4 @@ jobs:
       - run: bun exec playwright install --with-deps
 
       # Run Turborepo build, lint, and check-types
-      - run: bun exec turbo run lint build check-types
+      - run: bunx turbo run lint build check-types

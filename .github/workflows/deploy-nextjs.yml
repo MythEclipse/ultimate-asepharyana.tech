@@ -52,7 +52,7 @@ jobs:
         run: bun install
 
       - name: Build Services Package (Drizzle)
-        run: bun exec turbo run build --filter=@asepharyana/services
+        run: bunx turbo run build --filter=@asepharyana/services
 
       - name: Build Next.js
         working-directory: apps/nextjs
