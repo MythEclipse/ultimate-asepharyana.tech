@@ -98,17 +98,22 @@ jobs:
 
           rm -f /tmp/deploy_key
 
-      - name: Restart NextJS with PM2
+      - name: Install Dependencies and Restart NextJS with PM2
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
-            # Ensure bun and node global bin are available for PM2
+            # Ensure bun is available
             export PATH=$PATH:/root/.bun/bin:/usr/bin
+            cd ${{ secrets.VPS_TARGET_DIR }}/apps/nextjs
+
+            # Install dependencies (including next)
+            bun install --production
+
             cd ${{ secrets.VPS_TARGET_DIR }}
 
-            # Start NextJS with PM2
+            # Restart NextJS with PM2
             pm2 startOrRestart apps/nextjs/ecosystem.config.cjs --env production
             pm2 save
 
