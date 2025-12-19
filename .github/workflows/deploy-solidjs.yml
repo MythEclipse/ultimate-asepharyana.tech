@@ -1,0 +1,109 @@
+name: Deploy SolidJS to VPS
+
+on:
+  workflow_dispatch: # Manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/solidjs/**'
+      - '.github/workflows/deploy-solidjs.yml'
+
+jobs:
+  build-and-deploy-solidjs:
+    name: Build and Deploy SolidJS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Get Bun cache directory
+        id: bun-cache
+        shell: bash
+        run: |
+          echo "BUN_INSTALL_CACHE_DIR=$(bun pm cache)" >> $GITHUB_OUTPUT
+
+      - name: Setup Bun cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.bun-cache.outputs.BUN_INSTALL_CACHE_DIR }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('apps/solidjs/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Prepare .env file for production
+        env:
+          ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
+        run: |
+          if [ -n "$ENV_FILE_PRODUCTION" ]; then
+            echo "$ENV_FILE_PRODUCTION" > apps/solidjs/.env
+          fi
+
+      - name: Install Dependencies
+        working-directory: apps/solidjs
+        run: bun install
+
+      - name: Build SolidJS Application
+        working-directory: apps/solidjs
+        run: bun run build
+
+      - name: Sync Build Artifacts to VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+
+          # Create necessary directories on VPS
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/{.output,logs}"
+
+          # Sync build output (.output folder)
+          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/solidjs/.output/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/.output/
+
+          # Sync package.json
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/solidjs/package.json \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/package.json
+
+          # Sync ecosystem config
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+            apps/solidjs/ecosystem.config.cjs \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/ecosystem.config.cjs
+
+          # Sync .env file if exists
+          if [ -f apps/solidjs/.env ]; then
+            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
+              apps/solidjs/.env \
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/.env
+          fi
+
+          rm -f /tmp/deploy_key
+
+      - name: Install Dependencies and Restart SolidJS with PM2
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            # Ensure bun is available
+            export PATH=$PATH:/home/asephs/.bun/bin:/usr/bin
+            cd ${{ secrets.VPS_TARGET_DIR }}/apps/solidjs
+
+            # Install dependencies
+            bun install --production
+
+            cd ${{ secrets.VPS_TARGET_DIR }}
+
+            # Restart SolidJS with PM2
+            pm2 startOrRestart apps/solidjs/ecosystem.config.cjs --env production
+            pm2 save
+
+            echo "✅ SolidJS deployment successful!"
+          '
+          rm -f /tmp/deploy_key
