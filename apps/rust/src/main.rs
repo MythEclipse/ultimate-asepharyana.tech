@@ -14,7 +14,8 @@ use std::sync::Arc;
 
 use axum::Router;
 use sea_orm::{Database, DatabaseConnection};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, CorsLayer};
+use http::{header, Method};
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -77,10 +78,17 @@ async fn main() -> anyhow::Result<()> {
     });
 
     tracing::info!("Building application routes...");
+    let allowed_origins = [
+        "http://localhost:4090".parse().unwrap(),
+        "http://localhost:3000".parse().unwrap(),
+        "https://solid.asepharyana.tech".parse().unwrap(),
+        "https://asepharyana.tech".parse().unwrap(),
+    ];
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_origin(allowed_origins)
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS, Method::PATCH])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
+        .allow_credentials(true);
 
     let app = Router::new()
         .merge(create_api_routes().with_state(app_state.clone()))

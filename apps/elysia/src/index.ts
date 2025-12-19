@@ -49,9 +49,22 @@ export const app = new Elysia()
       // Global rate limit: 100 requests per minute
       max: 100,
       window: 60 * 1000,
-    })
+    }),
   )
-  .use(cors())
+  .use(
+    cors({
+      origin: [
+        'http://localhost:4090',
+        'http://localhost:3000',
+        'https://solid.asepharyana.tech',
+        'https://asepharyana.tech',
+        /\.asepharyana\.tech$/,
+      ],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      credentials: true,
+    }),
+  )
   .use(
     swagger({
       path: '/docs',
@@ -59,15 +72,22 @@ export const app = new Elysia()
         info: {
           title: 'ElysiaJS Auth API Documentation',
           version: '1.0.0',
-          description: 'API documentation for ElysiaJS authentication service with Redis caching',
+          description:
+            'API documentation for ElysiaJS authentication service with Redis caching',
         },
         tags: [
           { name: 'Health', description: 'Health check endpoints' },
           { name: 'Auth', description: 'Authentication endpoints' },
           { name: 'API', description: 'General API endpoints' },
-          { name: 'Social Media', description: 'Social media posts, comments, and likes' },
+          {
+            name: 'Social Media',
+            description: 'Social media posts, comments, and likes',
+          },
           { name: 'Chat', description: 'Chat rooms and messages' },
-          { name: 'Quiz Battle', description: 'Quiz Battle game WebSocket and REST endpoints' },
+          {
+            name: 'Quiz Battle',
+            description: 'Quiz Battle game WebSocket and REST endpoints',
+          },
         ],
         servers: [
           {
@@ -95,13 +115,13 @@ export const app = new Elysia()
           },
         ],
       },
-    })
+    }),
   )
   .use(
     jwt({
       name: 'jwt',
       secret: config.jwtSecret,
-    })
+    }),
   )
   .use(logger)
   .get('/', () => ({
@@ -151,10 +171,16 @@ initializeConnections().then(() => {
   });
 
   console.log(
-    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
   );
   console.log(`📝 Environment: ${config.env}`);
-  console.log(`🔐 Auth endpoints: http://${app.server?.hostname}:${app.server?.port}/api/auth`);
-  console.log(`🎮 Quiz Battle WS: ws://${app.server?.hostname}:${app.server?.port}/api/quiz/battle`);
-  console.log(`📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/docs`);
+  console.log(
+    `🔐 Auth endpoints: http://${app.server?.hostname}:${app.server?.port}/api/auth`,
+  );
+  console.log(
+    `🎮 Quiz Battle WS: ws://${app.server?.hostname}:${app.server?.port}/api/quiz/battle`,
+  );
+  console.log(
+    `📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/docs`,
+  );
 });
