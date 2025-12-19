@@ -1,13 +1,19 @@
 name: Deploy Rust to VPS
 
 on:
-  workflow_dispatch: # Manual triggeraa
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - main
     paths:
       - 'apps/rust/**'
       - '.github/workflows/deploy-rust.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 1
+  SCCACHE_GHA_ENABLED: 'true'
+  RUSTC_WRAPPER: 'sccache'
 
 jobs:
   build-and-deploy-rust:
@@ -24,46 +30,46 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Cache Cargo dependencies
-        uses: actions/cache@v3
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Cache Rust dependencies and build
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          workspaces: apps/rust -> target
+          cache-targets: true
+          cache-on-failure: true
+          shared-key: rust-build
 
       - name: Cache APT packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/deploy-rust.yml') }}
+          key: ${{ runner.os }}-apt-v2-${{ hashFiles('.github/workflows/deploy-rust.yml') }}
           restore-keys: |
-            ${{ runner.os }}-apt-
+            ${{ runner.os }}-apt-v2-
 
       - name: Install System Dependencies
-        run: >
-          sudo apt-get update && sudo apt-get install -y
-          mingw-w64
-          build-essential
-          pkg-config
-          cmake
-          clang
-          libclang-dev
-          libsqlite3-dev
-          libmysqlclient-dev
-          libssl-dev
-          libjpeg-dev
-          libpng-dev
-          libavcodec-dev
-          libavformat-dev
-          libavutil-dev
-          libswscale-dev
-          libavfilter-dev
-          libavdevice-dev
-          libswresample-dev
-          libpostproc-dev
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            cmake \
+            clang \
+            libclang-dev \
+            libsqlite3-dev \
+            libmysqlclient-dev \
+            libssl-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libavfilter-dev \
+            libavdevice-dev \
+            libswresample-dev \
+            libpostproc-dev
 
       - name: Prepare .env file for production
         env:
@@ -76,10 +82,14 @@ jobs:
       - name: Setup Env
         run: bash ./scripts/2updateenv.sh
 
-      - name: Build Rust
+      - name: Build Rust (Release)
         env:
           BINDGEN_EXTRA_CLANG_ARGS: '-I/usr/include/x86_64-linux-gnu'
-        run: cargo build --release --manifest-path apps/rust/Cargo.toml --target-dir apps/rust/target
+        run: |
+          echo "🔨 Building Rust with sccache..."
+          cargo build --release --manifest-path apps/rust/Cargo.toml --target-dir apps/rust/target -j $(nproc)
+          echo "📊 sccache stats:"
+          sccache --show-stats
 
       - name: Check Build Output
         run: |
@@ -88,6 +98,7 @@ jobs:
             echo "ERROR: Rust build output executable not found. Deployment aborted."
             exit 1
           fi
+          echo "✅ Binary size: $(du -h apps/rust/target/release/rust | cut -f1)"
 
       - name: Copy .env to all subprojects/packages
         run: bash scripts/2updateenv.sh
