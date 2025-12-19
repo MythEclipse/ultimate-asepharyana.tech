@@ -115,7 +115,7 @@ jobs:
             cd ${{ secrets.VPS_TARGET_DIR }}/apps/elysia
 
             # Install dependencies
-            bun install --production
+            bun install
 
             cd ${{ secrets.VPS_TARGET_DIR }}
 
