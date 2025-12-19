@@ -12,8 +12,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 1
-  SCCACHE_GHA_ENABLED: 'true'
-  RUSTC_WRAPPER: 'sccache'
 
 jobs:
   build-and-deploy-rust:
@@ -31,7 +29,9 @@ jobs:
           toolchain: stable
 
       - name: Setup sccache
+        id: sccache
         uses: mozilla-actions/sccache-action@v0.0.6
+        continue-on-error: true
 
       - name: Cache Rust dependencies and build
         uses: Swatinem/rust-cache@v2
@@ -85,11 +85,20 @@ jobs:
       - name: Build Rust (Release)
         env:
           BINDGEN_EXTRA_CLANG_ARGS: '-I/usr/include/x86_64-linux-gnu'
+          # Disable sccache if setup failed
+          SCCACHE_GHA_ENABLED: ${{ steps.sccache.outcome == 'success' && 'true' || 'false' }}
+          RUSTC_WRAPPER: ${{ steps.sccache.outcome == 'success' && 'sccache' || '' }}
         run: |
-          echo "🔨 Building Rust with sccache..."
+          if [ "${{ steps.sccache.outcome }}" == "success" ]; then
+            echo "🔨 Building Rust with sccache..."
+          else
+            echo "⚠️ sccache failed, building without cache..."
+          fi
           cargo build --release --manifest-path apps/rust/Cargo.toml --target-dir apps/rust/target -j $(nproc)
-          echo "📊 sccache stats:"
-          sccache --show-stats
+          if [ "${{ steps.sccache.outcome }}" == "success" ]; then
+            echo "📊 sccache stats:"
+            sccache --show-stats || true
+          fi
 
       - name: Check Build Output
         run: |
