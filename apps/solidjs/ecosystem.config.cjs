@@ -15,11 +15,11 @@ module.exports = {
             max_memory_restart: '500M',
             env_production: {
                 NODE_ENV: 'production',
-                PORT: 4093,
+                PORT: 4090,
             },
             env_development: {
                 NODE_ENV: 'development',
-                PORT: 4093,
+                PORT: 4090,
             },
             // Logging configuration
             error_file: './logs/error.log',

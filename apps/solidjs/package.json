@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "vinxi dev --port 4093",
+    "dev": "vinxi dev --port 4090",
     "build": "vinxi build",
-    "start": "vinxi start --port 4093",
+    "start": "vinxi start --port 4090",
     "lint": "eslint --fix \"**/*.{ts,tsx,js,jsx}\"",
     "check": "tsc --noEmit"
   },
