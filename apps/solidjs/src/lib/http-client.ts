@@ -1,4 +1,6 @@
-const API_BASE = process.env.VITE_API_URL || 'https://api.asepharyana.cloud';
+// API Base URLs
+const RUST_API = 'https://ws.asepharyana.tech'; // For anime, komik endpoints
+const ELYSIA_API = 'https://elysia.asepharyana.tech'; // For auth, chat endpoints
 
 interface RequestOptions {
   headers?: Record<string, string>;
@@ -7,14 +9,27 @@ interface RequestOptions {
 }
 
 class HttpClient {
-  private baseUrl: string;
+  private rustApi: string;
+  private elysiaApi: string;
 
-  constructor(baseUrl: string = API_BASE) {
-    this.baseUrl = baseUrl;
+  constructor(rustApi: string = RUST_API, elysiaApi: string = ELYSIA_API) {
+    this.rustApi = rustApi;
+    this.elysiaApi = elysiaApi;
+  }
+
+  private getBaseUrl(path: string): string {
+    // Use Rust API for anime and komik endpoints
+    if (path.startsWith('/api/anime') || path.startsWith('/api/komik')) {
+      return this.rustApi;
+    }
+    // Use Elysia API for auth, chat, and other endpoints
+    return this.elysiaApi;
   }
 
   async fetchJson<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const url = path.startsWith('http') ? path : `${this.baseUrl}${path}`;
+    const url = path.startsWith('http')
+      ? path
+      : `${this.getBaseUrl(path)}${path}`;
 
     const response = await fetch(url, {
       ...options,
@@ -42,7 +57,9 @@ class HttpClient {
     headers?: Record<string, string>,
     options: RequestOptions = {},
   ): Promise<T> {
-    const url = path.startsWith('http') ? path : `${this.baseUrl}${path}`;
+    const url = path.startsWith('http')
+      ? path
+      : `${this.getBaseUrl(path)}${path}`;
 
     const response = await fetch(url, {
       method,
