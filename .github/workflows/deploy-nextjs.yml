@@ -105,7 +105,7 @@ jobs:
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
             # Ensure bun is available
-            export PATH=$PATH:/root/.bun/bin:/usr/bin
+            export PATH=$PATH:/home/asephs/.bun/bin:/usr/bin
             cd ${{ secrets.VPS_TARGET_DIR }}/apps/nextjs
 
             # Install dependencies (including next)
