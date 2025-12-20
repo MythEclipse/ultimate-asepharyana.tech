@@ -294,7 +294,7 @@ async function startGame(matchId: string): Promise<void> {
 
     // Load questions for this match
     // This will be implemented in game handlers
-    const gameModule = await import('./game.js');
+    const gameModule = await import('./game');
     const startGameMatch = gameModule.startGameMatch;
     await startGameMatch(matchId);
   } catch (error) {

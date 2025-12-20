@@ -40,7 +40,7 @@ import {
 async function loadQuestions(
   difficulty: string,
   category: string,
-  count: number
+  count: number,
 ): Promise<QuestionData[]> {
   try {
     const db = getDb();
@@ -49,7 +49,10 @@ async function loadQuestions(
     let conditions;
 
     if (category !== 'all') {
-      conditions = and(eq(quizQuestions.difficulty, difficulty), eq(quizQuestions.category, category));
+      conditions = and(
+        eq(quizQuestions.difficulty, difficulty),
+        eq(quizQuestions.category, category),
+      );
     } else {
       conditions = eq(quizQuestions.difficulty, difficulty);
     }
@@ -90,9 +93,14 @@ async function loadQuestions(
 
 // Start the game match
 export async function startGameMatch(matchId: string): Promise<void> {
+  console.log(`[Game] startGameMatch called for match ${matchId}`);
   try {
     const match = wsManager.getMatch(matchId);
-    if (!match) return;
+    if (!match) {
+      console.error(`[Game] Match ${matchId} not found in wsManager`);
+      return;
+    }
+    console.log(`[Game] Match found, loading match data from DB...`);
 
     const db = getDb();
 
@@ -103,17 +111,29 @@ export async function startGameMatch(matchId: string): Promise<void> {
       .where(eq(quizMatches.id, matchId))
       .limit(1);
 
-    if (!matchData) return;
+    if (!matchData) {
+      console.error(`[Game] Match ${matchId} not found in database`);
+      return;
+    }
+    console.log(
+      `[Game] Match data loaded: difficulty=${matchData.difficulty}, category=${matchData.category}, totalQuestions=${matchData.totalQuestions}`,
+    );
 
     // Load questions
     const questions = await loadQuestions(
       matchData.difficulty,
       matchData.category,
-      matchData.totalQuestions
+      matchData.totalQuestions,
+    );
+
+    console.log(
+      `[Game] Loaded ${questions.length} questions for match ${matchId}`,
     );
 
     if (questions.length === 0) {
-      console.error('[Game] No questions found for match');
+      console.error(
+        `[Game] No questions found for match - difficulty: ${matchData.difficulty}, category: ${matchData.category}`,
+      );
       return;
     }
 
@@ -194,12 +214,17 @@ async function sendNextQuestion(matchId: string): Promise<void> {
 
     wsManager.broadcastToMatch(matchId, questionMsg);
 
-    console.log(`[Game] Sent question ${currentIndex + 1}/${match.questions.length} for match ${matchId}`);
+    console.log(
+      `[Game] Sent question ${currentIndex + 1}/${match.questions.length} for match ${matchId}`,
+    );
 
     // Auto-timeout after time limit
-    setTimeout(() => {
-      handleQuestionTimeout(matchId, currentIndex);
-    }, match.gameState.timePerQuestion * 1000 + 1000); // +1s grace period
+    setTimeout(
+      () => {
+        handleQuestionTimeout(matchId, currentIndex);
+      },
+      match.gameState.timePerQuestion * 1000 + 1000,
+    ); // +1s grace period
   } catch (error) {
     console.error('[Game] Error sending question:', error);
   }
@@ -208,7 +233,7 @@ async function sendNextQuestion(matchId: string): Promise<void> {
 // Handle player answer submission
 export async function handleGameAnswerSubmit(
   sessionId: string,
-  payload: GameAnswerSubmitPayload
+  payload: GameAnswerSubmitPayload,
 ): Promise<void> {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -241,8 +266,13 @@ export async function handleGameAnswerSubmit(
     let points = 0;
     if (isCorrect) {
       const maxPoints = 100;
-      const timeBonus = Math.max(0, match.gameState.timePerQuestion - answerTimeSeconds);
-      points = Math.round(maxPoints * (1 + timeBonus / match.gameState.timePerQuestion));
+      const timeBonus = Math.max(
+        0,
+        match.gameState.timePerQuestion - answerTimeSeconds,
+      );
+      points = Math.round(
+        maxPoints * (1 + timeBonus / match.gameState.timePerQuestion),
+      );
     }
 
     // Save answer to database
@@ -278,15 +308,28 @@ export async function handleGameAnswerSubmit(
 
     if (isPlayer1) {
       match.gameState.playerScore = (match.gameState.playerScore || 0) + points;
-      match.gameState.playerHealth = Math.max(0, match.gameState.playerHealth - damage);
+      match.gameState.playerHealth = Math.max(
+        0,
+        match.gameState.playerHealth - damage,
+      );
       if (!isCorrect) {
-        match.gameState.opponentHealth = Math.max(0, match.gameState.opponentHealth - 20);
+        match.gameState.opponentHealth = Math.max(
+          0,
+          match.gameState.opponentHealth - 20,
+        );
       }
     } else {
-      match.gameState.opponentScore = (match.gameState.opponentScore || 0) + points;
-      match.gameState.opponentHealth = Math.max(0, match.gameState.opponentHealth - damage);
+      match.gameState.opponentScore =
+        (match.gameState.opponentScore || 0) + points;
+      match.gameState.opponentHealth = Math.max(
+        0,
+        match.gameState.opponentHealth - damage,
+      );
       if (!isCorrect) {
-        match.gameState.playerHealth = Math.max(0, match.gameState.playerHealth - 20);
+        match.gameState.playerHealth = Math.max(
+          0,
+          match.gameState.playerHealth - 20,
+        );
       }
     }
 
@@ -328,7 +371,10 @@ export async function handleGameAnswerSubmit(
     wsManager.broadcastToMatch(payload.matchId, battleUpdateMsg);
 
     // Check if game should end (health depleted)
-    if (match.gameState.playerHealth <= 0 || match.gameState.opponentHealth <= 0) {
+    if (
+      match.gameState.playerHealth <= 0 ||
+      match.gameState.opponentHealth <= 0
+    ) {
       await endGame(payload.matchId, 'health_depleted');
     }
   } catch (error) {
@@ -337,7 +383,10 @@ export async function handleGameAnswerSubmit(
 }
 
 // Handle question timeout
-async function handleQuestionTimeout(matchId: string, questionIndex: number): Promise<void> {
+async function handleQuestionTimeout(
+  matchId: string,
+  questionIndex: number,
+): Promise<void> {
   try {
     const match = wsManager.getMatch(matchId);
     if (!match) return;
@@ -386,7 +435,10 @@ async function handleQuestionTimeout(matchId: string, questionIndex: number): Pr
 }
 
 // End game and calculate results
-async function endGame(matchId: string, reason: 'health_depleted' | 'all_questions_answered'): Promise<void> {
+async function endGame(
+  matchId: string,
+  reason: 'health_depleted' | 'all_questions_answered',
+): Promise<void> {
   try {
     const match = wsManager.getMatch(matchId);
     if (!match) return;
@@ -403,11 +455,15 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
     let loserId: string;
 
     if (reason === 'health_depleted') {
-      winnerId = player1Health > player2Health ? match.player1Id : match.player2Id;
-      loserId = winnerId === match.player1Id ? match.player2Id : match.player1Id;
+      winnerId =
+        player1Health > player2Health ? match.player1Id : match.player2Id;
+      loserId =
+        winnerId === match.player1Id ? match.player2Id : match.player1Id;
     } else {
-      winnerId = player1Score > player2Score ? match.player1Id : match.player2Id;
-      loserId = winnerId === match.player1Id ? match.player2Id : match.player1Id;
+      winnerId =
+        player1Score > player2Score ? match.player1Id : match.player2Id;
+      loserId =
+        winnerId === match.player1Id ? match.player2Id : match.player1Id;
     }
 
     // Get player answers stats
@@ -417,8 +473,8 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
       .where(
         and(
           eq(quizMatchAnswers.matchId, matchId),
-          eq(quizMatchAnswers.userId, match.player1Id)
-        )
+          eq(quizMatchAnswers.userId, match.player1Id),
+        ),
       );
 
     const player2Answers = await db
@@ -427,20 +483,36 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
       .where(
         and(
           eq(quizMatchAnswers.matchId, matchId),
-          eq(quizMatchAnswers.userId, match.player2Id)
-        )
+          eq(quizMatchAnswers.userId, match.player2Id),
+        ),
       );
 
-    const player1Correct = player1Answers.filter((a: { isCorrect: number }) => a.isCorrect === 1).length;
-    const player2Correct = player2Answers.filter((a: { isCorrect: number }) => a.isCorrect === 1).length;
+    const player1Correct = player1Answers.filter(
+      (a: { isCorrect: number }) => a.isCorrect === 1,
+    ).length;
+    const player2Correct = player2Answers.filter(
+      (a: { isCorrect: number }) => a.isCorrect === 1,
+    ).length;
 
-    const player1AvgTime = player1Answers.length > 0
-      ? player1Answers.reduce((sum: number, a: { answerTime: number }) => sum + a.answerTime, 0) / player1Answers.length / 1000
-      : 0;
+    const player1AvgTime =
+      player1Answers.length > 0
+        ? player1Answers.reduce(
+            (sum: number, a: { answerTime: number }) => sum + a.answerTime,
+            0,
+          ) /
+          player1Answers.length /
+          1000
+        : 0;
 
-    const player2AvgTime = player2Answers.length > 0
-      ? player2Answers.reduce((sum: number, a: { answerTime: number }) => sum + a.answerTime, 0) / player2Answers.length / 1000
-      : 0;
+    const player2AvgTime =
+      player2Answers.length > 0
+        ? player2Answers.reduce(
+            (sum: number, a: { answerTime: number }) => sum + a.answerTime,
+            0,
+          ) /
+          player2Answers.length /
+          1000
+        : 0;
 
     // Calculate rewards
     const winnerRewards: GameRewards = {
@@ -470,13 +542,25 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
       .where(eq(quizMatches.id, matchId));
 
     // Get stats BEFORE updates for MMR calculation
-    const [matchRecord] = await db.select().from(quizMatches).where(eq(quizMatches.id, matchId)).limit(1);
+    const [matchRecord] = await db
+      .select()
+      .from(quizMatches)
+      .where(eq(quizMatches.id, matchId))
+      .limit(1);
     let winnerOldMMR = 0;
     let loserOldMMR = 0;
 
     if (matchRecord && matchRecord.gameMode === 'ranked') {
-      const [winnerStats] = await db.select().from(quizUserStats).where(eq(quizUserStats.userId, winnerId)).limit(1);
-      const [loserStats] = await db.select().from(quizUserStats).where(eq(quizUserStats.userId, loserId)).limit(1);
+      const [winnerStats] = await db
+        .select()
+        .from(quizUserStats)
+        .where(eq(quizUserStats.userId, winnerId))
+        .limit(1);
+      const [loserStats] = await db
+        .select()
+        .from(quizUserStats)
+        .where(eq(quizUserStats.userId, loserId))
+        .limit(1);
       winnerOldMMR = winnerStats?.points || 0;
       loserOldMMR = loserStats?.points || 0;
     }
@@ -503,11 +587,21 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
     await trackCorrectAnswers(match.player1Id, player1Correct);
     await trackCorrectAnswers(match.player2Id, player2Correct);
 
-    const [player1Stats] = await db.select().from(quizUserStats).where(eq(quizUserStats.userId, match.player1Id)).limit(1);
-    const [player2Stats] = await db.select().from(quizUserStats).where(eq(quizUserStats.userId, match.player2Id)).limit(1);
+    const [player1Stats] = await db
+      .select()
+      .from(quizUserStats)
+      .where(eq(quizUserStats.userId, match.player1Id))
+      .limit(1);
+    const [player2Stats] = await db
+      .select()
+      .from(quizUserStats)
+      .where(eq(quizUserStats.userId, match.player2Id))
+      .limit(1);
 
-    if (player1Stats) await trackWinStreak(match.player1Id, player1Stats.currentStreak);
-    if (player2Stats) await trackWinStreak(match.player2Id, player2Stats.currentStreak);
+    if (player1Stats)
+      await trackWinStreak(match.player1Id, player1Stats.currentStreak);
+    if (player2Stats)
+      await trackWinStreak(match.player2Id, player2Stats.currentStreak);
 
     if (player1Correct === player1Answers.length && player1Answers.length > 0) {
       await trackPerfectGame(match.player1Id);
@@ -517,41 +611,47 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
     }
 
     // Prepare game over message
-    const winnerResult: PlayerGameResult = winnerId === match.player1Id ? {
-      userId: match.player1Id,
-      username: match.player1.username,
-      finalHealth: player1Health,
-      finalScore: player1Score,
-      correctAnswers: player1Correct,
-      totalAnswers: player1Answers.length,
-      averageTime: player1AvgTime,
-    } : {
-      userId: match.player2Id,
-      username: match.player2.username,
-      finalHealth: player2Health,
-      finalScore: player2Score,
-      correctAnswers: player2Correct,
-      totalAnswers: player2Answers.length,
-      averageTime: player2AvgTime,
-    };
+    const winnerResult: PlayerGameResult =
+      winnerId === match.player1Id
+        ? {
+            userId: match.player1Id,
+            username: match.player1.username,
+            finalHealth: player1Health,
+            finalScore: player1Score,
+            correctAnswers: player1Correct,
+            totalAnswers: player1Answers.length,
+            averageTime: player1AvgTime,
+          }
+        : {
+            userId: match.player2Id,
+            username: match.player2.username,
+            finalHealth: player2Health,
+            finalScore: player2Score,
+            correctAnswers: player2Correct,
+            totalAnswers: player2Answers.length,
+            averageTime: player2AvgTime,
+          };
 
-    const loserResult: PlayerGameResult = loserId === match.player1Id ? {
-      userId: match.player1Id,
-      username: match.player1.username,
-      finalHealth: player1Health,
-      finalScore: player1Score,
-      correctAnswers: player1Correct,
-      totalAnswers: player1Answers.length,
-      averageTime: player1AvgTime,
-    } : {
-      userId: match.player2Id,
-      username: match.player2.username,
-      finalHealth: player2Health,
-      finalScore: player2Score,
-      correctAnswers: player2Correct,
-      totalAnswers: player2Answers.length,
-      averageTime: player2AvgTime,
-    };
+    const loserResult: PlayerGameResult =
+      loserId === match.player1Id
+        ? {
+            userId: match.player1Id,
+            username: match.player1.username,
+            finalHealth: player1Health,
+            finalScore: player1Score,
+            correctAnswers: player1Correct,
+            totalAnswers: player1Answers.length,
+            averageTime: player1AvgTime,
+          }
+        : {
+            userId: match.player2Id,
+            username: match.player2.username,
+            finalHealth: player2Health,
+            finalScore: player2Score,
+            correctAnswers: player2Correct,
+            totalAnswers: player2Answers.length,
+            averageTime: player2AvgTime,
+          };
 
     const gameOverMsg: WSMessage<GameOverPayload> = {
       type: 'game.over',
@@ -590,7 +690,11 @@ async function endGame(matchId: string, reason: 'health_depleted' | 'all_questio
 }
 
 // Update user stats after game
-async function updateUserStats(userId: string, isWinner: boolean, rewards: GameRewards): Promise<void> {
+async function updateUserStats(
+  userId: string,
+  isWinner: boolean,
+  rewards: GameRewards,
+): Promise<void> {
   try {
     const db = getDb();
 
@@ -598,12 +702,18 @@ async function updateUserStats(userId: string, isWinner: boolean, rewards: GameR
       .update(quizUserStats)
       .set({
         points: sql`${quizUserStats.points} + ${rewards.points}`,
-        wins: isWinner ? sql`${quizUserStats.wins} + 1` : sql`${quizUserStats.wins}`,
-        losses: !isWinner ? sql`${quizUserStats.losses} + 1` : sql`${quizUserStats.losses}`,
+        wins: isWinner
+          ? sql`${quizUserStats.wins} + 1`
+          : sql`${quizUserStats.wins}`,
+        losses: !isWinner
+          ? sql`${quizUserStats.losses} + 1`
+          : sql`${quizUserStats.losses}`,
         totalGames: sql`${quizUserStats.totalGames} + 1`,
         experience: sql`${quizUserStats.experience} + ${rewards.experience}`,
         coins: sql`${quizUserStats.coins} + ${rewards.coins}`,
-        currentStreak: isWinner ? sql`${quizUserStats.currentStreak} + 1` : sql`0`,
+        currentStreak: isWinner
+          ? sql`${quizUserStats.currentStreak} + 1`
+          : sql`0`,
       })
       .where(eq(quizUserStats.userId, userId));
   } catch (error) {
