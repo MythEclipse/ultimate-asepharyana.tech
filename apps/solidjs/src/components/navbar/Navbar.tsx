@@ -4,12 +4,7 @@ import { useTheme } from "../providers/theme-provider";
 import { useAuth } from "~/lib/auth-context";
 
 const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/anime", label: "Anime" },
-    { href: "/komik", label: "Komik" },
-    { href: "/chat", label: "Chat" },
     { href: "/project", label: "Project" },
-    { href: "/compressor", label: "Tools" },
 ];
 
 export function Navbar() {
@@ -52,9 +47,9 @@ export function Navbar() {
                             <A
                                 href={link.href}
                                 class={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 ${location.pathname === link.href ||
-                                        (link.href !== "/" && location.pathname.startsWith(link.href))
-                                        ? "text-primary"
-                                        : "text-muted-foreground hover:text-foreground"
+                                    (link.href !== "/" && location.pathname.startsWith(link.href))
+                                    ? "text-primary"
+                                    : "text-muted-foreground hover:text-foreground"
                                     }`}
                             >
                                 {link.label}
@@ -131,8 +126,8 @@ export function Navbar() {
                                 <A
                                     href={link.href}
                                     class={`block py-3 px-4 text-sm font-medium rounded-lg transition-all ${location.pathname === link.href
-                                            ? "bg-primary/10 text-primary"
-                                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                        ? "bg-primary/10 text-primary"
+                                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                                         }`}
                                     onClick={() => setIsOpen(false)}
                                 >
