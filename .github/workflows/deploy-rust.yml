@@ -85,17 +85,29 @@ jobs:
       - name: Build Rust (Release)
         env:
           BINDGEN_EXTRA_CLANG_ARGS: '-I/usr/include/x86_64-linux-gnu'
-          # Disable sccache if setup failed
-          SCCACHE_GHA_ENABLED: ${{ steps.sccache.outcome == 'success' && 'true' || 'false' }}
-          RUSTC_WRAPPER: ${{ steps.sccache.outcome == 'success' && 'sccache' || '' }}
         run: |
+          # Check if sccache setup succeeded AND is actually working
+          USE_SCCACHE="false"
           if [ "${{ steps.sccache.outcome }}" == "success" ]; then
-            echo "🔨 Building Rust with sccache..."
+            echo "🔍 Validating sccache is working..."
+            if sccache --start-server 2>/dev/null || sccache --show-stats 2>/dev/null; then
+              export SCCACHE_GHA_ENABLED="true"
+              export RUSTC_WRAPPER="sccache"
+              USE_SCCACHE="true"
+              echo "✅ sccache is working, using cached builds"
+            else
+              echo "⚠️ sccache server failed to start, building without cache..."
+              unset RUSTC_WRAPPER
+              unset SCCACHE_GHA_ENABLED
+            fi
           else
-            echo "⚠️ sccache failed, building without cache..."
+            echo "⚠️ sccache setup failed, building without cache..."
           fi
+
+          echo "🔨 Building Rust..."
           cargo build --release --manifest-path apps/rust/Cargo.toml --target-dir apps/rust/target -j $(nproc)
-          if [ "${{ steps.sccache.outcome }}" == "success" ]; then
+
+          if [ "$USE_SCCACHE" == "true" ]; then
             echo "📊 sccache stats:"
             sccache --show-stats || true
           fi
