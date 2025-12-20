@@ -236,11 +236,18 @@ export async function handleGameAnswerSubmit(
   payload: GameAnswerSubmitPayload,
 ): Promise<void> {
   try {
-    const connection = wsManager.getConnection(sessionId);
-    if (!connection) return;
+    // Use userId from payload to get connection (more reliable than sessionId)
+    const connection = wsManager.getConnectionByUserId(payload.userId);
+    if (!connection) {
+      console.warn(`[Game] No connection found for user ${payload.userId}`);
+      return;
+    }
 
     const match = wsManager.getMatch(payload.matchId);
-    if (!match) return;
+    if (!match) {
+      console.warn(`[Game] No match found for matchId ${payload.matchId}`);
+      return;
+    }
 
     // Verify question index
     if (payload.questionIndex !== match.gameState.currentQuestionIndex) {
@@ -443,6 +450,15 @@ async function endGame(
     const match = wsManager.getMatch(matchId);
     if (!match) return;
 
+    // Guard against multiple calls - check if already ending/finished
+    if (match.status === 'finished') {
+      console.log(
+        `[Game] EndGame already called for match ${matchId}, skipping`,
+      );
+      return;
+    }
+    match.status = 'finished'; // Mark as finished immediately to prevent re-entrance
+
     const db = getDb();
 
     // Determine winner
@@ -451,20 +467,35 @@ async function endGame(
     const player1Score = match.gameState.playerScore || 0;
     const player2Score = match.gameState.opponentScore || 0;
 
+    console.log(`[Game] EndGame Debug: reason=${reason}`);
+    console.log(
+      `[Game] EndGame Debug: player1Health=${player1Health}, player2Health=${player2Health}`,
+    );
+    console.log(
+      `[Game] EndGame Debug: player1Score=${player1Score}, player2Score=${player2Score}`,
+    );
+
     let winnerId: string;
     let loserId: string;
 
     if (reason === 'health_depleted') {
-      winnerId =
-        player1Health > player2Health ? match.player1Id : match.player2Id;
-      loserId =
-        winnerId === match.player1Id ? match.player2Id : match.player1Id;
+      // When health is equal (both at 0), use score as tiebreaker
+      if (player1Health === player2Health) {
+        winnerId = player1Score >= player2Score ? match.player1Id : match.player2Id;
+      } else {
+        winnerId = player1Health > player2Health ? match.player1Id : match.player2Id;
+      }
+      loserId = winnerId === match.player1Id ? match.player2Id : match.player1Id;
     } else {
       winnerId =
-        player1Score > player2Score ? match.player1Id : match.player2Id;
+        player1Score >= player2Score ? match.player1Id : match.player2Id;
       loserId =
         winnerId === match.player1Id ? match.player2Id : match.player1Id;
     }
+
+    console.log(
+      `[Game] EndGame Debug: winnerId=${winnerId}, loserId=${loserId}`,
+    );
 
     // Get player answers stats
     const player1Answers = await db

@@ -45,9 +45,17 @@ async function getOpponentInfo(userId: string): Promise<OpponentInfo | null> {
       .where(eq(quizUserStats.userId, userId))
       .limit(1);
 
+    // Get username from connection if DB name is null
+    const connection = wsManager.getConnectionByUserId(userId);
+    const username =
+      user.name ||
+      connection?.username ||
+      user.email?.split('@')[0] ||
+      'Player';
+
     return {
       userId: user.id,
-      username: user.name || 'Unknown',
+      username,
       points: stats?.points || 0,
       wins: stats?.wins || 0,
       losses: stats?.losses || 0,
