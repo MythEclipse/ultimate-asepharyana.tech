@@ -16,6 +16,18 @@ interface Project {
 
 const PROJECTS: Project[] = [
     {
+        title: "Elysia API",
+        description: "Backend API dengan ElysiaJS - Dokumentasi Swagger",
+        images: { light: "/webAnimeL.png", dark: "/webAnime.png" },
+        linkUrl: "https://elysia.asepharyana.tech/docs",
+    },
+    {
+        title: "Rust API",
+        description: "High-performance API dengan Rust - Dokumentasi Redoc",
+        images: { light: "/webKomikL.png", dark: "/webKomik.png" },
+        linkUrl: "https://ws.asepharyana.tech/docs",
+    },
+    {
         title: "Anime",
         description: "Anime scraping dari otakudesu.cloud",
         images: { light: "/webAnimeL.png", dark: "/webAnime.png" },
@@ -54,46 +66,66 @@ const PROJECTS: Project[] = [
 ];
 
 function ProjectCard(props: { project: Project; imageSrc: string }) {
-    return (
-        <A href={props.project.linkUrl} class="block group">
-            <article class="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-500 transform group-hover:scale-[1.03] group-hover:-translate-y-1">
-                {/* Image Container with Overlay */}
-                <div class="relative h-56 overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
-                    <img
-                        src={props.imageSrc}
-                        alt={props.project.title}
-                        class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                    />
-                    {/* Gradient Overlay */}
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
-                </div>
+    const isExternal = () => props.project.linkUrl.startsWith('http');
 
-                {/* Content */}
-                <div class="p-6 space-y-3">
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center gap-2">
-                        {props.project.title}
-                        <svg
-                            class="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M13 7l5 5m0 0l-5 5m5-5H6"
-                            />
+    const CardContent = () => (
+        <article class="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-500 transform group-hover:scale-[1.03] group-hover:-translate-y-1">
+            {/* Image Container with Overlay */}
+            <div class="relative h-56 overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
+                <img
+                    src={props.imageSrc}
+                    alt={props.project.title}
+                    loading="lazy"
+                    class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                />
+                {/* Gradient Overlay */}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+                {/* External badge */}
+                {isExternal() && (
+                    <div class="absolute top-3 right-3 px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
-                    </h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                        {props.project.description}
-                    </p>
-                </div>
+                        API
+                    </div>
+                )}
+            </div>
 
-                {/* Bottom Accent Line */}
-                <div class="h-1 w-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 ease-out" />
-            </article>
+            {/* Content */}
+            <div class="p-6 space-y-3">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center gap-2">
+                    {props.project.title}
+                    <svg
+                        class="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                        />
+                    </svg>
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                    {props.project.description}
+                </p>
+            </div>
+
+            {/* Bottom Accent Line */}
+            <div class="h-1 w-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 ease-out" />
+        </article>
+    );
+
+    return isExternal() ? (
+        <a href={props.project.linkUrl} target="_blank" rel="noopener noreferrer" class="block group">
+            <CardContent />
+        </a>
+    ) : (
+        <A href={props.project.linkUrl} class="block group">
+            <CardContent />
         </A>
     );
 }
