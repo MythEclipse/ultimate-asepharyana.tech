@@ -127,10 +127,20 @@ export default function Home() {
                   {/* Profile container */}
                   <div class="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 group">
                     <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full opacity-75 blur group-hover:opacity-100 transition-opacity duration-500" />
+                    {/* Loading placeholder */}
+                    <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-900/30 to-purple-900/30 animate-pulse" />
                     <img
                       src="/profil.avif"
                       alt="Asep Haryana Saputra"
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
                       class="relative rounded-full w-full h-full object-cover border-4 border-background shadow-2xl group-hover:scale-[1.02] transition-transform duration-500"
+                      onLoad={(e) => {
+                        // Remove placeholder when image loads
+                        const placeholder = e.currentTarget.previousElementSibling;
+                        if (placeholder) placeholder.classList.add('opacity-0');
+                      }}
                     />
                   </div>
                 </Motion.div>
