@@ -265,35 +265,78 @@ test_anime_endpoints() {
 }
 
 test_anime2_endpoints() {
-    print_subheader "Anime2 API Endpoints (Secondary - samehadaku)"
+    print_subheader "Anime2 API Endpoints (Secondary - alqanime)"
     
+    log_warn "Anime2 uses external source (alqanime.net) which may be slow or unavailable"
+    
+    # Test basic endpoints - these may timeout if external source is down
     test_get "/api/anime2" "GET /api/anime2 - Anime2 index"
-    test_get "/api/anime2/search?q=one+piece" "GET /api/anime2/search - Search anime2"
+    test_get "/api/anime2/search?q=naruto" "GET /api/anime2/search - Search anime2"
     test_get "/api/anime2/ongoing-anime/1" "GET /api/anime2/ongoing-anime/1 - Ongoing anime2 page"
     test_get "/api/anime2/complete-anime/1" "GET /api/anime2/complete-anime/1 - Complete anime2 page"
-    test_get "/api/anime2/detail/one-piece" "GET /api/anime2/detail/{slug} - Anime2 detail"
+    
+    # Get actual slug from index for detail test
+    log_info "Fetching anime2 index to get valid slug..."
+    anime2_slug=$(curl -s --max-time 60 "${BASE_URL}/api/anime2" 2>/dev/null | grep -o '"slug":"[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+    if [ -n "$anime2_slug" ]; then
+        test_get "/api/anime2/detail/${anime2_slug}" "GET /api/anime2/detail/{slug} - Anime2 detail"
+    else
+        log_skip "Anime2 detail - Could not get valid slug from index"
+    fi
 }
 
 test_komik_endpoints() {
     print_subheader "Komik API Endpoints (Primary - komikindo)"
     
-    test_get "/api/komik/search?q=solo+leveling" "GET /api/komik/search - Search komik"
+    test_get "/api/komik/search?q=kagurabachi" "GET /api/komik/search - Search komik"
     test_get "/api/komik/manga?page=1" "GET /api/komik/manga - Manga list"
     test_get "/api/komik/manhwa?page=1" "GET /api/komik/manhwa - Manhwa list"
     test_get "/api/komik/manhua?page=1" "GET /api/komik/manhua - Manhua list"
-    test_get "/api/komik/detail?id=solo-leveling" "GET /api/komik/detail - Komik detail"
-    test_get "/api/komik/chapter?id=solo-leveling-chapter-1" "GET /api/komik/chapter - Chapter images"
+    
+    # Get actual manga slug from list for detail/chapter tests
+    log_info "Fetching manga list to get valid slug..."
+    manga_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik/manga?page=1" 2>/dev/null | grep -o '"slug":"[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+    if [ -n "$manga_slug" ]; then
+        test_get "/api/komik/detail?id=${manga_slug}" "GET /api/komik/detail - Komik detail (${manga_slug})"
+        
+        # Get chapter slug from detail
+        chapter_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik/detail?id=${manga_slug}" 2>/dev/null | grep -o '"slug":"[^"]*chapter[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+        if [ -n "$chapter_slug" ]; then
+            test_get "/api/komik/chapter?id=${chapter_slug}" "GET /api/komik/chapter - Chapter images (${chapter_slug})"
+        else
+            log_skip "Komik chapter - Could not get chapter slug from detail"
+        fi
+    else
+        log_skip "Komik detail - Could not get valid slug from manga list"
+        log_skip "Komik chapter - Skipped (no detail slug)"
+    fi
 }
 
 test_komik2_endpoints() {
     print_subheader "Komik2 API Endpoints (Secondary - komiku)"
     
-    test_get "/api/komik2/search?q=one+piece" "GET /api/komik2/search - Search komik2"
+    test_get "/api/komik2/search?q=bocchi" "GET /api/komik2/search - Search komik2"
     test_get "/api/komik2/manga?page=1" "GET /api/komik2/manga - Manga2 list"
     test_get "/api/komik2/manhwa?page=1" "GET /api/komik2/manhwa - Manhwa2 list"
     test_get "/api/komik2/manhua?page=1" "GET /api/komik2/manhua - Manhua2 list"
-    test_get "/api/komik2/detail?id=solo-leveling" "GET /api/komik2/detail - Komik2 detail"
-    test_get "/api/komik2/chapter?id=solo-leveling-chapter-1" "GET /api/komik2/chapter - Chapter2 images"
+    
+    # Get actual manga slug from list for detail/chapter tests
+    log_info "Fetching komik2 manga list to get valid slug..."
+    manga2_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik2/manga?page=1" 2>/dev/null | grep -o '"slug":"[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+    if [ -n "$manga2_slug" ]; then
+        test_get "/api/komik2/detail?id=${manga2_slug}" "GET /api/komik2/detail - Komik2 detail (${manga2_slug})"
+        
+        # Get chapter slug from detail
+        chapter2_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik2/detail?id=${manga2_slug}" 2>/dev/null | grep -o '"slug":"[^"]*chapter[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+        if [ -n "$chapter2_slug" ]; then
+            test_get "/api/komik2/chapter?id=${chapter2_slug}" "GET /api/komik2/chapter - Chapter2 images (${chapter2_slug})"
+        else
+            log_skip "Komik2 chapter - Could not get chapter slug from detail"
+        fi
+    else
+        log_skip "Komik2 detail - Could not get valid slug from manga list"
+        log_skip "Komik2 chapter - Skipped (no detail slug)"
+    fi
 }
 
 test_auth_endpoints() {
