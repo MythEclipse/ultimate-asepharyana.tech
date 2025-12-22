@@ -66,7 +66,12 @@ const sampleQuestions = [
     category: 'History',
     difficulty: 'hard',
     text: 'Siapa yang menemukan mesin cetak?',
-    answers: ['Johannes Gutenberg', 'Leonardo da Vinci', 'Isaac Newton', 'Galileo Galilei'],
+    answers: [
+      'Johannes Gutenberg',
+      'Leonardo da Vinci',
+      'Isaac Newton',
+      'Galileo Galilei',
+    ],
     correctAnswer: 0,
   },
   {
@@ -105,8 +110,13 @@ const sampleQuestions = [
   {
     category: 'Sports',
     difficulty: 'medium',
-    text: 'Siapa pemain sepak bola dengan gelar Ballon d\'Or terbanyak?',
-    answers: ['Cristiano Ronaldo', 'Lionel Messi', 'Ronaldinho', 'Zinedine Zidane'],
+    text: "Siapa pemain sepak bola dengan gelar Ballon d'Or terbanyak?",
+    answers: [
+      'Cristiano Ronaldo',
+      'Lionel Messi',
+      'Ronaldinho',
+      'Zinedine Zidane',
+    ],
     correctAnswer: 1,
   },
   {
@@ -127,7 +137,12 @@ const sampleQuestions = [
     category: 'Entertainment',
     difficulty: 'medium',
     text: 'Siapa pemeran Iron Man dalam Marvel Cinematic Universe?',
-    answers: ['Chris Evans', 'Chris Hemsworth', 'Robert Downey Jr.', 'Mark Ruffalo'],
+    answers: [
+      'Chris Evans',
+      'Chris Hemsworth',
+      'Robert Downey Jr.',
+      'Mark Ruffalo',
+    ],
     correctAnswer: 2,
   },
   {
@@ -149,6 +164,122 @@ const sampleQuestions = [
     difficulty: 'medium',
     text: 'Berapa akar kuadrat dari 144?',
     answers: ['10', '11', '12', '13'],
+    correctAnswer: 2,
+  },
+  // ===== GENERAL CATEGORY =====
+  {
+    category: 'general',
+    difficulty: 'easy',
+    text: 'Berapa jumlah hari dalam seminggu?',
+    answers: ['5', '6', '7', '8'],
+    correctAnswer: 2,
+  },
+  {
+    category: 'general',
+    difficulty: 'easy',
+    text: 'Warna apa yang dihasilkan dari campuran merah dan kuning?',
+    answers: ['Ungu', 'Hijau', 'Orange', 'Coklat'],
+    correctAnswer: 2,
+  },
+  {
+    category: 'general',
+    difficulty: 'easy',
+    text: 'Hewan apa yang dikenal sebagai raja hutan?',
+    answers: ['Harimau', 'Singa', 'Gajah', 'Beruang'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'easy',
+    text: 'Berapa jumlah benua di dunia?',
+    answers: ['5', '6', '7', '8'],
+    correctAnswer: 2,
+  },
+  {
+    category: 'general',
+    difficulty: 'easy',
+    text: 'Apa nama satelit alami Bumi?',
+    answers: ['Mars', 'Venus', 'Bulan', 'Bintang'],
+    correctAnswer: 2,
+  },
+  {
+    category: 'general',
+    difficulty: 'medium',
+    text: 'Siapa penemu bola lampu?',
+    answers: [
+      'Albert Einstein',
+      'Thomas Edison',
+      'Nikola Tesla',
+      'Isaac Newton',
+    ],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'medium',
+    text: 'Apa nama mata uang Jepang?',
+    answers: ['Won', 'Yuan', 'Yen', 'Ringgit'],
+    correctAnswer: 2,
+  },
+  {
+    category: 'general',
+    difficulty: 'medium',
+    text: 'Negara mana yang terkenal dengan Menara Eiffel?',
+    answers: ['Italia', 'Prancis', 'Jerman', 'Spanyol'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'medium',
+    text: 'Berapa jumlah planet dalam tata surya kita?',
+    answers: ['7', '8', '9', '10'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'medium',
+    text: 'Apa bahasa resmi Brazil?',
+    answers: ['Spanyol', 'Portugis', 'Inggris', 'Prancis'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'hard',
+    text: 'Berapa jumlah tulang dalam tubuh manusia dewasa?',
+    answers: ['196', '206', '216', '226'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'hard',
+    text: 'Siapa penemu teori relativitas?',
+    answers: [
+      'Isaac Newton',
+      'Niels Bohr',
+      'Albert Einstein',
+      'Stephen Hawking',
+    ],
+    correctAnswer: 2,
+  },
+  {
+    category: 'general',
+    difficulty: 'hard',
+    text: 'Apa nama unsur kimia dengan nomor atom 79?',
+    answers: ['Perak', 'Emas', 'Platinum', 'Tembaga'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'hard',
+    text: 'Tahun berapa Indonesia merdeka?',
+    answers: ['1944', '1945', '1946', '1947'],
+    correctAnswer: 1,
+  },
+  {
+    category: 'general',
+    difficulty: 'hard',
+    text: 'Apa nama laut terluas di dunia?',
+    answers: ['Atlantik', 'Hindia', 'Pasifik', 'Arktik'],
     correctAnswer: 2,
   },
 ];
@@ -206,25 +337,30 @@ async function seedQuestions() {
 
     // Show statistics
     console.log('\n📈 Questions by category:');
-    const categories = sampleQuestions.reduce((acc, q) => {
-      acc[q.category] = (acc[q.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const categories = sampleQuestions.reduce(
+      (acc, q) => {
+        acc[q.category] = (acc[q.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     Object.entries(categories).forEach(([category, count]) => {
       console.log(`   ${category}: ${count} questions`);
     });
 
     console.log('\n📈 Questions by difficulty:');
-    const difficulties = sampleQuestions.reduce((acc, q) => {
-      acc[q.difficulty] = (acc[q.difficulty] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const difficulties = sampleQuestions.reduce(
+      (acc, q) => {
+        acc[q.difficulty] = (acc[q.difficulty] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     Object.entries(difficulties).forEach(([difficulty, count]) => {
       console.log(`   ${difficulty}: ${count} questions`);
     });
-
   } catch (error) {
     console.error('❌ Error seeding questions:', error);
     throw error;
