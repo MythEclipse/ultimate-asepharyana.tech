@@ -123,7 +123,7 @@ export async function startGameMatch(matchId: string): Promise<void> {
     const questions = await loadQuestions(
       matchData.difficulty,
       matchData.category,
-      matchData.totalQuestions,
+      50, // Force 50 questions for survival mode
     );
 
     console.log(
@@ -337,9 +337,13 @@ export async function handleGameAnswerSubmit(
     wsManager.broadcastToMatch(payload.matchId, battleUpdateMsg);
 
     // Check if game should end (health <= 0)
+    console.log(
+      `[Game] Health Check: User ${payload.userId} health=${playerHealth} (isPlayer1=${isPlayer1})`,
+    );
+
     if (playerHealth <= 0) {
       console.log(
-        `[Game] Player ${payload.userId} health depleted, ending game`,
+        `[Game] Player ${payload.userId} health depleted (0), ending game matchId=${payload.matchId}`,
       );
       await endGame(payload.matchId, 'health_depleted');
     }
