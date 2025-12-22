@@ -175,10 +175,26 @@ export async function startGameMatch(matchId: string): Promise<void> {
 
     console.log(`[Game] Match ${matchId} started`);
 
-    // Send first question after 2 seconds
-    setTimeout(() => {
-      sendNextQuestion(matchId);
-    }, 2000);
+    // Send ALL questions to both players immediately (no delay)
+    const allQuestionsMsg: WSMessage<any> = {
+      type: 'game.questions.all',
+      payload: {
+        matchId,
+        questions: questions.map((q, idx) => ({
+          questionIndex: idx,
+          id: q.id,
+          text: q.text,
+          answers: q.answers,
+          category: q.category,
+        })),
+        totalQuestions: questions.length,
+      },
+    };
+
+    wsManager.broadcastToMatch(matchId, allQuestionsMsg);
+    console.log(
+      `[Game] Sent all ${questions.length} questions for match ${matchId}`,
+    );
   } catch (error) {
     console.error('[Game] Error starting match:', error);
   }
@@ -236,7 +252,6 @@ export async function handleGameAnswerSubmit(
   payload: GameAnswerSubmitPayload,
 ): Promise<void> {
   try {
-    // Use userId from payload to get connection (more reliable than sessionId)
     const connection = wsManager.getConnectionByUserId(payload.userId);
     if (!connection) {
       console.warn(`[Game] No connection found for user ${payload.userId}`);
@@ -249,12 +264,7 @@ export async function handleGameAnswerSubmit(
       return;
     }
 
-    // Verify question index
-    if (payload.questionIndex !== match.gameState.currentQuestionIndex) {
-      console.warn('[Game] Answer submitted for wrong question index');
-      return;
-    }
-
+    // Allow spam answering - don't validate question index
     const db = getDb();
 
     // Get correct answer from database
@@ -267,20 +277,6 @@ export async function handleGameAnswerSubmit(
     if (!questionData) return;
 
     const isCorrect = payload.answerIndex === questionData.correctAnswer;
-    const answerTimeSeconds = payload.answerTime / 1000;
-
-    // Calculate points (faster answer = more points)
-    let points = 0;
-    if (isCorrect) {
-      const maxPoints = 100;
-      const timeBonus = Math.max(
-        0,
-        match.gameState.timePerQuestion - answerTimeSeconds,
-      );
-      points = Math.round(
-        maxPoints * (1 + timeBonus / match.gameState.timePerQuestion),
-      );
-    }
 
     // Save answer to database
     await db.insert(quizMatchAnswers).values({
@@ -292,8 +288,25 @@ export async function handleGameAnswerSubmit(
       answerIndex: payload.answerIndex,
       isCorrect: isCorrect ? 1 : 0,
       answerTime: Math.round(payload.answerTime),
-      points,
+      points: 0, // No points in health mode
     });
+
+    // Health-based damage: -10 HP for wrong answer
+    const isPlayer1 = payload.userId === match.player1Id;
+    let playerHealth = isPlayer1
+      ? match.gameState.playerHealth
+      : match.gameState.opponentHealth;
+
+    if (!isCorrect) {
+      playerHealth = Math.max(0, playerHealth - 10);
+    }
+
+    // Update health
+    if (isPlayer1) {
+      match.gameState.playerHealth = playerHealth;
+    } else {
+      match.gameState.opponentHealth = playerHealth;
+    }
 
     // Send answer result to player
     const answerResultMsg: WSMessage<GameAnswerReceivedPayload> = {
@@ -302,88 +315,49 @@ export async function handleGameAnswerSubmit(
         questionIndex: payload.questionIndex,
         isCorrect,
         correctAnswerIndex: questionData.correctAnswer,
-        points,
-        answerTime: answerTimeSeconds,
+        points: 0,
+        answerTime: payload.answerTime / 1000,
       },
     };
 
     wsManager.sendToUser(payload.userId, answerResultMsg);
 
-    // Update game state
-    const isPlayer1 = payload.userId === match.player1Id;
-    const damage = isCorrect ? 0 : 20; // Take damage if wrong
-
-    if (isPlayer1) {
-      match.gameState.playerScore = (match.gameState.playerScore || 0) + points;
-      match.gameState.playerHealth = Math.max(
-        0,
-        match.gameState.playerHealth - damage,
-      );
-      if (!isCorrect) {
-        match.gameState.opponentHealth = Math.max(
-          0,
-          match.gameState.opponentHealth - 20,
-        );
-      }
-    } else {
-      match.gameState.opponentScore =
-        (match.gameState.opponentScore || 0) + points;
-      match.gameState.opponentHealth = Math.max(
-        0,
-        match.gameState.opponentHealth - damage,
-      );
-      if (!isCorrect) {
-        match.gameState.playerHealth = Math.max(
-          0,
-          match.gameState.playerHealth - 20,
-        );
-      }
-    }
-
-    // Notify opponent
-    const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
-    const opponentMsg: WSMessage<GameOpponentAnsweredPayload> = {
-      type: 'game.opponent.answered',
-      payload: {
-        opponentId: payload.userId,
-        questionIndex: payload.questionIndex,
-        answerTime: answerTimeSeconds,
-        isCorrect,
-        animation: isCorrect ? 'attack' : 'hurt',
-      },
-    };
-
-    wsManager.sendToUser(opponentId, opponentMsg);
-
-    // Broadcast battle update
-    const battleUpdateMsg: WSMessage<GameBattleUpdatePayload> = {
+    // Broadcast health update
+    const battleUpdateMsg: WSMessage<any> = {
       type: 'game.battle.update',
       payload: {
         matchId: payload.matchId,
-        questionIndex: payload.questionIndex,
-        event: 'player_answered',
-        actor: {
-          userId: payload.userId,
-          action: isCorrect ? 'attack' : 'hurt',
-        },
-        gameState: match.gameState,
-        animation: {
-          type: isCorrect ? 'attack' : 'hurt',
-          target: isCorrect ? 'opponent' : 'player',
-          damage: isCorrect ? 20 : 0,
-        },
+        player1Health: match.gameState.playerHealth,
+        player2Health: match.gameState.opponentHealth,
+        player1Score: 0,
+        player2Score: 0,
       },
     };
 
     wsManager.broadcastToMatch(payload.matchId, battleUpdateMsg);
 
-    // Check if game should end (health depleted)
-    if (
-      match.gameState.playerHealth <= 0 ||
-      match.gameState.opponentHealth <= 0
-    ) {
+    // Check if game should end (health <= 0)
+    if (playerHealth <= 0) {
+      console.log(
+        `[Game] Player ${payload.userId} health depleted, ending game`,
+      );
       await endGame(payload.matchId, 'health_depleted');
     }
+
+    // Notify opponent of answer (with animation data)
+    const opponentUserId = isPlayer1 ? match.player2Id : match.player1Id;
+    const opponentMsg: WSMessage<GameOpponentAnsweredPayload> = {
+      type: 'game.opponent.answered',
+      payload: {
+        opponentId: payload.userId,
+        questionIndex: payload.questionIndex,
+        answerTime: payload.answerTime / 1000,
+        isCorrect,
+        animation: isCorrect ? 'attack' : 'hurt',
+      },
+    };
+
+    wsManager.sendToUser(opponentUserId, opponentMsg);
   } catch (error) {
     console.error('[Game] Error handling answer submission:', error);
   }
@@ -465,15 +439,10 @@ async function endGame(
     // Determine winner
     const player1Health = match.gameState.playerHealth;
     const player2Health = match.gameState.opponentHealth;
-    const player1Score = match.gameState.playerScore || 0;
-    const player2Score = match.gameState.opponentScore || 0;
 
     console.log(`[Game] EndGame Debug: reason=${reason}`);
     console.log(
       `[Game] EndGame Debug: player1Health=${player1Health}, player2Health=${player2Health}`,
-    );
-    console.log(
-      `[Game] EndGame Debug: player1Score=${player1Score}, player2Score=${player2Score}`,
     );
 
     let winnerId: string;
@@ -485,20 +454,11 @@ async function endGame(
       winnerId =
         loserId === match.player1Id ? match.player2Id : match.player1Id;
       console.log(`[Game] Player ${loserId} forfeited by disconnecting`);
-    } else if (reason === 'health_depleted') {
-      // When health is equal (both at 0), use score as tiebreaker
-      if (player1Health === player2Health) {
-        winnerId =
-          player1Score >= player2Score ? match.player1Id : match.player2Id;
-      } else {
-        winnerId =
-          player1Health > player2Health ? match.player1Id : match.player2Id;
-      }
-      loserId =
-        winnerId === match.player1Id ? match.player2Id : match.player1Id;
     } else {
+      // Health-based winner: player with more health wins
+      // If both at 0, player1 wins by default
       winnerId =
-        player1Score >= player2Score ? match.player1Id : match.player2Id;
+        player1Health >= player2Health ? match.player1Id : match.player2Id;
       loserId =
         winnerId === match.player1Id ? match.player2Id : match.player1Id;
     }
@@ -575,8 +535,8 @@ async function endGame(
         winnerId,
         status: 'finished',
         finishedAt: new Date(),
-        player1Score,
-        player2Score,
+        player1Score: 0,
+        player2Score: 0,
         player1Health,
         player2Health,
       })
@@ -658,7 +618,7 @@ async function endGame(
             userId: match.player1Id,
             username: match.player1.username,
             finalHealth: player1Health,
-            finalScore: player1Score,
+            finalScore: 0,
             correctAnswers: player1Correct,
             totalAnswers: player1Answers.length,
             averageTime: player1AvgTime,
@@ -667,7 +627,7 @@ async function endGame(
             userId: match.player2Id,
             username: match.player2.username,
             finalHealth: player2Health,
-            finalScore: player2Score,
+            finalScore: 0,
             correctAnswers: player2Correct,
             totalAnswers: player2Answers.length,
             averageTime: player2AvgTime,
@@ -679,7 +639,7 @@ async function endGame(
             userId: match.player1Id,
             username: match.player1.username,
             finalHealth: player1Health,
-            finalScore: player1Score,
+            finalScore: 0,
             correctAnswers: player1Correct,
             totalAnswers: player1Answers.length,
             averageTime: player1AvgTime,
@@ -688,7 +648,7 @@ async function endGame(
             userId: match.player2Id,
             username: match.player2.username,
             finalHealth: player2Health,
-            finalScore: player2Score,
+            finalScore: 0,
             correctAnswers: player2Correct,
             totalAnswers: player2Answers.length,
             averageTime: player2AvgTime,
@@ -767,6 +727,8 @@ export async function endGameByForfeit(
   matchId: string,
   forfeitingPlayerId: string,
 ): Promise<void> {
-  console.log(`[Game] Player ${forfeitingPlayerId} forfeiting match ${matchId}`);
+  console.log(
+    `[Game] Player ${forfeitingPlayerId} forfeiting match ${matchId}`,
+  );
   await endGame(matchId, 'player_disconnected', forfeitingPlayerId);
 }
