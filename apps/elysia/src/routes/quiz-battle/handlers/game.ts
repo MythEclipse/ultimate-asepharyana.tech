@@ -444,7 +444,8 @@ async function handleQuestionTimeout(
 // End game and calculate results
 async function endGame(
   matchId: string,
-  reason: 'health_depleted' | 'all_questions_answered',
+  reason: 'health_depleted' | 'all_questions_answered' | 'player_disconnected',
+  forfeitingPlayerId?: string,
 ): Promise<void> {
   try {
     const match = wsManager.getMatch(matchId);
@@ -478,14 +479,23 @@ async function endGame(
     let winnerId: string;
     let loserId: string;
 
-    if (reason === 'health_depleted') {
+    if (reason === 'player_disconnected' && forfeitingPlayerId) {
+      // Player who disconnected loses
+      loserId = forfeitingPlayerId;
+      winnerId =
+        loserId === match.player1Id ? match.player2Id : match.player1Id;
+      console.log(`[Game] Player ${loserId} forfeited by disconnecting`);
+    } else if (reason === 'health_depleted') {
       // When health is equal (both at 0), use score as tiebreaker
       if (player1Health === player2Health) {
-        winnerId = player1Score >= player2Score ? match.player1Id : match.player2Id;
+        winnerId =
+          player1Score >= player2Score ? match.player1Id : match.player2Id;
       } else {
-        winnerId = player1Health > player2Health ? match.player1Id : match.player2Id;
+        winnerId =
+          player1Health > player2Health ? match.player1Id : match.player2Id;
       }
-      loserId = winnerId === match.player1Id ? match.player2Id : match.player1Id;
+      loserId =
+        winnerId === match.player1Id ? match.player2Id : match.player1Id;
     } else {
       winnerId =
         player1Score >= player2Score ? match.player1Id : match.player2Id;
@@ -750,4 +760,13 @@ async function updateUserStats(
   } catch (error) {
     console.error('[Game] Error updating user stats:', error);
   }
+}
+
+// End game due to player forfeit (disconnect)
+export async function endGameByForfeit(
+  matchId: string,
+  forfeitingPlayerId: string,
+): Promise<void> {
+  console.log(`[Game] Player ${forfeitingPlayerId} forfeiting match ${matchId}`);
+  await endGame(matchId, 'player_disconnected', forfeitingPlayerId);
 }

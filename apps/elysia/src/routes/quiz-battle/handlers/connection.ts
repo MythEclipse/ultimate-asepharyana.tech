@@ -14,7 +14,14 @@ import type {
   WSConnection,
   WSData,
 } from '../types';
-import { getDb, users, quizUserStats, quizFriendships, eq, and } from '@asepharyana/services';
+import {
+  getDb,
+  users,
+  quizUserStats,
+  quizFriendships,
+  eq,
+  and,
+} from '@asepharyana/services';
 
 // Reconnect payload type
 interface ReconnectPayload {
@@ -24,7 +31,9 @@ interface ReconnectPayload {
 }
 
 // Verify JWT token (simple version, you should use proper JWT verification)
-async function verifyToken(token: string): Promise<{ userId: string; username: string } | null> {
+async function verifyToken(
+  token: string,
+): Promise<{ userId: string; username: string } | null> {
   try {
     // TODO: Implement proper JWT verification
     // For now, we'll do a basic check
@@ -52,7 +61,7 @@ function generateSessionId(): string {
 
 export async function handleAuthConnect(
   ws: ServerWebSocket<WSData>,
-  payload: AuthConnectPayload
+  payload: AuthConnectPayload,
 ): Promise<void> {
   try {
     // Verify token
@@ -175,7 +184,7 @@ export async function handleAuthConnect(
 
 export async function handleUserStatusUpdate(
   sessionId: string,
-  payload: UserStatusUpdatePayload
+  payload: UserStatusUpdatePayload,
 ): Promise<void> {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -193,8 +202,8 @@ export async function handleUserStatusUpdate(
       .where(
         and(
           eq(quizFriendships.userId, payload.userId),
-          eq(quizFriendships.status, 'accepted')
-        )
+          eq(quizFriendships.status, 'accepted'),
+        ),
       );
 
     const friendIds = friendships.map((f: { friendId: string }) => f.friendId);
@@ -212,7 +221,9 @@ export async function handleUserStatusUpdate(
 
     wsManager.broadcastToFriends(payload.userId, statusMsg, friendIds);
 
-    console.log(`[Status] User ${connection.username} status changed to ${payload.status}`);
+    console.log(
+      `[Status] User ${connection.username} status changed to ${payload.status}`,
+    );
   } catch (error) {
     console.error('[Status] Error updating user status:', error);
   }
@@ -220,7 +231,7 @@ export async function handleUserStatusUpdate(
 
 export function handleConnectionPing(
   sessionId: string,
-  payload: ConnectionPingPayload
+  payload: ConnectionPingPayload,
 ): void {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -260,9 +271,15 @@ export async function handleDisconnect(sessionId: string): Promise<void> {
     // Check if user is in a match
     if (connection.currentMatchId) {
       const match = wsManager.getMatch(connection.currentMatchId);
-      if (match) {
-        // Notify opponent
-        const opponentId = match.player1Id === connection.userId ? match.player2Id : match.player1Id;
+      if (match && match.status !== 'finished') {
+        // Import and call endGameByForfeit
+        const { endGameByForfeit } = await import('./game');
+
+        // Notify opponent first
+        const opponentId =
+          match.player1Id === connection.userId
+            ? match.player2Id
+            : match.player1Id;
         const opponent = wsManager.getConnectionByUserId(opponentId);
 
         if (opponent) {
@@ -274,15 +291,18 @@ export async function handleDisconnect(sessionId: string): Promise<void> {
                 userId: connection.userId,
                 username: connection.username,
               },
-              waitTime: 30,
+              waitTime: 0, // No wait time, game ends immediately
               autoWin: true,
             },
           };
           wsManager.sendToUser(opponentId, disconnectMsg);
         }
 
-        // Don't immediately remove match, give 30s grace period for reconnect
-        // In production, you'd use a timer here
+        // End the game with forfeit - disconnected player loses
+        await endGameByForfeit(connection.currentMatchId, connection.userId);
+        console.log(
+          `[Disconnect] Player ${connection.username} forfeited match ${connection.currentMatchId}`,
+        );
       }
     }
 
@@ -290,7 +310,10 @@ export async function handleDisconnect(sessionId: string): Promise<void> {
     if (connection.currentLobbyId) {
       const lobby = wsManager.getLobby(connection.currentLobbyId);
       if (lobby) {
-        wsManager.removeLobbyMember(connection.currentLobbyId, connection.userId);
+        wsManager.removeLobbyMember(
+          connection.currentLobbyId,
+          connection.userId,
+        );
 
         // Notify other lobby members
         const leaveMsg: WSMessage = {
@@ -319,7 +342,7 @@ export async function handleDisconnect(sessionId: string): Promise<void> {
 
 export async function handleReconnect(
   ws: ServerWebSocket<WSData>,
-  payload: ReconnectPayload
+  payload: ReconnectPayload,
 ): Promise<void> {
   try {
     // Verify session
@@ -357,7 +380,10 @@ export async function handleReconnect(
     if (oldConnection.currentMatchId) {
       const match = wsManager.getMatch(oldConnection.currentMatchId);
       if (match) {
-        const opponentId = match.player1Id === oldConnection.userId ? match.player2Id : match.player1Id;
+        const opponentId =
+          match.player1Id === oldConnection.userId
+            ? match.player2Id
+            : match.player1Id;
 
         const reconnectedMsg: WSMessage = {
           type: 'game.player.reconnected',
@@ -375,7 +401,9 @@ export async function handleReconnect(
       }
     }
 
-    console.log(`[Reconnect] User ${oldConnection.username} reconnected successfully`);
+    console.log(
+      `[Reconnect] User ${oldConnection.username} reconnected successfully`,
+    );
   } catch (error) {
     console.error('[Reconnect] Error handling reconnect:', error);
   }

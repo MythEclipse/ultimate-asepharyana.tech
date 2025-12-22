@@ -322,7 +322,7 @@ export interface GameRewards {
 
 export interface GameOverPayload {
   matchId: string;
-  reason: 'health_depleted' | 'all_questions_answered';
+  reason: 'health_depleted' | 'all_questions_answered' | 'player_disconnected';
   winner: PlayerGameResult;
   loser: PlayerGameResult;
   rewards: {
@@ -507,7 +507,11 @@ export interface LeaderboardFriendsDataPayload {
 }
 
 // ===== NOTIFICATIONS =====
-export type NotificationType = 'achievement' | 'friend_request' | 'challenge' | 'system';
+export type NotificationType =
+  | 'achievement'
+  | 'friend_request'
+  | 'challenge'
+  | 'system';
 export type NotificationPriority = 'low' | 'medium' | 'high';
 
 export interface NotificationReceivedPayload {
@@ -666,7 +670,12 @@ export interface AchievementUnlockedPayload {
 }
 
 // ===== DAILY MISSIONS =====
-export type MissionType = 'play_games' | 'win_games' | 'answer_correct' | 'win_streak' | 'perfect_game';
+export type MissionType =
+  | 'play_games'
+  | 'win_games'
+  | 'answer_correct'
+  | 'win_streak'
+  | 'perfect_game';
 
 export interface DailyMissionData {
   missionId: string;
@@ -705,7 +714,14 @@ export interface DailyMissionCompletedPayload {
 }
 
 // ===== RANKED SYSTEM =====
-export type RankedTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Master' | 'Grandmaster';
+export type RankedTier =
+  | 'Bronze'
+  | 'Silver'
+  | 'Gold'
+  | 'Platinum'
+  | 'Diamond'
+  | 'Master'
+  | 'Grandmaster';
 export type RankedDivision = 1 | 2 | 3 | 4; // 4 = lowest, 1 = highest
 
 export interface RankedInfo {
