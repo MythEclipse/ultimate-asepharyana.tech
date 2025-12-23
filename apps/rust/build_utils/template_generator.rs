@@ -1,4 +1,5 @@
 use crate::build_utils::constants::DYNAMIC_REGEX;
+use crate::build_utils::types::{ResponseStructInfo, TemplateType};
 use crate::build_utils::path_utils::{
     generate_default_description, sanitize_operation_id, sanitize_tag,
 };
@@ -56,14 +57,15 @@ pub fn generate_template_content(
     };
     let operation_id = sanitize_operation_id(&route_path_str);
 
-    let (response_struct_name, response_fields, success_response_body) =
-        get_response_struct_info(&axum_path);
+    let template_type = TemplateType::from_path(&axum_path);
+    let response_info = ResponseStructInfo::from_template_type(template_type);
 
     let path_params = extract_path_params_from_route(&route_path_str);
 
+
     let func_signature = build_function_signature(func_name, &path_params, protected);
 
-    let response_data = build_response_data(response_struct_name, &path_params);
+    let response_data = build_response_data(response_info.struct_name, &path_params);
 
     let message_content = build_message_content(func_name, &path_params);
 
@@ -147,10 +149,10 @@ pub fn generate_template_content(
         default_description,
         default_tag,
         operation_id,
-        success_response_body,
+        response_info.success_body,
         pascal_case_name,
-        response_struct_name,
-        response_fields,
+        response_info.struct_name,
+        response_info.fields,
         if path_params.is_empty() {
             "".to_string()
         } else {
@@ -166,12 +168,12 @@ pub fn generate_template_content(
         default_tag,
         operation_id,
         default_description,
-        response_struct_name,
+        response_info.struct_name,
         security,
         func_signature,
         auth_verification,
         if protected { "\n    " } else { "" },
-        response_struct_name,
+        response_info.struct_name,
         message_content,
         response_data,
         default_description,
@@ -181,46 +183,16 @@ pub fn generate_template_content(
     Ok(template)
 }
 
+
+/// Get response struct information based on the route path.
+/// 
+/// This function determines the appropriate response structure based on the path pattern.
+/// Returns tuple of (struct_name, fields, success_response_body) for backward compatibility.
+#[deprecated(note = "Use TemplateType::from_path and ResponseStructInfo::from_template_type instead")]
 pub fn get_response_struct_info(axum_path: &str) -> (&str, &str, &str) {
-    if axum_path.contains("/search") {
-        (
-            "SearchResponse",
-            r#"
-    /// Success message
-    pub message: String,
-    /// Search results - replace with actual Vec<T> where T implements ToSchema
-    pub data: Vec<serde_json::Value>,
-    /// Total number of results
-    pub total: Option<u64>,
-    /// Current page
-    pub page: Option<u32>,
-    /// Results per page
-    pub per_page: Option<u32>,"#,
-            "Json<SearchResponse>",
-        )
-    } else if axum_path.contains('{') || axum_path.contains("/detail") {
-        (
-            "DetailResponse",
-            r#"
-    /// Success message
-    pub message: String,
-    /// Detailed data - replace with actual T where T implements ToSchema
-    pub data: serde_json::Value,"#,
-            "Json<DetailResponse>",
-        )
-    } else {
-        (
-            "ListResponse",
-            r#"
-    /// Success message
-    pub message: String,
-    /// List of items - replace with actual Vec<T> where T implements ToSchema
-    pub data: Vec<serde_json::Value>,
-    /// Total number of items
-    pub total: Option<u64>,"#,
-            "Json<ListResponse>",
-        )
-    }
+    let template_type = TemplateType::from_path(axum_path);
+    let info = ResponseStructInfo::from_template_type(template_type);
+    (info.struct_name, info.fields, info.success_body)
 }
 
 pub fn extract_path_params_from_route(route_path_str: &str) -> Vec<(String, String)> {

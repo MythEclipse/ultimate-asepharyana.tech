@@ -1,11 +1,16 @@
 /// Build script for generating API routes and OpenAPI documentation.
 ///
 /// This script performs the following tasks:
-/// - Creates the API routes directory if it doesn't exist.
-/// - Generates module files for the API routes.
-/// - Generates the root API module with OpenAPI schemas and handlers.
-/// - Ensures rebuilds occur when build utilities or API routes change.
-/// - Implements error checking before rewriting.
+/// - Creates the API routes directory if it doesn't exist
+/// - Generates module files for the API routes
+/// - Generates the root API module with OpenAPI schemas and handlers
+/// - Validates OpenAPI specifications before writing
+/// - Ensures rebuilds occur when build utilities or API routes change
+///
+/// The build process runs in two phases:
+/// 1. Dry run: Validates everything without modifying files
+/// 2. Actual build: Writes the generated code and specifications
+
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -19,53 +24,81 @@ use utoipa::openapi::OpenApi;
 mod build_utils;
 use build_utils::{mod_generator, openapi_generator, BuildOperation};
 
+
 /// Configuration for the build process
 #[derive(Debug)]
 struct BuildConfig {
     api_routes_path: PathBuf,
     build_utils_path: PathBuf,
     enable_logging: bool,
+    /// Root directory of the project (from CARGO_MANIFEST_DIR)
+    project_root: PathBuf,
 }
 
-impl Default for BuildConfig {
-    fn default() -> Self {
-        Self {
+impl BuildConfig {
+    fn from_env() -> Result<Self> {
+        let project_root = PathBuf::from(
+            env::var("CARGO_MANIFEST_DIR")
+                .context("CARGO_MANIFEST_DIR not set")?  
+        );
+        
+        Ok(Self {
             api_routes_path: "src/routes/api".into(),
             build_utils_path: "build_utils/".into(),
-            enable_logging: true,
-        }
+            enable_logging: env::var("VERBOSE").is_ok(),
+            project_root,
+        })
     }
 }
 
 /// Type alias for API handlers
 type ApiHandlers = Vec<build_utils::handler_updater::HandlerRouteInfo>;
 
+
 fn main() -> Result<()> {
-    let config = initialize_build();
-    log::info!("Starting API build process with error checking");
+    let config = BuildConfig::from_env()?;
+    
+    if config.enable_logging {
+        env_logger::init();
+        log::info!("🚀 Starting API build process");
+        log::info!("📂 Project root: {}", config.project_root.display());
+    }
 
     let mut operation = BuildOperation::new();
 
     // Phase 1: Dry run - check for potential errors without modifying files
-    perform_dry_run(&config)?;
+    println!("cargo:warning=🔍 Phase 1: Validating API structure...");
+    if let Err(e) = perform_dry_run(&config) {
+        println!("cargo:warning=❌ Validation failed: {}", e);
+        return Err(e);
+    }
+    println!("cargo:warning=✓ Validation passed");
 
     // Phase 2: Actual build
+    println!("cargo:warning=🔨 Phase 2: Building API routes...");
     perform_build(&config, &mut operation)?;
 
-    println!("cargo:warning=API build completed successfully");
-    log::info!("API build process completed successfully");
+    // Print summary
+    print_build_summary(&operation);
+    
+    println!("cargo:warning=✅ API build completed successfully");
+    log::info!("✨ API build process completed successfully");
     Ok(())
 }
 
+
 /// Performs a dry run to check for potential errors before actual file modifications
 fn perform_dry_run(config: &BuildConfig) -> Result<()> {
-    log::info!("Performing dry run to check for errors");
+    log::debug!("🔍 Performing dry run validation");
 
     let api_routes_path = setup_build_environment(config)?;
     let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
 
+    log::info!("📊 Found {} handlers, {} schemas, {} modules", 
+               api_handlers.len(), openapi_schemas.len(), modules.len());
+
     // Test OpenAPI generation without writing files
-    let _openapi_doc = openapi_generator::generate_root_api_mod(
+    let openapi_doc = openapi_generator::generate_root_api_mod(
         &api_routes_path,
         &modules,
         &api_handlers,
@@ -73,15 +106,16 @@ fn perform_dry_run(config: &BuildConfig) -> Result<()> {
     )?;
 
     // Test OpenAPI validation
-    validate_openapi_spec(&_openapi_doc)?;
+    validate_openapi_spec(&openapi_doc)?;
 
-    log::info!("Dry run validation passed");
+    log::info!("✓ Dry run validation passed");
     Ok(())
 }
 
+
 /// Performs the actual build
-fn perform_build(config: &BuildConfig, _operation: &mut BuildOperation) -> Result<()> {
-    log::info!("Performing actual build");
+fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result<()> {
+    log::debug!("🔨 Performing actual build");
 
     let api_routes_path = setup_build_environment(config)?;
     let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
@@ -98,22 +132,40 @@ fn perform_build(config: &BuildConfig, _operation: &mut BuildOperation) -> Resul
 
     write_openapi_spec(&openapi_doc)?;
 
-    println!(
-        "cargo:warning=API build completed - {} handlers, {} schemas, {} modules",
+    // Track successful build
+    log::info!(
+        "📝 Generated API: {} handlers, {} schemas, {} modules",
         api_handlers.len(),
         openapi_schemas.len(),
         modules.len()
     );
+    
+    // Store stats in operation for summary
+    operation.add_warning(format!(
+        "API generated with {} handlers, {} schemas, {} modules",
+        api_handlers.len(), openapi_schemas.len(), modules.len()
+    ));
 
     Ok(())
 }
 
-fn initialize_build() -> BuildConfig {
-    let config = BuildConfig::default();
-    if config.enable_logging {
-        env_logger::init();
+
+/// Print a summary of the build process
+fn print_build_summary(operation: &BuildOperation) {
+    if operation.has_warnings() || operation.has_errors() {
+        println!("cargo:warning=\n📊 Build Summary:");
+        if operation.has_errors() {
+            println!("cargo:warning=  ❌ Errors: {}", operation.errors.len());
+            for error in &operation.errors {
+                println!("cargo:warning=    - {}", error);
+            }
+        }
+        if operation.has_warnings() {
+            for warning in &operation.warnings {
+                println!("cargo:warning=    ℹ️  {}", warning);
+            }
+        }
     }
-    config
 }
 
 fn setup_build_environment(config: &BuildConfig) -> Result<PathBuf> {
@@ -168,21 +220,24 @@ fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<Stri
     Ok((api_handlers, openapi_schemas, modules))
 }
 
+
 fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
-    log::debug!("Validating OpenAPI specification");
+    log::debug!("🔍 Validating OpenAPI specification");
 
     let json = serde_json::to_string(openapi)
         .context("Failed to serialize OpenAPI spec for validation")?;
 
     let _: openapiv3::OpenAPI =
-        serde_json::from_str(&json).context("OpenAPI specification validation failed")?;
+        serde_json::from_str(&json)
+            .context("OpenAPI specification validation failed. Check your response schemas and endpoint definitions.")?;
 
-    log::info!("OpenAPI specification validation passed");
+    log::info!("✓ OpenAPI specification validation passed");
     Ok(())
 }
 
+
 fn write_openapi_spec(openapi_doc: &OpenApi) -> Result<()> {
-    log::debug!("Writing OpenAPI specification to file");
+    log::debug!("💾 Writing OpenAPI specification to file");
 
     let out_dir =
         PathBuf::from(env::var("OUT_DIR").context("OUT_DIR environment variable not set")?);
@@ -196,7 +251,8 @@ fn write_openapi_spec(openapi_doc: &OpenApi) -> Result<()> {
 
     temp_file
         .persist(&openapi_spec_path)
-        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec: {:?}", e))?;
+        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec to {}: {:?}", openapi_spec_path.display(), e))?;
 
+    log::info!("✓ OpenAPI spec written to: {}", openapi_spec_path.display());
     Ok(())
 }
