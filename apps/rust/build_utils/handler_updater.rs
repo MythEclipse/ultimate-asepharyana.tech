@@ -15,6 +15,7 @@ use crate::build_utils::handler_updater::param_parsing::parse_query_params;
 use crate::build_utils::handler_updater::response_enhancement::enhance_response_struct;
 use crate::build_utils::handler_updater::schema_injection::inject_schemas;
 use crate::build_utils::handler_updater::utoipa_generation::generate_utoipa_macro;
+use crate::build_utils::openapi_auto_generator::{FunctionSignature, generate_utoipa_annotation};
 use crate::build_utils::path_utils::{
     extract_path_params, generate_default_description, parse_path_params_from_signature,
     sanitize_operation_id, sanitize_tag,
