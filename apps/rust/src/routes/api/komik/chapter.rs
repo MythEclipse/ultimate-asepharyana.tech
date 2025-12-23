@@ -70,7 +70,6 @@ const CACHE_TTL: u64 = 300; // 5 minutes
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-#[axum::debug_handler]
 pub async fn chapter(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<ChapterQuery>,
@@ -157,7 +156,6 @@ pub async fn chapter(
 pub async fn fetch_komik_chapter(
     chapter_url: String,
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
-    let start_time = std::time::Instant::now();
     let base_url = get_komik_url();
     let url = format!("{}/{}", base_url, chapter_url); // Keep as-is since chapter URLs might already have correct format
 
@@ -174,7 +172,6 @@ pub async fn fetch_komik_chapter(
         info!("Fetching URL: {}", url);
         match fetch_with_proxy(&url).await {
             Ok(response) => {
-                let _duration = start_time.elapsed();
                 info!("Successfully fetched URL: {}", url);
                 Ok(response.data)
             }
@@ -326,8 +323,8 @@ fn parse_komik_chapter_document(
         }
     }
 
-    let _duration = start_time.elapsed();
-    info!("Parsed komik chapter document in {:?}", _duration);
+    let duration = start_time.elapsed();
+    info!("Parsed komik chapter document in {:?}", duration);
 
     Ok(ChapterData {
         title,

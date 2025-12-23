@@ -4,7 +4,6 @@ use crate::config::CONFIG_MAP;
 use crate::utils::error::AppError;
 use deadpool_redis::{Manager, Pool};
 use once_cell::sync::Lazy;
-use redis::Client;
 use tracing::{debug, error, info};
 
 // Create a lazy static Redis connection pool
@@ -32,7 +31,6 @@ pub static REDIS_POOL: Lazy<Pool> = Lazy::new(|| {
 
     info!("Initializing Redis connection pool for URL: {}", redis_url);
 
-    let _client = Client::open(redis_url.clone()).expect("Failed to create Redis client");
     Pool::builder(Manager::new(redis_url).expect("Failed to create Redis manager"))
         .max_size(10) // Set maximum number of connections in the pool
         .build()

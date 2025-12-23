@@ -195,7 +195,6 @@ pub async fn slug(
 async fn fetch_anime_detail(
     slug: String,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-    let _start_time_fetch = std::time::Instant::now(); // Renamed to clearly differentiate and mark as unused
     let url = format!("{}/anime/{}", OTAKUDESU_BASE_URL, slug);
 
     let backoff = ExponentialBackoff {

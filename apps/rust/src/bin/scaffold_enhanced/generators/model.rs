@@ -1,7 +1,6 @@
 //! SeaORM model generator
 
 use anyhow::{Context, Result};
-use chrono::Local;
 use std::fs;
 use std::path::Path;
 

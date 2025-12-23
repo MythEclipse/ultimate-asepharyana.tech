@@ -28,7 +28,7 @@ pub fn generate_migration(name: &str, table: Option<&str>) -> Result<()> {
 }
 
 pub fn generate_model_migration(
-    model: &str,
+    _model: &str,
     table: &str,
     timestamps: bool,
     soft_delete: bool,
@@ -50,8 +50,8 @@ pub fn generate_model_migration(
     Ok(())
 }
 
-fn generate_create_table_migration(name: &str, table: &str) -> String {
-    let struct_name = name
+fn generate_create_table_migration(_name: &str, table: &str) -> String {
+    let struct_name = table
         .split('_')
         .map(|s| {
             let mut c = s.chars();
@@ -199,7 +199,7 @@ enum {table} {{
     )
 }
 
-fn generate_empty_migration(name: &str) -> String {
+fn generate_empty_migration(_name: &str) -> String {
     format!(
         r#"use sea_orm_migration::prelude::*;
 

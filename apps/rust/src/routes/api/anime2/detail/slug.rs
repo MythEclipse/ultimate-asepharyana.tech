@@ -211,7 +211,6 @@ pub async fn slug(
 async fn fetch_anime_detail(
     slug: String,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-    let start_time = std::time::Instant::now();
     let url = format!("https://alqanime.net/{}/", slug);
 
     // Retry logic with exponential backoff
@@ -227,7 +226,6 @@ async fn fetch_anime_detail(
         info!("Fetching URL: {}", url);
         match fetch_with_proxy(&url).await {
             Ok(response) => {
-                let _duration = start_time.elapsed();
                 info!("Successfully fetched URL: {}", url);
                 Ok(response.data)
             }

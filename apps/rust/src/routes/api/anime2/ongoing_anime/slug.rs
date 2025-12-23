@@ -170,7 +170,6 @@ pub async fn slug(
 async fn fetch_ongoing_anime_page(
     slug: String,
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
-    let start_time = std::time::Instant::now();
     let url = format!(
         "https://alqanime.net/advanced-search/page/{}/?status=ongoing&order=update",
         slug
@@ -189,7 +188,6 @@ async fn fetch_ongoing_anime_page(
         info!("Fetching URL: {}", url);
         match fetch_with_proxy(&url).await {
             Ok(response) => {
-                let _duration = start_time.elapsed();
                 info!("Successfully fetched URL: {}", url);
                 Ok(response.data)
             }

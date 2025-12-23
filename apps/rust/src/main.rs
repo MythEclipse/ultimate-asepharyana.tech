@@ -15,7 +15,7 @@ use std::sync::Arc;
 use axum::Router;
 use http::{header, Method};
 use sea_orm::{Database, DatabaseConnection};
-use tower_http::cors::{AllowOrigin, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;

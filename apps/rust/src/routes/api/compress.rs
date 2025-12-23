@@ -401,7 +401,6 @@ async fn compress_video(
     fs::remove_file(CACHE_DIR.join("ffmpeg2pass-0.log.mbtree")).await?; // and this
 
     let result_buffer = fs::read(&temp_output_path).await?;
-    let _actual_bytes = result_buffer.len() as f64;
     let size_reduction =
         (((buffer.len() - result_buffer.len()) as f64) / (buffer.len() as f64)) * 100.0;
     tracing::info!("Video compressed successfully for cache key: {}", cache_key);

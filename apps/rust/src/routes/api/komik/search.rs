@@ -110,7 +110,6 @@ const CACHE_TTL: u64 = 300; // 5 minutes
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-#[axum::debug_handler]
 pub async fn search(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<SearchQuery>,

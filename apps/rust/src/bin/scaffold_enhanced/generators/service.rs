@@ -21,8 +21,6 @@ pub fn generate_service(name: &str, model: Option<&str>) -> Result<()> {
 }
 
 fn generate_service_content(name: &str, model: &str) -> String {
-    let table_name = super::model::pluralize(model);
-
     format!(
         r#"//! {} service layer
 

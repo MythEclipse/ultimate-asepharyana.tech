@@ -2,7 +2,6 @@
 //! Laravel Artisan-inspired code generation
 
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "scaffold")]
@@ -159,14 +158,11 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-mod generators {
-    pub mod api;
-    pub mod controller;
-    pub mod migration;
-    pub mod model;
-    pub mod repository;
-    pub mod service;
+mod scaffold_enhanced {
+    pub mod generators;
 }
+
+use scaffold_enhanced::generators;
 
 mod utils {
     use anyhow::Result;

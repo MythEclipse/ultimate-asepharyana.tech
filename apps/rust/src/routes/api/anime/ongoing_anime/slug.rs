@@ -182,7 +182,6 @@ pub async fn slug(
 async fn fetch_ongoing_anime_page(
     slug: String,
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let _start_time = std::time::Instant::now();
     let url = format!("{}/ongoing-anime/page/{}/", OTAKUDESU_BASE_URL, slug);
 
     let backoff = ExponentialBackoff {

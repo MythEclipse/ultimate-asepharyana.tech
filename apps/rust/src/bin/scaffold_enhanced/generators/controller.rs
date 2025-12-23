@@ -1,6 +1,6 @@
 //! API controller generator with CRUD operations
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::fs;
 use std::path::Path;
 
@@ -8,16 +8,16 @@ pub fn generate_controller(name: &str, crud: bool, model: Option<&str>) -> Resul
     let api_dir = Path::new("src/routes/api").join(name);
     fs::create_dir_all(&api_dir)?;
 
-    let model_name = model.unwrap_or_else(|| {
+    let model_name = model.map(|s| s.to_string()).unwrap_or_else(|| {
         // Singularize the resource name
         let singular = name.trim_end_matches('s');
-        &singular[..1].to_uppercase() + &singular[1..]
+        format!("{}{}", &singular[..1].to_uppercase(), &singular[1..])
     });
 
     if crud {
-        generate_crud_routes(&api_dir, name, model_name)?;
+        generate_crud_routes(&api_dir, name, &model_name)?;
     } else {
-        generate_basic_controller(&api_dir, name, model_name)?;
+        generate_basic_controller(&api_dir, name, &model_name);
     }
 
     Ok(())
@@ -304,7 +304,7 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     )
 }
 
-fn generate_basic_controller(api_dir: &Path, resource: &str, model: &str) -> String {
+fn generate_basic_controller(api_dir: &Path, resource: &str, _model: &str) {
     let content = format!(
         r#"//! {} controller
 
@@ -326,6 +326,5 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
         resource, resource, resource
     );
 
-    fs::write(api_dir.join("index.rs"), content).unwrap();
-    Ok(())
+    let _ = fs::write(api_dir.join("index.rs"), content);
 }
