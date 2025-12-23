@@ -389,6 +389,37 @@ async function handleQuestionTimeout(
 
     if (!questionData) return;
 
+    // Apply damage to both players for not answering (timeout penalty)
+    const damageAmount = 10;
+    match.gameState.playerHealth = Math.max(
+      0,
+      match.gameState.playerHealth - damageAmount,
+    );
+    match.gameState.opponentHealth = Math.max(
+      0,
+      match.gameState.opponentHealth - damageAmount,
+    );
+
+    // Update database with new health values
+    await db
+      .update(quizMatches)
+      .set({
+        player1Health: match.gameState.playerHealth,
+        player2Health: match.gameState.opponentHealth,
+      })
+      .where(eq(quizMatches.id, matchId));
+
+    // Broadcast health update to both players
+    const battleUpdateMsg: WSMessage<any> = {
+      type: 'game.battle.update',
+      payload: {
+        matchId,
+        player1Health: match.gameState.playerHealth,
+        player2Health: match.gameState.opponentHealth,
+      },
+    };
+    wsManager.broadcastToMatch(matchId, battleUpdateMsg);
+
     // Move to next question
     match.gameState.currentQuestionIndex++;
 
@@ -400,13 +431,35 @@ async function handleQuestionTimeout(
         questionIndex,
         correctAnswerIndex: questionData.correctAnswer,
         players: [
-          { userId: match.player1Id, answered: true, isCorrect: false },
-          { userId: match.player2Id, answered: true, isCorrect: false },
+          {
+            userId: match.player1Id,
+            answered: false,
+            isCorrect: false,
+            tookDamage: damageAmount,
+          },
+          {
+            userId: match.player2Id,
+            answered: false,
+            isCorrect: false,
+            tookDamage: damageAmount,
+          },
         ],
       },
     };
 
     wsManager.broadcastToMatch(matchId, timeoutMsg);
+
+    // Check if game should end due to health depletion
+    if (
+      match.gameState.playerHealth <= 0 ||
+      match.gameState.opponentHealth <= 0
+    ) {
+      console.log(
+        `[Game] Health depleted after timeout, ending game matchId=${matchId}`,
+      );
+      await endGame(matchId, 'health_depleted');
+      return;
+    }
 
     // Send next question after delay
     setTimeout(() => {
