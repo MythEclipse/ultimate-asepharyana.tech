@@ -88,7 +88,7 @@ fn generate_root_api_mod_internal(
                             HttpBuilder::new()
                                 .scheme(HttpAuthScheme::Bearer)
                                 .bearer_format("JWT")
-                                .build()
+                                .build(),
                         ),
                     )
                 }

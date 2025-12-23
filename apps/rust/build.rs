@@ -10,7 +10,6 @@
 /// The build process runs in two phases:
 /// 1. Dry run: Validates everything without modifying files
 /// 2. Actual build: Writes the generated code and specifications
-
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -22,8 +21,7 @@ use tempfile::NamedTempFile;
 use utoipa::openapi::OpenApi;
 
 mod build_utils;
-use build_utils::{mod_generator, auto_mod_generator, openapi_generator, BuildOperation};
-
+use build_utils::{auto_mod_generator, mod_generator, openapi_generator, BuildOperation};
 
 /// Configuration for the build process
 #[derive(Debug)]
@@ -37,11 +35,9 @@ struct BuildConfig {
 
 impl BuildConfig {
     fn from_env() -> Result<Self> {
-        let project_root = PathBuf::from(
-            env::var("CARGO_MANIFEST_DIR")
-                .context("CARGO_MANIFEST_DIR not set")?  
-        );
-        
+        let project_root =
+            PathBuf::from(env::var("CARGO_MANIFEST_DIR").context("CARGO_MANIFEST_DIR not set")?);
+
         Ok(Self {
             api_routes_path: "src/routes/api".into(),
             build_utils_path: "build_utils/".into(),
@@ -54,10 +50,9 @@ impl BuildConfig {
 /// Type alias for API handlers
 type ApiHandlers = Vec<build_utils::handler_updater::HandlerRouteInfo>;
 
-
 fn main() -> Result<()> {
     let config = BuildConfig::from_env()?;
-    
+
     if config.enable_logging {
         env_logger::init();
         log::info!("🚀 Starting API build process");
@@ -80,12 +75,11 @@ fn main() -> Result<()> {
 
     // Print summary
     print_build_summary(&operation);
-    
+
     println!("cargo:warning=✅ API build completed successfully");
     log::info!("✨ API build process completed successfully");
     Ok(())
 }
-
 
 /// Performs a dry run to check for potential errors before actual file modifications
 fn perform_dry_run(config: &BuildConfig) -> Result<()> {
@@ -94,8 +88,12 @@ fn perform_dry_run(config: &BuildConfig) -> Result<()> {
     let api_routes_path = setup_build_environment(config)?;
     let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
 
-    log::info!("📊 Found {} handlers, {} schemas, {} modules", 
-               api_handlers.len(), openapi_schemas.len(), modules.len());
+    log::info!(
+        "📊 Found {} handlers, {} schemas, {} modules",
+        api_handlers.len(),
+        openapi_schemas.len(),
+        modules.len()
+    );
 
     // Test OpenAPI generation without writing files
     let openapi_doc = openapi_generator::generate_root_api_mod(
@@ -112,17 +110,16 @@ fn perform_dry_run(config: &BuildConfig) -> Result<()> {
     Ok(())
 }
 
-
 /// Performs the actual build
 fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result<()> {
     log::debug!("🔨 Performing actual build");
 
     let api_routes_path = setup_build_environment(config)?;
-    
+
     // Use auto-routing by default (new system)
     // Can be disabled with DISABLE_AUTO_ROUTING=1 for legacy support
     let use_legacy = env::var("DISABLE_AUTO_ROUTING").is_ok();
-    
+
     let (api_handlers, openapi_schemas, modules) = if use_legacy {
         println!("cargo:warning=⚠️  Using legacy routing system (DISABLE_AUTO_ROUTING=1)");
         collect_api_data(&api_routes_path)?
@@ -150,17 +147,19 @@ fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result
         openapi_schemas.len(),
         modules.len()
     );
-    
+
     // Store stats in operation for summary
     let routing_mode = if use_legacy { "legacy" } else { "auto" };
     operation.add_warning(format!(
         "API generated with {} handlers, {} schemas, {} modules ({})",
-        api_handlers.len(), openapi_schemas.len(), modules.len(), routing_mode
+        api_handlers.len(),
+        openapi_schemas.len(),
+        modules.len(),
+        routing_mode
     ));
 
     Ok(())
 }
-
 
 /// Print a summary of the build process
 fn print_build_summary(operation: &BuildOperation) {
@@ -233,7 +232,9 @@ fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<Stri
 }
 
 /// Collect API data using auto-routing system
-fn collect_api_data_auto(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
+fn collect_api_data_auto(
+    api_routes_path: &Path,
+) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
     log::debug!("📡 Collecting API data with auto-routing");
 
     let mut api_handlers = Vec::new();
@@ -257,7 +258,6 @@ fn collect_api_data_auto(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet
     Ok((api_handlers, openapi_schemas, modules))
 }
 
-
 fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
     log::debug!("🔍 Validating OpenAPI specification");
 
@@ -272,7 +272,6 @@ fn validate_openapi_spec(openapi: &OpenApi) -> Result<()> {
     Ok(())
 }
 
-
 fn write_openapi_spec(openapi_doc: &OpenApi) -> Result<()> {
     log::debug!("💾 Writing OpenAPI specification to file");
 
@@ -286,9 +285,13 @@ fn write_openapi_spec(openapi_doc: &OpenApi) -> Result<()> {
     serde_json::to_writer_pretty(&mut temp_file, openapi_doc)
         .context("Failed to serialize OpenAPI specification")?;
 
-    temp_file
-        .persist(&openapi_spec_path)
-        .map_err(|e| anyhow::anyhow!("Failed to save OpenAPI spec to {}: {:?}", openapi_spec_path.display(), e))?;
+    temp_file.persist(&openapi_spec_path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to save OpenAPI spec to {}: {:?}",
+            openapi_spec_path.display(),
+            e
+        )
+    })?;
 
     log::info!("✓ OpenAPI spec written to: {}", openapi_spec_path.display());
     Ok(())

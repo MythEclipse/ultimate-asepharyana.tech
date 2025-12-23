@@ -13,9 +13,9 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
+use http::{header, Method};
 use sea_orm::{Database, DatabaseConnection};
 use tower_http::cors::{AllowOrigin, CorsLayer};
-use http::{header, Method};
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -47,13 +47,10 @@ async fn main() -> anyhow::Result<()> {
     let _ = REDIS_POOL.get().await; // Initialize the pool early
 
     // Setup database connections
-    let database_url = CONFIG_MAP
-        .get("DATABASE_URL")
-        .cloned()
-        .unwrap_or_else(|| {
-            tracing::warn!("DATABASE_URL not set, using default");
-            "mysql://root:password@localhost/mydb".to_string()
-        });
+    let database_url = CONFIG_MAP.get("DATABASE_URL").cloned().unwrap_or_else(|| {
+        tracing::warn!("DATABASE_URL not set, using default");
+        "mysql://root:password@localhost/mydb".to_string()
+    });
 
     // SeaORM connection
     let db: DatabaseConnection = Database::connect(&database_url)
@@ -86,7 +83,14 @@ async fn main() -> anyhow::Result<()> {
     ];
     let cors = CorsLayer::new()
         .allow_origin(allowed_origins)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS, Method::PATCH])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+            Method::PATCH,
+        ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
         .allow_credentials(true);
 

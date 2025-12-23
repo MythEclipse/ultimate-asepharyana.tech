@@ -4,7 +4,6 @@
 //! from function signatures, eliminating manual boilerplate.
 
 use regex::Regex;
-use std::collections::HashMap;
 
 /// Parse function signature and extract OpenAPI metadata
 #[derive(Debug, Clone)]
@@ -36,11 +35,7 @@ impl FunctionSignature {
     pub fn parse(func_code: &str) -> Option<Self> {
         // Extract function name
         let name_regex = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").ok()?;
-        let name = name_regex
-            .captures(func_code)?
-            .get(1)?
-            .as_str()
-            .to_string();
+        let name = name_regex.captures(func_code)?.get(1)?.as_str().to_string();
 
         let is_async = func_code.contains("async fn");
 
@@ -93,7 +88,7 @@ impl FunctionSignature {
                 if let Some(type_match) = cap.get(1) {
                     // Skip if this is in return type
                     if !func_code.contains(&format!("-> Json<{}>", type_match.as_str()))
-                        && !func_code.contains(&format!("-> impl IntoResponse"))
+                        && !func_code.contains(&"-> impl IntoResponse".to_string())
                     {
                         params.push(Parameter {
                             name: "body".to_string(),
@@ -143,8 +138,9 @@ pub fn generate_utoipa_annotation(
     // Add parameters
     if !sig.params.is_empty() {
         annotation.push_str("\n    params(");
-        
-        let param_strs: Vec<String> = sig.params
+
+        let param_strs: Vec<String> = sig
+            .params
             .iter()
             .filter(|p| p.param_type == ParameterType::Path || p.param_type == ParameterType::Query)
             .map(|p| {
@@ -153,10 +149,11 @@ pub fn generate_utoipa_annotation(
                     ParameterType::Query => "Query",
                     _ => "Path",
                 };
-                
+
                 // Try to extract param name from route path
-                let param_name = extract_param_name_from_path(route_path).unwrap_or_else(|| p.name.clone());
-                
+                let param_name =
+                    extract_param_name_from_path(route_path).unwrap_or_else(|| p.name.clone());
+
                 format!(
                     r#"
         ("{}" = {}, {}, description = "{}")"#,
@@ -164,7 +161,7 @@ pub fn generate_utoipa_annotation(
                 )
             })
             .collect();
-        
+
         annotation.push_str(&param_strs.join(","));
         annotation.push_str("\n    ),");
     }
@@ -183,7 +180,7 @@ pub fn generate_utoipa_annotation(
 
     // Add responses
     annotation.push_str("\n    responses(");
-    
+
     if let Some(return_type) = &sig.return_type {
         if return_type != "IntoResponse" {
             annotation.push_str(&format!(
@@ -192,18 +189,24 @@ pub fn generate_utoipa_annotation(
                 return_type
             ));
         } else {
-            annotation.push_str(r#"
-        (status = 200, description = "Success"),"#);
+            annotation.push_str(
+                r#"
+        (status = 200, description = "Success"),"#,
+            );
         }
     } else {
-        annotation.push_str(r#"
-        (status = 200, description = "Success"),"#);
+        annotation.push_str(
+            r#"
+        (status = 200, description = "Success"),"#,
+        );
     }
 
-    annotation.push_str(r#"
+    annotation.push_str(
+        r#"
         (status = 500, description = "Internal Server Error")
     )
-)]"#);
+)]"#,
+    );
 
     annotation
 }
@@ -212,9 +215,7 @@ pub fn generate_utoipa_annotation(
 /// e.g., "/users/{id}" -> Some("id")
 fn extract_param_name_from_path(path: &str) -> Option<String> {
     let re = Regex::new(r"\{(\w+)\}").ok()?;
-    re.captures(path)?
-        .get(1)
-        .map(|m| m.as_str().to_string())
+    re.captures(path)?.get(1).map(|m| m.as_str().to_string())
 }
 
 /// Auto-generate ToSchema derive for structs
@@ -256,7 +257,7 @@ pub async fn get_user(Path(id): Path<String>) -> Json<UserResponse> {
     // ...
 }
 "#;
-        
+
         let sig = FunctionSignature::parse(code).unwrap();
         assert_eq!(sig.name, "get_user");
         assert!(sig.is_async);
@@ -281,7 +282,7 @@ pub async fn get_user(Path(id): Path<String>) -> Json<UserResponse> {
     fn test_add_to_schema() {
         let code = r#"#[derive(Serialize, Deserialize)]
 pub struct User {}"#;
-        
+
         let result = add_to_schema_derive(code);
         assert!(result.contains("ToSchema"));
     }

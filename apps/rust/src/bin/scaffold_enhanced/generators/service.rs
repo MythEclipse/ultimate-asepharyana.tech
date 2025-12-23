@@ -7,23 +7,24 @@ use std::path::Path;
 pub fn generate_service(name: &str, model: Option<&str>) -> Result<()> {
     let services_dir = Path::new("src/services");
     fs::create_dir_all(services_dir)?;
-    
+
     let model_name = model.unwrap_or(name);
     let service_content = generate_service_content(name, model_name);
-    
+
     let service_path = services_dir.join(format!("{}_service.rs", name.to_lowercase()));
     fs::write(&service_path, service_content)
         .with_context(|| format!("Failed to write service: {:?}", service_path))?;
-    
+
     update_services_mod(name)?;
-    
+
     Ok(())
 }
 
 fn generate_service_content(name: &str, model: &str) -> String {
     let table_name = super::model::pluralize(model);
-    
-    format!(r#"//! {} service layer
+
+    format!(
+        r#"//! {} service layer
 
 use sea_orm::*;
 use crate::entities::{}::{{Entity as {}, Model, ActiveModel}};
@@ -57,13 +58,22 @@ impl {}Service {{
         {}.delete_by_id(id).exec(&self.db).await
     }}
 }}
-"#, name, model.to_lowercase(), model, model, model, model, model, model)
+"#,
+        name,
+        model.to_lowercase(),
+        model,
+        model,
+        model,
+        model,
+        model,
+        model
+    )
 }
 
 fn update_services_mod(name: &str) -> Result<()> {
     let mod_path = Path::new("src/services/mod.rs");
     let module_line = format!("pub mod {}_service;", name.to_lowercase());
-    
+
     if mod_path.exists() {
         let content = fs::read_to_string(mod_path)?;
         if !content.contains(&module_line) {
@@ -73,6 +83,6 @@ fn update_services_mod(name: &str) -> Result<()> {
     } else {
         fs::write(mod_path, format!("{}\n", module_line))?;
     }
-    
+
     Ok(())
 }

@@ -70,7 +70,10 @@ fn main() -> Result<()> {
             .context("Failed to generate template content")?;
 
     if args.dry_run {
-        println!("🔍 Dry run mode - would create file at: {}", file_path.display());
+        println!(
+            "🔍 Dry run mode - would create file at: {}",
+            file_path.display()
+        );
         println!("\n--- Template Content ---\n");
         println!("{}", template_content);
         println!("\n--- End of Template ---\n");
@@ -110,10 +113,7 @@ fn validate_route_path(path: &str) -> Result<()> {
     }
 
     if path.starts_with('/') {
-        anyhow::bail!(
-            "Route path should not start with '/' (got: '{}')",
-            path
-        );
+        anyhow::bail!("Route path should not start with '/' (got: '{}')", path);
     }
 
     if path.contains("..") {

@@ -1,8 +1,8 @@
 use crate::build_utils::constants::DYNAMIC_REGEX;
-use crate::build_utils::types::{ResponseStructInfo, TemplateType};
 use crate::build_utils::path_utils::{
     generate_default_description, sanitize_operation_id, sanitize_tag,
 };
+use crate::build_utils::types::{ResponseStructInfo, TemplateType};
 use regex::Regex;
 
 pub fn generate_template_content(
@@ -61,7 +61,6 @@ pub fn generate_template_content(
     let response_info = ResponseStructInfo::from_template_type(template_type);
 
     let path_params = extract_path_params_from_route(&route_path_str);
-
 
     let func_signature = build_function_signature(func_name, &path_params, protected);
 
@@ -183,12 +182,13 @@ pub fn generate_template_content(
     Ok(template)
 }
 
-
 /// Get response struct information based on the route path.
-/// 
+///
 /// This function determines the appropriate response structure based on the path pattern.
 /// Returns tuple of (struct_name, fields, success_response_body) for backward compatibility.
-#[deprecated(note = "Use TemplateType::from_path and ResponseStructInfo::from_template_type instead")]
+#[deprecated(
+    note = "Use TemplateType::from_path and ResponseStructInfo::from_template_type instead"
+)]
 pub fn get_response_struct_info(axum_path: &str) -> (&str, &str, &str) {
     let template_type = TemplateType::from_path(axum_path);
     let info = ResponseStructInfo::from_template_type(template_type);

@@ -1,0 +1,24 @@
+# Clippy configuration for stricter linting
+
+# Deny warnings in CI
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+
+# Allow some pedantic lints that are too strict
+too_many_lines = "allow"
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+# Deny common issues
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unimplemented = "deny"
+todo = "deny"
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"

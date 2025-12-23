@@ -23,20 +23,19 @@
 //! - `path_utils`: Utilities for path manipulation and sanitization
 //! - `template_generator`: High-level template generation logic
 
+pub mod auto_mod_generator;
 pub mod constants;
 pub mod errors;
-pub mod types;
-pub mod route_scanner;
-pub mod route_registry;
-pub mod auto_mod_generator;
-pub mod openapi_auto_generator;
 pub mod handler_template;
 pub mod handler_updater;
 pub mod mod_generator;
+pub mod openapi_auto_generator;
 pub mod openapi_generator;
 pub mod path_utils;
+pub mod route_registry;
+pub mod route_scanner;
 pub mod template_generator;
-
+pub mod types;
 
 /// Build operation tracker for errors and warnings during the build process.
 ///
@@ -84,21 +83,21 @@ impl BuildOperation {
     /// Get a summary of all errors and warnings
     pub fn summary(&self) -> String {
         let mut summary = String::new();
-        
+
         if self.has_errors() {
             summary.push_str(&format!("Errors ({}): \n", self.errors.len()));
             for (i, error) in self.errors.iter().enumerate() {
                 summary.push_str(&format!("  {}. {}\n", i + 1, error));
             }
         }
-        
+
         if self.has_warnings() {
             summary.push_str(&format!("Warnings ({}): \n", self.warnings.len()));
             for (i, warning) in self.warnings.iter().enumerate() {
                 summary.push_str(&format!("  {}. {}\n", i + 1, warning));
             }
         }
-        
+
         summary
     }
 }

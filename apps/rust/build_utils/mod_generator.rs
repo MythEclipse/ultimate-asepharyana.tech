@@ -114,7 +114,11 @@ fn process_directory_entries(
 
     for path in entries {
         let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-        if file_name.starts_with('.') || file_name == "mod.rs" || file_name == "test" || file_name == "chat" {
+        if file_name.starts_with('.')
+            || file_name == "mod.rs"
+            || file_name == "test"
+            || file_name == "chat"
+        {
             continue;
         }
 

@@ -29,10 +29,7 @@ impl RouteRegistry {
             .unwrap_or("")
             .to_string();
 
-        self.routes_by_dir
-            .entry(dir_path)
-            .or_insert_with(Vec::new)
-            .push(route);
+        self.routes_by_dir.entry(dir_path).or_default().push(route);
     }
 
     /// Get routes for a specific directory, sorted by specificity
@@ -66,7 +63,7 @@ impl RouteRegistry {
     /// Generate route registration code for a directory
     pub fn generate_registration_code(&self, dir_path: &str) -> String {
         let routes = self.get_dir_routes(dir_path);
-        
+
         if routes.is_empty() {
             return "router".to_string();
         }
@@ -93,8 +90,8 @@ impl Default for RouteRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
     use crate::build_utils::types::DynamicParam;
+    use std::path::PathBuf;
 
     #[test]
     fn test_route_ordering() {
@@ -128,7 +125,7 @@ mod tests {
         });
 
         let routes = registry.get_dir_routes("/api/users");
-        
+
         // Static route should come before dynamic
         assert_eq!(routes.len(), 2);
         assert_eq!(routes[0].route_path, "/users/profile");

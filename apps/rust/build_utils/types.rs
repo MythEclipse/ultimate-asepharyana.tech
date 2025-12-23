@@ -192,20 +192,20 @@ impl RouteFileInfo {
     /// Used for ordering routes: static < dynamic < catch-all
     pub fn specificity_score(&self) -> u32 {
         let mut score = 0;
-        
+
         // Each path segment adds to score
         score += self.route_path.matches('/').count() as u32 * 10;
-        
+
         // Dynamic routes are less specific
         if self.is_dynamic {
             score += 100;
         }
-        
+
         // Catch-all is least specific
         if self.is_catch_all {
             score += 1000;
         }
-        
+
         score
     }
 
@@ -226,4 +226,3 @@ impl RouteFileInfo {
         })
     }
 }
-

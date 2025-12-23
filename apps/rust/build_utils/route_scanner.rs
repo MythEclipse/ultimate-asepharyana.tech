@@ -7,13 +7,13 @@ use crate::build_utils::types::{DynamicParam, RouteFileInfo};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Scan the API directory and collect all route files
 pub fn scan_routes(api_dir: &Path) -> Result<Vec<RouteFileInfo>> {
     let mut routes = Vec::new();
     scan_directory_recursive(api_dir, api_dir, &mut routes)?;
-    
+
     // Sort routes by specificity (static before dynamic, shorter before longer)
     routes.sort_by(|a, b| {
         // Static routes before dynamic
@@ -24,11 +24,13 @@ pub fn scan_routes(api_dir: &Path) -> Result<Vec<RouteFileInfo>> {
                 // For same type, sort by path length (shorter first)
                 let a_len = a.route_path.matches('/').count();
                 let b_len = b.route_path.matches('/').count();
-                a_len.cmp(&b_len).then_with(|| a.route_path.cmp(&b.route_path))
+                a_len
+                    .cmp(&b_len)
+                    .then_with(|| a.route_path.cmp(&b.route_path))
             }
         }
     });
-    
+
     Ok(routes)
 }
 
@@ -44,16 +46,10 @@ fn scan_directory_recursive(
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
-        let file_name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
         // Skip hidden files, mod.rs, and private modules
-        if file_name.starts_with('.') 
-            || file_name.starts_with('_') 
-            || file_name == "mod.rs" 
-        {
+        if file_name.starts_with('.') || file_name.starts_with('_') || file_name == "mod.rs" {
             continue;
         }
 
@@ -171,7 +167,7 @@ fn build_route_path(
     file_path: &Path,
     api_root: &Path,
     is_index: bool,
-    dynamic_params: &[DynamicParam],
+    _dynamic_params: &[DynamicParam],
 ) -> Result<String> {
     let relative_path = file_path
         .strip_prefix(api_root)
@@ -182,13 +178,13 @@ fn build_route_path(
     // Process each component of the path
     for component in relative_path.components() {
         let component_str = component.as_os_str().to_str().unwrap_or("");
-        
+
         // Skip the filename itself
         if component_str.ends_with(".rs") {
             if !is_index {
                 // Add filename as path segment (unless it's index.rs)
                 let segment = component_str.trim_end_matches(".rs");
-                
+
                 // Check if this segment is dynamic
                 if segment.starts_with('[') && segment.ends_with(']') {
                     let param_name = segment.trim_matches(|c| c == '[' || c == ']');
@@ -234,21 +230,17 @@ fn build_module_path(file_path: &Path, api_root: &Path) -> Result<String> {
         .context("File path is not under api_root")?
         .with_extension("");
 
-    let mut parts: Vec<String> = vec![
-        "crate".to_string(),
-        "routes".to_string(),
-        "api".to_string(),
-    ];
-    
+    let mut parts: Vec<String> = vec!["crate".to_string(), "routes".to_string(), "api".to_string()];
+
     for component in relative_path.components() {
         let component_str = component.as_os_str().to_str().unwrap_or("");
-        
+
         // Sanitize component (remove brackets, replace hyphens)
         let sanitized = component_str
             .trim_matches(|c| c == '[' || c == ']')
             .replace("...", "")
             .replace('-', "_");
-        
+
         if !sanitized.is_empty() {
             parts.push(sanitized);
         }
@@ -276,7 +268,7 @@ pub fn detect_conflicts(routes: &[RouteFileInfo]) -> Vec<String> {
             // Multiple routes with same path - check if methods differ
             let methods: Vec<_> = route_list.iter().map(|r| &r.http_method).collect();
             let unique_methods: std::collections::HashSet<_> = methods.iter().collect();
-            
+
             if unique_methods.len() < methods.len() {
                 conflicts.push(format!(
                     "Route conflict: {} has multiple handlers with same method",

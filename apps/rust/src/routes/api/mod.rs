@@ -9,7 +9,6 @@ pub mod anime;
 pub mod anime2;
 pub mod auth;
 pub mod compress;
-pub mod demo;
 pub mod drivepng;
 pub mod komik;
 pub mod proxy;
@@ -82,7 +81,6 @@ use crate::routes::api::auth::verify::VerifyQuery;
 use crate::routes::api::auth::verify::VerifyResponse;
 use crate::routes::api::compress::CompressQuery;
 use crate::routes::api::compress::CompressResponse;
-use crate::routes::api::demo::testid::DemoResponse;
 use crate::routes::api::drivepng::ListResponse as ListResponse_2;
 use crate::routes::api::komik::chapter::ChapterData;
 use crate::routes::api::komik::chapter::ChapterQuery;
@@ -120,7 +118,6 @@ paths(
               crate::routes::api::komik::chapter::chapter,
               crate::routes::api::komik::detail::detail,
               crate::routes::api::komik::search::search,
-              crate::routes::api::demo::testid::test_auto_route,
               crate::routes::api::auth::change_password::change_password,
               crate::routes::api::auth::delete_account::delete_account,
               crate::routes::api::auth::forgot_password::forgot_password,
@@ -216,7 +213,6 @@ components(
                   VerifyResponse,
                   CompressQuery,
                   CompressResponse,
-                  DemoResponse,
                   ListResponse_2,
                   ChapterData,
                   ChapterQuery,
@@ -292,7 +288,6 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = anime2::register_routes(router);
     router = auth::register_routes(router);
     router = compress::register_routes(router);
-    router = demo::register_routes(router);
     router = drivepng::register_routes(router);
     router = komik::register_routes(router);
     router = proxy::register_routes(router);

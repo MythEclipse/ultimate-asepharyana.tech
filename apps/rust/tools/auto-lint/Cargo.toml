@@ -1,0 +1,10 @@
+[package]
+name = "rust-lint"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "auto-lint"
+path = "auto_lint.rs"
+
+[dependencies]
