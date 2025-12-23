@@ -752,7 +752,25 @@ async function endGame(
       },
     };
 
+    // Broadcast game over to both players
     wsManager.broadcastToMatch(matchId, gameOverMsg);
+
+    // CRITICAL: Clear currentMatchId from player connections so they can join new games
+    const player1Conn = wsManager.getConnectionByUserId(match.player1Id);
+    const player2Conn = wsManager.getConnectionByUserId(match.player2Id);
+
+    if (player1Conn) {
+      player1Conn.currentMatchId = undefined;
+      console.log(
+        `[Game] Cleared currentMatchId for player ${match.player1Id}`,
+      );
+    }
+    if (player2Conn) {
+      player2Conn.currentMatchId = undefined;
+      console.log(
+        `[Game] Cleared currentMatchId for player ${match.player2Id}`,
+      );
+    }
 
     // Update user statuses
     wsManager.updateUserStatus(match.player1Id, 'online');
