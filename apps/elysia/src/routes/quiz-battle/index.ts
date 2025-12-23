@@ -141,9 +141,56 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           // ===== GAME =====
-          case 'game.connect':
-            // Client acknowledges connection to match - game starts automatically via startGameMatch
-            console.log(`[WS] Client connected to game match`);
+          case 'game.connect': {
+            // CRITICAL: Check if match exists and is not finished
+            const matchId = (message.payload as any)?.matchId;
+            if (!matchId) {
+              console.log(`[WS] game.connect missing matchId`);
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  payload: {
+                    code: 'INVALID_REQUEST',
+                    message: 'matchId is required',
+                  },
+                }),
+              );
+              break;
+            }
+
+            const match = wsManager.getMatch(matchId);
+            if (!match) {
+              console.log(`[WS] game.connect: match ${matchId} not found`);
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  payload: {
+                    code: 'MATCH_NOT_FOUND',
+                    message: 'Match does not exist',
+                  },
+                }),
+              );
+              break;
+            }
+
+            if (match.status === 'finished') {
+              console.log(
+                `[WS] game.connect: match ${matchId} already finished, rejecting reconnect`,
+              );
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  payload: {
+                    code: 'MATCH_FINISHED',
+                    message:
+                      'This match has already ended. Please start a new match.',
+                  },
+                }),
+              );
+              break;
+            }
+
+            console.log(`[WS] Client connected to game match ${matchId}`);
             ws.send(
               JSON.stringify({
                 type: 'game.connect.ack',
@@ -151,6 +198,7 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
               }),
             );
             break;
+          }
 
           case 'game.answer.submit':
             if (sessionId) {
