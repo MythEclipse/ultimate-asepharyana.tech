@@ -317,6 +317,7 @@ export async function handleGameAnswerSubmit(
         correctAnswerIndex: questionData.correctAnswer,
         points: 0,
         answerTime: payload.answerTime / 1000,
+        playerHealth: playerHealth, // Include updated health for immediate UI update
       },
     };
 

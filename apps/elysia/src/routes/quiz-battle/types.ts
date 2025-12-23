@@ -255,7 +255,8 @@ export interface GameAnswerReceivedPayload {
   isCorrect: boolean;
   correctAnswerIndex: number;
   points: number;
-  answerTime: number;
+  answerTime: number; // In seconds
+  playerHealth: number; // Updated health after this answer
 }
 
 export interface AnimationData {
