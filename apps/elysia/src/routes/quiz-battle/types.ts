@@ -215,8 +215,6 @@ export interface GameState {
   timePerQuestion: number;
   playerHealth: number;
   opponentHealth: number;
-  playerScore?: number;
-  opponentScore?: number;
 }
 
 export interface GameStartedPayload {

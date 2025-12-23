@@ -487,8 +487,6 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
           player2Id: match.player2Id,
           currentQuestion: match.gameState.currentQuestionIndex,
           totalQuestions: match.questions.length,
-          player1Score: match.gameState.playerScore || 0,
-          player2Score: match.gameState.opponentScore || 0,
           status: match.status,
         }),
       );
@@ -523,8 +521,6 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
                           player2Id: { type: 'string' },
                           currentQuestion: { type: 'number' },
                           totalQuestions: { type: 'number' },
-                          player1Score: { type: 'number' },
-                          player2Score: { type: 'number' },
                           status: {
                             type: 'string',
                             enum: [

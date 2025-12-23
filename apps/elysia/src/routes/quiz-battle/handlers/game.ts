@@ -329,8 +329,6 @@ export async function handleGameAnswerSubmit(
         matchId: payload.matchId,
         player1Health: match.gameState.playerHealth,
         player2Health: match.gameState.opponentHealth,
-        player1Score: 0,
-        player2Score: 0,
       },
     };
 
@@ -539,8 +537,6 @@ async function endGame(
         winnerId,
         status: 'finished',
         finishedAt: new Date(),
-        player1Score: 0,
-        player2Score: 0,
         player1Health,
         player2Health,
       })

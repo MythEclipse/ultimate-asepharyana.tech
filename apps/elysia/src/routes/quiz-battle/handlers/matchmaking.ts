@@ -175,8 +175,6 @@ export async function handleMatchmakingFind(
           timePerQuestion: gameSettings.timePerQuestion,
           playerHealth: 100,
           opponentHealth: 100,
-          playerScore: 0,
-          opponentScore: 0,
         },
         questions: [],
         currentQuestionStartTime: 0,
