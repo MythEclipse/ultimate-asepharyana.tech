@@ -20,7 +20,7 @@ import {
   handleMatchmakingCancel,
 } from './handlers/matchmaking';
 
-import { handleGameAnswerSubmit } from './handlers/game';
+import { handleGameAnswerSubmit, endGameByForfeit } from './handlers/game';
 
 import {
   handleFriendRequestSend,
@@ -421,11 +421,22 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
     },
 
     close(ws) {
-      console.log('[WS] Client disconnected');
       const sessionId = sessionIds.get(ws.raw as ServerWebSocket<WSData>);
       if (sessionId) {
+        console.log(`[WS] Client disconnected: ${sessionId}`);
+        
+        // CRITICAL: If player was in a match, forfeit it
+        const connection = wsManager.getConnection(sessionId);
+        if (connection?.currentMatchId) {
+          console.log(`[WS] Player ${connection.userId} disconnected mid-game, forfeiting match ${connection.currentMatchId}`);
+          endGameByForfeit(connection.currentMatchId, connection.userId);
+        }
+        
+        // Call existing disconnect handler
         handleDisconnect(sessionId);
         sessionIds.delete(ws.raw as ServerWebSocket<WSData>);
+      } else {
+        console.log('[WS] Client disconnected (session not found)');
       }
     },
   })

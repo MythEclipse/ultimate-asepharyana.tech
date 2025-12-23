@@ -776,12 +776,10 @@ async function endGame(
     wsManager.updateUserStatus(match.player1Id, 'online');
     wsManager.updateUserStatus(match.player2Id, 'online');
 
-    // Remove match after 5 seconds
-    setTimeout(() => {
-      wsManager.removeMatch(matchId);
-    }, 5000);
-
-    console.log(`[Game] Match ${matchId} ended. Winner: ${winnerId}`);
+    // CRITICAL: Remove match IMMEDIATELY to prevent reconnection window
+    // Previous code had 5 second delay which allowed replays!
+    wsManager.removeMatch(matchId);
+    console.log(`[Game] Match ${matchId} removed. Winner: ${winnerId}`);
   } catch (error) {
     console.error('[Game] Error ending game:', error);
   }
