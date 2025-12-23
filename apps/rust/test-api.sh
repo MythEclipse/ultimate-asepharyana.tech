@@ -312,24 +312,24 @@ test_komik_endpoints() {
     fi
 }
 
-test_komik2_endpoints() {
+test_komik_endpoints() {
     print_subheader "Komik2 API Endpoints (Secondary - komiku)"
     
-    test_get "/api/komik2/search?q=bocchi" "GET /api/komik2/search - Search komik2"
-    test_get "/api/komik2/manga?page=1" "GET /api/komik2/manga - Manga2 list"
-    test_get "/api/komik2/manhwa?page=1" "GET /api/komik2/manhwa - Manhwa2 list"
-    test_get "/api/komik2/manhua?page=1" "GET /api/komik2/manhua - Manhua2 list"
+    test_get "/api/komik/search?q=bocchi" "GET /api/komik/search - Search komik"
+    test_get "/api/komik/manga?page=1" "GET /api/komik/manga - Manga2 list"
+    test_get "/api/komik/manhwa?page=1" "GET /api/komik/manhwa - Manhwa2 list"
+    test_get "/api/komik/manhua?page=1" "GET /api/komik/manhua - Manhua2 list"
     
     # Get actual manga slug from list for detail/chapter tests
-    log_info "Fetching komik2 manga list to get valid slug..."
-    manga2_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik2/manga?page=1" 2>/dev/null | grep -o '"slug":"[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+    log_info "Fetching komik manga list to get valid slug..."
+    manga2_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik/manga?page=1" 2>/dev/null | grep -o '"slug":"[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
     if [ -n "$manga2_slug" ]; then
-        test_get "/api/komik2/detail?id=${manga2_slug}" "GET /api/komik2/detail - Komik2 detail (${manga2_slug})"
+        test_get "/api/komik/detail?id=${manga2_slug}" "GET /api/komik/detail - Komik2 detail (${manga2_slug})"
         
         # Get chapter slug from detail
-        chapter2_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik2/detail?id=${manga2_slug}" 2>/dev/null | grep -o '"slug":"[^"]*chapter[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
+        chapter2_slug=$(curl -s --max-time 30 "${BASE_URL}/api/komik/detail?id=${manga2_slug}" 2>/dev/null | grep -o '"slug":"[^"]*chapter[^"]*"' | head -1 | sed 's/"slug":"//;s/"$//' 2>/dev/null)
         if [ -n "$chapter2_slug" ]; then
-            test_get "/api/komik2/chapter?id=${chapter2_slug}" "GET /api/komik2/chapter - Chapter2 images (${chapter2_slug})"
+            test_get "/api/komik/chapter?id=${chapter2_slug}" "GET /api/komik/chapter - Chapter2 images (${chapter2_slug})"
         else
             log_skip "Komik2 chapter - Could not get chapter slug from detail"
         fi
@@ -577,7 +577,7 @@ if [ -n "$ONLY_TEST" ]; then
             ;;
         komik)
             test_komik_endpoints
-            test_komik2_endpoints
+            test_komik_endpoints
             ;;
         auth)
             test_auth_endpoints
@@ -603,7 +603,7 @@ else
     test_anime_endpoints
     test_anime2_endpoints
     test_komik_endpoints
-    test_komik2_endpoints
+    test_komik_endpoints
     test_auth_endpoints
     test_utility_endpoints
     test_websocket

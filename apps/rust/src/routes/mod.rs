@@ -1,7 +1,6 @@
 #![allow(unused_imports)]
 pub mod api;
 pub mod ws;
-use crate::routes::api::komik2;
 use axum::Router;
 use std::sync::Arc;
 

@@ -6,8 +6,11 @@ pub const ANIMEAPI: &str = "https://anime.asepharyana.tech";
 pub const BASE_URL: &str = "http://127.0.0.1:4090";
 
 // Get Komik URL from environment config
-pub fn get_komik_url() -> Option<String> {
-    CONFIG_MAP.get("NEXT_PUBLIC_KOMIK").cloned()
+pub fn get_komik_url() -> String {
+    CONFIG_MAP
+        .get("KOMIK2_BASE_URL")
+        .cloned()
+        .unwrap_or_else(|| "https://komiku.org".to_string())
 }
 
 // Get production URL from environment config, fallback to default
@@ -18,16 +21,8 @@ pub fn get_production_url() -> String {
         .unwrap_or_else(|| "https://asepharyana.tech".to_string())
 }
 
-// Get Komik2 URL from environment config
-pub fn get_komik2_url() -> String {
-    CONFIG_MAP
-        .get("KOMIK2_BASE_URL")
-        .cloned()
-        .unwrap_or_else(|| "https://komiku.org".to_string())
-}
-
-// Get Komik2 API URL from environment config
-pub fn get_komik2_api_url() -> String {
+// Get Komik API URL from environment config
+pub fn get_komik_api_url() -> String {
     CONFIG_MAP
         .get("KOMIK2_API_URL")
         .cloned()
