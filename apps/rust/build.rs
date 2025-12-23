@@ -22,7 +22,7 @@ use tempfile::NamedTempFile;
 use utoipa::openapi::OpenApi;
 
 mod build_utils;
-use build_utils::{mod_generator, openapi_generator, BuildOperation};
+use build_utils::{mod_generator, auto_mod_generator, openapi_generator, BuildOperation};
 
 
 /// Configuration for the build process
@@ -118,7 +118,16 @@ fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result
     log::debug!("🔨 Performing actual build");
 
     let api_routes_path = setup_build_environment(config)?;
-    let (api_handlers, openapi_schemas, modules) = collect_api_data(&api_routes_path)?;
+    
+    // Check if auto-routing is enabled
+    let use_auto_routing = env::var("USE_AUTO_ROUTING").is_ok();
+    
+    let (api_handlers, openapi_schemas, modules) = if use_auto_routing {
+        println!("cargo:warning=🚀 Using auto-routing system (USE_AUTO_ROUTING=1)");
+        collect_api_data_auto(&api_routes_path)?
+    } else {
+        collect_api_data(&api_routes_path)?
+    };
 
     // Generate OpenAPI
     let openapi_doc = openapi_generator::generate_root_api_mod(
@@ -141,9 +150,10 @@ fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result
     );
     
     // Store stats in operation for summary
+    let routing_mode = if use_auto_routing { "auto" } else { "manual" };
     operation.add_warning(format!(
-        "API generated with {} handlers, {} schemas, {} modules",
-        api_handlers.len(), openapi_schemas.len(), modules.len()
+        "API generated with {} handlers, {} schemas, {} modules ({})",
+        api_handlers.len(), openapi_schemas.len(), modules.len(), routing_mode
     ));
 
     Ok(())
@@ -216,6 +226,31 @@ fn collect_api_data(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<Stri
     )?;
 
     let modules = modules.into_iter().unique().sorted().collect();
+
+    Ok((api_handlers, openapi_schemas, modules))
+}
+
+/// Collect API data using auto-routing system
+fn collect_api_data_auto(api_routes_path: &Path) -> Result<(ApiHandlers, HashSet<String>, Vec<String>)> {
+    log::debug!("📡 Collecting API data with auto-routing");
+
+    let mut api_handlers = Vec::new();
+    let mut openapi_schemas = HashSet::new();
+    let mut modules = Vec::new();
+
+    openapi_schemas.reserve(100);
+
+    // Use auto mod generator instead of manual traversal
+    auto_mod_generator::generate_mods_auto(
+        api_routes_path,
+        &mut api_handlers,
+        &mut openapi_schemas,
+        &mut modules,
+    )?;
+
+    let modules = modules.into_iter().unique().sorted().collect();
+
+    log::info!("✅ Auto-routing collected {} routes", api_handlers.len());
 
     Ok((api_handlers, openapi_schemas, modules))
 }

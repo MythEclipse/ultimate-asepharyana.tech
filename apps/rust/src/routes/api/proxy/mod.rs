@@ -7,6 +7,7 @@ pub mod croxy;
 use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
+
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  croxy::register_routes(router)
+    croxy::register_routes(router)
 }

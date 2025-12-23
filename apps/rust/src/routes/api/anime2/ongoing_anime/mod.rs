@@ -7,6 +7,7 @@ pub mod slug;
 use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
+
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  slug::register_routes(router)
+    slug::register_routes(router)
 }

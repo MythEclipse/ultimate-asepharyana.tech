@@ -3,12 +3,11 @@
 //! This module generates mod.rs files automatically based on discovered routes.
 
 use crate::build_utils::route_scanner::scan_routes;
-use crate::build_utils::route_registry::RouteRegistry;
 use crate::build_utils::handler_updater::{update_handler_file, HandlerRouteInfo};
 use anyhow::{Context, Result};
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Generate all mod.rs files using the route scanner
 pub fn generate_mods_auto(
@@ -22,22 +21,25 @@ pub fn generate_mods_auto(
     
     println!("cargo:warning=📁 Discovered {} routes", routes.len());
     
-    // Build registry
-    let mut registry = RouteRegistry::new();
+    // Group routes by directory
+    let mut routes_by_dir: HashMap<PathBuf, Vec<_>> = HashMap::new();
     for route in routes {
-        registry.add_route(route);
+        let dir = route.file_path.parent().unwrap_or(api_root).to_path_buf();
+        routes_by_dir.entry(dir).or_default().push(route);
     }
     
-    // Get all directories
-    let directories = registry.get_directories();
+    // Collect all unique directories
+    let mut all_dirs: Vec<PathBuf> = routes_by_dir.keys().cloned().collect();
+    all_dirs.sort();
     
-    // Generate mod.rs for each directory
-    for dir_path in &directories {
-        let dir = Path::new(dir_path);
+    // Generate mod.rs for each directory (deepest first)
+    all_dirs.reverse();
+    for dir in &all_dirs {
+        let dir_routes = routes_by_dir.get(dir).unwrap();
         generate_mod_for_directory_auto(
             dir,
             api_root,
-            &registry,
+            dir_routes,
             all_handlers,
             all_schemas,
             modules,
@@ -47,31 +49,18 @@ pub fn generate_mods_auto(
     Ok(())
 }
 
-/// Generate mod.rs for a single directory using route registry
+/// Generate mod.rs for a single directory
 fn generate_mod_for_directory_auto(
     current_dir: &Path,
     api_root: &Path,
-    registry: &RouteRegistry,
+    routes: &[crate::build_utils::types::RouteFileInfo],
     all_handlers: &mut Vec<HandlerRouteInfo>,
     all_schemas: &mut HashSet<String>,
     modules: &mut Vec<String>,
 ) -> Result<()> {
-    let dir_str = current_dir.to_str().unwrap_or("");
-    
-    // Get module names for this directory
-    let module_names = registry.get_module_names(dir_str);
-    
-    if module_names.is_empty() {
-        return Ok(());
-    }
-    
-    // Get routes for this directory to update handler files
-    let routes = registry.get_dir_routes(dir_str);
-    
-    // Compute module path prefix
     let module_path_prefix = compute_module_path_prefix(current_dir, api_root)?;
     
-    // Update each handler file
+    // Update handler files
     for route in routes {
         if let Some(handler_info) = update_handler_file(
             &route.file_path,
@@ -83,14 +72,47 @@ fn generate_mod_for_directory_auto(
         }
     }
     
-    // Generate pub mod declarations
-    let pub_mods: Vec<String> = module_names
-        .iter()
-        .map(|name| format!("pub mod {};", name))
-        .collect();
+    // Collect module names and pub mods
+    let mut module_names: Vec<String> = Vec::new();
+    let mut pub_mods: Vec<String> = Vec::new();
+    
+    for route in routes {
+        if let Some(mod_name) = route.module_name() {
+            if !module_names.contains(&mod_name) {
+                module_names.push(mod_name.clone());
+                pub_mods.push(format!("pub mod {};", mod_name));
+            }
+        }
+    }
+    
+    // Also add subdirectories as modules
+    if let Ok(entries) = fs::read_dir(current_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let dir_name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                
+                // Skip hidden and private directories
+                if dir_name.starts_with('.') || dir_name.starts_with('_') {
+                    continue;
+                }
+                
+                let mod_name = dir_name.replace('-', "_");
+                if !module_names.contains(&mod_name) {
+                    module_names.push(mod_name.clone());
+                    pub_mods.push(format!("pub mod {};", mod_name));
+                }
+            }
+        }
+    }
+    
+    pub_mods.sort();
+    module_names.sort();
     
     // Generate registration code
-    let registration_code = registry.generate_registration_code(dir_str);
+    let registration_code = generate_registration_code(&module_names);
     
     // Generate mod.rs content
     let mod_content = format!(
@@ -116,14 +138,26 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     fs::write(current_dir.join("mod.rs"), mod_content)
         .with_context(|| format!("Failed to write mod.rs for: {:?}", current_dir))?;
     
-    // If this is root level, add to modules list
+    // If this is root level API directory, add to modules list
     if current_dir == api_root {
-        for name in module_names {
-            modules.push(name);
-        }
+        modules.extend(module_names);
     }
     
     Ok(())
+}
+
+fn generate_registration_code(module_names: &[String]) -> String {
+    if module_names.is_empty() {
+        return "router".to_string();
+    }
+    
+    // Chain all module registrations
+    module_names
+        .iter()
+        .rev()
+        .fold("router".to_string(), |acc, name| {
+            format!("{}::register_routes({})", name, acc)
+        })
 }
 
 fn compute_module_path_prefix(current_dir: &Path, root_api_path: &Path) -> Result<String> {
