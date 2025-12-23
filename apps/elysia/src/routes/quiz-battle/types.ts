@@ -805,6 +805,10 @@ export interface MatchState {
   questions: QuestionData[];
   currentQuestionStartTime: number;
   status: MatchStatus;
+
+  // Anti-spam protection
+  answeredQuestions?: Set<string>; // Track answered questions: "matchId:userId:questionIndex"
+  lastSubmitTimes?: Record<string, number>; // Rate limiting: userId -> timestamp
 }
 
 // ===== Lobby State Management =====

@@ -264,6 +264,40 @@ export async function handleGameAnswerSubmit(
       return;
     }
 
+    // CRITICAL: Check for duplicate answers (prevent spam exploit)
+    const answeredKey = `${payload.matchId}:${payload.userId}:${payload.questionIndex}`;
+    if (!match.answeredQuestions) {
+      match.answeredQuestions = new Set();
+    }
+
+    if (match.answeredQuestions.has(answeredKey)) {
+      console.log(
+        `[Game] Duplicate answer ignored: user ${payload.userId} already answered question ${payload.questionIndex}`,
+      );
+      return; // Already answered this question!
+    }
+
+    // CRITICAL: Rate limiting (prevent spam)
+    if (!match.lastSubmitTimes) {
+      match.lastSubmitTimes = {};
+    }
+
+    const lastSubmitTime = match.lastSubmitTimes[payload.userId] || 0;
+    const now = Date.now();
+
+    if (now - lastSubmitTime < 100) {
+      // 100ms cooldown
+      console.log(
+        `[Game] Rate limit: user ${payload.userId} submitting too fast`,
+      );
+      return;
+    }
+
+    match.lastSubmitTimes[payload.userId] = now;
+
+    // Mark as answered BEFORE processing (prevent race conditions)
+    match.answeredQuestions.add(answeredKey);
+
     // Allow spam answering - don't validate question index
     const db = getDb();
 
