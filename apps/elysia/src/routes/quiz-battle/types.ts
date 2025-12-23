@@ -257,6 +257,7 @@ export interface GameAnswerReceivedPayload {
   points: number;
   answerTime: number; // In seconds
   playerHealth: number; // Updated health after this answer
+  opponentHealth: number; // Opponent health from player's perspective
 }
 
 export interface AnimationData {

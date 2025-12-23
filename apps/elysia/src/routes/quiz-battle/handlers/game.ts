@@ -291,24 +291,48 @@ export async function handleGameAnswerSubmit(
       points: 0, // No points in health mode
     });
 
-    // Health-based damage: -10 HP for wrong answer
+    // Health-based damage logic (like offline mode):
+    // - Correct answer = opponent takes damage (-10 HP)
+    // - Wrong answer = player takes damage (-10 HP)
     const isPlayer1 = payload.userId === match.player1Id;
-    let playerHealth = isPlayer1
+
+    if (isCorrect) {
+      // Correct answer - damage OPPONENT
+      if (isPlayer1) {
+        match.gameState.opponentHealth = Math.max(
+          0,
+          match.gameState.opponentHealth - 10,
+        );
+      } else {
+        match.gameState.playerHealth = Math.max(
+          0,
+          match.gameState.playerHealth - 10,
+        );
+      }
+    } else {
+      // Wrong answer - damage SELF
+      if (isPlayer1) {
+        match.gameState.playerHealth = Math.max(
+          0,
+          match.gameState.playerHealth - 10,
+        );
+      } else {
+        match.gameState.opponentHealth = Math.max(
+          0,
+          match.gameState.opponentHealth - 10,
+        );
+      }
+    }
+
+    // Get current player's health after update
+    const playerHealth = isPlayer1
       ? match.gameState.playerHealth
       : match.gameState.opponentHealth;
+    const opponentHealth = isPlayer1
+      ? match.gameState.opponentHealth
+      : match.gameState.playerHealth;
 
-    if (!isCorrect) {
-      playerHealth = Math.max(0, playerHealth - 10);
-    }
-
-    // Update health
-    if (isPlayer1) {
-      match.gameState.playerHealth = playerHealth;
-    } else {
-      match.gameState.opponentHealth = playerHealth;
-    }
-
-    // Send answer result to player
+    // Send answer result to player with updated healths
     const answerResultMsg: WSMessage<GameAnswerReceivedPayload> = {
       type: 'game.answer.received',
       payload: {
@@ -317,7 +341,8 @@ export async function handleGameAnswerSubmit(
         correctAnswerIndex: questionData.correctAnswer,
         points: 0,
         answerTime: payload.answerTime / 1000,
-        playerHealth: playerHealth, // Include updated health for immediate UI update
+        playerHealth: playerHealth, // This player's health
+        opponentHealth: opponentHealth, // Opponent's health from this player's perspective
       },
     };
 
