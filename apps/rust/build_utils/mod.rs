@@ -29,6 +29,7 @@ pub mod types;
 pub mod route_scanner;
 pub mod route_registry;
 pub mod auto_mod_generator;
+pub mod openapi_auto_generator;
 pub mod handler_template;
 pub mod handler_updater;
 pub mod mod_generator;

@@ -119,14 +119,16 @@ fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result
 
     let api_routes_path = setup_build_environment(config)?;
     
-    // Check if auto-routing is enabled
-    let use_auto_routing = env::var("USE_AUTO_ROUTING").is_ok();
+    // Use auto-routing by default (new system)
+    // Can be disabled with DISABLE_AUTO_ROUTING=1 for legacy support
+    let use_legacy = env::var("DISABLE_AUTO_ROUTING").is_ok();
     
-    let (api_handlers, openapi_schemas, modules) = if use_auto_routing {
-        println!("cargo:warning=🚀 Using auto-routing system (USE_AUTO_ROUTING=1)");
-        collect_api_data_auto(&api_routes_path)?
-    } else {
+    let (api_handlers, openapi_schemas, modules) = if use_legacy {
+        println!("cargo:warning=⚠️  Using legacy routing system (DISABLE_AUTO_ROUTING=1)");
         collect_api_data(&api_routes_path)?
+    } else {
+        println!("cargo:warning=🚀 Using auto-routing system (default)");
+        collect_api_data_auto(&api_routes_path)?
     };
 
     // Generate OpenAPI
@@ -150,7 +152,7 @@ fn perform_build(config: &BuildConfig, operation: &mut BuildOperation) -> Result
     );
     
     // Store stats in operation for summary
-    let routing_mode = if use_auto_routing { "auto" } else { "manual" };
+    let routing_mode = if use_legacy { "legacy" } else { "auto" };
     operation.add_warning(format!(
         "API generated with {} handlers, {} schemas, {} modules ({})",
         api_handlers.len(), openapi_schemas.len(), modules.len(), routing_mode
