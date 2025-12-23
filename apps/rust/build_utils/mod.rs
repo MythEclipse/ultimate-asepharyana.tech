@@ -8,12 +8,14 @@
 //! - OpenAPI schema generation
 //! - Path parameter extraction
 //! - Type-safe HTTP method handling
+//! - **Automatic file-based routing (Next.js-style)**
 //!
 //! ## Modules
 //!
 //! - `constants`: Common constants and regex patterns
 //! - `errors`: Custom error types with helpful messages
 //! - `types`: Type definitions for HTTP methods, templates, and metadata
+//! - `route_scanner`: Automatic route discovery from file system
 //! - `handler_template`: Template generation for new handlers
 //! - `handler_updater`: Updates existing handler files with OpenAPI annotations
 //! - `mod_generator`: Generates module files for API routes
@@ -24,6 +26,7 @@
 pub mod constants;
 pub mod errors;
 pub mod types;
+pub mod route_scanner;
 pub mod handler_template;
 pub mod handler_updater;
 pub mod mod_generator;

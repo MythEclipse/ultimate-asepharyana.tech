@@ -154,3 +154,76 @@ pub struct EndpointMetadata {
     pub response_body: Option<String>,
     pub axum_path: String,
 }
+
+/// Dynamic parameter information
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DynamicParam {
+    /// Parameter name (e.g., "id", "slug")
+    pub name: String,
+    /// Parameter type (e.g., "String", "Vec<String>")
+    pub param_type: String,
+    /// Whether this is a catch-all parameter ([...param])
+    pub is_catch_all: bool,
+}
+
+/// Information about a route file for auto-routing
+#[derive(Debug, Clone)]
+pub struct RouteFileInfo {
+    /// Absolute path to the file
+    pub file_path: std::path::PathBuf,
+    /// Route path (e.g., "/users/{id}")
+    pub route_path: String,
+    /// Module path (e.g., "crate::routes::api::users::id")
+    pub module_path: String,
+    /// Whether this is an index.rs file
+    pub is_index: bool,
+    /// Whether this route contains dynamic segments
+    pub is_dynamic: bool,
+    /// Whether this contains catch-all segments
+    pub is_catch_all: bool,
+    /// List of dynamic parameters
+    pub dynamic_params: Vec<DynamicParam>,
+    /// HTTP method for this route
+    pub http_method: String,
+}
+
+impl RouteFileInfo {
+    /// Get route specificity score (lower is more specific)
+    /// Used for ordering routes: static < dynamic < catch-all
+    pub fn specificity_score(&self) -> u32 {
+        let mut score = 0;
+        
+        // Each path segment adds to score
+        score += self.route_path.matches('/').count() as u32 * 10;
+        
+        // Dynamic routes are less specific
+        if self.is_dynamic {
+            score += 100;
+        }
+        
+        // Catch-all is least specific
+        if self.is_catch_all {
+            score += 1000;
+        }
+        
+        score
+    }
+
+    /// Get the file stem (filename without extension)
+    pub fn file_stem(&self) -> Option<String> {
+        self.file_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(|s| s.to_string())
+    }
+
+    /// Get module name for this route
+    pub fn module_name(&self) -> Option<String> {
+        self.file_stem().map(|stem| {
+            stem.trim_matches(|c| c == '[' || c == ']')
+                .replace("...", "")
+                .replace('-', "_")
+        })
+    }
+}
+
