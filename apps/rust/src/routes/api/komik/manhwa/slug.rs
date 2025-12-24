@@ -17,9 +17,9 @@ use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/manhwa";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik2/manhwa endpoint.";
-pub const ENDPOINT_TAG: &str = "komik2";
-pub const OPERATION_ID: &str = "komik2_manhwa_slug";
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhwa endpoint.";
+pub const ENDPOINT_TAG: &str = "komik";
+pub const OPERATION_ID: &str = "komik_manhwa_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ManhwaResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -80,10 +80,10 @@ const CACHE_TTL: u64 = 300; // 5 minutes
         ("page" = Option<u32>, Query, description = "Page number for pagination (starts from 1)", example = 1, minimum = 1)
     ),
     path = "/api/komik/manhwa",
-    tag = "komik2",
-    operation_id = "komik2_manhwa_slug",
+    tag = "komik",
+    operation_id = "komik_manhwa_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the komik2/manhwa endpoint.", body = ManhwaResponse),
+        (status = 200, description = "Handles GET requests for the komik/manhwa endpoint.", body = ManhwaResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -95,7 +95,7 @@ pub async fn list(
     let page = params.page.unwrap_or(1);
     info!("Starting manhwa list request for page {}", page);
 
-    let cache_key = format!("komik2:manhwa:{}", page);
+    let cache_key = format!("komik:manhwa:{}", page);
 
     let cache = Cache::new(&app_state.redis_pool);
 

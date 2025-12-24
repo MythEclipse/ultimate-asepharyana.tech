@@ -1,4 +1,4 @@
-//use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik2 manhua slug endpoint.
+//use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manhua slug endpoint.
 
 use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
@@ -19,9 +19,9 @@ use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/manhua";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik2/manhua endpoint.";
-pub const ENDPOINT_TAG: &str = "komik2";
-pub const OPERATION_ID: &str = "komik2_manhua_slug";
+pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manhua endpoint.";
+pub const ENDPOINT_TAG: &str = "komik";
+pub const OPERATION_ID: &str = "komik_manhua_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ManhuaResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -82,10 +82,10 @@ const CACHE_TTL: u64 = 300; // 5 minutes
         ("page" = Option<u32>, Query, description = "Page number for pagination (starts from 1)", example = 1, minimum = 1)
     ),
     path = "/api/komik/manhua",
-    tag = "komik2",
-    operation_id = "komik2_manhua_slug",
+    tag = "komik",
+    operation_id = "komik_manhua_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the komik2/manhua endpoint.", body = ManhuaResponse),
+        (status = 200, description = "Handles GET requests for the komik/manhua endpoint.", body = ManhuaResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -97,7 +97,7 @@ pub async fn list(
     let page = params.page.unwrap_or(1);
     info!("Starting manhua list request for page {}", page);
 
-    let cache_key = format!("komik2:manhua:{}", page);
+    let cache_key = format!("komik:manhua:{}", page);
 
     let cache = Cache::new(&app_state.redis_pool);
 
