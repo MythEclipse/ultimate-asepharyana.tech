@@ -20,8 +20,8 @@ use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use rust::config::CONFIG;
-use rust::redis_client::REDIS_POOL;
+use rust::core::config::CONFIG;
+use rust::infra::redis::REDIS_POOL;
 
 use rust::routes::api::{create_api_routes, ApiDoc};
 use rust::routes::AppState;
@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("✓ SeaORM database connection established");
 
     // Seed default chat data if tables are empty
-    if let Err(e) = rust::seed::seed_chat_data_if_empty(&db).await {
+    if let Err(e) = rust::seeder::seed::seed_chat_data_if_empty(&db).await {
         tracing::warn!("Failed to seed chat data: {}", e);
     }
 

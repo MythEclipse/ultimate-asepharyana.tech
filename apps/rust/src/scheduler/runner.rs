@@ -103,7 +103,7 @@ impl ScheduledTask for CleanupExpiredSessions {
     }
 
     async fn run(&self) {
-        use crate::redis_client::REDIS_POOL;
+        use crate::infra::redis::REDIS_POOL;
 
         info!("Cleaning up expired sessions...");
 
@@ -159,7 +159,7 @@ impl ScheduledTask for CleanupExpiredTokens {
     }
 
     async fn run(&self) {
-        use crate::redis_client::REDIS_POOL;
+        use crate::infra::redis::REDIS_POOL;
 
         info!("Cleaning up expired tokens...");
 
@@ -216,7 +216,7 @@ impl ScheduledTask for LogMetrics {
     }
 
     async fn run(&self) {
-        use crate::redis_client::REDIS_POOL;
+        use crate::infra::redis::REDIS_POOL;
 
         // Get Redis pool stats
         let redis_stats = match REDIS_POOL.status() {

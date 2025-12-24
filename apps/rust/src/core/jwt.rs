@@ -2,7 +2,7 @@
 //!
 //! Uses the type-safe CONFIG for JWT secret.
 
-use crate::config::CONFIG;
+use crate::core::config::CONFIG;
 use crate::utils::error::AppError;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};

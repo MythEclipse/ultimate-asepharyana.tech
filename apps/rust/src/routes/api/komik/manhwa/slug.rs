@@ -1,6 +1,6 @@
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use crate::urls::get_komik_api_url;
+use crate::scraping::urls::get_komik_api_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};

@@ -5,7 +5,7 @@ use redis::AsyncCommands;
 use reqwest::Client;
 use tracing::{error, info, warn};
 
-use crate::redis_client::get_redis_conn;
+use crate::infra::redis::get_redis_conn;
 use crate::utils::error::AppError;
 use crate::utils::headers::common_headers;
 use crate::utils::http::is_internet_baik_block_page; // Import the new common_headers function

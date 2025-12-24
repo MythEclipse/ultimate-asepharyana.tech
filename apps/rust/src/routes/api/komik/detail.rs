@@ -1,8 +1,8 @@
 //! Handler for the detail endpoint.
 
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use crate::urls::get_komik_url;
+use crate::scraping::urls::get_komik_url;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},

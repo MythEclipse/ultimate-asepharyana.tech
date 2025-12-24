@@ -19,9 +19,9 @@ use tracing::{error, info};
 use utoipa::ToSchema;
 
 // Internal imports
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use crate::urls::get_otakudesu_url;
+use crate::scraping::urls::get_otakudesu_url;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime/search";

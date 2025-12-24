@@ -9,7 +9,7 @@ use serde::Deserialize;
 use std::sync::Arc;
 use utoipa::ToSchema;
 
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::utils::error::AppError;
 

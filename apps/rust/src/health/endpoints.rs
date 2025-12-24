@@ -85,7 +85,7 @@ pub async fn readiness_check() -> impl IntoResponse {
 
 /// Check Redis connectivity using PING command.
 async fn check_redis() -> CheckResult {
-    use crate::redis_client::REDIS_POOL;
+    use crate::infra::redis::REDIS_POOL;
 
     let start = Instant::now();
 

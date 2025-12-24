@@ -1,6 +1,6 @@
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use crate::urls::OTAKUDESU_BASE_URL;
+use crate::scraping::urls::OTAKUDESU_BASE_URL;
 use axum::http::StatusCode;
 use axum::{
     extract::{Path, State},

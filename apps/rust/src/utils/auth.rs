@@ -1,6 +1,6 @@
 //! JWT Claims and utilities using type-safe config.
 
-use crate::config::CONFIG;
+use crate::core::config::CONFIG;
 use crate::utils::error::AppError;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 

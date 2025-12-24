@@ -21,7 +21,7 @@ use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
 // Internal imports
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 
 pub const ENDPOINT_METHOD: &str = "get";

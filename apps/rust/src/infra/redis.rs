@@ -2,7 +2,7 @@
 //!
 //! Uses the type-safe CONFIG for Redis connection parameters.
 
-use crate::config::CONFIG;
+use crate::core::config::CONFIG;
 use crate::utils::error::AppError;
 use deadpool_redis::{Manager, Pool};
 use once_cell::sync::Lazy;

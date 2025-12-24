@@ -1,7 +1,7 @@
 // Ensure lazy_static macro is available
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use crate::urls::get_otakudesu_url;
+use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};

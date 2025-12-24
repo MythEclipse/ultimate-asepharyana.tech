@@ -1,4 +1,4 @@
-use crate::fetch_with_proxy::fetch_with_proxy;
+use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
