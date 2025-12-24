@@ -10,18 +10,32 @@ interface KomikItem {
     type: string;
     chapter?: string;
     score?: string;
+    date?: string;
+    reader_count?: string;
 }
 
-interface KomikHomeData {
-    status: string;
-    data: {
-        popular: KomikItem[];
-        latest: KomikItem[];
+interface KomikListResponse {
+    data: KomikItem[];
+    pagination: {
+        current_page: number;
+        last_visible_page: number;
+        has_next_page: boolean;
+        next_page: number | null;
+        has_previous_page: boolean;
+        previous_page: number | null;
     };
 }
 
-async function fetchKomikData(): Promise<KomikHomeData> {
-    return httpClient.fetchJson<KomikHomeData>("/api/komik");
+async function fetchManga(): Promise<KomikListResponse> {
+    return httpClient.fetchJson<KomikListResponse>("/api/komik/manga?page=1");
+}
+
+async function fetchManhwa(): Promise<KomikListResponse> {
+    return httpClient.fetchJson<KomikListResponse>("/api/komik/manhwa?page=1");
+}
+
+async function fetchManhua(): Promise<KomikListResponse> {
+    return httpClient.fetchJson<KomikListResponse>("/api/komik/manhua?page=1");
 }
 
 function KomikCard(props: { item: KomikItem }) {
@@ -73,8 +87,21 @@ function KomikGrid(props: { items: KomikItem[]; loading?: boolean }) {
     );
 }
 
+function LoadingSkeleton() {
+    return (
+        <div class="space-y-12">
+            <section>
+                <h2 class="text-2xl font-bold mb-6">Loading...</h2>
+                <KomikGrid items={[]} loading={true} />
+            </section>
+        </div>
+    );
+}
+
 export default function KomikPage() {
-    const [data] = createResource(fetchKomikData);
+    const [manga] = createResource(fetchManga);
+    const [manhwa] = createResource(fetchManhwa);
+    const [manhua] = createResource(fetchManhua);
 
     return (
         <>
@@ -108,46 +135,67 @@ export default function KomikPage() {
                         </div>
                     </div>
 
-                    <Suspense fallback={
-                        <div class="space-y-12">
-                            <section>
-                                <h2 class="text-2xl font-bold mb-6">Popular</h2>
-                                <KomikGrid items={[]} loading={true} />
-                            </section>
-                        </div>
-                    }>
-                        <Show when={data.error}>
-                            <div class="text-center py-12 text-destructive">
-                                Failed to load komik data. Please try again later.
+                    <div class="space-y-12">
+                        {/* Manga Section */}
+                        <section>
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                                    📚 Manga
+                                </h2>
+                                <A href="/komik/manga/page/1" class="text-primary hover:underline">View All →</A>
                             </div>
-                        </Show>
+                            <Suspense fallback={<KomikGrid items={[]} loading={true} />}>
+                                <Show when={manga.error}>
+                                    <div class="text-center py-8 text-destructive">
+                                        Failed to load manga. Please try again later.
+                                    </div>
+                                </Show>
+                                <Show when={manga()}>
+                                    {(data) => <KomikGrid items={data().data.slice(0, 6)} />}
+                                </Show>
+                            </Suspense>
+                        </section>
 
-                        <Show when={data()}>
-                            {(komikData) => (
-                                <div class="space-y-12">
-                                    {/* Popular */}
-                                    <section>
-                                        <div class="flex items-center justify-between mb-6">
-                                            <h2 class="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                                                🔥 Popular
-                                            </h2>
-                                        </div>
-                                        <KomikGrid items={komikData().data.popular} />
-                                    </section>
+                        {/* Manhwa Section */}
+                        <section>
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    🇰🇷 Manhwa
+                                </h2>
+                                <A href="/komik/manhwa/page/1" class="text-primary hover:underline">View All →</A>
+                            </div>
+                            <Suspense fallback={<KomikGrid items={[]} loading={true} />}>
+                                <Show when={manhwa.error}>
+                                    <div class="text-center py-8 text-destructive">
+                                        Failed to load manhwa. Please try again later.
+                                    </div>
+                                </Show>
+                                <Show when={manhwa()}>
+                                    {(data) => <KomikGrid items={data().data.slice(0, 6)} />}
+                                </Show>
+                            </Suspense>
+                        </section>
 
-                                    {/* Latest */}
-                                    <section>
-                                        <div class="flex items-center justify-between mb-6">
-                                            <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                                📖 Latest Updates
-                                            </h2>
-                                        </div>
-                                        <KomikGrid items={komikData().data.latest} />
-                                    </section>
-                                </div>
-                            )}
-                        </Show>
-                    </Suspense>
+                        {/* Manhua Section */}
+                        <section>
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-2xl font-bold bg-gradient-to-r from-red-600 to-yellow-600 bg-clip-text text-transparent">
+                                    🇨🇳 Manhua
+                                </h2>
+                                <A href="/komik/manhua/page/1" class="text-primary hover:underline">View All →</A>
+                            </div>
+                            <Suspense fallback={<KomikGrid items={[]} loading={true} />}>
+                                <Show when={manhua.error}>
+                                    <div class="text-center py-8 text-destructive">
+                                        Failed to load manhua. Please try again later.
+                                    </div>
+                                </Show>
+                                <Show when={manhua()}>
+                                    {(data) => <KomikGrid items={data().data.slice(0, 6)} />}
+                                </Show>
+                            </Suspense>
+                        </section>
+                    </div>
                 </div>
             </main>
         </>

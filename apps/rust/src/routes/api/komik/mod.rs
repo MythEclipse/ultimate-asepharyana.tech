@@ -3,7 +3,6 @@
 
 pub mod chapter;
 pub mod detail;
-pub mod index;
 pub mod manga;
 pub mod manhua;
 pub mod manhwa;
@@ -15,5 +14,5 @@ use std::sync::Arc;
 use crate::routes::AppState;
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    chapter::register_routes(detail::register_routes(index::register_routes(manga::register_routes(manhua::register_routes(manhwa::register_routes(search::register_routes(router)))))))
+    chapter::register_routes(detail::register_routes(manga::register_routes(manhua::register_routes(manhwa::register_routes(search::register_routes(router))))))
 }

@@ -90,9 +90,6 @@ use crate::routes::api::komik::detail::DetailData;
 use crate::routes::api::komik::detail::DetailQuery;
 use crate::routes::api::komik::detail::DetailResponse as DetailResponse_2;
 use crate::routes::api::komik::detail::KomikDetailRequest;
-use crate::routes::api::komik::index::KomikHomeData;
-use crate::routes::api::komik::index::KomikHomeItem;
-use crate::routes::api::komik::index::KomikHomeResponse;
 use crate::routes::api::komik::manga::slug::MangaItem;
 use crate::routes::api::komik::manga::slug::MangaResponse;
 use crate::routes::api::komik::manga::slug::Pagination as Pagination_6;
@@ -118,7 +115,6 @@ paths(
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manga::slug::list,
-              crate::routes::api::komik::index::list,
               crate::routes::api::komik::chapter::chapter,
               crate::routes::api::komik::detail::detail,
               crate::routes::api::komik::search::search,
@@ -226,9 +222,6 @@ components(
                   DetailQuery,
                   DetailResponse_2,
                   KomikDetailRequest,
-                  KomikHomeData,
-                  KomikHomeItem,
-                  KomikHomeResponse,
                   MangaItem,
                   MangaResponse,
                   Pagination_6,
