@@ -12,6 +12,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 1
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
   build-and-deploy-rust:
@@ -33,23 +35,63 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.6
         continue-on-error: true
 
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
       - name: Cache Rust dependencies and build
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/rust -> target
           cache-targets: true
           cache-on-failure: true
-          shared-key: rust-build
+          cache-all-crates: true
+          shared-key: rust-build-${{ hashFiles('**/Cargo.lock') }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Cache APT packages
         uses: actions/cache@v4
+        id: apt-cache
         with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-v2-${{ hashFiles('.github/workflows/deploy-rust.yml') }}
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-v3-ffmpeg-dev
           restore-keys: |
-            ${{ runner.os }}-apt-v2-
+            ${{ runner.os }}-apt-v3-
 
       - name: Install System Dependencies
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            cmake \
+            clang \
+            libclang-dev \
+            libsqlite3-dev \
+            libmysqlclient-dev \
+            libssl-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libavfilter-dev \
+            libavdevice-dev \
+            libswresample-dev \
+            libpostproc-dev
+
+      - name: Restore APT packages from cache
+        if: steps.apt-cache.outputs.cache-hit == 'true'
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends \
             build-essential \
