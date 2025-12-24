@@ -1,17 +1,15 @@
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff};
-
 use lazy_static::lazy_static;
-use scraper::{Html, Selector};
+use scraper::Selector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::info;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -45,18 +43,18 @@ pub struct Pagination {
 }
 
 lazy_static! {
-    pub static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref DESC_SELECTOR: Selector = Selector::parse(".data .typez").unwrap();
-    pub static ref GENRE_SELECTOR: Selector = Selector::parse(".genres a").unwrap();
-    pub static ref RATING_SELECTOR: Selector = Selector::parse(".score").unwrap();
-    pub static ref TYPE_SELECTOR: Selector = Selector::parse(".typez").unwrap();
-    pub static ref SEASON_SELECTOR: Selector = Selector::parse(".season").unwrap();
-    pub static ref PAGINATION_SELECTOR: Selector =
+    static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+    static ref DESC_SELECTOR: Selector = Selector::parse(".data .typez").unwrap();
+    static ref GENRE_SELECTOR: Selector = Selector::parse(".genres a").unwrap();
+    static ref RATING_SELECTOR: Selector = Selector::parse(".score").unwrap();
+    static ref TYPE_SELECTOR: Selector = Selector::parse(".typez").unwrap();
+    static ref SEASON_SELECTOR: Selector = Selector::parse(".season").unwrap();
+    static ref PAGINATION_SELECTOR: Selector =
         Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
+    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -89,114 +87,65 @@ pub async fn search(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<SearchQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start = std::time::Instant::now();
     let query = params.q.unwrap_or_else(|| "one".to_string());
     info!("Starting search for query: {}", query);
 
     let cache_key = format!("anime2:search:{}", query);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
+            let (data, pagination) = fetch_and_parse_search(&url)
+                .await
+                .map_err(|e| e.to_string())?;
 
-    if let Some(json_data_str) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let search_response: SearchResponse =
-            serde_json::from_str(&json_data_str).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(search_response).into_response());
-    }
-
-    let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
-
-    let result = fetch_and_parse_search(&url).await;
-
-    match result {
-        Ok((data, pagination)) => {
-            let response = SearchResponse {
+            Ok(SearchResponse {
                 status: "Ok".to_string(),
                 data,
                 pagination,
-            };
-            let json_data = serde_json::to_string(&response).map_err(|e| {
-                error!("Failed to serialize response for caching: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
+            })
+        })
+        .await
+        .map_err(|e| internal_err(&e))?;
 
-            // Store in Redis with TTL
-            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
-                .await
-                .map_err(|e| {
-                    error!("Failed to set data in Redis: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Redis error: {}", e),
-                    )
-                })?;
-            info!("Cache set for key: {}", cache_key);
-
-            let duration = start.elapsed();
-            info!(
-                "Fetched and parsed search for query: {}, duration: {:?}",
-                query, duration
-            );
-            Ok(Json(response).into_response())
-        }
-        Err(e) => {
-            let duration = start.elapsed();
-            error!(
-                "Error searching for query: {}, error: {:?}, duration: {:?}",
-                query, e, duration
-            );
-            Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
-        }
-    }
+    Ok(Json(response).into_response())
 }
 
 async fn fetch_and_parse_search(
     url: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let operation = || async {
-        let response = fetch_with_proxy(url).await?;
-        Ok(response.data)
-    };
-
-    let backoff = default_backoff();
-    let html = retry(backoff, operation).await?;
-
-    match tokio::task::spawn_blocking(move || {
-        let document = Html::parse_document(&html);
+    let html = fetch_html_with_retry(url).await?;
+    let (data, pagination) = tokio::task::spawn_blocking(move || {
+        let document = parse_html(&html);
         parse_search_document(&document)
     })
-    .await
-    {
-        Ok(inner_result) => inner_result,
-        Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>),
-    }
+    .await??;
+
+    Ok((data, pagination))
+}
+
+async fn fetch_html_with_retry(
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let backoff = default_backoff();
+    let fetch_operation = || async {
+        info!("Fetching URL: {}", url);
+        match fetch_with_proxy(url).await {
+            Ok(response) => {
+                info!("Successfully fetched URL: {}", url);
+                Ok(response.data)
+            }
+            Err(e) => Err(transient(e)),
+        }
+    };
+
+    let html = retry(backoff, fetch_operation).await?;
+    Ok(html)
 }
 
 fn parse_search_document(
-    document: &Html,
+    document: &scraper::Html,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let mut data = Vec::new();
 
@@ -218,7 +167,7 @@ fn parse_search_document(
         let poster = element
             .select(&IMG_SELECTOR)
             .next()
-            .and_then(|e| e.value().attr("data-src"))
+            .and_then(|e| e.value().attr("src"))
             .unwrap_or("")
             .to_string();
 
@@ -235,7 +184,7 @@ fn parse_search_document(
             .unwrap_or("")
             .to_string();
 
-        let genres: Vec<String> = element
+        let genres = element
             .select(&GENRE_SELECTOR)
             .map(|e| e.text().collect::<String>().trim().to_string())
             .collect();
@@ -273,44 +222,50 @@ fn parse_search_document(
         }
     }
 
-    let pagination = parse_pagination(document);
-
-    Ok((data, pagination))
-}
-
-fn parse_pagination(document: &Html) -> Pagination {
-    let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
-    let last_visible_page = document
+    // Pagination logic
+    let current_page = document
         .select(&PAGINATION_SELECTOR)
-        .next_back()
-        .map(|e| {
-            e.text()
-                .collect::<String>()
-                .trim()
-                .parse::<u32>()
-                .unwrap_or(1)
-        })
+        .find(|e| e.value().attr("class").unwrap_or("").contains("current"))
+        .and_then(|e| e.text().collect::<String>().trim().parse().ok())
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
-    let has_previous_page = page_num > 1;
+    let last_visible_page = document
+        .select(&PAGINATION_SELECTOR)
+        .last()
+        .and_then(|e| e.text().collect::<String>().trim().parse().ok())
+        .unwrap_or(current_page);
 
-    Pagination {
-        current_page: page_num,
+    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+
+    let next_page = if has_next_page {
+        document
+            .select(&NEXT_SELECTOR)
+            .next()
+            .and_then(|e| e.value().attr("href"))
+            .and_then(|href| href.split("/page/").nth(1))
+            .and_then(|s| s.split('/').next())
+            .map(|s| s.to_string())
+    } else {
+        None
+    };
+
+    let has_previous_page = current_page > 1;
+    let previous_page = if has_previous_page {
+        Some((current_page - 1).to_string())
+    } else {
+        None
+    };
+
+    let pagination = Pagination {
+        current_page,
         last_visible_page,
         has_next_page,
-        next_page: if has_next_page {
-            Some((page_num + 1).to_string())
-        } else {
-            None
-        },
+        next_page,
         has_previous_page,
-        previous_page: if has_previous_page {
-            Some((page_num - 1).to_string())
-        } else {
-            None
-        },
-    }
+        previous_page,
+    };
+
+    Ok((data, pagination))
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

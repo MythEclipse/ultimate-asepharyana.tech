@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 // External crate imports
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -10,13 +11,11 @@ use axum::{
     Json, Router,
 };
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
 
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
 
 // Internal imports
@@ -117,75 +116,26 @@ pub async fn slug(
     State(app_state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start = std::time::Instant::now();
+    let _start = std::time::Instant::now();
     info!("Starting request for detail slug: {}", slug);
 
     let cache_key = format!("anime:detail:{}", slug);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Check cache first
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
-
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let detail_response: DetailResponse =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(detail_response).into_response());
-    }
-
-    let data = fetch_anime_detail(slug.clone()).await.map_err(|e| {
-        error!("Error fetching detail for slug: {}, error: {:?}", slug, e);
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
-    })?;
-
-    let detail_response = DetailResponse {
-        status: Some("Ok".to_string()),
-        data: data.clone(),
-    };
-    let json_data = serde_json::to_string(&detail_response).map_err(|e| {
-        error!("Failed to serialize response for caching: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Serialization error: {}", e),
-        )
-    })?;
-
-    // Cache the result
-    conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let data = fetch_anime_detail(slug.clone())
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(DetailResponse {
+                status: Some("Ok".to_string()),
+                data,
+            })
+        })
         .await
-        .map_err(|e| {
-            error!("Failed to set data in Redis: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Redis error: {}", e),
-            )
-        })?;
-    info!("Cache set for key: {}", cache_key);
+        .map_err(|e| internal_err(&e))?;
 
-    let duration = start.elapsed();
-    info!(
-        "Fetched and parsed detail for slug: {}, duration: {:?}",
-        slug, duration
-    );
-    Ok(Json(detail_response).into_response())
+    return Ok(Json(response).into_response());
 }
 
 async fn fetch_anime_detail(

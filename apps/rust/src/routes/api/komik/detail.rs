@@ -1,5 +1,6 @@
 //! Handler for the detail endpoint.
 
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;
@@ -9,20 +10,19 @@ use axum::{
         Query, State,
     },
     http::StatusCode,
-    response::{Response},
-    routing::{get},
+    response::Response,
+    routing::get,
     Json, Router,
 };
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
-use std::time::Duration;
+
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
@@ -138,104 +138,24 @@ pub async fn detail(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<DetailQuery>,
 ) -> Result<Json<DetailResponse>, (StatusCode, String)> {
-    let start_time = std::time::Instant::now();
+    let _start_time = std::time::Instant::now();
     let komik_id = params.komik_id.unwrap_or_else(|| "one-piece".to_string());
     info!("Handling request for komik detail: {}", komik_id);
 
     let cache_key = format!("komik:detail:{}", komik_id);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
-
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let detail_response: DetailResponse =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(detail_response));
-    }
-
-    match fetch_komik_detail(komik_id.clone()).await {
-        Ok(data) => {
-            // Validate that we got meaningful data
-            let is_valid_response =
-                !data.title.is_empty() || !data.chapters.is_empty() || !data.description.is_empty();
-
-            if !is_valid_response {
-                error!(
-                    "Received empty response for komik_id: {}. All fields are empty.",
-                    komik_id
-                );
-                return Err((
-                    StatusCode::NOT_FOUND,
-                    "No data found for this komik".to_string(),
-                ));
-            }
-
-            let detail_response = DetailResponse { status: true, data };
-            let json_data = serde_json::to_string(&detail_response).map_err(|e| {
-                error!("Failed to serialize response for caching: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-
-            // Store in Redis with TTL
-            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let data = fetch_komik_detail(komik_id.clone())
                 .await
-                .map_err(|e| {
-                    error!("Failed to set data in Redis: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Redis error: {}", e),
-                    )
-                })?;
-            info!("Cache set for key: {}", cache_key);
+                .map_err(|e| e.to_string())?;
+            Ok(DetailResponse { status: true, data })
+        })
+        .await
+        .map_err(|e| internal_err(&e))?;
 
-            let total_duration = start_time.elapsed();
-            info!(
-                "Successfully processed request for komik_id: {} in {:?}",
-                komik_id, total_duration
-            );
-            Ok(Json(detail_response))
-        }
-        Err(e) => {
-            let total_duration = start_time.elapsed();
-            error!(
-                "Failed to process request for komik_id: {} after {:?}, error: {:?}",
-                komik_id, total_duration, e
-            );
-
-            // Provide more specific error messages
-            let error_msg = match e.to_string().as_str() {
-                "Empty response" => "No data received from the source website".to_string(),
-                "Failed to fetch" => "Failed to connect to the source website".to_string(),
-                "Timeout" => "Request timed out while connecting to source website".to_string(),
-                _ => format!("Failed to fetch komik data: {}", e),
-            };
-
-            Err((StatusCode::INTERNAL_SERVER_ERROR, error_msg))
-        }
-    }
+    Ok(Json(response))
 }
 
 async fn fetch_komik_detail(
@@ -734,4 +654,3 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
         .route(ENDPOINT_PATH, get(detail))
         .route("/ws/komik/detail", get(ws_handler))
 }
-

@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 // External crate imports
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -10,15 +11,13 @@ use axum::{
     Json, Router,
 };
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
 
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
 
 // Internal imports
@@ -94,110 +93,41 @@ pub async fn slug(
     State(app_state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start_time = std::time::Instant::now();
+    let _start_time = std::time::Instant::now();
     info!("Handling request for complete_anime slug: {}", slug);
 
     let cache_key = format!("anime2:complete:{}", slug);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let url = format!(
+                "https://alqanime.net/advanced-search/page/{}/?status=completed&order=update",
+                slug
+            );
 
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let list_response: ListResponse = serde_json::from_str(&json_data_string).map_err(|e| {
-            error!("Failed to deserialize cached data: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Serialization error: {}", e),
-            )
-        })?;
-        return Ok(Json(list_response).into_response());
-    }
+            let html = fetch_html_with_retry(&url)
+                .await
+                .map_err(|e| e.to_string())?;
 
-    let url = format!(
-        "https://alqanime.net/advanced-search/page/{}/?status=completed&order=update",
-        slug
-    );
+            let html_clone = html.clone();
+            let slug_clone = slug.clone();
+            let (anime_list, _) =
+                tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .map_err(|e| e.to_string())?;
 
-    let html = fetch_html_with_retry(&url).await.map_err(|e| {
-        error!("Failed to fetch HTML for slug: {}, error: {:?}", slug, e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Error fetching HTML: {}", e),
-        )
-    })?;
-
-    let html_clone = html.clone();
-    let slug_clone = slug.clone();
-    let (anime_list, _) =
-        tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
-            .await
-            .map_err(|e| {
-                error!(
-                    "Failed to spawn blocking task for slug: {}, error: {:?}",
-                    slug, e
-                );
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Error spawning blocking task: {}", e),
-                )
-            })?
-            // Handle JoinError
-            .map_err(|e| {
-                error!(
-                    "Failed to parse anime page for slug: {}, error: {:?}",
-                    slug, e
-                );
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Error parsing anime page: {}", e),
-                )
-            })?; // Handle parsing error
-
-    let list_response = ListResponse {
-        message: "Success".to_string(),
-        data: anime_list.clone(),
-        total: Some(anime_list.len() as i64),
-    };
-    let json_data = serde_json::to_string(&list_response).map_err(|e| {
-        error!("Failed to serialize response for caching: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Serialization error: {}", e),
-        )
-    })?;
-
-    // Store in Redis with TTL
-    conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
+            Ok(ListResponse {
+                message: "Success".to_string(),
+                data: anime_list.clone(),
+                total: Some(anime_list.len() as i64),
+            })
+        })
         .await
-        .map_err(|e| {
-            error!("Failed to set data in Redis: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Redis error: {}", e),
-            )
-        })?;
-    info!("Cache set for key: {}", cache_key);
+        .map_err(|e| internal_err(&e))?;
 
-    let total_duration = start_time.elapsed();
-    info!(
-        "Successfully processed request for slug: {} in {:?}",
-        slug, total_duration
-    );
-    Ok(Json(list_response).into_response())
+    Ok(Json(response).into_response())
 }
 
 async fn fetch_html_with_retry(

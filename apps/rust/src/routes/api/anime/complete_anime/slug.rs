@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 // External crate imports
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -10,15 +11,13 @@ use axum::{
     Json, Router,
 };
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
 
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
 
 // Internal imports
@@ -95,113 +94,38 @@ pub async fn slug(
     State(app_state): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start = std::time::Instant::now();
+    let _start = std::time::Instant::now();
     info!("Starting request for complete_anime slug: {}", slug);
 
     let cache_key = format!("anime:complete:{}", slug);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Check cache first
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let url = format!("{}/complete-anime/page/{}/", OTAKUDESU_BASE_URL, slug);
+            let html = fetch_html_with_retry(&url)
+                .await
+                .map_err(|e| e.to_string())?;
 
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let list_response: ListResponse = serde_json::from_str(&json_data_string).map_err(|e| {
-            error!("Failed to deserialize cached data: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Serialization error: {}", e),
-            )
-        })?;
-        return Ok(Json(list_response).into_response());
-    }
-
-    let url = format!("{}/complete-anime/page/{}/", OTAKUDESU_BASE_URL, slug);
-
-    // Fetch and parse HTML
-    match fetch_html_with_retry(&url).await {
-        Ok(html) => {
-            // Parse HTML in a blocking task to avoid blocking the async runtime
             let html_clone = html.clone();
             let slug_clone = slug.clone();
-            let parse_result =
+            let (anime_list, pagination) =
                 tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
-                    .await;
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .map_err(|e| e.to_string())?;
 
-            let (anime_list, pagination) = match parse_result {
-                Ok(inner_result) => match inner_result {
-                    Ok(data) => data,
-                    Err(e) => {
-                        return Err((
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            format!("Error parsing anime page: {}", e),
-                        ));
-                    }
-                },
-                Err(join_err) => {
-                    return Err((
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Blocking task join error: {}", join_err),
-                    ));
-                }
-            };
-
-            // Build response
-            let list_response = ListResponse {
+            Ok(ListResponse {
                 message: "Success".to_string(),
                 data: anime_list.clone(),
                 total: Some(anime_list.len() as i64),
                 pagination: Some(pagination),
-            };
+            })
+        })
+        .await
+        .map_err(|e| internal_err(&e))?;
 
-            // Serialize and cache the response
-            let json_data = serde_json::to_string(&list_response).map_err(|e| {
-                error!("Failed to serialize response for caching: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-
-            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
-                .await
-                .map_err(|e| {
-                    error!("Failed to set data in Redis: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Redis error: {}", e),
-                    )
-                })?;
-            info!("Cache set for key: {}", cache_key);
-
-            let duration = start.elapsed();
-            info!(
-                "Fetched and parsed for slug: {}, duration: {:?}",
-                slug, duration
-            );
-            Ok(Json(list_response).into_response())
-        }
-        Err(e) => {
-            let duration = start.elapsed();
-            error!(
-                "Error fetching for slug: {}, error: {:?}, duration: {:?}",
-                slug, e, duration
-            );
-            Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
-        }
-    }
+    return Ok(Json(response).into_response());
 }
 
 /// Fetches HTML content with exponential backoff retry mechanism
@@ -209,7 +133,6 @@ async fn fetch_html_with_retry(
     url: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let backoff = default_backoff();
-
 
     let fetch_operation = || async {
         info!("Fetching URL: {}", url);

@@ -1,17 +1,15 @@
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
-
 use lazy_static::lazy_static;
-use scraper::{Html, Selector};
+use scraper::Selector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -51,6 +49,9 @@ pub struct Anime2Response {
     pub data: Anime2Data,
 }
 
+const CACHE_KEY: &str = "anime2:index";
+const CACHE_TTL: u64 = 300;
+
 #[utoipa::path(
     get,
     path = "/api/anime2",
@@ -64,87 +65,32 @@ pub struct Anime2Response {
 pub async fn anime2(
     State(app_state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start_time = std::time::Instant::now();
     info!("Handling request for anime2 index");
 
-    let cache_key = "anime2:index";
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    // Use Cache helper for get_or_set pattern
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
-
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let anime2_response: Anime2Response =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(anime2_response).into_response());
-    }
-
-    match fetch_anime_data().await {
-        Ok(data) => {
-            let response = Anime2Response {
+    let response = cache
+        .get_or_set(CACHE_KEY, CACHE_TTL, || async {
+            let data = fetch_anime_data().await.map_err(|e| e.to_string())?;
+            Ok(Anime2Response {
                 status: "Ok".to_string(),
                 data,
-            };
-            let json_data = serde_json::to_string(&response).map_err(|e| {
-                error!("Failed to serialize response for caching: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
+            })
+        })
+        .await
+        .map_err(|e| internal_err(&e))?;
 
-            // Store in Redis with TTL
-            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
-                .await
-                .map_err(|e| {
-                    error!("Failed to set data in Redis: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Redis error: {}", e),
-                    )
-                })?;
-            info!("Cache set for key: {}", cache_key);
-
-            info!(
-                "Successfully processed anime2 index in {:?}",
-                start_time.elapsed()
-            );
-            Ok(Json(response).into_response())
-        }
-        Err(e) => {
-            error!("Error processing anime2 index: {:?}", e);
-            Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
-        }
-    }
+    Ok(Json(response))
 }
 
 lazy_static! {
-    pub static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
+    static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+    static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
 }
-const CACHE_TTL: u64 = 300; // 5 minutes
 
 async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Send + Sync>> {
     let ongoing_url = "https://alqanime.net/advanced-search/?status=ongoing&order=update";
@@ -195,7 +141,7 @@ async fn fetch_html_with_retry(
 fn parse_ongoing_anime(
     html: &str,
 ) -> Result<Vec<OngoingAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut ongoing_anime = Vec::new();
 
     for element in document.select(&ITEM_SELECTOR) {
@@ -249,7 +195,7 @@ fn parse_ongoing_anime(
 fn parse_complete_anime(
     html: &str,
 ) -> Result<Vec<CompleteAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut complete_anime = Vec::new();
 
     for element in document.select(&ITEM_SELECTOR) {

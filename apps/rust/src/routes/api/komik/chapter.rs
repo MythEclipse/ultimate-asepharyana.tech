@@ -1,5 +1,6 @@
 //! Handler for the komik chapter endpoint.
 
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;
@@ -7,15 +8,14 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, routing::get, Json, Router};
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
 
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
+
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/komik/chapter";
 pub const ENDPOINT_DESCRIPTION: &str = "Retrieves chapter data for a specific komik chapter.";
@@ -73,83 +73,26 @@ pub async fn chapter(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<ChapterQuery>,
 ) -> Result<Json<ChapterResponse>, (StatusCode, String)> {
-    let start_time = std::time::Instant::now();
     let chapter_url = params.chapter_url.unwrap_or_default();
     info!("Handling request for komik chapter: {}", chapter_url);
 
     let cache_key = format!("komik:chapter:{}", chapter_url);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
-
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let chapter_response: ChapterResponse =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(chapter_response));
-    }
-
-    match fetch_komik_chapter(chapter_url.clone()).await {
-        Ok(data) => {
-            let chapter_response = ChapterResponse {
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let data = fetch_komik_chapter(chapter_url.clone())
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(ChapterResponse {
                 message: "Ok".to_string(),
                 data,
-            };
-            let json_data = serde_json::to_string(&chapter_response).map_err(|e| {
-                error!("Failed to serialize response for caching: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
+            })
+        })
+        .await
+        .map_err(|e| internal_err(&e))?;
 
-            // Store in Redis with TTL
-            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
-                .await
-                .map_err(|e| {
-                    error!("Failed to set data in Redis: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Redis error: {}", e),
-                    )
-                })?;
-            info!("Cache set for key: {}", cache_key);
-
-            let total_duration = start_time.elapsed();
-            info!(
-                "Successfully processed request for chapter_url: {} in {:?}",
-                chapter_url, total_duration
-            );
-            Ok(Json(chapter_response))
-        }
-        Err(e) => {
-            let total_duration = start_time.elapsed();
-            error!(
-                "Failed to process request for chapter_url: {} after {:?}, error: {:?}",
-                chapter_url, total_duration, e
-            );
-            Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
-        }
-    }
+    Ok(Json(response))
 }
 
 pub async fn fetch_komik_chapter(
@@ -187,7 +130,7 @@ fn parse_komik_chapter_document(
     document: &Html,
     chapter_url: &str,
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
-    let start_time = std::time::Instant::now();
+    let _start_time = std::time::Instant::now();
     info!("Starting to parse komik chapter document");
 
     let title = document
@@ -315,9 +258,6 @@ fn parse_komik_chapter_document(
             }
         }
     }
-
-    let duration = start_time.elapsed();
-    info!("Parsed komik chapter document in {:?}", duration);
 
     Ok(ChapterData {
         title,

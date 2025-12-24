@@ -1,17 +1,16 @@
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
+use crate::scraping::urls::get_komik_api_url;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
-
 use lazy_static::lazy_static;
 use regex::Regex;
-use scraper::{Html, Selector};
+use scraper::Selector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::info;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -50,44 +49,40 @@ pub struct SearchResponse {
 
 #[derive(Deserialize, ToSchema)]
 pub struct SearchQuery {
-    /// Search query string to filter komik results
     pub query: Option<String>,
-    /// Page number for pagination (defaults to 1)
     pub page: Option<u32>,
 }
 
 use axum::extract::State;
 
 lazy_static! {
-  pub static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge, .listupd .bge").unwrap();
-  pub static ref TITLE_SELECTOR: Selector = Selector::parse(
-    "div.kan h3, div.kan a h3, .tt h3"
-  ).unwrap();
-  pub static ref IMG_SELECTOR: Selector = Selector::parse("div.bgei img").unwrap();
-  pub static ref CHAPTER_SELECTOR: Selector = Selector::parse(
-    "div.new1 a span:last-child, .new1 span, .lch"
-  ).unwrap();
-  pub static ref SCORE_SELECTOR: Selector = Selector::parse(".up, .epx, .numscore").unwrap(); // broader match
-  pub static ref DATE_SELECTOR: Selector = Selector::parse(
-    "div.kan span.judul2, .mdis .date"
-  ).unwrap();
-  pub static ref TYPE_SELECTOR: Selector = Selector::parse(
-    "div.tpe1_inf b, .tpe1_inf span.type, .mdis .type"
-  ).unwrap();
-  pub static ref LINK_SELECTOR: Selector = Selector::parse("div.bgei a, div.kan a").unwrap();
-  pub static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
-  pub static ref CURRENT_SELECTOR: Selector = Selector::parse(
-    ".pagination > .current, .pagination > span.page-numbers.current, .hpage .current"
-  ).unwrap();
-  pub static ref PAGE_SELECTORS: Selector = Selector::parse(
-    ".pagination > a, .pagination > .page-numbers:not(.next):not(.prev), .hpage a"
-  ).unwrap();
-  pub static ref NEXT_SELECTOR: Selector = Selector::parse(
-    ".pagination > a.next, .pagination > .next.page-numbers, .hpage .next"
-  ).unwrap();
-  pub static ref PREV_SELECTOR: Selector = Selector::parse(
-    ".pagination > a.prev, .pagination > .prev.page-numbers, .hpage .prev"
-  ).unwrap();
+    static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge, .listupd .bge").unwrap();
+    static ref TITLE_SELECTOR: Selector =
+        Selector::parse("div.kan h3, div.kan a h3, .tt h3").unwrap();
+    static ref IMG_SELECTOR: Selector = Selector::parse("div.bgei img").unwrap();
+    static ref CHAPTER_SELECTOR: Selector =
+        Selector::parse("div.new1 a span:last-child, .new1 span, .lch").unwrap();
+    static ref SCORE_SELECTOR: Selector = Selector::parse(".up, .epx, .numscore").unwrap();
+    static ref DATE_SELECTOR: Selector =
+        Selector::parse("div.kan span.judul2, .mdis .date").unwrap();
+    static ref TYPE_SELECTOR: Selector =
+        Selector::parse("div.tpe1_inf b, .tpe1_inf span.type, .mdis .type").unwrap();
+    static ref LINK_SELECTOR: Selector = Selector::parse("div.bgei a, div.kan a").unwrap();
+    static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
+    static ref CURRENT_SELECTOR: Selector = Selector::parse(
+        ".pagination > .current, .pagination > span.page-numbers.current, .hpage .current"
+    )
+    .unwrap();
+    static ref PAGE_SELECTORS: Selector = Selector::parse(
+        ".pagination > a, .pagination > .page-numbers:not(.next):not(.prev), .hpage a"
+    )
+    .unwrap();
+    static ref NEXT_SELECTOR: Selector =
+        Selector::parse(".pagination > a.next, .pagination > .next.page-numbers, .hpage .next")
+            .unwrap();
+    static ref PREV_SELECTOR: Selector =
+        Selector::parse(".pagination > a.prev, .pagination > .prev.page-numbers, .hpage .prev")
+            .unwrap();
 }
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -109,7 +104,6 @@ pub async fn search(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<SearchQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start_time = std::time::Instant::now();
     let query = params.query.unwrap_or_default();
     let page = params.page.unwrap_or(1);
     info!(
@@ -118,85 +112,54 @@ pub async fn search(
     );
 
     let cache_key = format!("komik:search:{}:{}", query, page);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
-
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let search_response: SearchResponse =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let base_url = get_komik_api_url();
+            let url = if page == 1 {
+                format!(
+                    "{}/?post_type=manga&s={}",
+                    base_url,
+                    urlencoding::encode(&query)
                 )
-            })?;
-        return Ok(Json(search_response));
-    }
+            } else {
+                format!(
+                    "{}/page/{}/?post_type=manga&s={}",
+                    base_url,
+                    page,
+                    urlencoding::encode(&query)
+                )
+            };
+            let (data, pagination) = fetch_and_parse_search(&url, page)
+                .await
+                .map_err(|e| e.to_string())?;
 
-    let url = format!(
-        "https://api.komiku.org/?post_type=manga&s={}",
-        urlencoding::encode(&query)
-    );
-
-    let (data, pagination) = fetch_and_parse_search(&url, page).await.map_err(|e| {
-        error!(
-            "Failed to process komik search for query: '{}', page: {} after {:?}, error: {:?}",
-            query,
-            page,
-            start_time.elapsed(),
-            e
-        );
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
-    })?;
-
-    let search_response = SearchResponse { data, pagination };
-    let json_data = serde_json::to_string(&search_response).map_err(|e| {
-        error!("Failed to serialize response for caching: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Serialization error: {}", e),
-        )
-    })?;
-
-    // Store in Redis with TTL
-    conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
+            Ok(SearchResponse { data, pagination })
+        })
         .await
-        .map_err(|e| {
-            error!("Failed to set data in Redis: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Redis error: {}", e),
-            )
-        })?;
-    info!("Cache set for key: {}", cache_key);
+        .map_err(|e| internal_err(&e))?;
 
-    let total_duration = start_time.elapsed();
-    info!(
-        "Successfully processed komik search for query: '{}', page: {} in {:?}",
-        query, page, total_duration
-    );
-    Ok(Json(search_response))
+    Ok(Json(response).into_response())
 }
 
 async fn fetch_and_parse_search(
     url: &str,
     page: u32,
-) -> Result<(Vec<MangaItem>, Pagination), String> {
+) -> Result<(Vec<MangaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+    let html = fetch_html_with_retry(url).await?;
+    let (data, pagination) = tokio::task::spawn_blocking(move || {
+        let document = parse_html(&html);
+        parse_search_document(&document, page)
+    })
+    .await??;
+
+    Ok((data, pagination))
+}
+
+async fn fetch_html_with_retry(
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let backoff = default_backoff();
 
     let fetch_operation = || async {
@@ -206,29 +169,18 @@ async fn fetch_and_parse_search(
                 info!("Successfully fetched URL: {}", url);
                 Ok(response.data)
             }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
+            Err(e) => Err(transient(e)),
         }
     };
 
-    let html = retry(backoff, fetch_operation)
-        .await
-        .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
-
-    let parse_result = tokio::task::spawn_blocking(move || parse_search_document(html, page)).await;
-    match parse_result {
-        Ok(inner_result) => inner_result,
-        Err(join_err) => Err(format!("Blocking task failed: {}", join_err)),
-    }
+    let html = retry(backoff, fetch_operation).await?;
+    Ok(html)
 }
 
 fn parse_search_document(
-    html_string: String,
+    document: &scraper::Html,
     current_page: u32,
-) -> Result<(Vec<MangaItem>, Pagination), String> {
-    let document = Html::parse_document(&html_string);
+) -> Result<(Vec<MangaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let mut data = Vec::new();
 
     for element in document.select(&ANIMPOST_SELECTOR) {
@@ -238,107 +190,90 @@ fn parse_search_document(
             .map(|e| e.text().collect::<String>().trim().to_string())
             .unwrap_or_default();
 
-        let mut poster = element
+        let poster = element
             .select(&IMG_SELECTOR)
             .next()
-            .and_then(|e| {
-                e.value()
-                    .attr("src")
-                    .or_else(|| e.value().attr("data-src"))
-                    .or_else(|| e.value().attr("data-lazy-src"))
-                    .or_else(|| {
-                        e.value()
-                            .attr("srcset")
-                            .and_then(|s| s.split_whitespace().next())
-                    })
-            })
+            .and_then(|e| e.value().attr("src"))
             .unwrap_or("")
             .to_string();
-        poster = poster.split('?').next().unwrap_or(&poster).to_string();
 
         let chapter = element
             .select(&CHAPTER_SELECTOR)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .and_then(|text| {
-                CHAPTER_REGEX
-                    .captures(&text)
-                    .and_then(|cap| cap.get(0))
-                    .map(|m| m.as_str().to_string())
-            })
-            .unwrap_or_default();
+            .unwrap_or_else(|| "N/A".to_string());
 
         let score = element
             .select(&SCORE_SELECTOR)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+            .unwrap_or_else(|| "N/A".to_string());
 
         let date = element
             .select(&DATE_SELECTOR)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+            .unwrap_or_else(|| "N/A".to_string());
 
         let r#type = element
             .select(&TYPE_SELECTOR)
             .next()
             .map(|e| e.text().collect::<String>().trim().to_string())
-            .map(|text| text.split_whitespace().next().unwrap_or("").to_string())
             .unwrap_or_default();
 
         let slug = element
             .select(&LINK_SELECTOR)
             .next()
             .and_then(|e| e.value().attr("href"))
-            .map(|href| {
-                let parts: Vec<&str> = href.split('/').filter(|s| !s.is_empty()).collect();
-                if let Some(pos) = parts
-                    .iter()
-                    .position(|s| *s == "manga" || *s == "manhua" || *s == "manhwa")
-                {
-                    parts.get(pos + 1).cloned().unwrap_or("").to_string()
-                } else {
-                    parts.last().cloned().unwrap_or("").to_string()
-                }
-            })
-            .unwrap_or_default();
+            .and_then(|href| href.split('/').nth(3))
+            .unwrap_or("")
+            .to_string();
 
-        data.push(MangaItem {
-            title,
-            poster,
-            chapter,
-            score,
-            date,
-            r#type,
-            slug,
-        });
+        if !title.is_empty() {
+            data.push(MangaItem {
+                title,
+                poster,
+                chapter,
+                score,
+                date,
+                r#type,
+                slug,
+            });
+        }
     }
 
+    // Pagination logic
     let last_visible_page = document
         .select(&PAGE_SELECTORS)
-        .next_back()
+        .last()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(current_page);
 
     let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let next_page = if has_next_page {
+        Some(current_page + 1)
+    } else {
+        None
+    };
+
     let has_previous_page = document.select(&PREV_SELECTOR).next().is_some();
+    let previous_page = if has_previous_page {
+        if current_page > 1 {
+            Some(current_page - 1)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     let pagination = Pagination {
         current_page,
         last_visible_page,
         has_next_page,
-        next_page: if has_next_page {
-            Some(current_page + 1)
-        } else {
-            None
-        },
+        next_page,
         has_previous_page,
-        previous_page: if has_previous_page {
-            Some(current_page - 1)
-        } else {
-            None
-        },
+        previous_page,
     };
 
     Ok((data, pagination))

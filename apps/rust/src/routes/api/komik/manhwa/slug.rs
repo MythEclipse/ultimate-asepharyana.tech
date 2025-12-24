@@ -1,3 +1,4 @@
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
@@ -5,15 +6,13 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
 use backoff::future::retry;
-use deadpool_redis::redis::AsyncCommands;
-use crate::helpers::{default_backoff, transient};
 
 use lazy_static::lazy_static;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -92,85 +91,33 @@ pub async fn list(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<QueryParams>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let start_time = std::time::Instant::now();
+    let _start_time = std::time::Instant::now();
     let page = params.page.unwrap_or(1);
     info!("Starting manhwa list request for page {}", page);
 
     let cache_key = format!("komik2:manhwa:{}", page);
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(&cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
 
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let manhwa_response: ManhwaResponse =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(manhwa_response).into_response());
-    }
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let base_api_url = get_komik_api_url();
+            let url = if page == 1 {
+                format!("{}/manga/?tipe=manhwa", base_api_url)
+            } else {
+                format!("{}/manga/page/{}/?tipe=manhwa", base_api_url, page)
+            };
 
-    let base_api_url = get_komik_api_url();
-    let url = if page == 1 {
-        format!("{}/manga/?tipe=manhwa", base_api_url)
-    } else {
-        format!("{}/manga/page/{}/?tipe=manhwa", base_api_url, page)
-    };
+            let (data, pagination) = fetch_and_parse_manhwa_list(&url, page)
+                .await
+                .map_err(|e| e.to_string())?;
 
-    let (data, pagination) = fetch_and_parse_manhwa_list(&url, page).await.map_err(|e| {
-        error!(
-            "Failed to process manhwa list for page: {} after {:?}, error: {:?}",
-            page,
-            start_time.elapsed(),
-            e
-        );
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))
-    })?;
-
-    let manhwa_response = ManhwaResponse { data, pagination };
-    let json_data = serde_json::to_string(&manhwa_response).map_err(|e| {
-        error!("Failed to serialize response for caching: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Serialization error: {}", e),
-        )
-    })?;
-
-    // Store in Redis with TTL
-    conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
+            Ok(ManhwaResponse { data, pagination })
+        })
         .await
-        .map_err(|e| {
-            error!("Failed to set data in Redis: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Redis error: {}", e),
-            )
-        })?;
-    info!("Cache set for key: {}", cache_key);
+        .map_err(|e| internal_err(&e))?;
 
-    let total_duration = start_time.elapsed();
-    info!(
-        "Successfully processed manhwa list for page: {} in {:?}",
-        page, total_duration
-    );
-    Ok(Json(manhwa_response).into_response())
+    Ok(Json(response).into_response())
 }
 
 async fn fetch_and_parse_manhwa_list(
