@@ -1,6 +1,7 @@
-use crate::config::CONFIG_MAP;
+use crate::config::CONFIG;
 use crate::utils::error::AppError;
 use serde::{Deserialize, Serialize};
+use std::env;
 
 /// Email service configuration
 #[derive(Debug, Clone)]
@@ -16,39 +17,43 @@ pub struct EmailConfig {
 
 impl EmailConfig {
     pub fn from_env() -> Self {
-        EmailConfig {
-            smtp_host: CONFIG_MAP
-                .get("MAIL_HOST")
-                .or_else(|| CONFIG_MAP.get("SMTP_HOST"))
-                .cloned()
-                .unwrap_or_else(|| "smtp.gmail.com".to_string()),
-            smtp_port: CONFIG_MAP
-                .get("MAIL_PORT")
-                .or_else(|| CONFIG_MAP.get("SMTP_PORT"))
-                .and_then(|p| p.parse().ok())
-                .unwrap_or(587),
-            smtp_username: CONFIG_MAP
-                .get("MAIL_USER")
-                .or_else(|| CONFIG_MAP.get("SMTP_USERNAME"))
-                .cloned()
-                .unwrap_or_else(|| "noreply@example.com".to_string()),
-            smtp_password: CONFIG_MAP
-                .get("MAIL_PASSWORD")
-                .or_else(|| CONFIG_MAP.get("SMTP_PASSWORD"))
-                .cloned()
-                .unwrap_or_default(),
-            smtp_secure: CONFIG_MAP
-                .get("MAIL_SECURE")
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(false),
-            from_email: CONFIG_MAP
-                .get("FROM_EMAIL")
-                .cloned()
-                .unwrap_or_else(|| "noreply@example.com".to_string()),
-            from_name: CONFIG_MAP
-                .get("FROM_NAME")
-                .cloned()
-                .unwrap_or_else(|| "Auth System".to_string()),
+        // Try to use structured config first, fall back to env vars
+        if let Some(ref smtp) = CONFIG.smtp {
+            EmailConfig {
+                smtp_host: smtp.host.clone(),
+                smtp_port: smtp.port,
+                smtp_username: smtp.username.clone(),
+                smtp_password: smtp.password.clone(),
+                smtp_secure: smtp.port == 465,
+                from_email: smtp.from_email.clone(),
+                from_name: smtp.from_name.clone(),
+            }
+        } else {
+            // Fallback to legacy env vars
+            EmailConfig {
+                smtp_host: env::var("MAIL_HOST")
+                    .or_else(|_| env::var("SMTP_HOST"))
+                    .unwrap_or_else(|_| "smtp.gmail.com".to_string()),
+                smtp_port: env::var("MAIL_PORT")
+                    .or_else(|_| env::var("SMTP_PORT"))
+                    .ok()
+                    .and_then(|p| p.parse().ok())
+                    .unwrap_or(587),
+                smtp_username: env::var("MAIL_USER")
+                    .or_else(|_| env::var("SMTP_USERNAME"))
+                    .unwrap_or_else(|_| "noreply@example.com".to_string()),
+                smtp_password: env::var("MAIL_PASSWORD")
+                    .or_else(|_| env::var("SMTP_PASSWORD"))
+                    .unwrap_or_default(),
+                smtp_secure: env::var("MAIL_SECURE")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(false),
+                from_email: env::var("FROM_EMAIL")
+                    .unwrap_or_else(|_| "noreply@example.com".to_string()),
+                from_name: env::var("FROM_NAME")
+                    .unwrap_or_else(|_| "Auth System".to_string()),
+            }
         }
     }
 }
@@ -71,10 +76,8 @@ pub struct EmailService {
 
 impl EmailService {
     pub fn new() -> Self {
-        let app_url = CONFIG_MAP
-            .get("APP_URL")
-            .cloned()
-            .unwrap_or_else(|| "https://elysia.asepharyana.tech".to_string());
+        let app_url = env::var("APP_URL")
+            .unwrap_or_else(|_| "https://elysia.asepharyana.tech".to_string());
 
         EmailService {
             config: EmailConfig::from_env(),

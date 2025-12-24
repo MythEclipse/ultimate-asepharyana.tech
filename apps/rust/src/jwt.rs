@@ -1,6 +1,8 @@
-// JWT utilities for signing and verifying tokens using dynamic config from CONFIG_MAP
+//! JWT utilities for signing and verifying tokens.
+//!
+//! Uses the type-safe CONFIG for JWT secret.
 
-use crate::config::CONFIG_MAP;
+use crate::config::CONFIG;
 use crate::utils::error::AppError;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
@@ -13,10 +15,7 @@ pub struct Claims {
 }
 
 pub fn sign_jwt(payload: Claims) -> Result<String, AppError> {
-    let secret = CONFIG_MAP
-        .get("JWT_SECRET")
-        .cloned()
-        .unwrap_or_else(|| "default_secret".to_string());
+    let secret = &CONFIG.jwt_secret;
     encode(
         &Header::default(),
         &payload,
@@ -26,10 +25,7 @@ pub fn sign_jwt(payload: Claims) -> Result<String, AppError> {
 }
 
 pub fn verify_jwt(token: &str) -> Result<Claims, AppError> {
-    let secret = CONFIG_MAP
-        .get("JWT_SECRET")
-        .cloned()
-        .unwrap_or_else(|| "default_secret".to_string());
+    let secret = &CONFIG.jwt_secret;
     decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_ref()),

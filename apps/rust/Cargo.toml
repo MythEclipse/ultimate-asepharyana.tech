@@ -76,6 +76,7 @@ itertools = "0.14"
 clap = { version = "4.5", features = ["derive"] }
 validator = { version = "0.20", features = ["derive"] }
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "builder", "tokio1-rustls-tls"] }
+config = { version = "0.15.19", features = ["toml"] }
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)
@@ -109,6 +110,11 @@ path = "src/bin/scaffold.rs"
 
 [[bin]]
 name = "scaffold_enhanced"
+path = "src/bin/scaffold_enhanced.rs"
+
+# Unified CLI (alias for scaffold_enhanced)
+[[bin]]
+name = "rex"
 path = "src/bin/scaffold_enhanced.rs"
 
 # [[bin]]

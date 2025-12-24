@@ -15,7 +15,7 @@ use std::sync::Arc;
 use utoipa::ToSchema;
 
 // SeaORM imports
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use crate::entities::{user, email_verification_token, password_reset_token, session};
 
 use crate::routes::AppState;

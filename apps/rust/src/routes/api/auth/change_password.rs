@@ -13,7 +13,7 @@ use std::sync::Arc;
 use utoipa::ToSchema;
 
 // SeaORM imports
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use crate::entities::{user};
 
 use crate::routes::AppState;

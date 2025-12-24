@@ -20,7 +20,7 @@ use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use rust::config::CONFIG_MAP;
+use rust::config::CONFIG;
 use rust::redis_client::REDIS_POOL;
 
 use rust::routes::api::{create_api_routes, ApiDoc};
@@ -28,32 +28,23 @@ use rust::routes::AppState;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let filter = std::env::var_os("RUST_LOG")
-        .and_then(|s| s.into_string().ok())
-        .unwrap_or_else(|| "info".to_string());
+    // Initialize tracing with config log level
+    let filter = &CONFIG.log_level;
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new(&filter))
+        .with_env_filter(EnvFilter::new(filter))
         .init();
 
-    tracing::info!("RustExpress starting up...");
+    tracing::info!("🚀 RustExpress starting up...");
+    tracing::info!("   Environment: {}", CONFIG.environment);
 
-    let jwt_secret = CONFIG_MAP.get("JWT_SECRET").cloned().unwrap_or_else(|| {
-        tracing::warn!(
-        "JWT_SECRET not set in environment, using default secret (not recommended for production)"
-      );
-        "default_secret".to_string()
-    });
+    // Get JWT secret from config (validated at startup)
+    let jwt_secret = CONFIG.jwt_secret.clone();
 
-    let _ = REDIS_POOL.get().await; // Initialize the pool early
+    // Initialize Redis pool early
+    let _ = REDIS_POOL.get().await;
 
-    // Setup database connections
-    let database_url = CONFIG_MAP.get("DATABASE_URL").cloned().unwrap_or_else(|| {
-        tracing::warn!("DATABASE_URL not set, using default");
-        "mysql://root:password@localhost/mydb".to_string()
-    });
-
-    // SeaORM connection
-    let db: DatabaseConnection = Database::connect(&database_url)
+    // SeaORM connection using validated config
+    let db: DatabaseConnection = Database::connect(&CONFIG.database_url)
         .await
         .expect("Failed to connect to MySQL database with SeaORM");
     tracing::info!("✓ SeaORM database connection established");

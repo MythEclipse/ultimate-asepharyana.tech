@@ -15,7 +15,6 @@ use axum::{
 };
 use backoff::{future::retry, ExponentialBackoff};
 use deadpool_redis::redis::AsyncCommands;
-use futures::{FutureExt, StreamExt};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use regex::Regex;

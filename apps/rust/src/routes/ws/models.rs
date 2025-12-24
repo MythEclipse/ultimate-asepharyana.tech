@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatRoom {

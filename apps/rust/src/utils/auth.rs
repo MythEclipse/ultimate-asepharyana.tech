@@ -1,6 +1,6 @@
-// JWT Claims and utilities using dynamic config from CONFIG_MAP
+//! JWT Claims and utilities using type-safe config.
 
-use crate::config::CONFIG_MAP;
+use crate::config::CONFIG;
 use crate::utils::error::AppError;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 
@@ -13,10 +13,7 @@ pub struct Claims {
 }
 
 pub fn encode_jwt(claims: Claims) -> Result<String, AppError> {
-    let secret = CONFIG_MAP
-        .get("JWT_SECRET")
-        .cloned()
-        .unwrap_or_else(|| "default_secret".to_string());
+    let secret = &CONFIG.jwt_secret;
     encode(
         &Header::default(),
         &claims,
@@ -26,10 +23,7 @@ pub fn encode_jwt(claims: Claims) -> Result<String, AppError> {
 }
 
 pub fn decode_jwt(token: &str) -> Result<Claims, AppError> {
-    let secret = CONFIG_MAP
-        .get("JWT_SECRET")
-        .cloned()
-        .unwrap_or_else(|| "default_secret".to_string());
+    let secret = &CONFIG.jwt_secret;
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
     decode::<Claims>(

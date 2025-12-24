@@ -1,43 +1,41 @@
-// Redis connection utility with tracing for connection lifecycle and errors.
+//! Redis connection utility with tracing for connection lifecycle and errors.
+//!
+//! Uses the type-safe CONFIG for Redis connection parameters.
 
-use crate::config::CONFIG_MAP;
+use crate::config::CONFIG;
 use crate::utils::error::AppError;
 use deadpool_redis::{Manager, Pool};
 use once_cell::sync::Lazy;
 use tracing::{debug, error, info};
 
-// Create a lazy static Redis connection pool
+/// Create a lazy static Redis connection pool.
+/// Uses REDIS_URL from config, or falls back to constructing from host/port.
 pub static REDIS_POOL: Lazy<Pool> = Lazy::new(|| {
-    let host = CONFIG_MAP
-        .get("REDIS_HOST")
-        .cloned()
-        .unwrap_or_else(|| "127.0.0.1".to_string());
-
-    let port = CONFIG_MAP
-        .get("REDIS_PORT")
-        .cloned()
-        .unwrap_or_else(|| "6379".to_string());
-
-    let password = CONFIG_MAP
-        .get("REDIS_PASSWORD")
-        .cloned()
-        .unwrap_or_else(|| "".to_string());
-
-    let redis_url = if password.is_empty() {
-        format!("redis://{}:{}", host, port)
+    // Use redis_url if available, otherwise construct from environment
+    let redis_url = if !CONFIG.redis_url.is_empty() {
+        CONFIG.redis_url.clone()
     } else {
-        format!("redis://:{}@{}:{}", password, host, port)
+        // Fallback to legacy env vars for backward compatibility
+        let host = std::env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+        let port = std::env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string());
+        let password = std::env::var("REDIS_PASSWORD").unwrap_or_default();
+
+        if password.is_empty() {
+            format!("redis://{}:{}", host, port)
+        } else {
+            format!("redis://:{}@{}:{}", password, host, port)
+        }
     };
 
     info!("Initializing Redis connection pool for URL: {}", redis_url);
 
     Pool::builder(Manager::new(redis_url).expect("Failed to create Redis manager"))
-        .max_size(10) // Set maximum number of connections in the pool
+        .max_size(10)
         .build()
         .expect("Failed to create Redis connection pool")
 });
 
-// Function to get an async connection from the pool
+/// Get an async connection from the pool.
 pub async fn get_redis_conn() -> Result<deadpool_redis::Connection, AppError> {
     debug!("Attempting to get Redis connection from pool.");
     match REDIS_POOL.get().await {
