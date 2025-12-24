@@ -1,18 +1,17 @@
-// Ensure lazy_static macro is available
+// Anime index handler - refactored with helpers
+use crate::helpers::{Cache, default_backoff, transient, internal_err};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::{future::retry, ExponentialBackoff};
-use deadpool_redis::redis::AsyncCommands;
+use backoff::future::retry;
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Duration;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -52,6 +51,15 @@ pub struct AnimeResponse {
     pub data: AnimeData,
 }
 
+lazy_static! {
+    pub static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
+    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
+    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
+    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
+    pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
+}
+const CACHE_TTL: u64 = 300; // 5 minutes
+
 #[utoipa::path(
     get,
     path = "/api/anime",
@@ -68,84 +76,22 @@ pub async fn anime(
     let start_time = std::time::Instant::now();
     info!("Handling request for anime index");
 
-    let cache_key = "anime:index";
-    let mut conn = app_state.redis_pool.get().await.map_err(|e| {
-        error!("Failed to get Redis connection: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
+    let cache = Cache::new(&app_state.redis_pool);
+    
+    // Clean caching with get_or_set pattern
+    let response = cache.get_or_set("anime:index", CACHE_TTL, || async {
+        let data = fetch_anime_data().await
+            .map_err(|e| format!("Fetch error: {}", e))?;
+        
+        Ok(AnimeResponse {
+            status: "Ok".to_string(),
+            data,
+        })
+    }).await.map_err(internal_err)?;
 
-    // Try to get cached data
-    let cached_response: Option<String> = conn.get(cache_key).await.map_err(|e| {
-        error!("Failed to get data from Redis: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Redis error: {}", e),
-        )
-    })?;
-
-    if let Some(json_data_string) = cached_response {
-        info!("Cache hit for key: {}", cache_key);
-        let anime_response: AnimeResponse =
-            serde_json::from_str(&json_data_string).map_err(|e| {
-                error!("Failed to deserialize cached data: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-        return Ok(Json(anime_response).into_response());
-    }
-
-    match fetch_anime_data().await {
-        Ok(data) => {
-            let response = AnimeResponse {
-                status: "Ok".to_string(),
-                data,
-            };
-            let json_data = serde_json::to_string(&response).map_err(|e| {
-                error!("Failed to serialize response for caching: {:?}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Serialization error: {}", e),
-                )
-            })?;
-
-            // Store in Redis with TTL
-            conn.set_ex::<_, _, ()>(&cache_key, json_data, CACHE_TTL)
-                .await
-                .map_err(|e| {
-                    error!("Failed to set data in Redis: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Redis error: {}", e),
-                    )
-                })?;
-            info!("Cache set for key: {}", cache_key);
-
-            info!(
-                "Successfully processed anime index in {:?}",
-                start_time.elapsed()
-            );
-            Ok(Json(response).into_response())
-        }
-        Err(e) => {
-            error!("Error processing anime index: {:?}", e);
-            Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e)))
-        }
-    }
+    info!("Anime index completed in {:?}", start_time.elapsed());
+    Ok(Json(response).into_response())
 }
-
-lazy_static! {
-    pub static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-}
-const CACHE_TTL: u64 = 300; // 5 minutes
 
 async fn fetch_anime_data() -> Result<AnimeData, Box<dyn std::error::Error + Send + Sync>> {
     let ongoing_url = format!("{}/ongoing-anime/", get_otakudesu_url());
@@ -173,13 +119,7 @@ async fn fetch_anime_data() -> Result<AnimeData, Box<dyn std::error::Error + Sen
 async fn fetch_html_with_retry(
     url: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = ExponentialBackoff {
-        initial_interval: Duration::from_millis(500),
-        max_interval: Duration::from_secs(10),
-        multiplier: 2.0,
-        max_elapsed_time: Some(Duration::from_secs(30)),
-        ..Default::default()
-    };
+    let backoff = default_backoff(); // Use helper instead of manual config
 
     let fetch_operation = || async {
         info!("Fetching URL: {}", url);
@@ -190,7 +130,7 @@ async fn fetch_html_with_retry(
             }
             Err(e) => {
                 warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(backoff::Error::transient(e))
+                Err(transient(e)) // Use helper
             }
         }
     };
