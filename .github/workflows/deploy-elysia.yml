@@ -68,39 +68,22 @@ jobs:
           # Create necessary directories on VPS
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/{packages/services/dist,apps/elysia/dist,apps/elysia/src,apps/elysia/logs}"
 
-          # Sync packages/services (Drizzle schemas)
-          rsync -avz --progress -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            packages/services/dist/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/packages/services/dist/
+          # Sync build artifacts and config in one go
 
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            packages/services/package.json \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/packages/services/package.json
+          # Create file list
+          echo "packages/services/dist/" > ./deploy_files.txt
+          echo "packages/services/package.json" >> ./deploy_files.txt
+          echo "apps/elysia/dist/" >> ./deploy_files.txt
+          echo "apps/elysia/src/" >> ./deploy_files.txt
+          echo "apps/elysia/package.json" >> ./deploy_files.txt
+          echo "apps/elysia/ecosystem.config.cjs" >> ./deploy_files.txt
+          echo "apps/elysia/.env" >> ./deploy_files.txt
 
-          # Sync build output (dist folder)
-          rsync -avz --progress -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/dist/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/dist/
+          echo "Files to deploy:"
+          cat ./deploy_files.txt
 
-          # Sync source files (for reference/debugging)
-          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/src/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/src/
-
-          # Sync package.json
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/package.json \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/package.json
-
-          # Sync ecosystem config
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/ecosystem.config.cjs \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/ecosystem.config.cjs
-
-          # Sync .env file
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/elysia/.env \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/elysia/.env
+          # Sync everything
+          rsync -avz --progress --files-from=./deploy_files.txt -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" . ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}
 
           rm -f /tmp/deploy_key
 

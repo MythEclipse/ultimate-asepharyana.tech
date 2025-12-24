@@ -61,27 +61,22 @@ jobs:
           # Create necessary directories on VPS
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/{.output,logs}"
 
-          # Sync build output (.output folder)
-          rsync -avz --progress --delete -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/solidjs/.output/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/.output/
+          # Sync build artifacts and config in one go
 
-          # Sync package.json
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/solidjs/package.json \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/package.json
+          # Create file list
+          echo "apps/solidjs/.output/" > ./deploy_files.txt
+          echo "apps/solidjs/package.json" >> ./deploy_files.txt
+          echo "apps/solidjs/ecosystem.config.cjs" >> ./deploy_files.txt
 
-          # Sync ecosystem config
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-            apps/solidjs/ecosystem.config.cjs \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/ecosystem.config.cjs
-
-          # Sync .env file if exists
           if [ -f apps/solidjs/.env ]; then
-            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" \
-              apps/solidjs/.env \
-              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/apps/solidjs/.env
+            echo "apps/solidjs/.env" >> ./deploy_files.txt
           fi
+
+          echo "Files to deploy:"
+          cat ./deploy_files.txt
+
+          # Sync everything
+          rsync -avz --progress --files-from=./deploy_files.txt -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" . ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}
 
           rm -f /tmp/deploy_key
 
