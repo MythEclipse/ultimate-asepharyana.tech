@@ -10,7 +10,9 @@ pub mod events; // Event bus (pub/sub)
 pub mod extractors; // Custom extractors (ValidatedJson, etc.)
 pub mod fetch_with_proxy;
 pub mod graceful; // Graceful shutdown
+pub mod graphql; // GraphQL API (async-graphql)
 pub mod health; // Health check endpoints
+pub mod helpers; // Developer helpers (prelude, response, pagination)
 pub mod image_proxy;
 pub mod jobs; // Background job system
 pub mod jwt;
@@ -29,6 +31,7 @@ pub mod typescript; // TypeScript type generation
 pub mod urls;
 pub mod utils;
 pub mod versioning; // API versioning (v1, v2)
+pub mod ws; // WebSocket with room management
 
 #[path = "../build_utils/mod.rs"]
 pub mod build_utils;
