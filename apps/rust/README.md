@@ -4,54 +4,58 @@ A high-performance, developer-friendly Rust framework built on Axum with batteri
 
 ## ✨ Features
 
-### Core Framework
+### Core Infrastructure
 
-- **Type-Safe Configuration** - Fail-fast config validation at startup
-- **Auto-Routing** - File-based routing with automatic handler discovery
-- **OpenAPI/Swagger** - Auto-generated API documentation
-- **SeaORM** - Type-safe database operations with MySQL
+| Feature          | Module     | Description                 |
+| ---------------- | ---------- | --------------------------- |
+| Type-Safe Config | `config`   | Fail-fast config validation |
+| Auto-Routing     | `routes`   | File-based routing          |
+| OpenAPI/Swagger  | `utoipa`   | Auto-generated docs         |
+| SeaORM           | `entities` | Type-safe DB                |
 
 ### Request Handling
 
-- **ValidatedJson** - Automatic request validation with 422 responses
-- **ValidatedQuery** - Query parameter validation
-- **Auth Middleware** - JWT authentication with Redis blacklist
+| Feature         | Module       | Description              |
+| --------------- | ------------ | ------------------------ |
+| ValidatedJson   | `extractors` | Auto-validation with 422 |
+| ValidatedQuery  | `extractors` | Query param validation   |
+| Rate Limiting   | `ratelimit`  | 1000 req/sec (governor)  |
+| Auth Middleware | `middleware` | JWT + Redis blacklist    |
 
-### Dependency Injection
+### Services
 
-- **ServiceContainer** - Runtime DI with provider pattern
-- **MiddlewareRegistry** - Named middleware groups
+| Feature         | Module            | Description                  |
+| --------------- | ----------------- | ---------------------------- |
+| DI Container    | `di`              | Runtime dependency injection |
+| Event Bus       | `events`          | Pub/sub between modules      |
+| Circuit Breaker | `circuit_breaker` | Protect external calls       |
+| Browser Pool    | `browser`         | Single browser, pooled tabs  |
 
 ### Background Processing
 
-- **Job Queue** - Redis-backed background jobs with retries
-- **Worker** - Async job processing with configurable concurrency
-
-### Browser Automation
-
-- **BrowserPool** - Single browser with pooled tabs for scraping
-- **PooledTab** - Navigate, click, type, evaluate JS, screenshot
+| Feature   | Module        | Description          |
+| --------- | ------------- | -------------------- |
+| Job Queue | `jobs`        | Redis-backed jobs    |
+| Scheduler | `scheduler`   | Cron-based tasks     |
+| Worker    | `jobs/worker` | Async job processing |
 
 ### Developer Experience
 
-- **`rex` CLI** - Code generation (models, controllers, APIs)
-- **TestApp** - In-memory integration testing
-- **Hot Reload** - Fast development iteration
+| Feature        | Module       | Description               |
+| -------------- | ------------ | ------------------------- |
+| `rex` CLI      | `bin/rex`    | Code generation           |
+| TestApp        | `testing`    | In-memory testing         |
+| TypeScript Gen | `typescript` | TS type generation        |
+| Seeder         | `seeder`     | Database seeding          |
+| Health Checks  | `health`     | Liveness/readiness probes |
 
 ## 🚀 Quick Start
 
 ```bash
-# Install
-cargo build
-
-# Run dev server
-cargo run
-
-# Generate API resources
-cargo run --bin rex make:api products --full
-
-# Run tests
-cargo test
+cargo build                     # Build
+cargo run                       # Run server
+cargo run --bin rex make:api users --full  # Generate API
+cargo test                      # Run tests
 ```
 
 ## 📁 Project Structure
@@ -59,108 +63,62 @@ cargo test
 ```
 src/
 ├── browser/        # Browser tab pooling
+├── circuit_breaker/# External service protection
 ├── config.rs       # Type-safe configuration
 ├── di/             # Dependency injection
-├── entities/       # SeaORM models
+├── events/         # Event bus (pub/sub)
 ├── extractors/     # ValidatedJson, ValidatedQuery
+├── health/         # Health check endpoints
 ├── jobs/           # Background job system
-├── middleware/     # Auth, rate limiting, registry
-├── routes/         # API handlers (auto-discovered)
+├── middleware/     # Auth, rate limiting
+├── ratelimit.rs    # Rate limiter (1000/sec)
+├── scheduler/      # Cron-based tasks
+├── seeder/         # Database seeding
 ├── testing/        # TestApp utilities
-└── main.rs         # Entry point
+├── typescript/     # TypeScript generation
+└── main.rs
 ```
 
 ## 🔧 Configuration
 
 ```env
-DATABASE_URL=mysql://user:password@localhost:3306/database
-JWT_SECRET=your_secret_key
+DATABASE_URL=mysql://user:pass@localhost:3306/db
+JWT_SECRET=your_secret
 REDIS_URL=redis://localhost:6379
 APP_LOG_LEVEL=info
-APP_SERVER_PORT=4091
 ```
 
 ## 📖 Usage Examples
 
-### Validated Requests
+### Rate Limiting
 
 ```rust
-use rust::extractors::ValidatedJson;
-use validator::Validate;
+use axum::middleware::from_fn;
 
-#[derive(Deserialize, Validate)]
-struct CreateUser {
-    #[validate(email)]
-    email: String,
-    #[validate(length(min = 8))]
-    password: String,
-}
-
-async fn create_user(ValidatedJson(data): ValidatedJson<CreateUser>) {
-    // data is guaranteed valid
-}
+router.layer(from_fn(rate_limit_middleware))
 ```
 
-### Background Jobs
+### Event Bus
 
 ```rust
-use rust::jobs::{Job, JobDispatcher};
-
-#[derive(Serialize, Deserialize)]
-struct SendEmail { user_id: String }
-
-#[async_trait]
-impl Job for SendEmail {
-    const NAME: &'static str = "send_email";
-    async fn handle(&self) -> anyhow::Result<()> { Ok(()) }
-}
-
-dispatcher.dispatch(SendEmail { user_id: "123".into() }).await?;
+let bus = EventBus::new();
+bus.publish(UserRegistered { user_id: "123".into(), .. }).await;
 ```
 
-### Browser Scraping
+### Circuit Breaker
 
 ```rust
-use rust::browser::{BrowserPool, BrowserPoolConfig, get_browser_pool};
-
-// Get tab from pool
-let tab = get_browser_pool().unwrap().get_tab().await?;
-tab.goto("https://example.com").await?;
-let html = tab.content().await?;
-// Tab auto-returns to pool when dropped
+let breaker = CircuitBreaker::new("api", CircuitBreakerConfig::default());
+let result = breaker.call(|| client.get(url)).await;
 ```
 
-### Integration Testing
+### Scheduler
 
 ```rust
-use rust::testing::TestApp;
-
-#[tokio::test]
-async fn test_health() {
-    let app = TestApp::with_router(create_router());
-    app.get("/health").await.assert_status(200);
-}
+let scheduler = Scheduler::new().await?;
+scheduler.add_job("cleanup", "0 * * * * *", || async { ... }).await?;
+scheduler.start().await?;
 ```
-
-## 🔨 CLI Commands
-
-```bash
-cargo run --bin rex make:model User          # Generate model
-cargo run --bin rex make:migration create_users # Generate migration
-cargo run --bin rex make:controller users --crud # Generate CRUD controller
-cargo run --bin rex make:api products --full # Generate complete stack
-```
-
-## 📦 Key Dependencies
-
-| Crate          | Purpose               |
-| -------------- | --------------------- |
-| axum           | Web framework         |
-| sea-orm        | ORM                   |
-| tokio          | Async runtime         |
-| validator      | Request validation    |
-| chromiumoxide  | Browser automation    |
-| deadpool-redis | Redis connection pool |
 
 ## License
 
