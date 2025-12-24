@@ -81,6 +81,8 @@ chromiumoxide = { version = "0.8.0", default-features = false, features = ["toki
 ts-rs = { version = "11.1.0", features = ["serde-compat"] }
 governor = "0.10.4"
 tokio-cron-scheduler = "0.15.1"
+metrics = "0.24.3"
+metrics-exporter-prometheus = "0.18.1"
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)

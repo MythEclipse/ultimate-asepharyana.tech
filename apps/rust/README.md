@@ -1,53 +1,62 @@
 # RustExpress Framework
 
-A high-performance, developer-friendly Rust framework built on Axum with batteries included.
+A high-performance, production-ready Rust framework built on Axum.
 
-## ✨ Features
+## ✨ Complete Feature Set
 
 ### Core Infrastructure
 
-| Feature          | Module     | Description                 |
-| ---------------- | ---------- | --------------------------- |
-| Type-Safe Config | `config`   | Fail-fast config validation |
-| Auto-Routing     | `routes`   | File-based routing          |
-| OpenAPI/Swagger  | `utoipa`   | Auto-generated docs         |
-| SeaORM           | `entities` | Type-safe DB                |
+| Feature          | Module     | Description          |
+| ---------------- | ---------- | -------------------- |
+| Type-Safe Config | `config`   | Fail-fast validation |
+| Auto-Routing     | `routes`   | File-based routing   |
+| OpenAPI/Swagger  | `utoipa`   | Auto-generated docs  |
+| SeaORM           | `entities` | Type-safe DB         |
 
 ### Request Handling
 
-| Feature         | Module       | Description              |
-| --------------- | ------------ | ------------------------ |
-| ValidatedJson   | `extractors` | Auto-validation with 422 |
-| ValidatedQuery  | `extractors` | Query param validation   |
-| Rate Limiting   | `ratelimit`  | 1000 req/sec (governor)  |
-| Auth Middleware | `middleware` | JWT + Redis blacklist    |
+| Feature             | Module          | Description           |
+| ------------------- | --------------- | --------------------- |
+| ValidatedJson/Query | `extractors`    | Auto-validation (422) |
+| Rate Limiting       | `ratelimit`     | 1000 req/sec          |
+| Request ID          | `observability` | Per-request tracking  |
+| Auth Middleware     | `middleware`    | JWT + Redis           |
+
+### Observability
+
+| Feature            | Module                     | Description         |
+| ------------------ | -------------------------- | ------------------- |
+| Prometheus Metrics | `observability/metrics`    | `/metrics` endpoint |
+| Request Tracing    | `observability/request_id` | X-Request-ID header |
+| Health Checks      | `health`                   | Liveness/readiness  |
 
 ### Services
 
-| Feature         | Module            | Description                  |
-| --------------- | ----------------- | ---------------------------- |
-| DI Container    | `di`              | Runtime dependency injection |
-| Event Bus       | `events`          | Pub/sub between modules      |
-| Circuit Breaker | `circuit_breaker` | Protect external calls       |
-| Browser Pool    | `browser`         | Single browser, pooled tabs  |
+| Feature         | Module            | Description       |
+| --------------- | ----------------- | ----------------- |
+| DI Container    | `di`              | Runtime injection |
+| Event Bus       | `events`          | Pub/sub pattern   |
+| Circuit Breaker | `circuit_breaker` | Fault tolerance   |
+| Browser Pool    | `browser`         | Pooled tabs       |
 
 ### Background Processing
 
-| Feature   | Module        | Description          |
-| --------- | ------------- | -------------------- |
-| Job Queue | `jobs`        | Redis-backed jobs    |
-| Scheduler | `scheduler`   | Cron-based tasks     |
-| Worker    | `jobs/worker` | Async job processing |
+| Feature   | Module        | Description      |
+| --------- | ------------- | ---------------- |
+| Job Queue | `jobs`        | Redis-backed     |
+| Scheduler | `scheduler`   | Cron tasks       |
+| Worker    | `jobs/worker` | Async processing |
 
 ### Developer Experience
 
-| Feature        | Module       | Description               |
-| -------------- | ------------ | ------------------------- |
-| `rex` CLI      | `bin/rex`    | Code generation           |
-| TestApp        | `testing`    | In-memory testing         |
-| TypeScript Gen | `typescript` | TS type generation        |
-| Seeder         | `seeder`     | Database seeding          |
-| Health Checks  | `health`     | Liveness/readiness probes |
+| Feature           | Module       | Description     |
+| ----------------- | ------------ | --------------- |
+| `rex` CLI         | `bin/rex`    | Code generation |
+| TestApp           | `testing`    | In-memory tests |
+| TypeScript Gen    | `typescript` | TS types        |
+| Seeder            | `seeder`     | DB seeding      |
+| API Versioning    | `versioning` | v1/v2 routing   |
+| Graceful Shutdown | `graceful`   | Signal handling |
 
 ## 🚀 Quick Start
 
@@ -58,66 +67,47 @@ cargo run --bin rex make:api users --full  # Generate API
 cargo test                      # Run tests
 ```
 
-## 📁 Project Structure
-
-```
-src/
-├── browser/        # Browser tab pooling
-├── circuit_breaker/# External service protection
-├── config.rs       # Type-safe configuration
-├── di/             # Dependency injection
-├── events/         # Event bus (pub/sub)
-├── extractors/     # ValidatedJson, ValidatedQuery
-├── health/         # Health check endpoints
-├── jobs/           # Background job system
-├── middleware/     # Auth, rate limiting
-├── ratelimit.rs    # Rate limiter (1000/sec)
-├── scheduler/      # Cron-based tasks
-├── seeder/         # Database seeding
-├── testing/        # TestApp utilities
-├── typescript/     # TypeScript generation
-└── main.rs
-```
-
-## 🔧 Configuration
-
-```env
-DATABASE_URL=mysql://user:pass@localhost:3306/db
-JWT_SECRET=your_secret
-REDIS_URL=redis://localhost:6379
-APP_LOG_LEVEL=info
-```
-
 ## 📖 Usage Examples
 
-### Rate Limiting
+### Request ID
 
 ```rust
-use axum::middleware::from_fn;
+use axum::Extension;
+use rust::observability::RequestId;
 
-router.layer(from_fn(rate_limit_middleware))
+async fn handler(Extension(req_id): Extension<RequestId>) {
+    println!("Request: {}", req_id);
+}
 ```
 
-### Event Bus
+### Metrics
 
 ```rust
-let bus = EventBus::new();
-bus.publish(UserRegistered { user_id: "123".into(), .. }).await;
+use rust::observability::{setup_metrics, MetricsHandler};
+
+setup_metrics()?;
+router.route("/metrics", get(MetricsHandler::handle))
 ```
 
-### Circuit Breaker
+### Graceful Shutdown
 
 ```rust
-let breaker = CircuitBreaker::new("api", CircuitBreakerConfig::default());
-let result = breaker.call(|| client.get(url)).await;
+use rust::graceful::shutdown_signal;
+
+axum::serve(listener, app)
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 ```
 
-### Scheduler
+### API Versioning
 
 ```rust
-let scheduler = Scheduler::new().await?;
-scheduler.add_job("cleanup", "0 * * * * *", || async { ... }).await?;
-scheduler.start().await?;
+use rust::versioning::VersionedApi;
+
+let app = VersionedApi::new()
+    .v1(users_v1_routes())
+    .v2(users_v2_routes())
+    .build();
 ```
 
 ## License

@@ -9,6 +9,7 @@ pub mod error;
 pub mod events; // Event bus (pub/sub)
 pub mod extractors; // Custom extractors (ValidatedJson, etc.)
 pub mod fetch_with_proxy;
+pub mod graceful; // Graceful shutdown
 pub mod health; // Health check endpoints
 pub mod image_proxy;
 pub mod jobs; // Background job system
@@ -16,6 +17,7 @@ pub mod jwt;
 pub mod komik_base_url;
 pub mod middleware;
 pub mod models;
+pub mod observability; // Metrics, request ID, tracing
 pub mod ratelimit; // Rate limiting (1000 req/sec)
 pub mod redis_client;
 pub mod ryzen_cdn;
@@ -26,6 +28,7 @@ pub mod testing; // Testing utilities (TestApp, etc.)
 pub mod typescript; // TypeScript type generation
 pub mod urls;
 pub mod utils;
+pub mod versioning; // API versioning (v1, v2)
 
 #[path = "../build_utils/mod.rs"]
 pub mod build_utils;
