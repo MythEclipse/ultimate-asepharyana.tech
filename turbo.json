@@ -5,16 +5,13 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "target/**"]
+      "outputs": ["dist/**", "target/**"]
     },
     "elysia#build": {
       "outputs": ["dist/**"]
     },
     "rust#build": {
       "outputs": ["target/**"]
-    },
-    "nextjs#build": {
-      "outputs": [".next/**", "!.next/cache/**"]
     },
     "services#build": {
       "outputs": ["dist/**"]

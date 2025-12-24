@@ -28,9 +28,6 @@
     "paths": {
       "@asepharyana/services": [
         "./packages/services/src/index.ts"
-      ],
-      "@asepharyana/storybook-ui": [
-        "./storybook-ui/src/index.ts"
       ]
     }
   },
