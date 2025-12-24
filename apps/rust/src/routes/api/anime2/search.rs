@@ -3,8 +3,10 @@ use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::future::retry;
 use deadpool_redis::redis::AsyncCommands;
+use crate::helpers::{default_backoff};
+
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -179,7 +181,7 @@ async fn fetch_and_parse_search(
         Ok(response.data)
     };
 
-    let backoff = ExponentialBackoff::default();
+    let backoff = default_backoff();
     let html = retry(backoff, operation).await?;
 
     match tokio::task::spawn_blocking(move || {

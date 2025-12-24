@@ -8,8 +8,10 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::future::retry;
 use deadpool_redis::redis::AsyncCommands;
+use crate::helpers::{default_backoff};
+
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -169,7 +171,7 @@ async fn fetch_anime_full(slug: String) -> Result<AnimeFullData, String> {
         Ok(response.data)
     };
 
-    let backoff = ExponentialBackoff::default();
+    let backoff = default_backoff();
     let html = retry(backoff, operation)
         .await
         .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;

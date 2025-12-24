@@ -6,13 +6,14 @@ use crate::scraping::urls::get_komik_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, routing::get, Json, Router};
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::future::retry;
 use deadpool_redis::redis::AsyncCommands;
+use crate::helpers::{default_backoff, transient};
+
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 pub const ENDPOINT_METHOD: &str = "get";
@@ -158,13 +159,7 @@ pub async fn fetch_komik_chapter(
     let url = format!("{}/{}", base_url, chapter_url); // Keep as-is since chapter URLs might already have correct format
 
     // Retry logic with exponential backoff
-    let backoff = ExponentialBackoff {
-        initial_interval: Duration::from_millis(500),
-        max_interval: Duration::from_secs(10),
-        multiplier: 2.0,
-        max_elapsed_time: Some(Duration::from_secs(30)),
-        ..Default::default()
-    };
+    let backoff = default_backoff();
 
     let fetch_operation = || async {
         info!("Fetching URL: {}", url);
@@ -175,7 +170,7 @@ pub async fn fetch_komik_chapter(
             }
             Err(e) => {
                 warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(backoff::Error::transient(e))
+                Err(transient(e))
             }
         }
     };

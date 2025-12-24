@@ -1,6 +1,5 @@
 // Standard library imports
 use std::sync::Arc;
-use std::time::Duration;
 
 // External crate imports
 use axum::{
@@ -10,8 +9,10 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::future::retry;
 use deadpool_redis::redis::AsyncCommands;
+use crate::helpers::{default_backoff, transient};
+
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -202,13 +203,7 @@ pub async fn slug(
 async fn fetch_html_with_retry(
     url: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = ExponentialBackoff {
-        initial_interval: Duration::from_millis(500),
-        max_interval: Duration::from_secs(10),
-        multiplier: 2.0,
-        max_elapsed_time: Some(Duration::from_secs(30)),
-        ..Default::default()
-    };
+    let backoff = default_backoff();
 
     let fetch_operation = || async {
         info!("Fetching URL: {}", url);
@@ -219,7 +214,7 @@ async fn fetch_html_with_retry(
             }
             Err(e) => {
                 warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(backoff::Error::transient(e))
+                Err(transient(e))
             }
         }
     };

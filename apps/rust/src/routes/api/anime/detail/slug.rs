@@ -9,8 +9,10 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::future::retry;
 use deadpool_redis::redis::AsyncCommands;
+use crate::helpers::{default_backoff, transient};
+
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -191,13 +193,7 @@ async fn fetch_anime_detail(
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!("{}/anime/{}", OTAKUDESU_BASE_URL, slug);
 
-    let backoff = ExponentialBackoff {
-        initial_interval: std::time::Duration::from_millis(500),
-        max_interval: std::time::Duration::from_secs(10),
-        multiplier: 2.0,
-        max_elapsed_time: Some(std::time::Duration::from_secs(30)),
-        ..Default::default()
-    };
+    let backoff = default_backoff();
 
     let fetch_operation = || async {
         info!("Fetching URL: {}", url);
@@ -208,7 +204,7 @@ async fn fetch_anime_detail(
             }
             Err(e) => {
                 warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(backoff::Error::transient(e))
+                Err(transient(e))
             }
         }
     };

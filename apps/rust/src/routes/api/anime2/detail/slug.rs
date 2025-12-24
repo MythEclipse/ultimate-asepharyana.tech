@@ -3,15 +3,16 @@ use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
-use backoff::{future::retry, ExponentialBackoff};
+use backoff::future::retry;
 use deadpool_redis::redis::AsyncCommands;
+use crate::helpers::{default_backoff, transient};
+
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
@@ -208,13 +209,7 @@ async fn fetch_anime_detail(
     let url = format!("https://alqanime.net/{}/", slug);
 
     // Retry logic with exponential backoff
-    let backoff = ExponentialBackoff {
-        initial_interval: Duration::from_millis(500),
-        max_interval: Duration::from_secs(10),
-        multiplier: 2.0,
-        max_elapsed_time: Some(Duration::from_secs(30)),
-        ..Default::default()
-    };
+    let backoff = default_backoff();
 
     let fetch_operation = || async {
         info!("Fetching URL: {}", url);
@@ -225,7 +220,7 @@ async fn fetch_anime_detail(
             }
             Err(e) => {
                 warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(backoff::Error::transient(e))
+                Err(transient(e))
             }
         }
     };
