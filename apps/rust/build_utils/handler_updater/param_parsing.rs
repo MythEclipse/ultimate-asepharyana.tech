@@ -10,7 +10,7 @@ pub fn parse_query_params(content: &str) -> Result<Vec<(String, String)>> {
         .map_err(|e| anyhow!("Invalid query regex pattern: {}", e))?;
 
     if let Some(cap) = query_regex.captures(content) {
-        let _param_name = &cap[1];
+        let _ = &cap[1];
         let struct_name = &cap[2];
 
         // Find the struct definition line (with optional pub)

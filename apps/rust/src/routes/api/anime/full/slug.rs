@@ -17,17 +17,11 @@ use std::sync::Arc;
 use tracing::{error, info};
 use utoipa::ToSchema;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/anime/full/{slug}";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime/full/{slug} endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime_full_slug";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<FullResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

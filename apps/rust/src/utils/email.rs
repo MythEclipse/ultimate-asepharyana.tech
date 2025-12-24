@@ -65,7 +65,6 @@ pub struct EmailTemplate {
 
 /// Email service implementation
 pub struct EmailService {
-    #[allow(dead_code)]
     config: EmailConfig,
     app_url: String,
 }

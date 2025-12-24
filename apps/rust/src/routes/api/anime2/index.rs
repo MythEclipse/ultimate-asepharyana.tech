@@ -13,17 +13,11 @@ use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/anime2";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime2 endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime2";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime2_index";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<Anime2Response>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

@@ -1,5 +1,4 @@
 //! Handler for the komik chapter endpoint.
-#![allow(dead_code)]
 
 use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::routes::AppState;

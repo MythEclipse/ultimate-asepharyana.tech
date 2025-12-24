@@ -5,7 +5,6 @@
 
 use crate::build_utils::types::{DynamicParam, RouteFileInfo};
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -83,8 +82,6 @@ fn extract_route_info(file_path: &Path, api_root: &Path) -> Result<Option<RouteF
         return Ok(None);
     }
 
-    // Extract HTTP method from ENDPOINT_METHOD constant
-    let http_method = extract_http_method(&content);
 
     // Determine if this is an index file
     let is_index = file_stem == "index";
@@ -95,34 +92,15 @@ fn extract_route_info(file_path: &Path, api_root: &Path) -> Result<Option<RouteF
     // Build route path from file location
     let route_path = build_route_path(file_path, api_root, is_index, &dynamic_params)?;
 
-    // Build module path
-    let module_path = build_module_path(file_path, api_root)?;
 
     Ok(Some(RouteFileInfo {
         file_path: file_path.to_path_buf(),
         route_path,
-        module_path,
-        is_index,
         is_dynamic,
-        is_catch_all: dynamic_params.iter().any(|p| p.is_catch_all),
-        dynamic_params,
-        http_method,
     }))
 }
 
 /// Extract HTTP method from file content
-fn extract_http_method(content: &str) -> String {
-    // Look for ENDPOINT_METHOD constant
-    for line in content.lines() {
-        if line.contains("ENDPOINT_METHOD") && line.contains("=") {
-            if let Some(method) = line.split('"').nth(1) {
-                return method.to_lowercase();
-            }
-        }
-    }
-    // Default to GET
-    "get".to_string()
-}
 
 /// Extract dynamic parameters from filename
 /// Examples:
@@ -224,62 +202,7 @@ fn build_route_path(
 /// Examples:
 /// - "users/index.rs" → "crate::routes::api::users::index"
 /// - "users/[id].rs" → "crate::routes::api::users::id"
-fn build_module_path(file_path: &Path, api_root: &Path) -> Result<String> {
-    let relative_path = file_path
-        .strip_prefix(api_root)
-        .context("File path is not under api_root")?
-        .with_extension("");
 
-    let mut parts: Vec<String> = vec!["crate".to_string(), "routes".to_string(), "api".to_string()];
-
-    for component in relative_path.components() {
-        let component_str = component.as_os_str().to_str().unwrap_or("");
-
-        // Sanitize component (remove brackets, replace hyphens)
-        let sanitized = component_str
-            .trim_matches(|c| c == '[' || c == ']')
-            .replace("...", "")
-            .replace('-', "_");
-
-        if !sanitized.is_empty() {
-            parts.push(sanitized);
-        }
-    }
-
-    Ok(parts.join("::"))
-}
-
-/// Detect potential route conflicts
-pub fn detect_conflicts(routes: &[RouteFileInfo]) -> Vec<String> {
-    let mut conflicts = Vec::new();
-    let mut path_map: HashMap<String, Vec<&RouteFileInfo>> = HashMap::new();
-
-    // Group routes by path
-    for route in routes {
-        path_map
-            .entry(route.route_path.clone())
-            .or_default()
-            .push(route);
-    }
-
-    // Check for conflicts
-    for (path, route_list) in &path_map {
-        if route_list.len() > 1 {
-            // Multiple routes with same path - check if methods differ
-            let methods: Vec<_> = route_list.iter().map(|r| &r.http_method).collect();
-            let unique_methods: std::collections::HashSet<_> = methods.iter().collect();
-
-            if unique_methods.len() < methods.len() {
-                conflicts.push(format!(
-                    "Route conflict: {} has multiple handlers with same method",
-                    path
-                ));
-            }
-        }
-    }
-
-    conflicts
-}
 
 #[cfg(test)]
 mod tests {

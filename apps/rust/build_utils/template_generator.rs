@@ -182,18 +182,6 @@ pub fn generate_template_content(
     Ok(template)
 }
 
-/// Get response struct information based on the route path.
-///
-/// This function determines the appropriate response structure based on the path pattern.
-/// Returns tuple of (struct_name, fields, success_response_body) for backward compatibility.
-#[deprecated(
-    note = "Use TemplateType::from_path and ResponseStructInfo::from_template_type instead"
-)]
-pub fn get_response_struct_info(axum_path: &str) -> (&str, &str, &str) {
-    let template_type = TemplateType::from_path(axum_path);
-    let info = ResponseStructInfo::from_template_type(template_type);
-    (info.struct_name, info.fields, info.success_body)
-}
 
 pub fn extract_path_params_from_route(route_path_str: &str) -> Vec<(String, String)> {
     let mut path_params = Vec::new();

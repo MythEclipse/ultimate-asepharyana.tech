@@ -94,7 +94,6 @@ fn compute_module_path_prefix(current_dir: &Path, root_api_path: &Path) -> Resul
     Ok(module_path_prefix)
 }
 
-#[allow(clippy::too_many_arguments)]
 fn process_directory_entries(
     current_dir: &Path,
     root_api_path: &Path,

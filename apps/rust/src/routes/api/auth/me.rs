@@ -1,5 +1,4 @@
 //! Handler for get current user endpoint.
-#![allow(dead_code)]
 
 use axum::{
     extract::State,

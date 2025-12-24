@@ -1,5 +1,4 @@
 //! Handler for delete account endpoint.
-#![allow(dead_code)]
 
 use axum::{
     extract::State,

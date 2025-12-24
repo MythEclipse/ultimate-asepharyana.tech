@@ -1,7 +1,6 @@
 use super::param_parsing::generate_detailed_param_doc;
 
 // Enhanced function to generate detailed utoipa macro with comprehensive parameter documentation
-#[allow(clippy::too_many_arguments)]
 pub fn generate_utoipa_macro(
     http_method: &str,
     route_path: &str,

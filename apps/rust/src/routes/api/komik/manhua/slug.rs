@@ -17,17 +17,11 @@ use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/komik/manhua";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik2/manhua endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "komik2";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "komik2_manhua_slug";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<ManhuaResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

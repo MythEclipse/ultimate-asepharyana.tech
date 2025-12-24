@@ -17,17 +17,11 @@ use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/komik/manga";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik2/manga endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "komik2";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "komik2_manga_slug";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<MangaResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

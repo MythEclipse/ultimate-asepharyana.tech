@@ -1,5 +1,4 @@
 //! Handler for the compress endpoint.
-#![allow(dead_code)]
 
 use crate::routes::AppState;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};

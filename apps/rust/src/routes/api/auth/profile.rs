@@ -1,5 +1,4 @@
 //! Handler for update profile endpoint.
-#![allow(dead_code)]
 
 use axum::{
     extract::State,

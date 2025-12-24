@@ -25,14 +25,11 @@
 
 pub mod auto_mod_generator;
 pub mod constants;
-pub mod errors;
 pub mod handler_template;
 pub mod handler_updater;
 pub mod mod_generator;
-pub mod openapi_auto_generator;
 pub mod openapi_generator;
 pub mod path_utils;
-pub mod route_registry;
 pub mod route_scanner;
 pub mod template_generator;
 pub mod types;
@@ -41,31 +38,24 @@ pub mod types;
 ///
 /// This structure accumulates errors and warnings that occur during API generation,
 /// allowing for comprehensive reporting at the end of the build.
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct BuildOperation {
     pub errors: Vec<String>,
     pub warnings: Vec<String>,
 }
 
-#[allow(dead_code)]
 impl Default for BuildOperation {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[allow(dead_code)]
 impl BuildOperation {
     pub fn new() -> Self {
         Self {
             errors: Vec::new(),
             warnings: Vec::new(),
         }
-    }
-
-    pub fn add_error(&mut self, error: String) {
-        self.errors.push(error);
     }
 
     pub fn add_warning(&mut self, warning: String) {
@@ -78,26 +68,5 @@ impl BuildOperation {
 
     pub fn has_warnings(&self) -> bool {
         !self.warnings.is_empty()
-    }
-
-    /// Get a summary of all errors and warnings
-    pub fn summary(&self) -> String {
-        let mut summary = String::new();
-
-        if self.has_errors() {
-            summary.push_str(&format!("Errors ({}): \n", self.errors.len()));
-            for (i, error) in self.errors.iter().enumerate() {
-                summary.push_str(&format!("  {}. {}\n", i + 1, error));
-            }
-        }
-
-        if self.has_warnings() {
-            summary.push_str(&format!("Warnings ({}): \n", self.warnings.len()));
-            for (i, warning) in self.warnings.iter().enumerate() {
-                summary.push_str(&format!("  {}. {}\n", i + 1, warning));
-            }
-        }
-
-        summary
     }
 }

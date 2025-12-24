@@ -28,18 +28,12 @@ use crate::urls::OTAKUDESU_BASE_URL;
 // Pre-compiled regex for slug extraction
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/anime/ongoing-anime/{slug}";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str =
     "Handles GET requests for the anime/ongoing-anime/{slug} endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime_ongoing_anime_slug";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<OngoingAnimeResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

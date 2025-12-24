@@ -1,5 +1,4 @@
 //! Handler for the drivepng endpoint.
-#![allow(dead_code)]
 
 use crate::routes::AppState;
 use axum::{response::IntoResponse, routing::get, Json, Router};

@@ -13,17 +13,11 @@ use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::utils::error::AppError;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/proxy/croxy";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the proxy endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "proxy";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "fetch_with_proxy_only";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Vec<u8>";
 
 #[derive(Debug, Deserialize, ToSchema)]

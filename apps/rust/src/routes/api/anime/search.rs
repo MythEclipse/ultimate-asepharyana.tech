@@ -23,17 +23,11 @@ use crate::fetch_with_proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::urls::get_otakudesu_url;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/anime/search";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for anime based on query parameters.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime_search";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

@@ -1,5 +1,4 @@
 //! Handler for the logout endpoint.
-#![allow(dead_code)]
 
 use axum::{
     extract::State,

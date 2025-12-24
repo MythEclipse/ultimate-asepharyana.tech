@@ -1,5 +1,4 @@
 //! Handler for the verify email endpoint.
-#![allow(dead_code)]
 
 use axum::{
     extract::{Query, State},

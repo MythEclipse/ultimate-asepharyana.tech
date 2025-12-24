@@ -23,17 +23,11 @@ use crate::routes::AppState;
 use crate::urls::OTAKUDESU_BASE_URL;
 use crate::utils::error::AppError;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/anime/detail/{slug}";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime/detail/{slug} endpoint.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "anime";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "anime_detail_slug";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

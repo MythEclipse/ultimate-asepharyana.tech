@@ -13,17 +13,11 @@ use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
-#[allow(dead_code)]
 pub const ENDPOINT_METHOD: &str = "get";
-#[allow(dead_code)]
 pub const ENDPOINT_PATH: &str = "/api/komik/search";
-#[allow(dead_code)]
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for komik based on query parameters.";
-#[allow(dead_code)]
 pub const ENDPOINT_TAG: &str = "komik";
-#[allow(dead_code)]
 pub const OPERATION_ID: &str = "komik_search";
-#[allow(dead_code)]
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

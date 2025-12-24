@@ -20,14 +20,9 @@ use crate::build_utils::path_utils::{
     sanitize_operation_id, sanitize_tag,
 };
 
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct HandlerRouteInfo {
     pub func_name: String,
-    pub http_method: String,
-    pub route_path: String,
     pub handler_module_path: String,
-    pub route_tag: String,
 }
 
 pub fn update_handler_file(
@@ -91,9 +86,6 @@ pub fn update_handler_file(
         module_path_prefix,
         &file_stem,
         schemas,
-        http_method,
-        route_path,
-        route_tag,
     )
 }
 
@@ -391,9 +383,6 @@ fn inject_schemas_and_return_info(
     module_path_prefix: &str,
     file_stem: &str,
     schemas: &mut HashSet<String>,
-    http_method: String,
-    route_path: String,
-    route_tag: String,
 ) -> Result<Option<HandlerRouteInfo>> {
     inject_schemas(
         content,
@@ -406,78 +395,10 @@ fn inject_schemas_and_return_info(
             .captures(content)
             .map(|c| c[1].to_string())
             .unwrap_or_else(|| file_stem.to_string()),
-        http_method,
-        route_path,
         handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
-        route_tag,
     }))
 }
 
-#[allow(dead_code)]
-fn update_uploader_file(
-    path: &Path,
-    schemas: &mut HashSet<String>,
-    module_path_prefix: &str,
-    _root_api_path: &Path,
-) -> Result<Option<HandlerRouteInfo>> {
-    let content =
-        fs::read_to_string(path).with_context(|| format!("Failed to read file: {:?}", path))?;
-
-    // Check if register_routes already exists and has multiple routes
-    let register_regex =
-        Regex::new(r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\}\s*")
-            .unwrap();
-
-    if let Some(existing_register) = register_regex.find(&content) {
-        let route_count = existing_register.as_str().matches(".route(").count();
-        if route_count > 1 {
-            // Already has multiple routes, don't modify
-            inject_schemas(
-                &content,
-                &format!("{}::uploader", module_path_prefix),
-                schemas,
-            )?;
-            return Ok(Some(HandlerRouteInfo {
-                func_name: "upload_file".to_string(),
-                http_method: "post".to_string(),
-                route_path: "/uploader".to_string(),
-                handler_module_path: format!("{}::uploader", module_path_prefix),
-                route_tag: "uploader".to_string(),
-            }));
-        }
-    }
-
-    // Generate register_routes for uploader with both routes
-    let new_register_fn = r#"pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  router
-    .route("/uploader", post(upload_file))
-    .route("/{file_name}", get(download_file))
-}"#;
-
-    let mut new_content = content.clone();
-    new_content = register_regex.replace_all(&new_content, "").to_string();
-    new_content = new_content.trim_end().to_string();
-    new_content.push_str("\n\n");
-    new_content.push_str(new_register_fn);
-
-    if content != new_content {
-        fs::write(path, &new_content)?;
-    }
-
-    inject_schemas(
-        &new_content,
-        &format!("{}::uploader", module_path_prefix),
-        schemas,
-    )?;
-
-    Ok(Some(HandlerRouteInfo {
-        func_name: "upload_file".to_string(),
-        http_method: "post".to_string(),
-        route_path: "/uploader".to_string(),
-        handler_module_path: format!("{}::uploader", module_path_prefix),
-        route_tag: "uploader".to_string(),
-    }))
-}
 
 /// Extracts and normalizes metadata from handler content.
 fn extract_and_normalize_metadata(

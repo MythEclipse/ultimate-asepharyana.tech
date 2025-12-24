@@ -1,5 +1,4 @@
 //! Handler for the login endpoint.
-#![allow(dead_code)]
 
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::verify;

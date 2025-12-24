@@ -1,5 +1,4 @@
 //! Handler for the uploader endpoint.
-#![allow(dead_code)]
 
 use crate::routes::AppState;
 use axum::{response::IntoResponse, routing::get, Json, Router};
