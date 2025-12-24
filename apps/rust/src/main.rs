@@ -66,11 +66,13 @@ async fn main() -> anyhow::Result<()> {
     // Create broadcast channel for WebSocket chat messages
     let (chat_tx, _) = tokio::sync::broadcast::channel(1000);
 
+    let db_arc = Arc::new(db);
+ 
     let app_state = Arc::new(AppState {
         jwt_secret,
         redis_pool: REDIS_POOL.clone(),
-        db: db.clone(),
-        pool: db.clone(),
+        db: db_arc.clone(),
+        pool: db_arc.clone(),
         chat_tx,
     });
 

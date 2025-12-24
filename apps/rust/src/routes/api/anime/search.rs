@@ -140,7 +140,7 @@ pub async fn search(
         urlencoding::encode(&query)
     );
 
-    match fetch_and_parse_search(&url, query.clone()).await {
+    match fetch_and_parse_search(&url).await {
         Ok((data, pagination)) => {
             let response = SearchResponse {
                 status: "Ok".to_string(),
@@ -187,7 +187,6 @@ pub async fn search(
 
 async fn fetch_and_parse_search(
     url: &str,
-    query: String,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let operation = || async {
         let response = fetch_with_proxy(url).await?;
@@ -196,11 +195,8 @@ async fn fetch_and_parse_search(
 
     let backoff = ExponentialBackoff::default();
     let html = retry(backoff, operation).await?;
-    let html_clone = html.clone(); // Clone the html string
-    let query_clone = query.clone();
-
     let parse_result = tokio::task::spawn_blocking(move || {
-        let document = Html::parse_document(&html_clone);
+        let document = Html::parse_document(&html);
 
         let mut data = Vec::new();
 
@@ -293,7 +289,7 @@ async fn fetch_and_parse_search(
             }
         }
 
-        let pagination = parse_pagination(&document, &query_clone);
+        let pagination = parse_pagination(&document);
 
         Ok((data, pagination))
     })
@@ -309,7 +305,7 @@ async fn fetch_and_parse_search(
     Ok((data, pagination))
 }
 
-fn parse_pagination(document: &Html, _query: &str) -> Pagination {
+fn parse_pagination(document: &Html) -> Pagination {
     let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
     let last_visible_page = 57;
 

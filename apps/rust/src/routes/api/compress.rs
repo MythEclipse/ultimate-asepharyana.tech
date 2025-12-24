@@ -217,7 +217,6 @@ async fn compress_image(
 async fn compress_video(
     buffer: &[u8],
     target_bytes: f64,
-    _original_bytes: f64,
     cache_key: &str,
     ext: &str,
 ) -> Result<(Vec<u8>, f64), Box<dyn std::error::Error + Send + Sync>> {
@@ -410,11 +409,10 @@ async fn compress_video(
 
 #[cfg(not(feature = "ffmpeg"))]
 async fn compress_video(
-    _buffer: &[u8],
-    _target_bytes: f64,
-    _original_bytes: f64,
-    _cache_key: &str,
-    _ext: &str,
+    _: &[u8],
+    _: f64,
+    _: &str,
+    _: &str,
 ) -> Result<(Vec<u8>, f64), Box<dyn std::error::Error + Send + Sync>> {
     tracing::warn!("Video compression attempted but ffmpeg feature is not enabled.");
     Err("Video compression requires ffmpeg feature".into())
@@ -590,7 +588,7 @@ async fn process_compression(
                 SizeUnit::MB => size_value * 1024.0 * 1024.0,
                 SizeUnit::KB => size_value * 1024.0,
             };
-            compress_video(&buffer, target_bytes, original_bytes, &cache_key, &ext)
+            compress_video(&buffer, target_bytes, &cache_key, &ext)
                 .await?
                 .0
         }

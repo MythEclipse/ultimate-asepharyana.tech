@@ -224,7 +224,7 @@ async fn fetch_anime_detail(
         .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
 
     match tokio::task::spawn_blocking(move || {
-        parse_anime_detail_document(&Html::parse_document(&html), &slug)
+        parse_anime_detail_document(&Html::parse_document(&html))
     })
     .await
     {
@@ -233,7 +233,7 @@ async fn fetch_anime_detail(
     }
 }
 
-fn parse_anime_detail_document(document: &Html, _slug: &str) -> Result<AnimeDetailData, AppError> {
+fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppError> {
     let info_selector = Selector::parse(".infozingle p").unwrap();
     let poster_selector = Selector::parse(".fotoanime img").unwrap();
     let synopsis_selector = Selector::parse(".sinopc").unwrap();

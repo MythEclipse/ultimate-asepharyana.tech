@@ -13,9 +13,9 @@ pub fn generate_migration(name: &str, table: Option<&str>) -> Result<()> {
     fs::create_dir_all(migrations_dir)?;
 
     let content = if let Some(table_name) = table {
-        generate_create_table_migration(name, table_name)
+        generate_create_table_migration(table_name)
     } else {
-        generate_empty_migration(name)
+        generate_empty_migration()
     };
 
     let migration_path = migrations_dir.join(&file_name);
@@ -28,7 +28,6 @@ pub fn generate_migration(name: &str, table: Option<&str>) -> Result<()> {
 }
 
 pub fn generate_model_migration(
-    _model: &str,
     table: &str,
     timestamps: bool,
     soft_delete: bool,
@@ -50,7 +49,7 @@ pub fn generate_model_migration(
     Ok(())
 }
 
-fn generate_create_table_migration(_name: &str, table: &str) -> String {
+fn generate_create_table_migration(table: &str) -> String {
     let struct_name = table
         .split('_')
         .map(|s| {
@@ -199,7 +198,7 @@ enum {table} {{
     )
 }
 
-fn generate_empty_migration(_name: &str) -> String {
+fn generate_empty_migration() -> String {
     format!(
         r#"use sea_orm_migration::prelude::*;
 

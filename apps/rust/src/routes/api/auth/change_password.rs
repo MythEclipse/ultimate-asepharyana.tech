@@ -9,14 +9,13 @@ use axum::{
     Json, Router,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
 // SeaORM imports
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, session, prelude::*};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, Set};
+use crate::entities::{user};
 
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;

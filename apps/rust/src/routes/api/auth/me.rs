@@ -9,11 +9,10 @@ use axum::{
     Json, Router,
 };
 use std::sync::Arc;
-use utoipa::ToSchema;
 
 // SeaORM imports
-use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
-use crate::entities::{user, prelude::*};
+use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
+use crate::entities::{user};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;

@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-pub fn generate_full_api(name: &str, full: bool, _auth: bool) -> Result<()> {
+pub fn generate_full_api(name: &str, full: bool) -> Result<()> {
     println!("📦 Generating model...");
     let model_name = singularize(name);
     super::model::generate_model(&model_name, true, true, false)?;

@@ -16,7 +16,7 @@ use utoipa::ToSchema;
 
 // SeaORM imports
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, session, prelude::*};
+use crate::entities::{user};
 
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;

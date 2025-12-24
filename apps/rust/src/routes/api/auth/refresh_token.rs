@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 // SeaORM imports
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, session, prelude::*};
+use crate::entities::{user};
 
 use crate::routes::AppState;
 use crate::utils::auth::{encode_jwt, Claims};

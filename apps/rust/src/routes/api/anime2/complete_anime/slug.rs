@@ -147,7 +147,7 @@ pub async fn slug(
 
     let html_clone = html.clone();
     let slug_clone = slug.clone();
-    let (anime_list, _pagination) =
+    let (anime_list, _) =
         tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
             .await
             .map_err(|e| {

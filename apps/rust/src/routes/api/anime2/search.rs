@@ -130,7 +130,7 @@ pub async fn search(
 
     let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
 
-    let result = fetch_and_parse_search(&url, query.clone()).await;
+    let result = fetch_and_parse_search(&url).await;
 
     match result {
         Ok((data, pagination)) => {
@@ -179,7 +179,6 @@ pub async fn search(
 
 async fn fetch_and_parse_search(
     url: &str,
-    query: String,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let operation = || async {
         let response = fetch_with_proxy(url).await?;
@@ -189,11 +188,9 @@ async fn fetch_and_parse_search(
     let backoff = ExponentialBackoff::default();
     let html = retry(backoff, operation).await?;
 
-    let query_clone = query.clone();
-
     match tokio::task::spawn_blocking(move || {
         let document = Html::parse_document(&html);
-        parse_search_document(&document, &query_clone)
+        parse_search_document(&document)
     })
     .await
     {
@@ -204,7 +201,6 @@ async fn fetch_and_parse_search(
 
 fn parse_search_document(
     document: &Html,
-    _query: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let mut data = Vec::new();
 
@@ -281,12 +277,12 @@ fn parse_search_document(
         }
     }
 
-    let pagination = parse_pagination(document, _query);
+    let pagination = parse_pagination(document);
 
     Ok((data, pagination))
 }
 
-fn parse_pagination(document: &Html, _query: &str) -> Pagination {
+fn parse_pagination(document: &Html) -> Pagination {
     let page_num = 1; // Simplified, as Next.js uses parseInt(slug, 10) || 1
     let last_visible_page = document
         .select(&PAGINATION_SELECTOR)

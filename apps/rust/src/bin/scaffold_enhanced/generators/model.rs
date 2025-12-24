@@ -27,7 +27,7 @@ pub fn generate_model(
 
     // Generate migration if requested
     if with_migration {
-        super::migration::generate_model_migration(name, &table_name, timestamps, soft_delete)?;
+        super::migration::generate_model_migration(&table_name, timestamps, soft_delete)?;
     }
 
     Ok(())

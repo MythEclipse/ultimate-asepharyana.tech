@@ -142,9 +142,9 @@ fn main() -> anyhow::Result<()> {
             println!("✅ Repository {} created successfully!", name);
         }
 
-        Commands::MakeApi { name, full, auth } => {
+        Commands::MakeApi { name, full, auth: _ } => {
             println!("🚀 Generating complete API for: {}", name);
-            generators::api::generate_full_api(&name, full, auth)?;
+            generators::api::generate_full_api(&name, full)?;
             println!("✅ Complete API created successfully!");
             println!("📝 Run 'cargo build' to compile and register routes");
         }

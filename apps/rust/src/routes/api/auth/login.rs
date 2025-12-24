@@ -4,14 +4,14 @@
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::verify;
 use chrono::Utc;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 // SeaORM imports
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, prelude::*};
+use crate::entities::{user};
 
 use crate::models::user::{LoginResponse, UserResponse};
 use crate::routes::AppState;
@@ -86,10 +86,10 @@ pub async fn login(
     // }
 
     // Check if email is verified (optional - you can skip this check)
-    if let Some(_email_verified) = user_model.email_verified {
+    if user_model.email_verified.is_some() {
         // email_verified is a timestamp, if Some then it's verified
         // If you want to enforce verification, uncomment:
-        // if email_verified.is_none() {
+        // if user_model.email_verified.is_none() {
         //     return Err(AppError::EmailNotVerified);
         // }
     }
@@ -134,18 +134,18 @@ pub async fn login(
 
 /// Log login attempt for security tracking (optional, no-op if table doesn't exist)
 async fn log_login_attempt(
-    _state: &AppState,
-    _user_id: &str,
-    _success: bool,
-    _failure_reason: Option<&str>,
+    _: &AppState,
+    user_id: &str,
+    success: bool,
+    failure_reason: Option<&str>,
 ) -> Result<(), AppError> {
     // TODO: Implement login history tracking if needed
     // For now, just log to console
     tracing::info!(
         "Login attempt - user_id: {}, success: {}, reason: {:?}",
-        _user_id,
-        _success,
-        _failure_reason
+        user_id,
+        success,
+        failure_reason
     );
     Ok(())
 }

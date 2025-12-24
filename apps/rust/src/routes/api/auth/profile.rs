@@ -8,15 +8,14 @@ use axum::{
     routing::put,
     Json, Router,
 };
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 use validator::Validate;
 
 // SeaORM imports
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set, ActiveValue};
-use crate::entities::{user, prelude::*};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use crate::entities::{user};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;

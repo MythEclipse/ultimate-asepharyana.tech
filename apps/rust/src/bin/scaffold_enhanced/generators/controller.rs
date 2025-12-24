@@ -17,7 +17,7 @@ pub fn generate_controller(name: &str, crud: bool, model: Option<&str>) -> Resul
     if crud {
         generate_crud_routes(&api_dir, name, &model_name)?;
     } else {
-        generate_basic_controller(&api_dir, name, &model_name);
+        generate_basic_controller(&api_dir, name);
     }
 
     Ok(())
@@ -304,7 +304,7 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     )
 }
 
-fn generate_basic_controller(api_dir: &Path, resource: &str, _model: &str) {
+fn generate_basic_controller(api_dir: &Path, resource: &str) {
     let content = format!(
         r#"//! {} controller
 

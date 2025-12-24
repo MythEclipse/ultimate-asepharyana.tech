@@ -20,7 +20,7 @@ pub enum LibError {
 }
 
 impl From<JoinError> for LibError {
-    fn from(_err: JoinError) -> Self {
+    fn from(_: JoinError) -> Self {
         LibError::Unknown
     }
 }

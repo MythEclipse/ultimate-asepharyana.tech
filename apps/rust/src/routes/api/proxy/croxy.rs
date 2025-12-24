@@ -46,7 +46,7 @@ pub struct ProxyParams {
     )
 )]
 pub async fn fetch_with_proxy_only(
-    _state: State<Arc<AppState>>,
+    _: State<Arc<AppState>>,
     Query(params): Query<ProxyParams>,
 ) -> Result<Response, AppError> {
     let slug = params.url;

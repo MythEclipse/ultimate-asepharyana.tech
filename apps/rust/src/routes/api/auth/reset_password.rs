@@ -10,7 +10,7 @@ use utoipa::ToSchema;
 
 // SeaORM imports
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, password_reset_token, session, prelude::*};
+use crate::entities::{user, password_reset_token};
 
 use crate::routes::AppState;
 use crate::utils::email::EmailService;

@@ -10,7 +10,6 @@ use axum::{extract::Query, routing::get, Json, Router};
 use backoff::{future::retry, ExponentialBackoff};
 use deadpool_redis::redis::AsyncCommands;
 use lazy_static::lazy_static;
-use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

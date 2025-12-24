@@ -10,8 +10,8 @@ use axum::{
         Query, State,
     },
     http::StatusCode,
-    response::{IntoResponse, Response},
-    routing::{get, get_service},
+    response::{Response},
+    routing::{get},
     Json, Router,
 };
 use backoff::{future::retry, ExponentialBackoff};
@@ -587,7 +587,7 @@ pub async fn ws_handler(ws: WebSocketUpgrade, State(app_state): State<Arc<AppSta
     ws.on_upgrade(|socket| handle_socket(socket, app_state))
 }
 
-async fn handle_socket(mut socket: WebSocket, _app_state: Arc<AppState>) {
+async fn handle_socket(mut socket: WebSocket, _: Arc<AppState>) {
     info!("WebSocket connection established.");
 
     while let Some(msg) = socket.recv().await {

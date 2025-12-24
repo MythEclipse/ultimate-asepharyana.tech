@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 // SeaORM imports
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, email_verification_token, prelude::*};
+use crate::entities::{user, email_verification_token};
 
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
