@@ -21,6 +21,7 @@ pub struct AppConfig {
     pub jwt_secret: String,
 
     /// Redis connection URL
+    #[serde(default)]
     pub redis_url: String,
 
     /// Server port to bind to
