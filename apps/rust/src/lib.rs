@@ -1,5 +1,6 @@
 // Library root. Modules can access static config via crate::config::CONFIG
 
+pub mod browser; // Browser tab pool for scraping
 pub mod config;
 pub mod di; // Dependency Injection container
 pub mod entities; // SeaORM generated entities

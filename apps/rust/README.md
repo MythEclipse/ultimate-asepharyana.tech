@@ -1,236 +1,167 @@
-# RustExpress - Rust API with SeaORM
+# RustExpress Framework
 
-A high-performance Rust API built with Axum framework and SeaORM. This provides type-safe database operations with excellent performance.
+A high-performance, developer-friendly Rust framework built on Axum with batteries included.
 
-## 🔄 Recent Updates
+## ✨ Features
 
-**✨ Now using SeaORM!**
-- **Type-safe queries** with compile-time checking
-- **Database pull** support - generate entities from existing schema
-- **Better performance** and ergonomics
-- **Migration support** with sea-orm-cli
+### Core Framework
 
-See [SEAORM.md](./SEAORM.md) for detailed SeaORM usage guide.
+- **Type-Safe Configuration** - Fail-fast config validation at startup
+- **Auto-Routing** - File-based routing with automatic handler discovery
+- **OpenAPI/Swagger** - Auto-generated API documentation
+- **SeaORM** - Type-safe database operations with MySQL
 
-## Features
+### Request Handling
 
-- **REST API** with Axum framework
-- **Real-time chat** via WebSockets
-- **SeaORM** for type-safe database operations
-- **MySQL database** support
-- **Entity generation** from database schema
-- **Environment-based configuration**
-- **Structured logging** with tracing
-- **Redis integration** for caching
+- **ValidatedJson** - Automatic request validation with 422 responses
+- **ValidatedQuery** - Query parameter validation
+- **Auth Middleware** - JWT authentication with Redis blacklist
 
-## Prerequisites
+### Dependency Injection
 
-- Rust 1.70+
-- Cargo
-- MySQL 8.0+
-- sea-orm-cli (for database operations)
+- **ServiceContainer** - Runtime DI with provider pattern
+- **MiddlewareRegistry** - Named middleware groups
 
-```bash
-cargo install sea-orm-cli
-```
+### Background Processing
 
-## Setup
+- **Job Queue** - Redis-backed background jobs with retries
+- **Worker** - Async job processing with configurable concurrency
 
-1. **Clone and navigate to the project:**
+### Browser Automation
 
-   ```bash
-   cd apps/rust
-   ```
+- **BrowserPool** - Single browser with pooled tabs for scraping
+- **PooledTab** - Navigate, click, type, evaluate JS, screenshot
 
-2. **Install dependencies:**
+### Developer Experience
 
-   ```bash
-   cargo build
-   ```
+- **`rex` CLI** - Code generation (models, controllers, APIs)
+- **TestApp** - In-memory integration testing
+- **Hot Reload** - Fast development iteration
 
-3. **Set up environment variables:**
-   Copy `.env.example` to `.env` and modify as needed:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Example configuration:
-
-   ```env
-   DATABASE_URL=mysql://user:password@localhost:3306/database
-   RUST_LOG=info
-   JWT_SECRET=your_secret_key
-   REDIS_URL=redis://localhost:6379
-   ```
-
-4. **Generate entities from database:**
-
-   ```bash
-   # Windows
-   .\generate-entities.ps1
-   
-   # Linux/Mac
-   ./generate-entities.sh
-   ```
-
-   This will create entities in `src/entities/` based on your database schema.
-
-## Running the Application
-
-### Development
+## 🚀 Quick Start
 
 ```bash
+# Install
+cargo build
+
+# Run dev server
 cargo run
-```
 
-### Production Build
+# Generate API resources
+cargo run --bin rex make:api products --full
 
-```bash
-cargo build --release
-./target/release/RustExpress
-```
-
-## API Endpoints
-
-### REST API
-
-- `GET /` - Health check endpoint
-- `POST /merge-pdfs` - Merge multiple PDF files
-
-### WebSocket
-
-- `GET /ws` - WebSocket connection for real-time chat
-
-## WebSocket Chat Usage
-
-Connect to `ws://localhost:3001/ws` and send JSON messages:
-
-```json
-{
-  "user_id": "user123",
-  "text": "Hello, World!",
-  "email": "user@example.com",
-  "image_profile": "https://example.com/avatar.jpg",
-  "role": "user"
-}
-```
-
-The server will:
-
-1. Send chat history on connection
-2. Save new messages to the database
-3. Echo messages back to the client
-
-## PDF Merging
-
-Send a POST request to `/merge-pdfs` with multipart form data containing PDF files:
-
-```bash
-curl -X POST -F "file1=@document1.pdf" -F "file2=@document2.pdf" \
-  http://localhost:3001/merge-pdfs -o merged.pdf
-```
-
-## Database Schema
-
-### chat_messages table
-
-- `id` - Unique message identifier
-- `user_id` - User identifier
-- `text` - Message content
-- `email` - User email (optional)
-- `image_profile` - Profile image URL (optional)
-- `image_message` - Message image URL (optional)
-- `role` - User role
-- `timestamp` - Message timestamp
-
-## Developer Workflow
-
-### Running Tests
-
-```bash
+# Run tests
 cargo test
 ```
 
-### Code Formatting
+## 📁 Project Structure
 
-```bash
-cargo fmt
+```
+src/
+├── browser/        # Browser tab pooling
+├── config.rs       # Type-safe configuration
+├── di/             # Dependency injection
+├── entities/       # SeaORM models
+├── extractors/     # ValidatedJson, ValidatedQuery
+├── jobs/           # Background job system
+├── middleware/     # Auth, rate limiting, registry
+├── routes/         # API handlers (auto-discovered)
+├── testing/        # TestApp utilities
+└── main.rs         # Entry point
 ```
 
-### Linting
+## 🔧 Configuration
 
-```bash
-cargo clippy
+```env
+DATABASE_URL=mysql://user:password@localhost:3306/database
+JWT_SECRET=your_secret_key
+REDIS_URL=redis://localhost:6379
+APP_LOG_LEVEL=info
+APP_SERVER_PORT=4091
 ```
 
-## Architecture
+## 📖 Usage Examples
 
-- **main.rs** - Application entry point and server setup
-- **config.rs** - Environment configuration
-- **routes/mod.rs** - HTTP routes and WebSocket handlers
-- **models.rs** - Data structures and database models
-- **chat_service.rs** - Chat message database operations
-- **pdf_service.rs** - PDF merging functionality
+### Validated Requests
 
-## Dependencies
+```rust
+use rust::extractors::ValidatedJson;
+use validator::Validate;
 
-- **axum** - Web framework
-- **tokio** - Async runtime
-- **sqlx** - Database toolkit
-- **serde** - Serialization/deserialization
-- **tracing** - Structured logging
-- **dotenvy** - Environment variable loading
-- **anyhow** - Error handling
-- **chrono** - Date/time handling
-- **uuid** - UUID generation
+#[derive(Deserialize, Validate)]
+struct CreateUser {
+    #[validate(email)]
+    email: String,
+    #[validate(length(min = 8))]
+    password: String,
+}
+
+async fn create_user(ValidatedJson(data): ValidatedJson<CreateUser>) {
+    // data is guaranteed valid
+}
+```
+
+### Background Jobs
+
+```rust
+use rust::jobs::{Job, JobDispatcher};
+
+#[derive(Serialize, Deserialize)]
+struct SendEmail { user_id: String }
+
+#[async_trait]
+impl Job for SendEmail {
+    const NAME: &'static str = "send_email";
+    async fn handle(&self) -> anyhow::Result<()> { Ok(()) }
+}
+
+dispatcher.dispatch(SendEmail { user_id: "123".into() }).await?;
+```
+
+### Browser Scraping
+
+```rust
+use rust::browser::{BrowserPool, BrowserPoolConfig, get_browser_pool};
+
+// Get tab from pool
+let tab = get_browser_pool().unwrap().get_tab().await?;
+tab.goto("https://example.com").await?;
+let html = tab.content().await?;
+// Tab auto-returns to pool when dropped
+```
+
+### Integration Testing
+
+```rust
+use rust::testing::TestApp;
+
+#[tokio::test]
+async fn test_health() {
+    let app = TestApp::with_router(create_router());
+    app.get("/health").await.assert_status(200);
+}
+```
+
+## 🔨 CLI Commands
+
+```bash
+cargo run --bin rex make:model User          # Generate model
+cargo run --bin rex make:migration create_users # Generate migration
+cargo run --bin rex make:controller users --crud # Generate CRUD controller
+cargo run --bin rex make:api products --full # Generate complete stack
+```
+
+## 📦 Key Dependencies
+
+| Crate          | Purpose               |
+| -------------- | --------------------- |
+| axum           | Web framework         |
+| sea-orm        | ORM                   |
+| tokio          | Async runtime         |
+| validator      | Request validation    |
+| chromiumoxide  | Browser automation    |
+| deadpool-redis | Redis connection pool |
 
 ## License
 
-This project is licensed under the MIT License.
-
-## 🔄 Migration from Express.js
-
-### Quick Migration
-
-Use the provided migration scripts:
-
-**Windows (PowerShell):**
-
-```powershell
-.\migrate.ps1
-```
-
-**Linux/macOS (Bash):**
-
-```bash
-chmod +x migrate.sh
-./migrate.sh
-```
-
-### Manual Migration Steps
-
-1. **Ensure Express.js app is working** in `../Express/`
-2. **Build RustExpress**: `cargo build --release`
-3. **Configure environment**: Copy Express.js environment or create new `.env`
-4. **Test compatibility**: Both apps can run simultaneously
-5. **Gradual switchover**: Route traffic from Express (port 4091) to RustExpress (port 3001)
-
-### API Compatibility
-
-| Express.js Route   | RustExpress Route  | Status                                             |
-| ------------------ | ------------------ | -------------------------------------------------- |
-| `GET /`            | `GET /`            | ✅ Compatible (redirects to asepharyana.tech/chat) |
-| `POST /merge-pdfs` | `POST /merge-pdfs` | ✅ Compatible (same API)                           |
-| WebSocket `/`      | WebSocket `/ws`    | ✅ Compatible (same protocol)                      |
-| N/A                | `GET /api/health`  | ✨ New (health check endpoint)                     |
-| N/A                | `GET /api/status`  | ✨ New (status monitoring)                         |
-
-### Performance Comparison
-
-Based on typical workloads:
-
-- **Memory Usage**: ~70% reduction compared to Node.js Express
-- **CPU Usage**: ~40% reduction under load
-- **Request Latency**: ~30% faster response times
-- **Concurrent Connections**: 3-5x higher capacity
+MIT License
