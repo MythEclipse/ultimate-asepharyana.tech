@@ -1,7 +1,7 @@
 //! Cryptography utilities.
 
+use base64::{engine::general_purpose, Engine as _};
 use sha2::{Digest, Sha256};
-use base64::{Engine as _, engine::general_purpose};
 
 /// Hash a password with bcrypt.
 pub fn hash_password(password: &str) -> anyhow::Result<String> {
@@ -28,7 +28,9 @@ pub fn base64_encode(data: &[u8]) -> String {
 
 /// Decode base64 to bytes.
 pub fn base64_decode(encoded: &str) -> anyhow::Result<Vec<u8>> {
-    general_purpose::STANDARD.decode(encoded).map_err(Into::into)
+    general_purpose::STANDARD
+        .decode(encoded)
+        .map_err(Into::into)
 }
 
 /// Encode string to base64 URL-safe format.
@@ -38,22 +40,24 @@ pub fn base64_url_encode(data: &[u8]) -> String {
 
 /// Decode base64 URL-safe format.
 pub fn base64_url_decode(encoded: &str) -> anyhow::Result<Vec<u8>> {
-    general_purpose::URL_SAFE_NO_PAD.decode(encoded).map_err(Into::into)
+    general_purpose::URL_SAFE_NO_PAD
+        .decode(encoded)
+        .map_err(Into::into)
 }
 
 /// Generate a secure random token.
 pub fn generate_token(length: usize) -> String {
     use rand::Rng;
-    let mut rng = rand::thread_rng();
-    let bytes: Vec<u8> = (0..length).map(|_| rng.gen()).collect();
+    let mut rng = rand::rng();
+    let bytes: Vec<u8> = (0..length).map(|_| rng.random()).collect();
     hex::encode(bytes)
 }
 
 /// Generate a short verification code (6 digits).
 pub fn generate_verification_code() -> String {
     use rand::Rng;
-    let mut rng = rand::thread_rng();
-    format!("{:06}", rng.gen_range(0..1000000))
+    let mut rng = rand::rng();
+    format!("{:06}", rng.random_range(0..1000000))
 }
 
 /// Hash for cache keys (short, fast).

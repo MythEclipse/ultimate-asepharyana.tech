@@ -55,10 +55,10 @@ pub fn mask_email(email: &str) -> String {
 pub fn random_string(len: usize) -> String {
     use rand::Rng;
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     (0..len)
         .map(|_| {
-            let idx = rng.gen_range(0..CHARSET.len());
+            let idx = rng.random_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect()
@@ -68,10 +68,10 @@ pub fn random_string(len: usize) -> String {
 pub fn random_code(len: usize) -> String {
     use rand::Rng;
     const CHARSET: &[u8] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     (0..len)
         .map(|_| {
-            let idx = rng.gen_range(0..CHARSET.len());
+            let idx = rng.random_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect()
@@ -79,9 +79,8 @@ pub fn random_code(len: usize) -> String {
 
 /// Check if string is a valid email format.
 pub fn is_valid_email(email: &str) -> bool {
-    static RE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap()
-    });
+    static RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap());
     RE.is_match(email)
 }
 
@@ -93,7 +92,8 @@ pub fn title_case(s: &str) -> String {
             match chars.next() {
                 None => String::new(),
                 Some(first) => {
-                    first.to_uppercase().collect::<String>() + chars.as_str().to_lowercase().as_str()
+                    first.to_uppercase().collect::<String>()
+                        + chars.as_str().to_lowercase().as_str()
                 }
             }
         })

@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Generate a secure random hex string.
 pub fn random_hex(len: usize) -> String {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     (0..len)
         .map(|_| format!("{:02x}", rng.random::<u8>()))
         .collect()
