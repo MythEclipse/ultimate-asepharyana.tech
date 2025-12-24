@@ -85,6 +85,9 @@ metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
 async-graphql = "7.0.17"
 async-graphql-axum = "7.0.17"
+hex = "0.4.3"
+hmac = "0.12.1"
+sha2 = "0.10.9"
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)

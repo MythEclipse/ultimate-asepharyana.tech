@@ -1,4 +1,7 @@
-pub mod user;
+//! Data models and types.
 
-// Re-export commonly used types
-pub use user::{UserResponse, LoginResponse};
+pub mod user;
+pub mod types;
+
+pub use user::*;
+pub use types::*;

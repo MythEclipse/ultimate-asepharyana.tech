@@ -1,7 +1,6 @@
-//! Database seeder for populating test/development data.
-//!
-//! Provides a framework for creating seed data.
+//! Seeder module - database seeding utilities.
 
 pub mod runner;
+pub mod seed;
 
-pub use runner::{Seeder, SeederRunner};
+pub use runner::{Seeder, SeederRunner, UsersSeeder, AdminSeeder};
