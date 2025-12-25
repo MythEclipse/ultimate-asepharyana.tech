@@ -10,14 +10,14 @@ My personal portfolio monorepo – a full-stack web application showcasing vario
 
 ## 📦 Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | SolidJS, TailwindCSS, Kobalte UI |
-| **Backend (TypeScript)** | Elysia.js (Bun runtime) |
-| **Backend (Rust)** | Axum, SeaORM, Utoipa (OpenAPI) |
-| **Database** | MySQL, Redis |
-| **Build System** | Turborepo + Bun Workspaces |
-| **Documentation** | Swagger UI (auto-generated) |
+| Layer                    | Technology                       |
+| ------------------------ | -------------------------------- |
+| **Frontend**             | SolidJS, TailwindCSS, Kobalte UI |
+| **Backend (TypeScript)** | Elysia.js (Bun runtime)          |
+| **Backend (Rust)**       | Axum, SeaORM, Utoipa (OpenAPI)   |
+| **Database**             | MySQL, Redis                     |
+| **Build System**         | Turborepo + Bun Workspaces       |
+| **Documentation**        | Swagger UI (auto-generated)      |
 
 ## 🏗️ Project Structure
 
@@ -71,35 +71,43 @@ bun run build
 
 ## 🔗 API Endpoints
 
-### Rust API (Port 3000)
+### Rust API (Port 4091)
 
-| Endpoint | Description |
-|----------|-------------|
-| `/api/anime/*` | Anime scraping & streaming |
-| `/api/anime2/*` | Alternative anime source |
-| `/api/komik/*` | Manga/comic scraping |
-| `/api/proxy/*` | Media proxy service |
-| `/api/auth/*` | Authentication endpoints |
-| `/docs` | Swagger UI documentation |
+| Endpoint        | Description                |
+| --------------- | -------------------------- |
+| `/api/anime/*`  | Anime scraping & streaming |
+| `/api/anime2/*` | Alternative anime source   |
+| `/api/komik/*`  | Manga/comic scraping       |
+| `/api/proxy/*`  | Media proxy service        |
+| `/api/auth/*`   | Authentication endpoints   |
+| `/docs`         | Swagger UI documentation   |
 
-### Elysia API
+### Elysia API (Port 4092)
 
-| Endpoint | Description |
-|----------|-------------|
+| Endpoint      | Description                     |
+| ------------- | ------------------------------- |
 | `/api/quiz/*` | Real-time quiz game (WebSocket) |
-| `/api/auth/*` | User authentication |
-| `/swagger` | API documentation |
+| `/api/auth/*` | User authentication             |
+| `/swagger`    | API documentation               |
+
+### SolidJS Frontend (Port 4090)
+
+| Route    | Description              |
+| -------- | ------------------------ |
+| `/`      | Landing page / Portfolio |
+| `/anime` | Anime streaming viewer   |
+| `/komik` | Manga/comic reader       |
 
 ## 🛠️ Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `bun run dev` | Run all apps in dev mode |
-| `bun run build` | Build all apps for production |
-| `bun run lint` | Lint all packages |
-| `bun run format` | Format code with Prettier |
-| `bun run rust:build` | Build Rust backend (release) |
-| `bun run copyenv` | Copy root .env to all apps |
+| Script               | Description                   |
+| -------------------- | ----------------------------- |
+| `bun run dev`        | Run all apps in dev mode      |
+| `bun run build`      | Build all apps for production |
+| `bun run lint`       | Lint all packages             |
+| `bun run format`     | Format code with Prettier     |
+| `bun run rust:build` | Build Rust backend (release)  |
+| `bun run copyenv`    | Copy root .env to all apps    |
 
 ## 🔧 Rust Scaffold System
 
