@@ -9,7 +9,8 @@ import { eq } from 'drizzle-orm';
 import { getDb } from './database';
 import { imageCache } from './schema';
 
-const PICSER_API_URL = 'https://picser.pages.dev/api/public-upload';
+// Use /api/upload endpoint (no token required, same as Rust)
+const PICSER_API_URL = 'https://picser.pages.dev/api/upload';
 const IMAGE_CACHE_REDIS_PREFIX = 'img_cache:';
 const IMAGE_CACHE_TTL = 86400; // 24 hours
 
@@ -198,17 +199,9 @@ async function uploadToPicser(
   }
   const imageBlob = await imageResponse.blob();
 
-  // Create form data
+  // Create form data - /api/upload only needs the file (no github credentials)
   const formData = new FormData();
   formData.append('file', imageBlob, extractFilename(originalUrl));
-  formData.append('github_owner', config.githubOwner);
-  formData.append('github_repo', config.githubRepo);
-  formData.append('github_branch', config.githubBranch);
-  formData.append('folder', config.folder);
-
-  if (config.githubToken) {
-    formData.append('github_token', config.githubToken);
-  }
 
   // Upload to Picser
   const response = await fetch(PICSER_API_URL, {

@@ -11,7 +11,7 @@ use crate::helpers::ImageCache;
 use crate::routes::AppState;
 
 pub const ENDPOINT_METHOD: &str = "post";
-pub const ENDPOINT_PATH: &str = "/proxy/image-cache";
+pub const ENDPOINT_PATH: &str = "/api/proxy/image-cache";
 pub const ENDPOINT_DESCRIPTION: &str = "Cache an image to CDN and return the cached URL";
 pub const ENDPOINT_TAG: &str = "proxy";
 pub const OPERATION_ID: &str = "proxy_image_cache";
@@ -127,5 +127,5 @@ pub async fn image_cache_batch(
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
         .route(ENDPOINT_PATH, post(image_cache))
-        .route("/proxy/image-cache/batch", post(image_cache_batch))
+        .route("/api/proxy/image-cache/batch", post(image_cache_batch))
 }
