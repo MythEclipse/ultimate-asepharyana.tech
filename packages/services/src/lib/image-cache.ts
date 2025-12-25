@@ -193,7 +193,12 @@ async function uploadToPicser(
   config: Required<ImageCacheConfig>,
 ): Promise<string> {
   // Download the image
-  const imageResponse = await fetch(originalUrl);
+  const imageResponse = await fetch(originalUrl, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+  });
   if (!imageResponse.ok) {
     throw new Error(`Failed to download image: ${imageResponse.status}`);
   }

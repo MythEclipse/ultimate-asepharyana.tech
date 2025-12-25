@@ -86,7 +86,10 @@ impl<'a> ImageCache<'a> {
         Self {
             db,
             redis,
-            client: Client::new(),
+            client: Client::builder()
+                .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+                .unwrap_or_default(),
             config: ImageCacheConfig::default(),
         }
     }
@@ -100,7 +103,10 @@ impl<'a> ImageCache<'a> {
         Self {
             db,
             redis,
-            client: Client::new(),
+            client: Client::builder()
+                .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+                .unwrap_or_default(),
             config,
         }
     }
