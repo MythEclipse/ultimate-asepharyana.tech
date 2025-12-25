@@ -8,6 +8,7 @@ import { sosmedRoutes } from './routes/sosmed';
 import { chatRoutes } from './routes/chat';
 import { quizBattleWS } from './routes/quiz-battle';
 import { userAvatarRoutes } from './routes/user-avatar';
+import { imageCacheRoutes } from './routes/image-cache';
 import { logger } from './middleware';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimit } from './middleware/rateLimit';
@@ -149,6 +150,7 @@ export const app = new Elysia()
   .use(userAvatarRoutes)
   .use(sosmedRoutes)
   .use(chatRoutes)
+  .use(imageCacheRoutes)
   .use(quizBattleWS);
 
 // Graceful shutdown handler

@@ -22,6 +22,7 @@ pub mod text;
 // I/O helpers
 pub mod cache;
 pub mod file;
+pub mod image_cache;
 pub mod retry;
 
 // Web/API helpers
@@ -66,6 +67,9 @@ pub use retry::{
 
 // Caching
 pub use cache::{cache_key, cache_key_multi, Cache, DEFAULT_CACHE_TTL};
+
+// Image caching
+pub use image_cache::{cache_image_url, cache_image_urls, ImageCache, ImageCacheConfig};
 
 // Scraping
 pub use scraping::{

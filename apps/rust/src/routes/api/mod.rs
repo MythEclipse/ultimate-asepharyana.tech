@@ -107,11 +107,17 @@ use crate::routes::api::komik::search::Pagination as Pagination_9;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
 use crate::routes::api::proxy::croxy::ProxyParams;
+use crate::routes::api::proxy::image_cache::ImageCacheBatchRequest;
+use crate::routes::api::proxy::image_cache::ImageCacheBatchResponse;
+use crate::routes::api::proxy::image_cache::ImageCacheRequest;
+use crate::routes::api::proxy::image_cache::ImageCacheResponse;
+use crate::routes::api::proxy::image_cache::ImageCacheResult;
 use crate::routes::api::uploader::ListResponse as ListResponse_3;
 #[derive(utoipa::OpenApi)]
 #[openapi(
 paths(
               crate::routes::api::proxy::croxy::fetch_with_proxy_only,
+              crate::routes::api::proxy::image_cache::image_cache,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manga::slug::list,
@@ -239,6 +245,11 @@ components(
                   SearchQuery_2,
                   SearchResponse_2,
                   ProxyParams,
+                  ImageCacheBatchRequest,
+                  ImageCacheBatchResponse,
+                  ImageCacheRequest,
+                  ImageCacheResponse,
+                  ImageCacheResult,
                   ListResponse_3
             )
         ),

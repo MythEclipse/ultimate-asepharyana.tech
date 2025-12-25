@@ -9,6 +9,7 @@ pub mod chat_room;
 pub mod chat_room_member;
 pub mod comments;
 pub mod email_verification_token;
+pub mod image_cache;
 pub mod likes;
 pub mod password_reset_token;
 pub mod permission;

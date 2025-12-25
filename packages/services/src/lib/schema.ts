@@ -24,7 +24,7 @@ export const users = mysqlTable(
   },
   (table) => ({
     emailIdx: index('email_idx').on(table.email),
-  })
+  }),
 );
 
 // Account table
@@ -48,7 +48,7 @@ export const accounts = mysqlTable(
   },
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
-  })
+  }),
 );
 
 // Session table
@@ -65,7 +65,7 @@ export const sessions = mysqlTable(
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
     sessionTokenIdx: index('sessionToken_idx').on(table.sessionToken),
-  })
+  }),
 );
 
 // Role table
@@ -95,7 +95,7 @@ export const userRoles = mysqlTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.roleId] }),
-  })
+  }),
 );
 
 // RolePermission junction table
@@ -111,7 +111,7 @@ export const rolePermissions = mysqlTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
-  })
+  }),
 );
 
 // Posts table
@@ -134,7 +134,7 @@ export const posts = mysqlTable(
     userIdIdx: index('userId_idx').on(table.userId),
     authorIdIdx: index('authorId_idx').on(table.authorId),
     createdAtIdx: index('created_at_idx').on(table.created_at),
-  })
+  }),
 );
 
 // Comments table
@@ -159,7 +159,7 @@ export const comments = mysqlTable(
     postIdIdx: index('postId_idx').on(table.postId),
     userIdIdx: index('userId_idx').on(table.userId),
     authorIdIdx: index('authorId_idx').on(table.authorId),
-  })
+  }),
 );
 
 // Likes table
@@ -175,7 +175,7 @@ export const likes = mysqlTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.postId] }),
-  })
+  }),
 );
 
 // Replies table
@@ -195,7 +195,7 @@ export const replies = mysqlTable(
   (table) => ({
     commentIdIdx: index('commentId_idx').on(table.commentId),
     userIdIdx: index('userId_idx').on(table.userId),
-  })
+  }),
 );
 
 // ChatMessage table
@@ -216,7 +216,7 @@ export const chatMessages = mysqlTable(
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
     timestampIdx: index('timestamp_idx').on(table.timestamp),
-  })
+  }),
 );
 
 // EmailVerificationToken table
@@ -234,7 +234,7 @@ export const emailVerificationTokens = mysqlTable(
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
     tokenIdx: index('token_idx').on(table.token),
-  })
+  }),
 );
 
 // PasswordResetToken table
@@ -253,7 +253,7 @@ export const passwordResetTokens = mysqlTable(
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
     tokenIdx: index('token_idx').on(table.token),
-  })
+  }),
 );
 
 // ChatRoom table
@@ -269,7 +269,7 @@ export const chatRooms = mysqlTable(
   },
   (table) => ({
     createdAtIdx: index('createdAt_idx').on(table.createdAt),
-  })
+  }),
 );
 
 // Update ChatMessage table to reference ChatRoom
@@ -291,7 +291,7 @@ export const chatMessagesWithRoom = mysqlTable(
     roomIdIdx: index('roomId_idx').on(table.roomId),
     userIdIdx: index('userId_idx').on(table.userId),
     createdAtIdx: index('createdAt_idx').on(table.createdAt),
-  })
+  }),
 );
 
 // ChatRoomMember table
@@ -312,7 +312,7 @@ export const chatRoomMembers = mysqlTable(
     pk: primaryKey({ columns: [table.roomId, table.userId] }),
     roomIdIdx: index('roomId_idx').on(table.roomId),
     userIdIdx: index('userId_idx').on(table.userId),
-  })
+  }),
 );
 
 // Relations
@@ -433,7 +433,7 @@ export const rolePermissionsRelations = relations(
       fields: [rolePermissions.permissionId],
       references: [permissions.id],
     }),
-  })
+  }),
 );
 
 export const emailVerificationTokensRelations = relations(
@@ -443,7 +443,7 @@ export const emailVerificationTokensRelations = relations(
       fields: [emailVerificationTokens.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const passwordResetTokensRelations = relations(
@@ -453,7 +453,7 @@ export const passwordResetTokensRelations = relations(
       fields: [passwordResetTokens.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const chatRoomsRelations = relations(chatRooms, ({ many }) => ({
@@ -472,7 +472,7 @@ export const chatMessagesWithRoomRelations = relations(
       fields: [chatMessagesWithRoom.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const chatRoomMembersRelations = relations(
@@ -486,7 +486,7 @@ export const chatRoomMembersRelations = relations(
       fields: [chatRoomMembers.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 // =============================================
@@ -508,7 +508,7 @@ export const quizQuestions = mysqlTable(
   (table) => ({
     categoryIdx: index('category_idx').on(table.category),
     difficultyIdx: index('difficulty_idx').on(table.difficulty),
-  })
+  }),
 );
 
 // QuizAnswer table - Pilihan jawaban
@@ -524,7 +524,7 @@ export const quizAnswers = mysqlTable(
   },
   (table) => ({
     questionIdIdx: index('questionId_idx').on(table.questionId),
-  })
+  }),
 );
 
 // QuizUserStats table - Statistik user
@@ -553,7 +553,7 @@ export const quizUserStats = mysqlTable(
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
     pointsIdx: index('points_idx').on(table.points),
-  })
+  }),
 );
 
 // QuizMatch table - Data match/pertandingan
@@ -588,7 +588,7 @@ export const quizMatches = mysqlTable(
     player2IdIdx: index('player2Id_idx').on(table.player2Id),
     statusIdx: index('status_idx').on(table.status),
     createdAtIdx: index('createdAt_idx').on(table.createdAt),
-  })
+  }),
 );
 
 // QuizMatchQuestion table - Pertanyaan yang digunakan dalam match
@@ -606,7 +606,7 @@ export const quizMatchQuestions = mysqlTable(
   },
   (table) => ({
     matchIdIdx: index('matchId_idx').on(table.matchId),
-  })
+  }),
 );
 
 // QuizMatchAnswer table - Jawaban player dalam match
@@ -633,7 +633,7 @@ export const quizMatchAnswers = mysqlTable(
   (table) => ({
     matchIdIdx: index('matchId_idx').on(table.matchId),
     userIdIdx: index('userId_idx').on(table.userId),
-  })
+  }),
 );
 
 // QuizFriendship table - Sistem pertemanan
@@ -656,7 +656,7 @@ export const quizFriendships = mysqlTable(
     userIdIdx: index('userId_idx').on(table.userId),
     friendIdIdx: index('friendId_idx').on(table.friendId),
     statusIdx: index('status_idx').on(table.status),
-  })
+  }),
 );
 
 // QuizLobby table - Lobby untuk private match
@@ -682,7 +682,7 @@ export const quizLobbies = mysqlTable(
     lobbyCodeIdx: index('lobbyCode_idx').on(table.lobbyCode),
     hostIdIdx: index('hostId_idx').on(table.hostId),
     statusIdx: index('status_idx').on(table.status),
-  })
+  }),
 );
 
 // QuizLobbyMember table - Member dalam lobby
@@ -704,7 +704,7 @@ export const quizLobbyMembers = mysqlTable(
     pk: primaryKey({ columns: [table.lobbyId, table.userId] }),
     lobbyIdIdx: index('lobbyId_idx').on(table.lobbyId),
     userIdIdx: index('userId_idx').on(table.userId),
-  })
+  }),
 );
 
 // QuizNotification table - Sistem notifikasi
@@ -728,7 +728,7 @@ export const quizNotifications = mysqlTable(
     userIdIdx: index('userId_idx').on(table.userId),
     isReadIdx: index('isRead_idx').on(table.isRead),
     createdAtIdx: index('createdAt_idx').on(table.createdAt),
-  })
+  }),
 );
 
 // QuizAchievement table - Data achievement
@@ -746,7 +746,7 @@ export const quizAchievements = mysqlTable(
   },
   (table) => ({
     rarityIdx: index('rarity_idx').on(table.rarity),
-  })
+  }),
 );
 
 // QuizUserAchievement table - Achievement yang dimiliki user
@@ -765,18 +765,15 @@ export const quizUserAchievements = mysqlTable(
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.achievementId] }),
     userIdIdx: index('userId_idx').on(table.userId),
-  })
+  }),
 );
 
 // Quiz Battle Relations
-export const quizQuestionsRelations = relations(
-  quizQuestions,
-  ({ many }) => ({
-    answers: many(quizAnswers),
-    matchQuestions: many(quizMatchQuestions),
-    matchAnswers: many(quizMatchAnswers),
-  })
-);
+export const quizQuestionsRelations = relations(quizQuestions, ({ many }) => ({
+  answers: many(quizAnswers),
+  matchQuestions: many(quizMatchQuestions),
+  matchAnswers: many(quizMatchAnswers),
+}));
 
 export const quizAnswersRelations = relations(quizAnswers, ({ one }) => ({
   question: one(quizQuestions, {
@@ -820,7 +817,7 @@ export const quizMatchQuestionsRelations = relations(
       fields: [quizMatchQuestions.questionId],
       references: [quizQuestions.id],
     }),
-  })
+  }),
 );
 
 export const quizMatchAnswersRelations = relations(
@@ -838,7 +835,7 @@ export const quizMatchAnswersRelations = relations(
       fields: [quizMatchAnswers.questionId],
       references: [quizQuestions.id],
     }),
-  })
+  }),
 );
 
 export const quizFriendshipsRelations = relations(
@@ -852,7 +849,7 @@ export const quizFriendshipsRelations = relations(
       fields: [quizFriendships.friendId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const quizLobbiesRelations = relations(quizLobbies, ({ one, many }) => ({
@@ -874,7 +871,7 @@ export const quizLobbyMembersRelations = relations(
       fields: [quizLobbyMembers.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const quizNotificationsRelations = relations(
@@ -884,14 +881,14 @@ export const quizNotificationsRelations = relations(
       fields: [quizNotifications.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const quizAchievementsRelations = relations(
   quizAchievements,
   ({ many }) => ({
     userAchievements: many(quizUserAchievements),
-  })
+  }),
 );
 
 export const quizUserAchievementsRelations = relations(
@@ -905,5 +902,24 @@ export const quizUserAchievementsRelations = relations(
       fields: [quizUserAchievements.achievementId],
       references: [quizAchievements.id],
     }),
-  })
+  }),
+);
+
+// =============================================
+// IMAGE CACHE SCHEMA
+// =============================================
+
+// ImageCache table - URL mappings for CDN caching
+export const imageCache = mysqlTable(
+  'ImageCache',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    originalUrl: text('originalUrl').notNull(),
+    cdnUrl: text('cdnUrl').notNull(),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    expiresAt: timestamp('expiresAt'),
+  },
+  (table) => ({
+    originalUrlIdx: index('originalUrl_idx').on(table.originalUrl),
+  }),
 );
