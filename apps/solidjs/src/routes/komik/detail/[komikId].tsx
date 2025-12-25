@@ -28,7 +28,7 @@ interface DetailResponse {
 }
 
 async function fetchKomikDetail(slug: string): Promise<DetailResponse> {
-    return httpClient.fetchJson<DetailResponse>(`/api/komik/detail/${slug}`);
+    return httpClient.fetchJson<DetailResponse>(`/api/komik/detail?komik_id=${encodeURIComponent(slug)}`);
 }
 
 export default function KomikDetailPage() {

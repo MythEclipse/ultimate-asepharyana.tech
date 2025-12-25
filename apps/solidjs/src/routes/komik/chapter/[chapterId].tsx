@@ -17,7 +17,7 @@ interface ChapterResponse {
 }
 
 async function fetchChapter(slug: string): Promise<ChapterResponse> {
-    return httpClient.fetchJson<ChapterResponse>(`/api/komik/chapter/${slug}`);
+    return httpClient.fetchJson<ChapterResponse>(`/api/komik/chapter?chapter_url=${encodeURIComponent(slug)}`);
 }
 
 export default function KomikChapterPage() {
