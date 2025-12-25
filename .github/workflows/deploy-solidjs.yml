@@ -89,15 +89,16 @@ jobs:
             # Ensure bun is available
             export PATH=$PATH:/home/asephs/.bun/bin:/usr/bin
 
-            git reset --hard origin/main
             
             cd ${{ secrets.VPS_TARGET_DIR }}/apps/solidjs
             
             # Install dependencies
             bun install --production
-
+            
             cd ${{ secrets.VPS_TARGET_DIR }}
-
+            
+            git reset --hard origin/main  
+            
             # Restart SolidJS with PM2
             pm2 startOrRestart apps/solidjs/ecosystem.config.cjs --env production
             pm2 save

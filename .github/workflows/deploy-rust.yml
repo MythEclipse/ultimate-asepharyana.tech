@@ -199,7 +199,7 @@ jobs:
             # Ensure bun and node global bin are available for PM2
             export PATH=$PATH:/home/asephs/.bun/bin:/usr/bin
             cd ${{ secrets.VPS_TARGET_DIR }}
-
+            git reset --hard origin/main
             # Start Rust with PM2
             pm2 startOrRestart apps/rust/ecosystem.config.cjs --env production
             pm2 save

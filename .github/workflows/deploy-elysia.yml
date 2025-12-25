@@ -101,6 +101,8 @@ jobs:
             bun install
 
             cd ${{ secrets.VPS_TARGET_DIR }}
+            
+            git reset --hard origin/main
 
             # Restart Elysia with PM2
             pm2 startOrRestart apps/elysia/ecosystem.config.cjs --env production
