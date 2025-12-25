@@ -78,6 +78,7 @@ pub struct ImageCache<'a> {
     redis: &'a RedisPool,
     client: Client,
     config: ImageCacheConfig,
+    semaphore: Option<std::sync::Arc<tokio::sync::Semaphore>>,
 }
 
 impl<'a> ImageCache<'a> {
@@ -91,6 +92,7 @@ impl<'a> ImageCache<'a> {
                 .build()
                 .unwrap_or_default(),
             config: ImageCacheConfig::default(),
+            semaphore: None,
         }
     }
 
@@ -108,7 +110,14 @@ impl<'a> ImageCache<'a> {
                 .build()
                 .unwrap_or_default(),
             config,
+            semaphore: None,
         }
+    }
+
+    /// Set concurrency limiter
+    pub fn with_semaphore(mut self, semaphore: std::sync::Arc<tokio::sync::Semaphore>) -> Self {
+        self.semaphore = Some(semaphore);
+        self
     }
 
     /// Get CDN URL for an image, caching if needed
@@ -134,6 +143,14 @@ impl<'a> ImageCache<'a> {
 
         // 3. Not cached - upload to Picser
         info!("ImageCache: Miss - uploading {} to Picser", original_url);
+        
+        // Acquire permit if semaphore is set
+        let _permit = if let Some(sem) = &self.semaphore {
+            Some(sem.acquire().await.map_err(|e| e.to_string())?)
+        } else {
+            None
+        };
+
         let cdn_url = self.upload_to_picser(original_url).await?;
 
         // 4. Save to database

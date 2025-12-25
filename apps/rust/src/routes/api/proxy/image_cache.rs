@@ -72,7 +72,8 @@ pub async fn image_cache(
     State(state): State<Arc<AppState>>,
     Json(req): Json<ImageCacheRequest>,
 ) -> impl IntoResponse {
-    let cache = ImageCache::new(&state.db, &state.redis_pool);
+    let cache = ImageCache::new(&state.db, &state.redis_pool)
+        .with_semaphore(state.image_processing_semaphore.clone());
 
     // Check if already cached
     let from_cache = cache.get_cdn_url(&req.url).await.is_some();

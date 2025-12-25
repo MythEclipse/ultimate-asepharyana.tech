@@ -9,10 +9,15 @@ import { eq } from 'drizzle-orm';
 import { getDb } from './database';
 import { imageCache } from './schema';
 
+import pLimit from 'p-limit';
+
 // Use /api/upload endpoint (no token required, same as Rust)
 const PICSER_API_URL = 'https://picser.pages.dev/api/upload';
 const IMAGE_CACHE_REDIS_PREFIX = 'img_cache:';
 const IMAGE_CACHE_TTL = 86400; // 24 hours
+
+// Limit concurrency to 10 requests
+const limiter = pLimit(10);
 
 interface PicserResponse {
   success: boolean;
@@ -119,9 +124,11 @@ export async function getOrCacheImage(
     return cdnUrl;
   }
 
-  // 3. Upload to Picser
+  // 3. Upload to Picser (with concurrency limit)
   try {
-    const cdnUrl = await uploadToPicser(originalUrl, mergedConfig);
+    const cdnUrl = await limiter(() =>
+      uploadToPicser(originalUrl, mergedConfig),
+    );
 
     // 4. Save to database
     const id = crypto.randomUUID();

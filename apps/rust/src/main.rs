@@ -59,12 +59,16 @@ async fn main() -> anyhow::Result<()> {
 
     let db_arc = Arc::new(db);
 
+    // Create semaphore for image processing (limit 10 concurrent)
+    let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(10));
+
     let app_state = Arc::new(AppState {
         jwt_secret,
         redis_pool: REDIS_POOL.clone(),
         db: db_arc.clone(),
         pool: db_arc.clone(),
         chat_tx,
+        image_processing_semaphore,
     });
 
     tracing::info!("Building application routes...");
