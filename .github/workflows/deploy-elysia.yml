@@ -71,10 +71,11 @@ jobs:
           # Sync build artifacts and config in one go
 
           # Create file list
-          echo "packages/services/dist/" > ./deploy_files.txt
+          # Create file list
+          find packages/services/dist -type f > ./deploy_files.txt
           echo "packages/services/package.json" >> ./deploy_files.txt
-          echo "apps/elysia/dist/" >> ./deploy_files.txt
-          echo "apps/elysia/src/" >> ./deploy_files.txt
+          find apps/elysia/dist -type f >> ./deploy_files.txt
+          find apps/elysia/src -type f >> ./deploy_files.txt
           echo "apps/elysia/package.json" >> ./deploy_files.txt
           echo "apps/elysia/ecosystem.config.cjs" >> ./deploy_files.txt
           echo "apps/elysia/.env" >> ./deploy_files.txt

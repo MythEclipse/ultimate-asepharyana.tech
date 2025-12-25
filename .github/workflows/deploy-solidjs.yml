@@ -64,7 +64,7 @@ jobs:
           # Sync build artifacts and config in one go
 
           # Create file list
-          echo "apps/solidjs/.output/" > ./deploy_files.txt
+          find apps/solidjs/.output -type f > ./deploy_files.txt
           echo "apps/solidjs/package.json" >> ./deploy_files.txt
           echo "apps/solidjs/ecosystem.config.cjs" >> ./deploy_files.txt
 
