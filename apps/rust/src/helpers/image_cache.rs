@@ -19,20 +19,21 @@ pub const IMAGE_CACHE_TTL: u64 = 86400;
 /// Redis key prefix for image cache
 pub const IMAGE_CACHE_PREFIX: &str = "img_cache";
 
-/// Picser API endpoint
-pub const PICSER_API_URL: &str = "https://picser.pages.dev/api/public-upload";
+/// Picser API endpoint (web upload - no token required)
+pub const PICSER_API_URL: &str = "https://picser.pages.dev/api/upload";
 
-/// Response from Picser API
+/// Response from Picser API (/api/upload)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PicserResponse {
     pub success: bool,
-    pub filename: Option<String>,
     pub url: Option<String>,
     pub urls: Option<PicserUrls>,
+    pub filename: Option<String>,
     pub size: Option<u64>,
     #[serde(rename = "type")]
     pub content_type: Option<String>,
     pub commit_sha: Option<String>,
+    pub github_url: Option<String>,
     pub error: Option<String>,
 }
 
@@ -216,23 +217,13 @@ impl<'a> ImageCache<'a> {
         // Determine filename from URL
         let filename = self.extract_filename(original_url);
 
-        // Create multipart form
+        // Create multipart form - /api/upload only needs the file
         let part = reqwest::multipart::Part::bytes(image_bytes.to_vec())
             .file_name(filename.clone())
-            .mime_str("application/octet-stream")
+            .mime_str("image/jpeg")
             .map_err(|e| e.to_string())?;
 
-        let mut form = reqwest::multipart::Form::new()
-            .part("file", part)
-            .text("github_owner", self.config.github_owner.clone())
-            .text("github_repo", self.config.github_repo.clone())
-            .text("github_branch", self.config.github_branch.clone())
-            .text("folder", self.config.folder.clone());
-
-        // Add token if configured
-        if let Some(ref token) = self.config.github_token {
-            form = form.text("github_token", token.clone());
-        }
+        let form = reqwest::multipart::Form::new().part("file", part);
 
         // Upload to Picser
         let response = self
@@ -243,10 +234,21 @@ impl<'a> ImageCache<'a> {
             .await
             .map_err(|e| format!("Failed to upload to Picser: {}", e))?;
 
-        let picser_response: PicserResponse = response
-            .json()
+        let response_text = response
+            .text()
             .await
-            .map_err(|e| format!("Failed to parse Picser response: {}", e))?;
+            .map_err(|e| format!("Failed to read Picser response: {}", e))?;
+
+        // Log the raw response for debugging
+        info!("ImageCache: Picser raw response: {}", response_text);
+
+        let picser_response: PicserResponse =
+            serde_json::from_str(&response_text).map_err(|e| {
+                format!(
+                    "Failed to parse Picser response: {} - Raw: {}",
+                    e, response_text
+                )
+            })?;
 
         if !picser_response.success {
             let err_msg = picser_response
@@ -256,13 +258,14 @@ impl<'a> ImageCache<'a> {
             return Err(format!("Picser upload failed: {}", err_msg));
         }
 
-        // Prefer jsdelivr_commit URL for permanence
+        // Extract CDN URL - prefer jsdelivr_commit for permanence
         let cdn_url = picser_response
             .urls
             .as_ref()
-            .and_then(|u| u.jsdelivr_commit.clone())
-            .or(picser_response.url)
-            .ok_or("No CDN URL in response")?;
+            .and_then(|u| u.jsdelivr_commit.clone().or(u.jsdelivr.clone()))
+            .or(picser_response.url.clone())
+            .or(picser_response.github_url.clone())
+            .ok_or("No CDN URL in Picser response")?;
 
         info!("ImageCache: Uploaded {} -> {}", original_url, cdn_url);
         Ok(cdn_url)

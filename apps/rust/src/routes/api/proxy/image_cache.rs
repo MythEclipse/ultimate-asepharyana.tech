@@ -84,12 +84,15 @@ pub async fn image_cache(
             cdn_url,
             from_cache,
         }),
-        Err(_) => Json(ImageCacheResponse {
-            success: false,
-            original_url: req.url.clone(),
-            cdn_url: req.url, // Fallback to original
-            from_cache: false,
-        }),
+        Err(e) => {
+            tracing::error!("ImageCache error: {}", e);
+            Json(ImageCacheResponse {
+                success: false,
+                original_url: req.url.clone(),
+                cdn_url: req.url, // Fallback to original
+                from_cache: false,
+            })
+        }
     }
 }
 
