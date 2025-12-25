@@ -2,6 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useParams } from "@solidjs/router";
 import { createResource, For, Show, Suspense, createSignal } from "solid-js";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface ChapterData {
     title: string;
@@ -58,10 +59,11 @@ export default function KomikChapterPage() {
                                 <div class="max-w-4xl mx-auto">
                                     <For each={chapterData().data.images}>
                                         {(img, i) => (
-                                            <img
+                                            <CachedImage
                                                 src={img}
                                                 alt={`Page ${i() + 1}`}
                                                 class="w-full"
+                                                fallbackClass="w-full aspect-[2/3] bg-gray-900 animate-pulse"
                                                 loading="lazy"
                                             />
                                         )}

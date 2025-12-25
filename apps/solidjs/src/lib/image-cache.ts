@@ -4,8 +4,14 @@
  * Caches images via backend API with Rust-first, Elysia-fallback strategy.
  */
 
-const RUST_API = 'https://ws.asepharyana.tech';
-const ELYSIA_API = 'https://elysia.asepharyana.tech';
+const isDev =
+  typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const RUST_API = isDev
+  ? 'http://localhost:4091'
+  : 'https://ws.asepharyana.tech';
+const ELYSIA_API = isDev
+  ? 'http://localhost:4091'
+  : 'https://elysia.asepharyana.tech';
 
 interface ImageCacheResponse {
   success: boolean;

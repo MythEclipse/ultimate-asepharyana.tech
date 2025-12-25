@@ -1,6 +1,12 @@
-// API Base URLs
-const RUST_API = 'https://ws.asepharyana.tech'; // For anime, komik endpoints
-const ELYSIA_API = 'https://elysia.asepharyana.tech'; // For auth, chat endpoints
+// API Base URLs - use localhost in development
+const isDev =
+  typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const RUST_API = isDev
+  ? 'http://localhost:4091'
+  : 'https://ws.asepharyana.tech'; // For anime, komik endpoints
+const ELYSIA_API = isDev
+  ? 'http://localhost:4091'
+  : 'https://elysia.asepharyana.tech'; // For auth, chat endpoints
 
 interface RequestOptions {
   headers?: Record<string, string>;

@@ -2,6 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useParams } from "@solidjs/router";
 import { createResource, For, Show, Suspense } from "solid-js";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface KomikDetail {
     title: string;
@@ -54,7 +55,12 @@ export default function KomikDetailPage() {
                             <div class="p-4 md:p-8 max-w-6xl mx-auto">
                                 <div class="flex flex-col md:flex-row gap-8 mb-8">
                                     <div class="w-full md:w-1/3">
-                                        <img src={detailData().data.poster} alt={detailData().data.title} class="w-full rounded-xl shadow-lg" />
+                                        <CachedImage
+                                            src={detailData().data.poster}
+                                            alt={detailData().data.title}
+                                            class="w-full rounded-xl shadow-lg"
+                                            fallbackClass="w-full aspect-[3/4] rounded-xl bg-muted animate-pulse"
+                                        />
                                     </div>
 
                                     <div class="flex-1">

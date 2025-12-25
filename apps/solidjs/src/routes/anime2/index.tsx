@@ -3,6 +3,7 @@ import { A } from "@solidjs/router";
 import { createResource, For, Show, Suspense } from "solid-js";
 import { Motion } from "solid-motionone";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface AnimeItem {
     title: string;
@@ -47,10 +48,11 @@ function AnimeCard(props: { item: AnimeItem; index: number }) {
                 <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br from-purple-500/30 via-transparent to-pink-500/30 blur-2xl" />
 
                 <div class="aspect-[3/4] overflow-hidden relative bg-gradient-to-br from-purple-900/20 to-pink-900/20">
-                    <img
+                    <CachedImage
                         src={props.item.poster}
                         alt={props.item.title}
                         class="w-full h-full object-cover transform-gpu group-hover:scale-115 group-hover:rotate-2 transition-all duration-700 ease-out"
+                        fallbackClass="w-full h-full bg-muted animate-pulse"
                         loading="lazy"
                     />
 

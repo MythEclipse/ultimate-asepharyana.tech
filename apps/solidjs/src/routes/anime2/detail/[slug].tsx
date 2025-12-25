@@ -2,6 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useParams } from "@solidjs/router";
 import { createResource, For, Show, Suspense, createMemo } from "solid-js";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface Genre {
     name: string;
@@ -127,10 +128,11 @@ export default function Anime2DetailPage() {
                                     <div class="w-full md:w-1/3 space-y-4 md:sticky top-8">
                                         {/* Poster */}
                                         <div class="rounded-xl overflow-hidden shadow-lg">
-                                            <img
+                                            <CachedImage
                                                 src={detailData().data.poster || detailData().data.poster2}
                                                 alt={detailData().data.title}
                                                 class="w-full"
+                                                fallbackClass="w-full aspect-[3/4] bg-muted animate-pulse"
                                             />
                                         </div>
 
@@ -340,10 +342,11 @@ export default function Anime2DetailPage() {
                                                             >
                                                                 <div class="relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition-all">
                                                                     <div class="aspect-[3/4] overflow-hidden">
-                                                                        <img
+                                                                        <CachedImage
                                                                             src={rec.poster}
                                                                             alt={rec.title}
                                                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                                            fallbackClass="w-full h-full bg-muted animate-pulse"
                                                                             loading="lazy"
                                                                         />
                                                                     </div>

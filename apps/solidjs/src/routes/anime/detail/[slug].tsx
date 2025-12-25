@@ -3,6 +3,7 @@ import { A, useParams } from "@solidjs/router";
 import { createResource, For, Show, Suspense } from "solid-js";
 import { Motion } from "solid-motionone";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface AnimeDetail {
     title: string;
@@ -107,10 +108,11 @@ export default function AnimeDetailPage() {
 
                                             {/* Poster container */}
                                             <div class="relative rounded-3xl overflow-hidden shadow-2xl transform group-hover:scale-[1.02] group-hover:-rotate-1 transition-all duration-500">
-                                                <img
+                                                <CachedImage
                                                     src={detailData().data.poster}
                                                     alt={detailData().data.title}
                                                     class="w-full"
+                                                    fallbackClass="w-full aspect-[3/4] bg-muted animate-pulse"
                                                 />
 
                                                 {/* Shine effect */}

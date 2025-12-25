@@ -2,6 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useParams } from "@solidjs/router";
 import { createResource, For, Show, Suspense } from "solid-js";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface ListItem {
     title: string;
@@ -51,7 +52,7 @@ export default function CompleteAnimePage() {
                                                     class="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition-all"
                                                 >
                                                     <div class="aspect-[3/4] overflow-hidden">
-                                                        <img src={item.poster} alt={item.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                                                        <CachedImage src={item.poster} alt={item.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform" fallbackClass="w-full h-full bg-muted animate-pulse" loading="lazy" />
                                                     </div>
                                                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                                                     <div class="absolute bottom-0 left-0 right-0 p-3">

@@ -2,6 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
 import { createSignal, createResource, For, Show, Suspense } from "solid-js";
 import { httpClient } from "~/lib/http-client";
+import { CachedImage } from "~/components/CachedImage";
 
 interface KomikItem {
     title: string;
@@ -45,10 +46,11 @@ function KomikCard(props: { item: KomikItem }) {
             class="group relative overflow-hidden rounded-xl bg-card border border-border shadow-sm hover:shadow-lg transition-all hover:border-primary/50"
         >
             <div class="aspect-[3/4] overflow-hidden">
-                <img
+                <CachedImage
                     src={props.item.poster}
                     alt={props.item.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fallbackClass="w-full h-full bg-muted animate-pulse"
                     loading="lazy"
                 />
             </div>
