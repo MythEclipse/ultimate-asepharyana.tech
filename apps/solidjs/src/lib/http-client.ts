@@ -32,6 +32,16 @@ class HttpClient {
     return this.elysiaApi;
   }
 
+  // Determine credentials mode based on endpoint
+  private getCredentialsMode(path: string): RequestCredentials {
+    // Only use 'include' for auth endpoints that need cookies
+    if (path.startsWith('/api/auth')) {
+      return 'include';
+    }
+    // For public endpoints (anime, komik, etc.), omit credentials to avoid CORS issues
+    return 'omit';
+  }
+
   async fetchJson<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const url = path.startsWith('http')
       ? path
@@ -43,7 +53,7 @@ class HttpClient {
         'Content-Type': 'application/json',
         ...options.headers,
       },
-      credentials: options.credentials || 'include',
+      credentials: options.credentials || this.getCredentialsMode(path),
     });
 
     if (!response.ok) {
@@ -75,7 +85,7 @@ class HttpClient {
         ...headers,
         ...options.headers,
       },
-      credentials: options.credentials || 'include',
+      credentials: options.credentials || this.getCredentialsMode(path),
       body: body ? JSON.stringify(body) : undefined,
     });
 
