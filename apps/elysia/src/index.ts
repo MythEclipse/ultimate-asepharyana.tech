@@ -54,13 +54,7 @@ export const app = new Elysia()
   )
   .use(
     cors({
-      origin: [
-        'http://localhost:4090',
-        'http://localhost:3000',
-        'https://solid.asepharyana.tech',
-        'https://asepharyana.tech',
-        /\.asepharyana\.tech$/,
-      ],
+      origin: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       credentials: true,

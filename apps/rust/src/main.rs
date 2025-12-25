@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
     let (chat_tx, _) = tokio::sync::broadcast::channel(1000);
 
     let db_arc = Arc::new(db);
- 
+
     let app_state = Arc::new(AppState {
         jwt_secret,
         redis_pool: REDIS_POOL.clone(),
@@ -68,24 +68,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     tracing::info!("Building application routes...");
-    let allowed_origins = [
-        "http://localhost:4090".parse().unwrap(),
-        "http://localhost:3000".parse().unwrap(),
-        "https://solid.asepharyana.tech".parse().unwrap(),
-        "https://asepharyana.tech".parse().unwrap(),
-    ];
-    let cors = CorsLayer::new()
-        .allow_origin(allowed_origins)
-        .allow_methods([
-            Method::GET,
-            Method::POST,
-            Method::PUT,
-            Method::DELETE,
-            Method::OPTIONS,
-            Method::PATCH,
-        ])
-        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
-        .allow_credentials(true);
+    let cors = CorsLayer::permissive();
 
     let app = Router::new()
         .merge(create_api_routes().with_state(app_state.clone()))
