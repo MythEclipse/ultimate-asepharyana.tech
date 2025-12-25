@@ -55,7 +55,7 @@ fn generate_root_api_mod_internal(
         components(\n            schemas(\n{}\n            )\n        ),\n\
         modifiers(&SecurityAddon),\n\
         security((\n            \"bearer_auth\" = []\n        )),\n\
-        servers(\n            (url = \"https://ws.asepharyana.tech\", description = \"Production Server\"),\n            (url = \"http://localhost:8080\", description = \"Local Development\")\n        ),\n\
+        servers(\n            (url = \"https://ws.asepharyana.tech\", description = \"Production Server\"),\n            (url = \"http://localhost:4091\", description = \"Local Development\")\n        ),\n\
         info(\n            title = \"Freefire API\",\n            version = \"0.0.1\",\n            description = \"Free API for anime, manga, and more\"\n        ),\n\
         tags(\n            (name = \"api\", description = \"Main API\"),\n            (name = \"auth\", description = \"Authentication endpoints\")\n        )\n\
     )]\n\
@@ -75,7 +75,7 @@ fn generate_root_api_mod_internal(
     Ok({
         use utoipa::OpenApi; // Bring OpenApi trait into scope for TempApiDoc
         #[derive(utoipa::OpenApi)]
-        #[openapi(paths(), components(schemas()), modifiers(&SecurityAddon), security(("bearer_auth" = [])), servers((url = "https://ws.asepharyana.tech", description = "Production Server"), (url = "http://localhost:8080", description = "Local Development")), tags((name = "api", description = "Main API")))]
+        #[openapi(paths(), components(schemas()), modifiers(&SecurityAddon), security(("bearer_auth" = [])), servers((url = "https://ws.asepharyana.tech", description = "Production Server"), (url = "http://localhost:4091", description = "Local Development")), tags((name = "api", description = "Main API")))]
         struct TempApiDoc;
         struct SecurityAddon;
         impl utoipa::Modify for SecurityAddon {

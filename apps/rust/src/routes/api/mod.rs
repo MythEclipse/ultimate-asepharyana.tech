@@ -259,7 +259,7 @@ security((
         )),
 servers(
             (url = "https://ws.asepharyana.tech", description = "Production Server"),
-            (url = "http://localhost:8080", description = "Local Development")
+            (url = "http://localhost:4091", description = "Local Development")
         ),
 info(
             title = "Freefire API",
