@@ -96,14 +96,13 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
             # Ensure bun is available
             export PATH=$PATH:/home/asephs/.bun/bin:/usr/bin
-            cd ${{ secrets.VPS_TARGET_DIR }}/apps/elysia
-
-            # Install dependencies
-            bun install
-
             cd ${{ secrets.VPS_TARGET_DIR }}
             
+            # Reset to latest code first
             git reset --hard origin/main
+            
+            # Install dependencies at workspace root (includes packages/services)
+            bun install
 
             # Restart Elysia with PM2
             pm2 startOrRestart apps/elysia/ecosystem.config.cjs --env production
