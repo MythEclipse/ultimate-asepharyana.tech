@@ -16,8 +16,8 @@ const PICSER_API_URL = 'https://picser.pages.dev/api/upload';
 const IMAGE_CACHE_REDIS_PREFIX = 'img_cache:';
 const IMAGE_CACHE_TTL = 86400; // 24 hours
 
-// Limit concurrency to 10 requests
-const limiter = pLimit(10);
+// Limit concurrency to 5 requests to Picser API
+const limiter = pLimit(5);
 
 interface PicserResponse {
   success: boolean;

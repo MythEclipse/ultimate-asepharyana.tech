@@ -59,8 +59,8 @@ async fn main() -> anyhow::Result<()> {
 
     let db_arc = Arc::new(db);
 
-    // Create semaphore for image processing (limit 10 concurrent)
-    let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(10));
+    // Create semaphore for image processing (limit 5 concurrent to Picser API)
+    let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(5));
 
     let app_state = Arc::new(AppState {
         jwt_secret,
