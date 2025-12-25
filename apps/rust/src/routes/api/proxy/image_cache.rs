@@ -22,6 +22,9 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<ImageCacheResponse>";
 pub struct ImageCacheRequest {
     /// Original image URL to cache
     pub url: String,
+    /// If true, returns original URL immediately and caches in background
+    #[serde(default)]
+    pub lazy: bool,
 }
 
 /// Response containing the cached URL
@@ -35,6 +38,9 @@ pub struct ImageCacheResponse {
     pub cdn_url: String,
     /// Whether the image was already cached
     pub from_cache: bool,
+    /// If true, the image caching is pending in the background. Only present in lazy mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pending: Option<bool>,
 }
 
 /// Batch request for multiple images
@@ -76,22 +82,59 @@ pub async fn image_cache(
         .with_semaphore(state.image_processing_semaphore.clone());
 
     // Check if already cached
-    let from_cache = cache.get_cdn_url(&req.url).await.is_some();
+    if let Some(cdn_url) = cache.get_cdn_url(&req.url).await {
+        return Json(ImageCacheResponse {
+            success: true,
+            original_url: req.url,
+            cdn_url,
+            from_cache: true,
+            pending: None,
+        });
+    }
 
+    // Lazy mode: return original URL immediately, upload in background
+    if req.lazy {
+        let url = req.url.clone();
+        let db = state.db.clone();
+        let redis = state.redis_pool.clone();
+        let semaphore = state.image_processing_semaphore.clone();
+
+        tokio::spawn(async move {
+            let cache = ImageCache::new(&db, &redis).with_semaphore(semaphore);
+            match cache.get_or_cache(&url).await {
+                Ok(cdn_url) => {
+                    tracing::info!("[LazyCache] Successfully cached: {} -> {}", url, cdn_url)
+                }
+                Err(e) => tracing::warn!("[LazyCache] Background upload failed for {}: {}", url, e),
+            }
+        });
+
+        return Json(ImageCacheResponse {
+            success: true,
+            original_url: req.url.clone(),
+            cdn_url: req.url,
+            from_cache: false,
+            pending: Some(true),
+        });
+    }
+
+    // Blocking mode: wait for upload
     match cache.get_or_cache(&req.url).await {
         Ok(cdn_url) => Json(ImageCacheResponse {
             success: true,
             original_url: req.url,
             cdn_url,
-            from_cache,
+            from_cache: false,
+            pending: None,
         }),
         Err(e) => {
             tracing::error!("ImageCache error: {}", e);
             Json(ImageCacheResponse {
                 success: false,
                 original_url: req.url.clone(),
-                cdn_url: req.url, // Fallback to original
+                cdn_url: req.url,
                 from_cache: false,
+                pending: None,
             })
         }
     }

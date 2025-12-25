@@ -79,6 +79,8 @@ function extractFilename(url: string): string {
 /**
  * Get or cache an image URL
  * Returns CDN URL if cached, otherwise uploads to Picser and caches
+ *
+ * @param lazy - If true, returns original URL immediately and uploads in background
  */
 export async function getOrCacheImage(
   originalUrl: string,
@@ -87,9 +89,11 @@ export async function getOrCacheImage(
     set: (key: string, value: string, ttl?: number) => Promise<void>;
   },
   config?: ImageCacheConfig,
+  options?: { lazy?: boolean },
 ): Promise<string> {
   const mergedConfig = { ...defaultConfig, ...config };
   const cacheKey = `${IMAGE_CACHE_REDIS_PREFIX}${hashUrl(originalUrl)}`;
+  const isLazy = options?.lazy ?? false;
 
   // 1. Check Redis if available
   if (redis) {
@@ -124,13 +128,48 @@ export async function getOrCacheImage(
     return cdnUrl;
   }
 
-  // 3. Upload to Picser (with concurrency limit)
+  // 3. If lazy mode, return original URL and upload in background
+  if (isLazy) {
+    // Fire-and-forget background upload
+    setImmediate(async () => {
+      try {
+        const cdnUrl = await limiter(() =>
+          uploadToPicser(originalUrl, mergedConfig),
+        );
+        // Save to database
+        const id = crypto.randomUUID();
+        await db.insert(imageCache).values({
+          id,
+          originalUrl,
+          cdnUrl,
+          createdAt: new Date(),
+        });
+        // Cache in Redis
+        if (redis) {
+          try {
+            await redis.set(cacheKey, cdnUrl, IMAGE_CACHE_TTL);
+          } catch {
+            // Ignore Redis errors
+          }
+        }
+        console.log(`[LazyCache] Successfully cached: ${originalUrl}`);
+      } catch (error) {
+        console.warn(
+          `[LazyCache] Background upload failed for ${originalUrl}:`,
+          error,
+        );
+      }
+    });
+    return originalUrl; // Return original immediately
+  }
+
+  // 4. Blocking mode: Upload to Picser (with concurrency limit)
   try {
     const cdnUrl = await limiter(() =>
       uploadToPicser(originalUrl, mergedConfig),
     );
 
-    // 4. Save to database
+    // 5. Save to database
     const id = crypto.randomUUID();
     await db.insert(imageCache).values({
       id,
@@ -139,7 +178,7 @@ export async function getOrCacheImage(
       createdAt: new Date(),
     });
 
-    // 5. Cache in Redis
+    // 6. Cache in Redis
     if (redis) {
       try {
         await redis.set(cacheKey, cdnUrl, IMAGE_CACHE_TTL);

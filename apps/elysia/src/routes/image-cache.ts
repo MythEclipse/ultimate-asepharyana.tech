@@ -10,7 +10,9 @@ export const imageCacheRoutes = new Elysia({ prefix: '/api' })
   .post(
     '/image-cache',
     async ({ body }) => {
-      const cdnUrl = await getOrCacheImage(body.url);
+      const cdnUrl = await getOrCacheImage(body.url, undefined, undefined, {
+        lazy: body.lazy ?? false,
+      });
       const fromCache = cdnUrl !== body.url;
 
       return {
@@ -18,16 +20,19 @@ export const imageCacheRoutes = new Elysia({ prefix: '/api' })
         original_url: body.url,
         cdn_url: cdnUrl,
         from_cache: fromCache,
+        pending: body.lazy && !fromCache, // Indicates background upload in progress
       };
     },
     {
       body: t.Object({
         url: t.String(),
+        lazy: t.Optional(t.Boolean()),
       }),
       detail: {
         tags: ['API'],
         summary: 'Cache an image to CDN',
-        description: 'Upload an image to Picser CDN and return the cached URL',
+        description:
+          'Upload an image to Picser CDN. Set lazy=true to return immediately while caching in background.',
       },
     },
   )
