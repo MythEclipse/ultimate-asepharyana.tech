@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use http::{header, Method};
+// use http::{header, Method};       <-- Removed to fix unused import error
 use sea_orm::{Database, DatabaseConnection};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;

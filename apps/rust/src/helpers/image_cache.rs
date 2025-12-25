@@ -77,7 +77,7 @@ pub struct ImageCache<'a> {
     db: &'a DatabaseConnection,
     redis: &'a RedisPool,
     client: Client,
-    config: ImageCacheConfig,
+    _config: ImageCacheConfig,
     semaphore: Option<std::sync::Arc<tokio::sync::Semaphore>>,
 }
 
@@ -91,7 +91,7 @@ impl<'a> ImageCache<'a> {
                 .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
                 .unwrap_or_default(),
-            config: ImageCacheConfig::default(),
+            _config: ImageCacheConfig::default(),
             semaphore: None,
         }
     }
@@ -109,7 +109,7 @@ impl<'a> ImageCache<'a> {
                 .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
                 .unwrap_or_default(),
-            config,
+            _config: config,
             semaphore: None,
         }
     }
@@ -143,7 +143,7 @@ impl<'a> ImageCache<'a> {
 
         // 3. Not cached - upload to Picser
         info!("ImageCache: Miss - uploading {} to Picser", original_url);
-        
+
         // Acquire permit if semaphore is set
         let _permit = if let Some(sem) = &self.semaphore {
             Some(sem.acquire().await.map_err(|e| e.to_string())?)
