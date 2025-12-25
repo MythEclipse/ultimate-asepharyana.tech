@@ -6,6 +6,7 @@ import { Suspense, type ParentProps, createEffect, createSignal, Show, ErrorBoun
 import { Motion, Presence } from "solid-motionone";
 import "./app.css";
 import { ClientLayout } from "./components/layout/ClientLayout";
+import { NavigationProgress } from "./components/NavigationProgress";
 
 // Error fallback component with auto-refresh and API error detection
 function ErrorFallback(props: { error: Error; reset: () => void }) {
@@ -42,8 +43,8 @@ function ErrorFallback(props: { error: Error; reset: () => void }) {
   return (
     <div class="min-h-[50vh] flex items-center justify-center p-8">
       <div class={`max-w-md w-full border rounded-xl p-6 text-center ${isApiError()
-          ? 'bg-orange-500/10 border-orange-500/30'
-          : 'bg-destructive/10 border-destructive/20'
+        ? 'bg-orange-500/10 border-orange-500/30'
+        : 'bg-destructive/10 border-destructive/20'
         }`}>
         <div class={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isApiError() ? 'bg-orange-500/20' : 'bg-destructive/20'
           }`}>
@@ -125,6 +126,7 @@ function RootLayout(props: ParentProps) {
   return (
     <MetaProvider>
       <Title>Asepharyana</Title>
+      <NavigationProgress />
       <ClientLayout>
         <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
           <Suspense fallback={
