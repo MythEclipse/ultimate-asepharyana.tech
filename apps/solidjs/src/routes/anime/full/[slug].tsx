@@ -160,18 +160,43 @@ export default function AnimeFullPage() {
 
                                 {/* Download Links */}
                                 <Show when={episodeData().data.download_urls && Object.keys(episodeData().data.download_urls!).length > 0}>
-                                    <div class="glass-card rounded-xl p-6">
-                                        <h3 class="font-semibold mb-4 flex items-center gap-2">
-                                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                            </svg>
-                                            Download
-                                        </h3>
-                                        <div class="space-y-4">
+                                    <div class="glass-card rounded-2xl overflow-hidden">
+                                        {/* Header */}
+                                        <div class="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 p-5 border-b border-border/50">
+                                            <h3 class="text-xl font-bold flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                </div>
+                                                Download Episode
+                                            </h3>
+                                        </div>
+
+                                        {/* Resolution Groups */}
+                                        <div class="p-5 space-y-5">
                                             <For each={Object.entries(episodeData().data.download_urls!)}>
                                                 {([resolution, servers]) => (
-                                                    <div>
-                                                        <h4 class="text-sm font-medium text-muted-foreground mb-2">{resolution}</h4>
+                                                    <div class="glass-subtle rounded-xl p-4">
+                                                        {/* Resolution Header */}
+                                                        <div class="flex items-center gap-3 mb-4">
+                                                            <div class={`px-3 py-1.5 rounded-lg font-bold text-sm ${resolution.includes('1080') ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
+                                                                    resolution.includes('720') ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
+                                                                        resolution.includes('480') ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
+                                                                            resolution.includes('360') ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white' :
+                                                                                'bg-primary/20 text-primary'
+                                                                }`}>
+                                                                {resolution.includes('1080') && '🎬 '}
+                                                                {resolution.includes('720') && '📺 '}
+                                                                {resolution.includes('480') && '📱 '}
+                                                                {resolution}
+                                                            </div>
+                                                            <span class="text-muted-foreground text-sm">
+                                                                {servers.length} server{servers.length > 1 ? 's' : ''}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Server Buttons */}
                                                         <div class="flex flex-wrap gap-2">
                                                             <For each={servers}>
                                                                 {(dl) => (
@@ -179,8 +204,11 @@ export default function AnimeFullPage() {
                                                                         href={dl.url}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        class="px-4 py-2 rounded-lg glass-subtle hover:bg-white/10 text-sm transition-colors"
+                                                                        class="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-secondary/80 hover:bg-primary hover:text-primary-foreground text-sm font-medium transition-all duration-200 hover-lift"
                                                                     >
+                                                                        <svg class="w-4 h-4 text-muted-foreground group-hover:text-primary-foreground transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                                                        </svg>
                                                                         {dl.server}
                                                                     </a>
                                                                 )}
