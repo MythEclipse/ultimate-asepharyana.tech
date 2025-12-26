@@ -5,29 +5,44 @@ import { Motion } from "solid-motionone";
 import { httpClient } from "~/lib/http-client";
 import { CachedImage } from "~/components/CachedImage";
 
+interface Genre {
+    name: string;
+    slug: string;
+    anime_url: string;
+}
+
+interface EpisodeList {
+    episode: string;
+    slug: string;
+}
+
+interface Recommendation {
+    title: string;
+    slug: string;
+    poster: string;
+    status?: string | null;
+    type?: string | null;
+}
+
+// Matches OpenAPI AnimeDetailData schema
 interface AnimeDetail {
     title: string;
+    alternative_title: string;
     poster: string;
-    japanese_title: string;
-    score: string;
-    producer: string;
-    type: string;
-    status: string;
-    episode_count: string;
-    duration: string;
     release_date: string;
     studio: string;
-    genre: Array<{ name: string; slug: string }>;
     synopsis: string;
-    episode_lists: Array<{
-        episode: string;
-        slug: string;
-        date: string;
-    }>;
+    episode_lists: EpisodeList[];
+    recommendations: Recommendation[];
+    batch?: EpisodeList[];
+    genres?: Genre[];
+    producers?: string[];
+    status?: string | null;
+    type?: string | null;
 }
 
 interface DetailResponse {
-    status: string;
+    status?: string | null;
     data: AnimeDetail;
 }
 
@@ -118,11 +133,10 @@ export default function AnimeDetailPage() {
                                                 {/* Shine effect */}
                                                 <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-full transition-all duration-1000" />
 
-                                                {/* Score badge */}
-                                                <Show when={detailData().data.score}>
-                                                    <div class="absolute top-4 right-4 px-4 py-2 rounded-2xl bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold shadow-lg flex items-center gap-2">
-                                                        <span class="text-xl">⭐</span>
-                                                        <span class="text-lg">{detailData().data.score}</span>
+                                                {/* Type badge */}
+                                                <Show when={detailData().data.type}>
+                                                    <div class="absolute top-4 right-4 px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold shadow-lg flex items-center gap-2">
+                                                        <span class="text-lg">{detailData().data.type}</span>
                                                     </div>
                                                 </Show>
                                             </div>
@@ -159,22 +173,12 @@ export default function AnimeDetailPage() {
                                                     </div>
                                                 </Show>
 
-                                                <Show when={detailData().data.episode_count}>
+                                                <Show when={detailData().data.episode_lists?.length}>
                                                     <div class="flex items-center gap-3">
                                                         <span class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-lg">🎬</span>
                                                         <div>
-                                                            <p class="text-xs text-muted-foreground">Episode</p>
-                                                            <p class="font-semibold">{detailData().data.episode_count}</p>
-                                                        </div>
-                                                    </div>
-                                                </Show>
-
-                                                <Show when={detailData().data.duration}>
-                                                    <div class="flex items-center gap-3">
-                                                        <span class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-lg">⏱️</span>
-                                                        <div>
-                                                            <p class="text-xs text-muted-foreground">Durasi</p>
-                                                            <p class="font-semibold">{detailData().data.duration}</p>
+                                                            <p class="text-xs text-muted-foreground">Episodes</p>
+                                                            <p class="font-semibold">{detailData().data.episode_lists.length} eps</p>
                                                         </div>
                                                     </div>
                                                 </Show>
@@ -213,9 +217,9 @@ export default function AnimeDetailPage() {
                                             <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-tight mb-3">
                                                 {detailData().data.title}
                                             </h1>
-                                            <Show when={detailData().data.japanese_title}>
+                                            <Show when={detailData().data.alternative_title}>
                                                 <p class="text-xl text-muted-foreground font-medium">
-                                                    {detailData().data.japanese_title}
+                                                    {detailData().data.alternative_title}
                                                 </p>
                                             </Show>
                                         </Motion.div>
@@ -227,7 +231,7 @@ export default function AnimeDetailPage() {
                                             transition={{ delay: 0.3 }}
                                             class="flex flex-wrap gap-2"
                                         >
-                                            <For each={detailData().data.genre}>
+                                            <For each={detailData().data.genres}>
                                                 {(g, index) => (
                                                     <Motion.span
                                                         initial={{ opacity: 0, scale: 0 }}
@@ -287,9 +291,6 @@ export default function AnimeDetailPage() {
                                                                     <span class="text-lg font-bold group-hover:text-blue-500 transition-colors">
                                                                         {ep.episode}
                                                                     </span>
-                                                                    <p class="text-xs text-muted-foreground mt-2 group-hover:text-foreground/80 transition-colors">
-                                                                        {ep.date}
-                                                                    </p>
                                                                 </div>
 
                                                                 {/* Play icon on hover */}

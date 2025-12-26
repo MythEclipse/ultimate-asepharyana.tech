@@ -4,24 +4,34 @@ import { createResource, For, Show, Suspense } from "solid-js";
 import { httpClient } from "~/lib/http-client";
 import { CachedImage } from "~/components/CachedImage";
 
-interface ListItem {
+// Matches OpenAPI OngoingAnimeItem schema
+interface OngoingAnimeItem {
     title: string;
     slug: string;
     poster: string;
-    current_episode?: string;
+    current_episode: string;
+    anime_url: string;
 }
 
-interface ListResponse {
+// Matches OpenAPI Pagination schema
+interface Pagination {
+    current_page: number;
+    last_visible_page: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+    next_page?: number | null;
+    previous_page?: number | null;
+}
+
+// Matches OpenAPI OngoingAnimeResponse schema
+interface OngoingAnimeResponse {
     status: string;
-    data: ListItem[];
-    pagination?: {
-        current_page: number;
-        total_pages: number;
-    };
+    data: OngoingAnimeItem[];
+    pagination: Pagination;
 }
 
-async function fetchOngoingAnime(page: string): Promise<ListResponse> {
-    return httpClient.fetchJson<ListResponse>(`/api/anime/ongoing-anime/${page}`);
+async function fetchOngoingAnime(page: string): Promise<OngoingAnimeResponse> {
+    return httpClient.fetchJson<OngoingAnimeResponse>(`/api/anime/ongoing-anime/${page}`);
 }
 
 export default function OngoingAnimePage() {

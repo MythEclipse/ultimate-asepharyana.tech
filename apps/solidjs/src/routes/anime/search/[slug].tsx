@@ -4,16 +4,30 @@ import { createResource, For, Show, Suspense } from "solid-js";
 import { httpClient } from "~/lib/http-client";
 import { CachedImage } from "~/components/CachedImage";
 
-interface SearchResult {
+// Matches OpenAPI AnimeItem schema
+interface AnimeItem {
     title: string;
     slug: string;
     poster: string;
-    current_episode?: string;
+    episode: string;
+    anime_url: string;
+    genres: string[];
+    status: string;
+    rating: string;
 }
 
+// Matches OpenAPI SearchResponse schema
 interface SearchResponse {
     status: string;
-    data: SearchResult[];
+    data: AnimeItem[];
+    pagination: {
+        current_page: number;
+        last_visible_page: number;
+        has_next_page: boolean;
+        has_previous_page: boolean;
+        next_page?: number | null;
+        previous_page?: number | null;
+    };
 }
 
 async function searchAnime(query: string): Promise<SearchResponse> {
@@ -23,7 +37,7 @@ async function searchAnime(query: string): Promise<SearchResponse> {
 export default function AnimeSearchPage() {
     const params = useParams();
     const [searchParams] = useSearchParams();
-    const query = () => params.slug || searchParams.q || "";
+    const query = (): string => params.slug || (searchParams.q as string) || "";
 
     const [data] = createResource(query, searchAnime);
 
