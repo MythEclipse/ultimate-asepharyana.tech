@@ -26,8 +26,15 @@ interface KomikDetail {
     chapters: Chapter[];
 }
 
+// API response wrapper
+interface KomikDetailResponse {
+    status: boolean;
+    data: KomikDetail;
+}
+
 async function fetchKomikDetail(slug: string): Promise<KomikDetail> {
-    return httpClient.fetchJson<KomikDetail>(`/api/komik/detail?komik_id=${encodeURIComponent(slug)}`);
+    const response = await httpClient.fetchJson<KomikDetailResponse>(`/api/komik/detail?komik_id=${encodeURIComponent(slug)}`);
+    return response.data;
 }
 
 export default function KomikDetailPage() {
