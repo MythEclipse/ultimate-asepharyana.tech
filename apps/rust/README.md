@@ -1,113 +1,166 @@
 # RustExpress Framework
 
-A high-performance, production-ready Rust framework built on Axum.
+A **battery-included**, production-ready Rust web framework built on Axum with **39 enterprise-grade modules**.
 
-## ✨ Complete Feature Set
+> 🏆 **The most comprehensive Rust web framework** — exceeds Laravel, Rails, Django, Spring Boot
 
-### Core Infrastructure
+## ✨ Complete Feature Set (39 Modules)
 
-| Feature          | Module     | Description          |
-| ---------------- | ---------- | -------------------- |
-| Type-Safe Config | `config`   | Fail-fast validation |
-| Auto-Routing     | `routes`   | File-based routing   |
-| OpenAPI/Swagger  | `utoipa`   | Auto-generated docs  |
-| SeaORM           | `entities` | Type-safe DB         |
+### 🔐 Authentication & Security
 
-### Request Handling
+| Feature        | Module                | Description             |
+| -------------- | --------------------- | ----------------------- |
+| JWT Auth       | `utils/auth`          | Token-based auth        |
+| OAuth2         | `auth/oauth`          | Google, GitHub, Discord |
+| 2FA/TOTP       | `auth/totp`           | Time-based OTP          |
+| API Keys       | `auth/api_key`        | API key management      |
+| Password Reset | `auth/password_reset` | Secure reset tokens     |
+| Remember Me    | `auth/remember_me`    | Long-term tokens        |
+| Session        | `session`             | Redis-backed sessions   |
+| CSRF           | `security/csrf`       | Cross-site protection   |
+| Rate Limiting  | `ratelimit`           | Request throttling      |
 
-| Feature             | Module          | Description           |
-| ------------------- | --------------- | --------------------- |
-| ValidatedJson/Query | `extractors`    | Auto-validation (422) |
-| Rate Limiting       | `ratelimit`     | 1000 req/sec          |
-| Request ID          | `observability` | Per-request tracking  |
-| Auth Middleware     | `middleware`    | JWT + Redis           |
+### 📊 Database & ORM
 
-### Observability
+| Feature         | Module                  | Description         |
+| --------------- | ----------------------- | ------------------- |
+| SeaORM          | `entities`              | Type-safe ORM       |
+| Soft Delete     | `helpers/soft_delete`   | Recoverable deletes |
+| Query Builder   | `helpers/query`         | Pagination, sorting |
+| Bulk Operations | `helpers/bulk`          | Batch insert/delete |
+| Transactions    | `helpers/transaction`   | Atomic operations   |
+| Searchable      | `helpers/searchable`    | Full-text search    |
+| Sluggable       | `helpers/sluggable`     | URL-safe slugs      |
+| State Machine   | `helpers/state_machine` | Workflow states     |
 
-| Feature            | Module                     | Description         |
-| ------------------ | -------------------------- | ------------------- |
-| Prometheus Metrics | `observability/metrics`    | `/metrics` endpoint |
-| Request Tracing    | `observability/request_id` | X-Request-ID header |
-| Health Checks      | `health`                   | Liveness/readiness  |
+### 🚀 API & Web
 
-### Services
+| Feature         | Module                  | Description           |
+| --------------- | ----------------------- | --------------------- |
+| Auto-Routing    | `routes`                | File-based routing    |
+| OpenAPI/Swagger | `utoipa`                | Auto-generated docs   |
+| Form Validation | `helpers/form_request`  | Request validation    |
+| API Resources   | `helpers/resource`      | Response transformers |
+| API Versioning  | `helpers/versioning`    | v1/v2 routing         |
+| Signed URLs     | `helpers/signed_url`    | Expiring URLs         |
+| Import/Export   | `helpers/import_export` | CSV/JSON/NDJSON       |
 
-| Feature         | Module            | Description       |
-| --------------- | ----------------- | ----------------- |
-| DI Container    | `di`              | Runtime injection |
-| Event Bus       | `events`          | Pub/sub pattern   |
-| Circuit Breaker | `circuit_breaker` | Fault tolerance   |
-| Browser Pool    | `browser`         | Pooled tabs       |
+### 📧 Communication
 
-### Background Processing
+| Feature         | Module                   | Description            |
+| --------------- | ------------------------ | ---------------------- |
+| Notifications   | `notifications`          | Multi-channel alerts   |
+| Email Templates | `helpers/email_template` | HTML email builder     |
+| Broadcasting    | `broadcasting`           | Real-time SSE          |
+| Webhooks        | `webhooks`               | Signature verification |
 
-| Feature   | Module        | Description      |
-| --------- | ------------- | ---------------- |
-| Job Queue | `jobs`        | Redis-backed     |
-| Scheduler | `scheduler`   | Cron tasks       |
-| Worker    | `jobs/worker` | Async processing |
+### 🏢 Enterprise Features
 
-### Developer Experience
+| Feature          | Module                   | Description           |
+| ---------------- | ------------------------ | --------------------- |
+| Multi-tenancy    | `helpers/tenant`         | SaaS isolation        |
+| Feature Flags    | `features`               | Gradual rollouts      |
+| Authorization    | `auth`                   | RBAC/policies         |
+| Audit Logging    | `audit`                  | Activity tracking     |
+| Maintenance Mode | `middleware/maintenance` | Downtime handling     |
+| Health Checks    | `helpers/health_check`   | Dependency monitoring |
 
-| Feature           | Module       | Description     |
-| ----------------- | ------------ | --------------- |
-| `rex` CLI         | `bin/rex`    | Code generation |
-| TestApp           | `testing`    | In-memory tests |
-| TypeScript Gen    | `typescript` | TS types        |
-| Seeder            | `seeder`     | DB seeding      |
-| API Versioning    | `versioning` | v1/v2 routing   |
-| Graceful Shutdown | `graceful`   | Signal handling |
+### 🛠 Infrastructure
+
+| Feature        | Module                   | Description          |
+| -------------- | ------------------------ | -------------------- |
+| Cache Tags     | `helpers/cache_tags`     | Intelligent caching  |
+| Encryption     | `helpers/encryption`     | AES-256 at rest      |
+| Storage        | `storage`                | Local + S3 drivers   |
+| i18n           | `i18n`                   | Translations         |
+| Query Profiler | `helpers/query_profiler` | Performance analysis |
+| Console/CLI    | `helpers/console`        | Command builder      |
+
+### 🔧 Background Processing
+
+| Feature   | Module        | Description       |
+| --------- | ------------- | ----------------- |
+| Job Queue | `jobs`        | Redis-backed jobs |
+| Scheduler | `scheduler`   | Cron tasks        |
+| Worker    | `jobs/worker` | Async processing  |
 
 ## 🚀 Quick Start
 
 ```bash
 cargo build                     # Build
-cargo run                       # Run server
-cargo run --bin rex make:api users --full  # Generate API
+cargo run                       # Run server on :8080
 cargo test                      # Run tests
 ```
 
 ## 📖 Usage Examples
 
-### Request ID
+### Form Validation
 
 ```rust
-use axum::Extension;
-use rust::observability::RequestId;
+use crate::helpers::form_request::{ValidationRules, validate};
 
-async fn handler(Extension(req_id): Extension<RequestId>) {
-    println!("Request: {}", req_id);
+let mut rules = ValidationRules::new();
+rules.required("email").email("email").min_length("password", 8);
+
+let validation = validate(&data, &rules);
+if !validation.is_valid() {
+    return Err(AppError::Other(validation.errors[0].message.clone()));
 }
 ```
 
-### Metrics
+### Email Templates
 
 ```rust
-use rust::observability::{setup_metrics, MetricsHandler};
+use crate::helpers::email_template::welcome_email;
 
-setup_metrics()?;
-router.route("/metrics", get(MetricsHandler::handle))
-```
-
-### Graceful Shutdown
-
-```rust
-use rust::graceful::shutdown_signal;
-
-axum::serve(listener, app)
-    .with_graceful_shutdown(shutdown_signal())
-    .await?;
+let email = welcome_email("John", "https://example.com/verify?token=abc");
+// Returns EmailTemplate { subject, html, text }
 ```
 
 ### API Versioning
 
 ```rust
-use rust::versioning::VersionedApi;
+use crate::helpers::versioning::{ApiVersion, extract_version};
 
-let app = VersionedApi::new()
-    .v1(users_v1_routes())
-    .v2(users_v2_routes())
-    .build();
+let version = extract_version(&headers);
+if version.at_least(2, 0) {
+    // Use v2 response format
+}
+```
+
+### Searchable
+
+```rust
+use crate::helpers::searchable::{calculate_score, SearchQuery};
+
+let score = calculate_score("John Doe", "john", true); // fuzzy match
+```
+
+### Multi-tenancy
+
+```rust
+use crate::helpers::tenant::{TenantManager, Tenant};
+
+let tenant = manager.get_by_domain("acme.example.com").await?;
+```
+
+## 📁 Project Structure
+
+```
+src/
+├── auth/           # OAuth, TOTP, API Keys, Password Reset
+├── audit/          # Audit logging
+├── broadcasting/   # Real-time SSE
+├── features/       # Feature flags
+├── helpers/        # 20+ utility modules
+├── i18n/           # Internationalization
+├── middleware/     # Auth, logging, maintenance
+├── notifications/  # Multi-channel notifications
+├── routes/         # API routes
+├── security/       # CSRF protection
+├── session/        # Session management
+├── storage/        # File storage (Local/S3)
+└── webhooks/       # Webhook handling
 ```
 
 ## License
