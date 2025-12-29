@@ -1,21 +1,24 @@
-//! Handler for the login endpoint.
+//! Handler for the login endpoint - Enhanced with form_request validation.
 
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::verify;
 use chrono::Utc;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 // SeaORM imports
+use crate::entities::user;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user};
 
 use crate::models::user::{LoginResponse, UserResponse};
 use crate::routes::AppState;
 use crate::utils::auth::{encode_jwt, Claims};
 use crate::utils::error::AppError;
+
+// New helpers
+use crate::helpers::form_request::{validate, ValidationRules};
 
 pub const ENDPOINT_METHOD: &str = "post";
 pub const ENDPOINT_PATH: &str = "/api/auth/login";
@@ -25,7 +28,7 @@ pub const OPERATION_ID: &str = "auth_login";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<LoginResponse>";
 
 /// Login request payload
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct LoginRequest {
     /// User email address
     pub email: String,
@@ -34,13 +37,6 @@ pub struct LoginRequest {
     /// Remember me option (extends token expiry)
     #[serde(default)]
     pub remember_me: bool,
-}
-
-/// Login metadata for tracking
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct LoginMetadata {
-    pub ip_address: Option<String>,
-    pub user_agent: Option<String>,
 }
 
 #[utoipa::path(
@@ -57,6 +53,23 @@ pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Validate input using form_request helper
+    let data = serde_json::to_value(&payload).unwrap_or_default();
+    let mut rules = ValidationRules::new();
+    rules
+        .required("email")
+        .email("email")
+        .required("password")
+        .min_length("password", 1);
+
+    let validation = validate(&data, &rules);
+    if !validation.is_valid() {
+        return Err(AppError::Other(format!(
+            "Validation failed: {:?}",
+            validation.errors.first().map(|e| &e.message)
+        )));
+    }
+
     // Find user by email using SeaORM
     let user_model: Option<user::Model> = user::Entity::find()
         .filter(user::Column::Email.eq(&payload.email))
@@ -69,38 +82,29 @@ pub async fn login(
     // Verify password
     let password_valid = verify(
         &payload.password,
-        user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?
+        user_model
+            .password
+            .as_ref()
+            .ok_or(AppError::InvalidCredentials)?,
     )?;
 
     if !password_valid {
-        // Log failed login attempt (still using SQLx temporarily)
-        log_login_attempt(&state, &user_model.id, false, Some("Invalid password")).await?;
+        tracing::warn!("Login failed for user {}: invalid password", user_model.id);
         return Err(AppError::InvalidCredentials);
     }
 
-    // Check if account is active
-    // Note: is_active field doesn't exist in current schema, skip for now
-    // if !user_model.is_active {
-    //     return Err(AppError::AccountInactive);
-    // }
-
-    // Check if email is verified (optional - you can skip this check)
-    if user_model.email_verified.is_some() {
-        // email_verified is a timestamp, if Some then it's verified
-        // If you want to enforce verification, uncomment:
-        // if user_model.email_verified.is_none() {
-        //     return Err(AppError::EmailNotVerified);
-        // }
-    }
-
     // Generate JWT tokens
-    let token_expiry = if payload.remember_me { 30 * 24 * 3600 } else { 24 * 3600 }; // 30 days or 24 hours
+    let token_expiry = if payload.remember_me {
+        30 * 24 * 3600
+    } else {
+        24 * 3600
+    };
     let exp = (Utc::now().timestamp() + token_expiry) as usize;
 
     let claims = Claims {
         user_id: user_model.id.clone(),
-        email: user_model.email.clone().unwrap_or_else(|| "".to_string()),
-        name: user_model.name.clone().unwrap_or_else(|| "".to_string()),
+        email: user_model.email.clone().unwrap_or_default(),
+        name: user_model.name.clone().unwrap_or_default(),
         exp,
     };
 
@@ -109,17 +113,17 @@ pub async fn login(
     // Generate refresh token
     let refresh_token = Uuid::new_v4().to_string();
 
-    // Store refresh token in User table (not separate refresh_tokens table)
+    // Store refresh token
     let mut user_active: user::ActiveModel = user_model.clone().into();
     user_active.refresh_token = Set(Some(refresh_token.clone()));
-    user_active.update(state.sea_orm())
+    user_active
+        .update(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Log successful login
-    log_login_attempt(&state, &user_model.id, true, None).await?;
+    tracing::info!("User {} logged in successfully", user_model.id);
 
-    // Convert SeaORM model to response format using From trait
+    // Convert to response
     let user_response: UserResponse = user_model.into();
 
     Ok(Json(LoginResponse {
@@ -129,24 +133,6 @@ pub async fn login(
         token_type: "Bearer".to_string(),
         expires_in: token_expiry,
     }))
-}
-
-/// Log login attempt for security tracking (optional, no-op if table doesn't exist)
-async fn log_login_attempt(
-    _: &AppState,
-    user_id: &str,
-    success: bool,
-    failure_reason: Option<&str>,
-) -> Result<(), AppError> {
-    // TODO: Implement login history tracking if needed
-    // For now, just log to console
-    tracing::info!(
-        "Login attempt - user_id: {}, success: {}, reason: {:?}",
-        user_id,
-        success,
-        failure_reason
-    );
-    Ok(())
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

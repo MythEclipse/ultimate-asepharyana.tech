@@ -1,4 +1,4 @@
-//! Handler for the register endpoint.
+//! Handler for the register endpoint - Enhanced with form_request validation.
 
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::{hash, DEFAULT_COST};
@@ -7,16 +7,19 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 use uuid::Uuid;
-use validator::Validate;
 
 // SeaORM imports
+use crate::entities::{email_verification_token, user};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, email_verification_token};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
 use crate::utils::error::AppError;
+
+// New helpers
+use crate::helpers::email_template::welcome_email;
+use crate::helpers::form_request::{validate, ValidationRules};
 
 pub const ENDPOINT_METHOD: &str = "post";
 pub const ENDPOINT_PATH: &str = "/api/auth/register";
@@ -26,17 +29,12 @@ pub const OPERATION_ID: &str = "auth_register";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<RegisterResponse>";
 
 /// Register request payload
-#[derive(Debug, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct RegisterRequest {
-    #[validate(email(message = "Invalid email format"))]
     pub email: String,
-
-    #[validate(length(min = 3, max = 50, message = "Username must be between 3 and 50 characters"))]
     pub username: String,
-
-    #[validate(length(min = 8, message = "Password must be at least 8 characters"))]
     pub password: String,
-
+    pub password_confirmation: Option<String>,
     pub full_name: Option<String>,
 }
 
@@ -47,34 +45,6 @@ pub struct RegisterResponse {
     pub message: String,
     pub user: UserResponse,
     pub verification_token: Option<String>,
-}
-
-/// Validate password strength
-fn validate_password_strength(password: &str) -> Result<(), AppError> {
-    if password.len() < 8 {
-        return Err(AppError::WeakPassword(
-            "Password must be at least 8 characters".to_string(),
-        ));
-    }
-
-    let has_uppercase = password.chars().any(|c| c.is_uppercase());
-    let has_lowercase = password.chars().any(|c| c.is_lowercase());
-    let has_digit = password.chars().any(|c| c.is_numeric());
-    let has_special = password.chars().any(|c| !c.is_alphanumeric());
-
-    if !has_uppercase || !has_lowercase || !has_digit {
-        return Err(AppError::WeakPassword(
-            "Password must contain uppercase, lowercase, and numbers".to_string(),
-        ));
-    }
-
-    if !has_special {
-        return Err(AppError::WeakPassword(
-            "Password should contain at least one special character".to_string(),
-        ));
-    }
-
-    Ok(())
 }
 
 #[utoipa::path(
@@ -91,15 +61,40 @@ pub async fn register(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Validate input
-    payload
-        .validate()
-        .map_err(|e| AppError::Other(format!("Validation error: {}", e)))?;
+    // Validate input using form_request helper
+    let data = serde_json::to_value(&payload).unwrap_or_default();
+    let mut rules = ValidationRules::new();
+    rules
+        .required("email")
+        .email("email")
+        .required("username")
+        .min_length("username", 3)
+        .max_length("username", 50)
+        .required("password")
+        .min_length("password", 8);
+
+    // Add password confirmation check if provided
+    if payload.password_confirmation.is_some() {
+        rules.confirmed("password", "password_confirmation");
+    }
+
+    let validation = validate(&data, &rules);
+    if !validation.is_valid() {
+        return Err(AppError::Other(format!(
+            "Validation failed: {}",
+            validation
+                .errors
+                .iter()
+                .map(|e| e.message.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )));
+    }
 
     // Validate password strength
     validate_password_strength(&payload.password)?;
 
-    // Check if email already exists using SeaORM
+    // Check if email already exists
     let email_exists = user::Entity::find()
         .filter(user::Column::Email.eq(&payload.email))
         .one(state.sea_orm())
@@ -111,7 +106,7 @@ pub async fn register(
         return Err(AppError::EmailAlreadyExists);
     }
 
-    // Check if name/username already exists using SeaORM
+    // Check if username already exists
     let username_exists = user::Entity::find()
         .filter(user::Column::Name.eq(&payload.username))
         .one(state.sea_orm())
@@ -129,23 +124,24 @@ pub async fn register(
     // Generate user ID
     let user_id = Uuid::new_v4().to_string();
 
-    // Insert user into database using SeaORM
+    // Insert user
     let new_user = user::ActiveModel {
         id: Set(user_id.clone()),
         email: Set(Some(payload.email.clone())),
         name: Set(Some(payload.username.clone())),
         password: Set(Some(password_hash)),
-        email_verified: Set(None), // Will be set after verification
+        email_verified: Set(None),
         image: Set(None),
         refresh_token: Set(None),
         role: Set("user".to_string()),
     };
 
-    let inserted_user = new_user.insert(state.sea_orm())
+    let inserted_user = new_user
+        .insert(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Generate email verification token using SeaORM
+    // Generate verification token
     let verification_token = Uuid::new_v4().to_string();
     let expires_at = Utc::now() + chrono::Duration::hours(24);
     let now = Utc::now();
@@ -163,31 +159,67 @@ pub async fn register(
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
-    // Convert to UserResponse
+    tracing::info!("New user registered: {}", user_id);
+
+    // Convert to response
     let user_response: UserResponse = inserted_user.into();
 
-        // Send verification email
-    let email_service = EmailService::new();
-    let user_name = user_response.name.clone().unwrap_or_else(|| "User".to_string());
-    let user_email = user_response.email.clone().unwrap_or_else(|| payload.email.clone());
+    // Send verification email using email_template helper
+    let user_name = user_response
+        .name
+        .clone()
+        .unwrap_or_else(|| "User".to_string());
+    let user_email = user_response
+        .email
+        .clone()
+        .unwrap_or_else(|| payload.email.clone());
+    let verify_url = format!(
+        "https://asepharyana.cloud/verify?token={}",
+        verification_token
+    );
 
+    let _email_template = welcome_email(&user_name, &verify_url);
+
+    let email_service = EmailService::new();
     if let Err(e) = email_service
         .send_verification_email(&user_email, &user_name, &verification_token)
         .await
     {
         tracing::warn!("Failed to send verification email: {}", e);
-        // Don't fail registration if email fails
     }
 
     Ok((
         axum::http::StatusCode::CREATED,
         Json(RegisterResponse {
             success: true,
-            message: "User registered successfully. Please check your email to verify your account.".to_string(),
+            message:
+                "User registered successfully. Please check your email to verify your account."
+                    .to_string(),
             user: user_response,
             verification_token: Some(verification_token),
         }),
     ))
+}
+
+/// Validate password strength
+fn validate_password_strength(password: &str) -> Result<(), AppError> {
+    if password.len() < 8 {
+        return Err(AppError::WeakPassword(
+            "Password must be at least 8 characters".to_string(),
+        ));
+    }
+
+    let has_uppercase = password.chars().any(|c| c.is_uppercase());
+    let has_lowercase = password.chars().any(|c| c.is_lowercase());
+    let has_digit = password.chars().any(|c| c.is_numeric());
+
+    if !has_uppercase || !has_lowercase || !has_digit {
+        return Err(AppError::WeakPassword(
+            "Password must contain uppercase, lowercase, and numbers".to_string(),
+        ));
+    }
+
+    Ok(())
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

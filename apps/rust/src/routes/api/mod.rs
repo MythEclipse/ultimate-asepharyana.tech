@@ -64,7 +64,6 @@ use crate::routes::api::auth::delete_account::DeleteAccountRequest;
 use crate::routes::api::auth::delete_account::DeleteAccountResponse;
 use crate::routes::api::auth::forgot_password::ForgotPasswordRequest;
 use crate::routes::api::auth::forgot_password::ForgotPasswordResponse;
-use crate::routes::api::auth::login::LoginMetadata;
 use crate::routes::api::auth::login::LoginRequest;
 use crate::routes::api::auth::logout::LogoutRequest;
 use crate::routes::api::auth::logout::LogoutResponse;
@@ -202,7 +201,6 @@ components(
                   DeleteAccountResponse,
                   ForgotPasswordRequest,
                   ForgotPasswordResponse,
-                  LoginMetadata,
                   LoginRequest,
                   LogoutRequest,
                   LogoutResponse,

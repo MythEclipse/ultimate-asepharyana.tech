@@ -1,8 +1,9 @@
 //! Helper utilities for easier development.
 //!
-//! Comprehensive collection of 29 utility modules for cleaner, more maintainable code.
+//! Comprehensive collection of 30 utility modules for cleaner, more maintainable code.
 
 // Core helpers
+pub mod api_response;
 pub mod errors;
 pub mod handler;
 pub mod pagination;
@@ -21,11 +22,14 @@ pub mod text;
 
 // I/O helpers
 pub mod cache;
+pub mod cache_tags;
 pub mod file;
 pub mod image_cache;
 pub mod retry;
+pub mod soft_delete;
 
 // Web/API helpers
+pub mod query;
 pub mod request;
 pub mod scraping;
 pub mod url;
@@ -39,9 +43,25 @@ pub mod serde_helpers;
 pub mod testing;
 
 // Infrastructure helpers
+pub mod bulk;
+pub mod console;
+pub mod email_template;
+pub mod encryption;
 pub mod env;
+pub mod form_request;
+pub mod health_check;
+pub mod import_export;
+pub mod query_profiler;
+pub mod resource;
+pub mod searchable;
 pub mod security;
+pub mod signed_url;
+pub mod sluggable;
+pub mod state_machine;
+pub mod tenant;
+pub mod transaction;
 pub mod uuid_utils;
+pub mod versioning;
 
 // ============================================================================
 // Re-exports for convenience
