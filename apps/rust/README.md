@@ -16,22 +16,61 @@ Add to your `Cargo.toml`:
 rustexpress = "0.1.0"
 ```
 
-Or use the CLI to scaffold a new project:
+## 🚀 Quick Start
 
 ```bash
-cargo install rustexpress
-rex new my-app
-cd my-app
-rex serve
+# From the apps/rust directory:
+cd apps/rust
+
+# Run the server
+cargo run
+
+# Or use the rex CLI
+cargo run --bin rex -- --help
+cargo run --bin rex -- serve
+cargo run --bin rex -- about
 ```
 
-## ✨ Complete Feature Set (39 Modules)
+## 🛠️ Rex CLI - Laravel Artisan-inspired
+
+**13 powerful commands** for scaffolding and managing your application:
+
+### Code Generation
+
+```bash
+rex make:model User              # Generate SeaORM entity
+rex make:migration create_users  # Generate migration file
+rex make:controller users        # Generate API controller
+rex make:service UserService     # Generate service layer
+rex make:repository UserRepo     # Generate repository pattern
+rex make:api products            # Generate complete CRUD stack
+```
+
+### Database Management
+
+```bash
+rex migrate:run                  # Run pending migrations
+rex migrate:rollback             # Rollback last migration
+rex migrate:status               # Show migration status
+rex db:seed                      # Run database seeders
+```
+
+### Server & Info
+
+```bash
+rex serve                        # Start development server
+rex serve --port 8080            # Custom port
+rex list                         # List models and routes
+rex about                        # Show framework info
+```
+
+## ✨ Complete Feature Set (39+ Modules)
 
 ### 🔐 Authentication & Security
 
 | Feature        | Module                | Description             |
 | -------------- | --------------------- | ----------------------- |
-| JWT Auth       | `utils/auth`          | Token-based auth        |
+| JWT Auth       | `core/jwt`            | Token-based auth        |
 | OAuth2         | `auth/oauth`          | Google, GitHub, Discord |
 | 2FA/TOTP       | `auth/totp`           | Time-based OTP          |
 | API Keys       | `auth/api_key`        | API key management      |
@@ -39,7 +78,7 @@ rex serve
 | Remember Me    | `auth/remember_me`    | Long-term tokens        |
 | Session        | `session`             | Redis-backed sessions   |
 | CSRF           | `security/csrf`       | Cross-site protection   |
-| Rate Limiting  | `ratelimit`           | Request throttling      |
+| Rate Limiting  | `core/ratelimit`      | Request throttling      |
 
 ### 📊 Database & ORM
 
@@ -65,6 +104,7 @@ rex serve
 | API Versioning  | `helpers/versioning`    | v1/v2 routing         |
 | Signed URLs     | `helpers/signed_url`    | Expiring URLs         |
 | Import/Export   | `helpers/import_export` | CSV/JSON/NDJSON       |
+| GraphQL         | `graphql`               | async-graphql support |
 
 ### 📧 Communication
 
@@ -74,6 +114,7 @@ rex serve
 | Email Templates | `helpers/email_template` | HTML email builder     |
 | Broadcasting    | `broadcasting`           | Real-time SSE          |
 | Webhooks        | `webhooks`               | Signature verification |
+| WebSocket       | `ws`                     | Room-based WebSocket   |
 
 ### 🏢 Enterprise Features
 
@@ -84,18 +125,20 @@ rex serve
 | Authorization    | `auth`                   | RBAC/policies         |
 | Audit Logging    | `audit`                  | Activity tracking     |
 | Maintenance Mode | `middleware/maintenance` | Downtime handling     |
-| Health Checks    | `helpers/health_check`   | Dependency monitoring |
+| Health Checks    | `health`                 | Dependency monitoring |
+| Circuit Breaker  | `circuit_breaker`        | Failure isolation     |
 
 ### 🛠 Infrastructure
 
-| Feature        | Module                   | Description          |
-| -------------- | ------------------------ | -------------------- |
-| Cache Tags     | `helpers/cache_tags`     | Intelligent caching  |
-| Encryption     | `helpers/encryption`     | AES-256 at rest      |
-| Storage        | `storage`                | Local + S3 drivers   |
-| i18n           | `i18n`                   | Translations         |
-| Query Profiler | `helpers/query_profiler` | Performance analysis |
-| Console/CLI    | `helpers/console`        | Command builder      |
+| Feature           | Module                   | Description          |
+| ----------------- | ------------------------ | -------------------- |
+| Cache Tags        | `helpers/cache_tags`     | Intelligent caching  |
+| Encryption        | `helpers/encryption`     | AES-256 at rest      |
+| Storage           | `storage`                | Local + S3 drivers   |
+| i18n              | `i18n`                   | Translations         |
+| Query Profiler    | `helpers/query_profiler` | Performance analysis |
+| Dependency Inject | `di`                     | Service container    |
+| Graceful Shutdown | `graceful`               | Signal handling      |
 
 ### 🔧 Background Processing
 
@@ -105,20 +148,12 @@ rex serve
 | Scheduler | `scheduler`   | Cron tasks        |
 | Worker    | `jobs/worker` | Async processing  |
 
-## 🚀 Quick Start
-
-```bash
-cargo build                     # Build
-cargo run                       # Run server on :8080
-cargo test                      # Run tests
-```
-
-## 📖 Usage Examples
+## Usage Examples
 
 ### Form Validation
 
 ```rust
-use crate::helpers::form_request::{ValidationRules, validate};
+use rustexpress::helpers::form_request::{ValidationRules, validate};
 
 let mut rules = ValidationRules::new();
 rules.required("email").email("email").min_length("password", 8);
@@ -132,7 +167,7 @@ if !validation.is_valid() {
 ### Email Templates
 
 ```rust
-use crate::helpers::email_template::welcome_email;
+use rustexpress::helpers::email_template::welcome_email;
 
 let email = welcome_email("John", "https://example.com/verify?token=abc");
 // Returns EmailTemplate { subject, html, text }
@@ -141,7 +176,7 @@ let email = welcome_email("John", "https://example.com/verify?token=abc");
 ### API Versioning
 
 ```rust
-use crate::helpers::versioning::{ApiVersion, extract_version};
+use rustexpress::helpers::versioning::{ApiVersion, extract_version};
 
 let version = extract_version(&headers);
 if version.at_least(2, 0) {
@@ -149,40 +184,64 @@ if version.at_least(2, 0) {
 }
 ```
 
-### Searchable
-
-```rust
-use crate::helpers::searchable::{calculate_score, SearchQuery};
-
-let score = calculate_score("John Doe", "john", true); // fuzzy match
-```
-
 ### Multi-tenancy
 
 ```rust
-use crate::helpers::tenant::{TenantManager, Tenant};
+use rustexpress::helpers::tenant::{TenantManager, Tenant};
 
 let tenant = manager.get_by_domain("acme.example.com").await?;
+```
+
+### Storage
+
+```rust
+use rustexpress::storage::Storage;
+
+let storage = Storage::local("./uploads");
+storage.put("images/photo.jpg", &bytes).await?;
+let content = storage.get("images/photo.jpg").await?;
 ```
 
 ## 📁 Project Structure
 
 ```
 src/
-├── auth/           # OAuth, TOTP, API Keys, Password Reset
+├── auth/           # OAuth, TOTP, API Keys, Password Reset, RBAC
 ├── audit/          # Audit logging
+├── bin/            # CLI tools (rex, scaffold)
 ├── broadcasting/   # Real-time SSE
+├── circuit_breaker/# Failure isolation
+├── core/           # Config, JWT, Rate limiting
+├── di/             # Dependency injection
+├── entities/       # SeaORM entities (13 models)
+├── events/         # Event bus (pub/sub)
+├── extractors/     # ValidatedJson, ValidatedQuery
 ├── features/       # Feature flags
-├── helpers/        # 20+ utility modules
+├── graceful/       # Graceful shutdown
+├── graphql/        # GraphQL support
+├── health/         # Health checks
+├── helpers/        # 50 utility modules
 ├── i18n/           # Internationalization
+├── infra/          # Redis, HTTP client, Proxy
+├── jobs/           # Background job queue
 ├── middleware/     # Auth, logging, maintenance
 ├── notifications/  # Multi-channel notifications
-├── routes/         # API routes
+├── observability/  # Metrics, tracing
+├── routes/         # API routes (33 endpoints)
+├── scheduler/      # Cron tasks
 ├── security/       # CSRF protection
 ├── session/        # Session management
 ├── storage/        # File storage (Local/S3)
-└── webhooks/       # Webhook handling
+├── testing/        # Test utilities
+├── webhooks/       # Webhook handling
+└── ws/             # WebSocket with rooms
 ```
+
+## 🔗 API Documentation
+
+Swagger UI is available at `/docs` when the server is running.
+
+OpenAPI spec: `/api-docs/openapi.json`
 
 ## License
 
