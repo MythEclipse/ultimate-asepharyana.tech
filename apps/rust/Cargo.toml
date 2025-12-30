@@ -10,6 +10,7 @@ repository = "https://github.com/MythEclipse/ultimate-asepharyana.cloud"
 keywords = ["web", "framework", "axum", "api", "rest"]
 categories = ["web-programming::http-server", "web-programming::websocket"]
 build = "build.rs"
+default-run = "rustexpress"
 
 # Dependensi yang dibutuhkan saat aplikasi berjalan
 [dependencies]
