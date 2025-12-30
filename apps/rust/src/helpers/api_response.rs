@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::api_response::{ApiResponse, ApiResult};
+//! use rustexpress::helpers::api_response::{ApiResponse, ApiResult};
 //!
 //! async fn get_user(id: i32) -> ApiResult<User> {
 //!     let user = find_user(id)?;

@@ -45,7 +45,7 @@ pub struct JobMeta {
 /// # Example
 ///
 /// ```ignore
-/// use rust::jobs::{Job, JobDispatcher};
+/// use rustexpress::jobs::{Job, JobDispatcher};
 /// use serde::{Serialize, Deserialize};
 /// use async_trait::async_trait;
 ///

@@ -6,7 +6,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::storage::{Storage, LocalDriver};
+//! use rustexpress::storage::{Storage, LocalDriver};
 //!
 //! let storage = Storage::local("./uploads");
 //!

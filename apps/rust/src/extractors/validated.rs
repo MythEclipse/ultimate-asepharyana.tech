@@ -77,7 +77,7 @@ fn format_validation_errors(errors: &ValidationErrors) -> serde_json::Value {
 /// ```ignore
 /// use validator::Validate;
 /// use serde::Deserialize;
-/// use rust::extractors::ValidatedJson;
+/// use rustexpress::extractors::ValidatedJson;
 ///
 /// #[derive(Deserialize, Validate)]
 /// struct CreateUser {
@@ -135,7 +135,7 @@ where
 /// ```ignore
 /// use validator::Validate;
 /// use serde::Deserialize;
-/// use rust::extractors::ValidatedQuery;
+/// use rustexpress::extractors::ValidatedQuery;
 ///
 /// #[derive(Deserialize, Validate)]
 /// struct Pagination {

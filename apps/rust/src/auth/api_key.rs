@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::auth::api_key::{ApiKeyManager, ApiKey};
+//! use rustexpress::auth::api_key::{ApiKeyManager, ApiKey};
 //!
 //! let manager = ApiKeyManager::new(redis_pool);
 //!

@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::transaction::{transaction, TransactionExt};
+//! use rustexpress::helpers::transaction::{transaction, TransactionExt};
 //!
 //! let result = transaction(&db, |txn| async move {
 //!     User::insert(user1).exec(&txn).await?;

@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::bulk::{BulkResult, batch_insert};
+//! use rustexpress::helpers::bulk::{BulkResult, batch_insert};
 //!
 //! // Bulk insert
 //! let result = batch_insert::<User, _>(&db, users, 100).await?;

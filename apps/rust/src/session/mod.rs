@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::session::{SessionStore, SessionMiddleware, Session};
+//! use rustexpress::session::{SessionStore, SessionMiddleware, Session};
 //!
 //! // In your route handler
 //! async fn handler(session: Session) -> impl IntoResponse {

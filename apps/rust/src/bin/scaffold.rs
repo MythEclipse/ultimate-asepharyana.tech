@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use rust::build_utils::template_generator;
+use rustexpress::build_utils::template_generator;
 use std::env;
 use std::fs;
 use std::path::PathBuf;

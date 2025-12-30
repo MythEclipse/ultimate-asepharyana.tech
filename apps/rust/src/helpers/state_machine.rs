@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::state_machine::{StateMachine, Transition};
+//! use rustexpress::helpers::state_machine::{StateMachine, Transition};
 //!
 //! let mut sm = StateMachine::new("draft");
 //! sm.add_transition("draft", "pending", "submit");

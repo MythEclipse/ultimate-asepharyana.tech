@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::console::{Console, Command, CommandContext};
+//! use rustexpress::helpers::console::{Console, Command, CommandContext};
 //!
 //! let mut console = Console::new("myapp");
 //! console.register("migrate", "Run migrations", |ctx| {

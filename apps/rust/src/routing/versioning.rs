@@ -35,7 +35,7 @@ impl std::fmt::Display for ApiVersion {
 /// # Example
 ///
 /// ```ignore
-/// use rust::versioning::VersionedApi;
+/// use rustexpress::versioning::VersionedApi;
 ///
 /// let app = VersionedApi::new()
 ///     .v1(users_v1_routes())

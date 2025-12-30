@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::auth::oauth::{OAuthProvider, OAuthClient, GoogleProvider};
+//! use rustexpress::auth::oauth::{OAuthProvider, OAuthClient, GoogleProvider};
 //!
 //! let google = GoogleProvider::new(
 //!     "client_id",

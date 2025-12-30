@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::auth::remember_me::{RememberMe, RememberToken};
+//! use rustexpress::auth::remember_me::{RememberMe, RememberToken};
 //!
 //! let remember = RememberMe::new(redis_pool);
 //!

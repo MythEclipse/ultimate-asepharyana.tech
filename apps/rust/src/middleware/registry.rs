@@ -19,7 +19,7 @@ use axum::{
 /// # Example
 ///
 /// ```ignore
-/// use rust::middleware::MiddlewareRegistry;
+/// use rustexpress::middleware::MiddlewareRegistry;
 ///
 /// let mut registry = MiddlewareRegistry::new();
 /// registry.register("auth", auth_layer);

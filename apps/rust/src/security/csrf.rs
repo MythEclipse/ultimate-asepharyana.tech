@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::security::{CsrfConfig, CsrfLayer, CsrfToken};
+//! use rustexpress::security::{CsrfConfig, CsrfLayer, CsrfToken};
 //! use axum::{Router, routing::post};
 //!
 //! // Add CSRF protection to routes

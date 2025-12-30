@@ -3,7 +3,7 @@
 //! # Usage
 //!
 //! ```ignore
-//! use rust::helpers::prelude::*;
+//! use rustexpress::helpers::prelude::*;
 //! ```
 
 // Re-export common types

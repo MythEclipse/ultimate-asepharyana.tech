@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::soft_delete::{SoftDeletable, soft_delete_filter, SoftDeleteScope};
+//! use rustexpress::helpers::soft_delete::{SoftDeletable, soft_delete_filter, SoftDeleteScope};
 //! use sea_orm::*;
 //!
 //! // Query without deleted

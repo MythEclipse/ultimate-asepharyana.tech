@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::query_profiler::{QueryProfiler, QueryLog};
+//! use rustexpress::helpers::query_profiler::{QueryProfiler, QueryLog};
 //!
 //! let profiler = QueryProfiler::new();
 //!

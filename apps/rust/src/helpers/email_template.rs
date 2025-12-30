@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::email_template::{EmailTemplate, TemplateEngine};
+//! use rustexpress::helpers::email_template::{EmailTemplate, TemplateEngine};
 //!
 //! let engine = TemplateEngine::new();
 //! engine.register("welcome", include_str!("templates/welcome.html"));

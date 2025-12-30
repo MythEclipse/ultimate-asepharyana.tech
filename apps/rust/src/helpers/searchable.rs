@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::searchable::{Searchable, SearchQuery, search};
+//! use rustexpress::helpers::searchable::{Searchable, SearchQuery, search};
 //!
 //! impl Searchable for User {
 //!     fn searchable_fields() -> Vec<&'static str> {

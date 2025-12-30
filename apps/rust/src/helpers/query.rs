@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::query::{QueryBuilder, Pagination, SortOrder};
+//! use rustexpress::helpers::query::{QueryBuilder, Pagination, SortOrder};
 //!
 //! let query = User::find()
 //!     .apply_pagination(Pagination::new(1, 20))

@@ -11,7 +11,7 @@ use tracing::info;
 /// # Example
 ///
 /// ```ignore
-/// use rust::typescript::generate_typescript_types;
+/// use rustexpress::typescript::generate_typescript_types;
 ///
 /// generate_typescript_types("../frontend/src/types/api.d.ts")?;
 /// ```

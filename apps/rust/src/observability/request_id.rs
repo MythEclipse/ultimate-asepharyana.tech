@@ -51,7 +51,7 @@ impl std::fmt::Display for RequestId {
 ///
 /// ```ignore
 /// use axum::Extension;
-/// use rust::observability::RequestId;
+/// use rustexpress::observability::RequestId;
 ///
 /// async fn handler(Extension(req_id): Extension<RequestId>) {
 ///     println!("Request ID: {}", req_id);

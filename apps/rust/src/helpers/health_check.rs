@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::health_check::{HealthRegistry, HealthCheck, HealthStatus};
+//! use rustexpress::helpers::health_check::{HealthRegistry, HealthCheck, HealthStatus};
 //!
 //! let mut registry = HealthRegistry::new();
 //! registry.register("database", DatabaseHealthCheck);

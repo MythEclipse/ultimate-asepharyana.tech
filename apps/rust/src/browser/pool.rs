@@ -44,7 +44,7 @@ impl Default for BrowserPoolConfig {
 /// # Example
 ///
 /// ```ignore
-/// use rust::browser::{BrowserPool, BrowserPoolConfig};
+/// use rustexpress::browser::{BrowserPool, BrowserPoolConfig};
 ///
 /// let pool = BrowserPool::new(BrowserPoolConfig::default()).await?;
 ///

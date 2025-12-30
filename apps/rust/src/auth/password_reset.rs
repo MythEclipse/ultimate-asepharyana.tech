@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::auth::password_reset::{PasswordReset, ResetToken};
+//! use rustexpress::auth::password_reset::{PasswordReset, ResetToken};
 //!
 //! let reset = PasswordReset::new(redis_pool);
 //!

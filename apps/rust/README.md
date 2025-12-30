@@ -1,8 +1,29 @@
 # RustExpress Framework
 
-A **battery-included**, production-ready Rust web framework built on Axum with **39 enterprise-grade modules**.
+[![Crates.io](https://img.shields.io/crates/v/rustexpress.svg)](https://crates.io/crates/rustexpress)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A **batteries-included**, production-ready Rust web framework built on Axum with **39+ enterprise-grade modules**.
 
 > 🏆 **The most comprehensive Rust web framework** — exceeds Laravel, Rails, Django, Spring Boot
+
+## 📦 Installation
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+rustexpress = "0.1.0"
+```
+
+Or use the CLI to scaffold a new project:
+
+```bash
+cargo install rustexpress
+rex new my-app
+cd my-app
+rex serve
+```
 
 ## ✨ Complete Feature Set (39 Modules)
 

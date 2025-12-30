@@ -17,7 +17,7 @@ use tower::ServiceExt;
 /// # Example
 ///
 /// ```ignore
-/// use rust::testing::TestApp;
+/// use rustexpress::testing::TestApp;
 ///
 /// #[tokio::test]
 /// async fn test_health_endpoint() {

@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::import_export::{CsvExporter, JsonExporter};
+//! use rustexpress::helpers::import_export::{CsvExporter, JsonExporter};
 //!
 //! // Export to CSV
 //! let csv = CsvExporter::export(&users)?;

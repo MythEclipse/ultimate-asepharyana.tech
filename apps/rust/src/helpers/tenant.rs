@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::tenant::{TenantManager, Tenant, TenantContext};
+//! use rustexpress::helpers::tenant::{TenantManager, Tenant, TenantContext};
 //!
 //! let manager = TenantManager::new(redis_pool);
 //! let tenant = manager.get_by_domain("acme.example.com").await?;

@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::storage::{Storage, S3Driver, S3Config};
+//! use rustexpress::storage::{Storage, S3Driver, S3Config};
 //!
 //! let config = S3Config {
 //!     bucket: "my-bucket".to_string(),

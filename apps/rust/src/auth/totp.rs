@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::auth::totp::{Totp, TotpConfig};
+//! use rustexpress::auth::totp::{Totp, TotpConfig};
 //!
 //! let totp = Totp::new("user@example.com", "MyApp");
 //!

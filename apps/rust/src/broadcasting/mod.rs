@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::broadcasting::{Broadcaster, Event};
+//! use rustexpress::broadcasting::{Broadcaster, Event};
 //!
 //! let broadcaster = Broadcaster::new();
 //!

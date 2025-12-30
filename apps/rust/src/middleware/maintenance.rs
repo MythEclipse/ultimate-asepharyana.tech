@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::middleware::maintenance::{MaintenanceMode, MaintenanceConfig};
+//! use rustexpress::middleware::maintenance::{MaintenanceMode, MaintenanceConfig};
 //!
 //! let maintenance = MaintenanceMode::new(redis_pool);
 //!

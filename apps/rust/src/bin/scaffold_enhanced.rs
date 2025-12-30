@@ -101,6 +101,56 @@ enum Commands {
         #[arg(default_value = "all")]
         what: String,
     },
+
+    // ============================================================================
+    // Database Commands
+    // ============================================================================
+    /// Run pending database migrations
+    #[command(name = "migrate:run")]
+    MigrateRun {
+        /// Run in fresh mode (drop all tables first)
+        #[arg(long)]
+        fresh: bool,
+    },
+
+    /// Rollback the last database migration
+    #[command(name = "migrate:rollback")]
+    MigrateRollback {
+        /// Number of migrations to rollback
+        #[arg(short, long, default_value = "1")]
+        step: u32,
+    },
+
+    /// Show migration status
+    #[command(name = "migrate:status")]
+    MigrateStatus,
+
+    /// Run database seeders
+    #[command(name = "db:seed")]
+    DbSeed {
+        /// Specific seeder class to run
+        #[arg(short, long)]
+        class: Option<String>,
+    },
+
+    // ============================================================================
+    // Server Commands
+    // ============================================================================
+    /// Start the development server
+    #[command(name = "serve")]
+    Serve {
+        /// Port to run on
+        #[arg(short, long, default_value = "4091")]
+        port: u16,
+
+        /// Host to bind to
+        #[arg(long, default_value = "0.0.0.0")]
+        host: String,
+    },
+
+    /// Display RustExpress version and info
+    #[command(name = "about")]
+    About,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -142,7 +192,11 @@ fn main() -> anyhow::Result<()> {
             println!("✅ Repository {} created successfully!", name);
         }
 
-        Commands::MakeApi { name, full, auth: _ } => {
+        Commands::MakeApi {
+            name,
+            full,
+            auth: _,
+        } => {
             println!("🚀 Generating complete API for: {}", name);
             generators::api::generate_full_api(&name, full)?;
             println!("✅ Complete API created successfully!");
@@ -152,6 +206,92 @@ fn main() -> anyhow::Result<()> {
         Commands::List { what } => {
             println!("📋 Listing {}...", what);
             utils::list_resources(&what)?;
+        }
+
+        // ============================================================================
+        // Database Commands
+        // ============================================================================
+        Commands::MigrateRun { fresh } => {
+            if fresh {
+                println!("🔄 Running fresh migrations (drop all tables first)...");
+                println!("⚠️  This would drop all tables and re-run migrations");
+            } else {
+                println!("🔄 Running pending migrations...");
+            }
+            // TODO: Integrate with sea-orm-cli or custom migration runner
+            println!("💡 Tip: Use 'sea-orm-cli migrate up' for now");
+            println!("   We're working on native migration support!");
+        }
+
+        Commands::MigrateRollback { step } => {
+            println!("⏪ Rolling back {} migration(s)...", step);
+            // TODO: Integrate with sea-orm-cli
+            println!("💡 Tip: Use 'sea-orm-cli migrate down -n {}' for now", step);
+        }
+
+        Commands::MigrateStatus => {
+            println!("📊 Migration Status:");
+            println!("─────────────────────────────────────────");
+            // TODO: Show actual migration status
+            println!("💡 Tip: Use 'sea-orm-cli migrate status' for now");
+            println!("\nTo generate a new migration:");
+            println!("  rex make:migration create_products_table --table products");
+        }
+
+        Commands::DbSeed { class } => {
+            if let Some(seeder) = class {
+                println!("🌱 Running seeder: {}...", seeder);
+            } else {
+                println!("🌱 Running all seeders...");
+            }
+            println!("💡 Seeders run automatically on server start");
+            println!("   Check src/seeder/ for seeder implementations");
+        }
+
+        // ============================================================================
+        // Server Commands
+        // ============================================================================
+        Commands::Serve { port, host } => {
+            println!("🚀 Starting RustExpress development server...");
+            println!("   Host: {}", host);
+            println!("   Port: {}", port);
+            println!("─────────────────────────────────────────");
+
+            // Run cargo run with environment
+            let status = std::process::Command::new("cargo")
+                .arg("run")
+                .env("PORT", port.to_string())
+                .env("HOST", &host)
+                .status();
+
+            match status {
+                Ok(s) if s.success() => {}
+                Ok(s) => {
+                    eprintln!("❌ Server exited with status: {}", s);
+                }
+                Err(e) => {
+                    eprintln!("❌ Failed to start server: {}", e);
+                }
+            }
+        }
+
+        Commands::About => {
+            println!();
+            println!("╔══════════════════════════════════════════════════════════════╗");
+            println!("║                    🦀 RustExpress Framework                   ║");
+            println!("╠══════════════════════════════════════════════════════════════╣");
+            println!("║  Version: 0.1.0                                              ║");
+            println!("║  Built on: Axum + SeaORM + Tokio                             ║");
+            println!("║  License: MIT                                                ║");
+            println!("╠══════════════════════════════════════════════════════════════╣");
+            println!("║  A batteries-included Rust web framework with 39+ modules    ║");
+            println!("║  featuring JWT auth, OAuth2, 2FA, WebSocket, GraphQL,        ║");
+            println!("║  background jobs, and enterprise features.                   ║");
+            println!("╚══════════════════════════════════════════════════════════════╝");
+            println!();
+            println!("📚 Documentation: https://github.com/MythEclipse/ultimate-asepharyana.cloud");
+            println!("🐛 Report issues: https://github.com/MythEclipse/ultimate-asepharyana.cloud/issues");
+            println!();
         }
     }
 

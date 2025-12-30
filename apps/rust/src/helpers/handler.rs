@@ -5,7 +5,7 @@
 /// # Example
 ///
 /// ```ignore
-/// use rust::helpers::crud_handlers;
+/// use rustexpress::helpers::crud_handlers;
 ///
 /// crud_handlers!(User, users);
 /// // Generates: list_users, get_user, create_user, update_user, delete_user
@@ -69,7 +69,7 @@ macro_rules! crud_handlers {
 /// # Example
 ///
 /// ```ignore
-/// use rust::helpers::handler::try_handler;
+/// use rustexpress::helpers::handler::try_handler;
 ///
 /// async fn my_handler() -> impl IntoResponse {
 ///     try_handler(async {

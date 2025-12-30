@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::versioning::{ApiVersion, extract_version};
+//! use rustexpress::helpers::versioning::{ApiVersion, extract_version};
 //!
 //! // From header: Accept: application/vnd.api+json; version=2
 //! let version = extract_version(&headers);

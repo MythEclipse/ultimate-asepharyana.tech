@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::signed_url::{SignedUrl, SignedUrlConfig};
+//! use rustexpress::helpers::signed_url::{SignedUrl, SignedUrlConfig};
 //!
 //! let signer = SignedUrl::new("my-secret-key");
 //!

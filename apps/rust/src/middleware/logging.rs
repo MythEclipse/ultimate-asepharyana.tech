@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::middleware::logging::{LoggingConfig, with_logging};
+//! use rustexpress::middleware::logging::{LoggingConfig, with_logging};
 //! use axum::Router;
 //!
 //! let app = Router::new()

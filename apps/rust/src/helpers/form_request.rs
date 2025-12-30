@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::form_request::{FormRequest, ValidationRules, validate};
+//! use rustexpress::helpers::form_request::{FormRequest, ValidationRules, validate};
 //!
 //! let rules = ValidationRules::new()
 //!     .required("email")

@@ -1,8 +1,14 @@
 
 [package]
-name = "rust"
+name = "rustexpress"
 version = "0.1.0"
 edition = "2021"
+description = "A batteries-included, production-ready Rust web framework built on Axum"
+authors = ["Asep Haryana"]
+license = "MIT"
+repository = "https://github.com/MythEclipse/ultimate-asepharyana.cloud"
+keywords = ["web", "framework", "axum", "api", "rest"]
+categories = ["web-programming::http-server", "web-programming::websocket"]
 build = "build.rs"
 
 # Dependensi yang dibutuhkan saat aplikasi berjalan

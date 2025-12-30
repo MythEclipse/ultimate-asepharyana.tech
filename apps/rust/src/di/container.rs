@@ -12,7 +12,7 @@ use std::sync::{Arc, RwLock};
 /// # Example
 ///
 /// ```ignore
-/// use rust::di::ServiceContainer;
+/// use rustexpress::di::ServiceContainer;
 ///
 /// // Define a service
 /// struct DatabaseService {
@@ -81,7 +81,7 @@ impl ServiceContainer {
 /// # Example
 ///
 /// ```ignore
-/// use rust::di::{ServiceContainer, ServiceProvider};
+/// use rustexpress::di::{ServiceContainer, ServiceProvider};
 ///
 /// struct DatabaseServiceProvider;
 ///

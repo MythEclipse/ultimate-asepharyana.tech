@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::features::{FeatureFlags, Feature};
+//! use rustexpress::features::{FeatureFlags, Feature};
 //!
 //! let flags = FeatureFlags::new(redis_pool);
 //!

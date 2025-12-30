@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::encryption::{Encryptor, EncryptedField};
+//! use rustexpress::helpers::encryption::{Encryptor, EncryptedField};
 //!
 //! let encryptor = Encryptor::new("secret-key");
 //!

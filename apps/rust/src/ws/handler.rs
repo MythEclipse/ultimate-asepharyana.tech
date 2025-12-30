@@ -40,7 +40,7 @@ impl Default for WsState {
 /// # Example
 ///
 /// ```ignore
-/// use rust::ws::{ws_handler, WsState};
+/// use rustexpress::ws::{ws_handler, WsState};
 ///
 /// let ws_state = WsState::new();
 /// router.route("/ws", get(ws_handler)).with_state(ws_state);

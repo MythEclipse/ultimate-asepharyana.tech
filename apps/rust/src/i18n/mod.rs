@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::i18n::{I18n, Locale};
+//! use rustexpress::i18n::{I18n, Locale};
 //!
 //! let i18n = I18n::load("./locales").await?;
 //!

@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::webhooks::{WebhookHandler, WebhookEvent};
+//! use rustexpress::webhooks::{WebhookHandler, WebhookEvent};
 //!
 //! let handler = WebhookHandler::new()
 //!     .add_secret("stripe", "whsec_xxx")

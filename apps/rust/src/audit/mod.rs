@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::audit::{AuditLogger, AuditAction};
+//! use rustexpress::audit::{AuditLogger, AuditAction};
 //!
 //! let audit = AuditLogger::new(redis_pool);
 //!

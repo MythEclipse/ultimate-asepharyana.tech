@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::auth::{Gate, Permission, Role};
+//! use rustexpress::auth::{Gate, Permission, Role};
 //!
 //! // Define permissions
 //! let mut gate = Gate::new();

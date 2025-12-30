@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::notifications::{Notification, NotificationChannel, Notifier};
+//! use rustexpress::notifications::{Notification, NotificationChannel, Notifier};
 //!
 //! let notifier = Notifier::new(redis_pool);
 //!

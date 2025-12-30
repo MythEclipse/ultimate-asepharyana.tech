@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::cache_tags::TaggedCache;
+//! use rustexpress::helpers::cache_tags::TaggedCache;
 //!
 //! let cache = TaggedCache::new(redis_pool);
 //!

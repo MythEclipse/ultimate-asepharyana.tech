@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::sluggable::{Sluggable, slugify};
+//! use rustexpress::helpers::sluggable::{Sluggable, slugify};
 //!
 //! let slug = slugify("Hello World! This is a Test");
 //! // Returns: "hello-world-this-is-a-test"

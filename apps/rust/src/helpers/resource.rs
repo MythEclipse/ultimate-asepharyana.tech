@@ -5,7 +5,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use rust::helpers::resource::{Resource, ResourceCollection};
+//! use rustexpress::helpers::resource::{Resource, ResourceCollection};
 //!
 //! struct UserResource;
 //! impl Resource for UserResource {
