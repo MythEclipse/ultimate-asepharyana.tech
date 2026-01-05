@@ -30,7 +30,7 @@ pub const ENDPOINT_DESCRIPTION: &str =
     "Handles GET requests for the anime2/complete-anime/slug endpoint.";
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_complete_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<CompleteAnimeResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct CompleteAnimeItem {
@@ -52,10 +52,10 @@ pub struct Pagination {
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct ListResponse {
-    pub message: String,
+pub struct CompleteAnimeResponse {
+    pub status: String,
     pub data: Vec<CompleteAnimeItem>,
-    pub total: Option<i64>,
+    pub pagination: Pagination,
 }
 
 // Pre-compiled CSS selectors for performance
@@ -85,7 +85,7 @@ const CACHE_TTL: u64 = 300; // 5 minutes
     tag = "anime2",
     operation_id = "anime2_complete_anime_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = ListResponse),
+        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = CompleteAnimeResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -112,16 +112,16 @@ pub async fn slug(
 
             let html_clone = html.clone();
             let slug_clone = slug.clone();
-            let (anime_list, _) =
+            let (anime_list, pagination) =
                 tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
                     .await
                     .map_err(|e| e.to_string())?
                     .map_err(|e| e.to_string())?;
 
-            Ok(ListResponse {
-                message: "Success".to_string(),
-                data: anime_list.clone(),
-                total: Some(anime_list.len() as i64),
+            Ok(CompleteAnimeResponse {
+                status: "Ok".to_string(),
+                data: anime_list,
+                pagination,
             })
         })
         .await
