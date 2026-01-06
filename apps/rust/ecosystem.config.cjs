@@ -3,7 +3,7 @@ module.exports = {
   apps: [
     {
       name: 'ultimate-rust',
-      script: 'target/release/rust',
+      script: 'target/release/rustexpress',
       cwd: process.env.VPS_TARGET_DIR
         ? `${process.env.VPS_TARGET_DIR}/apps/rust`
         : '/home/asephs/ultimate-asepharyana.cloud/apps/rust',

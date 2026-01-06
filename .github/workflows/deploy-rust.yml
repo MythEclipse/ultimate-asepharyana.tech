@@ -157,11 +157,11 @@ jobs:
       - name: Check Build Output
         run: |
           echo "Rust build output:" && ls -l apps/rust/target/release
-          if [ ! -f "apps/rust/target/release/rust" ]; then
+          if [ ! -f "apps/rust/target/release/rustexpress" ]; then
             echo "ERROR: Rust build output executable not found. Deployment aborted."
             exit 1
           fi
-          echo "✅ Binary size: $(du -h apps/rust/target/release/rust | cut -f1)"
+          echo "✅ Binary size: $(du -h apps/rust/target/release/rustexpress | cut -f1)"
 
       - name: Copy .env to all subprojects/packages
         run: bash scripts/2updateenv.sh
@@ -178,7 +178,7 @@ jobs:
           # Prepare list of files to sync
           # We use sed to strip leading ./ from find output to ensure clean relative paths
           find . -type f -name ".env" | sed 's|^\./||' > ./deploy_files.txt
-          echo "apps/rust/target/release/rust" >> ./deploy_files.txt
+          echo "apps/rust/target/release/rustexpress" >> ./deploy_files.txt
           echo "apps/rust/ecosystem.config.cjs" >> ./deploy_files.txt
 
           echo "Files to deploy:"
