@@ -3,6 +3,7 @@
 pub mod prelude;
 
 pub mod account;
+pub mod bookmarks;
 pub mod chat_message;
 pub mod chat_message_room;
 pub mod chat_room;

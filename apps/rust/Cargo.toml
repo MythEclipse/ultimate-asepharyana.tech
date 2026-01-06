@@ -127,9 +127,6 @@ path = "src/bin/scaffold_enhanced.rs"
 # name = "test_apis"
 # path = "src/bin/test_apis.rs"
 
-# [[bin]]
-# name = "test_openapi"
-# path = "src/bin/test_openapi.rs"
 
 
 [lints.rust]

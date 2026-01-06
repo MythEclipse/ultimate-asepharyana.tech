@@ -44,10 +44,22 @@ async fn main() -> anyhow::Result<()> {
     let _ = REDIS_POOL.get().await;
 
     // SeaORM connection using validated config
-    let db: DatabaseConnection = Database::connect(&CONFIG.database_url)
+    let mut opt = sea_orm::ConnectOptions::new(CONFIG.database_url.clone());
+    opt.max_connections(50)
+        .min_connections(5)
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .idle_timeout(std::time::Duration::from_secs(10))
+        .sqlx_logging(true);
+
+    let db: DatabaseConnection = Database::connect(opt)
         .await
         .expect("Failed to connect to MySQL database with SeaORM");
     tracing::info!("✓ SeaORM database connection established");
+
+    // Initialize Schema (Bookmarks)
+    if let Err(e) = rustexpress::infra::db_setup::init(&db).await {
+        tracing::error!("Failed to init DB schema: {}", e);
+    }
 
     // Seed default chat data if tables are empty
     if let Err(e) = rustexpress::seeder::seed::seed_chat_data_if_empty(&db).await {
