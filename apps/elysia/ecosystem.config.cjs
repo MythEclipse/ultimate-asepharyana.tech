@@ -17,10 +17,6 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 4092,
       },
-      env_development: {
-        NODE_ENV: 'development',
-        PORT: 4092,
-      },
       // Logging configuration
       error_file: './logs/error.log',
       out_file: './logs/out.log',
