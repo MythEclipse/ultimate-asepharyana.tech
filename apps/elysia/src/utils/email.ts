@@ -11,8 +11,8 @@ export interface EmailConfig {
 
 export function getEmailConfig(): EmailConfig {
   return {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
+    host: process.env.SMTP_HOST || '',
+    port: parseInt(process.env.SMTP_PORT || '0'),
     username: process.env.SMTP_USERNAME || '',
     password: process.env.SMTP_PASSWORD || '',
     fromEmail: process.env.FROM_EMAIL || 'noreply@example.com',
@@ -24,18 +24,9 @@ export async function sendEmail(
   to: string,
   subject: string,
   text: string,
-  html?: string
+  html?: string,
 ): Promise<void> {
   const config = getEmailConfig();
-
-  // If no password is set, log to console (development mode)
-  if (!config.password) {
-    console.log('📧 [DEV MODE] Email would be sent:');
-    console.log(`To: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Body: ${text}`);
-    return;
-  }
 
   const transporter = nodemailer.createTransport({
     host: config.host,
@@ -61,7 +52,7 @@ export async function sendEmail(
 export async function sendVerificationEmail(
   email: string,
   username: string,
-  token: string
+  token: string,
 ): Promise<void> {
   const verificationUrl = `${process.env.APP_URL || 'https://elysia.asepharyana.tech'}/api/auth/verify?token=${token}`;
 
@@ -83,7 +74,7 @@ export async function sendVerificationEmail(
 export async function sendPasswordResetEmail(
   email: string,
   username: string,
-  token: string
+  token: string,
 ): Promise<void> {
   const resetUrl = `${process.env.APP_URL || 'https://elysia.asepharyana.tech'}/reset-password?token=${token}`;
 
