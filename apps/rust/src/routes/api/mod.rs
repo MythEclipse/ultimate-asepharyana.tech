@@ -94,6 +94,7 @@ use crate::routes::api::auth::logout::LogoutRequest;
 use crate::routes::api::auth::logout::LogoutResponse;
 use crate::routes::api::auth::profile::UpdateProfileRequest;
 use crate::routes::api::auth::profile::UpdateProfileResponse;
+use crate::routes::api::auth::profile_image::UploadProfileImageResponse;
 use crate::routes::api::auth::refresh_token::RefreshRequest;
 use crate::routes::api::auth::refresh_token::RefreshResponse;
 use crate::routes::api::auth::register::RegisterRequest;
@@ -173,6 +174,7 @@ paths(
               crate::routes::api::auth::logout::logout,
               crate::routes::api::auth::me::get_me,
               crate::routes::api::auth::profile::update_profile,
+              crate::routes::api::auth::profile_image::upload_image,
               crate::routes::api::auth::refresh_token::refresh,
               crate::routes::api::auth::register::register,
               crate::routes::api::auth::reset_password::reset_password,
@@ -281,6 +283,7 @@ components(
                   LogoutResponse,
                   UpdateProfileRequest,
                   UpdateProfileResponse,
+                  UploadProfileImageResponse,
                   RefreshRequest,
                   RefreshResponse,
                   RegisterRequest,

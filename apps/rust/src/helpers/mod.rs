@@ -51,6 +51,7 @@ pub mod env;
 pub mod form_request;
 pub mod health_check;
 pub mod import_export;
+pub mod profile_storage;
 pub mod query_profiler;
 pub mod resource;
 pub mod searchable;

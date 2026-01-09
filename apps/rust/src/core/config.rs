@@ -55,6 +55,59 @@ pub struct SmtpConfig {
     pub from_name: String,
 }
 
+/// MinIO/S3-compatible storage configuration
+#[derive(Debug, Clone)]
+pub struct MinioConfig {
+    /// MinIO endpoint URL (e.g., "https://cdn.asepharyana.tech")
+    pub endpoint: String,
+    /// Bucket name
+    pub bucket_name: String,
+    /// Access key / username
+    pub access_key: String,
+    /// Secret key / password
+    pub secret_key: String,
+    /// Use HTTPS (true) or HTTP (false)
+    pub secure: bool,
+    /// AWS region (default: us-east-1)
+    pub region: String,
+    /// Public URL for serving files (optional)
+    pub public_url: Option<String>,
+    /// Prefix for avatar files (e.g., "avatars")
+    pub avatar_prefix: String,
+}
+
+impl MinioConfig {
+    /// Load MinIO configuration from environment variables
+    pub fn from_env() -> Option<Self> {
+        let endpoint = env::var("MINIO_ENDPOINT").ok()?;
+        let bucket_name = env::var("MINIO_BUCKET_NAME").ok()?;
+        let access_key = env::var("MINIO_ACCESS_KEY").ok()?;
+        let secret_key = env::var("MINIO_SECRET_KEY").ok()?;
+
+        let secure = env::var("MINIO_SECURE")
+            .map(|v| v.to_lowercase() == "true")
+            .unwrap_or(true);
+
+        let region = env::var("MINIO_REGION").unwrap_or_else(|_| "us-east-1".to_string());
+
+        let public_url = env::var("MINIO_PUBLIC_URL").ok();
+
+        let avatar_prefix =
+            env::var("MINIO_AVATAR_PREFIX").unwrap_or_else(|_| "avatars".to_string());
+
+        Some(Self {
+            endpoint,
+            bucket_name,
+            access_key,
+            secret_key,
+            secure,
+            region,
+            public_url,
+            avatar_prefix,
+        })
+    }
+}
+
 fn default_port() -> u16 {
     4091
 }
@@ -125,6 +178,13 @@ pub static CONFIG: Lazy<AppConfig> = Lazy::new(|| {
         eprintln!("   - REDIS_URL (or APP_REDIS_URL)");
         std::process::exit(1);
     })
+});
+
+/// Global MinIO configuration, loaded from environment variables.
+/// Returns None if required MINIO_* variables are not set.
+pub static MINIO_CONFIG: Lazy<Option<MinioConfig>> = Lazy::new(|| {
+    let _ = dotenvy::dotenv();
+    MinioConfig::from_env()
 });
 
 // ============================================================================
