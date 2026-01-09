@@ -1,6 +1,12 @@
 import { Elysia, t } from 'elysia';
 import { OAuth2Client } from 'google-auth-library';
-import { getDb, users, accounts, sessions } from '@asepharyana/services';
+import {
+  getDb,
+  users,
+  accounts,
+  sessions,
+  quizUserStats,
+} from '@asepharyana/services';
 import type { NewUser, NewAccount, NewSession } from '@asepharyana/services';
 import { eq, and } from '@asepharyana/services';
 import { config } from '../../config';
@@ -67,6 +73,20 @@ export const googleAuth = new Elysia().post(
         };
 
         await db.insert(users).values(newUser);
+
+        // Initialize user stats
+        await db.insert(quizUserStats).values({
+          userId: userId,
+          points: 0,
+          wins: 0,
+          losses: 0,
+          totalGames: 0,
+          experience: 0,
+          coins: 0,
+          currentStreak: 0,
+          highestStreak: 0,
+        });
+
         user = newUser;
       }
 

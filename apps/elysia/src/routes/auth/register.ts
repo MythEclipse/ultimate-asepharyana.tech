@@ -1,6 +1,11 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDb, users, emailVerificationTokens } from '@asepharyana/services';
+import {
+  getDb,
+  users,
+  emailVerificationTokens,
+  quizUserStats,
+} from '@asepharyana/services';
 import type { NewUser, NewEmailVerificationToken } from '@asepharyana/services';
 import { eq } from '@asepharyana/services';
 import { sendVerificationEmail } from '../../utils/email';
@@ -10,7 +15,9 @@ import { sanitizeEmail, sanitizeString } from '../../utils/validation';
 function generateToken(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join(
+    '',
+  );
 }
 
 interface RegisterBody {
@@ -57,7 +64,7 @@ export const registerRoute = new Elysia()
       max: 10,
       window: 60 * 60 * 1000,
       message: 'Too many registration attempts, please try again later',
-    })
+    }),
   )
   .post(
     '/register',
@@ -106,6 +113,19 @@ export const registerRoute = new Elysia()
 
       await db.insert(users).values(newUser);
 
+      // Initialize user stats
+      await db.insert(quizUserStats).values({
+        userId: userId,
+        points: 0,
+        wins: 0,
+        losses: 0,
+        totalGames: 0,
+        experience: 0,
+        coins: 0,
+        currentStreak: 0,
+        highestStreak: 0,
+      });
+
       const verificationToken = generateToken();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -126,7 +146,8 @@ export const registerRoute = new Elysia()
 
       return {
         success: true,
-        message: 'User registered successfully. Please check your email to verify your account.',
+        message:
+          'User registered successfully. Please check your email to verify your account.',
         user: {
           id: userId,
           email: sanitizedEmail,
@@ -141,5 +162,5 @@ export const registerRoute = new Elysia()
         password: t.String({ minLength: 8 }),
         name: t.Optional(t.String()),
       }),
-    }
+    },
   );
