@@ -115,6 +115,7 @@ export const registerRoute = new Elysia()
 
       // Initialize user stats
       await db.insert(quizUserStats).values({
+        id: `qus_${userId}`,
         userId: userId,
         points: 0,
         wins: 0,
@@ -123,7 +124,11 @@ export const registerRoute = new Elysia()
         experience: 0,
         coins: 0,
         currentStreak: 0,
-        highestStreak: 0,
+        bestStreak: 0,
+        draws: 0,
+        totalCorrectAnswers: 0,
+        totalQuestions: 0,
+        level: 1,
       });
 
       const verificationToken = generateToken();

@@ -1,15 +1,7 @@
 // Game Logic Handlers
-
 import { wsManager } from '../ws-manager';
-import { checkAchievementsForUser } from './achievements';
 import { updateRankedMMR } from './ranked';
-import {
-  trackGamePlayed,
-  trackGameWon,
-  trackCorrectAnswers,
-  trackWinStreak,
-  trackPerfectGame,
-} from './daily-missions';
+
 import type {
   WSMessage,
   GameStartedPayload,
@@ -687,41 +679,6 @@ async function endGame(
     if (matchRecord && matchRecord.gameMode === 'ranked') {
       await updateRankedMMR(winnerId, loserOldMMR, true);
       await updateRankedMMR(loserId, winnerOldMMR, false);
-    }
-
-    // Check achievements for both players
-    await checkAchievementsForUser(winnerId);
-    await checkAchievementsForUser(loserId);
-
-    // Track daily missions for both players
-    await trackGamePlayed(match.player1Id);
-    await trackGamePlayed(match.player2Id);
-    await trackGameWon(winnerId);
-
-    await trackCorrectAnswers(match.player1Id, player1Correct);
-    await trackCorrectAnswers(match.player2Id, player2Correct);
-
-    const [player1Stats] = await db
-      .select()
-      .from(quizUserStats)
-      .where(eq(quizUserStats.userId, match.player1Id))
-      .limit(1);
-    const [player2Stats] = await db
-      .select()
-      .from(quizUserStats)
-      .where(eq(quizUserStats.userId, match.player2Id))
-      .limit(1);
-
-    if (player1Stats)
-      await trackWinStreak(match.player1Id, player1Stats.currentStreak);
-    if (player2Stats)
-      await trackWinStreak(match.player2Id, player2Stats.currentStreak);
-
-    if (player1Correct === player1Answers.length && player1Answers.length > 0) {
-      await trackPerfectGame(match.player1Id);
-    }
-    if (player2Correct === player2Answers.length && player2Answers.length > 0) {
-      await trackPerfectGame(match.player2Id);
     }
 
     // Prepare game over message

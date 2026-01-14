@@ -4,7 +4,8 @@ import { authMiddleware } from '../middleware/auth';
 
 export const historyRoutes = new Elysia({ prefix: '/api/history' })
   .use(authMiddleware)
-  .get('/', async ({ user, set }) => {
+  .get('/', async (context) => {
+    const { user, set } = context as any;
     try {
       const db = getDb();
       const userId = user.id;
