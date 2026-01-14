@@ -11,6 +11,7 @@ import { eq } from '@asepharyana/services';
 import { sendVerificationEmail } from '../../utils/email';
 import { rateLimit } from '../../middleware/rateLimit';
 import { sanitizeEmail, sanitizeString } from '../../utils/validation';
+import { authLogger } from '../../utils/logger';
 
 function generateToken(): string {
   const array = new Uint8Array(32);
@@ -72,8 +73,11 @@ export const registerRoute = new Elysia()
       const db = getDb();
       const { email, name, password } = body as RegisterBody;
 
+      authLogger.registerAttempt(email);
+
       const sanitizedEmail = sanitizeEmail(email);
       if (!sanitizedEmail) {
+        authLogger.registerFailed(email, 'Invalid email format');
         set.status = 400;
         throw new Error('Invalid email format');
       }
@@ -82,6 +86,7 @@ export const registerRoute = new Elysia()
 
       const passwordError = validatePassword(password);
       if (passwordError) {
+        authLogger.registerFailed(sanitizedEmail, passwordError);
         set.status = 400;
         throw new Error(passwordError);
       }
@@ -93,6 +98,7 @@ export const registerRoute = new Elysia()
         .limit(1);
 
       if (existingUserResult.length > 0) {
+        authLogger.registerFailed(sanitizedEmail, 'Email already exists');
         set.status = 400;
         throw new Error('Email already exists');
       }
@@ -142,6 +148,8 @@ export const registerRoute = new Elysia()
       };
 
       await db.insert(emailVerificationTokens).values(newToken);
+
+      authLogger.registerSuccess(userId, sanitizedEmail);
 
       try {
         await sendVerificationEmail(email, name || 'User', verificationToken);

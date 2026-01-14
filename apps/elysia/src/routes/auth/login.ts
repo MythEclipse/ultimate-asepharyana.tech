@@ -6,6 +6,7 @@ import { eq } from '@asepharyana/services';
 import { signJWT } from '../../utils/jwt';
 import { rateLimit } from '../../middleware/rateLimit';
 import { sanitizeEmail } from '../../utils/validation';
+import { authLogger } from '../../utils/logger';
 
 interface LoginBody {
   email: string;
@@ -41,8 +42,11 @@ export const loginRoute = new Elysia()
       const db = getDb();
       const { email, password, rememberMe } = body as LoginBody;
 
+      authLogger.loginAttempt(email);
+
       const sanitizedEmail = sanitizeEmail(email);
       if (!sanitizedEmail) {
+        authLogger.loginFailed(email, 'Invalid email format');
         set.status = 400;
         throw new Error('Invalid email format');
       }
@@ -56,12 +60,14 @@ export const loginRoute = new Elysia()
       const user = result[0];
 
       if (!user || !user.password) {
+        authLogger.loginFailed(sanitizedEmail, 'User not found or no password');
         set.status = 401;
         throw new Error('Invalid credentials');
       }
 
       const passwordValid = await bcrypt.compare(password, user.password);
       if (!passwordValid) {
+        authLogger.loginFailed(sanitizedEmail, 'Invalid password');
         set.status = 401;
         throw new Error('Invalid credentials');
       }
@@ -85,6 +91,8 @@ export const loginRoute = new Elysia()
       };
 
       await db.insert(sessions).values(newSession);
+
+      authLogger.loginSuccess(user.id, sanitizedEmail);
 
       return {
         success: true,

@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { getDb, quizMatches, eq, desc, or } from '@asepharyana/services';
 import { authMiddleware } from '../middleware/auth';
+import { historyLogger } from '../utils/logger';
 
 export const historyRoutes = new Elysia({ prefix: '/api/history' })
   .use(authMiddleware)
@@ -8,6 +9,7 @@ export const historyRoutes = new Elysia({ prefix: '/api/history' })
     const { user, set } = context as any;
     try {
       if (!user || !user.id) {
+        historyLogger.fetchError('unknown', 'User not authenticated');
         set.status = 401;
         return {
           success: false,
@@ -49,6 +51,8 @@ export const historyRoutes = new Elysia({ prefix: '/api/history' })
         },
       });
 
+      historyLogger.fetch(userId, history.length);
+
       return {
         success: true,
         data: history.map((match) => ({
@@ -58,7 +62,7 @@ export const historyRoutes = new Elysia({ prefix: '/api/history' })
         })),
       };
     } catch (error) {
-      console.error('Error fetching history:', error);
+      historyLogger.fetchError(user?.id || 'unknown', error);
       set.status = 500;
       return {
         success: false,

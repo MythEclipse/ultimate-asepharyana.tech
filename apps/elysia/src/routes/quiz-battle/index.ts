@@ -5,6 +5,7 @@ import { Elysia, t } from 'elysia';
 import { wsManager } from './ws-manager';
 import type { WSMessage, WSData } from './types';
 import type { ServerWebSocket } from 'bun';
+import { wsLogger } from '../../utils/logger';
 
 // Import handlers
 import {
@@ -77,10 +78,9 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
     body: t.Any(),
 
     open(ws) {
-      console.log('[WS] Client connected');
-      // Store sessionId in WeakMap
       const sessionId = Math.random().toString(36).substring(2, 15);
       sessionIds.set(ws.raw as ServerWebSocket<WSData>, sessionId);
+      wsLogger.connected(sessionId);
     },
 
     message(ws, rawMessage: unknown) {
@@ -90,12 +90,12 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             ? JSON.parse(rawMessage)
             : (rawMessage as WSMessage);
 
-        console.log(`[WS] Received message type: ${message.type}`);
-
         // Get session ID from WeakMap
         const sessionId =
           sessionIds.get(ws.raw as ServerWebSocket<WSData>) ||
           Math.random().toString(36).substring(2, 15);
+
+        wsLogger.messageReceived(sessionId, message.type);
 
         // Route messages based on type
         switch (message.type) {
@@ -410,14 +410,12 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
     close(ws) {
       const sessionId = sessionIds.get(ws.raw as ServerWebSocket<WSData>);
       if (sessionId) {
-        console.log(`[WS] Client disconnected: ${sessionId}`);
+        const connection = wsManager.getConnection(sessionId);
+        wsLogger.disconnected(sessionId, connection?.userId, connection?.currentMatchId ? 'mid-game' : undefined);
 
         // CRITICAL: If player was in a match, forfeit it
-        const connection = wsManager.getConnection(sessionId);
         if (connection?.currentMatchId) {
-          console.log(
-            `[WS] Player ${connection.userId} disconnected mid-game, forfeiting match ${connection.currentMatchId}`,
-          );
+          wsLogger.disconnected(sessionId, connection.userId, `forfeiting match ${connection.currentMatchId}`);
           endGameByForfeit(connection.currentMatchId, connection.userId);
         }
 
@@ -425,7 +423,7 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
         handleDisconnect(sessionId);
         sessionIds.delete(ws.raw as ServerWebSocket<WSData>);
       } else {
-        console.log('[WS] Client disconnected (session not found)');
+        wsLogger.disconnected(sessionId || 'unknown', undefined, 'session not found');
       }
     },
   })

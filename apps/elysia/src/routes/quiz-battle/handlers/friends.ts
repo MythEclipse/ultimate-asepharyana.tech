@@ -36,6 +36,7 @@ import {
   and,
   or,
 } from '@asepharyana/services';
+import { friendLogger, matchLogger } from '../../../utils/logger';
 
 // Store pending match invites in memory
 const pendingMatchInvites = new Map<string, {
@@ -159,11 +160,9 @@ export async function handleFriendRequestSend(
     };
     wsManager.sendToSession(sessionId, successMsg);
 
-    console.log(
-      `[Friends] Friend request sent from ${payload.userId} to ${payload.targetUserId}`,
-    );
+    friendLogger.requestSent(payload.userId, payload.targetUserId);
   } catch (error) {
-    console.error('[Friends] Error sending friend request:', error);
+    friendLogger.error('sending friend request', error);
     const errorMsg: WSMessage = {
       type: 'error',
       payload: {
@@ -290,9 +289,7 @@ export async function handleFriendRequestRespond(
         wsManager.sendToSession(senderSession, acceptedMsg);
       }
 
-      console.log(
-        `[Friends] Friend request accepted: ${request.userId} <-> ${payload.userId}`,
-      );
+      friendLogger.requestAccepted(payload.userId, request.userId);
     } else {
       // Reject friend request
       await db
@@ -309,12 +306,10 @@ export async function handleFriendRequestRespond(
       };
       wsManager.sendToSession(sessionId, responseMsg);
 
-      console.log(
-        `[Friends] Friend request rejected: ${request.userId} -> ${payload.userId}`,
-      );
+      friendLogger.requestRejected(payload.userId, payload.requestId);
     }
   } catch (error) {
-    console.error('[Friends] Error responding to friend request:', error);
+    friendLogger.error('responding to friend request', error);
     const errorMsg: WSMessage = {
       type: 'error',
       payload: {
@@ -558,11 +553,9 @@ export async function handleMatchInviteSend(
     };
     wsManager.sendToSession(sessionId, sentMsg);
 
-    console.log(
-      `[Friends] Match invite sent from ${payload.senderId} to ${payload.receiverId}`,
-    );
+    friendLogger.inviteSent(payload.senderId, payload.receiverId);
   } catch (error) {
-    console.error('[Friends] Error sending match invite:', error);
+    friendLogger.error('sending match invite', error);
     const errorMsg: WSMessage = {
       type: 'error',
       payload: {
