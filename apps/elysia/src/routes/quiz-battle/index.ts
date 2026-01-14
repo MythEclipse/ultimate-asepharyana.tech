@@ -23,9 +23,6 @@ import {
 import { handleGameAnswerSubmit, endGameByForfeit } from './handlers/game';
 
 import {
-  handleFriendRequestSend,
-  handleFriendRequestAccept,
-  handleFriendRequestReject,
   handleFriendRemove,
   handleFriendListRequest,
   handleFriendChallenge,
@@ -60,16 +57,6 @@ import {
   handleNotificationMarkAllRead,
   handleNotificationDelete,
 } from './handlers/notifications';
-
-import {
-  handleAchievementListSync,
-  handleAchievementClaim,
-} from './handlers/achievements';
-
-import {
-  handleDailyMissionListSync,
-  handleDailyMissionClaim,
-} from './handlers/daily-missions';
 
 import {
   handleRankedStatsSync,
@@ -207,23 +194,6 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           // ===== FRIEND SYSTEM =====
-          case 'friend.request.send':
-            if (sessionId) {
-              handleFriendRequestSend(sessionId, message.payload as any);
-            }
-            break;
-
-          case 'friend.request.accept':
-            if (sessionId) {
-              handleFriendRequestAccept(sessionId, message.payload as any);
-            }
-            break;
-
-          case 'friend.request.reject':
-            if (sessionId) {
-              handleFriendRequestReject(sessionId, message.payload as any);
-            }
-            break;
 
           case 'friend.remove':
             if (sessionId) {
@@ -356,30 +326,6 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           // ===== ACHIEVEMENTS =====
-          case 'achievement.list.sync':
-            if (sessionId) {
-              handleAchievementListSync(sessionId, message as any);
-            }
-            break;
-
-          case 'achievement.claim':
-            if (sessionId) {
-              handleAchievementClaim(sessionId, message as any);
-            }
-            break;
-
-          // ===== DAILY MISSIONS =====
-          case 'daily.mission.list.sync':
-            if (sessionId) {
-              handleDailyMissionListSync(sessionId, message as any);
-            }
-            break;
-
-          case 'daily.mission.claim':
-            if (sessionId) {
-              handleDailyMissionClaim(sessionId, message as any);
-            }
-            break;
 
           // ===== RANKED SYSTEM =====
           case 'ranked.stats.sync':
@@ -424,14 +370,16 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
       const sessionId = sessionIds.get(ws.raw as ServerWebSocket<WSData>);
       if (sessionId) {
         console.log(`[WS] Client disconnected: ${sessionId}`);
-        
+
         // CRITICAL: If player was in a match, forfeit it
         const connection = wsManager.getConnection(sessionId);
         if (connection?.currentMatchId) {
-          console.log(`[WS] Player ${connection.userId} disconnected mid-game, forfeiting match ${connection.currentMatchId}`);
+          console.log(
+            `[WS] Player ${connection.userId} disconnected mid-game, forfeiting match ${connection.currentMatchId}`,
+          );
           endGameByForfeit(connection.currentMatchId, connection.userId);
         }
-        
+
         // Call existing disconnect handler
         handleDisconnect(sessionId);
         sessionIds.delete(ws.raw as ServerWebSocket<WSData>);
