@@ -7,6 +7,14 @@ export const historyRoutes = new Elysia({ prefix: '/api/history' })
   .get('/', async (context) => {
     const { user, set } = context as any;
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          error: 'Unauthorized: User not authenticated',
+        };
+      }
+
       const db = getDb();
       const userId = user.id;
 
