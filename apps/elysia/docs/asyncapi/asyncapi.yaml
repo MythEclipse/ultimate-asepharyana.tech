@@ -1,0 +1,1314 @@
+asyncapi: 3.0.0
+info:
+  title: Quiz Battle WebSocket API
+  version: 1.0.0
+  description: |
+    Real-time API for Quiz Battle game.
+    Handles authentication, matchmaking, gameplay, friendships, lobbies, chat, notifications, and more.
+
+servers:
+  dev:
+    host: localhost:3000
+    pathname: /api/quiz/battle
+    protocol: ws
+    description: Local development server
+
+channels:
+  battle:
+    address: /api/quiz/battle
+    messages:
+      ClientMessage:
+        payload:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/AuthConnectMessage'
+              - $ref: '#/components/schemas/UserStatusUpdateMessage'
+              - $ref: '#/components/schemas/ConnectionPingMessage'
+              - $ref: '#/components/schemas/ConnectionReconnectMessage'
+              - $ref: '#/components/schemas/MatchmakingFindMessage'
+              - $ref: '#/components/schemas/MatchmakingCancelMessage'
+              - $ref: '#/components/schemas/GameConnectMessage'
+              - $ref: '#/components/schemas/GameAnswerSubmitMessage'
+              - $ref: '#/components/schemas/FriendRequestSendMessage'
+              - $ref: '#/components/schemas/FriendRequestAcceptMessage'
+              - $ref: '#/components/schemas/FriendRequestRejectMessage'
+              - $ref: '#/components/schemas/FriendRemoveMessage'
+              - $ref: '#/components/schemas/FriendListRequestMessage'
+              - $ref: '#/components/schemas/FriendChallengeMessage'
+              - $ref: '#/components/schemas/LeaderboardGlobalSyncMessage'
+              - $ref: '#/components/schemas/LeaderboardFriendsSyncMessage'
+              - $ref: '#/components/schemas/LobbyCreateMessage'
+              - $ref: '#/components/schemas/LobbyJoinMessage'
+              - $ref: '#/components/schemas/LobbyReadyMessage'
+              - $ref: '#/components/schemas/LobbyStartMessage'
+              - $ref: '#/components/schemas/LobbyLeaveMessage'
+              - $ref: '#/components/schemas/LobbyKickMessage'
+              - $ref: '#/components/schemas/LobbyListSyncMessage'
+              - $ref: '#/components/schemas/ChatGlobalSendMessage'
+              - $ref: '#/components/schemas/ChatPrivateSendMessage'
+              - $ref: '#/components/schemas/ChatHistorySyncMessage'
+              - $ref: '#/components/schemas/ChatTypingMessage'
+              - $ref: '#/components/schemas/ChatMarkReadMessage'
+              - $ref: '#/components/schemas/NotificationListSyncMessage'
+              - $ref: '#/components/schemas/NotificationMarkReadMessage'
+              - $ref: '#/components/schemas/NotificationMarkAllReadMessage'
+              - $ref: '#/components/schemas/NotificationDeleteMessage'
+              - $ref: '#/components/schemas/AchievementListSyncMessage'
+              - $ref: '#/components/schemas/AchievementClaimMessage'
+              - $ref: '#/components/schemas/DailyMissionListSyncMessage'
+              - $ref: '#/components/schemas/DailyMissionClaimMessage'
+              - $ref: '#/components/schemas/RankedStatsSyncMessage'
+              - $ref: '#/components/schemas/RankedLeaderboardSyncMessage'
+      ServerMessage:
+        payload:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ErrorMessage'
+              - $ref: '#/components/schemas/GameConnectAckMessage'
+              - $ref: '#/components/schemas/AuthConnectedMessage'
+              - $ref: '#/components/schemas/AuthErrorMessage'
+              - $ref: '#/components/schemas/UserStatusChangedMessage'
+              - $ref: '#/components/schemas/ConnectionPongMessage'
+              - $ref: '#/components/schemas/MatchmakingSearchingMessage'
+              - $ref: '#/components/schemas/MatchmakingFoundMessage'
+              - $ref: '#/components/schemas/MatchmakingCancelledMessage'
+              - $ref: '#/components/schemas/LobbyCreatedMessage'
+              - $ref: '#/components/schemas/LobbyPlayerJoinedMessage'
+              - $ref: '#/components/schemas/LobbyPlayerReadyMessage'
+              - $ref: '#/components/schemas/LobbyGameStartingMessage'
+              - $ref: '#/components/schemas/LobbyPlayerLeftMessage'
+              - $ref: '#/components/schemas/LobbyPlayerKickedMessage'
+              - $ref: '#/components/schemas/LobbyListDataMessage'
+              - $ref: '#/components/schemas/GameStartedMessage'
+              - $ref: '#/components/schemas/GameQuestionNewMessage'
+              - $ref: '#/components/schemas/GameAnswerReceivedMessage'
+              - $ref: '#/components/schemas/GameBattleUpdateMessage'
+              - $ref: '#/components/schemas/GameOpponentAnsweredMessage'
+              - $ref: '#/components/schemas/GameQuestionTimeoutMessage'
+              - $ref: '#/components/schemas/GameQuestionNextMessage'
+              - $ref: '#/components/schemas/GameOverMessage'
+              - $ref: '#/components/schemas/GamePlayerDisconnectedMessage'
+              - $ref: '#/components/schemas/GamePlayerReconnectedMessage'
+              - $ref: '#/components/schemas/FriendRequestReceivedMessage'
+              - $ref: '#/components/schemas/FriendRequestAcceptedMessage'
+              - $ref: '#/components/schemas/FriendRequestRejectedMessage'
+              - $ref: '#/components/schemas/FriendRemovedMessage'
+              - $ref: '#/components/schemas/FriendListDataMessage'
+              - $ref: '#/components/schemas/FriendChallengeReceivedMessage'
+              - $ref: '#/components/schemas/LeaderboardGlobalDataMessage'
+              - $ref: '#/components/schemas/LeaderboardUpdatedMessage'
+              - $ref: '#/components/schemas/LeaderboardFriendsDataMessage'
+              - $ref: '#/components/schemas/ChatGlobalMessage'
+              - $ref: '#/components/schemas/ChatPrivateMessage'
+              - $ref: '#/components/schemas/ChatHistoryDataMessage'
+              - $ref: '#/components/schemas/ChatTypingIndicatorMessage'
+              - $ref: '#/components/schemas/NotificationListDataMessage'
+              - $ref: '#/components/schemas/AchievementListDataMessage'
+              - $ref: '#/components/schemas/AchievementUnlockedMessage'
+              - $ref: '#/components/schemas/DailyMissionListDataMessage'
+              - $ref: '#/components/schemas/DailyMissionCompletedMessage'
+              - $ref: '#/components/schemas/RankedStatsDataMessage'
+              - $ref: '#/components/schemas/RankedLeaderboardDataMessage'
+              - $ref: '#/components/schemas/MMRChangeMessage'
+
+operations:
+  sendData:
+    action: send
+    channel:
+      $ref: '#/channels/battle'
+    messages:
+      - $ref: '#/channels/battle/messages/ClientMessage'
+
+  receiveData:
+    action: receive
+    channel:
+      $ref: '#/channels/battle'
+    messages:
+      - $ref: '#/channels/battle/messages/ServerMessage'
+
+components:
+  schemas:
+    # --- Base Wrapper ---
+    BaseMessage:
+      type: object
+      required:
+        - type
+        - payload
+      properties:
+        type:
+          type: string
+        payload:
+          type: object
+
+    # --- Error ---
+    ErrorMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: error
+            payload:
+              type: object
+              properties:
+                code:
+                  type: string
+                message:
+                  type: string
+
+    # --- Auth & Connection ---
+    AuthConnectMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: auth:connect
+            payload:
+              type: object
+              required: [token, userId, username, deviceId]
+              properties:
+                token: { type: string }
+                userId: { type: string }
+                username: { type: string }
+                deviceId: { type: string }
+
+    AuthConnectedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: auth:connected
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                sessionId: { type: string }
+                serverTime: { type: number }
+                status: { type: string }
+
+    AuthErrorMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: auth:error
+            payload:
+              type: object
+              properties:
+                code: { type: string }
+                message: { type: string }
+
+    UserStatusUpdateMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: user.status.update
+            payload:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [online, offline, in_game, away]
+
+    UserStatusChangedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: user.status.changed
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                username: { type: string }
+                status: { type: string }
+                timestamp: { type: number }
+
+    ConnectionPingMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: connection.ping
+            payload:
+              type: object
+              properties:
+                timestamp: { type: number }
+
+    ConnectionPongMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: connection.pong
+            payload:
+              type: object
+              properties:
+                timestamp: { type: number }
+                latency: { type: number }
+
+    ConnectionReconnectMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: connection.reconnect
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                sessionId: { type: string }
+
+    # --- Matchmaking ---
+    MatchmakingFindMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: matchmaking.find
+            payload:
+              type: object
+              required: [userId, gameMode, difficulty, category]
+              properties:
+                userId: { type: string }
+                gameMode: { type: string, enum: [ranked, casual, friend] }
+                difficulty: { type: string, enum: [easy, medium, hard] }
+                category: { type: string }
+
+    MatchmakingSearchingMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: matchmaking.searching
+            payload:
+              type: object
+              properties:
+                estimatedWaitTime: { type: number }
+                playersInQueue: { type: number }
+
+    MatchmakingFoundMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: matchmaking.found
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                opponent: { type: object }
+                gameSettings:
+                  $ref: '#/components/schemas/GameSettings'
+                startIn: { type: number }
+
+    MatchmakingCancelMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: matchmaking.cancel
+            payload:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+
+    MatchmakingCancelledMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: matchmaking.cancelled
+            payload:
+              type: object
+              properties:
+                reason: { type: string }
+
+    # --- Game ---
+    GameConnectMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.connect
+            payload:
+              type: object
+              required: [matchId]
+              properties:
+                matchId: { type: string }
+
+    GameConnectAckMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.connect.ack
+            payload:
+              type: object
+              properties:
+                status: { type: string, const: connected }
+                timestamp: { type: number }
+
+    GameStartedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.started
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                gameState: { type: object }
+                players: { type: array }
+                serverTime: { type: number }
+
+    GameQuestionNewMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.question.new
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                questionIndex: { type: number }
+                question: { type: object }
+                timeLimit: { type: number }
+                startTime: { type: number }
+
+    GameAnswerSubmitMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.answer.submit
+            payload:
+              type: object
+              required:
+                [
+                  matchId,
+                  userId,
+                  questionId,
+                  questionIndex,
+                  answerIndex,
+                  answerTime,
+                  timestamp,
+                ]
+              properties:
+                matchId: { type: string }
+                userId: { type: string }
+                questionId: { type: string }
+                questionIndex: { type: number }
+                answerIndex: { type: number }
+                answerTime: { type: number }
+                timestamp: { type: number }
+
+    GameAnswerReceivedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.answer.received
+            payload:
+              type: object
+              properties:
+                questionIndex: { type: number }
+                isCorrect: { type: boolean }
+                correctAnswerIndex: { type: number }
+                points: { type: number }
+                answerTime: { type: number }
+                playerHealth: { type: number }
+                opponentHealth: { type: number }
+
+    GameBattleUpdateMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.battle.update
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                questionIndex: { type: number }
+                event: { type: string }
+                actor: { type: object }
+                gameState: { type: object }
+                animation: { type: object }
+
+    GameOpponentAnsweredMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.opponent.answered
+            payload:
+              type: object
+              properties:
+                opponentId: { type: string }
+                questionIndex: { type: number }
+                answerTime: { type: number }
+                isCorrect: { type: boolean }
+                animation: { type: string }
+
+    GameQuestionTimeoutMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.question.timeout
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                questionIndex: { type: number }
+                correctAnswerIndex: { type: number }
+                players: { type: array }
+
+    GameQuestionNextMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.question.next
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                questionIndex: { type: number }
+                delay: { type: number }
+
+    GameOverMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.over
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                reason: { type: string }
+                winner: { type: object }
+                loser: { type: object }
+                rewards: { type: object }
+                gameHistory: { type: object }
+
+    GamePlayerDisconnectedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.player.disconnected
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                disconnectedPlayer: { type: object }
+                waitTime: { type: number }
+                autoWin: { type: boolean }
+
+    GamePlayerReconnectedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: game.player.reconnected
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                reconnectedPlayer: { type: object }
+                gameState: { type: object }
+                resumeIn: { type: number }
+
+    # --- Friends ---
+    FriendRequestSendMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.request.send
+            payload:
+              type: object
+              required: [senderId, senderUsername, targetUsername]
+              properties:
+                senderId: { type: string }
+                senderUsername: { type: string }
+                targetUsername: { type: string }
+                message: { type: string }
+
+    FriendRequestReceivedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.request.received
+            payload:
+              type: object
+              properties:
+                requestId: { type: string }
+                sender: { type: object }
+                message: { type: string }
+                timestamp: { type: number }
+
+    FriendRequestAcceptMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.request.accept
+            payload:
+              type: object
+              required: [requestId, userId]
+              properties:
+                requestId: { type: string }
+                userId: { type: string }
+
+    FriendRequestAcceptedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.request.accepted
+            payload:
+              type: object
+              properties:
+                friendship: { type: object }
+
+    FriendRequestRejectMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.request.reject
+            payload:
+              type: object
+              required: [requestId, userId]
+              properties:
+                requestId: { type: string }
+                userId: { type: string }
+
+    FriendRequestRejectedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.request.rejected
+            payload:
+              type: object
+              properties:
+                requestId: { type: string }
+                rejectedBy: { type: string }
+
+    FriendRemoveMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.remove
+            payload:
+              type: object
+              required: [userId, friendId]
+              properties:
+                userId: { type: string }
+                friendId: { type: string }
+
+    FriendRemovedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.removed
+            payload:
+              type: object
+              properties:
+                removedFriendId: { type: string }
+                removedBy: { type: string }
+
+    FriendListRequestMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.list.request
+            payload:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+
+    FriendListDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.list.data
+            payload:
+              type: object
+              properties:
+                friends: { type: array }
+                pendingRequests: { type: number }
+                totalFriends: { type: number }
+
+    FriendChallengeMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.challenge
+            payload:
+              type: object
+              required:
+                [challengerId, challengerUsername, targetFriendId, gameSettings]
+              properties:
+                challengerId: { type: string }
+                challengerUsername: { type: string }
+                targetFriendId: { type: string }
+                gameSettings:
+                  $ref: '#/components/schemas/GameSettings'
+                message: { type: string }
+
+    FriendChallengeReceivedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: friend.challenge.received
+            payload:
+              type: object
+              properties:
+                challengeId: { type: string }
+                challenger: { type: object }
+                gameSettings: { type: object }
+                message: { type: string }
+                expiresIn: { type: number }
+
+    # --- Leaderboard ---
+    LeaderboardGlobalSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: leaderboard.global.sync
+            payload:
+              type: object
+              properties:
+                limit: { type: number }
+                offset: { type: number }
+                timeframe:
+                  { type: string, enum: [all_time, weekly, monthly, daily] }
+
+    LeaderboardGlobalDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: leaderboard.global.data
+            payload:
+              type: object
+              properties:
+                leaderboard: { type: array }
+                userRank: { type: object }
+                totalPlayers: { type: number }
+                updatedAt: { type: number }
+
+    LeaderboardUpdatedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: leaderboard.updated
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                newRank: { type: number }
+                rankChange: { type: number }
+
+    LeaderboardFriendsSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: leaderboard.friends.sync
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                timeframe:
+                  { type: string, enum: [all_time, weekly, monthly, daily] }
+
+    LeaderboardFriendsDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: leaderboard.friends.data
+            payload:
+              type: object
+              properties:
+                leaderboard: { type: array }
+                userRank: { type: object }
+                totalFriends: { type: number }
+                updatedAt: { type: number }
+
+    # --- Lobby ---
+    LobbyCreateMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.create
+            payload:
+              type: object
+              required:
+                [hostId, hostUsername, isPrivate, maxPlayers, gameSettings]
+              properties:
+                hostId: { type: string }
+                hostUsername: { type: string }
+                isPrivate: { type: boolean }
+                maxPlayers: { type: number }
+                gameSettings:
+                  $ref: '#/components/schemas/GameSettings'
+
+    LobbyCreatedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.created
+            payload:
+              type: object
+              properties:
+                lobbyId: { type: string }
+                lobbyCode: { type: string }
+                hostId: { type: string }
+                createdAt: { type: number }
+
+    LobbyJoinMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.join
+            payload:
+              type: object
+              required: [userId, username, lobbyCode]
+              properties:
+                userId: { type: string }
+                username: { type: string }
+                lobbyCode: { type: string }
+
+    LobbyPlayerJoinedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.player.joined
+            payload:
+              type: object
+              properties:
+                lobbyId: { type: string }
+                player: { type: object }
+                players: { type: array }
+
+    LobbyReadyMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.ready
+            payload:
+              type: object
+              required: [lobbyId, userId, isReady]
+              properties:
+                lobbyId: { type: string }
+                userId: { type: string }
+                isReady: { type: boolean }
+
+    LobbyPlayerReadyMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.player.ready
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                isReady: { type: boolean }
+                allReady: { type: boolean }
+
+    LobbyStartMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.start
+            payload:
+              type: object
+              required: [lobbyId, hostId]
+              properties:
+                lobbyId: { type: string }
+                hostId: { type: string }
+
+    LobbyGameStartingMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.game.starting
+            payload:
+              type: object
+              properties:
+                matchId: { type: string }
+                countdown: { type: number }
+
+    LobbyLeaveMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.leave
+            payload:
+              type: object
+              required: [lobbyId, userId]
+              properties:
+                lobbyId: { type: string }
+                userId: { type: string }
+
+    LobbyPlayerLeftMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.player.left
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                username: { type: string }
+                players: { type: array }
+                newHostId: { type: string }
+
+    LobbyKickMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.kick
+            payload:
+              type: object
+              required: [lobbyId, hostId, targetUserId]
+              properties:
+                lobbyId: { type: string }
+                hostId: { type: string }
+                targetUserId: { type: string }
+
+    LobbyPlayerKickedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.player.kicked
+            payload:
+              type: object
+              properties:
+                kickedUserId: { type: string }
+                kickedUsername: { type: string }
+                players: { type: array }
+
+    LobbyListSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.list.sync
+            payload:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+
+    LobbyListDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: lobby.list.data
+            payload:
+              type: object
+              properties:
+                lobbies: { type: array }
+                totalLobbies: { type: number }
+
+    # --- Chat ---
+    ChatGlobalSendMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:global:send
+            payload:
+              type: object
+              required: [userId, username, message, timestamp]
+              properties:
+                userId: { type: string }
+                username: { type: string }
+                message: { type: string }
+                timestamp: { type: number }
+
+    ChatGlobalMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:global:message
+            payload:
+              type: object
+              properties:
+                messageId: { type: string }
+                sender: { type: object }
+                message: { type: string }
+                timestamp: { type: number }
+
+    ChatPrivateSendMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:private:send
+            payload:
+              type: object
+              required: [senderId, receiverId, message, timestamp]
+              properties:
+                senderId: { type: string }
+                receiverId: { type: string }
+                message: { type: string }
+                timestamp: { type: number }
+
+    ChatPrivateMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:private:message
+            payload:
+              type: object
+              properties:
+                messageId: { type: string }
+                conversationId: { type: string }
+                sender: { type: object }
+                message: { type: string }
+                timestamp: { type: number }
+                isRead: { type: boolean }
+
+    ChatHistorySyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:history:sync
+            payload:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+                targetUserId: { type: string }
+                limit: { type: number }
+                offset: { type: number }
+
+    ChatHistoryDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:history:data
+            payload:
+              type: object
+              properties:
+                messages: { type: array }
+                totalMessages: { type: number }
+                hasMore: { type: boolean }
+
+    ChatTypingMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:typing
+            payload:
+              type: object
+              required: [userId, isTyping]
+              properties:
+                userId: { type: string }
+                targetUserId: { type: string }
+                isTyping: { type: boolean }
+
+    ChatTypingIndicatorMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:typing:indicator
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                username: { type: string }
+                isTyping: { type: boolean }
+
+    ChatMarkReadMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: chat:mark:read
+            payload:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+
+    # --- Notification ---
+    NotificationListSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: notification.list.sync
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                limit: { type: number }
+                offset: { type: number }
+                unreadOnly: { type: boolean }
+
+    NotificationListDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: notification.list.data
+            payload:
+              type: object
+              properties:
+                notifications: { type: array }
+                totalCount: { type: number }
+                unreadCount: { type: number }
+                hasMore: { type: boolean }
+
+    NotificationMarkReadMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: notification.mark.read
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                notificationIds:
+                  type: array
+                  items: { type: string }
+
+    NotificationMarkAllReadMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: notification.mark.all.read
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+
+    NotificationDeleteMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: notification.delete
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                notificationId: { type: string }
+
+    # --- Achievement ---
+    AchievementListSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: achievement.list.sync
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                unlockedOnly: { type: boolean }
+
+    AchievementListDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: achievement.list.data
+            payload:
+              type: object
+              properties:
+                achievements: { type: array }
+                totalAchievements: { type: number }
+                unlockedCount: { type: number }
+
+    AchievementClaimMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: achievement.claim
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                achievementId: { type: string }
+
+    AchievementUnlockedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: achievement.unlocked
+            payload:
+              type: object
+              properties:
+                achievementId: { type: string }
+                name: { type: string }
+                description: { type: string }
+                rewardPoints: { type: number }
+                rewardCoins: { type: number }
+
+    # --- Daily Mission ---
+    DailyMissionListSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: daily.mission.list.sync
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+
+    DailyMissionListDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: daily.mission.list.data
+            payload:
+              type: object
+              properties:
+                missions: { type: array }
+                dailyResetAt: { type: number }
+
+    DailyMissionClaimMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: daily.mission.claim
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+                missionId: { type: string }
+
+    DailyMissionCompletedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: daily.mission.completed
+            payload:
+              type: object
+              properties:
+                missionId: { type: string }
+                title: { type: string }
+                rewardPoints: { type: number }
+                rewardCoins: { type: number }
+
+    # --- Ranked ---
+    RankedStatsSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: ranked.stats.sync
+            payload:
+              type: object
+              properties:
+                userId: { type: string }
+
+    RankedStatsDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: ranked.stats.data
+            payload:
+              type: object
+              properties:
+                rankedInfo: { type: object }
+
+    RankedLeaderboardSyncMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: ranked.leaderboard.sync
+            payload:
+              type: object
+              properties:
+                limit: { type: number }
+                offset: { type: number }
+
+    RankedLeaderboardDataMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: ranked.leaderboard.data
+            payload:
+              type: object
+              properties:
+                players: { type: array }
+                totalPlayers: { type: number }
+                hasMore: { type: boolean }
+
+    MMRChangeMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - properties:
+            type:
+              const: ranked.mmr.change
+            payload:
+              type: object
+              properties:
+                oldMMR: { type: number }
+                newMMR: { type: number }
+                change: { type: number }
+
+    # --- Shared Types ---
+    GameSettings:
+      type: object
+      properties:
+        totalQuestions: { type: number }
+        timePerQuestion: { type: number }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+        category: { type: string }

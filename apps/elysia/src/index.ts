@@ -147,7 +147,49 @@ export const app = new Elysia()
   .use(chatRoutes)
   .use(imageCacheRoutes)
   .use(quizBattleWS) // Added quizBattleWS
-  .use(historyRoutes); // Added historyRoutes
+  .use(historyRoutes) // Added historyRoutes
+  // Serve AsyncAPI YAML
+  .get('/docs-ws/asyncapi.yaml', () => {
+    return Bun.file('./docs/asyncapi/asyncapi.yaml');
+  })
+  // Serve AsyncAPI Viewer
+  .get('/docs-ws', () => {
+    return new Response(
+      `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>AsyncAPI Documentation</title>
+          <link rel="stylesheet" href="https://unpkg.com/@asyncapi/react-component@latest/styles/default.min.css">
+        </head>
+        <body>
+          <div id="asyncapi"></div>
+          <script src="https://unpkg.com/@asyncapi/react-component@latest/browser/standalone.js"></script>
+          <script>
+            AsyncApiStandalone.render({
+              schema: {
+                url: '/docs-ws/asyncapi.yaml',
+                refParser: {
+                  mode: 'dereference'
+                }
+              },
+              config: {
+                show: {
+                  sidebar: true,
+                }
+              }
+            }, document.getElementById('asyncapi'));
+          </script>
+        </body>
+      </html>
+      `,
+      {
+        headers: {
+          'Content-Type': 'text/html',
+        },
+      },
+    );
+  });
 
 // Graceful shutdown handler
 process.on('SIGTERM', async () => {
@@ -180,5 +222,8 @@ initializeConnections().then(() => {
   );
   console.log(
     `📚 Swagger docs: http://${app.server?.hostname}:${app.server?.port}/docs`,
+  );
+  console.log(
+    `📚 AsyncAPI docs: http://${app.server?.hostname}:${app.server?.port}/docs-ws`,
   );
 });
