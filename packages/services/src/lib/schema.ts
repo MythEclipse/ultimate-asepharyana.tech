@@ -715,7 +715,7 @@ export const quizNotifications = mysqlTable(
     userId: varchar('userId', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    type: varchar('type', { length: 50 }).notNull(), // achievement, friend_request, challenge, system
+    type: varchar('type', { length: 50 }).notNull(), // friend_request, challenge, match_invite, system
     title: varchar('title', { length: 255 }).notNull(),
     message: text('message').notNull(),
     data: text('data'), // JSON data
@@ -728,43 +728,6 @@ export const quizNotifications = mysqlTable(
     userIdIdx: index('userId_idx').on(table.userId),
     isReadIdx: index('isRead_idx').on(table.isRead),
     createdAtIdx: index('createdAt_idx').on(table.createdAt),
-  }),
-);
-
-// QuizAchievement table - Data achievement
-export const quizAchievements = mysqlTable(
-  'QuizAchievement',
-  {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    name: varchar('name', { length: 255 }).notNull(),
-    description: text('description').notNull(),
-    icon: varchar('icon', { length: 100 }),
-    rarity: varchar('rarity', { length: 50 }).notNull().default('common'), // common, rare, epic, legendary
-    requirement: text('requirement').notNull(), // JSON
-    rewardPoints: int('rewardPoints').notNull().default(0),
-    rewardCoins: int('rewardCoins').notNull().default(0),
-  },
-  (table) => ({
-    rarityIdx: index('rarity_idx').on(table.rarity),
-  }),
-);
-
-// QuizUserAchievement table - Achievement yang dimiliki user
-export const quizUserAchievements = mysqlTable(
-  'QuizUserAchievement',
-  {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    achievementId: varchar('achievementId', { length: 255 })
-      .notNull()
-      .references(() => quizAchievements.id, { onDelete: 'cascade' }),
-    unlockedAt: timestamp('unlockedAt').notNull().defaultNow(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.achievementId] }),
-    userIdIdx: index('userId_idx').on(table.userId),
   }),
 );
 
@@ -880,27 +843,6 @@ export const quizNotificationsRelations = relations(
     user: one(users, {
       fields: [quizNotifications.userId],
       references: [users.id],
-    }),
-  }),
-);
-
-export const quizAchievementsRelations = relations(
-  quizAchievements,
-  ({ many }) => ({
-    userAchievements: many(quizUserAchievements),
-  }),
-);
-
-export const quizUserAchievementsRelations = relations(
-  quizUserAchievements,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [quizUserAchievements.userId],
-      references: [users.id],
-    }),
-    achievement: one(quizAchievements, {
-      fields: [quizUserAchievements.achievementId],
-      references: [quizAchievements.id],
     }),
   }),
 );

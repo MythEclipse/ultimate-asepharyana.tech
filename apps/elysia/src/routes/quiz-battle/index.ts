@@ -18,6 +18,7 @@ import {
 import {
   handleMatchmakingFind,
   handleMatchmakingCancel,
+  handleMatchmakingConfirm,
 } from './handlers/matchmaking';
 
 import { handleGameAnswerSubmit, endGameByForfeit } from './handlers/game';
@@ -26,6 +27,11 @@ import {
   handleFriendRemove,
   handleFriendListRequest,
   handleFriendChallenge,
+  handleFriendRequestSend,
+  handleFriendRequestRespond,
+  handleFriendRequestList,
+  handleMatchInviteSend,
+  handleMatchInviteRespond,
 } from './handlers/friends';
 
 import {
@@ -127,6 +133,12 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             }
             break;
 
+          case 'matchmaking.confirm':
+            if (sessionId) {
+              handleMatchmakingConfirm(sessionId, message.payload as any);
+            }
+            break;
+
           // ===== GAME =====
           case 'game.connect': {
             // CRITICAL: Check if match exists and is not finished
@@ -210,6 +222,37 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
           case 'friend.challenge':
             if (sessionId) {
               handleFriendChallenge(sessionId, message.payload as any);
+            }
+            break;
+
+          case 'friend.request.send':
+            if (sessionId) {
+              handleFriendRequestSend(sessionId, message.payload as any);
+            }
+            break;
+
+          case 'friend.request.respond':
+            if (sessionId) {
+              handleFriendRequestRespond(sessionId, message.payload as any);
+            }
+            break;
+
+          case 'friend.request.list':
+            if (sessionId) {
+              handleFriendRequestList(sessionId, message.payload as any);
+            }
+            break;
+
+          // ===== MATCH INVITE =====
+          case 'match.invite.send':
+            if (sessionId) {
+              handleMatchInviteSend(sessionId, message.payload as any);
+            }
+            break;
+
+          case 'match.invite.respond':
+            if (sessionId) {
+              handleMatchInviteRespond(sessionId, message.payload as any);
             }
             break;
 
@@ -324,8 +367,6 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
               handleNotificationDelete(sessionId, message as any);
             }
             break;
-
-          // ===== ACHIEVEMENTS =====
 
           // ===== RANKED SYSTEM =====
           case 'ranked.stats.sync':

@@ -408,6 +408,120 @@ export interface FriendRemovedPayload {
   removedBy: string;
 }
 
+// Friend Request payloads
+export interface FriendRequestSendPayload {
+  userId: string;
+  targetUserId: string;
+  message?: string;
+}
+
+export interface FriendRequestReceivedPayload {
+  requestId: string;
+  sender: {
+    userId: string;
+    username: string;
+    points: number;
+    avatarUrl?: string;
+  };
+  message?: string;
+  timestamp: number;
+}
+
+export interface FriendRequestRespondPayload {
+  userId: string;
+  requestId: string;
+  accept: boolean;
+}
+
+export interface FriendRequestResponsePayload {
+  requestId: string;
+  status: 'accepted' | 'rejected';
+  friend?: FriendInfo;
+}
+
+export interface FriendRequestListPayload {
+  userId: string;
+  type: 'incoming' | 'outgoing';
+}
+
+export interface FriendRequestListDataPayload {
+  requests: Array<{
+    requestId: string;
+    user: {
+      userId: string;
+      username: string;
+      points: number;
+      avatarUrl?: string;
+    };
+    message?: string;
+    timestamp: number;
+  }>;
+  totalCount: number;
+}
+
+// Match Invitation payloads
+export interface MatchInviteSendPayload {
+  senderId: string;
+  receiverId: string;
+  gameSettings: GameSettings;
+  message?: string;
+}
+
+export interface MatchInviteReceivedPayload {
+  inviteId: string;
+  sender: {
+    userId: string;
+    username: string;
+    points: number;
+    wins: number;
+    avatarUrl?: string;
+  };
+  gameSettings: GameSettings;
+  message?: string;
+  expiresIn: number;
+}
+
+export interface MatchInviteRespondPayload {
+  userId: string;
+  inviteId: string;
+  accept: boolean;
+}
+
+export interface MatchInviteAcceptedPayload {
+  inviteId: string;
+  matchId: string;
+  opponent: OpponentInfo;
+  gameSettings: GameSettings;
+  startIn: number;
+}
+
+export interface MatchInviteRejectedPayload {
+  inviteId: string;
+  rejectedBy: string;
+  reason?: string;
+}
+
+// Matchmaking confirmation payloads
+export interface MatchmakingConfirmPayload {
+  matchId: string;
+  userId: string;
+  confirmed: boolean;
+}
+
+export interface MatchmakingConfirmRequestPayload {
+  matchId: string;
+  opponent: OpponentInfo;
+  gameSettings: GameSettings;
+  timeToConfirm: number;
+}
+
+export interface MatchmakingConfirmStatusPayload {
+  matchId: string;
+  playerConfirmed: boolean;
+  opponentConfirmed: boolean;
+  status: 'waiting' | 'both_confirmed' | 'declined' | 'timeout';
+}
+
 // ===== LEADERBOARD =====
 export interface LeaderboardEntry {
   rank: number;
@@ -464,9 +578,9 @@ export interface LeaderboardFriendsDataPayload {
 
 // ===== NOTIFICATIONS =====
 export type NotificationType =
-  | 'achievement'
   | 'friend_request'
   | 'challenge'
+  | 'match_invite'
   | 'system';
 export type NotificationPriority = 'low' | 'medium' | 'high';
 
@@ -579,8 +693,6 @@ export interface ChatTypingIndicatorPayload {
   username: string;
   isTyping: boolean;
 }
-
-// ===== ACHIEVEMENTS =====
 
 // ===== RANKED SYSTEM =====
 export type RankedTier =

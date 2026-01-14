@@ -11,6 +11,9 @@ import type {
   OpponentInfo,
   GameSettings,
   MatchState,
+  MatchmakingConfirmPayload,
+  MatchmakingConfirmRequestPayload,
+  MatchmakingConfirmStatusPayload,
 } from '../types';
 import { wsManager } from '../ws-manager';
 import {
@@ -20,6 +23,18 @@ import {
   quizMatches,
   eq,
 } from '@asepharyana/services';
+
+// Store pending match confirmations
+const pendingConfirmations = new Map<string, {
+  matchId: string;
+  player1Id: string;
+  player2Id: string;
+  player1Confirmed: boolean;
+  player2Confirmed: boolean;
+  gameSettings: GameSettings;
+  expiresAt: number;
+  timeoutId: ReturnType<typeof setTimeout>;
+}>();
 
 // Generate unique match ID
 function generateMatchId(): string {
@@ -152,7 +167,7 @@ export async function handleMatchmakingFind(
         gameMode: payload.gameMode,
         difficulty: payload.difficulty,
         category: payload.category,
-        status: 'waiting',
+        status: 'pending_confirm', // Changed to pending_confirm
         player1Score: 0,
         player2Score: 0,
         player1Health: 100,
@@ -183,42 +198,49 @@ export async function handleMatchmakingFind(
 
       wsManager.createMatch(matchId, matchState);
 
-      // Update user statuses
-      wsManager.updateUserStatus(payload.userId, 'in_game');
-      wsManager.updateUserStatus(matchFound.userId, 'in_game');
+      // Create pending confirmation with 30 second timeout
+      const timeoutId = setTimeout(() => {
+        handleConfirmationTimeout(matchId);
+      }, 30000);
 
-      // Send match found to both players
-      const matchFoundMsgPlayer1: WSMessage<MatchmakingFoundPayload> = {
-        type: 'matchmaking.found',
+      pendingConfirmations.set(matchId, {
+        matchId,
+        player1Id: payload.userId,
+        player2Id: matchFound.userId,
+        player1Confirmed: false,
+        player2Confirmed: false,
+        gameSettings,
+        expiresAt: Date.now() + 30000,
+        timeoutId,
+      });
+
+      // Send confirmation request to both players
+      const confirmReqPlayer1: WSMessage<MatchmakingConfirmRequestPayload> = {
+        type: 'matchmaking.confirm.request',
         payload: {
           matchId,
           opponent: opponentInfo,
           gameSettings,
-          startIn: 5,
+          timeToConfirm: 30,
         },
       };
 
-      const matchFoundMsgPlayer2: WSMessage<MatchmakingFoundPayload> = {
-        type: 'matchmaking.found',
+      const confirmReqPlayer2: WSMessage<MatchmakingConfirmRequestPayload> = {
+        type: 'matchmaking.confirm.request',
         payload: {
           matchId,
           opponent: userInfo,
           gameSettings,
-          startIn: 5,
+          timeToConfirm: 30,
         },
       };
 
-      wsManager.sendToUser(payload.userId, matchFoundMsgPlayer1);
-      wsManager.sendToUser(matchFound.userId, matchFoundMsgPlayer2);
+      wsManager.sendToUser(payload.userId, confirmReqPlayer1);
+      wsManager.sendToUser(matchFound.userId, confirmReqPlayer2);
 
       console.log(
-        `[Matchmaking] Match found: ${connection.username} vs ${opponentConnection.username}`,
+        `[Matchmaking] Match found, waiting for confirmation: ${connection.username} vs ${opponentConnection.username}`,
       );
-
-      // Start game after 5 seconds
-      setTimeout(() => {
-        startGame(matchId);
-      }, 5000);
     } else {
       // No match found, add to queue
       await addUserToQueue(payload, userPoints);
@@ -226,6 +248,183 @@ export async function handleMatchmakingFind(
   } catch (error) {
     console.error('[Matchmaking] Error finding match:', error);
   }
+}
+
+/**
+ * Handle match confirmation from player
+ */
+export async function handleMatchmakingConfirm(
+  sessionId: string,
+  payload: MatchmakingConfirmPayload,
+): Promise<void> {
+  try {
+    const pending = pendingConfirmations.get(payload.matchId);
+    if (!pending) {
+      const errorMsg: WSMessage = {
+        type: 'error',
+        payload: {
+          code: 'MATCH_NOT_FOUND',
+          message: 'Match tidak ditemukan atau sudah kadaluarsa',
+        },
+      };
+      wsManager.sendToSession(sessionId, errorMsg);
+      return;
+    }
+
+    // Determine which player confirmed
+    const isPlayer1 = payload.userId === pending.player1Id;
+    const isPlayer2 = payload.userId === pending.player2Id;
+
+    if (!isPlayer1 && !isPlayer2) {
+      const errorMsg: WSMessage = {
+        type: 'error',
+        payload: {
+          code: 'NOT_IN_MATCH',
+          message: 'Anda tidak terdaftar di match ini',
+        },
+      };
+      wsManager.sendToSession(sessionId, errorMsg);
+      return;
+    }
+
+    if (!payload.confirmed) {
+      // Player declined
+      clearTimeout(pending.timeoutId);
+      pendingConfirmations.delete(payload.matchId);
+
+      // Notify both players
+      const declinedMsg: WSMessage<MatchmakingConfirmStatusPayload> = {
+        type: 'matchmaking.confirm.status',
+        payload: {
+          matchId: payload.matchId,
+          playerConfirmed: false,
+          opponentConfirmed: false,
+          status: 'declined',
+        },
+      };
+
+      wsManager.sendToUser(pending.player1Id, declinedMsg);
+      wsManager.sendToUser(pending.player2Id, declinedMsg);
+
+      // Clean up match
+      wsManager.deleteMatch(payload.matchId);
+
+      // Update database status
+      const db = getDb();
+      await db
+        .update(quizMatches)
+        .set({ status: 'cancelled' })
+        .where(eq(quizMatches.id, payload.matchId));
+
+      // Reset statuses
+      wsManager.updateUserStatus(pending.player1Id, 'online');
+      wsManager.updateUserStatus(pending.player2Id, 'online');
+
+      console.log(
+        `[Matchmaking] Match ${payload.matchId} declined by ${payload.userId}`,
+      );
+      return;
+    }
+
+    // Player confirmed
+    if (isPlayer1) {
+      pending.player1Confirmed = true;
+    } else {
+      pending.player2Confirmed = true;
+    }
+
+    // Send status update to both players
+    const statusMsgPlayer1: WSMessage<MatchmakingConfirmStatusPayload> = {
+      type: 'matchmaking.confirm.status',
+      payload: {
+        matchId: payload.matchId,
+        playerConfirmed: pending.player1Confirmed,
+        opponentConfirmed: pending.player2Confirmed,
+        status: 'waiting',
+      },
+    };
+
+    const statusMsgPlayer2: WSMessage<MatchmakingConfirmStatusPayload> = {
+      type: 'matchmaking.confirm.status',
+      payload: {
+        matchId: payload.matchId,
+        playerConfirmed: pending.player2Confirmed,
+        opponentConfirmed: pending.player1Confirmed,
+        status: 'waiting',
+      },
+    };
+
+    wsManager.sendToUser(pending.player1Id, statusMsgPlayer1);
+    wsManager.sendToUser(pending.player2Id, statusMsgPlayer2);
+
+    // Check if both confirmed
+    if (pending.player1Confirmed && pending.player2Confirmed) {
+      clearTimeout(pending.timeoutId);
+      pendingConfirmations.delete(payload.matchId);
+
+      // Update user statuses
+      wsManager.updateUserStatus(pending.player1Id, 'in_game');
+      wsManager.updateUserStatus(pending.player2Id, 'in_game');
+
+      // Send both confirmed message
+      const bothConfirmedMsg: WSMessage<MatchmakingConfirmStatusPayload> = {
+        type: 'matchmaking.confirm.status',
+        payload: {
+          matchId: payload.matchId,
+          playerConfirmed: true,
+          opponentConfirmed: true,
+          status: 'both_confirmed',
+        },
+      };
+
+      wsManager.sendToUser(pending.player1Id, bothConfirmedMsg);
+      wsManager.sendToUser(pending.player2Id, bothConfirmedMsg);
+
+      console.log(
+        `[Matchmaking] Match ${payload.matchId} confirmed by both players`,
+      );
+
+      // Start game after short delay
+      setTimeout(() => {
+        startGame(payload.matchId);
+      }, 3000);
+    }
+  } catch (error) {
+    console.error('[Matchmaking] Error handling confirmation:', error);
+  }
+}
+
+/**
+ * Handle confirmation timeout
+ */
+function handleConfirmationTimeout(matchId: string): void {
+  const pending = pendingConfirmations.get(matchId);
+  if (!pending) return;
+
+  pendingConfirmations.delete(matchId);
+
+  // Notify both players of timeout
+  const timeoutMsg: WSMessage<MatchmakingConfirmStatusPayload> = {
+    type: 'matchmaking.confirm.status',
+    payload: {
+      matchId,
+      playerConfirmed: pending.player1Confirmed,
+      opponentConfirmed: pending.player2Confirmed,
+      status: 'timeout',
+    },
+  };
+
+  wsManager.sendToUser(pending.player1Id, timeoutMsg);
+  wsManager.sendToUser(pending.player2Id, timeoutMsg);
+
+  // Clean up match
+  wsManager.deleteMatch(matchId);
+
+  // Reset statuses
+  wsManager.updateUserStatus(pending.player1Id, 'online');
+  wsManager.updateUserStatus(pending.player2Id, 'online');
+
+  console.log(`[Matchmaking] Match ${matchId} timed out waiting for confirmation`);
 }
 
 async function addUserToQueue(
