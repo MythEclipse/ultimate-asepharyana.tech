@@ -45,7 +45,9 @@ export class QuizBattleWSManager {
       // Cleanup: remove from matchmaking queue if exists
       this.matchmakingQueue.delete(connection.userId);
 
-      console.log(`[WS] User ${connection.username} disconnected (${sessionId})`);
+      console.log(
+        `[WS] User ${connection.username} disconnected (${sessionId})`,
+      );
     }
   }
 
@@ -120,6 +122,10 @@ export class QuizBattleWSManager {
     }
   }
 
+  deleteMatch(matchId: string): void {
+    this.removeMatch(matchId);
+  }
+
   getActiveMatchesCount(): number {
     return this.activeMatches.size;
   }
@@ -134,7 +140,9 @@ export class QuizBattleWSManager {
     const host = this.getConnectionByUserId(lobbyState.hostId);
     if (host) host.currentLobbyId = lobbyId;
 
-    console.log(`[Lobby] Created lobby ${lobbyId} with code ${lobbyState.lobbyCode}`);
+    console.log(
+      `[Lobby] Created lobby ${lobbyId} with code ${lobbyState.lobbyCode}`,
+    );
   }
 
   getLobby(lobbyId: string): LobbyState | undefined {
@@ -216,7 +224,7 @@ export class QuizBattleWSManager {
     gameMode: string,
     difficulty: string,
     category: string,
-    userMMR?: number
+    userMMR?: number,
   ): MatchmakingQueueEntry | undefined {
     // For ranked mode, use MMR-based matching with fallback
     // This ensures matches always happen, even with only 2 players of vastly different ranks
@@ -262,7 +270,9 @@ export class QuizBattleWSManager {
       if (
         entry.gameMode === gameMode &&
         entry.difficulty === difficulty &&
-        (entry.category === category || category === 'all' || entry.category === 'all')
+        (entry.category === category ||
+          category === 'all' ||
+          entry.category === 'all')
       ) {
         return entry;
       }
@@ -287,18 +297,26 @@ export class QuizBattleWSManager {
     }
   }
 
-  sendToSession(sessionId: string, typeOrMessage: string | WSMessage, payload?: unknown): void {
+  sendToSession(
+    sessionId: string,
+    typeOrMessage: string | WSMessage,
+    payload?: unknown,
+  ): void {
     const connection = this.connections.get(sessionId);
     if (connection && connection.ws) {
       try {
         // Support both formats: sendToSession(id, message) and sendToSession(id, type, payload)
-        const message: WSMessage = typeof typeOrMessage === 'string'
-          ? { type: typeOrMessage, payload: payload || {} }
-          : typeOrMessage;
+        const message: WSMessage =
+          typeof typeOrMessage === 'string'
+            ? { type: typeOrMessage, payload: payload || {} }
+            : typeOrMessage;
 
         connection.ws.send(JSON.stringify(message));
       } catch (error) {
-        console.error(`[WS] Error sending message to session ${sessionId}:`, error);
+        console.error(
+          `[WS] Error sending message to session ${sessionId}:`,
+          error,
+        );
       }
     }
   }
@@ -320,8 +338,12 @@ export class QuizBattleWSManager {
     }
   }
 
-  broadcastToFriends(userId: string, message: WSMessage, friendIds: string[]): void {
-    friendIds.forEach(friendId => {
+  broadcastToFriends(
+    userId: string,
+    message: WSMessage,
+    friendIds: string[],
+  ): void {
+    friendIds.forEach((friendId) => {
       const connection = this.getConnectionByUserId(friendId);
       if (connection && connection.status === 'online') {
         this.sendToUser(friendId, message);
@@ -335,7 +357,10 @@ export class QuizBattleWSManager {
         try {
           connection.ws.send(JSON.stringify(message));
         } catch (error) {
-          console.error(`[WS] Error broadcasting to ${connection.userId}:`, error);
+          console.error(
+            `[WS] Error broadcasting to ${connection.userId}:`,
+            error,
+          );
         }
       }
     });
@@ -343,7 +368,10 @@ export class QuizBattleWSManager {
 
   // ===== UTILITY FUNCTIONS =====
 
-  updateUserStatus(userId: string, status: 'online' | 'offline' | 'in_game' | 'away'): void {
+  updateUserStatus(
+    userId: string,
+    status: 'online' | 'offline' | 'in_game' | 'away',
+  ): void {
     const connection = this.getConnectionByUserId(userId);
     if (connection) {
       connection.status = status;
@@ -380,7 +408,7 @@ export class QuizBattleWSManager {
       }
     });
 
-    expiredLobbies.forEach(lobbyId => this.removeLobby(lobbyId));
+    expiredLobbies.forEach((lobbyId) => this.removeLobby(lobbyId));
   }
 
   cleanupDisconnectedUsers(): void {
@@ -390,7 +418,9 @@ export class QuizBattleWSManager {
     this.connections.forEach((connection, sessionId) => {
       // Check last ping time
       if (now - connection.lastPing > disconnectTimeout) {
-        console.log(`[WS] Cleaning up disconnected user ${connection.username}`);
+        console.log(
+          `[WS] Cleaning up disconnected user ${connection.username}`,
+        );
         this.removeConnection(sessionId);
       }
     });

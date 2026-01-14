@@ -25,16 +25,19 @@ import {
 } from '@asepharyana/services';
 
 // Store pending match confirmations
-const pendingConfirmations = new Map<string, {
-  matchId: string;
-  player1Id: string;
-  player2Id: string;
-  player1Confirmed: boolean;
-  player2Confirmed: boolean;
-  gameSettings: GameSettings;
-  expiresAt: number;
-  timeoutId: ReturnType<typeof setTimeout>;
-}>();
+const pendingConfirmations = new Map<
+  string,
+  {
+    matchId: string;
+    player1Id: string;
+    player2Id: string;
+    player1Confirmed: boolean;
+    player2Confirmed: boolean;
+    gameSettings: GameSettings;
+    expiresAt: number;
+    timeoutId: ReturnType<typeof setTimeout>;
+  }
+>();
 
 // Generate unique match ID
 function generateMatchId(): string {
@@ -424,7 +427,9 @@ function handleConfirmationTimeout(matchId: string): void {
   wsManager.updateUserStatus(pending.player1Id, 'online');
   wsManager.updateUserStatus(pending.player2Id, 'online');
 
-  console.log(`[Matchmaking] Match ${matchId} timed out waiting for confirmation`);
+  console.log(
+    `[Matchmaking] Match ${matchId} timed out waiting for confirmation`,
+  );
 }
 
 async function addUserToQueue(
@@ -480,7 +485,7 @@ export function handleMatchmakingCancel(
 }
 
 // This will be called from game handlers
-async function startGame(matchId: string): Promise<void> {
+export async function startGame(matchId: string): Promise<void> {
   try {
     const match = wsManager.getMatch(matchId);
     if (!match) return;
