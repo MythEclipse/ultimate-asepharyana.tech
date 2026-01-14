@@ -16,6 +16,7 @@ import type {
   MatchmakingConfirmStatusPayload,
 } from '../types';
 import { wsManager } from '../ws-manager';
+import { queueLogger, matchLogger } from '../../../utils/logger';
 import {
   getDb,
   users,
@@ -459,7 +460,7 @@ async function addUserToQueue(
 
   wsManager.sendToUser(payload.userId, searchingMsg);
 
-  console.log(`[Matchmaking] User ${payload.userId} added to queue`);
+  queueLogger.joined(payload.userId, payload.username);
 }
 
 export function handleMatchmakingCancel(
@@ -478,7 +479,7 @@ export function handleMatchmakingCancel(
 
     wsManager.sendToSession(sessionId, cancelledMsg);
 
-    console.log(`[Matchmaking] User ${payload.userId} cancelled matchmaking`);
+    queueLogger.left(payload.userId, connection?.username || 'unknown');
   } catch (error) {
     console.error('[Matchmaking] Error cancelling matchmaking:', error);
   }

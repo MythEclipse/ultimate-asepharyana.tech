@@ -1,6 +1,7 @@
 // Game Logic Handlers
 import { wsManager } from '../ws-manager';
 import { updateRankedMMR } from './ranked';
+import { matchLogger } from '../../../utils/logger';
 
 import type {
   WSMessage,
@@ -85,7 +86,7 @@ async function loadQuestions(
 
 // Start the game match
 export async function startGameMatch(matchId: string): Promise<void> {
-  console.log(`[Game] startGameMatch called for match ${matchId}`);
+  matchLogger.started(matchId);
   try {
     const match = wsManager.getMatch(matchId);
     if (!match) {
@@ -165,7 +166,7 @@ export async function startGameMatch(matchId: string): Promise<void> {
 
     wsManager.broadcastToMatch(matchId, gameStartedMsg);
 
-    console.log(`[Game] Match ${matchId} started`);
+    matchLogger.started(matchId);
 
     // Send ALL questions to both players immediately (no delay)
     const allQuestionsMsg: WSMessage<any> = {
@@ -770,7 +771,7 @@ async function endGame(
     // CRITICAL: Remove match IMMEDIATELY to prevent reconnection window
     // Previous code had 5 second delay which allowed replays!
     wsManager.removeMatch(matchId);
-    console.log(`[Game] Match ${matchId} removed. Winner: ${winnerId}`);
+    matchLogger.ended(matchId, winnerId);
   } catch (error) {
     console.error('[Game] Error ending game:', error);
   }

@@ -1,6 +1,7 @@
 // Leaderboard Handlers
 
 import { wsManager } from '../ws-manager';
+import { leaderboardLogger } from '../../../utils/logger';
 import type {
   WSMessage,
   LeaderboardGlobalSyncPayload,
@@ -122,7 +123,7 @@ export async function handleLeaderboardGlobalSync(
     };
 
     wsManager.sendToSession(sessionId, leaderboardMsg);
-    console.log(`[Leaderboard] Sent global leaderboard to ${connection.userId}`);
+    leaderboardLogger.fetched('global', leaderboard.length);
   } catch (error) {
     console.error('[Leaderboard] Error getting global leaderboard:', error);
     const errorMsg: WSMessage = {

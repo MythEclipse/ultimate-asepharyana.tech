@@ -9,6 +9,7 @@ import {
   NewChatRoomMember,
 } from '@asepharyana/services';
 import { eq, and } from '@asepharyana/services';
+import { chatLogger } from '../utils/logger';
 
 // Type for authenticated user from middleware
 type AuthUser = {
@@ -61,7 +62,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
         rooms,
       };
     } catch (error) {
-      console.error('Error fetching chat rooms:', error);
+      chatLogger.error('fetching chat rooms', error);
       if (error instanceof Error && error.message.includes('Unauthorized')) {
         return {
           success: false,
@@ -141,7 +142,7 @@ export const chatRoutes = new Elysia({ prefix: '/api/chat' }).use(authMiddleware
           room,
         };
       } catch (error) {
-        console.error('Error creating chat room:', error);
+        chatLogger.error('creating chat room', error);
         if (error instanceof Error && error.message.includes('Unauthorized')) {
           return {
             success: false,

@@ -22,6 +22,7 @@ import {
   eq,
   and,
 } from '@asepharyana/services';
+import { wsLogger } from '../../../utils/logger';
 
 // Reconnect payload type
 interface ReconnectPayload {
@@ -168,7 +169,7 @@ export async function handleAuthConnect(
     };
     ws.send(JSON.stringify(successMsg));
 
-    console.log(`[Auth] User ${payload.username} authenticated successfully`);
+    wsLogger.authenticated(sessionId, payload.userId, payload.username);
   } catch (error) {
     console.error('[Auth] Error during authentication:', error);
     const errorMsg: WSMessage<AuthErrorPayload> = {
@@ -260,7 +261,7 @@ export async function handleDisconnect(sessionId: string): Promise<void> {
     const connection = wsManager.getConnection(sessionId);
     if (!connection) return;
 
-    console.log(`[Disconnect] User ${connection.username} disconnecting...`);
+    wsLogger.disconnected(sessionId, connection.userId, 'user initiated');
 
     // Update status to offline
     await handleUserStatusUpdate(sessionId, {

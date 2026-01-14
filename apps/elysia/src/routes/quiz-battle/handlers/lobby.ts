@@ -2,6 +2,7 @@
 // Simplified version focusing on core functionality
 
 import { wsManager } from '../ws-manager';
+import { lobbyLogger } from '../../../utils/logger';
 import type {
   WSMessage,
   LobbyCreatePayload,
@@ -149,7 +150,7 @@ export async function handleLobbyCreate(
     };
     wsManager.sendToSession(sessionId, createdMsg);
 
-    console.log(`[Lobby] Created lobby ${lobbyId} with code ${lobbyCode} by ${payload.hostId}`);
+    lobbyLogger.created(lobbyId, payload.hostId);
   } catch (error) {
     console.error('[Lobby] Error creating lobby:', error);
     const errorMsg: WSMessage = {
@@ -239,7 +240,7 @@ export async function handleLobbyJoin(
     };
     wsManager.sendToSession(sessionId, joinedMsg);
 
-    console.log(`[Lobby] ${payload.userId} joined lobby ${lobby.id}`);
+    lobbyLogger.joined(lobby.id, payload.userId);
   } catch (error) {
     console.error('[Lobby] Error joining lobby:', error);
   }
@@ -349,7 +350,7 @@ export async function handleLobbyStart(
     };
 
     wsManager.sendToSession(sessionId, startingMsg);
-    console.log(`[Lobby] Game starting for lobby ${payload.lobbyId}`);
+    lobbyLogger.started(payload.lobbyId);
   } catch (error) {
     console.error('[Lobby] Error starting lobby:', error);
   }
@@ -376,7 +377,7 @@ export async function handleLobbyLeave(
 
     wsManager.removeLobbyMember(payload.lobbyId, payload.userId);
 
-    console.log(`[Lobby] ${payload.userId} left lobby ${payload.lobbyId}`);
+    lobbyLogger.left(payload.lobbyId, payload.userId);
   } catch (error) {
     console.error('[Lobby] Error leaving lobby:', error);
   }
