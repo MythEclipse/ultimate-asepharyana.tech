@@ -214,6 +214,7 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           case 'friend.list.request':
+            console.log('[WS] Received friend.list.request from session:', sessionId, 'payload:', message.payload);
             if (sessionId) {
               handleFriendListRequest(sessionId, message.payload as any);
             }
@@ -238,6 +239,7 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           case 'friend.request.list':
+            console.log('[WS] Received friend.request.list from session:', sessionId, 'payload:', message.payload);
             if (sessionId) {
               handleFriendRequestList(sessionId, message.payload as any);
             }

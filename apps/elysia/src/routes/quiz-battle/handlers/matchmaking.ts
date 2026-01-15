@@ -113,6 +113,15 @@ export async function handleMatchmakingFind(
       return;
     }
 
+    // Check if user is already in matchmaking queue
+    if (wsManager.getQueueEntry(payload.userId)) {
+      console.log(
+        `[Matchmaking] User ${payload.userId} already in queue, ignoring duplicate request`,
+      );
+      // Silently return - user is already queued
+      return;
+    }
+
     // Get user stats for matchmaking
     const db = getDb();
     const [stats] = await db
@@ -468,6 +477,7 @@ export function handleMatchmakingCancel(
   payload: MatchmakingCancelPayload,
 ): void {
   try {
+    const connection = wsManager.getConnectionByUserId(payload.userId);
     wsManager.removeFromQueue(payload.userId);
 
     const cancelledMsg: WSMessage<MatchmakingCancelledPayload> = {

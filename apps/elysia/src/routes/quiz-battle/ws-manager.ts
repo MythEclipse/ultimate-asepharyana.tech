@@ -203,6 +203,13 @@ export class QuizBattleWSManager {
   // ===== MATCHMAKING QUEUE =====
 
   addToQueue(entry: MatchmakingQueueEntry): void {
+    // Check if user is already in queue
+    if (this.matchmakingQueue.has(entry.userId)) {
+      console.log(
+        `[Queue] User ${entry.userId} already in queue, skipping duplicate add`,
+      );
+      return;
+    }
     this.matchmakingQueue.set(entry.userId, entry);
     console.log(`[Queue] Added ${entry.username} to matchmaking queue`);
   }
