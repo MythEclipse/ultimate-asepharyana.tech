@@ -100,6 +100,32 @@ impl RoomManager {
         self.rooms.iter().map(|r| r.key().clone()).collect()
     }
 
+    /// Clean up all empty rooms (call periodically to prevent memory leaks).
+    pub fn cleanup_empty_rooms(&self) -> usize {
+        let mut removed = 0;
+        let empty_rooms: Vec<String> = self
+            .rooms
+            .iter()
+            .filter(|entry| entry.value().member_count() == 0)
+            .map(|entry| entry.key().clone())
+            .collect();
+
+        for room_name in empty_rooms {
+            self.rooms.remove(&room_name);
+            removed += 1;
+        }
+
+        if removed > 0 {
+            info!("Cleaned up {} empty rooms", removed);
+        }
+        removed
+    }
+
+    /// Get total member count across all rooms.
+    pub fn total_members(&self) -> usize {
+        self.rooms.iter().map(|r| r.value().member_count()).sum()
+    }
+
     /// Get total user count across all rooms.
     pub fn total_users(&self) -> usize {
         self.rooms.iter().map(|r| r.member_count()).sum()

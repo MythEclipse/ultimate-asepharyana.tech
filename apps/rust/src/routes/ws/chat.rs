@@ -48,11 +48,27 @@ async fn websocket_connection(socket: WebSocket, state: Arc<AppState>) {
         }
     });
 
-    // Wait for either task to finish
+    // Wait for either task to finish and ensure proper cleanup
     tokio::select! {
-        _ = &mut send_task => recv_task.abort(),
-        _ = &mut recv_task => send_task.abort(),
+        result = &mut send_task => {
+            recv_task.abort();
+            // Wait for recv_task to actually finish
+            let _ = recv_task.await;
+            if let Err(e) = result {
+                tracing::warn!("Send task error: {:?}", e);
+            }
+        },
+        result = &mut recv_task => {
+            send_task.abort();
+            // Wait for send_task to actually finish  
+            let _ = send_task.await;
+            if let Err(e) = result {
+                tracing::warn!("Recv task error: {:?}", e);
+            }
+        }
     }
+    
+    tracing::info!("WebSocket connection closed and cleaned up");
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

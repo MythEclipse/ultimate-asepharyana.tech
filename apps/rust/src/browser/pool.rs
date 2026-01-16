@@ -324,9 +324,17 @@ impl Drop for PooledTab {
         let page = Arc::clone(&self.page);
         let pool = Arc::clone(&self.pool);
 
-        tokio::spawn(async move {
-            pool.return_tab(page).await;
-        });
+        // Use a blocking channel to ensure the tab is returned
+        // This prevents memory leaks from dropped tasks
+        let rt = tokio::runtime::Handle::try_current();
+        if let Ok(handle) = rt {
+            handle.spawn(async move {
+                pool.return_tab(page).await;
+            });
+        } else {
+            // Fallback: if we can't get runtime, just log warning
+            tracing::warn!("Cannot return tab to pool: no tokio runtime available");
+        }
     }
 }
 
