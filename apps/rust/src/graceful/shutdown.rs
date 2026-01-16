@@ -75,17 +75,21 @@ impl Clone for GracefulShutdown {
 /// Wait for a shutdown signal (SIGTERM, SIGINT, or Ctrl+C).
 pub async fn shutdown_signal() {
     let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("Failed to install Ctrl+C handler");
+        if let Err(e) = signal::ctrl_c().await {
+            tracing::error!("Failed to install Ctrl+C handler: {}", e);
+        }
     };
 
     #[cfg(unix)]
     let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("Failed to install SIGTERM handler")
-            .recv()
-            .await;
+        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
+            Ok(mut stream) => {
+                stream.recv().await;
+            }
+            Err(e) => {
+                tracing::error!("Failed to install SIGTERM handler: {}", e);
+            }
+        }
     };
 
     #[cfg(not(unix))]

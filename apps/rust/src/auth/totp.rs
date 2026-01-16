@@ -111,8 +111,14 @@ impl Totp {
         let secret_bytes = base32_decode(&self.config.secret);
         let counter_bytes = counter.to_be_bytes();
 
-        let mut mac =
-            Hmac::<Sha1>::new_from_slice(&secret_bytes).expect("HMAC can take key of any size");
+        // HMAC can take keys of any size, but we handle the error safely
+        let mut mac = match Hmac::<Sha1>::new_from_slice(&secret_bytes) {
+            Ok(mac) => mac,
+            Err(_) => {
+                tracing::error!("Failed to create HMAC instance");
+                return "000000".to_string(); // Return safe default
+            }
+        };
         mac.update(&counter_bytes);
         let result = mac.finalize().into_bytes();
 
@@ -195,7 +201,10 @@ pub fn generate_backup_codes(count: usize) -> Vec<String> {
 fn current_timestamp() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
+        .unwrap_or_else(|_| {
+            tracing::warn!("System time is before UNIX epoch, using 0");
+            std::time::Duration::from_secs(0)
+        })
         .as_secs()
 }
 

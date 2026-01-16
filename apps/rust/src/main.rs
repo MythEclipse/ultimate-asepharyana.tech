@@ -53,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
 
     let db: DatabaseConnection = Database::connect(opt)
         .await
-        .expect("Failed to connect to MySQL database with SeaORM");
+        .map_err(|e| anyhow::anyhow!("Failed to connect to MySQL database: {}", e))?;
     tracing::info!("✓ SeaORM database connection established");
 
     // Initialize Schema (Bookmarks)

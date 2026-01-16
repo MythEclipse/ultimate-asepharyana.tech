@@ -199,11 +199,12 @@ impl ApiKeyManager {
 
                 // Update last used
                 api_key.last_used_at = Some(Utc::now());
-                let updated_json = serde_json::to_string(&api_key).unwrap();
+                let updated_json = serde_json::to_string(&api_key)
+                    .map_err(|e| ApiKeyError::RedisError(e.to_string()))?;
                 let _: () = conn
                     .set(&self.key_storage(&prefix), &updated_json)
                     .await
-                    .unwrap_or(());
+                    .map_err(|e| ApiKeyError::RedisError(e.to_string()))?;
 
                 Ok(api_key)
             }
@@ -229,7 +230,8 @@ impl ApiKeyManager {
             let mut api_key: ApiKey =
                 serde_json::from_str(&j).map_err(|e| ApiKeyError::RedisError(e.to_string()))?;
             api_key.revoked = true;
-            let updated_json = serde_json::to_string(&api_key).unwrap();
+            let updated_json = serde_json::to_string(&api_key)
+                .map_err(|e| ApiKeyError::RedisError(e.to_string()))?;
             conn.set::<_, _, ()>(&key, &updated_json)
                 .await
                 .map_err(|e| ApiKeyError::RedisError(e.to_string()))?;
