@@ -74,6 +74,10 @@ async fn main() -> anyhow::Result<()> {
     // Create semaphore for image processing (limit 5 concurrent to Picser API)
     let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(5));
 
+    // Initialize RoomManager for WebSocket rooms
+    let room_manager = Arc::new(rustexpress::ws::room::RoomManager::new());
+    tracing::info!("✓ WebSocket RoomManager initialized");
+
     let app_state = Arc::new(AppState {
         jwt_secret,
         redis_pool: REDIS_POOL.clone(),
@@ -81,7 +85,35 @@ async fn main() -> anyhow::Result<()> {
         pool: db_arc.clone(),
         chat_tx,
         image_processing_semaphore,
+        room_manager: room_manager.clone(),
     });
+
+    // Initialize scheduler for background tasks
+    tracing::info!("Initializing scheduler...");
+    let scheduler = rustexpress::scheduler::Scheduler::new()
+        .await
+        .expect("Failed to create scheduler");
+
+    // Add cache cleanup task (runs daily at 2 AM)
+    let cache_cleanup = rustexpress::scheduler::CleanupOldCache::new(db_arc.clone());
+    scheduler
+        .add(cache_cleanup)
+        .await
+        .expect("Failed to add cache cleanup task");
+
+    // Add room cleanup task (runs every 5 minutes)
+    let room_cleanup = rustexpress::scheduler::CleanupEmptyRooms::new(room_manager.clone());
+    scheduler
+        .add(room_cleanup)
+        .await
+        .expect("Failed to add room cleanup task");
+
+    // Start scheduler
+    scheduler
+        .start()
+        .await
+        .expect("Failed to start scheduler");
+    tracing::info!("✓ Scheduler started with 2 tasks");
 
     tracing::info!("Building application routes...");
     let cors = CorsLayer::permissive();

@@ -17,38 +17,49 @@ pub enum EmailQueueMessage {
 /// Email queue for background processing
 #[derive(Clone)]
 pub struct EmailQueue {
-    sender: mpsc::UnboundedSender<EmailQueueMessage>,
+    sender: mpsc::Sender<EmailQueueMessage>,
 }
 
 impl EmailQueue {
     /// Create a new email queue and start the background worker
+    /// Uses bounded channel with capacity 1000 to prevent memory leaks
     pub fn new() -> Self {
-        let (sender, receiver) = mpsc::unbounded_channel();
+        let (sender, receiver) = mpsc::channel(1000);
 
         // Spawn background worker
         tokio::spawn(Self::worker(receiver));
 
-        info!("📬 Email queue initialized");
+        info!("📬 Email queue initialized (capacity: 1000)");
 
         Self { sender }
     }
 
     /// Send email asynchronously (non-blocking)
+    /// Returns error if queue is full (capacity reached)
     pub fn send(&self, template: EmailTemplate) -> Result<(), String> {
+        let to_email = template.to_email.clone();
         self.sender
-            .send(EmailQueueMessage::SendEmail(template))
-            .map_err(|e| format!("Failed to queue email: {}", e))
+            .try_send(EmailQueueMessage::SendEmail(template))
+            .map_err(|e| match e {
+                mpsc::error::TrySendError::Full(_) => {
+                    error!("Email queue full! Dropping email to: {}", to_email);
+                    "Email queue is full - message dropped".to_string()
+                }
+                mpsc::error::TrySendError::Closed(_) => {
+                    "Email queue closed".to_string()
+                }
+            })
     }
 
     /// Shutdown the email queue
     pub fn shutdown(&self) -> Result<(), String> {
         self.sender
-            .send(EmailQueueMessage::Shutdown)
-            .map_err(|e| format!("Failed to send shutdown signal: {}", e))
+            .try_send(EmailQueueMessage::Shutdown)
+            .map_err(|e| format!("Failed to send shutdown signal: {:?}", e))
     }
 
     /// Background worker that processes emails
-    async fn worker(mut receiver: mpsc::UnboundedReceiver<EmailQueueMessage>) {
+    async fn worker(mut receiver: mpsc::Receiver<EmailQueueMessage>) {
         let email_service = Arc::new(EmailService::new());
 
         info!("📨 Email worker started");
