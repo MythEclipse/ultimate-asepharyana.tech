@@ -174,7 +174,7 @@ fn parse_search_document(
         let poster = element
             .select(&IMG_SELECTOR)
             .next()
-            .and_then(|e| e.value().attr("data-src").or(e.value().attr("src")))
+            .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
             .unwrap_or("")
             .to_string();
 

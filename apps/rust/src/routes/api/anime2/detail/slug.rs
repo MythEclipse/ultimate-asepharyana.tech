@@ -335,7 +335,7 @@ fn parse_anime_detail_document(
         let poster = element
             .select(&REC_IMG_SELECTOR)
             .next()
-            .and_then(|e| e.value().attr("data-src").or_else(|| e.value().attr("src")))
+            .and_then(|e| e.value().attr("src").or_else(|| e.value().attr("data-src")))
             .unwrap_or("")
             .to_string();
 
