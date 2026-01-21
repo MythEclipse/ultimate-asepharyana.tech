@@ -379,7 +379,7 @@ pub fn cache_image_url_lazy(
 }
 
 /// Convert image URL to CDN URL if already cached, otherwise return original
-/// This is synchronous and doesn't trigger uploads
+/// and trigger background caching for next request
 pub async fn get_cached_or_original(
     db: &DatabaseConnection,
     redis: &RedisPool,
@@ -397,4 +397,28 @@ pub async fn get_cached_or_original(
         });
         original_url.to_string()
     })
+}
+
+/// Batch process multiple image URLs - returns original URLs immediately
+/// and triggers background caching for all
+pub fn cache_image_urls_batch_lazy(
+    db: &DatabaseConnection,
+    redis: &RedisPool,
+    urls: Vec<String>,
+) -> Vec<String> {
+    let db = db.clone();
+    let redis = redis.clone();
+    let urls_clone = urls.clone();
+
+    // Spawn background task to cache all URLs
+    tokio::spawn(async move {
+        let cache = ImageCache::new(&db, &redis);
+        for url in urls_clone {
+            if let Ok(cdn_url) = cache.get_or_cache(&url).await {
+                info!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
+            }
+        }
+    });
+
+    urls
 }

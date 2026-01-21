@@ -1,4 +1,4 @@
-use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
+use crate::helpers::{default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::State;
@@ -72,7 +72,20 @@ pub async fn anime2(
 
     let response = cache
         .get_or_set(CACHE_KEY, CACHE_TTL, || async {
-            let data = fetch_anime_data().await.map_err(|e| e.to_string())?;
+            let mut data = fetch_anime_data().await.map_err(|e| e.to_string())?;
+            
+            // Convert all poster URLs to CDN URLs (returns original + background cache)
+            for item in &mut data.ongoing_anime {
+                if !item.poster.is_empty() {
+                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                }
+            }
+            for item in &mut data.complete_anime {
+                if !item.poster.is_empty() {
+                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                }
+            }
+            
             Ok(Anime2Response {
                 status: "Ok".to_string(),
                 data,
