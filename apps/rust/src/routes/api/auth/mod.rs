@@ -18,6 +18,7 @@ pub mod verify;
 use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
+
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-  change_password::register_routes(delete_account::register_routes(forgot_password::register_routes(login::register_routes(logout::register_routes(me::register_routes(profile::register_routes(profile_image::register_routes(refresh_token::register_routes(register::register_routes(reset_password::register_routes(verify::register_routes(router))))))))))))
+    change_password::register_routes(delete_account::register_routes(forgot_password::register_routes(login::register_routes(logout::register_routes(me::register_routes(profile::register_routes(profile_image::register_routes(refresh_token::register_routes(register::register_routes(reset_password::register_routes(verify::register_routes(router))))))))))))
 }
