@@ -187,31 +187,27 @@ impl<'a> ImageCache<'a> {
             None
         };
 
-        let cdn_url = match self.upload_to_picser(original_url).await {
-            Ok(url) => url,
-            Err(e) => {
-                // Release lock on error
-                let _ = redis_cache.delete(&lock_key).await;
-                return Err(e);
-            }
-        };
+        // Ensure lock is always released, even on error
+        let result = async {
+            // Upload to Picser
+            let cdn_url = self.upload_to_picser(original_url).await?;
 
-        // 6. Save to database
-        if let Err(e) = self.save_to_db(original_url, &cdn_url).await {
-            // Release lock on error
-            let _ = redis_cache.delete(&lock_key).await;
-            return Err(e);
+            // Save to database
+            self.save_to_db(original_url, &cdn_url).await?;
+
+            // Cache in Redis
+            let _ = redis_cache
+                .set_with_ttl(&cache_key, &cdn_url, IMAGE_CACHE_TTL)
+                .await;
+
+            Ok(cdn_url)
         }
+        .await;
 
-        // 7. Cache in Redis
-        let _ = redis_cache
-            .set_with_ttl(&cache_key, &cdn_url, IMAGE_CACHE_TTL)
-            .await;
-
-        // 8. Release lock
+        // Always release lock, regardless of success or failure
         let _ = redis_cache.delete(&lock_key).await;
 
-        Ok(cdn_url)
+        result
     }
 
     /// Get CDN URL without uploading (read-only lookup)
@@ -327,7 +323,7 @@ impl<'a> ImageCache<'a> {
             let err_msg = picser_response
                 .error
                 .unwrap_or_else(|| "Unknown error".to_string());
-            error!("Picser upload failed: {}", err_msg);
+            error!("ImageCache: Picser upload failed for {}: {}", original_url, err_msg);
             return Err(format!("Picser upload failed: {}", err_msg));
         }
 
@@ -338,7 +334,10 @@ impl<'a> ImageCache<'a> {
             .and_then(|u| u.jsdelivr_commit.clone().or(u.jsdelivr.clone()))
             .or(picser_response.url.clone())
             .or(picser_response.github_url.clone())
-            .ok_or("No CDN URL in Picser response")?;
+            .ok_or_else(|| {
+                error!("ImageCache: No CDN URL in Picser response for {}", original_url);
+                "No CDN URL in Picser response".to_string()
+            })?;
 
         info!("ImageCache: Uploaded {} -> {}", original_url, cdn_url);
         Ok(cdn_url)
