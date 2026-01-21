@@ -95,7 +95,7 @@ pub use cache::{cache_key, cache_key_multi, Cache, DEFAULT_CACHE_TTL};
 // Image caching
 pub use image_cache::{
     cache_image_url, cache_image_url_lazy, cache_image_urls, cache_image_urls_batch_lazy,
-    get_cached_or_original, ImageCache, ImageCacheConfig,
+    get_cached_or_original, url_hash, ImageCache, ImageCacheConfig,
 };
 
 // Scraping

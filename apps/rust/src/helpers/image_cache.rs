@@ -19,8 +19,23 @@ pub const IMAGE_CACHE_TTL: u64 = 86400;
 /// Redis key prefix for image cache
 pub const IMAGE_CACHE_PREFIX: &str = "img_cache";
 
+/// Redis key prefix for caching locks (to prevent duplicate uploads)
+pub const IMAGE_CACHE_LOCK_PREFIX: &str = "img_cache_lock";
+
+/// Lock TTL (60 seconds - enough time for upload to complete)
+pub const IMAGE_CACHE_LOCK_TTL: u64 = 60;
+
 /// Picser API endpoint (web upload - no token required)
 pub const PICSER_API_URL: &str = "https://picser.pages.dev/api/upload";
+
+/// Create a hash of the URL for cache key
+pub fn url_hash(url: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(url.as_bytes());
+    let result = hasher.finalize();
+    hex::encode(&result[..8]) // Use first 8 bytes for shorter key
+}
 
 /// Response from Picser API (/api/upload)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,7 +137,8 @@ impl<'a> ImageCache<'a> {
 
     /// Get CDN URL for an image, caching if needed
     pub async fn get_or_cache(&self, original_url: &str) -> Result<String, String> {
-        let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, self.url_hash(original_url));
+        let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(original_url));
+        let lock_key = format!("{}:{}", IMAGE_CACHE_LOCK_PREFIX, url_hash(original_url));
 
         // 1. Check Redis cache first
         let redis_cache = Cache::new(self.redis);
@@ -141,32 +157,66 @@ impl<'a> ImageCache<'a> {
             return Ok(db_entry.cdn_url);
         }
 
-        // 3. Not cached - upload to Picser
+        // 3. Check if another process is already caching this URL
+        if redis_cache.get::<bool>(&lock_key).await.is_some() {
+            info!("ImageCache: Already being cached by another process: {}", original_url);
+            return Err(format!("URL {} is already being cached", original_url));
+        }
+
+        // 4. Acquire lock to prevent duplicate caching
+        let _ = redis_cache.set_with_ttl(&lock_key, &true, IMAGE_CACHE_LOCK_TTL).await;
+
+        // 5. Not cached - upload to Picser
         info!("ImageCache: Miss - uploading {} to Picser", original_url);
 
         // Acquire permit if semaphore is set
+        let redis_clone = self.redis.clone();
+        let lock_key_for_error = lock_key.clone();
         let _permit = if let Some(sem) = &self.semaphore {
-            Some(sem.acquire().await.map_err(|e| e.to_string())?)
+            Some(sem.acquire().await.map_err(|e| {
+                // Release lock on error - spawn task to avoid lifetime issues
+                let redis = redis_clone.clone();
+                let lock = lock_key_for_error.clone();
+                tokio::spawn(async move {
+                    let cache = Cache::new(&redis);
+                    let _ = cache.delete(&lock).await;
+                });
+                e.to_string()
+            })?)
         } else {
             None
         };
 
-        let cdn_url = self.upload_to_picser(original_url).await?;
+        let cdn_url = match self.upload_to_picser(original_url).await {
+            Ok(url) => url,
+            Err(e) => {
+                // Release lock on error
+                let _ = redis_cache.delete(&lock_key).await;
+                return Err(e);
+            }
+        };
 
-        // 4. Save to database
-        self.save_to_db(original_url, &cdn_url).await?;
+        // 6. Save to database
+        if let Err(e) = self.save_to_db(original_url, &cdn_url).await {
+            // Release lock on error
+            let _ = redis_cache.delete(&lock_key).await;
+            return Err(e);
+        }
 
-        // 5. Cache in Redis
+        // 7. Cache in Redis
         let _ = redis_cache
             .set_with_ttl(&cache_key, &cdn_url, IMAGE_CACHE_TTL)
             .await;
+
+        // 8. Release lock
+        let _ = redis_cache.delete(&lock_key).await;
 
         Ok(cdn_url)
     }
 
     /// Get CDN URL without uploading (read-only lookup)
     pub async fn get_cdn_url(&self, original_url: &str) -> Option<String> {
-        let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, self.url_hash(original_url));
+        let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(original_url));
 
         // Check Redis first
         let redis_cache = Cache::new(self.redis);
@@ -184,7 +234,7 @@ impl<'a> ImageCache<'a> {
 
     /// Invalidate cache for a URL
     pub async fn invalidate(&self, original_url: &str) -> Result<(), String> {
-        let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, self.url_hash(original_url));
+        let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(original_url));
 
         // Remove from Redis
         let redis_cache = Cache::new(self.redis);
@@ -294,13 +344,9 @@ impl<'a> ImageCache<'a> {
         Ok(cdn_url)
     }
 
-    /// Create a hash of the URL for cache key
+    /// Create a hash of the URL for cache key (internal method)
     fn url_hash(&self, url: &str) -> String {
-        use sha2::{Digest, Sha256};
-        let mut hasher = Sha256::new();
-        hasher.update(url.as_bytes());
-        let result = hasher.finalize();
-        hex::encode(&result[..8]) // Use first 8 bytes for shorter key
+        url_hash(url)
     }
 
     /// Extract filename from URL
@@ -310,7 +356,7 @@ impl<'a> ImageCache<'a> {
             .and_then(|s| s.split('?').next())
             .filter(|s| !s.is_empty() && s.contains('.'))
             .map(|s| s.to_string())
-            .unwrap_or_else(|| format!("{}.jpg", self.url_hash(url)))
+            .unwrap_or_else(|| format!("{}.jpg", url_hash(url)))
     }
 }
 
@@ -379,24 +425,48 @@ pub fn cache_image_url_lazy(
 }
 
 /// Convert image URL to CDN URL if already cached, otherwise return original
-/// and trigger background caching for next request
+/// and trigger background caching for next request (with duplicate prevention)
 pub async fn get_cached_or_original(
     db: &DatabaseConnection,
     redis: &RedisPool,
     original_url: &str,
 ) -> String {
     let cache = ImageCache::new(db, redis);
-    cache.get_cdn_url(original_url).await.unwrap_or_else(|| {
-        // Not cached - start background caching for next time
-        let db = db.clone();
-        let redis = redis.clone();
-        let url = original_url.to_string();
-        tokio::spawn(async move {
-            let cache = ImageCache::new(&db, &redis);
-            let _ = cache.get_or_cache(&url).await;
-        });
-        original_url.to_string()
-    })
+    
+    // Check if already cached (Redis or DB)
+    if let Some(cdn_url) = cache.get_cdn_url(original_url).await {
+        return cdn_url;
+    }
+
+    // Check if currently being cached by another process
+    let lock_key = format!("{}:{}", IMAGE_CACHE_LOCK_PREFIX, url_hash(original_url));
+    let redis_cache = Cache::new(redis);
+    if redis_cache.get::<bool>(&lock_key).await.is_some() {
+        // Already being cached, just return original URL
+        info!("[ImageCache] URL already being cached by another process: {}", original_url);
+        return original_url.to_string();
+    }
+
+    // Not cached and not being cached - start background caching
+    let db = db.clone();
+    let redis = redis.clone();
+    let url = original_url.to_string();
+    tokio::spawn(async move {
+        let cache = ImageCache::new(&db, &redis);
+        match cache.get_or_cache(&url).await {
+            Ok(cdn_url) => {
+                info!("[BgCache] Successfully cached: {} -> {}", url, cdn_url);
+            }
+            Err(e) => {
+                // Only warn if it's not already being cached
+                if !e.contains("already being cached") {
+                    warn!("[BgCache] Failed to cache {}: {}", url, e);
+                }
+            }
+        }
+    });
+    
+    original_url.to_string()
 }
 
 /// Batch process multiple image URLs - returns original URLs immediately
