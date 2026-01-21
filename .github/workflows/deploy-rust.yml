@@ -11,7 +11,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  CARGO_INCREMENTAL: 1
+  CARGO_INCREMENTAL: 0
   CARGO_NET_GIT_FETCH_WITH_CLI: true
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
@@ -56,44 +56,10 @@ jobs:
           shared-key: rust-build-${{ hashFiles('**/Cargo.lock') }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Cache APT packages
-        uses: actions/cache@v4
-        id: apt-cache
-        with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-v3-ffmpeg-dev
-          restore-keys: |
-            ${{ runner.os }}-apt-v3-
-
       - name: Install System Dependencies
-        if: steps.apt-cache.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            pkg-config \
-            cmake \
-            clang \
-            libclang-dev \
-            libsqlite3-dev \
-            libmysqlclient-dev \
-            libssl-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libavutil-dev \
-            libswscale-dev \
-            libavfilter-dev \
-            libavdevice-dev \
-            libswresample-dev \
-            libpostproc-dev
-
-      - name: Restore APT packages from cache
-        if: steps.apt-cache.outputs.cache-hit == 'true'
-        run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+          # Install essentials for production build
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends \
             build-essential \
             pkg-config \
             cmake \
@@ -124,7 +90,7 @@ jobs:
       - name: Setup Env
         run: bash ./scripts/2updateenv.sh
 
-      - name: Build Rust (Release)
+      - name: Build Rust (Release - Maximum Optimization)
         env:
           BINDGEN_EXTRA_CLANG_ARGS: '-I/usr/include/x86_64-linux-gnu'
         run: |
@@ -146,8 +112,16 @@ jobs:
             echo "⚠️ sccache setup failed, building without cache..."
           fi
 
-          echo "🔨 Building Rust..."
-          cargo build --release --manifest-path apps/rust/Cargo.toml --target-dir apps/rust/target -j $(nproc)
+          echo "🔨 Building Rust with MAXIMUM optimizations (LTO + opt-level 3)..."
+          echo "⏰ This will take longer but produce the fastest binary"
+          
+          # Build with maximum optimizations
+          # Note: LTO with codegen-units=1 can take 10-15 minutes but produces optimal binary
+          cargo build \
+            --release \
+            --manifest-path apps/rust/Cargo.toml \
+            --target-dir apps/rust/target \
+            --target x86_64-unknown-linux-gnu
 
           if [ "$USE_SCCACHE" == "true" ]; then
             echo "📊 sccache stats:"
@@ -156,12 +130,16 @@ jobs:
 
       - name: Check Build Output
         run: |
-          echo "Rust build output:" && ls -l apps/rust/target/release
-          if [ ! -f "apps/rust/target/release/rustexpress" ]; then
+          echo "Rust build output:" && ls -l apps/rust/target/x86_64-unknown-linux-gnu/release/
+          if [ ! -f "apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress" ]; then
             echo "ERROR: Rust build output executable not found. Deployment aborted."
             exit 1
           fi
-          echo "✅ Binary size: $(du -h apps/rust/target/release/rustexpress | cut -f1)"
+          echo "✅ Binary size: $(du -h apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress | cut -f1)"
+          
+          # Copy binary to expected location for deployment
+          mkdir -p apps/rust/target/release
+          cp apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress apps/rust/target/release/rustexpress
 
       - name: Copy .env to all subprojects/packages
         run: bash scripts/2updateenv.sh

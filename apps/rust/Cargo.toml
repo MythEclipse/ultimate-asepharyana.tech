@@ -145,3 +145,13 @@ unimplemented = "deny"
 [features]
 # default = ["ffmpeg"]
 ffmpeg = ["ffmpeg-next"]
+
+# Profile optimasi untuk production - fokus pada performa runtime maksimal
+[profile.release]
+opt-level = 3           # Optimasi level maksimal
+lto = "fat"             # Full LTO untuk inlining maksimal dan binary optimal
+codegen-units = 1       # Single codegen unit untuk optimasi maksimal (lebih lambat build, binary lebih cepat)
+incremental = false     # Disable incremental untuk optimasi penuh
+debug = false           # No debug info untuk binary lebih kecil
+strip = true            # Strip symbols untuk binary lebih kecil
+panic = "abort"         # Abort on panic (binary lebih kecil dan lebih cepat)
