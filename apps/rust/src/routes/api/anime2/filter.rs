@@ -1,4 +1,4 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{default_backoff, get_cached_or_original, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::{Query, State};
@@ -129,10 +129,17 @@ pub async fn filter(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (anime_list, pagination) =
+            let (mut anime_list, pagination) =
                 fetch_filtered_anime(page, &genre, &status, &anime_type, &order)
                     .await
                     .map_err(|e| e.to_string())?;
+
+            // Convert all poster URLs to CDN URLs
+            for item in &mut anime_list {
+                if !item.poster.is_empty() {
+                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                }
+            }
 
             Ok(FilterResponse {
                 status: "Ok".to_string(),

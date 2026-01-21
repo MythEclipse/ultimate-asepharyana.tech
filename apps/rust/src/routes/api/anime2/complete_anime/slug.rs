@@ -2,7 +2,7 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{default_backoff, get_cached_or_original, internal_err, transient, Cache};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -112,11 +112,18 @@ pub async fn slug(
 
             let html_clone = html.clone();
             let slug_clone = slug.clone();
-            let (anime_list, pagination) =
+            let (mut anime_list, pagination) =
                 tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
                     .await
                     .map_err(|e| e.to_string())?
                     .map_err(|e| e.to_string())?;
+
+            // Convert all poster URLs to CDN URLs
+            for item in &mut anime_list {
+                if !item.poster.is_empty() {
+                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                }
+            }
 
             Ok(CompleteAnimeResponse {
                 status: "Ok".to_string(),

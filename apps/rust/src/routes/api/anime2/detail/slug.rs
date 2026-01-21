@@ -215,14 +215,14 @@ fn parse_anime_detail_document(
     let poster = document
         .select(&POSTER_SELECTOR)
         .next()
-        .and_then(|e| e.value().attr("data-src"))
+        .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
         .unwrap_or("")
         .to_string();
 
     let poster2 = document
         .select(&POSTER2_SELECTOR)
         .next()
-        .and_then(|e| e.value().attr("data-src"))
+        .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
         .unwrap_or("")
         .to_string();
 
