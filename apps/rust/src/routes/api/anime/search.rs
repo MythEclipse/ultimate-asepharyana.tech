@@ -18,7 +18,9 @@ use tracing::{info, warn};
 use utoipa::ToSchema;
 
 // Internal imports
-use crate::helpers::{Cache, internal_err, default_backoff, transient};
+use crate::helpers::{
+    get_cached_or_original, internal_err, Cache, default_backoff, transient,
+};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
@@ -108,8 +110,15 @@ pub async fn search(
             urlencoding::encode(&query)
         );
 
-        let (data, pagination) = fetch_and_parse_search(&url).await
+        let (mut data, pagination) = fetch_and_parse_search(&url).await
             .map_err(|e| format!("Fetch error: {}", e))?;
+
+        // Convert all poster URLs to CDN URLs
+        for item in &mut data {
+            if !item.poster.is_empty() {
+                item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+            }
+        }
 
         Ok(SearchResponse {
             status: "Ok".to_string(),

@@ -1,4 +1,4 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{default_backoff, get_cached_or_original, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
@@ -99,8 +99,15 @@ pub async fn latest(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (komik_list, pagination) =
+            let (mut komik_list, pagination) =
                 fetch_latest_komik(page).await.map_err(|e| e.to_string())?;
+
+            // Convert all poster URLs to CDN URLs
+            for item in &mut komik_list {
+                if !item.poster.is_empty() {
+                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                }
+            }
 
             Ok(LatestKomikResponse {
                 status: "Ok".to_string(),

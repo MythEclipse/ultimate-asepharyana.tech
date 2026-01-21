@@ -102,7 +102,7 @@ impl CleanupOldCache {
         }
 
         // Delete from database
-        let ids: Vec<i32> = old_images.iter().map(|img| img.id).collect();
+        let ids: Vec<String> = old_images.iter().map(|img| img.id.clone()).collect();
 
         image_cache::Entity::delete_many()
             .filter(image_cache::Column::Id.is_in(ids))
@@ -111,12 +111,11 @@ impl CleanupOldCache {
             .map_err(|e| e.to_string())?;
 
         // Also clean from Redis
-        if let Ok(redis_pool) = REDIS_POOL.get().await {
-            let cache = Cache::new(&redis_pool);
-            for img in old_images {
-                let cache_key = format!("img_cache:{}", Self::hash_url(&img.original_url));
-                let _ = cache.delete(&cache_key).await;
-            }
+        let redis_pool = REDIS_POOL.clone();
+        let cache = Cache::new(&redis_pool);
+        for img in old_images {
+            let cache_key = format!("img_cache:{}", Self::hash_url(&img.original_url));
+            let _ = cache.delete(&cache_key).await;
         }
 
         Ok(count)
@@ -165,16 +164,15 @@ impl CleanupOldCache {
 
     /// Compact Redis memory to free up fragmented space.
     async fn compact_redis_memory(&self) -> Result<(), String> {
-        use deadpool_redis::redis::AsyncCommands;
-
         let mut conn = REDIS_POOL
             .get()
             .await
             .map_err(|e| format!("Failed to get Redis connection: {}", e))?;
 
-        // Run MEMORY PURGE command
-        let _: () = conn
-            .query_async(deadpool_redis::redis::cmd("MEMORY").arg("PURGE"))
+        // Run MEMORY PURGE command - using cmd method on connection
+        let _: String = deadpool_redis::redis::cmd("MEMORY")
+            .arg("PURGE")
+            .query_async(&mut *conn)
             .await
             .map_err(|e| format!("Failed to purge memory: {}", e))?;
 

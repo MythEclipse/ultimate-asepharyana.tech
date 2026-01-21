@@ -1,11 +1,11 @@
 /**
  * CachedImage Component
  * 
- * A component that automatically caches images via the CDN service.
- * Falls back to original URL if caching fails.
+ * A component that displays images. Since the API now automatically returns
+ * CDN URLs, this component no longer needs to make POST requests.
+ * It simply displays the image with proper loading states and error handling.
  */
-import { createResource, createSignal, Show, onMount } from "solid-js";
-import { getCachedImageUrl } from "~/lib/image-cache";
+import { createSignal, Show } from "solid-js";
 
 interface CachedImageProps {
     src: string;
@@ -16,44 +16,30 @@ interface CachedImageProps {
 }
 
 export function CachedImage(props: CachedImageProps) {
-    const [cachedSrc, setCachedSrc] = createSignal<string | null>(null);
     const [error, setError] = createSignal(false);
-
-    onMount(async () => {
-        if (!props.src) {
-            setError(true);
-            return;
-        }
-
-        try {
-            const cdn = await getCachedImageUrl(props.src);
-            setCachedSrc(cdn);
-        } catch {
-            // Fallback to original
-            setCachedSrc(props.src);
-        }
-    });
+    const [loaded, setLoaded] = createSignal(false);
 
     return (
         <Show
-            when={cachedSrc() && !error()}
+            when={!error()}
             fallback={
-                <div class={props.fallbackClass || props.class || "bg-muted animate-pulse"} />
+                <div class={props.fallbackClass || props.class || "bg-muted animate-pulse"}>
+                    <div class="flex items-center justify-center h-full text-muted-foreground">
+                        Failed to load image
+                    </div>
+                </div>
             }
         >
+            <Show when={!loaded()}>
+                <div class={`absolute inset-0 ${props.fallbackClass || "bg-muted animate-pulse"}`} />
+            </Show>
             <img
-                src={cachedSrc()!}
+                src={props.src}
                 alt={props.alt}
                 class={props.class}
                 loading={props.loading || "lazy"}
-                onError={() => {
-                    // If CDN fails, try original
-                    if (cachedSrc() !== props.src) {
-                        setCachedSrc(props.src);
-                    } else {
-                        setError(true);
-                    }
-                }}
+                onLoad={() => setLoaded(true)}
+                onError={() => setError(true)}
             />
         </Show>
     );
@@ -61,42 +47,34 @@ export function CachedImage(props: CachedImageProps) {
 
 /**
  * Simple image with lazy loading and fallback
- * Uses CDN cache automatically when available
+ * Since API returns CDN URLs directly, no additional processing needed
  */
 export function LazyImage(props: CachedImageProps) {
     const [loaded, setLoaded] = createSignal(false);
-    const [finalSrc, setFinalSrc] = createSignal(props.src);
-
-    // Try to get cached URL in background
-    onMount(async () => {
-        try {
-            const cdn = await getCachedImageUrl(props.src);
-            if (cdn && cdn !== props.src) {
-                setFinalSrc(cdn);
-            }
-        } catch {
-            // Keep original
-        }
-    });
+    const [error, setError] = createSignal(false);
 
     return (
         <div class="relative">
-            <Show when={!loaded()}>
+            <Show when={!loaded() && !error()}>
                 <div class={`absolute inset-0 ${props.fallbackClass || "bg-muted animate-pulse rounded"}`} />
             </Show>
-            <img
-                src={finalSrc()}
-                alt={props.alt}
-                class={props.class}
-                loading={props.loading || "lazy"}
-                onLoad={() => setLoaded(true)}
-                onError={() => {
-                    // Fallback to original if CDN fails
-                    if (finalSrc() !== props.src) {
-                        setFinalSrc(props.src);
-                    }
-                }}
-            />
+            <Show
+                when={!error()}
+                fallback={
+                    <div class={props.fallbackClass || props.class || "bg-muted rounded flex items-center justify-center"}>
+                        <span class="text-sm text-muted-foreground">Image unavailable</span>
+                    </div>
+                }
+            >
+                <img
+                    src={props.src}
+                    alt={props.alt}
+                    class={props.class}
+                    loading={props.loading || "lazy"}
+                    onLoad={() => setLoaded(true)}
+                    onError={() => setError(true)}
+                />
+            </Show>
         </div>
     );
 }

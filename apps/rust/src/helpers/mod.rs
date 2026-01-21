@@ -93,7 +93,10 @@ pub use retry::{
 pub use cache::{cache_key, cache_key_multi, Cache, DEFAULT_CACHE_TTL};
 
 // Image caching
-pub use image_cache::{cache_image_url, cache_image_urls, ImageCache, ImageCacheConfig};
+pub use image_cache::{
+    cache_image_url, cache_image_url_lazy, cache_image_urls, get_cached_or_original, ImageCache,
+    ImageCacheConfig,
+};
 
 // Scraping
 pub use scraping::{

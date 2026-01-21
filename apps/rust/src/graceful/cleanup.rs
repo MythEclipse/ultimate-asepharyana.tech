@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::signal;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
-use tracing::{info, warn};
+use tracing::info;
 
 use crate::ws::RoomManager;
 use crate::helpers::memory::MemoryMetrics;

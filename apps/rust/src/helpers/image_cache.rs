@@ -350,3 +350,51 @@ pub async fn cache_image_urls(
 
     results
 }
+
+/// Helper to convert image URL to CDN URL in background (non-blocking)
+/// Returns original URL immediately and caches in background
+pub fn cache_image_url_lazy(
+    db: &DatabaseConnection,
+    redis: &RedisPool,
+    original_url: String,
+) -> String {
+    let db = db.clone();
+    let redis = redis.clone();
+    let url_clone = original_url.clone();
+
+    // Spawn background task to cache
+    tokio::spawn(async move {
+        let cache = ImageCache::new(&db, &redis);
+        match cache.get_or_cache(&url_clone).await {
+            Ok(cdn_url) => {
+                info!("[LazyImageCache] Cached: {} -> {}", url_clone, cdn_url);
+            }
+            Err(e) => {
+                warn!("[LazyImageCache] Failed to cache {}: {}", url_clone, e);
+            }
+        }
+    });
+
+    original_url
+}
+
+/// Convert image URL to CDN URL if already cached, otherwise return original
+/// This is synchronous and doesn't trigger uploads
+pub async fn get_cached_or_original(
+    db: &DatabaseConnection,
+    redis: &RedisPool,
+    original_url: &str,
+) -> String {
+    let cache = ImageCache::new(db, redis);
+    cache.get_cdn_url(original_url).await.unwrap_or_else(|| {
+        // Not cached - start background caching for next time
+        let db = db.clone();
+        let redis = redis.clone();
+        let url = original_url.to_string();
+        tokio::spawn(async move {
+            let cache = ImageCache::new(&db, &redis);
+            let _ = cache.get_or_cache(&url).await;
+        });
+        original_url.to_string()
+    })
+}

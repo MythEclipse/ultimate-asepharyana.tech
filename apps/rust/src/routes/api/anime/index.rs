@@ -1,5 +1,5 @@
 // Anime index handler - refactored with helpers
-use crate::helpers::{Cache, default_backoff, transient, internal_err};
+use crate::helpers::{Cache, default_backoff, get_cached_or_original, transient, internal_err};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
@@ -80,8 +80,20 @@ pub async fn anime(
     
     // Clean caching with get_or_set pattern
     let response = cache.get_or_set("anime:index", CACHE_TTL, || async {
-        let data = fetch_anime_data().await
+        let mut data = fetch_anime_data().await
             .map_err(|e| format!("Fetch error: {}", e))?;
+        
+        // Convert all poster URLs to CDN URLs
+        for item in &mut data.ongoing_anime {
+            if !item.poster.is_empty() {
+                item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+            }
+        }
+        for item in &mut data.complete_anime {
+            if !item.poster.is_empty() {
+                item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+            }
+        }
         
         Ok(AnimeResponse {
             status: "Ok".to_string(),
