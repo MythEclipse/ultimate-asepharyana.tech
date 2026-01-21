@@ -200,6 +200,9 @@ impl<'a> ImageCache<'a> {
                 .set_with_ttl(&cache_key, &cdn_url, IMAGE_CACHE_TTL)
                 .await;
 
+            // Invalidate API caches so next requests get updated CDN URLs
+            let _ = self.invalidate_api_caches().await;
+
             Ok(cdn_url)
         }
         .await;
@@ -267,6 +270,37 @@ impl<'a> ImageCache<'a> {
         };
 
         model.insert(self.db).await.map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    /// Invalidate API response caches that may contain this image
+    async fn invalidate_api_caches(&self) -> Result<(), String> {
+        use deadpool_redis::redis::AsyncCommands;
+        
+        let mut conn = self.redis.get().await.map_err(|e| e.to_string())?;
+        
+        // Patterns untuk cache API yang berisi images
+        let patterns = vec![
+            "anime:*",
+            "anime2:*",
+            "komik:*",
+        ];
+        
+        let mut total_deleted = 0;
+        
+        for pattern in patterns {
+            let keys: Vec<String> = conn.keys(pattern).await.map_err(|e| e.to_string())?;
+            
+            if !keys.is_empty() {
+                let deleted: usize = conn.del(&keys).await.map_err(|e| e.to_string())?;
+                total_deleted += deleted;
+            }
+        }
+        
+        if total_deleted > 0 {
+            info!("ImageCache: Invalidated {} API cache keys after image upload", total_deleted);
+        }
+        
         Ok(())
     }
 
