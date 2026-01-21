@@ -175,7 +175,7 @@ fn parse_ongoing_anime(
         let poster = element
             .select(&IMG_SELECTOR)
             .next()
-            .and_then(|e| e.value().attr("data-src"))
+            .and_then(|e| e.value().attr("data-src").or(e.value().attr("src")))
             .unwrap_or("")
             .to_string();
 
@@ -229,7 +229,7 @@ fn parse_complete_anime(
         let poster = element
             .select(&IMG_SELECTOR)
             .next()
-            .and_then(|e| e.value().attr("data-src"))
+            .and_then(|e| e.value().attr("data-src").or(e.value().attr("src")))
             .unwrap_or("")
             .to_string();
 
