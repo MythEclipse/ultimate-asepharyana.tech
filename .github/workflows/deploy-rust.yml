@@ -58,26 +58,11 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          # Install essentials for production build
           sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            pkg-config \
-            cmake \
-            clang \
-            libclang-dev \
-            libsqlite3-dev \
-            libmysqlclient-dev \
-            libssl-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libavutil-dev \
-            libswscale-dev \
-            libavfilter-dev \
-            libavdevice-dev \
-            libswresample-dev \
-            libpostproc-dev
+            build-essential pkg-config cmake clang libclang-dev libsqlite3-dev \
+            libmysqlclient-dev libssl-dev libjpeg-dev libpng-dev libavcodec-dev \
+            libavformat-dev libavutil-dev libswscale-dev libavfilter-dev \
+            libavdevice-dev libswresample-dev libpostproc-dev
 
       - name: Prepare .env file for production
         env:
@@ -90,33 +75,22 @@ jobs:
       - name: Setup Env
         run: bash ./scripts/2updateenv.sh
 
-      - name: Build Rust (Release - Maximum Optimization)
+      - name: Build Rust (Release)
         env:
           BINDGEN_EXTRA_CLANG_ARGS: '-I/usr/include/x86_64-linux-gnu'
         run: |
-          # Check if sccache setup succeeded AND is actually working
           USE_SCCACHE="false"
           if [ "${{ steps.sccache.outcome }}" == "success" ]; then
-            echo "🔍 Validating sccache is working..."
             if sccache --start-server 2>/dev/null || sccache --show-stats 2>/dev/null; then
               export SCCACHE_GHA_ENABLED="true"
               export RUSTC_WRAPPER="sccache"
               USE_SCCACHE="true"
-              echo "✅ sccache is working, using cached builds"
             else
-              echo "⚠️ sccache server failed to start, building without cache..."
               unset RUSTC_WRAPPER
               unset SCCACHE_GHA_ENABLED
             fi
-          else
-            echo "⚠️ sccache setup failed, building without cache..."
           fi
 
-          echo "🔨 Building Rust with MAXIMUM optimizations (LTO + opt-level 3)..."
-          echo "⏰ This will take longer but produce the fastest binary"
-
-          # Build with maximum optimizations
-          # Note: LTO with codegen-units=1 can take 10-15 minutes but produces optimal binary
           cargo build \
             --release \
             --manifest-path apps/rust/Cargo.toml \
@@ -124,71 +98,72 @@ jobs:
             --target x86_64-unknown-linux-gnu
 
           if [ "$USE_SCCACHE" == "true" ]; then
-            echo "📊 sccache stats:"
             sccache --show-stats || true
           fi
 
-      - name: Check Build Output
+      - name: Copy Binary
         run: |
-          echo "Rust build output:" && ls -l apps/rust/target/x86_64-unknown-linux-gnu/release/
-          if [ ! -f "apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress" ]; then
-            echo "ERROR: Rust build output executable not found. Deployment aborted."
-            exit 1
-          fi
-          echo "✅ Binary size: $(du -h apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress | cut -f1)"
-
-          # Copy binary to expected location for deployment
           mkdir -p apps/rust/target/release
           cp apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress apps/rust/target/release/rustexpress
 
-      - name: Copy .env to all subprojects/packages
+      - name: Copy .env
         run: bash scripts/2updateenv.sh
 
-      - name: Sync Build Artifacts to VPS
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          VPS_TARGET_DIR: ~/ultimate-asepharyana.cloud
-        run: |
-          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-
-          # Sync Rust binary and create logs directory
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p $VPS_TARGET_DIR/apps/rust/{target/release,logs}"
-
-          # Prepare list of files to sync
-          # We use sed to strip leading ./ from find output to ensure clean relative paths
-          find . -type f -name ".env" | sed 's|^\./||' > ./deploy_files.txt
-          echo "apps/rust/target/release/rustexpress" >> ./deploy_files.txt
-          echo "apps/rust/ecosystem.config.cjs" >> ./deploy_files.txt
-
-          echo "Files to deploy:"
-          cat ./deploy_files.txt
-
-          # Sync everything in one go using --files-from
-          # This reduces overhead by using a single SSH connection for all files
-          rsync -avz --progress --files-from=./deploy_files.txt -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" . ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:$VPS_TARGET_DIR
-
-          rm -f /tmp/deploy_key
-
-      - name: Restart Rust with PM2
+      # Step 1: Prepare VPS (Git)
+      - name: 1. Prepare VPS (Git Pull)
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           VPS_TARGET_DIR: ~/ultimate-asepharyana.cloud
         run: |
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            # Ensure bun and node global bin are available for PM2
-            export PATH=\$PATH:/home/asephs/.bun/bin:/usr/bin
+            mkdir -p $VPS_TARGET_DIR
             cd $VPS_TARGET_DIR
-            
-            # Sync code changes (keep git history but overwrite changes to match origin)
+            # Pull source code first
             git fetch origin main
             git reset --hard origin/main
             git pull origin main
-            
-            # Start Rust with PM2
-            pm2 startOrRestart apps/rust/ecosystem.config.cjs --env production
-            pm2 save
+          "
+          rm -f /tmp/deploy_key
 
-            echo \"✅ Rust deployment successful!\"
+      # Step 2: Upload Artifacts (Rsync) - Overwrites binary
+      - name: 2. Sync Binary to VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_TARGET_DIR: ~/ultimate-asepharyana.cloud
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+
+          # Prepare files
+          find . -type f -name ".env" | sed 's|^\./||' > ./deploy_files.txt
+          echo "apps/rust/target/release/rustexpress" >> ./deploy_files.txt
+          # Config might have changed in git pull, but let's sync our local version just in case
+          # Actually, ecosystem.config.cjs is in git, so git pull handles it. 
+          # But syncing it ensures .env etc are consistent.
+
+          rsync -avz --progress --files-from=./deploy_files.txt -e "ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key" . ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:$VPS_TARGET_DIR
+
+          rm -f /tmp/deploy_key
+
+      # Step 3: Restart Service
+      - name: 3. Restart PM2
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_TARGET_DIR: ~/ultimate-asepharyana.cloud
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            export PATH=\$PATH:/home/asephs/.bun/bin:/usr/bin
+            cd $VPS_TARGET_DIR
+            
+            # Restart Service (Systemd User Mode)
+            # Ensure the service file is updated / linked (optional, usually one-time setup)
+            # mkdir -p ~/.config/systemd/user/
+            # cp apps/rust/rustexpress.service ~/.config/systemd/user/rustexpress.service
+            # systemctl --user daemon-reload
+            
+            systemctl --user restart rustexpress
+            
+            echo \"✅ Rust deployment (Systemd User Mode) successful!\"
           "
           rm -f /tmp/deploy_key

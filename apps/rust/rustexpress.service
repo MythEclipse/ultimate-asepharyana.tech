@@ -1,0 +1,21 @@
+[Unit]
+Description=RustExpress Web Server
+After=network.target
+
+[Service]
+Type=simple
+# User directive removed for user-mode service
+WorkingDirectory=%h/ultimate-asepharyana.cloud/apps/rust
+ExecStart=%h/ultimate-asepharyana.cloud/apps/rust/target/release/rustexpress
+Restart=always
+RestartSec=5
+
+# Environment Variables
+Environment=NODE_ENV=production
+Environment=PORT=4091
+
+# Limits
+LimitNOFILE=65535
+
+[Install]
+WantedBy=default.target
