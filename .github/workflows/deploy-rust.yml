@@ -38,8 +38,7 @@ jobs:
 
       - name: Build Rust Release
         run: |
-          cd apps/rust
-          cargo build --release
+          cargo build --release --manifest-path apps/rust/Cargo.toml
           ls -lh target/release/rustexpress
 
       - name: Deploy to VPS
@@ -49,7 +48,7 @@ jobs:
           echo "$SSH_KEY" > /tmp/key && chmod 600 /tmp/key
           
           scp -o StrictHostKeyChecking=no -i /tmp/key \
-            apps/rust/target/release/rustexpress \
+            target/release/rustexpress \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/ultimate-asepharyana.cloud/apps/rust/target/release/
           
           ssh -o StrictHostKeyChecking=no -i /tmp/key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
