@@ -60,8 +60,8 @@ pub struct CompleteAnimeResponse {
 
 // Pre-compiled CSS selectors for performance
 lazy_static! {
-    pub static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd article.bs").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    pub static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
+    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
     pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
     pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
@@ -102,7 +102,7 @@ pub async fn slug(
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
             let url = format!(
-                "https://alqanime.si/advanced-search/page/{}/?status=completed&order=update",
+                "https://alqanime.si/anime/page/{}/?status=completed&order=update",
                 slug
             );
 
@@ -121,7 +121,9 @@ pub async fn slug(
             // Convert all poster URLs to CDN URLs
             for item in &mut anime_list {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
 

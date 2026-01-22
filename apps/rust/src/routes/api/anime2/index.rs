@@ -1,4 +1,6 @@
-use crate::helpers::{default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache};
+use crate::helpers::{
+    default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache,
+};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::State;
@@ -73,19 +75,23 @@ pub async fn anime2(
     let response = cache
         .get_or_set(CACHE_KEY, CACHE_TTL, || async {
             let mut data = fetch_anime_data().await.map_err(|e| e.to_string())?;
-            
+
             // Convert all poster URLs to CDN URLs (returns original + background cache)
             for item in &mut data.ongoing_anime {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
             for item in &mut data.complete_anime {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
-            
+
             Ok(Anime2Response {
                 status: "Ok".to_string(),
                 data,
@@ -98,16 +104,16 @@ pub async fn anime2(
 }
 
 lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
     static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
     static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
 }
 
 async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Send + Sync>> {
-    let ongoing_url = "https://alqanime.si/advanced-search/?status=ongoing&order=update";
-    let complete_url = "https://alqanime.si/advanced-search/?status=completed&order=update";
+    let ongoing_url = "https://alqanime.si/anime/?status=ongoing&type=&order=update";
+    let complete_url = "https://alqanime.si/anime/?status=completed&type=&order=update";
 
     let (ongoing_html, complete_html) = tokio::join!(
         fetch_html_with_retry(ongoing_url),
@@ -168,7 +174,7 @@ fn parse_ongoing_anime(
             .select(&LINK_SELECTOR)
             .next()
             .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(3))
+            .and_then(|href| href.split('/').nth(4))
             .unwrap_or("")
             .to_string();
 
@@ -222,7 +228,7 @@ fn parse_complete_anime(
             .select(&LINK_SELECTOR)
             .next()
             .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(3))
+            .and_then(|href| href.split('/').nth(4))
             .unwrap_or("")
             .to_string();
 

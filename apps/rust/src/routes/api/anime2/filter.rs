@@ -68,8 +68,8 @@ pub struct FilterQuery {
 }
 
 lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
     static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
     static ref STATUS_SELECTOR: Selector = Selector::parse(".status").unwrap();
@@ -137,7 +137,9 @@ pub async fn filter(
             // Convert all poster URLs to CDN URLs
             for item in &mut anime_list {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
 
@@ -166,10 +168,11 @@ async fn fetch_filtered_anime(
     anime_type: &Option<String>,
     order: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let mut url = format!(
-        "https://alqanime.si/advanced-search/?order={}&page={}",
-        order, page
-    );
+    let mut url = if page > 1 {
+        format!("https://alqanime.si/anime/page/{}/?order={}", page, order)
+    } else {
+        format!("https://alqanime.si/anime/?order={}", order)
+    };
 
     if let Some(g) = genre {
         for genre_item in g.split(',') {

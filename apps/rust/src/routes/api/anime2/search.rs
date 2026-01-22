@@ -1,4 +1,6 @@
-use crate::helpers::{default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache};
+use crate::helpers::{
+    default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache,
+};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::State;
@@ -43,8 +45,8 @@ pub struct Pagination {
 }
 
 lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
     static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
     static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     static ref DESC_SELECTOR: Selector = Selector::parse(".data .typez").unwrap();
@@ -103,7 +105,9 @@ pub async fn search(
             // Convert all poster URLs to CDN URLs (returns original + background cache)
             for item in &mut data {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
 
@@ -167,7 +171,7 @@ fn parse_search_document(
             .select(&LINK_SELECTOR)
             .next()
             .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(3))
+            .and_then(|href| href.split('/').nth(4))
             .unwrap_or("")
             .to_string();
 

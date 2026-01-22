@@ -51,8 +51,8 @@ pub struct OngoingAnimeResponse {
 
 // Pre-compiled CSS selectors for performance
 lazy_static! {
-    pub static ref BS_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    pub static ref BS_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
+    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
     pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     pub static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
     pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
@@ -94,14 +94,16 @@ pub async fn slug(
             let (mut anime_list, pagination) = fetch_ongoing_anime_page(slug.clone())
                 .await
                 .map_err(|e| e.to_string())?;
-            
+
             // Convert all poster URLs to CDN URLs
             for item in &mut anime_list {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
-            
+
             Ok(OngoingAnimeResponse {
                 status: "Ok".to_string(),
                 data: anime_list,
@@ -118,7 +120,7 @@ async fn fetch_ongoing_anime_page(
     slug: String,
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
     let url = format!(
-        "https://alqanime.si/advanced-search/page/{}/?status=ongoing&order=update",
+        "https://alqanime.si/anime/page/{}/?status=ongoing&type=&order=update",
         slug
     );
 

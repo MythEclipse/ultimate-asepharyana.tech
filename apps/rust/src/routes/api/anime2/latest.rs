@@ -54,8 +54,8 @@ pub struct LatestQuery {
 }
 
 lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
+    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
+    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
     static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
     static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
@@ -100,7 +100,9 @@ pub async fn latest(
             // Convert all poster URLs to CDN URLs (returns original + background cache)
             for item in &mut anime_list {
                 if !item.poster.is_empty() {
-                    item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
                 }
             }
 
@@ -120,7 +122,7 @@ async fn fetch_latest_anime(
     page: u32,
 ) -> Result<(Vec<LatestAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let url = format!(
-        "https://alqanime.si/advanced-search/page/{}/?order=latest",
+        "https://alqanime.si/anime/page/{}/?status=&type=&order=latest",
         page
     );
 
