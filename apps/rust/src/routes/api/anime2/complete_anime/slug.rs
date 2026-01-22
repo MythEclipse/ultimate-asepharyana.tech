@@ -102,7 +102,7 @@ pub async fn slug(
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
             let url = format!(
-                "https://alqanime.net/advanced-search/page/{}/?status=completed&order=update",
+                "https://alqanime.si/advanced-search/page/{}/?status=completed&order=update",
                 slug
             );
 

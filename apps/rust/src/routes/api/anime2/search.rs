@@ -95,7 +95,7 @@ pub async fn search(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let url = format!("https://alqanime.net/?s={}", urlencoding::encode(&query));
+            let url = format!("https://alqanime.si/?s={}", urlencoding::encode(&query));
             let (mut data, pagination) = fetch_and_parse_search(&url)
                 .await
                 .map_err(|e| e.to_string())?;

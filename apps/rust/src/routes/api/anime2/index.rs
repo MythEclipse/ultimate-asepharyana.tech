@@ -106,8 +106,8 @@ lazy_static! {
 }
 
 async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Send + Sync>> {
-    let ongoing_url = "https://alqanime.net/advanced-search/?status=ongoing&order=update";
-    let complete_url = "https://alqanime.net/advanced-search/?status=completed&order=update";
+    let ongoing_url = "https://alqanime.si/advanced-search/?status=ongoing&order=update";
+    let complete_url = "https://alqanime.si/advanced-search/?status=completed&order=update";
 
     let (ongoing_html, complete_html) = tokio::join!(
         fetch_html_with_retry(ongoing_url),

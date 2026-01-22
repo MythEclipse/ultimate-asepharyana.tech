@@ -138,7 +138,7 @@ async fn fetch_genre_anime(
     order: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let mut url = format!(
-        "https://alqanime.net/advanced-search/?genre={}&page={}",
+        "https://alqanime.si/advanced-search/?genre={}&page={}",
         genre_slug, page
     );
 

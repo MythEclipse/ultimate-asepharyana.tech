@@ -167,7 +167,7 @@ async fn fetch_filtered_anime(
     order: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let mut url = format!(
-        "https://alqanime.net/advanced-search/?order={}&page={}",
+        "https://alqanime.si/advanced-search/?order={}&page={}",
         order, page
     );
 

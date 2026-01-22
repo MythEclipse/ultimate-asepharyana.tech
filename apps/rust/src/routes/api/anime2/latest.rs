@@ -120,7 +120,7 @@ async fn fetch_latest_anime(
     page: u32,
 ) -> Result<(Vec<LatestAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let url = format!(
-        "https://alqanime.net/advanced-search/page/{}/?order=latest",
+        "https://alqanime.si/advanced-search/page/{}/?order=latest",
         page
     );
 

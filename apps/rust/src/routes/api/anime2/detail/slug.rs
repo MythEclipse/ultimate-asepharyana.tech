@@ -147,7 +147,7 @@ pub async fn slug(
 async fn fetch_anime_detail(
     slug: String,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-    let url = format!("https://alqanime.net/{}/", slug);
+    let url = format!("https://alqanime.si/{}/", slug);
 
     // Retry logic with exponential backoff
     let backoff = default_backoff();

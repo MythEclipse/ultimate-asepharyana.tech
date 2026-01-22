@@ -118,7 +118,7 @@ async fn fetch_ongoing_anime_page(
     slug: String,
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
     let url = format!(
-        "https://alqanime.net/advanced-search/page/{}/?status=ongoing&order=update",
+        "https://alqanime.si/advanced-search/page/{}/?status=ongoing&order=update",
         slug
     );
 

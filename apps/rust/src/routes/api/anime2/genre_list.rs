@@ -77,7 +77,7 @@ pub async fn genres(
 
 async fn fetch_genres() -> Result<Vec<Genre>, Box<dyn std::error::Error + Send + Sync>> {
     // Fetch advanced search page to get genres
-    let url = "https://alqanime.net/advanced-search/";
+    let url = "https://alqanime.si/advanced-search/";
 
     let backoff = default_backoff();
     let fetch_operation = || async {
