@@ -16,35 +16,44 @@ env:
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
-  deploy-rust:
-    name: Deploy Rust to VPS
+  build-and-deploy-rust:
+    name: Build and Deploy Rust
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy and Build on VPS
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/rust -> target
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libmysqlclient-dev
+
+      - name: Build Rust Release
+        run: |
+          cd apps/rust
+          cargo build --release --target x86_64-unknown-linux-gnu
+          ls -lh target/x86_64-unknown-linux-gnu/release/rustexpress
+
+      - name: Deploy to VPS
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          echo "$SSH_KEY" > /tmp/key && chmod 600 /tmp/key
           
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
-            export PATH=$PATH:/home/asephs/.bun/bin:/home/asephs/.cargo/bin:/usr/bin
-            cd ${{ secrets.VPS_TARGET_DIR }}
-            
-            echo "📥 Pulling latest code from main..."
-            git fetch origin
-            git reset --hard origin/main
-            
-            echo "🔨 Building Rust in release mode..."
-            cd apps/rust
-            cargo build --release
-            
-            echo "🔄 Restarting application with PM2..."
-            cd ../..
-            pm2 restart ultimate-rust
-            pm2 save
-            
-            echo "✅ Deployment successful!"
-            echo "🌐 Access at: https://ws.asepharyana.tech/"
-          '
+          scp -o StrictHostKeyChecking=no -i /tmp/key \
+            apps/rust/target/x86_64-unknown-linux-gnu/release/rustexpress \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/ultimate-asepharyana.cloud/apps/rust/target/release/
           
-          rm -f /tmp/deploy_key
+          ssh -o StrictHostKeyChecking=no -i /tmp/key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            'export PATH=$PATH:/home/asephs/.bun/bin && cd ~/ultimate-asepharyana.cloud && chmod +x apps/rust/target/release/rustexpress && pm2 restart ultimate-rust && pm2 save'
+          
+          rm -f /tmp/key
+          echo "✅ Deployed to https://ws.asepharyana.tech/"
