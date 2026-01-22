@@ -47,13 +47,13 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/key && chmod 600 /tmp/key
-          
+
           scp -o StrictHostKeyChecking=no -i /tmp/key \
             apps/rust/target/release/rustexpress \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/ultimate-asepharyana.cloud/apps/rust/target/release/
-          
+
           ssh -o StrictHostKeyChecking=no -i /tmp/key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            'export PATH=$PATH:/home/asephs/.bun/bin && cd ~/ultimate-asepharyana.cloud && chmod +x apps/rust/target/release/rustexpress && pm2 restart ultimate-rust && pm2 save'
-          
+            'export PATH=$PATH:/home/asephs/.bun/bin && cd ~/ultimate-asepharyana.cloud && git pull origin main && chmod +x apps/rust/target/release/rustexpress && pm2 restart ultimate-rust && pm2 save'
+
           rm -f /tmp/key
           echo "✅ Deployed to https://ws.asepharyana.tech/"
