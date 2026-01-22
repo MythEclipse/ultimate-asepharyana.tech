@@ -1,6 +1,6 @@
 //use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manhua slug endpoint.
 
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{default_backoff, get_cached_or_original, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
@@ -110,9 +110,18 @@ pub async fn list(
                 format!("{}/manga/page/{}/?tipe=manhua", base_api_url, page)
             };
 
-            let (data, pagination) = fetch_and_parse_manhua_list(&url, page)
+            let (mut data, pagination) = fetch_and_parse_manhua_list(&url, page)
                 .await
                 .map_err(|e| e.to_string())?;
+
+            // Convert all poster URLs to CDN URLs
+            for item in &mut data {
+                if !item.poster.is_empty() {
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
+                }
+            }
 
             Ok(ManhuaResponse { data, pagination })
         })

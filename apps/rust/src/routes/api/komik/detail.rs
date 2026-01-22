@@ -1,6 +1,6 @@
 //! Handler for the detail endpoint.
 
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{default_backoff, get_cached_or_original, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;
@@ -147,9 +147,17 @@ pub async fn detail(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let data = fetch_komik_detail(komik_id.clone())
+            let mut data = fetch_komik_detail(komik_id.clone())
                 .await
                 .map_err(|e| e.to_string())?;
+
+            // Cache poster image
+            if !data.poster.is_empty() {
+                data.poster =
+                    get_cached_or_original(&app_state.db, &app_state.redis_pool, &data.poster)
+                        .await;
+            }
+
             Ok(DetailResponse { status: true, data })
         })
         .await

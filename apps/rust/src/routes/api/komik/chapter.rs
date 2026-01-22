@@ -1,6 +1,8 @@
 //! Handler for the komik chapter endpoint.
 
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{
+    cache_image_urls_batch_lazy, default_backoff, internal_err, transient, Cache,
+};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;
@@ -81,9 +83,15 @@ pub async fn chapter(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let data = fetch_komik_chapter(chapter_url.clone())
+            let mut data = fetch_komik_chapter(chapter_url.clone())
                 .await
                 .map_err(|e| e.to_string())?;
+
+            // Cache all images in background (lazy)
+            // This returns original URLs immediately but triggers caching for next time
+            data.images =
+                cache_image_urls_batch_lazy(&app_state.db, &app_state.redis_pool, data.images);
+
             Ok(ChapterResponse {
                 message: "Ok".to_string(),
                 data,
