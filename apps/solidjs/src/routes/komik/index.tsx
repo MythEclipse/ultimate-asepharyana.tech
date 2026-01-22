@@ -293,7 +293,7 @@ export default function KomikPage() {
                                     </div>
                                 </Show>
                                 <Show when={data()?.manga}>
-                                    {(mangaData) => <KomikGrid items={mangaData.data.slice(0, 6)} />}
+                                    {(mangaData) => <KomikGrid items={mangaData().data.slice(0, 6)} />}
                                 </Show>
                             </Suspense>
                         </section>
@@ -318,7 +318,7 @@ export default function KomikPage() {
                                     </div>
                                 </Show>
                                 <Show when={data()?.manhwa}>
-                                    {(manhwaData) => <KomikGrid items={manhwaData.data.slice(0, 6)} />}
+                                    {(manhwaData) => <KomikGrid items={manhwaData().data.slice(0, 6)} />}
                                 </Show>
                             </Suspense>
                         </section>
@@ -343,7 +343,7 @@ export default function KomikPage() {
                                     </div>
                                 </Show>
                                 <Show when={data()?.manhua}>
-                                    {(manhuaData) => <KomikGrid items={manhuaData.data.slice(0, 6)} />}
+                                    {(manhuaData) => <KomikGrid items={manhuaData().data.slice(0, 6)} />}
                                 </Show>
                             </Suspense>
                         </section>
