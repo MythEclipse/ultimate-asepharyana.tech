@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { A, useParams } from "@solidjs/router";
-import { createResource, For, Show, Suspense, createMemo } from "solid-js";
+import { createResource, For, Show, Suspense, createMemo, createSignal, onMount } from "solid-js";
 import { httpClient } from "~/lib/http-client";
 import { CachedImage } from "~/components/CachedImage";
 
@@ -51,7 +51,7 @@ interface DetailResponse {
     data: AnimeDetailData;
 }
 
-import { isServer } from "solid-js/web";
+
 
 async function fetchAnimeDetail(slug: string): Promise<DetailResponse> {
     return httpClient.fetchJson<DetailResponse>(`/api/anime2/detail/${slug}`);

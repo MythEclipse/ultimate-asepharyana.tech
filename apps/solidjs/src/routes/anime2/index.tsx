@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
-import { createResource, For, Show, Suspense } from "solid-js";
+import { createResource, For, Show, Suspense, createSignal, onMount } from "solid-js";
 import { Motion } from "solid-motionone";
 import { httpClient } from "~/lib/http-client";
 import { CachedImage } from "~/components/CachedImage";
@@ -21,7 +21,7 @@ interface HomeData {
     };
 }
 
-import { isServer } from "solid-js/web";
+
 
 async function fetchAnimeData(): Promise<HomeData> {
     return httpClient.fetchJson<HomeData>("/api/anime2");
