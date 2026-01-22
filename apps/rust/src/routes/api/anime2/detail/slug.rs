@@ -165,8 +165,15 @@ async fn fetch_anime_detail(
             .evaluate::<()>("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             .await;
 
-        // Wait longer for Cloudflare challenge to complete
-        tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+        // Wait for page content to load (title is a good indicator)
+        // This effectively waits for Cloudflare challenge to complete if present
+        tab.wait_for_selector(".entry-title")
+            .await
+            .map_err(|e| transient(e))?;
+
+        // Also wait for poster to ensure image is loaded selection
+        // We use a lenient check or just proceed, but waiting for title is usually enough
+        // to say "Cloudflare is done".
 
         let html = tab.content().await.map_err(|e| transient(e))?;
 
