@@ -157,10 +157,7 @@ jobs:
             cd $VPS_TARGET_DIR
             
             # Restart Service (Systemd User Mode)
-            # Ensure the service file is updated / linked (optional, usually one-time setup)
-            # mkdir -p ~/.config/systemd/user/
-            # cp apps/rust/rustexpress.service ~/.config/systemd/user/rustexpress.service
-            # systemctl --user daemon-reload
+            export XDG_RUNTIME_DIR=/run/user/$(id -u)
             
             systemctl --user restart rustexpress
             

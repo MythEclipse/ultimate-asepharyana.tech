@@ -6,6 +6,10 @@ SERVICE_FILE="apps/rust/rustexpress.service"
 TARGET_DIR="$HOME/ultimate-asepharyana.cloud"
 SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
 
+
+# Ensure XDG_RUNTIME_DIR is set
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
 echo "Setup Systemd (User Mode) for $SERVICE_NAME..."
 
 # Check if service file exists
