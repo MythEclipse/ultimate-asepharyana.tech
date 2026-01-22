@@ -71,7 +71,10 @@ pub struct BrowserPool {
 impl BrowserPool {
     /// Create a new browser pool and launch the browser.
     pub async fn new(config: BrowserPoolConfig) -> anyhow::Result<Arc<Self>> {
-        info!("🌐 Launching browser pool with max {} tabs", config.max_tabs);
+        info!(
+            "🌐 Launching browser pool with max {} tabs",
+            config.max_tabs
+        );
 
         // Build browser configuration
         let mut browser_config = BrowserConfig::builder();
@@ -95,10 +98,14 @@ impl BrowserPool {
         // User agent set via command line arg if provided
         if let Some(ref ua) = config.user_agent {
             browser_config = browser_config.arg(format!("--user-agent={}", ua));
+        } else {
+            // Use realistic user agent if not provided
+            browser_config = browser_config.arg("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         }
 
-        // Add common args for better performance
+        // Add common args for better performance and stealth
         browser_config = browser_config
+            .arg("--disable-blink-features=AutomationControlled")
             .arg("--disable-gpu")
             .arg("--disable-dev-shm-usage")
             .arg("--disable-setuid-sandbox")
@@ -113,16 +120,24 @@ impl BrowserPool {
             .arg("--disable-ipc-flooding-protection")
             .arg("--disable-renderer-backgrounding")
             .arg("--enable-features=NetworkService,NetworkServiceInProcess")
-            .arg("--force-color-profile=srgb");
+            .arg("--force-color-profile=srgb")
+            .arg("--disable-web-security")
+            .arg("--disable-features=IsolateOrigins,site-per-process")
+            .arg("--allow-running-insecure-content")
+            .arg("--disable-infobars")
+            .arg("--window-position=0,0")
+            .arg("--ignore-certificate-errors")
+            .arg("--ignore-certificate-errors-spki-list")
+            .arg("--disable-blink-features");
 
-        let browser_config = browser_config.build().map_err(|e| {
-            anyhow::anyhow!("Failed to build browser config: {}", e)
-        })?;
+        let browser_config = browser_config
+            .build()
+            .map_err(|e| anyhow::anyhow!("Failed to build browser config: {}", e))?;
 
         // Launch browser
-        let (browser, mut handler) = Browser::launch(browser_config).await.map_err(|e| {
-            anyhow::anyhow!("Failed to launch browser: {}", e)
-        })?;
+        let (browser, mut handler) = Browser::launch(browser_config)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to launch browser: {}", e))?;
 
         // Spawn browser event handler
         tokio::spawn(async move {
@@ -183,9 +198,11 @@ impl BrowserPool {
 
     /// Create a new tab.
     async fn create_new_tab(&self) -> anyhow::Result<Arc<Page>> {
-        let page = self.browser.new_page("about:blank").await.map_err(|e| {
-            anyhow::anyhow!("Failed to create new tab: {}", e)
-        })?;
+        let page = self
+            .browser
+            .new_page("about:blank")
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create new tab: {}", e))?;
 
         // Set default timeout
         // page.set_default_timeout(Duration::from_secs(30));
@@ -234,82 +251,99 @@ pub struct PooledTab {
 impl PooledTab {
     /// Navigate to a URL.
     pub async fn goto(&self, url: &str) -> anyhow::Result<()> {
-        self.page.goto(url).await.map_err(|e| {
-            anyhow::anyhow!("Failed to navigate to {}: {}", url, e)
-        })?;
+        self.page
+            .goto(url)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to navigate to {}: {}", url, e))?;
         Ok(())
     }
 
     /// Wait for navigation to complete.
     pub async fn wait_for_navigation(&self) -> anyhow::Result<()> {
-        self.page.wait_for_navigation().await.map_err(|e| {
-            anyhow::anyhow!("Navigation timeout: {}", e)
-        })?;
+        self.page
+            .wait_for_navigation()
+            .await
+            .map_err(|e| anyhow::anyhow!("Navigation timeout: {}", e))?;
         Ok(())
     }
 
     /// Get the page content (HTML).
     pub async fn content(&self) -> anyhow::Result<String> {
-        self.page.content().await.map_err(|e| {
-            anyhow::anyhow!("Failed to get page content: {}", e)
-        })
+        self.page
+            .content()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to get page content: {}", e))
     }
 
     /// Execute JavaScript and return the result.
-    pub async fn evaluate<T: serde::de::DeserializeOwned>(&self, expression: &str) -> anyhow::Result<T> {
-        self.page.evaluate(expression).await.map_err(|e| {
-            anyhow::anyhow!("Failed to evaluate JS: {}", e)
-        })?.into_value().map_err(|e| {
-            anyhow::anyhow!("Failed to convert JS result: {}", e)
-        })
+    pub async fn evaluate<T: serde::de::DeserializeOwned>(
+        &self,
+        expression: &str,
+    ) -> anyhow::Result<T> {
+        self.page
+            .evaluate(expression)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to evaluate JS: {}", e))?
+            .into_value()
+            .map_err(|e| anyhow::anyhow!("Failed to convert JS result: {}", e))
     }
 
     /// Wait for a selector to appear.
     pub async fn wait_for_selector(&self, selector: &str) -> anyhow::Result<()> {
-        self.page.find_element(selector).await.map_err(|e| {
-            anyhow::anyhow!("Selector '{}' not found: {}", selector, e)
-        })?;
+        self.page
+            .find_element(selector)
+            .await
+            .map_err(|e| anyhow::anyhow!("Selector '{}' not found: {}", selector, e))?;
         Ok(())
     }
 
     /// Click an element by selector.
     pub async fn click(&self, selector: &str) -> anyhow::Result<()> {
-        let element = self.page.find_element(selector).await.map_err(|e| {
-            anyhow::anyhow!("Element '{}' not found: {}", selector, e)
-        })?;
-        element.click().await.map_err(|e| {
-            anyhow::anyhow!("Failed to click '{}': {}", selector, e)
-        })?;
+        let element = self
+            .page
+            .find_element(selector)
+            .await
+            .map_err(|e| anyhow::anyhow!("Element '{}' not found: {}", selector, e))?;
+        element
+            .click()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to click '{}': {}", selector, e))?;
         Ok(())
     }
 
     /// Type text into an element.
     pub async fn type_text(&self, selector: &str, text: &str) -> anyhow::Result<()> {
-        let element = self.page.find_element(selector).await.map_err(|e| {
-            anyhow::anyhow!("Element '{}' not found: {}", selector, e)
-        })?;
-        element.type_str(text).await.map_err(|e| {
-            anyhow::anyhow!("Failed to type into '{}': {}", selector, e)
-        })?;
+        let element = self
+            .page
+            .find_element(selector)
+            .await
+            .map_err(|e| anyhow::anyhow!("Element '{}' not found: {}", selector, e))?;
+        element
+            .type_str(text)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to type into '{}': {}", selector, e))?;
         Ok(())
     }
 
     /// Take a screenshot as PNG bytes.
     pub async fn screenshot(&self) -> anyhow::Result<Vec<u8>> {
-        self.page.screenshot(
-            chromiumoxide::page::ScreenshotParams::builder()
-                .full_page(true)
-                .build()
-        ).await.map_err(|e| {
-            anyhow::anyhow!("Failed to take screenshot: {}", e)
-        })
+        self.page
+            .screenshot(
+                chromiumoxide::page::ScreenshotParams::builder()
+                    .full_page(true)
+                    .build(),
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to take screenshot: {}", e))
     }
 
     /// Get the current URL.
     pub async fn url(&self) -> anyhow::Result<String> {
-        self.page.url().await.map_err(|e| {
-            anyhow::anyhow!("Failed to get URL: {}", e)
-        }).map(|u| u.map(|url| url.to_string()).unwrap_or_default())
+        self.page
+            .url()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to get URL: {}", e))
+            .map(|u| u.map(|url| url.to_string()).unwrap_or_default())
     }
 
     /// Get access to the underlying Page for advanced operations.
@@ -347,7 +381,9 @@ static BROWSER_POOL: OnceCell<Arc<BrowserPool>> = OnceCell::new();
 /// Call this once at application startup.
 pub async fn init_browser_pool(config: BrowserPoolConfig) -> anyhow::Result<()> {
     let pool = BrowserPool::new(config).await?;
-    BROWSER_POOL.set(pool).map_err(|_| anyhow::anyhow!("Browser pool already initialized"))?;
+    BROWSER_POOL
+        .set(pool)
+        .map_err(|_| anyhow::anyhow!("Browser pool already initialized"))?;
     Ok(())
 }
 

@@ -1,5 +1,4 @@
 use crate::helpers::{default_backoff, internal_err, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -12,7 +11,7 @@ use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -81,15 +80,14 @@ lazy_static! {
     static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
     static ref ALT_TITLE_SELECTOR: Selector = Selector::parse(".alter").unwrap();
     static ref POSTER_SELECTOR: Selector =
-        Selector::parse(".thumb[itemprop=\"image\"] img.lazyload").unwrap();
+        Selector::parse(".thumb img, .thumbook img, .wp-post-image, .ts-post-image").unwrap();
     static ref POSTER2_SELECTOR: Selector =
-        Selector::parse(".bixbox.animefull .bigcover .ime img.lazyload").unwrap();
+        Selector::parse(".bigcover img, .bixbox.animefull .bigcover .ime img").unwrap();
     static ref SPE_SPAN_SELECTOR: Selector = Selector::parse(".info-content .spe span").unwrap();
     static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
     static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".entry-content p").unwrap();
     static ref GENRE_SELECTOR: Selector = Selector::parse(".genxed a").unwrap();
-    static ref DOWNLOAD_CONTAINER_SELECTOR: Selector =
-        Selector::parse(".soraddl .soraurl").unwrap();
+    static ref DOWNLOAD_CONTAINER_SELECTOR: Selector = Selector::parse(".soraddl.dlone").unwrap();
     static ref RESOLUTION_SELECTOR: Selector = Selector::parse(".res").unwrap();
     static ref LINK_SELECTOR: Selector = Selector::parse(".slink a").unwrap();
     static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
@@ -147,23 +145,33 @@ pub async fn slug(
 async fn fetch_anime_detail(
     slug: String,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-    let url = format!("https://alqanime.si/anime/{}/", slug);
+    let url = format!("https://alqanime.net/{}/", slug);
 
     // Retry logic with exponential backoff
     let backoff = default_backoff();
 
     let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
-        }
+        info!("Fetching URL with browser: {}", url);
+
+        // Use browser scraping to bypass Cloudflare bot protection
+        let pool = crate::browser::pool::get_browser_pool()
+            .ok_or_else(|| anyhow::anyhow!("Browser pool not initialized"))?;
+
+        let tab = pool.get_tab().await.map_err(|e| transient(e))?;
+        tab.goto(&url).await.map_err(|e| transient(e))?;
+
+        // Inject JavaScript to hide webdriver
+        let _ = tab
+            .evaluate::<()>("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            .await;
+
+        // Wait longer for Cloudflare challenge to complete
+        tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+
+        let html = tab.content().await.map_err(|e| transient(e))?;
+
+        info!("Successfully fetched URL with browser: {}", url);
+        Ok(html)
     };
 
     match retry(backoff, fetch_operation).await {
@@ -188,7 +196,7 @@ async fn fetch_anime_detail(
         }
         Err(e) => {
             error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
-            Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
+            Err(e.to_string().into())
         }
     }
 }
@@ -215,14 +223,24 @@ fn parse_anime_detail_document(
     let poster = document
         .select(&POSTER_SELECTOR)
         .next()
-        .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
+        .and_then(|e| {
+            e.value()
+                .attr("src")
+                .or_else(|| e.value().attr("data-src"))
+                .or_else(|| e.value().attr("data-lazy-src"))
+        })
         .unwrap_or("")
         .to_string();
 
     let poster2 = document
         .select(&POSTER2_SELECTOR)
         .next()
-        .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
+        .and_then(|e| {
+            e.value()
+                .attr("src")
+                .or_else(|| e.value().attr("data-src"))
+                .or_else(|| e.value().attr("data-lazy-src"))
+        })
         .unwrap_or("")
         .to_string();
 
@@ -335,7 +353,7 @@ fn parse_anime_detail_document(
         let poster = element
             .select(&REC_IMG_SELECTOR)
             .next()
-            .and_then(|e| e.value().attr("src").or_else(|| e.value().attr("data-src")))
+            .and_then(|e| e.value().attr("data-src").or_else(|| e.value().attr("src")))
             .unwrap_or("")
             .to_string();
 

@@ -43,6 +43,14 @@ async fn main() -> anyhow::Result<()> {
     // Initialize Redis pool early
     let _ = REDIS_POOL.get().await;
 
+    // Initialize browser pool for anime2 scraping
+    tracing::info!("Initializing browser pool...");
+    let browser_config = rustexpress::browser::BrowserPoolConfig::default();
+    rustexpress::browser::pool::init_browser_pool(browser_config)
+        .await
+        .expect("Failed to initialize browser pool");
+    tracing::info!("✓ Browser pool initialized");
+
     // SeaORM connection using validated config
     let mut opt = sea_orm::ConnectOptions::new(CONFIG.database_url.clone());
     opt.max_connections(50)
@@ -109,10 +117,7 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to add room cleanup task");
 
     // Start scheduler
-    scheduler
-        .start()
-        .await
-        .expect("Failed to start scheduler");
+    scheduler.start().await.expect("Failed to start scheduler");
     tracing::info!("✓ Scheduler started with 2 tasks");
 
     tracing::info!("Building application routes...");
