@@ -1,5 +1,7 @@
 // Anime index handler - refactored with helpers
-use crate::helpers::{Cache, default_backoff, get_cached_or_original, transient, internal_err};
+use crate::helpers::{
+    default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache,
+};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
@@ -8,7 +10,7 @@ use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
 use backoff::future::retry;
 use lazy_static::lazy_static;
-use scraper::{Html, Selector};
+use scraper::Selector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -77,29 +79,37 @@ pub async fn anime(
     info!("Handling request for anime index");
 
     let cache = Cache::new(&app_state.redis_pool);
-    
+
     // Clean caching with get_or_set pattern
-    let response = cache.get_or_set("anime:index", CACHE_TTL, || async {
-        let mut data = fetch_anime_data().await
-            .map_err(|e| format!("Fetch error: {}", e))?;
-        
-        // Convert all poster URLs to CDN URLs
-        for item in &mut data.ongoing_anime {
-            if !item.poster.is_empty() {
-                item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+    let response = cache
+        .get_or_set("anime:index", CACHE_TTL, || async {
+            let mut data = fetch_anime_data()
+                .await
+                .map_err(|e| format!("Fetch error: {}", e))?;
+
+            // Convert all poster URLs to CDN URLs
+            for item in &mut data.ongoing_anime {
+                if !item.poster.is_empty() {
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
+                }
             }
-        }
-        for item in &mut data.complete_anime {
-            if !item.poster.is_empty() {
-                item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
+            for item in &mut data.complete_anime {
+                if !item.poster.is_empty() {
+                    item.poster =
+                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
+                            .await;
+                }
             }
-        }
-        
-        Ok(AnimeResponse {
-            status: "Ok".to_string(),
-            data,
+
+            Ok(AnimeResponse {
+                status: "Ok".to_string(),
+                data,
+            })
         })
-    }).await.map_err(internal_err)?;
+        .await
+        .map_err(internal_err)?;
 
     info!("Anime index completed in {:?}", start_time.elapsed());
     Ok(Json(response).into_response())
@@ -154,7 +164,7 @@ async fn fetch_html_with_retry(
 fn parse_ongoing_anime(
     html: &str,
 ) -> Result<Vec<OngoingAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut ongoing_anime = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {
@@ -208,7 +218,7 @@ fn parse_ongoing_anime(
 fn parse_complete_anime(
     html: &str,
 ) -> Result<Vec<CompleteAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut complete_anime = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {

@@ -21,6 +21,8 @@ interface HomeData {
     };
 }
 
+import { isServer } from "solid-js/web";
+
 async function fetchAnimeData(): Promise<HomeData> {
     return httpClient.fetchJson<HomeData>("/api/anime2");
 }
@@ -187,7 +189,10 @@ function SectionHeader(props: {
 }
 
 export default function Anime2Page() {
-    const [data] = createResource(fetchAnimeData);
+    const [enabled, setEnabled] = createSignal(false);
+    onMount(() => setEnabled(true));
+
+    const [data] = createResource(enabled, fetchAnimeData);
 
     return (
         <>

@@ -62,6 +62,8 @@ export default function AnimeDetailPage() {
                 <div class="fixed inset-0 -z-10 overflow-hidden">
                     <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl animate-float-slow" />
                     <div class="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl animate-float-medium" />
+                    {/* Grid pattern overlay */}
+                    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
                 </div>
 
                 <Suspense fallback={
@@ -110,12 +112,12 @@ export default function AnimeDetailPage() {
                             <div class="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
                                 {/* Hero Section with parallax effect */}
                                 <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 mb-12">
-                                    {/* Poster with 3D effect - smaller size due to low res images */}
+                                    {/* Poster with 3D effect */}
                                     <Motion.div
                                         initial={{ opacity: 0, x: -100, rotateY: -30 }}
                                         animate={{ opacity: 1, x: 0, rotateY: 0 }}
                                         transition={{ duration: 0.8, easing: [0.34, 1.56, 0.64, 1] }}
-                                        class="w-full sm:w-2/3 md:w-1/2 lg:w-1/4 mx-auto lg:mx-0 perspective-1000"
+                                        class="w-full sm:w-2/3 md:w-1/2 lg:w-1/3 mx-auto lg:mx-0 perspective-1000 sticky top-8"
                                     >
                                         <div class="relative group">
                                             {/* Glow effect behind poster */}
@@ -138,15 +140,6 @@ export default function AnimeDetailPage() {
                                                     <div class="absolute top-4 right-4 px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold shadow-lg flex items-center gap-2">
                                                         <span class="text-lg">{detailData().data.type}</span>
                                                     </div>
-                                                </Show>
-                                            </div>
-
-                                            {/* Floating badges */}
-                                            <div class="absolute -bottom-3 -right-3 flex gap-2">
-                                                <Show when={detailData().data.type}>
-                                                    <span class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold text-sm shadow-lg animate-float-fast">
-                                                        {detailData().data.type}
-                                                    </span>
                                                 </Show>
                                             </div>
                                         </div>
@@ -275,7 +268,7 @@ export default function AnimeDetailPage() {
                                                 </span>
                                             </h2>
 
-                                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                                 <For each={detailData().data.episode_lists}>
                                                     {(ep, index) => (
                                                         <Motion.div
@@ -287,7 +280,7 @@ export default function AnimeDetailPage() {
                                                                 href={`/anime/full/${ep.slug}`}
                                                                 class="group block p-4 rounded-2xl bg-gradient-to-br from-card to-card/50 border border-border hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02]"
                                                             >
-                                                                <div class="text-center">
+                                                                <div class="text-center relative z-10">
                                                                     <span class="text-lg font-bold group-hover:text-blue-500 transition-colors">
                                                                         {ep.episode}
                                                                     </span>
@@ -307,10 +300,54 @@ export default function AnimeDetailPage() {
                                                 </For>
                                             </div>
                                         </Motion.div>
+
+                                        {/* Recommendations */}
+                                        <Show when={detailData().data.recommendations?.length > 0}>
+                                            <Motion.div
+                                                initial={{ opacity: 0, y: 30 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.6 }}
+                                            >
+                                                <h2 class="text-2xl font-bold mb-4">Rekomendasi</h2>
+                                                <div class="flex overflow-x-auto pb-4 gap-4 -mx-2 px-2">
+                                                    <For each={detailData().data.recommendations}>
+                                                        {(rec) => (
+                                                            <A
+                                                                href={`/anime/detail/${rec.slug}`}
+                                                                class="flex-shrink-0 w-36 md:w-44 group"
+                                                            >
+                                                                <div class="relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition-all">
+                                                                    <div class="aspect-[3/4] overflow-hidden">
+                                                                        <CachedImage
+                                                                            src={rec.poster}
+                                                                            alt={rec.title}
+                                                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                                            fallbackClass="w-full h-full bg-muted animate-pulse"
+                                                                            loading="lazy"
+                                                                        />
+                                                                    </div>
+                                                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                                                    <div class="absolute top-2 left-2">
+                                                                        <Show when={rec.type}>
+                                                                            <span class="px-2 py-0.5 rounded bg-primary text-primary-foreground text-xs">
+                                                                                {rec.type}
+                                                                            </span>
+                                                                        </Show>
+                                                                    </div>
+                                                                    <div class="absolute bottom-0 left-0 right-0 p-3">
+                                                                        <h3 class="text-white text-sm font-medium line-clamp-2">{rec.title}</h3>
+                                                                    </div>
+                                                                </div>
+                                                            </A>
+                                                        )}
+                                                    </For>
+                                                </div>
+                                            </Motion.div>
+                                        </Show>
                                     </div>
                                 </div>
 
-                                {/* Back Button */}
+                                /* Back Button */
                                 <Motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}

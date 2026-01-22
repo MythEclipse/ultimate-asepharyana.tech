@@ -51,6 +51,8 @@ interface DetailResponse {
     data: AnimeDetailData;
 }
 
+import { isServer } from "solid-js/web";
+
 async function fetchAnimeDetail(slug: string): Promise<DetailResponse> {
     return httpClient.fetchJson<DetailResponse>(`/api/anime2/detail/${slug}`);
 }
@@ -81,7 +83,10 @@ function processDownloads(downloads: DownloadItem[] = []): Record<string, Downlo
 
 export default function Anime2DetailPage() {
     const params = useParams();
-    const [data] = createResource(() => params.slug, fetchAnimeDetail);
+    const [enabled, setEnabled] = createSignal(false);
+    onMount(() => setEnabled(true));
+
+    const [data] = createResource(() => enabled() ? params.slug : null, fetchAnimeDetail);
 
     const groupedDownloads = createMemo(() => {
         if (!data()?.data.downloads) return {};

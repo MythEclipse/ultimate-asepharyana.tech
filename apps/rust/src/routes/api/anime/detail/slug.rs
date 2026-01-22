@@ -2,7 +2,7 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -163,10 +163,7 @@ async fn fetch_anime_detail(
         .await
         .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
 
-    match tokio::task::spawn_blocking(move || {
-        parse_anime_detail_document(&Html::parse_document(&html))
-    })
-    .await
+    match tokio::task::spawn_blocking(move || parse_anime_detail_document(&parse_html(&html))).await
     {
         Ok(inner_result) => inner_result.map_err(|e| e.into()),
         Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>),

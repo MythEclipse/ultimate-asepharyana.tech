@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { A, useParams } from "@solidjs/router";
-import { createResource, For, Show, Suspense, createSignal } from "solid-js";
+import { createResource, For, Show, Suspense } from "solid-js";
 import { Motion } from "solid-motionone";
 import { httpClient } from "~/lib/http-client";
 
@@ -51,7 +51,15 @@ export default function AnimeFullPage() {
     return (
         <>
             <Title>{data()?.data.episode || "Streaming"} | Asepharyana</Title>
-            <main class="min-h-screen bg-background text-foreground">
+            <main class="min-h-screen bg-background text-foreground overflow-hidden relative">
+                {/* Animated background */}
+                <div class="fixed inset-0 -z-10 overflow-hidden">
+                    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl animate-float-slow" />
+                    <div class="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl animate-float-medium" />
+                    {/* Grid pattern overlay */}
+                    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+                </div>
+
                 <Suspense fallback={
                     <div class="p-4 md:p-8 max-w-6xl mx-auto">
                         <div class="aspect-video w-full rounded-xl bg-muted animate-pulse mb-6" />
@@ -85,17 +93,18 @@ export default function AnimeFullPage() {
                                 class="p-4 md:p-8 max-w-6xl mx-auto"
                             >
                                 {/* Video Player */}
-                                <div class="aspect-video w-full rounded-2xl overflow-hidden bg-black mb-6 shadow-2xl">
+                                <div class="aspect-video w-full rounded-2xl overflow-hidden bg-black mb-6 shadow-2xl relative group">
+                                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-20 group-hover:opacity-40 blur transition-opacity duration-500" />
                                     <iframe
                                         src={episodeData().data.stream_url}
-                                        class="w-full h-full"
+                                        class="w-full h-full relative z-10"
                                         allowfullscreen
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     />
                                 </div>
 
                                 {/* Episode Title */}
-                                <h1 class="text-2xl md:text-3xl font-bold gradient-text mb-6">
+                                <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-6">
                                     {episodeData().data.episode}
                                 </h1>
 
@@ -135,10 +144,10 @@ export default function AnimeFullPage() {
                                 <Show when={episodeData().data.download_urls && Object.keys(episodeData().data.download_urls!).length > 0}>
                                     <div class="glass-card rounded-2xl overflow-hidden">
                                         {/* Header */}
-                                        <div class="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 p-5 border-b border-border/50">
+                                        <div class="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 p-5 border-b border-white/10">
                                             <h3 class="text-xl font-bold flex items-center gap-3">
-                                                <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                     </svg>
                                                 </div>
@@ -150,7 +159,7 @@ export default function AnimeFullPage() {
                                         <div class="p-5 space-y-5">
                                             <For each={Object.entries(episodeData().data.download_urls!)}>
                                                 {([resolution, servers]) => (
-                                                    <div class="glass-subtle rounded-xl p-4">
+                                                    <div class="bg-white/5 rounded-xl p-4 border border-white/5">
                                                         {/* Resolution Header */}
                                                         <div class="flex items-center gap-3 mb-4">
                                                             <div class={`px-3 py-1.5 rounded-lg font-bold text-sm ${resolution.includes('1080') ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
@@ -198,6 +207,29 @@ export default function AnimeFullPage() {
                     </Show>
                 </Suspense>
             </main>
+
+            {/* Custom CSS for animations */}
+            <style>{`
+                @keyframes float-slow {
+                    0%, 100% { transform: translateY(0) translateX(0); }
+                    50% { transform: translateY(-30px) translateX(15px); }
+                }
+                .animate-float-slow {
+                    animation: float-slow 10s ease-in-out infinite;
+                }
+                @keyframes float-medium {
+                    0%, 100% { transform: translateY(0) scale(1); }
+                    50% { transform: translateY(-20px) scale(1.05); }
+                }
+                .animate-float-medium {
+                    animation: float-medium 7s ease-in-out infinite;
+                }
+                .glass-card {
+                    background: rgba(255, 255, 255, 0.05);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+            `}</style>
         </>
     );
 }
