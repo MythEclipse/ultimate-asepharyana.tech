@@ -159,12 +159,17 @@ impl<'a> ImageCache<'a> {
 
         // 3. Check if another process is already caching this URL
         if redis_cache.get::<bool>(&lock_key).await.is_some() {
-            info!("ImageCache: Already being cached by another process: {}", original_url);
+            info!(
+                "ImageCache: Already being cached by another process: {}",
+                original_url
+            );
             return Err(format!("URL {} is already being cached", original_url));
         }
 
         // 4. Acquire lock to prevent duplicate caching
-        let _ = redis_cache.set_with_ttl(&lock_key, &true, IMAGE_CACHE_LOCK_TTL).await;
+        let _ = redis_cache
+            .set_with_ttl(&lock_key, &true, IMAGE_CACHE_LOCK_TTL)
+            .await;
 
         // 5. Not cached - upload to Picser
         info!("ImageCache: Miss - uploading {} to Picser", original_url);
@@ -276,31 +281,30 @@ impl<'a> ImageCache<'a> {
     /// Invalidate API response caches that may contain this image
     async fn invalidate_api_caches(&self) -> Result<(), String> {
         use deadpool_redis::redis::AsyncCommands;
-        
+
         let mut conn = self.redis.get().await.map_err(|e| e.to_string())?;
-        
+
         // Patterns untuk cache API yang berisi images
-        let patterns = vec![
-            "anime:*",
-            "anime2:*",
-            "komik:*",
-        ];
-        
+        let patterns = vec!["anime:*", "anime2:*", "komik:*"];
+
         let mut total_deleted = 0;
-        
+
         for pattern in patterns {
             let keys: Vec<String> = conn.keys(pattern).await.map_err(|e| e.to_string())?;
-            
+
             if !keys.is_empty() {
                 let deleted: usize = conn.del(&keys).await.map_err(|e| e.to_string())?;
                 total_deleted += deleted;
             }
         }
-        
+
         if total_deleted > 0 {
-            info!("ImageCache: Invalidated {} API cache keys after image upload", total_deleted);
+            info!(
+                "ImageCache: Invalidated {} API cache keys after image upload",
+                total_deleted
+            );
         }
-        
+
         Ok(())
     }
 
@@ -357,7 +361,10 @@ impl<'a> ImageCache<'a> {
             let err_msg = picser_response
                 .error
                 .unwrap_or_else(|| "Unknown error".to_string());
-            error!("ImageCache: Picser upload failed for {}: {}", original_url, err_msg);
+            error!(
+                "ImageCache: Picser upload failed for {}: {}",
+                original_url, err_msg
+            );
             return Err(format!("Picser upload failed: {}", err_msg));
         }
 
@@ -369,17 +376,15 @@ impl<'a> ImageCache<'a> {
             .or(picser_response.url.clone())
             .or(picser_response.github_url.clone())
             .ok_or_else(|| {
-                error!("ImageCache: No CDN URL in Picser response for {}", original_url);
+                error!(
+                    "ImageCache: No CDN URL in Picser response for {}",
+                    original_url
+                );
                 "No CDN URL in Picser response".to_string()
             })?;
 
         info!("ImageCache: Uploaded {} -> {}", original_url, cdn_url);
         Ok(cdn_url)
-    }
-
-    /// Create a hash of the URL for cache key (internal method)
-    fn url_hash(&self, url: &str) -> String {
-        url_hash(url)
     }
 
     /// Extract filename from URL
@@ -465,7 +470,7 @@ pub async fn get_cached_or_original(
     original_url: &str,
 ) -> String {
     let cache = ImageCache::new(db, redis);
-    
+
     // Check if already cached (Redis or DB)
     if let Some(cdn_url) = cache.get_cdn_url(original_url).await {
         return cdn_url;
@@ -476,7 +481,10 @@ pub async fn get_cached_or_original(
     let redis_cache = Cache::new(redis);
     if redis_cache.get::<bool>(&lock_key).await.is_some() {
         // Already being cached, just return original URL
-        info!("[ImageCache] URL already being cached by another process: {}", original_url);
+        info!(
+            "[ImageCache] URL already being cached by another process: {}",
+            original_url
+        );
         return original_url.to_string();
     }
 
@@ -498,7 +506,7 @@ pub async fn get_cached_or_original(
             }
         }
     });
-    
+
     original_url.to_string()
 }
 
