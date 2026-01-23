@@ -19,7 +19,7 @@ use utoipa::ToSchema;
 
 // Internal imports
 use crate::helpers::{
-    get_cached_or_original, internal_err, Cache, default_backoff, transient,
+    default_backoff, get_cached_or_original, internal_err, join_all_limited, transient, Cache,
 };
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
@@ -103,32 +103,49 @@ pub async fn search(
     let cache = Cache::new(&app_state.redis_pool);
 
     // Use get_or_set pattern - much cleaner!
-    let response = cache.get_or_set(&cache_key, CACHE_TTL, || async {
-        let url = format!(
-            "{}/?s={}&post_type=anime",
-            get_otakudesu_url(),
-            urlencoding::encode(&query)
-        );
+    let response = cache
+        .get_or_set(&cache_key, CACHE_TTL, || async {
+            let url = format!(
+                "{}/?s={}&post_type=anime",
+                get_otakudesu_url(),
+                urlencoding::encode(&query)
+            );
 
-        let (mut data, pagination) = fetch_and_parse_search(&url).await
-            .map_err(|e| format!("Fetch error: {}", e))?;
+            let (mut data, pagination) = fetch_and_parse_search(&url)
+                .await
+                .map_err(|e| format!("Fetch error: {}", e))?;
 
-        // Convert all poster URLs to CDN URLs
-        for item in &mut data {
-            if !item.poster.is_empty() {
-                item.poster = get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster).await;
-            }
-        }
+            // Convert all poster URLs to CDN URLs
+            // Convert all poster URLs to CDN URLs concurrently
+            let db = app_state.db.clone();
+            let redis = app_state.redis_pool.clone();
 
-        Ok(SearchResponse {
-            status: "Ok".to_string(),
-            data,
-            pagination,
+            data = join_all_limited(data, 20, |mut item| {
+                let db = db.clone();
+                let redis = redis.clone();
+                async move {
+                    if !item.poster.is_empty() {
+                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
+                    }
+                    item
+                }
+            })
+            .await;
+
+            Ok(SearchResponse {
+                status: "Ok".to_string(),
+                data,
+                pagination,
+            })
         })
-    }).await.map_err(internal_err)?;
+        .await
+        .map_err(internal_err)?;
 
     let duration = start.elapsed();
-    info!("Search completed for query: {}, duration: {:?}", query, duration);
+    info!(
+        "Search completed for query: {}, duration: {:?}",
+        query, duration
+    );
 
     Ok(Json(response).into_response())
 }

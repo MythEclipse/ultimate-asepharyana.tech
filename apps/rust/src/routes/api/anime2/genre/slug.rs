@@ -1,4 +1,6 @@
-use crate::helpers::{default_backoff, get_cached_or_original, internal_err, transient, Cache};
+use crate::helpers::{
+    default_backoff, get_cached_or_original, internal_err, join_all_limited, transient, Cache,
+};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::{Query, State};
@@ -113,13 +115,21 @@ pub async fn slug(
                     .map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs
-            for item in &mut anime_list {
-                if !item.poster.is_empty() {
-                    item.poster =
-                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
-                            .await;
+            // Convert all poster URLs to CDN URLs concurrently
+            let db = app_state.db.clone();
+            let redis = app_state.redis_pool.clone();
+
+            anime_list = join_all_limited(anime_list, 20, |mut item| {
+                let db = db.clone();
+                let redis = redis.clone();
+                async move {
+                    if !item.poster.is_empty() {
+                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
+                    }
+                    item
                 }
-            }
+            })
+            .await;
 
             Ok(GenreAnimeResponse {
                 status: "Ok".to_string(),
