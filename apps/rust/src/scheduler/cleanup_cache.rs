@@ -74,10 +74,7 @@ impl ScheduledTask for CleanupOldCache {
             }
         }
 
-        info!(
-            "🎉 Cache cleanup complete: {} items cleaned",
-            total_cleaned
-        );
+        info!("🎉 Cache cleanup complete: {} items cleaned", total_cleaned);
     }
 }
 
@@ -133,12 +130,7 @@ impl CleanupOldCache {
         let mut cleaned = 0;
 
         // Find keys without TTL (should not exist)
-        let patterns = vec![
-            "anime:*",
-            "komik:*",
-            "user:*:profile",
-            "img_cache:*",
-        ];
+        let patterns = vec!["anime:*", "komik:*", "user:*:profile", "img_cache:*"];
 
         for pattern in patterns {
             let keys: Vec<String> = conn
@@ -194,9 +186,9 @@ mod tests {
 
     #[test]
     fn test_schedule() {
-        let task = CleanupOldCache {
-            db: Arc::new(unsafe { std::mem::zeroed() }),
-        };
+        use sea_orm::{DatabaseBackend, MockDatabase};
+        let db = MockDatabase::new(DatabaseBackend::Sqlite).into_connection();
+        let task = CleanupOldCache { db: Arc::new(db) };
         assert_eq!(task.schedule(), "0 0 2 * * *");
     }
 

@@ -88,20 +88,20 @@ impl Default for ImageCacheConfig {
 }
 
 /// Image cache service
-pub struct ImageCache<'a> {
-    db: &'a DatabaseConnection,
-    redis: &'a RedisPool,
+pub struct ImageCache {
+    db: DatabaseConnection,
+    redis: RedisPool,
     client: Client,
     _config: ImageCacheConfig,
     semaphore: Option<std::sync::Arc<tokio::sync::Semaphore>>,
 }
 
-impl<'a> ImageCache<'a> {
+impl ImageCache {
     /// Create a new image cache instance
-    pub fn new(db: &'a DatabaseConnection, redis: &'a RedisPool) -> Self {
+    pub fn new(db: &DatabaseConnection, redis: &RedisPool) -> Self {
         Self {
-            db,
-            redis,
+            db: db.clone(),
+            redis: redis.clone(),
             client: Client::builder()
                 .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
@@ -113,13 +113,13 @@ impl<'a> ImageCache<'a> {
 
     /// Create with custom configuration
     pub fn with_config(
-        db: &'a DatabaseConnection,
-        redis: &'a RedisPool,
+        db: &DatabaseConnection,
+        redis: &RedisPool,
         config: ImageCacheConfig,
     ) -> Self {
         Self {
-            db,
-            redis,
+            db: db.clone(),
+            redis: redis.clone(),
             client: Client::builder()
                 .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
@@ -141,7 +141,7 @@ impl<'a> ImageCache<'a> {
         let lock_key = format!("{}:{}", IMAGE_CACHE_LOCK_PREFIX, url_hash(original_url));
 
         // 1. Check Redis cache first
-        let redis_cache = Cache::new(self.redis);
+        let redis_cache = Cache::new(&self.redis);
         if let Some(cached_url) = redis_cache.get::<String>(&cache_key).await {
             info!("ImageCache: Redis hit for {}", original_url);
             return Ok(cached_url);
@@ -223,7 +223,7 @@ impl<'a> ImageCache<'a> {
         let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(original_url));
 
         // Check Redis first
-        let redis_cache = Cache::new(self.redis);
+        let redis_cache = Cache::new(&self.redis);
         if let Some(cached_url) = redis_cache.get::<String>(&cache_key).await {
             return Some(cached_url);
         }
@@ -241,13 +241,13 @@ impl<'a> ImageCache<'a> {
         let cache_key = format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(original_url));
 
         // Remove from Redis
-        let redis_cache = Cache::new(self.redis);
+        let redis_cache = Cache::new(&self.redis);
         let _ = redis_cache.delete(&cache_key).await;
 
         // Remove from database
         image_cache::Entity::delete_many()
             .filter(image_cache::Column::OriginalUrl.eq(original_url))
-            .exec(self.db)
+            .exec(&self.db)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -259,7 +259,7 @@ impl<'a> ImageCache<'a> {
     async fn find_in_db(&self, original_url: &str) -> Result<Option<image_cache::Model>, String> {
         image_cache::Entity::find()
             .filter(image_cache::Column::OriginalUrl.eq(original_url))
-            .one(self.db)
+            .one(&self.db)
             .await
             .map_err(|e| e.to_string())
     }
@@ -274,7 +274,7 @@ impl<'a> ImageCache<'a> {
             expires_at: Set(None),
         };
 
-        model.insert(self.db).await.map_err(|e| e.to_string())?;
+        model.insert(&self.db).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
