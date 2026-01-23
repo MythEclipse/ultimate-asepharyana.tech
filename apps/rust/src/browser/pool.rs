@@ -28,9 +28,30 @@ pub struct BrowserPoolConfig {
 
 impl Default for BrowserPoolConfig {
     fn default() -> Self {
+        // Check for common paths or env var
+        let chrome_path = std::env::var("CHROME_BIN").ok().or_else(|| {
+            let possible_paths = [
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium",
+                "/usr/bin/chromium-browser",
+                // Path when installed via our script
+                &format!(
+                    "{}/bin/chrome-linux64/chrome",
+                    std::env::var("HOME").unwrap_or_default()
+                ),
+            ];
+
+            for path in possible_paths {
+                if std::path::Path::new(path).exists() {
+                    return Some(path.to_string());
+                }
+            }
+            None
+        });
+
         Self {
             max_tabs: 10,
-            chrome_path: None,
+            chrome_path,
             headless: true,
             sandbox: false, // Usually disabled for servers
             user_agent: None,

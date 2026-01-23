@@ -46,7 +46,8 @@ async fn main() -> anyhow::Result<()> {
     // Initialize browser pool for anime2 scraping
     tracing::info!("Initializing browser pool...");
     let mut browser_config = rustexpress::browser::BrowserPoolConfig::default();
-    browser_config.headless = true; // Ensure headless mode is enabled
+    browser_config.headless = true;
+    browser_config.sandbox = false; // CRITICAL: Fix for VPS/Docker crash running as root
     rustexpress::browser::pool::init_browser_pool(browser_config)
         .await
         .expect("Failed to initialize browser pool");
