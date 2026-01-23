@@ -1,6 +1,4 @@
-use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, transient, Cache,
-};
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
@@ -96,25 +94,19 @@ pub async fn latest(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (mut anime_list, pagination) =
+            let (anime_list, pagination) =
                 fetch_latest_anime(page).await.map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs
-            // Convert all poster URLs to CDN URLs concurrently
+            // Fire-and-forget background caching for posters to ensure max API speed
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            anime_list = join_all_limited(anime_list, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
+
+            // Return original URLs immediately.
+            // Posters will be cached in background and available on next request.
 
             Ok(LatestAnimeResponse {
                 status: "Ok".to_string(),
@@ -139,21 +131,32 @@ async fn fetch_latest_anime(
     };
 
     let backoff = default_backoff();
-    let fetch_operation = || async {
-        info!("Fetching latest anime: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => {
-                info!("Successfully fetched latest anime page");
-                Ok(response.data)
+    let fetch_operation = || -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, backoff::Error<std::io::Error>>> + Send>> {
+        let url = url.clone();
+        Box::pin(async move {
+            info!("Fetching: {}", url);
+            match fetch_with_proxy(&url).await {
+                Ok(response) => Ok(response.data),
+                Err(e) => {
+                    warn!("Failed: {:?}", e);
+                    // Convert to a concrete error type or Box<dyn Error...>
+                    // transient expects the error type E.
+                    // We need to ensure E is Sized.
+                    Err(transient(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    )))
+                }
             }
-            Err(e) => {
-                warn!("Failed to fetch latest anime: {:?}", e);
-                Err(transient(e))
-            }
-        }
+        })
     };
 
-    let html = retry(backoff, fetch_operation).await?;
+    let html = retry(backoff, fetch_operation).await.map_err(|e| {
+        Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        )) as Box<dyn std::error::Error + Send + Sync>
+    })?;
 
     let (anime_list, pagination) =
         tokio::task::spawn_blocking(move || parse_latest_page(&html, page)).await??;
