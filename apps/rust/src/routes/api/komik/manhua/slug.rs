@@ -1,8 +1,6 @@
 //use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router}; Handler for the komik manhua slug endpoint.
 
-use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, transient, Cache,
-};
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
@@ -112,25 +110,17 @@ pub async fn list(
                 format!("{}/manga/page/{}/?tipe=manhua", base_api_url, page)
             };
 
-            let (mut data, pagination) = fetch_and_parse_manhua_list(&url, page)
+            let (data, pagination) = fetch_and_parse_manhua_list(&url, page)
                 .await
                 .map_err(|e| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs concurrently
+            // Convert all poster URLs to CDN URLs
+            // Fire-and-forget background caching for posters to ensure max API speed
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            data = join_all_limited(data, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
 
             Ok(ManhuaResponse { data, pagination })
         })

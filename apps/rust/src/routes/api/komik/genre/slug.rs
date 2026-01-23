@@ -106,6 +106,14 @@ pub async fn slug(
                 .await
                 .map_err(|e| e.to_string())?;
 
+            // Convert all poster URLs to CDN URLs
+            // Fire-and-forget background caching for posters to ensure max API speed
+            let db = app_state.db.clone();
+            let redis = app_state.redis_pool.clone();
+
+            let posters: Vec<String> = komik_list.iter().map(|i| i.poster.clone()).collect();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
+
             Ok(GenreKomikResponse {
                 status: "Ok".to_string(),
                 genre: genre_slug.clone(),

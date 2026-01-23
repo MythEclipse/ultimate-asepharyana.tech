@@ -1,6 +1,4 @@
-use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, transient, Cache,
-};
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use axum::extract::{Query, State};
@@ -109,27 +107,17 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (mut anime_list, pagination) =
-                fetch_genre_anime(&genre_slug, page, &status, &order)
-                    .await
-                    .map_err(|e| e.to_string())?;
+            let (anime_list, pagination) = fetch_genre_anime(&genre_slug, page, &status, &order)
+                .await
+                .map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs
-            // Convert all poster URLs to CDN URLs concurrently
+            // Fire-and-forget background caching for posters to ensure max API speed
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            anime_list = join_all_limited(anime_list, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
 
             Ok(GenreAnimeResponse {
                 status: "Ok".to_string(),

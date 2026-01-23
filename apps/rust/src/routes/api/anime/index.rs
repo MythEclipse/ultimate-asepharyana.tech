@@ -1,8 +1,4 @@
-// Anime index handler - refactored with helpers
-use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, parse_html, transient,
-    Cache,
-};
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
@@ -88,36 +84,24 @@ pub async fn anime(
                 .await
                 .map_err(|e| format!("Fetch error: {}", e))?;
 
-            // Convert all poster URLs to CDN URLs concurrently
+            // Convert all poster URLs to CDN URLs
+            // Fire-and-forget background caching for posters to ensure max API speed
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            data.ongoing_anime = join_all_limited(data.ongoing_anime, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let ongoing_posters: Vec<String> = data
+                .ongoing_anime
+                .iter()
+                .map(|i| i.poster.clone())
+                .collect();
+            let complete_posters: Vec<String> = data
+                .complete_anime
+                .iter()
+                .map(|i| i.poster.clone())
+                .collect();
 
-            let db = app_state.db.clone();
-            let redis = app_state.redis_pool.clone();
-
-            data.complete_anime = join_all_limited(data.complete_anime, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let all_posters = [ongoing_posters, complete_posters].concat();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, all_posters);
 
             Ok(AnimeResponse {
                 status: "Ok".to_string(),

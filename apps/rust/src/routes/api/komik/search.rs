@@ -1,5 +1,5 @@
 use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, parse_html, transient,
+    default_backoff, internal_err, parse_html, transient,
     Cache,
 };
 use crate::infra::proxy::fetch_with_proxy;
@@ -134,26 +134,17 @@ pub async fn search(
                     urlencoding::encode(&query)
                 )
             };
-            let (mut data, pagination) = fetch_and_parse_search(&url, page)
+            let (data, pagination) = fetch_and_parse_search(&url, page)
                 .await
                 .map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs
-            // Convert all poster URLs to CDN URLs concurrently
+            // Fire-and-forget background caching for posters to ensure max API speed
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            data = join_all_limited(data, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
 
             Ok(SearchResponse { data, pagination })
         })

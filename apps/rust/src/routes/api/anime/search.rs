@@ -18,9 +18,7 @@ use tracing::{info, warn};
 use utoipa::ToSchema;
 
 // Internal imports
-use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, transient, Cache,
-};
+use crate::helpers::{default_backoff, internal_err, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
@@ -116,21 +114,13 @@ pub async fn search(
                 .map_err(|e| format!("Fetch error: {}", e))?;
 
             // Convert all poster URLs to CDN URLs
-            // Convert all poster URLs to CDN URLs concurrently
+            // Convert all poster URLs to CDN URLs
+            // Fire-and-forget background caching for posters to ensure max API speed
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            data = join_all_limited(data, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
-                    }
-                    item
-                }
-            })
-            .await;
+            let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
 
             Ok(SearchResponse {
                 status: "Ok".to_string(),
