@@ -1,5 +1,6 @@
 use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache,
+    default_backoff, get_cached_or_original, internal_err, join_all_limited, parse_html, transient,
+    Cache,
 };
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
@@ -102,14 +103,21 @@ pub async fn search(
                 .await
                 .map_err(|e| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs (returns original + background cache)
-            for item in &mut data {
-                if !item.poster.is_empty() {
-                    item.poster =
-                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
-                            .await;
+            // Convert all poster URLs to CDN URLs concurrently
+            let db = app_state.db.clone();
+            let redis = app_state.redis_pool.clone();
+
+            data = join_all_limited(data, 20, |mut item| {
+                let db = db.clone();
+                let redis = redis.clone();
+                async move {
+                    if !item.poster.is_empty() {
+                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
+                    }
+                    item
                 }
-            }
+            })
+            .await;
 
             Ok(SearchResponse {
                 status: "Ok".to_string(),

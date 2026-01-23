@@ -1,5 +1,6 @@
 use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, parse_html, transient, Cache,
+    default_backoff, get_cached_or_original, internal_err, join_all_limited, parse_html, transient,
+    Cache,
 };
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
@@ -76,21 +77,36 @@ pub async fn anime2(
         .get_or_set(CACHE_KEY, CACHE_TTL, || async {
             let mut data = fetch_anime_data().await.map_err(|e| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs (returns original + background cache)
-            for item in &mut data.ongoing_anime {
-                if !item.poster.is_empty() {
-                    item.poster =
-                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
-                            .await;
+            // Convert all poster URLs to CDN URLs concurrently
+            let db = app_state.db.clone();
+            let redis = app_state.redis_pool.clone();
+
+            data.ongoing_anime = join_all_limited(data.ongoing_anime, 20, |mut item| {
+                let db = db.clone();
+                let redis = redis.clone();
+                async move {
+                    if !item.poster.is_empty() {
+                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
+                    }
+                    item
                 }
-            }
-            for item in &mut data.complete_anime {
-                if !item.poster.is_empty() {
-                    item.poster =
-                        get_cached_or_original(&app_state.db, &app_state.redis_pool, &item.poster)
-                            .await;
+            })
+            .await;
+
+            let db = app_state.db.clone();
+            let redis = app_state.redis_pool.clone();
+
+            data.complete_anime = join_all_limited(data.complete_anime, 20, |mut item| {
+                let db = db.clone();
+                let redis = redis.clone();
+                async move {
+                    if !item.poster.is_empty() {
+                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
+                    }
+                    item
                 }
-            }
+            })
+            .await;
 
             Ok(Anime2Response {
                 status: "Ok".to_string(),

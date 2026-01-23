@@ -160,8 +160,8 @@ pub use numbers::{
 
 // Async
 pub use async_utils::{
-    join_all, simple_retry, sleep, sleep_ms, sleep_secs, spawn, spawn_blocking, timeout_ms,
-    timeout_secs, with_timeout, Debouncer,
+    join_all, join_all_limited, simple_retry, sleep, sleep_ms, sleep_secs, spawn, spawn_blocking,
+    timeout_ms, timeout_secs, with_timeout, Debouncer,
 };
 
 // Serde helpers
