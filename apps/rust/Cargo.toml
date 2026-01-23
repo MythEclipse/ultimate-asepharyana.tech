@@ -82,6 +82,7 @@ async-graphql-axum = "7.0.17"
 hex = "0.4.3"
 hmac = "0.12.1"
 sha2 = "0.10.9"
+log = "0.4"
 
 
 # Dependensi yang hanya dibutuhkan untuk build script (build.rs)

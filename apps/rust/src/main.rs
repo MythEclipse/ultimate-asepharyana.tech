@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 use axum::Router;
 // use http::{header, Method};       <-- Removed to fix unused import error
+use log::LevelFilter;
 use sea_orm::{Database, DatabaseConnection};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;
@@ -63,7 +64,8 @@ async fn main() -> anyhow::Result<()> {
         .min_connections(5)
         .connect_timeout(std::time::Duration::from_secs(10))
         .idle_timeout(std::time::Duration::from_secs(10))
-        .sqlx_logging(true);
+        .sqlx_logging(true)
+        .sqlx_logging_level(LevelFilter::Debug);
 
     let db: DatabaseConnection = Database::connect(opt)
         .await
