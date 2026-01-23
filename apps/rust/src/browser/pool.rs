@@ -100,7 +100,7 @@ impl BrowserPool {
         // Build browser configuration
         let mut browser_config = BrowserConfig::builder();
 
-        if config.headless {
+        if !config.headless {
             browser_config = browser_config.with_head();
         }
 

@@ -48,9 +48,13 @@ async fn main() -> anyhow::Result<()> {
     let mut browser_config = rustexpress::browser::BrowserPoolConfig::default();
     browser_config.headless = true;
     browser_config.sandbox = false; // CRITICAL: Fix for VPS/Docker crash running as root
-    rustexpress::browser::pool::init_browser_pool(browser_config)
-        .await
-        .expect("Failed to initialize browser pool");
+    match rustexpress::browser::pool::init_browser_pool(browser_config).await {
+        Ok(_) => tracing::info!("✓ Browser pool initialized"),
+        Err(e) => {
+            tracing::error!("⚠️ Failed to initialize browser pool: {}", e);
+            // Non-fatal, continue startup in headless environment
+        }
+    }
     tracing::info!("✓ Browser pool initialized");
 
     // SeaORM connection using validated config
