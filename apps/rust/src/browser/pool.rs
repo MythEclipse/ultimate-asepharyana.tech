@@ -3,6 +3,7 @@
 //! This pool maintains one headless Chrome instance and provides tabs
 //! on-demand for scraping. Tabs are returned to the pool after use.
 
+use crate::helpers::uuid_v4;
 use chromiumoxide::{Browser, BrowserConfig, Page};
 use futures::StreamExt;
 use std::sync::Arc;
@@ -150,6 +151,12 @@ impl BrowserPool {
             .arg("--ignore-certificate-errors")
             .arg("--ignore-certificate-errors-spki-list")
             .arg("--disable-blink-features");
+
+        // Use a unique user data directory to avoid "SingletonLock" errors
+        // when multiple instances run or previous instance crashed
+        let unique_id = uuid_v4();
+        let user_data_dir = std::env::temp_dir().join(format!("rustexpress-browser-{}", unique_id));
+        let browser_config = browser_config.user_data_dir(&user_data_dir);
 
         let browser_config = browser_config
             .build()
