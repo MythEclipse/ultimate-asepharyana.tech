@@ -60,18 +60,17 @@ async fn websocket_connection(socket: WebSocket, state: Arc<AppState>) {
         },
         result = &mut recv_task => {
             send_task.abort();
-            // Wait for send_task to actually finish  
+            // Wait for send_task to actually finish
             let _ = send_task.await;
             if let Err(e) = result {
                 tracing::warn!("Recv task error: {:?}", e);
             }
         }
     }
-    
+
     tracing::info!("WebSocket connection closed and cleaned up");
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router.route("/ws/chat", get(chat_websocket_handler))
 }
-

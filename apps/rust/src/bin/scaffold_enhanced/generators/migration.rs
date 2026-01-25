@@ -27,11 +27,7 @@ pub fn generate_migration(name: &str, table: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-pub fn generate_model_migration(
-    table: &str,
-    timestamps: bool,
-    soft_delete: bool,
-) -> Result<()> {
+pub fn generate_model_migration(table: &str, timestamps: bool, soft_delete: bool) -> Result<()> {
     let timestamp = Local::now().format("%Y%m%d%H%M%S");
     let name = format!("create_{}_table", table);
     let file_name = format!("m{}_{}.rs", timestamp, name);

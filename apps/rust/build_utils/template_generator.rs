@@ -182,7 +182,6 @@ pub fn generate_template_content(
     Ok(template)
 }
 
-
 pub fn extract_path_params_from_route(route_path_str: &str) -> Vec<(String, String)> {
     let mut path_params = Vec::new();
 

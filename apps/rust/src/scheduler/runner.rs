@@ -51,7 +51,12 @@ impl Scheduler {
     }
 
     /// Add a simple job with a closure.
-    pub async fn add_job<F, Fut>(&self, name: &'static str, schedule: &str, f: F) -> anyhow::Result<()>
+    pub async fn add_job<F, Fut>(
+        &self,
+        name: &'static str,
+        schedule: &str,
+        f: F,
+    ) -> anyhow::Result<()>
     where
         F: Fn() -> Fut + Send + Sync + 'static,
         Fut: std::future::Future<Output = ()> + Send + 'static,
@@ -135,7 +140,10 @@ impl ScheduledTask for CleanupExpiredSessions {
                     }
                 }
 
-                info!("Session cleanup complete: {} expired sessions found", cleaned);
+                info!(
+                    "Session cleanup complete: {} expired sessions found",
+                    cleaned
+                );
             }
             Err(e) => {
                 tracing::error!("Failed to connect to Redis for session cleanup: {}", e);
@@ -223,9 +231,6 @@ impl ScheduledTask for LogMetrics {
             s => format!("size={}, available={}", s.size, s.available),
         };
 
-        info!(
-            "📊 Metrics - Redis pool: {}",
-            redis_stats
-        );
+        info!("📊 Metrics - Redis pool: {}", redis_stats);
     }
 }

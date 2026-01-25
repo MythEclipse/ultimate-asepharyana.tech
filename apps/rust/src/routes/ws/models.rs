@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatRoom {
@@ -95,4 +95,3 @@ pub enum WsMessage {
         message: String,
     },
 }
-

@@ -50,7 +50,7 @@ pub fn select_all<'a>(document: &'a Html, css: &str) -> Vec<ElementRef<'a>> {
 /// Extract slug from URL (last path segment).
 pub fn extract_slug(url: &str) -> String {
     static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
-    
+
     SLUG_REGEX
         .captures(url)
         .and_then(|cap| cap.get(1))
@@ -67,9 +67,7 @@ pub fn strip_tags(html: &str) -> String {
 /// Extract number from text.
 pub fn extract_number(text: &str) -> Option<i64> {
     static NUM_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+").unwrap());
-    NUM_REGEX
-        .find(text)
-        .and_then(|m| m.as_str().parse().ok())
+    NUM_REGEX.find(text).and_then(|m| m.as_str().parse().ok())
 }
 
 /// Extract text inside parentheses.

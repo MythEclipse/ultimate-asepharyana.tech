@@ -45,10 +45,7 @@ impl Default for WsState {
 /// let ws_state = WsState::new();
 /// router.route("/ws", get(ws_handler)).with_state(ws_state);
 /// ```
-pub async fn ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<WsState>,
-) -> impl IntoResponse {
+pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<WsState>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 
@@ -146,12 +143,15 @@ async fn handle_message(
             if let Some(room_name) = msg.room {
                 let room = state.rooms.get_or_create(&room_name);
                 room.join(user_id, tx.clone());
-                
-                let response = WsMessage::new(WsEvent::Join, serde_json::json!({
-                    "room": room_name,
-                    "user_id": user_id,
-                    "members": room.member_count()
-                }));
+
+                let response = WsMessage::new(
+                    WsEvent::Join,
+                    serde_json::json!({
+                        "room": room_name,
+                        "user_id": user_id,
+                        "members": room.member_count()
+                    }),
+                );
                 room.broadcast(&response.to_json());
             }
         }
@@ -159,13 +159,16 @@ async fn handle_message(
             if let Some(room_name) = msg.room {
                 if let Some(room) = state.rooms.get(&room_name) {
                     room.leave(user_id);
-                    
-                    let response = WsMessage::new(WsEvent::Leave, serde_json::json!({
-                        "room": room_name,
-                        "user_id": user_id
-                    }));
+
+                    let response = WsMessage::new(
+                        WsEvent::Leave,
+                        serde_json::json!({
+                            "room": room_name,
+                            "user_id": user_id
+                        }),
+                    );
                     room.broadcast(&response.to_json());
-                    
+
                     state.rooms.remove_if_empty(&room_name);
                 }
             }
@@ -180,7 +183,11 @@ async fn handle_message(
                 }
             } else {
                 // Echo back
-                let _ = tx.send(WsMessage::new(WsEvent::Message, msg.data).from(user_id).to_json());
+                let _ = tx.send(
+                    WsMessage::new(WsEvent::Message, msg.data)
+                        .from(user_id)
+                        .to_json(),
+                );
             }
         }
         WsEvent::Private => {

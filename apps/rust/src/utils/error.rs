@@ -124,7 +124,9 @@ impl IntoResponse for AppError {
             AppError::InvalidEmail => (http::StatusCode::BAD_REQUEST, self.to_string()),
             AppError::Unauthorized => (http::StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::Forbidden => (http::StatusCode::FORBIDDEN, self.to_string()),
-            AppError::DatabaseError(_) => (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
+            AppError::DatabaseError(_) => {
+                (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
             _ => (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
 

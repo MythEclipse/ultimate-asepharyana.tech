@@ -41,11 +41,19 @@ export type NewReply = InferInsertModel<typeof schema.replies>;
 export type ChatMessage = InferSelectModel<typeof schema.chatMessages>;
 export type NewChatMessage = InferInsertModel<typeof schema.chatMessages>;
 
-export type EmailVerificationToken = InferSelectModel<typeof schema.emailVerificationTokens>;
-export type NewEmailVerificationToken = InferInsertModel<typeof schema.emailVerificationTokens>;
+export type EmailVerificationToken = InferSelectModel<
+  typeof schema.emailVerificationTokens
+>;
+export type NewEmailVerificationToken = InferInsertModel<
+  typeof schema.emailVerificationTokens
+>;
 
-export type PasswordResetToken = InferSelectModel<typeof schema.passwordResetTokens>;
-export type NewPasswordResetToken = InferInsertModel<typeof schema.passwordResetTokens>;
+export type PasswordResetToken = InferSelectModel<
+  typeof schema.passwordResetTokens
+>;
+export type NewPasswordResetToken = InferInsertModel<
+  typeof schema.passwordResetTokens
+>;
 
 export type ChatRoom = InferSelectModel<typeof schema.chatRooms>;
 export type NewChatRoom = InferInsertModel<typeof schema.chatRooms>;

@@ -1,7 +1,5 @@
 //! Common types used across build utilities for better type safety.
 
-
-
 /// Types of API endpoint templates
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TemplateType {
@@ -24,7 +22,6 @@ impl TemplateType {
             Self::List
         }
     }
-
 }
 
 /// Information about response structure for templates
@@ -81,7 +78,6 @@ impl ResponseStructInfo {
     }
 }
 
-
 /// Dynamic parameter information
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DynamicParam {
@@ -105,7 +101,6 @@ pub struct RouteFileInfo {
 }
 
 impl RouteFileInfo {
-
     /// Get the file stem (filename without extension)
     pub fn file_stem(&self) -> Option<String> {
         self.file_path

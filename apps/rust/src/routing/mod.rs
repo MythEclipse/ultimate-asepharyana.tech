@@ -2,4 +2,4 @@
 
 pub mod versioning;
 
-pub use versioning::{VersionedApi, ApiVersion, versioned_routes, extract_version};
+pub use versioning::{extract_version, versioned_routes, ApiVersion, VersionedApi};

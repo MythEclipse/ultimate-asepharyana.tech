@@ -143,7 +143,11 @@ impl JobDispatcher {
     }
 
     /// Dispatch a job with a delay (in seconds).
-    pub async fn dispatch_delayed<J: Job>(&self, job: J, delay_seconds: u64) -> anyhow::Result<String> {
+    pub async fn dispatch_delayed<J: Job>(
+        &self,
+        job: J,
+        delay_seconds: u64,
+    ) -> anyhow::Result<String> {
         let job_id = Uuid::new_v4().to_string();
         let delayed_key = "jobs:delayed";
         let job_key = format!("jobs:data:{}", job_id);
@@ -175,7 +179,12 @@ impl JobDispatcher {
         let delayed_entry = format!("{}:{}", J::QUEUE, job_id);
         let _: () = conn.zadd(delayed_key, delayed_entry, execute_at).await?;
 
-        tracing::info!("Dispatched delayed job {} ({}) - executes in {}s", J::NAME, job_id, delay_seconds);
+        tracing::info!(
+            "Dispatched delayed job {} ({}) - executes in {}s",
+            J::NAME,
+            job_id,
+            delay_seconds
+        );
 
         Ok(job_id)
     }

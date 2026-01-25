@@ -39,14 +39,17 @@ import {
 import { friendLogger, matchLogger } from '../../../utils/logger';
 
 // Store pending match invites in memory
-const pendingMatchInvites = new Map<string, {
-  inviteId: string;
-  senderId: string;
-  receiverId: string;
-  gameSettings: GameSettings;
-  message?: string;
-  expiresAt: number;
-}>();
+const pendingMatchInvites = new Map<
+  string,
+  {
+    inviteId: string;
+    senderId: string;
+    receiverId: string;
+    gameSettings: GameSettings;
+    message?: string;
+    expiresAt: number;
+  }
+>();
 
 /**
  * Handle friend request send
@@ -84,9 +87,10 @@ export async function handleFriendRequestSend(
         type: 'error',
         payload: {
           code: 'ALREADY_EXISTS',
-          message: existing.status === 'accepted'
-            ? 'Sudah berteman'
-            : 'Permintaan pertemanan sudah dikirim',
+          message:
+            existing.status === 'accepted'
+              ? 'Sudah berteman'
+              : 'Permintaan pertemanan sudah dikirim',
         },
       };
       wsManager.sendToSession(sessionId, errorMsg);
@@ -235,7 +239,9 @@ export async function handleFriendRequestRespond(
       const friendInfo: FriendInfo = {
         userId: request.userId,
         username: friend?.name || 'Unknown',
-        status: wsManager.findSessionByUserId(request.userId) ? 'online' : 'offline',
+        status: wsManager.findSessionByUserId(request.userId)
+          ? 'online'
+          : 'offline',
         points: friendStats?.points || 0,
         wins: friendStats?.wins || 0,
         lastSeen: Date.now(),
@@ -677,7 +683,9 @@ export async function handleMatchInviteRespond(
     });
 
     // Create match state
-    const senderConn = senderSession ? wsManager.getConnection(senderSession) : null;
+    const senderConn = senderSession
+      ? wsManager.getConnection(senderSession)
+      : null;
     const receiverConn = wsManager.getConnection(sessionId);
 
     if (senderConn && receiverConn) {

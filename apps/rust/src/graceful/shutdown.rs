@@ -50,7 +50,10 @@ impl GracefulShutdown {
         self.shutdown();
 
         // Give time for in-flight requests to complete
-        info!("⏳ Waiting {}s for in-flight requests...", drain_timeout.as_secs());
+        info!(
+            "⏳ Waiting {}s for in-flight requests...",
+            drain_timeout.as_secs()
+        );
         tokio::time::sleep(drain_timeout).await;
 
         info!("✅ Graceful shutdown complete");

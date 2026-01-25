@@ -45,9 +45,7 @@ impl EmailQueue {
                     error!("Email queue full! Dropping email to: {}", to_email);
                     "Email queue is full - message dropped".to_string()
                 }
-                mpsc::error::TrySendError::Closed(_) => {
-                    "Email queue closed".to_string()
-                }
+                mpsc::error::TrySendError::Closed(_) => "Email queue closed".to_string(),
             })
     }
 

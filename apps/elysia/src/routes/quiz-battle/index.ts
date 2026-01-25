@@ -214,7 +214,12 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           case 'friend.list.request':
-            console.log('[WS] Received friend.list.request from session:', sessionId, 'payload:', message.payload);
+            console.log(
+              '[WS] Received friend.list.request from session:',
+              sessionId,
+              'payload:',
+              message.payload,
+            );
             if (sessionId) {
               handleFriendListRequest(sessionId, message.payload as any);
             }
@@ -239,7 +244,12 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
             break;
 
           case 'friend.request.list':
-            console.log('[WS] Received friend.request.list from session:', sessionId, 'payload:', message.payload);
+            console.log(
+              '[WS] Received friend.request.list from session:',
+              sessionId,
+              'payload:',
+              message.payload,
+            );
             if (sessionId) {
               handleFriendRequestList(sessionId, message.payload as any);
             }
@@ -413,11 +423,19 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
       const sessionId = sessionIds.get(ws.raw as ServerWebSocket<WSData>);
       if (sessionId) {
         const connection = wsManager.getConnection(sessionId);
-        wsLogger.disconnected(sessionId, connection?.userId, connection?.currentMatchId ? 'mid-game' : undefined);
+        wsLogger.disconnected(
+          sessionId,
+          connection?.userId,
+          connection?.currentMatchId ? 'mid-game' : undefined,
+        );
 
         // CRITICAL: If player was in a match, forfeit it
         if (connection?.currentMatchId) {
-          wsLogger.disconnected(sessionId, connection.userId, `forfeiting match ${connection.currentMatchId}`);
+          wsLogger.disconnected(
+            sessionId,
+            connection.userId,
+            `forfeiting match ${connection.currentMatchId}`,
+          );
           endGameByForfeit(connection.currentMatchId, connection.userId);
         }
 
@@ -425,7 +443,11 @@ export const quizBattleWS = new Elysia({ prefix: '/api/quiz' })
         handleDisconnect(sessionId);
         sessionIds.delete(ws.raw as ServerWebSocket<WSData>);
       } else {
-        wsLogger.disconnected(sessionId || 'unknown', undefined, 'session not found');
+        wsLogger.disconnected(
+          sessionId || 'unknown',
+          undefined,
+          'session not found',
+        );
       }
     },
   })

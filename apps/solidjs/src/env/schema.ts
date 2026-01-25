@@ -1,7 +1,9 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const serverScheme = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   DISCORD_ID: z.string(),
   DISCORD_SECRET: z.string(),
   AUTH_SECRET: z.string(),

@@ -3,3 +3,5 @@
 /coverage
 /.nx/cache
 /.nx/workspace-data
+/apps/rust/mysql-data/**
+*.env

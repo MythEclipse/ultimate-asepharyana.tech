@@ -1,14 +1,14 @@
 //! Graceful shutdown with proper resource cleanup.
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tokio::signal;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
 use tracing::info;
 
-use crate::ws::RoomManager;
 use crate::helpers::memory::MemoryMetrics;
+use crate::ws::RoomManager;
 
 /// Graceful shutdown coordinator.
 pub struct ShutdownCoordinator {

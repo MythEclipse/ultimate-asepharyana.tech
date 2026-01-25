@@ -92,9 +92,7 @@ async fn check_redis() -> CheckResult {
     match REDIS_POOL.get().await {
         Ok(mut conn) => {
             // Execute PING command
-            let result: Result<String, _> = redis::cmd("PING")
-                .query_async(&mut *conn)
-                .await;
+            let result: Result<String, _> = redis::cmd("PING").query_async(&mut *conn).await;
 
             match result {
                 Ok(response) if response == "PONG" => CheckResult {

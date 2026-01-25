@@ -1,20 +1,14 @@
 //! Handler for update profile endpoint.
 
-use axum::{
-    extract::State,
-    http::HeaderMap,
-    response::IntoResponse,
-    routing::put,
-    Json, Router,
-};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse, routing::put, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 use validator::Validate;
 
 // SeaORM imports
+use crate::entities::user;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;
@@ -31,7 +25,7 @@ pub const SUCCESS_RESPONSE_BODY: &str = "Json<UpdateProfileResponse>";
 /// Update profile request
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct UpdateProfileRequest {
-    pub name: Option<String>, // Changed from full_name to name
+    pub name: Option<String>,  // Changed from full_name to name
     pub image: Option<String>, // Changed from avatar_url to image
 
     #[validate(email)]
@@ -130,7 +124,8 @@ pub async fn update_profile(
     }
 
     // Save changes
-    let updated_user = user_active.update(state.sea_orm())
+    let updated_user = user_active
+        .update(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 

@@ -1,7 +1,7 @@
 //! Graceful shutdown utilities.
 
-pub mod shutdown;
 pub mod cleanup;
+pub mod shutdown;
 
+pub use cleanup::{wait_for_shutdown_and_cleanup, ShutdownCoordinator, ShutdownHandle};
 pub use shutdown::{shutdown_signal, GracefulShutdown};
-pub use cleanup::{ShutdownCoordinator, ShutdownHandle, wait_for_shutdown_and_cleanup};

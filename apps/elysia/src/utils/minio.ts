@@ -34,7 +34,7 @@ export const putObject = async (
   objectName: string,
   data: Buffer | string,
   size?: number,
-  contentType?: string
+  contentType?: string,
 ): Promise<unknown> => {
   await ensureBucket(bucket);
   return minioClient.putObject(bucket, objectName, data, size, {

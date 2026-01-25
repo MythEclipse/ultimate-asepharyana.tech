@@ -1,20 +1,14 @@
 //! Handler for change password endpoint.
 
-use axum::{
-    extract::State,
-    http::HeaderMap,
-    response::IntoResponse,
-    routing::post,
-    Json, Router,
-};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse, routing::post, Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
 // SeaORM imports
+use crate::entities::user;
 use sea_orm::{ActiveModelTrait, EntityTrait, Set};
-use crate::entities::{user};
 
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
@@ -107,7 +101,10 @@ pub async fn change_password(
         .ok_or(AppError::UserNotFound)?;
 
     // Verify current password
-    let current_password_hash = user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?;
+    let current_password_hash = user_model
+        .password
+        .as_ref()
+        .ok_or(AppError::InvalidCredentials)?;
     let password_valid = verify(&payload.current_password, current_password_hash)?;
     if !password_valid {
         return Err(AppError::InvalidCredentials);
@@ -120,7 +117,8 @@ pub async fn change_password(
     let mut user_active: user::ActiveModel = user_model.into();
     user_active.password = Set(Some(new_password_hash));
     user_active.refresh_token = Set(None); // Clear refresh token for security
-    user_active.update(state.sea_orm())
+    user_active
+        .update(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 

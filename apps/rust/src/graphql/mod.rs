@@ -2,8 +2,8 @@
 //!
 //! Provides GraphQL schema, handlers, and playground endpoint.
 
-pub mod schema;
 pub mod handlers;
+pub mod schema;
 
-pub use schema::{create_schema, AppSchema, QueryRoot, MutationRoot};
 pub use handlers::{graphql_handler, graphql_playground};
+pub use schema::{create_schema, AppSchema, MutationRoot, QueryRoot};

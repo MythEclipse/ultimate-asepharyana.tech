@@ -8,7 +8,7 @@ pub mod jwt;
 pub mod ratelimit;
 
 pub use config::CONFIG;
-pub use error::{LibError, ErrorResponse};
+pub use error::{ErrorResponse, LibError};
 pub use jwt::{sign_jwt, verify_jwt, Claims};
 pub use ratelimit::rate_limit_middleware;
 

@@ -5,10 +5,7 @@ use std::hash::Hash;
 
 /// Chunk a vector into smaller vectors of specified size.
 pub fn chunk<T: Clone>(items: Vec<T>, size: usize) -> Vec<Vec<T>> {
-    items
-        .chunks(size)
-        .map(|chunk| chunk.to_vec())
-        .collect()
+    items.chunks(size).map(|chunk| chunk.to_vec()).collect()
 }
 
 /// Get unique items from a vector.

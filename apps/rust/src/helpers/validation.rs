@@ -4,29 +4,25 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 /// Email validation regex.
-static EMAIL_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap()
-});
+static EMAIL_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap());
 
 /// URL validation regex.
-static URL_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^https?://[^\s/$.?#].[^\s]*$").unwrap()
-});
+static URL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^https?://[^\s/$.?#].[^\s]*$").unwrap());
 
 /// Phone validation regex (international format).
-static PHONE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\+?[1-9]\d{1,14}$").unwrap()
-});
+static PHONE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\+?[1-9]\d{1,14}$").unwrap());
 
 /// UUID v4 validation regex.
 static UUID_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$").unwrap()
+    Regex::new(
+        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+    )
+    .unwrap()
 });
 
 /// Slug validation regex (lowercase, hyphens, no spaces).
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[a-z0-9]+(?:-[a-z0-9]+)*$").unwrap()
-});
+static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z0-9]+(?:-[a-z0-9]+)*$").unwrap());
 
 /// Validate email format.
 pub fn is_email(s: &str) -> bool {

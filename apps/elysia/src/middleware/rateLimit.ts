@@ -17,9 +17,10 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
  */
 export const rateLimit = ({ max, window, message }: RateLimitOptions) => {
   return new Elysia().derive(async ({ request, set }) => {
-    const ip = request.headers.get('x-forwarded-for') ||
-               request.headers.get('x-real-ip') ||
-               'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
 
     const key = `ratelimit:${ip}`;
     const now = Date.now();

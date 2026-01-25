@@ -34,7 +34,7 @@ export const loginRoute = new Elysia()
       max: 20, // 20 login attempts
       window: 15 * 60 * 1000, // per 15 minutes
       message: 'Too many login attempts, please try again in 15 minutes',
-    })
+    }),
   )
   .post(
     '/login',
@@ -74,11 +74,14 @@ export const loginRoute = new Elysia()
 
       const tokenExpiry = rememberMe ? 30 * 24 * 3600 : 24 * 3600;
 
-      const accessToken = await signJWT({
-        user_id: user.id,
-        email: user.email || '',
-        name: user.name || '',
-      }, tokenExpiry);
+      const accessToken = await signJWT(
+        {
+          user_id: user.id,
+          email: user.email || '',
+          name: user.name || '',
+        },
+        tokenExpiry,
+      );
 
       const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       const sessionToken = `session_${user.id}_${Date.now()}`;
@@ -114,5 +117,5 @@ export const loginRoute = new Elysia()
         password: t.String(),
         rememberMe: t.Optional(t.Boolean()),
       }),
-    }
+    },
   );

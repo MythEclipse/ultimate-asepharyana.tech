@@ -33,15 +33,21 @@ export const sanitizeEmail = (email: string): string | null => {
  * Sanitize object recursively
  */
 export const sanitizeObject = <T extends Record<string, unknown>>(
-  obj: T
+  obj: T,
 ): T => {
   const sanitized = {} as T;
 
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
       sanitized[key as keyof T] = sanitizeString(value) as T[keyof T];
-    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      sanitized[key as keyof T] = sanitizeObject(value as Record<string, unknown>) as T[keyof T];
+    } else if (
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value)
+    ) {
+      sanitized[key as keyof T] = sanitizeObject(
+        value as Record<string, unknown>,
+      ) as T[keyof T];
     } else {
       sanitized[key as keyof T] = value as T[keyof T];
     }
@@ -55,7 +61,8 @@ export const sanitizeObject = <T extends Record<string, unknown>>(
  */
 export const validatePagination = (page?: unknown, limit?: unknown) => {
   const pageNum = typeof page === 'number' ? page : parseInt(String(page || 1));
-  const limitNum = typeof limit === 'number' ? limit : parseInt(String(limit || 10));
+  const limitNum =
+    typeof limit === 'number' ? limit : parseInt(String(limit || 10));
 
   if (isNaN(pageNum) || pageNum < 1) {
     throw new Error('Invalid page parameter');

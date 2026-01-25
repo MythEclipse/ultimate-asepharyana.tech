@@ -57,7 +57,9 @@ impl IntoResponse for AuthError {
             AuthError::TokenRevoked => (StatusCode::UNAUTHORIZED, "Token has been revoked"),
             AuthError::AccountInactive => (StatusCode::FORBIDDEN, "Account is inactive"),
             AuthError::UserNotFound => (StatusCode::UNAUTHORIZED, "User not found"),
-            AuthError::InsufficientPermissions => (StatusCode::FORBIDDEN, "Insufficient permissions"),
+            AuthError::InsufficientPermissions => {
+                (StatusCode::FORBIDDEN, "Insufficient permissions")
+            }
         };
         (status, message).into_response()
     }
@@ -101,17 +103,14 @@ pub async fn auth_layer(
     })?;
 
     let blacklist_key = format!("blacklist:token:{}", token);
-    let is_blacklisted: bool = redis_conn
-        .exists(&blacklist_key)
-        .await
-        .unwrap_or(false);
+    let is_blacklisted: bool = redis_conn.exists(&blacklist_key).await.unwrap_or(false);
 
     if is_blacklisted {
         return Err(AuthError::TokenRevoked.into_response());
     }
 
     // Verify user still exists in database using SeaORM
-    use crate::entities::{user};
+    use crate::entities::user;
     use sea_orm::EntityTrait;
 
     let user_exists = user::Entity::find_by_id(&claims.user_id)
@@ -143,10 +142,7 @@ pub async fn optional_auth_layer(
             // Check if token is blacklisted
             if let Ok(mut redis_conn) = state.redis_pool.get().await {
                 let blacklist_key = format!("blacklist:token:{}", token);
-                let is_blacklisted: bool = redis_conn
-                    .exists(&blacklist_key)
-                    .await
-                    .unwrap_or(false);
+                let is_blacklisted: bool = redis_conn.exists(&blacklist_key).await.unwrap_or(false);
 
                 if !is_blacklisted {
                     // Check if user still exists using SeaORM

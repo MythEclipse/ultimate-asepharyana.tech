@@ -1,6 +1,6 @@
-import type { AuthRequestContext } from "start-authjs";
-import { StartAuthJS } from "start-authjs";
-import { authConfig } from "~/server/auth";
+import type { AuthRequestContext } from 'start-authjs';
+import { StartAuthJS } from 'start-authjs';
+import { authConfig } from '~/server/auth';
 
 const { GET: AuthGET, POST: AuthPOST } = StartAuthJS(authConfig);
 

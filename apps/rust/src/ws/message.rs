@@ -98,7 +98,10 @@ impl WsMessage<serde_json::Value> {
 impl WsMessage<serde_json::Value> {
     /// Create a connected message.
     pub fn connected() -> Self {
-        Self::new(WsEvent::Connected, serde_json::json!({"status": "connected"}))
+        Self::new(
+            WsEvent::Connected,
+            serde_json::json!({"status": "connected"}),
+        )
     }
 
     /// Create an error message.

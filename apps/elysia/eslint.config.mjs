@@ -6,22 +6,7 @@ export default [
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@nx/enforce-module-boundaries': [
-        'error',
-        {
-          allow: [
-            'elysia',
-            '@elysiajs/cors',
-            '@elysiajs/jwt',
-            'mysql2',
-            'bcryptjs',
-            'uuid',
-            'ioredis',
-            'nodemailer',
-            '@asepharyana/services',
-          ],
-        },
-      ],
+      // Removed @nx/enforce-module-boundaries as @nx is not installed
     },
   },
 ];

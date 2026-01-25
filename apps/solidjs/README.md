@@ -18,5 +18,4 @@ This will start a production server on port `3000`.
 - `AUTH_TRUST_HOST`=true
 - `AUTH_URL`=http://localhost:3000/api/auth
 
-
 ## This project was created with the [Solid CLI](https://github.com/solidjs-community/solid-cli)

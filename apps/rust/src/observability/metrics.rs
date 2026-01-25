@@ -17,7 +17,9 @@ pub fn setup_metrics() -> anyhow::Result<()> {
     // Configure histogram buckets for request latency
     let builder = builder.set_buckets_for_metric(
         Matcher::Full("http_request_duration_seconds".to_string()),
-        &[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
+        &[
+            0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+        ],
     )?;
 
     let handle = builder.install_recorder()?;

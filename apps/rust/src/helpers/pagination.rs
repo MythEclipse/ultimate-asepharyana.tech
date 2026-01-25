@@ -19,9 +19,15 @@ pub struct PaginationParams {
     pub order: String,
 }
 
-fn default_page() -> u64 { 1 }
-fn default_limit() -> u64 { 20 }
-fn default_order() -> String { "asc".to_string() }
+fn default_page() -> u64 {
+    1
+}
+fn default_limit() -> u64 {
+    20
+}
+fn default_order() -> String {
+    "asc".to_string()
+}
 
 impl PaginationParams {
     /// Calculate offset for database query.

@@ -15,8 +15,8 @@ use std::sync::Arc;
 use utoipa::ToSchema;
 
 // SeaORM imports
+use crate::entities::{email_verification_token, password_reset_token, session, user};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use crate::entities::{user, email_verification_token, password_reset_token, session};
 
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
@@ -91,7 +91,10 @@ pub async fn delete_account(
         .ok_or(AppError::UserNotFound)?;
 
     // Verify password
-    let current_password_hash = user_model.password.as_ref().ok_or(AppError::InvalidCredentials)?;
+    let current_password_hash = user_model
+        .password
+        .as_ref()
+        .ok_or(AppError::InvalidCredentials)?;
     let password_valid = verify(&payload.password, current_password_hash)?;
     if !password_valid {
         return Err(AppError::InvalidCredentials);

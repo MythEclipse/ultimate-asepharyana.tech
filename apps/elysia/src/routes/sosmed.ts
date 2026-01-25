@@ -1,5 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { getDb, posts, comments, likes, eq, desc, and } from '@asepharyana/services';
+import {
+  getDb,
+  posts,
+  comments,
+  likes,
+  eq,
+  desc,
+  and,
+} from '@asepharyana/services';
 import type { NewPost, NewComment, NewLike } from '@asepharyana/services';
 import { verifyJWT } from '../utils/jwt';
 
@@ -92,7 +100,10 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Invalid token');
         }
 
-        const { content, imageUrl } = body as { content: string; imageUrl?: string };
+        const { content, imageUrl } = body as {
+          content: string;
+          imageUrl?: string;
+        };
 
         if (!content && !imageUrl) {
           set.status = 400;
@@ -137,7 +148,8 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         set.status = 500;
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to create post',
+          error:
+            error instanceof Error ? error.message : 'Failed to create post',
         };
       }
     },
@@ -146,7 +158,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         content: t.String(),
         imageUrl: t.Optional(t.String()),
       }),
-    }
+    },
   )
 
   // Update a post
@@ -167,7 +179,10 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Invalid token');
         }
 
-        const { content, imageUrl } = body as { content: string; imageUrl?: string };
+        const { content, imageUrl } = body as {
+          content: string;
+          imageUrl?: string;
+        };
 
         const db = getDb();
         const existingPostResult = await db
@@ -221,7 +236,8 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         set.status = 500;
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to update post',
+          error:
+            error instanceof Error ? error.message : 'Failed to update post',
         };
       }
     },
@@ -230,7 +246,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         content: t.String(),
         imageUrl: t.Optional(t.String()),
       }),
-    }
+    },
   )
 
   // Delete a post
@@ -345,7 +361,8 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         set.status = 500;
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to add comment',
+          error:
+            error instanceof Error ? error.message : 'Failed to add comment',
         };
       }
     },
@@ -353,7 +370,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
       body: t.Object({
         content: t.String(),
       }),
-    }
+    },
   )
 
   // Update a comment
@@ -395,10 +412,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
           throw new Error('Not authorized to edit this comment');
         }
 
-        await db
-          .update(comments)
-          .set({ content })
-          .where(eq(comments.id, id));
+        await db.update(comments).set({ content }).where(eq(comments.id, id));
 
         const comment = await db.query.comments.findFirst({
           where: eq(comments.id, id),
@@ -423,7 +437,8 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
         set.status = 500;
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to update comment',
+          error:
+            error instanceof Error ? error.message : 'Failed to update comment',
         };
       }
     },
@@ -431,7 +446,7 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
       body: t.Object({
         content: t.String(),
       }),
-    }
+    },
   )
 
   // Delete a comment
@@ -480,7 +495,8 @@ export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })
       set.status = 500;
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete comment',
+        error:
+          error instanceof Error ? error.message : 'Failed to delete comment',
       };
     }
   })

@@ -5,4 +5,4 @@
 
 pub mod pool;
 
-pub use pool::{BrowserPool, PooledTab, BrowserPoolConfig};
+pub use pool::{BrowserPool, BrowserPoolConfig, PooledTab};

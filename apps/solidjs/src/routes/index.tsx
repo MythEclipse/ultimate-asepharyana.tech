@@ -1,25 +1,51 @@
-import { Title } from "@solidjs/meta";
-import { Motion } from "solid-motionone";
-import { A } from "@solidjs/router";
-import { For } from "solid-js";
-import BackgroundBeamsWithCollision from "~/components/background/BackgroundBeamsWithCollision";
-import { AnimatedHeader } from "~/components/text/AnimatedHeader";
-import { Instagram, Facebook, LinkedIn, GitHub } from "~/components/logo/SocialIcons";
-import { techStackWithImages } from "~/components/logo/TechIcons";
+import { Title } from '@solidjs/meta';
+import { Motion } from 'solid-motionone';
+import { A } from '@solidjs/router';
+import { For } from 'solid-js';
+import BackgroundBeamsWithCollision from '~/components/background/BackgroundBeamsWithCollision';
+import { AnimatedHeader } from '~/components/text/AnimatedHeader';
+import {
+  Instagram,
+  Facebook,
+  LinkedIn,
+  GitHub,
+} from '~/components/logo/SocialIcons';
+import { techStackWithImages } from '~/components/logo/TechIcons';
 
 const judul = [
-  { text: "Asep", class: "text-blue-500 dark:text-blue-400" },
-  { text: "Haryana", class: "text-purple-500 dark:text-purple-400" },
-  { text: "Saputra", class: "text-pink-500 dark:text-pink-400" },
+  { text: 'Asep', class: 'text-blue-500 dark:text-blue-400' },
+  { text: 'Haryana', class: 'text-purple-500 dark:text-purple-400' },
+  { text: 'Saputra', class: 'text-pink-500 dark:text-pink-400' },
 ];
 
 const skills = techStackWithImages;
 
 const socialLinks = [
-  { href: "https://github.com/MythEclipse", icon: GitHub, label: "GitHub", color: "hover:bg-gray-800 hover:text-white" },
-  { href: "https://www.instagram.com/asepharyana18/", icon: Instagram, label: "Instagram", color: "hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white" },
-  { href: "https://www.linkedin.com/in/asep-haryana-saputra-2014a5294/", icon: LinkedIn, label: "LinkedIn", color: "hover:bg-blue-600 hover:text-white" },
-  { href: "https://www.facebook.com/asep.haryana.900/", icon: Facebook, label: "Facebook", color: "hover:bg-blue-500 hover:text-white" },
+  {
+    href: 'https://github.com/MythEclipse',
+    icon: GitHub,
+    label: 'GitHub',
+    color: 'hover:bg-gray-800 hover:text-white',
+  },
+  {
+    href: 'https://www.instagram.com/asepharyana18/',
+    icon: Instagram,
+    label: 'Instagram',
+    color:
+      'hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white',
+  },
+  {
+    href: 'https://www.linkedin.com/in/asep-haryana-saputra-2014a5294/',
+    icon: LinkedIn,
+    label: 'LinkedIn',
+    color: 'hover:bg-blue-600 hover:text-white',
+  },
+  {
+    href: 'https://www.facebook.com/asep.haryana.900/',
+    icon: Facebook,
+    label: 'Facebook',
+    color: 'hover:bg-blue-500 hover:text-white',
+  },
 ];
 
 export default function Home() {
@@ -54,7 +80,9 @@ export default function Home() {
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 mb-6"
                   >
                     <span class="animate-wave text-2xl">👋</span>
-                    <span class="text-sm font-medium text-muted-foreground">Selamat datang di portfolio saya</span>
+                    <span class="text-sm font-medium text-muted-foreground">
+                      Selamat datang di portfolio saya
+                    </span>
                   </Motion.div>
 
                   {/* Main Title */}
@@ -78,7 +106,11 @@ export default function Home() {
                     transition={{ delay: 0.5 }}
                     class="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto lg:mx-0 mb-8"
                   >
-                    <span class="text-foreground font-semibold">Full-Stack Developer</span> yang passionate dalam membangun aplikasi web & mobile dengan teknologi modern.
+                    <span class="text-foreground font-semibold">
+                      Full-Stack Developer
+                    </span>{' '}
+                    yang passionate dalam membangun aplikasi web & mobile dengan
+                    teknologi modern.
                   </Motion.p>
 
                   {/* CTA Buttons */}
@@ -94,8 +126,18 @@ export default function Home() {
                     >
                       <span class="relative z-10 flex items-center gap-2">
                         Lihat Project
-                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        <svg
+                          class="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"
+                          />
                         </svg>
                       </span>
                       <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -138,7 +180,8 @@ export default function Home() {
                       class="relative rounded-full w-full h-full object-cover border-4 border-background shadow-2xl group-hover:scale-[1.02] transition-transform duration-500"
                       onLoad={(e) => {
                         // Remove placeholder when image loads
-                        const placeholder = e.currentTarget.previousElementSibling;
+                        const placeholder =
+                          e.currentTarget.previousElementSibling;
                         if (placeholder) placeholder.classList.add('opacity-0');
                       }}
                     />
@@ -176,9 +219,15 @@ export default function Home() {
                       transition={{ delay: 0.1 + index() * 0.1 }}
                       class="group relative"
                     >
-                      <div class={`absolute -inset-1 bg-gradient-to-r ${skill.color} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-300`} />
+                      <div
+                        class={`absolute -inset-1 bg-gradient-to-r ${skill.color} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-300`}
+                      />
                       <div class="relative glass-card rounded-2xl p-6 text-center hover:scale-105 transition-transform duration-300 cursor-default flex flex-col items-center">
-                        <img src={skill.image} alt={skill.name} class="w-10 h-10 mb-3" />
+                        <img
+                          src={skill.image}
+                          alt={skill.name}
+                          class="w-10 h-10 mb-3"
+                        />
                         <span class="font-semibold text-sm">{skill.name}</span>
                       </div>
                     </Motion.div>
@@ -205,10 +254,11 @@ export default function Home() {
                     Passionate Developer dengan semangat belajar tinggi
                   </h2>
                   <p class="text-muted-foreground text-lg leading-relaxed mb-6">
-                    Saya adalah seorang programmer yang selalu antusias mempelajari teknologi baru.
-                    Di waktu luang, saya menikmati bermain game dan menonton anime.
-                    Saya percaya bahwa kombinasi kreativitas dan logika adalah kunci untuk membangun
-                    solusi software yang luar biasa.
+                    Saya adalah seorang programmer yang selalu antusias
+                    mempelajari teknologi baru. Di waktu luang, saya menikmati
+                    bermain game dan menonton anime. Saya percaya bahwa
+                    kombinasi kreativitas dan logika adalah kunci untuk
+                    membangun solusi software yang luar biasa.
                   </p>
                   <div class="flex flex-wrap gap-4">
                     <div class="glass-card rounded-xl p-4 flex items-center gap-3">
@@ -238,8 +288,8 @@ export default function Home() {
                       Mari Terhubung
                     </h3>
                     <p class="text-muted-foreground mb-6">
-                      Tertarik untuk berkolaborasi atau sekadar ngobrol?
-                      Jangan ragu untuk menghubungi saya melalui platform berikut!
+                      Tertarik untuk berkolaborasi atau sekadar ngobrol? Jangan
+                      ragu untuk menghubungi saya melalui platform berikut!
                     </p>
                     <div class="grid grid-cols-2 gap-4">
                       <For each={socialLinks}>

@@ -13,21 +13,29 @@ export const userAvatarRoutes = new Elysia({ prefix: '/api/users' })
     '/avatar',
     async (ctx) => {
       const { body, set } = ctx;
-      const { user } = ctx as unknown as { user: { id: string; email?: string | null; name?: string | null } };
+      const { user } = ctx as unknown as {
+        user: { id: string; email?: string | null; name?: string | null };
+      };
       // body is FormData when content-type is multipart/form-data
       const form = body as unknown as FormData;
       const fileEntry = form?.get('avatar') || form?.get('file');
 
       if (!fileEntry || !(fileEntry instanceof File)) {
         set.status = 400;
-        return { success: false, error: 'Avatar file is required (field: avatar)' };
+        return {
+          success: false,
+          error: 'Avatar file is required (field: avatar)',
+        };
       }
 
       const file = fileEntry as File;
 
       if (!ALLOWED_TYPES.has(file.type)) {
         set.status = 400;
-        return { success: false, error: 'Unsupported file type. Use JPEG, PNG, or WEBP.' };
+        return {
+          success: false,
+          error: 'Unsupported file type. Use JPEG, PNG, or WEBP.',
+        };
       }
 
       if (file.size > MAX_SIZE_BYTES) {
@@ -36,15 +44,26 @@ export const userAvatarRoutes = new Elysia({ prefix: '/api/users' })
       }
 
       const name = file.name || 'avatar';
-      const ext = (name.includes('.') ? name.split('.').pop() : undefined) ||
-        (file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg');
+      const ext =
+        (name.includes('.') ? name.split('.').pop() : undefined) ||
+        (file.type === 'image/png'
+          ? 'png'
+          : file.type === 'image/webp'
+            ? 'webp'
+            : 'jpg');
 
       const objectName = `${config.minio.avatarPrefix}/${user.id}/${Date.now()}.${ext}`;
 
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      await putObject(config.minio.bucket, objectName, buffer, buffer.length, file.type);
+      await putObject(
+        config.minio.bucket,
+        objectName,
+        buffer,
+        buffer.length,
+        file.type,
+      );
       const url = buildPublicUrl(config.minio.bucket, objectName);
 
       const db = getDb();
@@ -59,7 +78,8 @@ export const userAvatarRoutes = new Elysia({ prefix: '/api/users' })
       detail: {
         tags: ['API'],
         summary: 'Upload user avatar (MinIO)',
-        description: 'Upload an avatar image and store it to MinIO. Updates the authenticated user\'s profile image URL.',
+        description:
+          "Upload an avatar image and store it to MinIO. Updates the authenticated user's profile image URL.",
       },
       type: 'multipart/form-data',
       body: t.Object({
@@ -70,5 +90,5 @@ export const userAvatarRoutes = new Elysia({ prefix: '/api/users' })
         400: t.Object({ success: t.Boolean(), error: t.String() }),
         401: t.Object({ success: t.Boolean(), error: t.String() }),
       },
-    }
+    },
   );

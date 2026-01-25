@@ -32,7 +32,6 @@
 ///    - Use Result types for recoverable errors
 ///    - Log errors appropriately
 ///    - Return structured error responses
-
 use std::future::Future;
 use std::time::Instant;
 use tracing::{info, warn};
@@ -46,13 +45,13 @@ where
     let start = Instant::now();
     let result = f().await;
     let duration = start.elapsed();
-    
+
     if duration.as_millis() > 100 {
         warn!("{} took {:?}", name, duration);
     } else {
         info!("{} took {:?}", name, duration);
     }
-    
+
     result
 }
 
@@ -83,7 +82,7 @@ mod tests {
             42
         })
         .await;
-        
+
         assert_eq!(result, 42);
     }
 }

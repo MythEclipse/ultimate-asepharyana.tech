@@ -43,14 +43,6 @@ interface ImageCacheConfig {
   folder?: string;
 }
 
-const defaultConfig: Required<ImageCacheConfig> = {
-  githubToken: '',
-  githubOwner: 'sh20raj',
-  githubRepo: 'picser',
-  githubBranch: 'main',
-  folder: 'uploads',
-};
-
 /**
  * Create hash of URL for cache key
  */
@@ -91,7 +83,6 @@ export async function getOrCacheImage(
   config?: ImageCacheConfig,
   options?: { lazy?: boolean },
 ): Promise<string> {
-  const mergedConfig = { ...defaultConfig, ...config };
   const cacheKey = `${IMAGE_CACHE_REDIS_PREFIX}${hashUrl(originalUrl)}`;
   const isLazy = options?.lazy ?? false;
 
@@ -133,9 +124,7 @@ export async function getOrCacheImage(
     // Fire-and-forget background upload
     setImmediate(async () => {
       try {
-        const cdnUrl = await limiter(() =>
-          uploadToPicser(originalUrl, mergedConfig),
-        );
+        const cdnUrl = await limiter(() => uploadToPicser(originalUrl));
         // Save to database
         const id = crypto.randomUUID();
         await db.insert(imageCache).values({
@@ -165,9 +154,7 @@ export async function getOrCacheImage(
 
   // 4. Blocking mode: Upload to Picser (with concurrency limit)
   try {
-    const cdnUrl = await limiter(() =>
-      uploadToPicser(originalUrl, mergedConfig),
-    );
+    const cdnUrl = await limiter(() => uploadToPicser(originalUrl));
 
     // 5. Save to database
     const id = crypto.randomUUID();
@@ -234,10 +221,7 @@ export async function invalidateImageCache(
 /**
  * Upload image to Picser CDN
  */
-async function uploadToPicser(
-  originalUrl: string,
-  config: Required<ImageCacheConfig>,
-): Promise<string> {
+async function uploadToPicser(originalUrl: string): Promise<string> {
   // Download the image
   const imageResponse = await fetch(originalUrl, {
     headers: {

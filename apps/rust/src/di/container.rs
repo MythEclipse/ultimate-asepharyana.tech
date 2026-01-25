@@ -63,7 +63,9 @@ impl ServiceContainer {
     pub fn resolve<T: Send + Sync + 'static>(&self) -> Option<Arc<T>> {
         let type_id = TypeId::of::<T>();
         let services = self.services.read().unwrap_or_else(|e| e.into_inner());
-        services.get(&type_id).and_then(|s| s.clone().downcast::<T>().ok())
+        services
+            .get(&type_id)
+            .and_then(|s| s.clone().downcast::<T>().ok())
     }
 
     /// Check if a service is registered.

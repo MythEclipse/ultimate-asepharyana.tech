@@ -51,8 +51,7 @@ impl EmailConfig {
                     .unwrap_or(false),
                 from_email: env::var("FROM_EMAIL")
                     .unwrap_or_else(|_| "noreply@example.com".to_string()),
-                from_name: env::var("FROM_NAME")
-                    .unwrap_or_else(|_| "Auth System".to_string()),
+                from_name: env::var("FROM_NAME").unwrap_or_else(|_| "Auth System".to_string()),
             }
         }
     }
@@ -76,8 +75,8 @@ pub struct EmailService {
 
 impl EmailService {
     pub fn new() -> Self {
-        let app_url = env::var("APP_URL")
-            .unwrap_or_else(|_| "https://elysia.asepharyana.tech".to_string());
+        let app_url =
+            env::var("APP_URL").unwrap_or_else(|_| "https://elysia.asepharyana.tech".to_string());
 
         EmailService {
             config: EmailConfig::from_env(),
@@ -216,11 +215,7 @@ impl EmailService {
     }
 
     /// Send welcome email after verification
-    pub async fn send_welcome_email(
-        &self,
-        to_email: &str,
-        to_name: &str,
-    ) -> Result<(), AppError> {
+    pub async fn send_welcome_email(&self, to_email: &str, to_name: &str) -> Result<(), AppError> {
         let html_body = format!(
             r#"
             <!DOCTYPE html>

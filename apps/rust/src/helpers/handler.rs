@@ -19,16 +19,16 @@ macro_rules! crud_handlers {
                 Query(params): Query<PaginationParams>,
             ) -> impl IntoResponse {
                 use sea_orm::PaginatorTrait;
-                
+
                 let paginator = $entity::Entity::find()
                     .paginate(&*db, params.limit);
-                
+
                 let total = paginator.num_items().await.unwrap_or(0);
                 let items = paginator
                     .fetch_page(params.page.saturating_sub(1))
                     .await
                     .unwrap_or_default();
-                
+
                 Json(Paginated::from_params(items, &params, total))
             }
 
@@ -41,7 +41,7 @@ macro_rules! crud_handlers {
                     .await
                     .map_err(|e| ErrorResponse::internal(e.to_string()))?
                     .ok_or_else(|| ErrorResponse::not_found(concat!(stringify!($entity), " not found")))?;
-                
+
                 Ok(Json(json_ok(item)))
             }
 
@@ -53,7 +53,7 @@ macro_rules! crud_handlers {
                     .exec(&*db)
                     .await
                     .map_err(|e| ErrorResponse::internal(e.to_string()))?;
-                
+
                 if result.rows_affected > 0 {
                     Ok(no_content())
                 } else {

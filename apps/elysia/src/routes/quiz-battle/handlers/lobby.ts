@@ -56,7 +56,7 @@ function getExpiryTime(): Date {
  */
 export async function handleLobbyCreate(
   sessionId: string,
-  payload: LobbyCreatePayload
+  payload: LobbyCreatePayload,
 ): Promise<void> {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -169,7 +169,7 @@ export async function handleLobbyCreate(
  */
 export async function handleLobbyJoin(
   sessionId: string,
-  payload: LobbyJoinPayload
+  payload: LobbyJoinPayload,
 ): Promise<void> {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -217,8 +217,16 @@ export async function handleLobbyJoin(
 
     const players: LobbyPlayer[] = [];
     for (const member of allMembers) {
-      const [user] = await db.select().from(users).where(eq(users.id, member.userId)).limit(1);
-      const [stats] = await db.select().from(quizUserStats).where(eq(quizUserStats.userId, member.userId)).limit(1);
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, member.userId))
+        .limit(1);
+      const [stats] = await db
+        .select()
+        .from(quizUserStats)
+        .where(eq(quizUserStats.userId, member.userId))
+        .limit(1);
 
       players.push({
         userId: member.userId,
@@ -251,7 +259,7 @@ export async function handleLobbyJoin(
  */
 export async function handleLobbyReady(
   sessionId: string,
-  payload: LobbyReadyPayload
+  payload: LobbyReadyPayload,
 ): Promise<void> {
   try {
     const db = getDb();
@@ -262,8 +270,8 @@ export async function handleLobbyReady(
       .where(
         and(
           eq(quizLobbyMembers.lobbyId, payload.lobbyId),
-          eq(quizLobbyMembers.userId, payload.userId)
-        )
+          eq(quizLobbyMembers.userId, payload.userId),
+        ),
       );
 
     const members = await db
@@ -294,7 +302,7 @@ export async function handleLobbyReady(
  */
 export async function handleLobbyStart(
   sessionId: string,
-  payload: LobbyStartPayload
+  payload: LobbyStartPayload,
 ): Promise<void> {
   try {
     const db = getDb();
@@ -361,7 +369,7 @@ export async function handleLobbyStart(
  */
 export async function handleLobbyLeave(
   sessionId: string,
-  payload: LobbyLeavePayload
+  payload: LobbyLeavePayload,
 ): Promise<void> {
   try {
     const db = getDb();
@@ -371,8 +379,8 @@ export async function handleLobbyLeave(
       .where(
         and(
           eq(quizLobbyMembers.lobbyId, payload.lobbyId),
-          eq(quizLobbyMembers.userId, payload.userId)
-        )
+          eq(quizLobbyMembers.userId, payload.userId),
+        ),
       );
 
     wsManager.removeLobbyMember(payload.lobbyId, payload.userId);
@@ -388,7 +396,7 @@ export async function handleLobbyLeave(
  */
 export async function handleLobbyKick(
   sessionId: string,
-  payload: LobbyKickPayload
+  payload: LobbyKickPayload,
 ): Promise<void> {
   try {
     const db = getDb();
@@ -408,12 +416,14 @@ export async function handleLobbyKick(
       .where(
         and(
           eq(quizLobbyMembers.lobbyId, payload.lobbyId),
-          eq(quizLobbyMembers.userId, payload.targetUserId)
-        )
+          eq(quizLobbyMembers.userId, payload.targetUserId),
+        ),
       );
 
     wsManager.removeLobbyMember(payload.lobbyId, payload.targetUserId);
-    console.log(`[Lobby] ${payload.targetUserId} kicked from ${payload.lobbyId}`);
+    console.log(
+      `[Lobby] ${payload.targetUserId} kicked from ${payload.lobbyId}`,
+    );
   } catch (error) {
     console.error('[Lobby] Error kicking player:', error);
   }
@@ -422,9 +432,7 @@ export async function handleLobbyKick(
 /**
  * Handle lobby list request
  */
-export async function handleLobbyListSync(
-  sessionId: string
-): Promise<void> {
+export async function handleLobbyListSync(sessionId: string): Promise<void> {
   try {
     const db = getDb();
 
@@ -432,16 +440,20 @@ export async function handleLobbyListSync(
       .select()
       .from(quizLobbies)
       .where(
-        and(
-          eq(quizLobbies.status, 'waiting'),
-          eq(quizLobbies.isPrivate, 0)
-        )
+        and(eq(quizLobbies.status, 'waiting'), eq(quizLobbies.isPrivate, 0)),
       );
 
     const lobbies: LobbyInfo[] = [];
     for (const lobby of allLobbies) {
-      const [host] = await db.select().from(users).where(eq(users.id, lobby.hostId)).limit(1);
-      const members = await db.select().from(quizLobbyMembers).where(eq(quizLobbyMembers.lobbyId, lobby.id));
+      const [host] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, lobby.hostId))
+        .limit(1);
+      const members = await db
+        .select()
+        .from(quizLobbyMembers)
+        .where(eq(quizLobbyMembers.lobbyId, lobby.id));
 
       lobbies.push({
         lobbyId: lobby.id,

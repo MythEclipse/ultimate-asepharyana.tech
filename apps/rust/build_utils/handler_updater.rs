@@ -81,12 +81,7 @@ pub fn update_handler_file(
 
     write_updated_content(path, &content, &final_content, utoipa_replaced)?;
 
-    inject_schemas_and_return_info(
-        &final_content,
-        module_path_prefix,
-        &file_stem,
-        schemas,
-    )
+    inject_schemas_and_return_info(&final_content, module_path_prefix, &file_stem, schemas)
 }
 
 fn is_scaffolded_file(content: &str) -> bool {
@@ -398,7 +393,6 @@ fn inject_schemas_and_return_info(
         handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
     }))
 }
-
 
 /// Extracts and normalizes metadata from handler content.
 fn extract_and_normalize_metadata(

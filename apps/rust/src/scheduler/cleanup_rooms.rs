@@ -33,15 +33,15 @@ impl ScheduledTask for CleanupEmptyRooms {
 
     async fn run(&self) {
         let removed = self.room_manager.cleanup_empty_rooms();
-        
+
         if removed > 0 {
             info!("🧹 Cleaned up {} empty WebSocket rooms", removed);
         }
-        
+
         // Log metrics
         let total_rooms = self.room_manager.list_rooms().len();
         let total_users = self.room_manager.total_users();
-        
+
         info!(
             "📊 Room stats: {} active rooms, {} total users",
             total_rooms, total_users
@@ -57,7 +57,7 @@ mod tests {
     async fn test_cleanup_task_creation() {
         let manager = Arc::new(RoomManager::new());
         let task = CleanupEmptyRooms::new(manager);
-        
+
         assert_eq!(task.name(), "cleanup_empty_rooms");
         assert_eq!(task.schedule(), "0 */5 * * * *");
     }
@@ -65,16 +65,16 @@ mod tests {
     #[tokio::test]
     async fn test_cleanup_removes_empty_rooms() {
         let manager = Arc::new(RoomManager::new());
-        
+
         // Create empty room
         let _room1 = manager.get_or_create("test-room-1");
         let _room2 = manager.get_or_create("test-room-2");
-        
+
         assert_eq!(manager.list_rooms().len(), 2);
-        
+
         let task = CleanupEmptyRooms::new(manager.clone());
         task.run().await;
-        
+
         // Both rooms should be removed as they're empty
         assert_eq!(manager.list_rooms().len(), 0);
     }

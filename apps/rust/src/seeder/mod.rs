@@ -3,4 +3,4 @@
 pub mod runner;
 pub mod seed;
 
-pub use runner::{Seeder, SeederRunner, UsersSeeder, AdminSeeder};
+pub use runner::{AdminSeeder, Seeder, SeederRunner, UsersSeeder};

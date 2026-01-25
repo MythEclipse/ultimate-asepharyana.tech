@@ -1,7 +1,4 @@
-use crate::helpers::{
-    default_backoff, internal_err, parse_html, transient,
-    Cache,
-};
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;

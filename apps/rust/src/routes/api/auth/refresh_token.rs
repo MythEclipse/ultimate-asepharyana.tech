@@ -8,8 +8,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 // SeaORM imports
+use crate::entities::user;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user};
 
 use crate::routes::AppState;
 use crate::utils::auth::{encode_jwt, Claims};
@@ -78,7 +78,8 @@ pub async fn refresh(
     // Update user's refresh token
     let mut user_active: user::ActiveModel = user_model.into();
     user_active.refresh_token = Set(Some(new_refresh_token.clone()));
-    user_active.update(state.sea_orm())
+    user_active
+        .update(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 

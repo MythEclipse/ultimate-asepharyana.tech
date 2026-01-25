@@ -20,14 +20,14 @@ let indexJsContent = readFileSync(indexJsPath, 'utf-8');
 if (!indexJsContent.includes('./src/lib/types.js')) {
   indexJsContent = indexJsContent.replace(
     /export \* from '\.\/src\/lib\/database\.js';/,
-    "export * from './src/lib/database.js';\nexport * from './src/lib/types.js';"
+    "export * from './src/lib/database.js';\nexport * from './src/lib/types.js';",
   );
 }
 
 if (!indexJsContent.includes('drizzle-orm')) {
   indexJsContent = indexJsContent.replace(
     /(export \* from '\.\/src\/lib\/types\.js';)/,
-    "$1\n\n// Re-export commonly used drizzle-orm operators\nexport { eq, ne, gt, gte, lt, lte, isNull, isNotNull, inArray, notInArray, exists, notExists, between, notBetween, like, notLike, ilike, notIlike, and, or, not, sql, desc, asc } from 'drizzle-orm';"
+    "$1\n\n// Re-export commonly used drizzle-orm operators\nexport { eq, ne, gt, gte, lt, lte, isNull, isNotNull, inArray, notInArray, exists, notExists, between, notBetween, like, notLike, ilike, notIlike, and, or, not, sql, desc, asc } from 'drizzle-orm';",
   );
 }
 
@@ -41,14 +41,14 @@ let indexDtsContent = readFileSync(indexDtsPath, 'utf-8');
 if (!indexDtsContent.includes('./src/lib/types.js')) {
   indexDtsContent = indexDtsContent.replace(
     /export \* from '\.\/src\/lib\/database\.js';/,
-    "export * from './src/lib/database.js';\nexport * from './src/lib/types.js';"
+    "export * from './src/lib/database.js';\nexport * from './src/lib/types.js';",
   );
 }
 
 if (!indexDtsContent.includes('drizzle-orm')) {
   indexDtsContent = indexDtsContent.replace(
     /(export \* from '\.\/src\/lib\/types\.js';)/,
-    "$1\nexport { eq, ne, gt, gte, lt, lte, isNull, isNotNull, inArray, notInArray, exists, notExists, between, notBetween, like, notLike, ilike, notIlike, and, or, not, sql, desc, asc } from 'drizzle-orm';"
+    "$1\nexport { eq, ne, gt, gte, lt, lte, isNull, isNotNull, inArray, notInArray, exists, notExists, between, notBetween, like, notLike, ilike, notIlike, and, or, not, sql, desc, asc } from 'drizzle-orm';",
   );
 }
 

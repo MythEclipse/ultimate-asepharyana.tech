@@ -92,14 +92,16 @@ pub fn age_years(birthdate: NaiveDateTime) -> i32 {
 
 /// Get start of day (00:00:00).
 pub fn start_of_day(dt: DateTime<Utc>) -> DateTime<Utc> {
-    dt.date_naive().and_hms_opt(0, 0, 0)
+    dt.date_naive()
+        .and_hms_opt(0, 0, 0)
         .map(|naive| DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc))
         .unwrap_or(dt)
 }
 
 /// Get end of day (23:59:59).
 pub fn end_of_day(dt: DateTime<Utc>) -> DateTime<Utc> {
-    dt.date_naive().and_hms_opt(23, 59, 59)
+    dt.date_naive()
+        .and_hms_opt(23, 59, 59)
         .map(|naive| DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc))
         .unwrap_or(dt)
 }

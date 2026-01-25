@@ -82,7 +82,6 @@ fn extract_route_info(file_path: &Path, api_root: &Path) -> Result<Option<RouteF
         return Ok(None);
     }
 
-
     // Determine if this is an index file
     let is_index = file_stem == "index";
 
@@ -91,7 +90,6 @@ fn extract_route_info(file_path: &Path, api_root: &Path) -> Result<Option<RouteF
 
     // Build route path from file location
     let route_path = build_route_path(file_path, api_root, is_index, &dynamic_params)?;
-
 
     Ok(Some(RouteFileInfo {
         file_path: file_path.to_path_buf(),
@@ -202,7 +200,6 @@ fn build_route_path(
 /// Examples:
 /// - "users/index.rs" → "crate::routes::api::users::index"
 /// - "users/[id].rs" → "crate::routes::api::users::id"
-
 
 #[cfg(test)]
 mod tests {

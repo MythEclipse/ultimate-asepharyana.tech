@@ -1,6 +1,6 @@
 //! GraphQL schema definition.
 
-use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, InputObject, ID};
+use async_graphql::{Context, EmptySubscription, InputObject, Object, Schema, SimpleObject, ID};
 use sea_orm::{DatabaseConnection, QuerySelect};
 use std::sync::Arc;
 
@@ -39,10 +39,10 @@ impl QueryRoot {
     /// Get user by ID.
     async fn user(&self, ctx: &Context<'_>, id: ID) -> async_graphql::Result<Option<User>> {
         use crate::entities::user;
-        use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
+        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
         let db = ctx.data::<Arc<DatabaseConnection>>()?;
-        
+
         let user_model = user::Entity::find()
             .filter(user::Column::Id.eq(id.to_string()))
             .one(db.as_ref())
@@ -58,7 +58,7 @@ impl QueryRoot {
 
     /// List users with pagination.
     async fn users(
-        &self, 
+        &self,
         ctx: &Context<'_>,
         #[graphql(default = 0)] offset: i32,
         #[graphql(default = 10)] limit: i32,
@@ -67,7 +67,7 @@ impl QueryRoot {
         use sea_orm::{EntityTrait, QueryOrder};
 
         let db = ctx.data::<Arc<DatabaseConnection>>()?;
-        
+
         let users = user::Entity::find()
             .order_by_asc(user::Column::Id)
             .offset(offset as u64)
@@ -75,12 +75,15 @@ impl QueryRoot {
             .all(db.as_ref())
             .await?;
 
-        Ok(users.into_iter().map(|u| User {
-            id: ID(u.id),
-            name: u.name,
-            email: u.email,
-            role: u.role,
-        }).collect())
+        Ok(users
+            .into_iter()
+            .map(|u| User {
+                id: ID(u.id),
+                name: u.name,
+                email: u.email,
+                role: u.role,
+            })
+            .collect())
     }
 }
 
@@ -95,7 +98,7 @@ pub struct MutationRoot;
 impl MutationRoot {
     /// Create a new user.
     async fn create_user(
-        &self, 
+        &self,
         ctx: &Context<'_>,
         input: CreateUserInput,
     ) -> async_graphql::Result<User> {
@@ -103,7 +106,7 @@ impl MutationRoot {
         use sea_orm::{ActiveModelTrait, Set};
 
         let db = ctx.data::<Arc<DatabaseConnection>>()?;
-        
+
         let password_hash = bcrypt::hash(&input.password, bcrypt::DEFAULT_COST)
             .map_err(|e| async_graphql::Error::new(format!("Password hash error: {}", e)))?;
 
@@ -136,7 +139,7 @@ impl MutationRoot {
         role: String,
     ) -> async_graphql::Result<User> {
         use crate::entities::user;
-        use sea_orm::{ActiveModelTrait, EntityTrait, Set, IntoActiveModel};
+        use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, Set};
 
         let db = ctx.data::<Arc<DatabaseConnection>>()?;
 

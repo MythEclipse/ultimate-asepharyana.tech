@@ -104,19 +104,18 @@ where
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         // First, extract JSON
-        let Json(data) = Json::<T>::from_request(req, state)
-            .await
-            .map_err(|e| {
-                let body = json!({
-                    "error": "Invalid JSON body",
-                    "code": "JSON_PARSE_ERROR",
-                    "details": e.to_string()
-                });
-                (StatusCode::BAD_REQUEST, Json(body)).into_response()
-            })?;
+        let Json(data) = Json::<T>::from_request(req, state).await.map_err(|e| {
+            let body = json!({
+                "error": "Invalid JSON body",
+                "code": "JSON_PARSE_ERROR",
+                "details": e.to_string()
+            });
+            (StatusCode::BAD_REQUEST, Json(body)).into_response()
+        })?;
 
         // Then, validate
-        data.validate().map_err(|e| ValidationError(e).into_response())?;
+        data.validate()
+            .map_err(|e| ValidationError(e).into_response())?;
 
         Ok(ValidatedJson(data))
     }
@@ -174,7 +173,8 @@ where
             })?;
 
         // Then, validate
-        data.validate().map_err(|e| ValidationError(e).into_response())?;
+        data.validate()
+            .map_err(|e| ValidationError(e).into_response())?;
 
         Ok(ValidatedQuery(data))
     }

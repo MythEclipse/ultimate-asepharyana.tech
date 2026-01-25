@@ -54,26 +54,27 @@ export const authMiddleware = new Elysia({ name: 'auth' })
  * Optional auth middleware
  * Adds user info if token is present, but doesn't require it
  */
-export const optionalAuthMiddleware = new Elysia({ name: 'optional-auth' })
-  .derive(async ({ headers }) => {
-    const authHeader = headers.authorization;
+export const optionalAuthMiddleware = new Elysia({
+  name: 'optional-auth',
+}).derive(async ({ headers }) => {
+  const authHeader = headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { user: null };
-    }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { user: null };
+  }
 
-    const token = authHeader.substring(7);
-    const payload = await verifyJWT(token);
+  const token = authHeader.substring(7);
+  const payload = await verifyJWT(token);
 
-    if (!payload) {
-      return { user: null };
-    }
+  if (!payload) {
+    return { user: null };
+  }
 
-    return {
-      user: {
-        id: payload.user_id,
-        email: payload.email,
-        name: payload.name,
-      },
-    };
-  });
+  return {
+    user: {
+      id: payload.user_id,
+      email: payload.email,
+      name: payload.name,
+    },
+  };
+});

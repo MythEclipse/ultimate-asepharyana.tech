@@ -1,7 +1,7 @@
 //! Data models and types.
 
-pub mod user;
 pub mod types;
+pub mod user;
 
-pub use user::*;
 pub use types::*;
+pub use user::*;

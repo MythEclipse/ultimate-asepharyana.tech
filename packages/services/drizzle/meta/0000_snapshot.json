@@ -95,9 +95,7 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -106,12 +104,8 @@
           "name": "Account_userId_User_id_fk",
           "tableFrom": "Account",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -119,9 +113,7 @@
       "compositePrimaryKeys": {
         "Account_id": {
           "name": "Account_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -191,16 +183,12 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "timestamp_idx": {
           "name": "timestamp_idx",
-          "columns": [
-            "timestamp"
-          ],
+          "columns": ["timestamp"],
           "isUnique": false
         }
       },
@@ -209,12 +197,8 @@
           "name": "ChatMessage_userId_User_id_fk",
           "tableFrom": "ChatMessage",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -222,9 +206,7 @@
       "compositePrimaryKeys": {
         "ChatMessage_id": {
           "name": "ChatMessage_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -282,23 +264,17 @@
       "indexes": {
         "roomId_idx": {
           "name": "roomId_idx",
-          "columns": [
-            "roomId"
-          ],
+          "columns": ["roomId"],
           "isUnique": false
         },
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "createdAt_idx": {
           "name": "createdAt_idx",
-          "columns": [
-            "createdAt"
-          ],
+          "columns": ["createdAt"],
           "isUnique": false
         }
       },
@@ -307,12 +283,8 @@
           "name": "ChatMessage_room_roomId_ChatRoom_id_fk",
           "tableFrom": "ChatMessage_room",
           "tableTo": "ChatRoom",
-          "columnsFrom": [
-            "roomId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["roomId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -320,12 +292,8 @@
           "name": "ChatMessage_room_userId_User_id_fk",
           "tableFrom": "ChatMessage_room",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -333,9 +301,7 @@
       "compositePrimaryKeys": {
         "ChatMessage_room_id": {
           "name": "ChatMessage_room_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -385,16 +351,12 @@
       "indexes": {
         "roomId_idx": {
           "name": "roomId_idx",
-          "columns": [
-            "roomId"
-          ],
+          "columns": ["roomId"],
           "isUnique": false
         },
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -403,12 +365,8 @@
           "name": "ChatRoomMember_roomId_ChatRoom_id_fk",
           "tableFrom": "ChatRoomMember",
           "tableTo": "ChatRoom",
-          "columnsFrom": [
-            "roomId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["roomId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -416,12 +374,8 @@
           "name": "ChatRoomMember_userId_User_id_fk",
           "tableFrom": "ChatRoomMember",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -429,16 +383,11 @@
       "compositePrimaryKeys": {
         "ChatRoomMember_id": {
           "name": "ChatRoomMember_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         },
         "ChatRoomMember_roomId_userId_pk": {
           "name": "ChatRoomMember_roomId_userId_pk",
-          "columns": [
-            "roomId",
-            "userId"
-          ]
+          "columns": ["roomId", "userId"]
         }
       },
       "uniqueConstraints": {},
@@ -497,9 +446,7 @@
       "indexes": {
         "createdAt_idx": {
           "name": "createdAt_idx",
-          "columns": [
-            "createdAt"
-          ],
+          "columns": ["createdAt"],
           "isUnique": false
         }
       },
@@ -507,9 +454,7 @@
       "compositePrimaryKeys": {
         "ChatRoom_id": {
           "name": "ChatRoom_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -574,23 +519,17 @@
       "indexes": {
         "postId_idx": {
           "name": "postId_idx",
-          "columns": [
-            "postId"
-          ],
+          "columns": ["postId"],
           "isUnique": false
         },
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "authorId_idx": {
           "name": "authorId_idx",
-          "columns": [
-            "authorId"
-          ],
+          "columns": ["authorId"],
           "isUnique": false
         }
       },
@@ -599,12 +538,8 @@
           "name": "Comments_userId_User_id_fk",
           "tableFrom": "Comments",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -612,12 +547,8 @@
           "name": "Comments_postId_Posts_id_fk",
           "tableFrom": "Comments",
           "tableTo": "Posts",
-          "columnsFrom": [
-            "postId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["postId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -625,12 +556,8 @@
           "name": "Comments_authorId_User_id_fk",
           "tableFrom": "Comments",
           "tableTo": "User",
-          "columnsFrom": [
-            "authorId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["authorId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -638,9 +565,7 @@
       "compositePrimaryKeys": {
         "Comments_id": {
           "name": "Comments_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -689,16 +614,12 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "token_idx": {
           "name": "token_idx",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": false
         }
       },
@@ -707,12 +628,8 @@
           "name": "EmailVerificationToken_userId_User_id_fk",
           "tableFrom": "EmailVerificationToken",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -720,17 +637,13 @@
       "compositePrimaryKeys": {
         "EmailVerificationToken_id": {
           "name": "EmailVerificationToken_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "EmailVerificationToken_token_unique": {
           "name": "EmailVerificationToken_token_unique",
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "checkConstraint": {}
@@ -778,9 +691,7 @@
       "indexes": {
         "originalUrl_idx": {
           "name": "originalUrl_idx",
-          "columns": [
-            "originalUrl"
-          ],
+          "columns": ["originalUrl"],
           "isUnique": false
         }
       },
@@ -788,9 +699,7 @@
       "compositePrimaryKeys": {
         "ImageCache_id": {
           "name": "ImageCache_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -820,12 +729,8 @@
           "name": "Likes_userId_User_id_fk",
           "tableFrom": "Likes",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -833,12 +738,8 @@
           "name": "Likes_postId_Posts_id_fk",
           "tableFrom": "Likes",
           "tableTo": "Posts",
-          "columnsFrom": [
-            "postId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["postId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -846,10 +747,7 @@
       "compositePrimaryKeys": {
         "Likes_userId_postId_pk": {
           "name": "Likes_userId_postId_pk",
-          "columns": [
-            "userId",
-            "postId"
-          ]
+          "columns": ["userId", "postId"]
         }
       },
       "uniqueConstraints": {},
@@ -906,16 +804,12 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "token_idx": {
           "name": "token_idx",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": false
         }
       },
@@ -924,12 +818,8 @@
           "name": "PasswordResetToken_userId_User_id_fk",
           "tableFrom": "PasswordResetToken",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -937,17 +827,13 @@
       "compositePrimaryKeys": {
         "PasswordResetToken_id": {
           "name": "PasswordResetToken_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "PasswordResetToken_token_unique": {
           "name": "PasswordResetToken_token_unique",
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "checkConstraint": {}
@@ -982,17 +868,13 @@
       "compositePrimaryKeys": {
         "Permission_id": {
           "name": "Permission_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "Permission_name_unique": {
           "name": "Permission_name_unique",
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "checkConstraint": {}
@@ -1056,23 +938,17 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "authorId_idx": {
           "name": "authorId_idx",
-          "columns": [
-            "authorId"
-          ],
+          "columns": ["authorId"],
           "isUnique": false
         },
         "created_at_idx": {
           "name": "created_at_idx",
-          "columns": [
-            "created_at"
-          ],
+          "columns": ["created_at"],
           "isUnique": false
         }
       },
@@ -1081,12 +957,8 @@
           "name": "Posts_userId_User_id_fk",
           "tableFrom": "Posts",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1094,12 +966,8 @@
           "name": "Posts_authorId_User_id_fk",
           "tableFrom": "Posts",
           "tableTo": "User",
-          "columnsFrom": [
-            "authorId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["authorId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1107,9 +975,7 @@
       "compositePrimaryKeys": {
         "Posts_id": {
           "name": "Posts_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1181,9 +1047,7 @@
       "indexes": {
         "rarity_idx": {
           "name": "rarity_idx",
-          "columns": [
-            "rarity"
-          ],
+          "columns": ["rarity"],
           "isUnique": false
         }
       },
@@ -1191,9 +1055,7 @@
       "compositePrimaryKeys": {
         "QuizAchievement_id": {
           "name": "QuizAchievement_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1234,9 +1096,7 @@
       "indexes": {
         "questionId_idx": {
           "name": "questionId_idx",
-          "columns": [
-            "questionId"
-          ],
+          "columns": ["questionId"],
           "isUnique": false
         }
       },
@@ -1245,12 +1105,8 @@
           "name": "QuizAnswer_questionId_QuizQuestion_id_fk",
           "tableFrom": "QuizAnswer",
           "tableTo": "QuizQuestion",
-          "columnsFrom": [
-            "questionId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["questionId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1258,9 +1114,7 @@
       "compositePrimaryKeys": {
         "QuizAnswer_id": {
           "name": "QuizAnswer_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1319,23 +1173,17 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "friendId_idx": {
           "name": "friendId_idx",
-          "columns": [
-            "friendId"
-          ],
+          "columns": ["friendId"],
           "isUnique": false
         },
         "status_idx": {
           "name": "status_idx",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         }
       },
@@ -1344,12 +1192,8 @@
           "name": "QuizFriendship_userId_User_id_fk",
           "tableFrom": "QuizFriendship",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1357,12 +1201,8 @@
           "name": "QuizFriendship_friendId_User_id_fk",
           "tableFrom": "QuizFriendship",
           "tableTo": "User",
-          "columnsFrom": [
-            "friendId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["friendId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1370,16 +1210,11 @@
       "compositePrimaryKeys": {
         "QuizFriendship_id": {
           "name": "QuizFriendship_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         },
         "QuizFriendship_userId_friendId_pk": {
           "name": "QuizFriendship_userId_friendId_pk",
-          "columns": [
-            "userId",
-            "friendId"
-          ]
+          "columns": ["userId", "friendId"]
         }
       },
       "uniqueConstraints": {},
@@ -1482,23 +1317,17 @@
       "indexes": {
         "lobbyCode_idx": {
           "name": "lobbyCode_idx",
-          "columns": [
-            "lobbyCode"
-          ],
+          "columns": ["lobbyCode"],
           "isUnique": false
         },
         "hostId_idx": {
           "name": "hostId_idx",
-          "columns": [
-            "hostId"
-          ],
+          "columns": ["hostId"],
           "isUnique": false
         },
         "status_idx": {
           "name": "status_idx",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         }
       },
@@ -1507,12 +1336,8 @@
           "name": "QuizLobby_hostId_User_id_fk",
           "tableFrom": "QuizLobby",
           "tableTo": "User",
-          "columnsFrom": [
-            "hostId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["hostId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1520,17 +1345,13 @@
       "compositePrimaryKeys": {
         "QuizLobby_id": {
           "name": "QuizLobby_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "QuizLobby_lobbyCode_unique": {
           "name": "QuizLobby_lobbyCode_unique",
-          "columns": [
-            "lobbyCode"
-          ]
+          "columns": ["lobbyCode"]
         }
       },
       "checkConstraint": {}
@@ -1587,16 +1408,12 @@
       "indexes": {
         "lobbyId_idx": {
           "name": "lobbyId_idx",
-          "columns": [
-            "lobbyId"
-          ],
+          "columns": ["lobbyId"],
           "isUnique": false
         },
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -1605,12 +1422,8 @@
           "name": "QuizLobbyMember_lobbyId_QuizLobby_id_fk",
           "tableFrom": "QuizLobbyMember",
           "tableTo": "QuizLobby",
-          "columnsFrom": [
-            "lobbyId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lobbyId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1618,12 +1431,8 @@
           "name": "QuizLobbyMember_userId_User_id_fk",
           "tableFrom": "QuizLobbyMember",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1631,16 +1440,11 @@
       "compositePrimaryKeys": {
         "QuizLobbyMember_id": {
           "name": "QuizLobbyMember_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         },
         "QuizLobbyMember_lobbyId_userId_pk": {
           "name": "QuizLobbyMember_lobbyId_userId_pk",
-          "columns": [
-            "lobbyId",
-            "userId"
-          ]
+          "columns": ["lobbyId", "userId"]
         }
       },
       "uniqueConstraints": {},
@@ -1725,16 +1529,12 @@
       "indexes": {
         "matchId_idx": {
           "name": "matchId_idx",
-          "columns": [
-            "matchId"
-          ],
+          "columns": ["matchId"],
           "isUnique": false
         },
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -1743,12 +1543,8 @@
           "name": "QuizMatchAnswer_matchId_QuizMatch_id_fk",
           "tableFrom": "QuizMatchAnswer",
           "tableTo": "QuizMatch",
-          "columnsFrom": [
-            "matchId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["matchId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1756,12 +1552,8 @@
           "name": "QuizMatchAnswer_userId_User_id_fk",
           "tableFrom": "QuizMatchAnswer",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1769,12 +1561,8 @@
           "name": "QuizMatchAnswer_questionId_QuizQuestion_id_fk",
           "tableFrom": "QuizMatchAnswer",
           "tableTo": "QuizQuestion",
-          "columnsFrom": [
-            "questionId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["questionId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1782,9 +1570,7 @@
       "compositePrimaryKeys": {
         "QuizMatchAnswer_id": {
           "name": "QuizMatchAnswer_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1825,9 +1611,7 @@
       "indexes": {
         "matchId_idx": {
           "name": "matchId_idx",
-          "columns": [
-            "matchId"
-          ],
+          "columns": ["matchId"],
           "isUnique": false
         }
       },
@@ -1836,12 +1620,8 @@
           "name": "QuizMatchQuestion_matchId_QuizMatch_id_fk",
           "tableFrom": "QuizMatchQuestion",
           "tableTo": "QuizMatch",
-          "columnsFrom": [
-            "matchId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["matchId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1849,12 +1629,8 @@
           "name": "QuizMatchQuestion_questionId_QuizQuestion_id_fk",
           "tableFrom": "QuizMatchQuestion",
           "tableTo": "QuizQuestion",
-          "columnsFrom": [
-            "questionId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["questionId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1862,9 +1638,7 @@
       "compositePrimaryKeys": {
         "QuizMatchQuestion_id": {
           "name": "QuizMatchQuestion_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2012,30 +1786,22 @@
       "indexes": {
         "player1Id_idx": {
           "name": "player1Id_idx",
-          "columns": [
-            "player1Id"
-          ],
+          "columns": ["player1Id"],
           "isUnique": false
         },
         "player2Id_idx": {
           "name": "player2Id_idx",
-          "columns": [
-            "player2Id"
-          ],
+          "columns": ["player2Id"],
           "isUnique": false
         },
         "status_idx": {
           "name": "status_idx",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         },
         "createdAt_idx": {
           "name": "createdAt_idx",
-          "columns": [
-            "createdAt"
-          ],
+          "columns": ["createdAt"],
           "isUnique": false
         }
       },
@@ -2044,12 +1810,8 @@
           "name": "QuizMatch_player1Id_User_id_fk",
           "tableFrom": "QuizMatch",
           "tableTo": "User",
-          "columnsFrom": [
-            "player1Id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player1Id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2057,12 +1819,8 @@
           "name": "QuizMatch_player2Id_User_id_fk",
           "tableFrom": "QuizMatch",
           "tableTo": "User",
-          "columnsFrom": [
-            "player2Id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player2Id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2070,12 +1828,8 @@
           "name": "QuizMatch_winnerId_User_id_fk",
           "tableFrom": "QuizMatch",
           "tableTo": "User",
-          "columnsFrom": [
-            "winnerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["winnerId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2083,9 +1837,7 @@
       "compositePrimaryKeys": {
         "QuizMatch_id": {
           "name": "QuizMatch_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2171,23 +1923,17 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "isRead_idx": {
           "name": "isRead_idx",
-          "columns": [
-            "isRead"
-          ],
+          "columns": ["isRead"],
           "isUnique": false
         },
         "createdAt_idx": {
           "name": "createdAt_idx",
-          "columns": [
-            "createdAt"
-          ],
+          "columns": ["createdAt"],
           "isUnique": false
         }
       },
@@ -2196,12 +1942,8 @@
           "name": "QuizNotification_userId_User_id_fk",
           "tableFrom": "QuizNotification",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2209,9 +1951,7 @@
       "compositePrimaryKeys": {
         "QuizNotification_id": {
           "name": "QuizNotification_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2276,16 +2016,12 @@
       "indexes": {
         "category_idx": {
           "name": "category_idx",
-          "columns": [
-            "category"
-          ],
+          "columns": ["category"],
           "isUnique": false
         },
         "difficulty_idx": {
           "name": "difficulty_idx",
-          "columns": [
-            "difficulty"
-          ],
+          "columns": ["difficulty"],
           "isUnique": false
         }
       },
@@ -2293,9 +2029,7 @@
       "compositePrimaryKeys": {
         "QuizQuestion_id": {
           "name": "QuizQuestion_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2337,9 +2071,7 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -2348,12 +2080,8 @@
           "name": "QuizUserAchievement_userId_User_id_fk",
           "tableFrom": "QuizUserAchievement",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2361,12 +2089,8 @@
           "name": "QuizUserAchievement_achievementId_QuizAchievement_id_fk",
           "tableFrom": "QuizUserAchievement",
           "tableTo": "QuizAchievement",
-          "columnsFrom": [
-            "achievementId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["achievementId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2374,16 +2098,11 @@
       "compositePrimaryKeys": {
         "QuizUserAchievement_id": {
           "name": "QuizUserAchievement_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         },
         "QuizUserAchievement_userId_achievementId_pk": {
           "name": "QuizUserAchievement_userId_achievementId_pk",
-          "columns": [
-            "userId",
-            "achievementId"
-          ]
+          "columns": ["userId", "achievementId"]
         }
       },
       "uniqueConstraints": {},
@@ -2515,16 +2234,12 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "points_idx": {
           "name": "points_idx",
-          "columns": [
-            "points"
-          ],
+          "columns": ["points"],
           "isUnique": false
         }
       },
@@ -2533,12 +2248,8 @@
           "name": "QuizUserStats_userId_User_id_fk",
           "tableFrom": "QuizUserStats",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2546,17 +2257,13 @@
       "compositePrimaryKeys": {
         "QuizUserStats_id": {
           "name": "QuizUserStats_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "QuizUserStats_userId_unique": {
           "name": "QuizUserStats_userId_unique",
-          "columns": [
-            "userId"
-          ]
+          "columns": ["userId"]
         }
       },
       "checkConstraint": {}
@@ -2604,16 +2311,12 @@
       "indexes": {
         "commentId_idx": {
           "name": "commentId_idx",
-          "columns": [
-            "commentId"
-          ],
+          "columns": ["commentId"],
           "isUnique": false
         },
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -2622,12 +2325,8 @@
           "name": "Replies_userId_User_id_fk",
           "tableFrom": "Replies",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2635,12 +2334,8 @@
           "name": "Replies_commentId_Comments_id_fk",
           "tableFrom": "Replies",
           "tableTo": "Comments",
-          "columnsFrom": [
-            "commentId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["commentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2648,9 +2343,7 @@
       "compositePrimaryKeys": {
         "Replies_id": {
           "name": "Replies_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -2680,12 +2373,8 @@
           "name": "RolePermission_roleId_Role_id_fk",
           "tableFrom": "RolePermission",
           "tableTo": "Role",
-          "columnsFrom": [
-            "roleId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["roleId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2693,12 +2382,8 @@
           "name": "RolePermission_permissionId_Permission_id_fk",
           "tableFrom": "RolePermission",
           "tableTo": "Permission",
-          "columnsFrom": [
-            "permissionId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["permissionId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2706,10 +2391,7 @@
       "compositePrimaryKeys": {
         "RolePermission_roleId_permissionId_pk": {
           "name": "RolePermission_roleId_permissionId_pk",
-          "columns": [
-            "roleId",
-            "permissionId"
-          ]
+          "columns": ["roleId", "permissionId"]
         }
       },
       "uniqueConstraints": {},
@@ -2745,17 +2427,13 @@
       "compositePrimaryKeys": {
         "Role_id": {
           "name": "Role_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "Role_name_unique": {
           "name": "Role_name_unique",
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "checkConstraint": {}
@@ -2795,16 +2473,12 @@
       "indexes": {
         "userId_idx": {
           "name": "userId_idx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "sessionToken_idx": {
           "name": "sessionToken_idx",
-          "columns": [
-            "sessionToken"
-          ],
+          "columns": ["sessionToken"],
           "isUnique": false
         }
       },
@@ -2813,12 +2487,8 @@
           "name": "Session_userId_User_id_fk",
           "tableFrom": "Session",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2826,17 +2496,13 @@
       "compositePrimaryKeys": {
         "Session_id": {
           "name": "Session_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "Session_sessionToken_unique": {
           "name": "Session_sessionToken_unique",
-          "columns": [
-            "sessionToken"
-          ]
+          "columns": ["sessionToken"]
         }
       },
       "checkConstraint": {}
@@ -2865,12 +2531,8 @@
           "name": "UserRole_userId_User_id_fk",
           "tableFrom": "UserRole",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2878,12 +2540,8 @@
           "name": "UserRole_roleId_Role_id_fk",
           "tableFrom": "UserRole",
           "tableTo": "Role",
-          "columnsFrom": [
-            "roleId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["roleId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2891,10 +2549,7 @@
       "compositePrimaryKeys": {
         "UserRole_userId_roleId_pk": {
           "name": "UserRole_userId_roleId_pk",
-          "columns": [
-            "userId",
-            "roleId"
-          ]
+          "columns": ["userId", "roleId"]
         }
       },
       "uniqueConstraints": {},
@@ -2964,9 +2619,7 @@
       "indexes": {
         "email_idx": {
           "name": "email_idx",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": false
         }
       },
@@ -2974,9 +2627,7 @@
       "compositePrimaryKeys": {
         "User_id": {
           "name": "User_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},

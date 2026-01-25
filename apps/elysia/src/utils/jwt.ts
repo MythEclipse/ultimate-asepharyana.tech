@@ -11,7 +11,7 @@ export interface JWTPayload {
 // Helper to sign JWT tokens
 export async function signJWT(
   payload: Omit<JWTPayload, 'exp'>,
-  expiresIn: number = 24 * 3600
+  expiresIn: number = 24 * 3600,
 ): Promise<string> {
   const secret = new TextEncoder().encode(config.jwtSecret);
 

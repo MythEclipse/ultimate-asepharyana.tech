@@ -155,7 +155,10 @@ impl TestResponse {
 
     /// Get a header value.
     pub fn header(&self, name: &str) -> Option<&str> {
-        self.response.headers().get(name).and_then(|v| v.to_str().ok())
+        self.response
+            .headers()
+            .get(name)
+            .and_then(|v| v.to_str().ok())
     }
 
     /// Get the response body as bytes.
@@ -165,7 +168,9 @@ impl TestResponse {
         }
 
         let body = std::mem::replace(self.response.body_mut(), Body::empty());
-        axum::body::to_bytes(body, usize::MAX).await.unwrap_or_default()
+        axum::body::to_bytes(body, usize::MAX)
+            .await
+            .unwrap_or_default()
     }
 
     /// Get the response body as a string.

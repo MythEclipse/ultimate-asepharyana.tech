@@ -14,8 +14,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 // SeaORM imports
+use crate::entities::{email_verification_token, user};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user, email_verification_token};
 
 use crate::routes::AppState;
 use crate::utils::email::EmailService;
@@ -76,7 +76,7 @@ pub async fn verify(
         .one(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
-    
+
     // Return 400 Bad Request if token not found (not 500)
     let token_model = match token_model {
         Some(t) => t,
@@ -93,7 +93,9 @@ pub async fn verify(
 
     // Check if token is expired (like Elysia)
     if token_model.expires_at < Utc::now() {
-        return Err(AppError::Other("Verification token has expired".to_string()));
+        return Err(AppError::Other(
+            "Verification token has expired".to_string(),
+        ));
     }
 
     // Find user
@@ -116,12 +118,16 @@ pub async fn verify(
 
     // Get user info for welcome email before updating
     let user_email = user_model.email.clone().unwrap_or_default();
-    let user_name = user_model.name.clone().unwrap_or_else(|| "User".to_string());
+    let user_name = user_model
+        .name
+        .clone()
+        .unwrap_or_else(|| "User".to_string());
 
     // Update user's email_verified status
     let mut user_active: user::ActiveModel = user_model.into();
     user_active.email_verified = Set(Some(Utc::now()));
-    user_active.update(state.sea_orm())
+    user_active
+        .update(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
@@ -134,7 +140,10 @@ pub async fn verify(
     // Send welcome email
     let email_service = EmailService::new();
     if !user_email.is_empty() {
-        if let Err(e) = email_service.send_welcome_email(&user_email, &user_name).await {
+        if let Err(e) = email_service
+            .send_welcome_email(&user_email, &user_name)
+            .await
+        {
             tracing::warn!("Failed to send welcome email: {}", e);
         }
     }
@@ -198,7 +207,8 @@ pub async fn resend_verification(
         expires_at: Set(expires_at),
         created_at: Set(Utc::now()),
     };
-    new_token.insert(state.sea_orm())
+    new_token
+        .insert(state.sea_orm())
         .await
         .map_err(|e| AppError::DatabaseError(e.to_string()))?;
 
@@ -228,4 +238,3 @@ pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
         .route(ENDPOINT_PATH, get(verify))
         .route("/api/auth/verify/resend", post(resend_verification))
 }
-

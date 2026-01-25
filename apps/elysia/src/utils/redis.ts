@@ -25,7 +25,10 @@ export function getRedis(): Redis {
   return redis;
 }
 
-export async function blacklistToken(token: string, expiresIn: number): Promise<void> {
+export async function blacklistToken(
+  token: string,
+  expiresIn: number,
+): Promise<void> {
   const client = getRedis();
   await client.setex(`blacklist:${token}`, expiresIn, '1');
 }

@@ -115,9 +115,7 @@ pub fn remove_nulls(value: Value) -> Value {
                 .collect();
             Value::Object(filtered)
         }
-        Value::Array(arr) => {
-            Value::Array(arr.into_iter().map(remove_nulls).collect())
-        }
+        Value::Array(arr) => Value::Array(arr.into_iter().map(remove_nulls).collect()),
         other => other,
     }
 }

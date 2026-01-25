@@ -14,8 +14,8 @@ use std::sync::Arc;
 use utoipa::ToSchema;
 
 // SeaORM imports
+use crate::entities::user;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use crate::entities::{user};
 
 use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
@@ -108,7 +108,8 @@ pub async fn logout(
         if let Some(user) = user_model {
             let mut user_active: user::ActiveModel = user.into();
             user_active.refresh_token = Set(None);
-            user_active.update(state.sea_orm())
+            user_active
+                .update(state.sea_orm())
                 .await
                 .map_err(|e| AppError::DatabaseError(e.to_string()))?;
         }
@@ -124,7 +125,8 @@ pub async fn logout(
         if let Some(user) = user_model {
             let mut user_active: user::ActiveModel = user.into();
             user_active.refresh_token = Set(None);
-            user_active.update(state.sea_orm())
+            user_active
+                .update(state.sea_orm())
                 .await
                 .map_err(|e| AppError::DatabaseError(e.to_string()))?;
         }

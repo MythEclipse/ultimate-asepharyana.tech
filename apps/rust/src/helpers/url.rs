@@ -102,17 +102,16 @@ pub fn parse_query(query: &str) -> HashMap<String, String> {
             let mut parts = pair.splitn(2, '=');
             let key = parts.next()?;
             let value = parts.next().unwrap_or("");
-            Some((
-                decode(key).ok()?,
-                decode(value).ok()?,
-            ))
+            Some((decode(key).ok()?, decode(value).ok()?))
         })
         .collect()
 }
 
 /// Extract domain from URL.
 pub fn extract_domain(url: &str) -> Option<String> {
-    let url = url.trim_start_matches("https://").trim_start_matches("http://");
+    let url = url
+        .trim_start_matches("https://")
+        .trim_start_matches("http://");
     url.split('/').next().map(|s| s.to_string())
 }
 

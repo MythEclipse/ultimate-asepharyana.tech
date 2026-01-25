@@ -1,5 +1,5 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, PaginatorTrait, Set};
 use chrono::Utc;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, PaginatorTrait, Set};
 use tracing::info;
 
 use crate::entities::chat_room;
@@ -26,7 +26,9 @@ pub async fn seed_chat_data_if_empty(db: &DatabaseConnection) -> Result<(), sea_
         let room2 = chat_room::ActiveModel {
             id: Set("00000000-0000-0000-0000-000000000002".to_string()),
             name: Set("Tech Talk".to_string()),
-            description: Set(Some("Discuss technology, programming, and development".to_string())),
+            description: Set(Some(
+                "Discuss technology, programming, and development".to_string(),
+            )),
             is_private: Set(0),
             created_at: Set(Utc::now()),
             updated_at: Set(Utc::now()),

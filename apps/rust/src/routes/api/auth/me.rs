@@ -1,17 +1,11 @@
 //! Handler for get current user endpoint.
 
-use axum::{
-    extract::State,
-    http::HeaderMap,
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse, routing::get, Json, Router};
 use std::sync::Arc;
 
 // SeaORM imports
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
-use crate::entities::{user};
+use crate::entities::user;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;

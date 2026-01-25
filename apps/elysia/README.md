@@ -102,6 +102,7 @@ The server will start at `http://localhost:4092`
 ### View API Documentation
 
 Open Swagger UI at:
+
 ```
 http://localhost:4092/docs
 ```
@@ -139,16 +140,19 @@ pnpm start
 ## API Endpoints
 
 ### General
+
 - `GET /` - Welcome message with API info
 - `GET /health` - Health check endpoint with database status
 
-### Demo Endpoints  
+### Demo Endpoints
+
 - `GET /api/hello/:name` - Personalized greeting
 - `POST /api/echo` - Echo back the request body
 - `GET /api/users` - List all users (demo)
   - `POST /api/users/avatar` - Upload user avatar (multipart/form-data; requires auth; stores in MinIO)
 
 ### Authentication (Full System)
+
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login with email/username
 - `GET /api/auth/me` - Get current user profile (requires auth)
@@ -209,15 +213,18 @@ chmod +x test-all-api.sh
 ```
 
 **Options:**
+
 - Without `-s`: Requires server to be already running on port 4092
 - With `-s`: Automatically starts server, runs tests, then stops server
 
 **Prerequisites for `-s` option:**
+
 - Redis must be running (start with `docker run -d -p 6379:6379 redis` or local redis-server)
 - Database must be accessible and migrated
 - Port 4092 must be available
 
 The test script will automatically:
+
 - Test all health and basic endpoints
 - Register a new user and login
 - Test all authentication endpoints

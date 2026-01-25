@@ -26,7 +26,7 @@ import {
  */
 export async function handleLeaderboardGlobalSync(
   sessionId: string,
-  payload: LeaderboardGlobalSyncPayload
+  payload: LeaderboardGlobalSyncPayload,
 ): Promise<void> {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -100,8 +100,10 @@ export async function handleLeaderboardGlobalSync(
         const totalUsers = allStats.length;
 
         // Count users with higher points
-        const rank = allStats.filter((s) => s.points > userStats.points).length + 1;
-        const percentile = totalUsers > 0 ? ((totalUsers - rank + 1) / totalUsers) * 100 : 0;
+        const rank =
+          allStats.filter((s) => s.points > userStats.points).length + 1;
+        const percentile =
+          totalUsers > 0 ? ((totalUsers - rank + 1) / totalUsers) * 100 : 0;
 
         userRank = {
           rank,
@@ -142,7 +144,7 @@ export async function handleLeaderboardGlobalSync(
  */
 export async function handleLeaderboardFriendsSync(
   sessionId: string,
-  payload: LeaderboardFriendsSyncPayload
+  payload: LeaderboardFriendsSyncPayload,
 ): Promise<void> {
   try {
     const connection = wsManager.getConnection(sessionId);
@@ -158,15 +160,15 @@ export async function handleLeaderboardFriendsSync(
         and(
           or(
             eq(quizFriendships.userId, payload.userId),
-            eq(quizFriendships.friendId, payload.userId)
+            eq(quizFriendships.friendId, payload.userId),
           ),
-          eq(quizFriendships.status, 'accepted')
-        )
+          eq(quizFriendships.status, 'accepted'),
+        ),
       );
 
     // Get friend IDs + self
     const friendIds = friendships.map((f) =>
-      f.userId === payload.userId ? f.friendId : f.userId
+      f.userId === payload.userId ? f.friendId : f.userId,
     );
     friendIds.push(payload.userId); // Include self
 
@@ -174,9 +176,7 @@ export async function handleLeaderboardFriendsSync(
     const friendsStats = await db
       .select()
       .from(quizUserStats)
-      .where(
-        or(...friendIds.map((id) => eq(quizUserStats.userId, id)))
-      );
+      .where(or(...friendIds.map((id) => eq(quizUserStats.userId, id))));
 
     // Sort by points
     friendsStats.sort((a, b) => b.points - a.points);
@@ -231,7 +231,7 @@ export async function handleLeaderboardFriendsSync(
 
     wsManager.sendToSession(sessionId, leaderboardMsg);
     console.log(
-      `[Leaderboard] Sent friends leaderboard to ${payload.userId}: ${leaderboard.length} entries`
+      `[Leaderboard] Sent friends leaderboard to ${payload.userId}: ${leaderboard.length} entries`,
     );
   } catch (error) {
     console.error('[Leaderboard] Error getting friends leaderboard:', error);

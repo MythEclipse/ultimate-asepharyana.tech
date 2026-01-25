@@ -44,7 +44,10 @@ pub async fn file_exists(path: &str) -> bool {
 
 /// Check if path is a directory.
 pub async fn is_directory(path: &str) -> bool {
-    fs::metadata(path).await.map(|m| m.is_dir()).unwrap_or(false)
+    fs::metadata(path)
+        .await
+        .map(|m| m.is_dir())
+        .unwrap_or(false)
 }
 
 /// Create directory (including parents).

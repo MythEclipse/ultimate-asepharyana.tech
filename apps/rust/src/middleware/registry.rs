@@ -5,11 +5,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, middleware::Next, response::Response};
 
 /// A registry for named middleware functions.
 ///
@@ -42,7 +38,11 @@ pub struct MiddlewareRegistry<S: Clone + Send + Sync + 'static> {
 
 /// Type alias for middleware functions.
 pub type MiddlewareFn<S> = Arc<
-    dyn Fn(axum::extract::State<S>, Request, Next) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>>
+    dyn Fn(
+            axum::extract::State<S>,
+            Request,
+            Next,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>>
         + Send
         + Sync,
 >;

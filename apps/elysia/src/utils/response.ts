@@ -20,7 +20,10 @@ export interface ApiResponse<T = unknown> {
 /**
  * Success response helper
  */
-export const successResponse = <T>(data: T, meta?: ApiResponse['meta']): ApiResponse<T> => {
+export const successResponse = <T>(
+  data: T,
+  meta?: ApiResponse['meta'],
+): ApiResponse<T> => {
   return {
     success: true,
     data,
@@ -34,7 +37,7 @@ export const successResponse = <T>(data: T, meta?: ApiResponse['meta']): ApiResp
 export const errorResponse = (
   code: string,
   message: string,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
 ): ApiResponse => {
   return {
     success: false,
@@ -65,7 +68,7 @@ export const getPagination = (params: PaginationParams) => {
 export const createPaginationMeta = (
   page: number,
   limit: number,
-  total: number
+  total: number,
 ) => {
   return {
     page,

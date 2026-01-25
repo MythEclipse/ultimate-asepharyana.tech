@@ -93,18 +93,16 @@ impl CircuitBreaker {
                 warn!("Circuit breaker '{}' is OPEN, rejecting request", self.name);
                 Err(CircuitBreakerError::CircuitOpen)
             }
-            CircuitState::Closed | CircuitState::HalfOpen => {
-                match f().await {
-                    Ok(result) => {
-                        self.record_success().await;
-                        Ok(result)
-                    }
-                    Err(e) => {
-                        self.record_failure().await;
-                        Err(CircuitBreakerError::ServiceError(e))
-                    }
+            CircuitState::Closed | CircuitState::HalfOpen => match f().await {
+                Ok(result) => {
+                    self.record_success().await;
+                    Ok(result)
                 }
-            }
+                Err(e) => {
+                    self.record_failure().await;
+                    Err(CircuitBreakerError::ServiceError(e))
+                }
+            },
         }
     }
 
@@ -133,7 +131,10 @@ impl CircuitBreaker {
             CircuitState::HalfOpen => {
                 let count = self.success_count.fetch_add(1, Ordering::SeqCst) + 1;
                 if count >= self.config.success_threshold {
-                    info!("Circuit breaker '{}' closing after {} successes", self.name, count);
+                    info!(
+                        "Circuit breaker '{}' closing after {} successes",
+                        self.name, count
+                    );
                     *self.state.write().await = CircuitState::Closed;
                     self.failure_count.store(0, Ordering::SeqCst);
                 }
@@ -158,7 +159,10 @@ impl CircuitBreaker {
                 }
             }
             CircuitState::HalfOpen => {
-                warn!("Circuit breaker '{}' reopening after failure in half-open", self.name);
+                warn!(
+                    "Circuit breaker '{}' reopening after failure in half-open",
+                    self.name
+                );
                 *self.state.write().await = CircuitState::Open;
                 *self.last_failure_time.write().await = Some(Instant::now());
             }

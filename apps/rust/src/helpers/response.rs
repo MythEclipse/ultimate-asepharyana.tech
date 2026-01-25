@@ -70,7 +70,7 @@ impl ErrorResponse {
     }
 
     // Common error constructors
-    
+
     /// 400 Bad Request
     pub fn bad_request(error: impl Into<String>) -> Self {
         Self::new(StatusCode::BAD_REQUEST, error)

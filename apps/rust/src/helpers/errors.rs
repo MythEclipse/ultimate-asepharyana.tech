@@ -52,27 +52,36 @@ pub fn map_internal<E: std::fmt::Display>(e: E) -> HandlerError {
 
 /// Create Redis error response.
 pub fn redis_error<E: std::fmt::Display>(e: E) -> HandlerError {
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis error: {}", e))
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Redis error: {}", e),
+    )
 }
 
 /// Create database error response.
 pub fn db_error<E: std::fmt::Display>(e: E) -> HandlerError {
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e))
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Database error: {}", e),
+    )
 }
 
 /// Create serialization error response.
 pub fn serialization_error<E: std::fmt::Display>(e: E) -> HandlerError {
-    (StatusCode::INTERNAL_SERVER_ERROR, format!("Serialization error: {}", e))
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Serialization error: {}", e),
+    )
 }
 
 /// Trait extension for Result to easily convert errors.
 pub trait ResultExt<T, E> {
     /// Map error to internal server error.
     fn map_internal(self) -> Result<T, HandlerError>;
-    
+
     /// Map error to bad request.
     fn map_bad_request(self) -> Result<T, HandlerError>;
-    
+
     /// Map error to not found.
     fn map_not_found(self) -> Result<T, HandlerError>;
 }
@@ -81,11 +90,11 @@ impl<T, E: std::fmt::Display> ResultExt<T, E> for Result<T, E> {
     fn map_internal(self) -> Result<T, HandlerError> {
         self.map_err(internal_err)
     }
-    
+
     fn map_bad_request(self) -> Result<T, HandlerError> {
         self.map_err(|e| bad_request(e.to_string()))
     }
-    
+
     fn map_not_found(self) -> Result<T, HandlerError> {
         self.map_err(|e| not_found(e.to_string()))
     }

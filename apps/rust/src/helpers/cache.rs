@@ -30,10 +30,8 @@ impl<'a> Cache<'a> {
         };
 
         let cached: Option<String> = conn.get(key).await.ok()?;
-        
-        cached.and_then(|json| {
-            serde_json::from_str(&json).ok()
-        })
+
+        cached.and_then(|json| serde_json::from_str(&json).ok())
     }
 
     /// Set a value in cache with default TTL (5 minutes).
@@ -49,13 +47,13 @@ impl<'a> Cache<'a> {
         ttl_secs: u64,
     ) -> Result<(), String> {
         let mut conn = self.pool.get().await.map_err(|e| e.to_string())?;
-        
+
         let json = serde_json::to_string(value).map_err(|e| e.to_string())?;
-        
+
         conn.set_ex::<_, _, ()>(key, json, ttl_secs)
             .await
             .map_err(|e| e.to_string())?;
-        
+
         info!("Cache: set key {} with TTL {}s", key, ttl_secs);
         Ok(())
     }
@@ -96,13 +94,13 @@ impl<'a> Cache<'a> {
         }
 
         info!("Cache miss: {}", key);
-        
+
         // Compute the value
         let value = compute().await?;
-        
+
         // Store in cache
         self.set_with_ttl(key, &value, ttl_secs).await?;
-        
+
         Ok(value)
     }
 }

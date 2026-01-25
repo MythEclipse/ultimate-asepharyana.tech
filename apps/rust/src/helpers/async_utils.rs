@@ -5,7 +5,10 @@ use std::time::Duration;
 use tokio::time::timeout;
 
 /// Run with timeout.
-pub async fn with_timeout<T, F>(duration: Duration, future: F) -> Result<T, tokio::time::error::Elapsed>
+pub async fn with_timeout<T, F>(
+    duration: Duration,
+    future: F,
+) -> Result<T, tokio::time::error::Elapsed>
 where
     F: Future<Output = T>,
 {
@@ -62,7 +65,7 @@ where
     Fut: Future,
 {
     use futures::stream::{self, StreamExt};
-    
+
     stream::iter(items)
         .map(f)
         .buffer_unordered(concurrency)
@@ -83,11 +86,7 @@ where
 }
 
 /// Retry a future with delay between attempts.
-pub async fn simple_retry<T, E, F, Fut>(
-    attempts: usize,
-    delay: Duration,
-    mut f: F,
-) -> Result<T, E>
+pub async fn simple_retry<T, E, F, Fut>(attempts: usize, delay: Duration, mut f: F) -> Result<T, E>
 where
     F: FnMut() -> Fut,
     Fut: Future<Output = Result<T, E>>,
