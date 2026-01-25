@@ -88,8 +88,8 @@ pnpm prisma:seed
 Run the development server with hot reload:
 
 ```bash
-# Using nx
-nx serve elysia
+# Using turbo
+turbo run dev --filter=@asepharyana/elysia
 
 # Or directly with bun
 bun run dev
@@ -118,8 +118,8 @@ pnpm prisma:studio
 Build the application:
 
 ```bash
-# Using nx
-nx build elysia
+# Using turbo
+turbo run build --filter=@asepharyana/elysia
 
 # Or directly with bun
 bun run build
@@ -186,8 +186,8 @@ curl -X POST http://localhost:4092/api/echo \
 Run unit tests:
 
 ```bash
-# Using nx
-nx test elysia
+# Using turbo
+turbo run test --filter=@asepharyana/elysia
 
 # Or directly with bun
 bun test

@@ -7,7 +7,12 @@ import {
   sessions,
   quizUserStats,
 } from '@asepharyana/services';
-import type { NewUser, NewAccount, NewSession } from '@asepharyana/services';
+import type {
+  NewUser,
+  NewAccount,
+  NewSession,
+  User,
+} from '@asepharyana/services';
 import { eq, and } from '@asepharyana/services';
 import { config } from '../../config';
 import { signJWT } from '../../utils/jwt';
@@ -92,7 +97,7 @@ export const googleAuth = new Elysia().post(
           level: 1,
         });
 
-        user = newUser as any;
+        user = newUser as User;
       }
 
       if (!user) {

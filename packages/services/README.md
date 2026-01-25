@@ -1,11 +1,11 @@
 # services
 
-This library was generated with [Nx](https://nx.dev).
+This library is part of the ultimate-asepharyana.cloud monorepo using Turborepo.
 
 ## Building
 
-Run `nx build services` to build the library.
+Run `turbo run build --filter=@asepharyana/services` to build the library.
 
 ## Running unit tests
 
-Run `nx test services` to execute the unit tests via [Vitest](https://vitest.dev/).
+Run `turbo run test --filter=@asepharyana/services` to execute the unit tests via Jest.

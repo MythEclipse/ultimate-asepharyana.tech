@@ -157,9 +157,9 @@ export const friendLogger = {
       'FRIEND',
       `Friend request sent from ${fromUserId} to ${toUserId}`,
     ),
-  requestAccepted: (userId: string, friendId: string) =>
+  requestAccepted: (userId: string) =>
     log('INFO', 'FRIEND', `Friend request accepted`, { userId }),
-  requestRejected: (userId: string, requestId: string) =>
+  requestRejected: (userId: string) =>
     log('INFO', 'FRIEND', `Friend request rejected`, { userId }),
   removed: (userId: string, friendId: string) =>
     log('INFO', 'FRIEND', `Friend removed: ${friendId}`, { userId }),
@@ -171,9 +171,9 @@ export const friendLogger = {
       'FRIEND',
       `Match invite sent from ${senderId} to ${receiverId}`,
     ),
-  inviteAccepted: (userId: string, inviteId: string) =>
+  inviteAccepted: (userId: string) =>
     log('INFO', 'FRIEND', `Match invite accepted`, { userId }),
-  inviteRejected: (userId: string, inviteId: string) =>
+  inviteRejected: (userId: string) =>
     log('INFO', 'FRIEND', `Match invite rejected`, { userId }),
   error: (action: string, error: unknown) =>
     log('ERROR', 'FRIEND', `Error: ${action}`, undefined, error),

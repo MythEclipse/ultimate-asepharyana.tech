@@ -1,6 +1,6 @@
 param(
     [string]$Path = ".",
-    [string[]]$Exclude = @("node_modules", ".next", "target", ".git", "logs",".nx")
+    [string[]]$Exclude = @("node_modules", ".next", "target", ".git", "logs")
 )
 
 function Show-Tree {

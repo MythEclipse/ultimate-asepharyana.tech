@@ -6,7 +6,11 @@ import { historyLogger } from '../utils/logger';
 export const historyRoutes = new Elysia({ prefix: '/api/history' })
   .use(authMiddleware)
   .get('/', async (context) => {
-    const { user, set } = context as any;
+    const ctx = context as unknown as {
+      user: { id: string };
+      set: { status: number };
+    };
+    const { user, set } = ctx;
     try {
       if (!user || !user.id) {
         historyLogger.fetchError('unknown', 'User not authenticated');

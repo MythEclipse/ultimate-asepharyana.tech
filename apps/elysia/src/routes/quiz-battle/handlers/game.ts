@@ -9,7 +9,6 @@ import type {
   GameQuestionNewPayload,
   GameAnswerSubmitPayload,
   GameAnswerReceivedPayload,
-  GameBattleUpdatePayload,
   GameOpponentAnsweredPayload,
   GameOverPayload,
   QuestionData,

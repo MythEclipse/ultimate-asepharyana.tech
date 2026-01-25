@@ -78,20 +78,22 @@ class QuizBattleRankedClient {
     console.log(`📥 [${this.username}] Received: ${message.type}`);
 
     switch (message.type) {
-      case 'auth.connected':
+      case 'auth.connected': {
         this.sessionId = message.payload.sessionId;
         console.log(
           `   🔐 Authenticated! Session: ${this.sessionId?.substring(0, 20)}...`,
         );
         break;
+      }
 
-      case 'matchmaking.searching':
+      case 'matchmaking.searching': {
         console.log(
           `   🔍 Searching for RANKED match... Queue size: ${message.payload.playersInQueue}`,
         );
         break;
+      }
 
-      case 'matchmaking.found':
+      case 'matchmaking.found': {
         this.currentMatchId = message.payload.matchId;
         console.log(`   🎯 RANKED Match found!`);
         console.log(
@@ -100,8 +102,9 @@ class QuizBattleRankedClient {
         console.log(`      Opponent: ${message.payload.opponent.username}`);
         console.log(`      Starting in: ${message.payload.startIn}s`);
         break;
+      }
 
-      case 'game.started':
+      case 'game.started': {
         this.gameStarted = true;
         console.log(`   🚀 RANKED GAME STARTED!`);
         console.log(
@@ -111,8 +114,9 @@ class QuizBattleRankedClient {
           `      Time per Question: ${message.payload.gameState.timePerQuestion}s`,
         );
         break;
+      }
 
-      case 'game.question.new':
+      case 'game.question.new': {
         this.questionsReceived++;
         console.log(
           `   ❓ Question ${message.payload.questionIndex + 1}: ${message.payload.question.text}`,
@@ -133,29 +137,34 @@ class QuizBattleRankedClient {
           1000 + Math.random() * 1000,
         );
         break;
+      }
 
-      case 'game.answer.received':
+      case 'game.answer.received': {
         this.answersSubmitted++;
         const result = message.payload.isCorrect ? '✅ CORRECT' : '❌ WRONG';
         console.log(`   ${result}! Points: +${message.payload.points}`);
         break;
+      }
 
-      case 'game.opponent.answered':
+      case 'game.opponent.answered': {
         const oppResult = message.payload.isCorrect ? '✅' : '❌';
         console.log(`   👤 Opponent answered: ${oppResult}`);
         break;
+      }
 
-      case 'game.battle.update':
+      case 'game.battle.update': {
         console.log(
           `   ⚔️ Health - You: ${message.payload.gameState.playerHealth}%, Opp: ${message.payload.gameState.opponentHealth}%`,
         );
         break;
+      }
 
-      case 'game.question.timeout':
+      case 'game.question.timeout': {
         console.log(`   ⏰ Question timeout! Moving to next...`);
         break;
+      }
 
-      case 'game.over':
+      case 'game.over': {
         this.gameOver = true;
         this.isWinner = message.payload.winner.userId === this.userId;
         this.finalScore = this.isWinner
@@ -174,8 +183,9 @@ class QuizBattleRankedClient {
           `   Rewards: +${message.payload.rewards.winner.points} pts, +${message.payload.rewards.winner.coins} coins`,
         );
         break;
+      }
 
-      case 'ranked.mmr.changed':
+      case 'ranked.mmr.changed': {
         this.mmrChange = message.payload.mmrChange;
         this.newMMR = message.payload.newMMR;
         console.log(
@@ -186,11 +196,13 @@ class QuizBattleRankedClient {
           `   🎖️ Tier: ${message.payload.tier} ${message.payload.division}`,
         );
         break;
+      }
 
       case 'error':
-      case 'auth.error':
+      case 'auth.error': {
         console.error(`   ❌ Error: ${message.payload.message}`);
         break;
+      }
     }
   }
 

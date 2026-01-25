@@ -1,4 +1,4 @@
-﻿// Notifications System Handlers
+// Notifications System Handlers
 import { wsManager } from '../ws-manager';
 import type {
   WSMessage,
@@ -9,14 +9,7 @@ import type {
   NotificationDeletePayload,
   NotificationReceivedPayload,
 } from '../types';
-import {
-  getDb,
-  users,
-  quizNotifications,
-  eq,
-  and,
-  desc,
-} from '@asepharyana/services';
+import { getDb, quizNotifications, eq, and, desc } from '@asepharyana/services';
 
 // Handler: Get notification list
 export async function handleNotificationListSync(
@@ -41,10 +34,6 @@ export async function handleNotificationListSync(
     .offset(offset);
 
   // Get total and unread counts
-  const [totalResult] = await db
-    .select()
-    .from(quizNotifications)
-    .where(eq(quizNotifications.userId, userId));
   const totalCount = notifs.length;
 
   const [unreadResult] = await db

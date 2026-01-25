@@ -36,7 +36,7 @@ import {
   and,
   or,
 } from '@asepharyana/services';
-import { friendLogger, matchLogger } from '../../../utils/logger';
+import { friendLogger } from '../../../utils/logger';
 
 // Store pending match invites in memory
 const pendingMatchInvites = new Map<
@@ -295,7 +295,7 @@ export async function handleFriendRequestRespond(
         wsManager.sendToSession(senderSession, acceptedMsg);
       }
 
-      friendLogger.requestAccepted(payload.userId, request.userId);
+      friendLogger.requestAccepted(payload.userId);
     } else {
       // Reject friend request
       await db
@@ -312,7 +312,7 @@ export async function handleFriendRequestRespond(
       };
       wsManager.sendToSession(sessionId, responseMsg);
 
-      friendLogger.requestRejected(payload.userId, payload.requestId);
+      friendLogger.requestRejected(payload.userId);
     }
   } catch (error) {
     friendLogger.error('responding to friend request', error);

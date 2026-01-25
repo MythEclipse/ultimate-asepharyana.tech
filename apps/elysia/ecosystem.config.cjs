@@ -1,3 +1,4 @@
+/* global module, process */
 // PM2 Ecosystem Configuration for ElysiaJS
 module.exports = {
   apps: [

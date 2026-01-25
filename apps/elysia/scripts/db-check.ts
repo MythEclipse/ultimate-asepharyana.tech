@@ -8,7 +8,7 @@ async function main() {
     const db = getDb();
 
     console.log('Listing tables...');
-    const rows = await db.execute<any>('SHOW TABLES');
+    const rows = await db.execute('SHOW TABLES');
     console.log('Tables:', rows);
   } catch (err) {
     console.error('Error querying tables:', err);

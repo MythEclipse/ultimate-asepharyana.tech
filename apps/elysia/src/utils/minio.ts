@@ -1,7 +1,5 @@
-/* eslint-disable @nx/enforce-module-boundaries */
 import { Client } from 'minio';
 import { config } from '../config';
-/* eslint-enable @nx/enforce-module-boundaries */
 
 const minioClient = new Client({
   endPoint: config.minio.endPoint,

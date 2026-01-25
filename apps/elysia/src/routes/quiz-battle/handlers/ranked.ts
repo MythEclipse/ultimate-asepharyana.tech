@@ -1,4 +1,4 @@
-﻿// Ranked System Handlers
+// Ranked System Handlers
 import { wsManager } from '../ws-manager';
 import type {
   WSMessage,
@@ -6,7 +6,6 @@ import type {
   RankedStatsDataPayload,
   RankedLeaderboardSyncPayload,
   RankedLeaderboardDataPayload,
-  MMRChangePayload,
   RankedInfo,
   RankedTier,
   RankedDivision,
@@ -77,7 +76,7 @@ function getNextTierMMR(currentMMR: number): number {
 }
 
 export async function handleRankedStatsSync(
-  ws: any,
+  ws: string,
   data: WSMessage<RankedStatsPayload>,
 ) {
   const { userId } = data.payload;
@@ -127,7 +126,7 @@ export async function handleRankedStatsSync(
 }
 
 export async function handleRankedLeaderboardSync(
-  ws: any,
+  ws: string,
   data: WSMessage<RankedLeaderboardSyncPayload>,
 ) {
   const { limit = 100, offset = 0 } = data.payload;

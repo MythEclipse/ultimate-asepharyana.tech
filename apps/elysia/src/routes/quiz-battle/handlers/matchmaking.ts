@@ -4,7 +4,6 @@ import type {
   WSMessage,
   MatchmakingFindPayload,
   MatchmakingSearchingPayload,
-  MatchmakingFoundPayload,
   MatchmakingCancelPayload,
   MatchmakingCancelledPayload,
   MatchmakingQueueEntry,
@@ -16,7 +15,7 @@ import type {
   MatchmakingConfirmStatusPayload,
 } from '../types';
 import { wsManager } from '../ws-manager';
-import { queueLogger, matchLogger } from '../../../utils/logger';
+import { queueLogger } from '../../../utils/logger';
 import {
   getDb,
   users,
@@ -151,7 +150,7 @@ export async function handleMatchmakingFind(
       );
       if (!opponentConnection) {
         // Opponent disconnected, add user to queue instead
-        await addUserToQueue(payload, userPoints);
+        await addUserToQueue(payload, userPoints, connection.username);
         return;
       }
 
@@ -256,7 +255,7 @@ export async function handleMatchmakingFind(
       );
     } else {
       // No match found, add to queue
-      await addUserToQueue(payload, userPoints);
+      await addUserToQueue(payload, userPoints, connection.username);
     }
   } catch (error) {
     console.error('[Matchmaking] Error finding match:', error);
@@ -445,10 +444,11 @@ function handleConfirmationTimeout(matchId: string): void {
 async function addUserToQueue(
   payload: MatchmakingFindPayload,
   points: number,
+  username: string,
 ): Promise<void> {
   const queueEntry: MatchmakingQueueEntry = {
     userId: payload.userId,
-    username: payload.userId, // We'll get username from connection
+    username: username,
     gameMode: payload.gameMode,
     difficulty: payload.difficulty,
     category: payload.category,
@@ -469,7 +469,7 @@ async function addUserToQueue(
 
   wsManager.sendToUser(payload.userId, searchingMsg);
 
-  queueLogger.joined(payload.userId, payload.username);
+  queueLogger.joined(payload.userId, username);
 }
 
 export function handleMatchmakingCancel(
