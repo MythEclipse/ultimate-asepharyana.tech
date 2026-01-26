@@ -674,16 +674,15 @@ pub async fn cache_image_urls_batch_lazy(
         .map(|url| format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(url)))
         .collect();
 
-    // Note: Rust-Redis doesn't expose a simple high-level mget in the deadpool wrapper easily
-    // without manual connection handling, but Cache wrapper might not support mget either yet.
-    // For now, we'll do individual lookups or assume low concurrency overhead since it's Redis.
-    // Optimization: If performance is an issue, implement mget in Cache struct.
-    // For this implementation, we will iterate.
+    // Use mget for efficient batch retrieval
+    let cached_values: Vec<Option<String>> = redis_cache.mget(&cache_keys).await;
 
     for (i, url) in urls.iter().enumerate() {
         let cache_key = &cache_keys[i];
-        if let Some(cdn_url) = redis_cache.get::<String>(cache_key).await {
-            results.push(cdn_url);
+
+        if let Some(cdn_url) = &cached_values[i] {
+            // Redis hit
+            results.push(cdn_url.clone());
         } else {
             // Redis miss - check DB?
             // Checking DB for every image might be slow.

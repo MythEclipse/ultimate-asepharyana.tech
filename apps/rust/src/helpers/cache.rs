@@ -41,6 +41,38 @@ impl<'a> Cache<'a> {
         cached.and_then(|json| serde_json::from_str(&json).ok())
     }
 
+    /// Get multiple values from cache, deserializing JSON.
+    /// Returns a vector of Options, preserving order of keys.
+    pub async fn mget<T: DeserializeOwned>(&self, keys: &[String]) -> Vec<Option<T>> {
+        if keys.is_empty() {
+            return Vec::new();
+        }
+
+        let mut conn = match self.pool.get().await {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Cache: failed to get connection: {}", e);
+                return std::iter::repeat_with(|| None).take(keys.len()).collect();
+            }
+        };
+
+        // Use low-level cmd interface for MGET to ensure correct command usage
+        use deadpool_redis::redis::cmd;
+        let cached_values: Vec<Option<String>> =
+            match cmd("MGET").arg(keys).query_async(&mut conn).await {
+                Ok(v) => v,
+                Err(e) => {
+                    error!("Cache: failed to mget values: {}", e);
+                    return std::iter::repeat_with(|| None).take(keys.len()).collect();
+                }
+            };
+
+        cached_values
+            .into_iter()
+            .map(|opt_s| opt_s.and_then(|json| serde_json::from_str(&json).ok()))
+            .collect()
+    }
+
     /// Set a value in cache with default TTL (5 minutes).
     pub async fn set<T: Serialize>(&self, key: &str, value: &T) -> Result<(), String> {
         self.set_with_ttl(key, value, DEFAULT_CACHE_TTL).await
