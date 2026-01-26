@@ -14,8 +14,9 @@ use std::sync::Arc;
 
 use axum::Router;
 // use http::{header, Method};       <-- Removed to fix unused import error
+
 use sea_orm::{Database, DatabaseConnection};
-use tower_http::compression::CompressionLayer;
+use tower_http::compression::{CompressionLayer, CompressionLevel};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
@@ -27,7 +28,7 @@ use rustexpress::infra::redis::REDIS_POOL;
 use rustexpress::routes::api::{create_api_routes, ApiDoc};
 use rustexpress::routes::AppState;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     // Initialize tracing with config log level
     let filter = &CONFIG.log_level;
@@ -37,6 +38,15 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("🚀 RustExpress starting up...");
     tracing::info!("   Environment: {}", CONFIG.environment);
+
+    // Log thread configuration
+    let worker_threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+    tracing::info!(
+        "   Tokio Worker Threads: (Defaulting to CPU cores: {})",
+        worker_threads
+    );
 
     // Get JWT secret from config (validated at startup)
     let jwt_secret = CONFIG.jwt_secret.clone();
@@ -63,8 +73,8 @@ async fn main() -> anyhow::Result<()> {
     opt.max_connections(100)
         .min_connections(10)
         .connect_timeout(std::time::Duration::from_secs(5))
-        .idle_timeout(std::time::Duration::from_secs(60))
-        .acquire_timeout(std::time::Duration::from_secs(3))
+        .idle_timeout(std::time::Duration::from_secs(300)) // Increased from 60s to 300s
+        .acquire_timeout(std::time::Duration::from_secs(10)) // Increased from 3s to 10s
         .max_lifetime(std::time::Duration::from_secs(1800))
         .sqlx_logging(CONFIG.log_level == "debug"); // Only log SQL in debug mode
 
@@ -147,7 +157,7 @@ async fn main() -> anyhow::Result<()> {
             rustexpress::routes::ws::register_routes(Router::new()).with_state(app_state.clone()),
         )
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .layer(CompressionLayer::new())
+        .layer(CompressionLayer::new().quality(CompressionLevel::Fastest))
         .layer(cors);
 
     let port = 4091;

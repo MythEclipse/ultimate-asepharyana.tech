@@ -73,7 +73,8 @@ lazy_static! {
 
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
-const CACHE_TTL: u64 = 120;
+use crate::helpers::cache_ttl::CACHE_TTL_VERY_SHORT;
+const CACHE_TTL: u64 = CACHE_TTL_VERY_SHORT;
 
 #[utoipa::path(
     get,

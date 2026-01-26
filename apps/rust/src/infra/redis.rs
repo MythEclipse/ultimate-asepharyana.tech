@@ -30,23 +30,34 @@ pub static REDIS_POOL: Lazy<Pool> = Lazy::new(|| {
     info!("Initializing Redis connection pool for URL: {}", redis_url);
 
     Pool::builder(Manager::new(redis_url).expect("Failed to create Redis manager"))
-        .max_size(50)  // Increased from 10 for better high-traffic handling
+        .max_size(100)  // Increased from 50 for high-traffic
+        .wait_timeout(Some(std::time::Duration::from_secs(5))) // Add wait timeout
         .runtime(deadpool_redis::Runtime::Tokio1)
         .build()
         .expect("Failed to create Redis connection pool")
 });
 
-/// Get an async connection from the pool.
+/// Get an async connection from the pool with retry backoff.
 pub async fn get_redis_conn() -> Result<deadpool_redis::Connection, AppError> {
-    debug!("Attempting to get Redis connection from pool.");
-    match REDIS_POOL.get().await {
-        Ok(conn) => {
-            debug!("Successfully retrieved Redis connection from pool.");
-            Ok(conn)
-        }
-        Err(e) => {
-            error!("Failed to get Redis connection from pool: {:?}", e);
-            Err(AppError::from(e))
+    let mut retries = 5;
+    let mut wait = std::time::Duration::from_millis(100);
+
+    loop {
+        match REDIS_POOL.get().await {
+            Ok(conn) => {
+                debug!("Successfully retrieved Redis connection from pool.");
+                return Ok(conn);
+            }
+            Err(e) => {
+                if retries <= 0 {
+                    error!("Failed to get Redis connection after retries: {:?}", e);
+                    return Err(AppError::from(e));
+                }
+                debug!("Redis connection failed, retrying in {:?}: {:?}", wait, e);
+                tokio::time::sleep(wait).await;
+                wait = std::cmp::min(wait * 2, std::time::Duration::from_secs(5));
+                retries -= 1;
+            }
         }
     }
 }

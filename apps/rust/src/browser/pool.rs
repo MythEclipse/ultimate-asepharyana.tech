@@ -184,7 +184,8 @@ impl BrowserPool {
         });
 
         // Pre-warm tabs for faster first requests
-        let warm_count = std::cmp::min(3, config.max_tabs);
+        // Dynamic "pool dinamis" as requested: warm up half of max tabs or at least 5
+        let warm_count = std::cmp::min(5, config.max_tabs);
         for i in 0..warm_count {
             match pool.create_new_tab().await {
                 Ok(tab) => {

@@ -342,7 +342,7 @@ impl ImageCache {
     /// Invalidate API response caches that may contain this image
     /// Uses SCAN instead of KEYS to avoid blocking Redis
     async fn invalidate_api_caches(&self) -> Result<(), String> {
-        use deadpool_redis::redis::{AsyncCommands, cmd};
+        use deadpool_redis::redis::{cmd, AsyncCommands};
 
         let mut conn = self.redis.get().await.map_err(|e| e.to_string())?;
 
@@ -357,17 +357,19 @@ impl ImageCache {
             loop {
                 let (new_cursor, keys): (u64, Vec<String>) = cmd("SCAN")
                     .arg(cursor)
-                    .arg("MATCH").arg(pattern)
-                    .arg("COUNT").arg(100)
+                    .arg("MATCH")
+                    .arg(pattern)
+                    .arg("COUNT")
+                    .arg(100)
                     .query_async(&mut *conn)
                     .await
                     .map_err(|e| e.to_string())?;
-                
+
                 if !keys.is_empty() {
                     let deleted: usize = conn.del(&keys).await.map_err(|e| e.to_string())?;
                     total_deleted += deleted;
                 }
-                
+
                 cursor = new_cursor;
                 if cursor == 0 {
                     break;
@@ -519,9 +521,9 @@ pub fn cache_image_url_lazy(
     redis: &RedisPool,
     original_url: String,
 ) -> String {
-    let db_owned = db;  // Arc is cheap to clone, no need for extra clone
+    let db_owned = db; // Arc is cheap to clone, no need for extra clone
     let redis_owned = redis.clone();
-    let url = original_url.clone();  // Single clone for the async block
+    let url = original_url.clone(); // Single clone for the async block
 
     // Spawn background task to cache
     tokio::spawn(async move {
@@ -607,13 +609,31 @@ pub fn cache_image_urls_batch_lazy(
 
     // Spawn background task to cache all URLs
     tokio::spawn(async move {
+        use futures::stream::{self, StreamExt};
+
         let cache = ImageCache::new(db_owned, redis_owned);
-        // Process sequentially to be nice to the semaphore/Picser API
-        for url in urls_clone {
-            if let Ok(cdn_url) = cache.get_or_cache(&url).await {
-                debug!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
-            }
-        }
+
+        // Process in parallel with concurrency limit
+        stream::iter(urls_clone)
+            .map(|url| {
+                let cache_ref = &cache;
+                async move {
+                    match cache_ref.get_or_cache(&url).await {
+                        Ok(cdn_url) => {
+                            debug!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
+                        },
+                        Err(e) => {
+                            // Only warn if not transient concurrency issue
+                             if !e.contains("already being cached") {
+                                debug!("[BatchLazyCache] Failed to cache {}: {}", url, e);
+                            }
+                        }
+                    }
+                }
+            })
+            .buffer_unordered(5) // Limit concurrent uploads to 5
+            .collect::<Vec<_>>()
+            .await;
     });
 
     urls
