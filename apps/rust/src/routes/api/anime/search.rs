@@ -109,7 +109,7 @@ pub async fn search(
                 urlencoding::encode(&query)
             );
 
-            let (mut data, pagination) = fetch_and_parse_search(&url)
+            let (data, pagination) = fetch_and_parse_search(&url)
                 .await
                 .map_err(|e| format!("Fetch error: {}", e))?;
 

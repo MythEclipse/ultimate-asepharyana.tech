@@ -80,7 +80,7 @@ pub async fn anime(
     // Clean caching with get_or_set pattern
     let response = cache
         .get_or_set("anime:index", CACHE_TTL, || async {
-            let mut data = fetch_anime_data()
+            let data = fetch_anime_data()
                 .await
                 .map_err(|e| format!("Fetch error: {}", e))?;
 

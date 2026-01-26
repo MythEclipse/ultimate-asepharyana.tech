@@ -442,13 +442,13 @@ pub fn cache_image_url_lazy(
     redis: &RedisPool,
     original_url: String,
 ) -> String {
-    let db = db.clone();
-    let redis = redis.clone();
+    let db_owned = db.clone();
+    let redis_owned = redis.clone();
     let url_clone = original_url.clone();
 
     // Spawn background task to cache
     tokio::spawn(async move {
-        let cache = ImageCache::new(&db, &redis);
+        let cache = ImageCache::new(&db_owned, &redis_owned);
         match cache.get_or_cache(&url_clone).await {
             Ok(cdn_url) => {
                 info!("[LazyImageCache] Cached: {} -> {}", url_clone, cdn_url);
@@ -489,11 +489,11 @@ pub async fn get_cached_or_original(
     }
 
     // Not cached and not being cached - start background caching
-    let db = db.clone();
-    let redis = redis.clone();
+    let db_owned = db.clone();
+    let redis_owned = redis.clone();
     let url = original_url.to_string();
     tokio::spawn(async move {
-        let cache = ImageCache::new(&db, &redis);
+        let cache = ImageCache::new(&db_owned, &redis_owned);
         match cache.get_or_cache(&url).await {
             Ok(cdn_url) => {
                 info!("[BgCache] Successfully cached: {} -> {}", url, cdn_url);
@@ -517,13 +517,13 @@ pub fn cache_image_urls_batch_lazy(
     redis: &RedisPool,
     urls: Vec<String>,
 ) -> Vec<String> {
-    let db = db.clone();
-    let redis = redis.clone();
+    let db_owned = db.clone();
+    let redis_owned = redis.clone();
     let urls_clone = urls.clone();
 
     // Spawn background task to cache all URLs
     tokio::spawn(async move {
-        let cache = ImageCache::new(&db, &redis);
+        let cache = ImageCache::new(&db_owned, &redis_owned);
         for url in urls_clone {
             if let Ok(cdn_url) = cache.get_or_cache(&url).await {
                 info!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
