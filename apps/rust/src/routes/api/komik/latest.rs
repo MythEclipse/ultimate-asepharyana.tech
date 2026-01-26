@@ -109,7 +109,7 @@ pub async fn latest(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = komik_list.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(db, &redis, posters);
 
             Ok(LatestKomikResponse {
                 status: "Ok".to_string(),

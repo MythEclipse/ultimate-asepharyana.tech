@@ -131,7 +131,7 @@ pub async fn list(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, posters);
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(db, &redis, posters);
 
             Ok(MangaResponse { data, pagination })
         })

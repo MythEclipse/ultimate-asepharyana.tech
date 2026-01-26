@@ -78,7 +78,7 @@ pub async fn image_cache(
     State(state): State<Arc<AppState>>,
     Json(req): Json<ImageCacheRequest>,
 ) -> impl IntoResponse {
-    let cache = ImageCache::new(&state.db, &state.redis_pool)
+    let cache = ImageCache::new(state.db.clone(), state.redis_pool.clone())
         .with_semaphore(state.image_processing_semaphore.clone());
 
     // Check if already cached
@@ -100,7 +100,7 @@ pub async fn image_cache(
         let semaphore = state.image_processing_semaphore.clone();
 
         tokio::spawn(async move {
-            let cache = ImageCache::new(&db, &redis).with_semaphore(semaphore);
+            let cache = ImageCache::new(db, redis).with_semaphore(semaphore);
             match cache.get_or_cache(&url).await {
                 Ok(cdn_url) => {
                     tracing::info!("[LazyCache] Successfully cached: {} -> {}", url, cdn_url)
@@ -145,7 +145,7 @@ pub async fn image_cache_batch(
     State(state): State<Arc<AppState>>,
     Json(req): Json<ImageCacheBatchRequest>,
 ) -> impl IntoResponse {
-    let cache = ImageCache::new(&state.db, &state.redis_pool);
+    let cache = ImageCache::new(state.db.clone(), state.redis_pool.clone());
     let mut results = Vec::with_capacity(req.urls.len());
 
     for url in req.urls {

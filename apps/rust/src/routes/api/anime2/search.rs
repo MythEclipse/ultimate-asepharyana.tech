@@ -112,7 +112,7 @@ pub async fn search(
                 let redis = redis.clone();
                 async move {
                     if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(&db, &redis, &item.poster).await;
+                        item.poster = get_cached_or_original(db, &redis, &item.poster).await;
                     }
                     item
                 }

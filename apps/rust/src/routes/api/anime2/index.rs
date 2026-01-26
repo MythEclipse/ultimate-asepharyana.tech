@@ -91,7 +91,7 @@ pub async fn anime2(
                 .collect();
 
             let all_posters = [ongoing_posters, complete_posters].concat();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(&db, &redis, all_posters);
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(db, &redis, all_posters);
 
             Ok(Anime2Response {
                 status: "Ok".to_string(),

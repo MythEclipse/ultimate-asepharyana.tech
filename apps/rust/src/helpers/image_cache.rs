@@ -9,6 +9,7 @@ use deadpool_redis::Pool as RedisPool;
 use reqwest::Client;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tracing::{error, info, warn};
 
 use super::cache::Cache;
@@ -89,7 +90,7 @@ impl Default for ImageCacheConfig {
 
 /// Image cache service
 pub struct ImageCache {
-    db: DatabaseConnection,
+    db: Arc<DatabaseConnection>,
     redis: RedisPool,
     client: Client,
     _config: ImageCacheConfig,
@@ -98,10 +99,10 @@ pub struct ImageCache {
 
 impl ImageCache {
     /// Create a new image cache instance
-    pub fn new(db: &DatabaseConnection, redis: &RedisPool) -> Self {
+    pub fn new(db: Arc<DatabaseConnection>, redis: RedisPool) -> Self {
         Self {
-            db: db.clone(),
-            redis: redis.clone(),
+            db,
+            redis,
             client: Client::builder()
                 .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
@@ -113,13 +114,13 @@ impl ImageCache {
 
     /// Create with custom configuration
     pub fn with_config(
-        db: &DatabaseConnection,
-        redis: &RedisPool,
+        db: Arc<DatabaseConnection>,
+        redis: RedisPool,
         config: ImageCacheConfig,
     ) -> Self {
         Self {
-            db: db.clone(),
-            redis: redis.clone(),
+            db,
+            redis,
             client: Client::builder()
                 .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
@@ -247,7 +248,7 @@ impl ImageCache {
         // Remove from database
         image_cache::Entity::delete_many()
             .filter(image_cache::Column::OriginalUrl.eq(original_url))
-            .exec(&self.db)
+            .exec(self.db.as_ref())
             .await
             .map_err(|e| e.to_string())?;
 
@@ -259,7 +260,7 @@ impl ImageCache {
     async fn find_in_db(&self, original_url: &str) -> Result<Option<image_cache::Model>, String> {
         image_cache::Entity::find()
             .filter(image_cache::Column::OriginalUrl.eq(original_url))
-            .one(&self.db)
+            .one(self.db.as_ref())
             .await
             .map_err(|e| e.to_string())
     }
@@ -274,7 +275,7 @@ impl ImageCache {
             expires_at: Set(None),
         };
 
-        model.insert(&self.db).await.map_err(|e| e.to_string())?;
+        model.insert(self.db.as_ref()).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -401,11 +402,11 @@ impl ImageCache {
 /// Convenience function to create a CDN URL for an image
 /// Returns the original URL if caching fails (graceful fallback)
 pub async fn cache_image_url(
-    db: &DatabaseConnection,
+    db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     original_url: &str,
 ) -> String {
-    let cache = ImageCache::new(db, redis);
+    let cache = ImageCache::new(db, redis.clone());
     match cache.get_or_cache(original_url).await {
         Ok(cdn_url) => cdn_url,
         Err(e) => {
@@ -417,11 +418,11 @@ pub async fn cache_image_url(
 
 /// Batch cache multiple images
 pub async fn cache_image_urls(
-    db: &DatabaseConnection,
+    db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     urls: &[String],
 ) -> Vec<String> {
-    let cache = ImageCache::new(db, redis);
+    let cache = ImageCache::new(db, redis.clone());
     let mut results = Vec::with_capacity(urls.len());
 
     for url in urls {
@@ -438,7 +439,7 @@ pub async fn cache_image_urls(
 /// Helper to convert image URL to CDN URL in background (non-blocking)
 /// Returns original URL immediately and caches in background
 pub fn cache_image_url_lazy(
-    db: &DatabaseConnection,
+    db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     original_url: String,
 ) -> String {
@@ -448,7 +449,7 @@ pub fn cache_image_url_lazy(
 
     // Spawn background task to cache
     tokio::spawn(async move {
-        let cache = ImageCache::new(&db_owned, &redis_owned);
+        let cache = ImageCache::new(db_owned, redis_owned);
         match cache.get_or_cache(&url_clone).await {
             Ok(cdn_url) => {
                 info!("[LazyImageCache] Cached: {} -> {}", url_clone, cdn_url);
@@ -465,11 +466,11 @@ pub fn cache_image_url_lazy(
 /// Convert image URL to CDN URL if already cached, otherwise return original
 /// and trigger background caching for next request (with duplicate prevention)
 pub async fn get_cached_or_original(
-    db: &DatabaseConnection,
+    db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     original_url: &str,
 ) -> String {
-    let cache = ImageCache::new(db, redis);
+    let cache = ImageCache::new(db.clone(), redis.clone());
 
     // Check if already cached (Redis or DB)
     if let Some(cdn_url) = cache.get_cdn_url(original_url).await {
@@ -493,7 +494,7 @@ pub async fn get_cached_or_original(
     let redis_owned = redis.clone();
     let url = original_url.to_string();
     tokio::spawn(async move {
-        let cache = ImageCache::new(&db_owned, &redis_owned);
+        let cache = ImageCache::new(db_owned, redis_owned);
         match cache.get_or_cache(&url).await {
             Ok(cdn_url) => {
                 info!("[BgCache] Successfully cached: {} -> {}", url, cdn_url);
@@ -513,7 +514,7 @@ pub async fn get_cached_or_original(
 /// Batch process multiple image URLs - returns original URLs immediately
 /// and triggers background caching for all
 pub fn cache_image_urls_batch_lazy(
-    db: &DatabaseConnection,
+    db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     urls: Vec<String>,
 ) -> Vec<String> {
@@ -523,7 +524,7 @@ pub fn cache_image_urls_batch_lazy(
 
     // Spawn background task to cache all URLs
     tokio::spawn(async move {
-        let cache = ImageCache::new(&db_owned, &redis_owned);
+        let cache = ImageCache::new(db_owned, redis_owned);
         for url in urls_clone {
             if let Ok(cdn_url) = cache.get_or_cache(&url).await {
                 info!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);

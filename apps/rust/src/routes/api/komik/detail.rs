@@ -154,7 +154,7 @@ pub async fn detail(
             // Cache poster image
             if !data.poster.is_empty() {
                 data.poster =
-                    get_cached_or_original(&app_state.db, &app_state.redis_pool, &data.poster)
+                    get_cached_or_original(app_state.db.clone(), &app_state.redis_pool, &data.poster)
                         .await;
             }
 
