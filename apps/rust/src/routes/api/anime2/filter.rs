@@ -147,7 +147,8 @@ pub async fn filter(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             Ok(FilterResponse {
                 status: "Ok".to_string(),

@@ -107,7 +107,8 @@ pub async fn anime(
                 &redis,
                 all_posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             Ok(AnimeResponse {
                 status: "Ok".to_string(),

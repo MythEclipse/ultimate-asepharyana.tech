@@ -606,7 +606,9 @@ pub async fn get_cached_or_original(
 
 /// Batch process multiple image URLs - returns original URLs immediately
 /// and triggers background caching for all
-pub fn cache_image_urls_batch_lazy(
+/// Batch process multiple image URLs - checks cache first, returns cached URL if found
+/// For misses: returns original URL and triggers background caching
+pub async fn cache_image_urls_batch_lazy(
     db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     urls: Vec<String>,
@@ -616,48 +618,84 @@ pub fn cache_image_urls_batch_lazy(
         return urls;
     }
 
-    let db_owned = db.clone();
-    let redis_owned = redis.clone();
+    let cache = ImageCache::new(db.clone(), redis.clone());
+    let mut results = Vec::with_capacity(urls.len());
+    let mut missing_urls = Vec::new();
 
-    // Avoid cloning the entire vector just for the background task if we return the original
-    // But since we need to return the original vector, we must clone it once.
-    let urls_clone = urls.clone();
+    // 1. Batch check Redis
+    let redis_cache = Cache::new(redis);
+    let cache_keys: Vec<String> = urls
+        .iter()
+        .map(|url| format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(url)))
+        .collect();
 
-    // Clone semaphore for the background task
-    let sem_owned = semaphore.clone();
+    // Note: Rust-Redis doesn't expose a simple high-level mget in the deadpool wrapper easily
+    // without manual connection handling, but Cache wrapper might not support mget either yet.
+    // For now, we'll do individual lookups or assume low concurrency overhead since it's Redis.
+    // Optimization: If performance is an issue, implement mget in Cache struct.
+    // For this implementation, we will iterate.
 
-    // Spawn background task to cache all URLs
-    tokio::spawn(async move {
-        use futures::stream::{self, StreamExt};
-
-        // Pass semaphore to ImageCache if available
-        let mut cache = ImageCache::new(db_owned, redis_owned);
-        if let Some(sem) = sem_owned {
-            cache = cache.with_semaphore(sem);
+    for (i, url) in urls.iter().enumerate() {
+        let cache_key = &cache_keys[i];
+        if let Some(cdn_url) = redis_cache.get::<String>(cache_key).await {
+            results.push(cdn_url);
+        } else {
+            // Redis miss - check DB?
+            // Checking DB for every image might be slow.
+            // Let's rely on Redis for "hot" cache and assume if it's not in Redis,
+            // we treat it as a "miss" for the fast path (lazy), OR we check DB.
+            // But checking DB individually is slow.
+            // Let's verify DB for misses.
+            if let Ok(Some(entry)) = cache.find_in_db(url).await {
+                // Determine if we should cache back to Redis? Yes.
+                let _ = redis_cache
+                    .set_with_ttl(cache_key, &entry.cdn_url, IMAGE_CACHE_TTL)
+                    .await;
+                results.push(entry.cdn_url);
+            } else {
+                // Real miss
+                results.push(url.clone());
+                missing_urls.push(url.clone());
+            }
         }
+    }
 
-        // Process in parallel with concurrency limit
-        stream::iter(urls_clone)
-            .map(|url| {
-                let cache_ref = &cache;
-                async move {
-                    match cache_ref.get_or_cache(&url).await {
-                        Ok(cdn_url) => {
-                            debug!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
-                        },
-                        Err(e) => {
-                            // Only warn if not transient concurrency issue
-                             if !e.contains("already being cached") {
-                                debug!("[BatchLazyCache] Failed to cache {}: {}", url, e);
+    // 2. Trigger background caching for missing URLs
+    if !missing_urls.is_empty() {
+        let db_owned = db.clone();
+        let redis_owned = redis.clone();
+        let sem_owned = semaphore.clone();
+        let urls_to_cache = missing_urls;
+
+        tokio::spawn(async move {
+            use futures::stream::{self, StreamExt};
+
+            let mut cache = ImageCache::new(db_owned, redis_owned);
+            if let Some(sem) = sem_owned {
+                cache = cache.with_semaphore(sem);
+            }
+
+            stream::iter(urls_to_cache)
+                .map(|url| {
+                    let cache_ref = &cache;
+                    async move {
+                        match cache_ref.get_or_cache(&url).await {
+                            Ok(cdn_url) => {
+                                debug!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
+                            }
+                            Err(e) => {
+                                if !e.contains("already being cached") {
+                                    debug!("[BatchLazyCache] Failed to cache {}: {}", url, e);
+                                }
                             }
                         }
                     }
-                }
-            })
-            .buffer_unordered(5) // Limit concurrent uploads to 5 (per batch)
-            .collect::<Vec<_>>()
-            .await;
-    });
+                })
+                .buffer_unordered(5)
+                .collect::<Vec<_>>()
+                .await;
+        });
+    }
 
-    urls
+    results
 }

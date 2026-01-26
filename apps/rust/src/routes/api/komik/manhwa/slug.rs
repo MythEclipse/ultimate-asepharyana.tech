@@ -123,7 +123,8 @@ pub async fn list(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             Ok(ManhwaResponse { data, pagination })
         })

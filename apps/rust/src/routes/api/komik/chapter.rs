@@ -94,7 +94,8 @@ pub async fn chapter(
                 &app_state.redis_pool,
                 data.images,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             Ok(ChapterResponse {
                 message: "Ok".to_string(),

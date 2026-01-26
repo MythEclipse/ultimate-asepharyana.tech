@@ -120,7 +120,8 @@ pub async fn popular(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             Ok(PopularKomikResponse {
                 status: "Ok".to_string(),

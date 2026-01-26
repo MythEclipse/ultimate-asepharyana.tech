@@ -146,7 +146,8 @@ pub async fn search(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             Ok(SearchResponse { data, pagination })
         })

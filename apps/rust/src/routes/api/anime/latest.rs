@@ -108,7 +108,8 @@ pub async fn latest(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             // Return original URLs immediately.
             // Posters will be cached in background and available on next request.

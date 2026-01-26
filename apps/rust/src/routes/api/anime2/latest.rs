@@ -116,7 +116,8 @@ pub async fn latest(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             // For current response, try to use cached version if available (best effort without waiting)
             // Note: On first load, this will likely return original URLs, which is fine for speed.
@@ -240,7 +241,8 @@ pub async fn latest(
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
-            );
+            )
+            .await;
 
             // We return `anime_list` as is (with original posters).
             // Effectively 0ms added latency.
