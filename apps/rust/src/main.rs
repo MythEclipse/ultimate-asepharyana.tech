@@ -98,15 +98,11 @@ async fn main() -> anyhow::Result<()> {
 
     let db_arc = Arc::new(db);
 
-    // Dynamic semaphore sizing based on CPU cores
-    let cpu_count = std::thread::available_parallelism()
-        .map(|p| p.get())
-        .unwrap_or(4);
-    let semaphore_permit = cpu_count * 2;
+    // Limit background uploads to 5 as requested by user
+    let semaphore_permit = 5;
     tracing::info!(
-        "Initializing image processing semaphore with {} permits (based on {} cores)",
-        semaphore_permit,
-        cpu_count
+        "Initializing image processing semaphore with {} permits (Global Upload Limit)",
+        semaphore_permit
     );
     let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(semaphore_permit));
 

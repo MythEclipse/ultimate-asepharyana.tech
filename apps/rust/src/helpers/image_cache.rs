@@ -691,7 +691,7 @@ pub async fn cache_image_urls_batch_lazy(
                         }
                     }
                 })
-                .buffer_unordered(5)
+                .buffer_unordered(50) // High concurrency for Redis checks; uploads throttled by global semaphore
                 .collect::<Vec<_>>()
                 .await;
         });
