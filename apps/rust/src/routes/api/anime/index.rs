@@ -81,7 +81,7 @@ pub async fn anime(
     // Clean caching with get_or_set pattern
     let response = cache
         .get_or_set("anime:index", CACHE_TTL, || async {
-            let data = fetch_anime_data()
+            let mut data = fetch_anime_data()
                 .await
                 .map_err(|e| format!("Fetch error: {}", e))?;
 
@@ -101,14 +101,30 @@ pub async fn anime(
                 .map(|i| i.poster.clone())
                 .collect();
 
+            let ongoing_len = ongoing_posters.len();
+
             let all_posters = [ongoing_posters, complete_posters].concat();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db.clone(),
                 &redis,
                 all_posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            // Update ongoing anime posters
+            for (i, item) in data.ongoing_anime.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
+
+            // Update complete anime posters
+            for (i, item) in data.complete_anime.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(ongoing_len + i) {
+                    item.poster = url.clone();
+                }
+            }
 
             Ok(AnimeResponse {
                 status: "Ok".to_string(),

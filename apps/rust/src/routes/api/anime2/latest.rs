@@ -94,7 +94,7 @@ pub async fn latest(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (anime_list, pagination) =
+            let (mut anime_list, pagination) =
                 fetch_latest_anime(page).await.map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs (returns original + background cache)
@@ -104,20 +104,22 @@ pub async fn latest(
             let redis = app_state.redis_pool.clone();
 
             // Extract all poster URLs
-            let posters: Vec<String> = anime_list
-                .iter()
-                .map(|item| item.poster.clone())
-                .filter(|p| !p.is_empty())
-                .collect();
+            let posters: Vec<String> = anime_list.iter().map(|item| item.poster.clone()).collect();
 
             // Trigger lazy batch caching
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db.clone(),
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            for (i, item) in anime_list.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
 
             // For current response, try to use cached version if available (best effort without waiting)
             // Note: On first load, this will likely return original URLs, which is fine for speed.

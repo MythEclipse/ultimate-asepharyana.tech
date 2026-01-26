@@ -72,7 +72,7 @@ pub async fn anime2(
 
     let response = cache
         .get_or_set(CACHE_KEY, CACHE_TTL, || async {
-            let data = fetch_anime_data().await.map_err(|e| e.to_string())?;
+            let mut data = fetch_anime_data().await.map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs
             // Fire-and-forget background caching for posters to ensure max API speed
@@ -90,14 +90,30 @@ pub async fn anime2(
                 .map(|i| i.poster.clone())
                 .collect();
 
+            let ongoing_len = ongoing_posters.len();
+
             let all_posters = [ongoing_posters, complete_posters].concat();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 all_posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            // Update ongoing posters
+            for (i, item) in data.ongoing_anime.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
+
+            // Update complete posters
+            for (i, item) in data.complete_anime.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(ongoing_len + i) {
+                    item.poster = url.clone();
+                }
+            }
 
             Ok(Anime2Response {
                 status: "Ok".to_string(),

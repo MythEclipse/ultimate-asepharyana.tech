@@ -110,7 +110,7 @@ pub async fn list(
                 format!("{}/manga/page/{}/?tipe=manhua", base_api_url, page)
             };
 
-            let (data, pagination) = fetch_and_parse_manhua_list(&url, page)
+            let (mut data, pagination) = fetch_and_parse_manhua_list(&url, page)
                 .await
                 .map_err(|e| e.to_string())?;
 
@@ -120,13 +120,19 @@ pub async fn list(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            for (i, item) in data.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
 
             Ok(ManhuaResponse { data, pagination })
         })

@@ -102,7 +102,7 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (komik_list, pagination) = fetch_genre_komik(&genre_slug, page)
+            let (mut komik_list, pagination) = fetch_genre_komik(&genre_slug, page)
                 .await
                 .map_err(|e| e.to_string())?;
 
@@ -112,13 +112,19 @@ pub async fn slug(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = komik_list.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            for (i, item) in komik_list.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
 
             Ok(GenreKomikResponse {
                 status: "Ok".to_string(),

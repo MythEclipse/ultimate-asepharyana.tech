@@ -112,7 +112,7 @@ pub async fn slug(
 
             let html_clone = html.clone();
             let slug_clone = slug.clone();
-            let (anime_list, pagination) =
+            let (mut anime_list, pagination) =
                 tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
                     .await
                     .map_err(|e| e.to_string())?
@@ -124,13 +124,19 @@ pub async fn slug(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            for (i, item) in anime_list.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
 
             Ok(CompleteAnimeResponse {
                 status: "Ok".to_string(),

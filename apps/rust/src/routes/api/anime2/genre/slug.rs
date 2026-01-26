@@ -107,9 +107,10 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (anime_list, pagination) = fetch_genre_anime(&genre_slug, page, &status, &order)
-                .await
-                .map_err(|e| e.to_string())?;
+            let (mut anime_list, pagination) =
+                fetch_genre_anime(&genre_slug, page, &status, &order)
+                    .await
+                    .map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs
             // Fire-and-forget background caching for posters to ensure max API speed
@@ -117,13 +118,19 @@ pub async fn slug(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
+
+            for (i, item) in anime_list.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
 
             Ok(GenreAnimeResponse {
                 status: "Ok".to_string(),
