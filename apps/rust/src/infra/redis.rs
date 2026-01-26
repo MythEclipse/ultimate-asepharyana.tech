@@ -30,7 +30,8 @@ pub static REDIS_POOL: Lazy<Pool> = Lazy::new(|| {
     info!("Initializing Redis connection pool for URL: {}", redis_url);
 
     Pool::builder(Manager::new(redis_url).expect("Failed to create Redis manager"))
-        .max_size(10)
+        .max_size(50)  // Increased from 10 for better high-traffic handling
+        .runtime(deadpool_redis::Runtime::Tokio1)
         .build()
         .expect("Failed to create Redis connection pool")
 });

@@ -54,7 +54,7 @@ rand = "0.9.2"
 tempfile = "3.24.0"
 mime_guess = "2.0.5"
 lazy_static = "1.5"
-tower-http = { version = "0.6.8", features = ["fs", "cors"] }
+tower-http = { version = "0.6.8", features = ["fs", "cors", "compression-gzip", "compression-br", "compression-zstd"] }
 backoff = { version = "0.4", features = ["futures", "tokio"] }
 dashmap = "6.1"
 deadpool-redis = { version = "0.22.0", features = ["serde"] }

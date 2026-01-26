@@ -96,10 +96,28 @@ impl Default for HttpClient {
 use once_cell::sync::Lazy;
 use std::sync::Arc;
 
-/// Global HTTP client instance.
+/// Global HTTP client instance (30s timeout - general purpose).
 pub static HTTP_CLIENT: Lazy<Arc<HttpClient>> = Lazy::new(|| Arc::new(HttpClient::new()));
+
+/// Fast HTTP client (10s timeout - for API calls).
+pub static HTTP_CLIENT_FAST: Lazy<Arc<HttpClient>> =
+    Lazy::new(|| Arc::new(HttpClient::with_timeout(10)));
+
+/// Slow HTTP client (60s timeout - for large downloads).
+pub static HTTP_CLIENT_SLOW: Lazy<Arc<HttpClient>> =
+    Lazy::new(|| Arc::new(HttpClient::with_timeout(60)));
 
 /// Get the global HTTP client.
 pub fn http_client() -> &'static HttpClient {
     &HTTP_CLIENT
+}
+
+/// Get the fast HTTP client (10s timeout).
+pub fn http_client_fast() -> &'static HttpClient {
+    &HTTP_CLIENT_FAST
+}
+
+/// Get the slow HTTP client (60s timeout).
+pub fn http_client_slow() -> &'static HttpClient {
+    &HTTP_CLIENT_SLOW
 }

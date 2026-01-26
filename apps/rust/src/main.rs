@@ -15,6 +15,7 @@ use std::sync::Arc;
 use axum::Router;
 // use http::{header, Method};       <-- Removed to fix unused import error
 use sea_orm::{Database, DatabaseConnection};
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
@@ -61,9 +62,10 @@ async fn main() -> anyhow::Result<()> {
     let mut opt = sea_orm::ConnectOptions::new(CONFIG.database_url.clone());
     opt.max_connections(100)
         .min_connections(10)
-        .connect_timeout(std::time::Duration::from_secs(10))
-        .idle_timeout(std::time::Duration::from_secs(300))
-        .acquire_timeout(std::time::Duration::from_secs(5))
+        .connect_timeout(std::time::Duration::from_secs(5))
+        .idle_timeout(std::time::Duration::from_secs(60))
+        .acquire_timeout(std::time::Duration::from_secs(3))
+        .max_lifetime(std::time::Duration::from_secs(1800))
         .sqlx_logging(CONFIG.log_level == "debug"); // Only log SQL in debug mode
 
     let db: DatabaseConnection = Database::connect(opt)
@@ -145,6 +147,7 @@ async fn main() -> anyhow::Result<()> {
             rustexpress::routes::ws::register_routes(Router::new()).with_state(app_state.clone()),
         )
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .layer(CompressionLayer::new())
         .layer(cors);
 
     let port = 4091;

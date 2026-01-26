@@ -180,8 +180,27 @@ impl BrowserPool {
             browser: Arc::new(browser),
             available_tabs: Mutex::new(Vec::new()),
             semaphore: Arc::new(Semaphore::new(config.max_tabs)),
-            config,
+            config: config.clone(),
         });
+
+        // Pre-warm tabs for faster first requests
+        let warm_count = std::cmp::min(3, config.max_tabs);
+        for i in 0..warm_count {
+            match pool.create_new_tab().await {
+                Ok(tab) => {
+                    pool.available_tabs.lock().await.push(tab);
+                    debug!("Pre-warmed tab {}/{}", i + 1, warm_count);
+                }
+                Err(e) => {
+                    warn!("Failed to pre-warm tab: {}", e);
+                    break;
+                }
+            }
+        }
+        info!(
+            "✅ Browser pool initialized with {} warm tabs",
+            pool.available_tabs.lock().await.len()
+        );
 
         Ok(pool)
     }

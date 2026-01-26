@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
+use crate::infra::http_client::http_client;
+
 use super::cache::Cache;
 
 use crate::helpers::cache_ttl::CACHE_TTL_IMAGE;
@@ -37,7 +39,7 @@ pub fn url_hash(url: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(url.as_bytes());
     let result = hasher.finalize();
-    hex::encode(&result[..8]) // Use first 8 bytes for shorter key
+    hex::encode(&result[..16]) // Use 16 bytes for collision-resistant key
 }
 
 /// Response from Picser API (/api/upload)
@@ -115,10 +117,7 @@ impl ImageCache {
         Self {
             db,
             redis,
-            client: Client::builder()
-                .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .build()
-                .unwrap_or_default(),
+            client: http_client().client().clone(), // Reuse global HTTP client for connection pooling
             _config: ImageCacheConfig::default(),
             semaphore: None,
         }
@@ -133,10 +132,7 @@ impl ImageCache {
         Self {
             db,
             redis,
-            client: Client::builder()
-                .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .build()
-                .unwrap_or_default(),
+            client: http_client().client().clone(), // Reuse global HTTP client
             _config: config,
             semaphore: None,
         }
@@ -344,8 +340,9 @@ impl ImageCache {
     }
 
     /// Invalidate API response caches that may contain this image
+    /// Uses SCAN instead of KEYS to avoid blocking Redis
     async fn invalidate_api_caches(&self) -> Result<(), String> {
-        use deadpool_redis::redis::AsyncCommands;
+        use deadpool_redis::redis::{AsyncCommands, cmd};
 
         let mut conn = self.redis.get().await.map_err(|e| e.to_string())?;
 
@@ -355,11 +352,26 @@ impl ImageCache {
         let mut total_deleted = 0;
 
         for pattern in patterns {
-            let keys: Vec<String> = conn.keys(pattern).await.map_err(|e| e.to_string())?;
-
-            if !keys.is_empty() {
-                let deleted: usize = conn.del(&keys).await.map_err(|e| e.to_string())?;
-                total_deleted += deleted;
+            // Use SCAN instead of KEYS to avoid blocking Redis
+            let mut cursor: u64 = 0;
+            loop {
+                let (new_cursor, keys): (u64, Vec<String>) = cmd("SCAN")
+                    .arg(cursor)
+                    .arg("MATCH").arg(pattern)
+                    .arg("COUNT").arg(100)
+                    .query_async(&mut *conn)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                
+                if !keys.is_empty() {
+                    let deleted: usize = conn.del(&keys).await.map_err(|e| e.to_string())?;
+                    total_deleted += deleted;
+                }
+                
+                cursor = new_cursor;
+                if cursor == 0 {
+                    break;
+                }
             }
         }
 
@@ -507,24 +519,19 @@ pub fn cache_image_url_lazy(
     redis: &RedisPool,
     original_url: String,
 ) -> String {
-    // Optimized: No need to clone DB/Redis here if we change the signature to take Arc directly
-    // but for now we clone only what's needed for the closure
-    let db_owned = db.clone();
+    let db_owned = db;  // Arc is cheap to clone, no need for extra clone
     let redis_owned = redis.clone();
-
-    // Move string ownership into closure without extra clone if possible
-    let url_for_cache = original_url.clone();
-    let url_for_log = original_url.clone();
+    let url = original_url.clone();  // Single clone for the async block
 
     // Spawn background task to cache
     tokio::spawn(async move {
         let cache = ImageCache::new(db_owned, redis_owned);
-        match cache.get_or_cache(&url_for_cache).await {
+        match cache.get_or_cache(&url).await {
             Ok(cdn_url) => {
-                info!("[LazyImageCache] Cached: {} -> {}", url_for_cache, cdn_url);
+                info!("[LazyImageCache] Cached: {} -> {}", url, cdn_url);
             }
             Err(e) => {
-                warn!("[LazyImageCache] Failed to cache {}: {}", url_for_log, e);
+                warn!("[LazyImageCache] Failed to cache {}: {}", url, e);
             }
         }
     });
