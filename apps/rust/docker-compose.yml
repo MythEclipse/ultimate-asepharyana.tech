@@ -7,9 +7,9 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: rustexpress
-      MYSQL_USER: rustuser
-      MYSQL_PASSWORD: rustpassword
+      MYSQL_DATABASE: sosmed
+      MYSQL_USER: asephs
+      MYSQL_PASSWORD: hunterz
     ports:
       - "3306:3306"
     volumes:

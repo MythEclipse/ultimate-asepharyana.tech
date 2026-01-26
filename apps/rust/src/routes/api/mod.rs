@@ -121,28 +121,24 @@ use crate::routes::api::komik::genre::slug::KomikItem;
 use crate::routes::api::komik::genre::slug::Pagination as Pagination_11;
 use crate::routes::api::komik::genre_list::Genre as Genre_4;
 use crate::routes::api::komik::genre_list::GenresResponse as GenresResponse_2;
-use crate::routes::api::komik::latest::LatestKomikItem;
-use crate::routes::api::komik::latest::LatestKomikResponse;
-use crate::routes::api::komik::latest::LatestQuery as LatestQuery_2;
-use crate::routes::api::komik::latest::Pagination as Pagination_12;
 use crate::routes::api::komik::manga::slug::MangaItem;
 use crate::routes::api::komik::manga::slug::MangaResponse;
-use crate::routes::api::komik::manga::slug::Pagination as Pagination_13;
+use crate::routes::api::komik::manga::slug::Pagination as Pagination_12;
 use crate::routes::api::komik::manga::slug::QueryParams;
 use crate::routes::api::komik::manhua::slug::ManhuaItem;
 use crate::routes::api::komik::manhua::slug::ManhuaResponse;
-use crate::routes::api::komik::manhua::slug::Pagination as Pagination_14;
+use crate::routes::api::komik::manhua::slug::Pagination as Pagination_13;
 use crate::routes::api::komik::manhua::slug::QueryParams as QueryParams_1;
 use crate::routes::api::komik::manhwa::slug::ManhwaItem;
 use crate::routes::api::komik::manhwa::slug::ManhwaResponse;
-use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_15;
+use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_14;
 use crate::routes::api::komik::manhwa::slug::QueryParams as QueryParams_2;
-use crate::routes::api::komik::popular::Pagination as Pagination_16;
+use crate::routes::api::komik::popular::Pagination as Pagination_15;
 use crate::routes::api::komik::popular::PopularKomikItem;
 use crate::routes::api::komik::popular::PopularKomikResponse;
 use crate::routes::api::komik::popular::PopularQuery;
 use crate::routes::api::komik::search::MangaItem as MangaItem_1;
-use crate::routes::api::komik::search::Pagination as Pagination_17;
+use crate::routes::api::komik::search::Pagination as Pagination_16;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
 use crate::routes::api::proxy::croxy::ProxyParams;
@@ -164,7 +160,6 @@ paths(
               crate::routes::api::komik::chapter::chapter,
               crate::routes::api::komik::detail::detail,
               crate::routes::api::komik::genre_list::genres,
-              crate::routes::api::komik::latest::latest,
               crate::routes::api::komik::popular::popular,
               crate::routes::api::komik::search::search,
               crate::routes::api::auth::change_password::change_password,
@@ -310,28 +305,24 @@ components(
                   Pagination_11,
                   Genre_4,
                   GenresResponse_2,
-                  LatestKomikItem,
-                  LatestKomikResponse,
-                  LatestQuery_2,
-                  Pagination_12,
                   MangaItem,
                   MangaResponse,
-                  Pagination_13,
+                  Pagination_12,
                   QueryParams,
                   ManhuaItem,
                   ManhuaResponse,
-                  Pagination_14,
+                  Pagination_13,
                   QueryParams_1,
                   ManhwaItem,
                   ManhwaResponse,
-                  Pagination_15,
+                  Pagination_14,
                   QueryParams_2,
-                  Pagination_16,
+                  Pagination_15,
                   PopularKomikItem,
                   PopularKomikResponse,
                   PopularQuery,
                   MangaItem_1,
-                  Pagination_17,
+                  Pagination_16,
                   SearchQuery_2,
                   SearchResponse_2,
                   ProxyParams,
