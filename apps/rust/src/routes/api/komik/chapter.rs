@@ -89,8 +89,12 @@ pub async fn chapter(
 
             // Cache all images in background (lazy)
             // This returns original URLs immediately but triggers caching for next time
-            data.images =
-                cache_image_urls_batch_lazy(app_state.db.clone(), &app_state.redis_pool, data.images);
+            data.images = cache_image_urls_batch_lazy(
+                app_state.db.clone(),
+                &app_state.redis_pool,
+                data.images,
+                Some(app_state.image_processing_semaphore.clone()),
+            );
 
             Ok(ChapterResponse {
                 message: "Ok".to_string(),

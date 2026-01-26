@@ -111,7 +111,12 @@ pub async fn latest(
                 .collect();
 
             // Trigger lazy batch caching
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(db.clone(), &redis, posters);
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+                db.clone(),
+                &redis,
+                posters,
+                Some(app_state.image_processing_semaphore.clone()),
+            );
 
             // For current response, try to use cached version if available (best effort without waiting)
             // Note: On first load, this will likely return original URLs, which is fine for speed.
@@ -230,7 +235,12 @@ pub async fn latest(
             let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
 
             // Fire background processing
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(db, &redis, posters);
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+                db,
+                &redis,
+                posters,
+                Some(app_state.image_processing_semaphore.clone()),
+            );
 
             // We return `anime_list` as is (with original posters).
             // Effectively 0ms added latency.

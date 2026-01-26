@@ -102,7 +102,12 @@ pub async fn anime(
                 .collect();
 
             let all_posters = [ongoing_posters, complete_posters].concat();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(db.clone(), &redis, all_posters);
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+                db.clone(),
+                &redis,
+                all_posters,
+                Some(app_state.image_processing_semaphore.clone()),
+            );
 
             Ok(AnimeResponse {
                 status: "Ok".to_string(),

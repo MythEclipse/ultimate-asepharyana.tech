@@ -520,14 +520,20 @@ pub fn cache_image_url_lazy(
     db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     original_url: String,
+    semaphore: Option<Arc<tokio::sync::Semaphore>>,
 ) -> String {
     let db_owned = db; // Arc is cheap to clone, no need for extra clone
     let redis_owned = redis.clone();
     let url = original_url.clone(); // Single clone for the async block
+    let sem_owned = semaphore.clone();
 
     // Spawn background task to cache
     tokio::spawn(async move {
-        let cache = ImageCache::new(db_owned, redis_owned);
+        let mut cache = ImageCache::new(db_owned, redis_owned);
+        if let Some(sem) = sem_owned {
+            cache = cache.with_semaphore(sem);
+        }
+
         match cache.get_or_cache(&url).await {
             Ok(cdn_url) => {
                 info!("[LazyImageCache] Cached: {} -> {}", url, cdn_url);
@@ -543,10 +549,13 @@ pub fn cache_image_url_lazy(
 
 /// Convert image URL to CDN URL if already cached, otherwise return original
 /// and trigger background caching for next request (with duplicate prevention)
+/// Convert image URL to CDN URL if already cached, otherwise return original
+/// and trigger background caching for next request (with duplicate prevention)
 pub async fn get_cached_or_original(
     db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     original_url: &str,
+    semaphore: Option<Arc<tokio::sync::Semaphore>>,
 ) -> String {
     let cache = ImageCache::new(db.clone(), redis.clone());
 
@@ -571,8 +580,14 @@ pub async fn get_cached_or_original(
     let db_owned = db.clone();
     let redis_owned = redis.clone();
     let url = original_url.to_string();
+    let sem_owned = semaphore.clone();
+
     tokio::spawn(async move {
-        let cache = ImageCache::new(db_owned, redis_owned);
+        let mut cache = ImageCache::new(db_owned, redis_owned);
+        if let Some(sem) = sem_owned {
+            cache = cache.with_semaphore(sem);
+        }
+
         match cache.get_or_cache(&url).await {
             Ok(cdn_url) => {
                 info!("[BgCache] Successfully cached: {} -> {}", url, cdn_url);
@@ -595,6 +610,7 @@ pub fn cache_image_urls_batch_lazy(
     db: Arc<DatabaseConnection>,
     redis: &RedisPool,
     urls: Vec<String>,
+    semaphore: Option<Arc<tokio::sync::Semaphore>>,
 ) -> Vec<String> {
     if urls.is_empty() {
         return urls;
@@ -607,11 +623,18 @@ pub fn cache_image_urls_batch_lazy(
     // But since we need to return the original vector, we must clone it once.
     let urls_clone = urls.clone();
 
+    // Clone semaphore for the background task
+    let sem_owned = semaphore.clone();
+
     // Spawn background task to cache all URLs
     tokio::spawn(async move {
         use futures::stream::{self, StreamExt};
 
-        let cache = ImageCache::new(db_owned, redis_owned);
+        // Pass semaphore to ImageCache if available
+        let mut cache = ImageCache::new(db_owned, redis_owned);
+        if let Some(sem) = sem_owned {
+            cache = cache.with_semaphore(sem);
+        }
 
         // Process in parallel with concurrency limit
         stream::iter(urls_clone)
@@ -631,7 +654,7 @@ pub fn cache_image_urls_batch_lazy(
                     }
                 }
             })
-            .buffer_unordered(5) // Limit concurrent uploads to 5
+            .buffer_unordered(5) // Limit concurrent uploads to 5 (per batch)
             .collect::<Vec<_>>()
             .await;
     });

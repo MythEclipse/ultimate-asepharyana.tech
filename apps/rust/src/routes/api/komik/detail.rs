@@ -153,9 +153,13 @@ pub async fn detail(
 
             // Cache poster image
             if !data.poster.is_empty() {
-                data.poster =
-                    get_cached_or_original(app_state.db.clone(), &app_state.redis_pool, &data.poster)
-                        .await;
+                data.poster = get_cached_or_original(
+                    app_state.db.clone(),
+                    &app_state.redis_pool,
+                    &data.poster,
+                    Some(app_state.image_processing_semaphore.clone()),
+                )
+                .await;
             }
 
             Ok(DetailResponse { status: true, data })

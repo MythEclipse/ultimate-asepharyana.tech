@@ -106,13 +106,16 @@ pub async fn search(
             // Convert all poster URLs to CDN URLs concurrently
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
+            let semaphore = app_state.image_processing_semaphore.clone();
 
             data = join_all_limited(data, 20, |mut item| {
                 let db = db.clone();
                 let redis = redis.clone();
+                let semaphore = semaphore.clone();
                 async move {
                     if !item.poster.is_empty() {
-                        item.poster = get_cached_or_original(db, &redis, &item.poster).await;
+                        item.poster =
+                            get_cached_or_original(db, &redis, &item.poster, Some(semaphore)).await;
                     }
                     item
                 }
