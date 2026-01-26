@@ -10,12 +10,14 @@ use reqwest::Client;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 use super::cache::Cache;
 
+use crate::helpers::cache_ttl::CACHE_TTL_IMAGE;
+
 /// Default TTL for image cache in Redis (24 hours)
-pub const IMAGE_CACHE_TTL: u64 = 86400;
+pub const IMAGE_CACHE_TTL: u64 = CACHE_TTL_IMAGE;
 
 /// Redis key prefix for image cache
 pub const IMAGE_CACHE_PREFIX: &str = "img_cache";
@@ -97,6 +99,16 @@ pub struct ImageCache {
     semaphore: Option<std::sync::Arc<tokio::sync::Semaphore>>,
 }
 
+// Add imports for Request Coalescing
+use dashmap::DashMap;
+use once_cell::sync::Lazy;
+use tokio::sync::broadcast;
+
+// Global In-Flight Uploads Map
+// Maps Original URL -> Broadcast Sender
+static IN_FLIGHT_UPLOADS: Lazy<DashMap<String, broadcast::Sender<Result<String, String>>>> =
+    Lazy::new(DashMap::new);
+
 impl ImageCache {
     /// Create a new image cache instance
     pub fn new(db: Arc<DatabaseConnection>, redis: RedisPool) -> Self {
@@ -148,73 +160,122 @@ impl ImageCache {
             return Ok(cached_url);
         }
 
-        // 2. Check database
-        if let Some(db_entry) = self.find_in_db(original_url).await? {
-            // Store in Redis for faster access
-            let _ = redis_cache
-                .set_with_ttl(&cache_key, &db_entry.cdn_url, IMAGE_CACHE_TTL)
-                .await;
-            info!("ImageCache: DB hit for {}", original_url);
-            return Ok(db_entry.cdn_url);
-        }
-
-        // 3. Check if another process is already caching this URL
-        if redis_cache.get::<bool>(&lock_key).await.is_some() {
-            info!(
-                "ImageCache: Already being cached by another process: {}",
-                original_url
-            );
-            return Err(format!("URL {} is already being cached", original_url));
-        }
-
-        // 4. Acquire lock to prevent duplicate caching
-        let _ = redis_cache
-            .set_with_ttl(&lock_key, &true, IMAGE_CACHE_LOCK_TTL)
-            .await;
-
-        // 5. Not cached - upload to Picser
-        info!("ImageCache: Miss - uploading {} to Picser", original_url);
-
-        // Acquire permit if semaphore is set
-        let redis_clone = self.redis.clone();
-        let lock_key_for_error = lock_key.clone();
-        let _permit = if let Some(sem) = &self.semaphore {
-            Some(sem.acquire().await.map_err(|e| {
-                // Release lock on error - spawn task to avoid lifetime issues
-                let redis = redis_clone.clone();
-                let lock = lock_key_for_error.clone();
-                tokio::spawn(async move {
-                    let cache = Cache::new(&redis);
-                    let _ = cache.delete(&lock).await;
-                });
-                e.to_string()
-            })?)
-        } else {
-            None
+        // 2. Check Request Coalescing (SingleFlight)
+        // This handles concurrent requests in this process/instance
+        let (tx, is_leader) = {
+            use dashmap::mapref::entry::Entry;
+            match IN_FLIGHT_UPLOADS.entry(original_url.to_string()) {
+                Entry::Occupied(entry) => {
+                    info!("ImageCache: Joining in-flight upload for {}", original_url);
+                    (entry.get().clone(), false)
+                }
+                Entry::Vacant(entry) => {
+                    let (tx, _) = broadcast::channel(1);
+                    entry.insert(tx.clone());
+                    info!("ImageCache: Starting leader upload for {}", original_url);
+                    (tx, true)
+                }
+            }
         };
 
-        // Ensure lock is always released, even on error
+        if !is_leader {
+            // Follower: Wait for result
+            let mut rx = tx.subscribe();
+            return match rx.recv().await {
+                Ok(Ok(url)) => Ok(url),
+                Ok(Err(e)) => Err(e),
+                Err(e) => {
+                    warn!(
+                        "ImageCache: Coalesce receive error for {}: {:?}",
+                        original_url, e
+                    );
+                    Err("Upload coalescing failed".to_string())
+                }
+            };
+        }
+
+        // Leader: Perform the work
+        // We wrap the work in a closure/block to easily capture the result
         let result = async {
-            // Upload to Picser
-            let cdn_url = self.upload_to_picser(original_url).await?;
+            // 3. Check database (Double check inside leader to be sure)
+            if let Some(db_entry) = self.find_in_db(original_url).await? {
+                // Store in Redis for faster access
+                let _ = redis_cache
+                    .set_with_ttl(&cache_key, &db_entry.cdn_url, IMAGE_CACHE_TTL)
+                    .await;
+                info!("ImageCache: DB hit for {}", original_url);
+                return Ok(db_entry.cdn_url);
+            }
 
-            // Save to database
-            self.save_to_db(original_url, &cdn_url).await?;
+            // 4. Check if another process is already caching this URL (Distributed Lock check)
+            if redis_cache.get::<bool>(&lock_key).await.is_some() {
+                // Even if locked by another process, strict single-flight within this instance
+                // is good. But if another process is working, we might want to wait or just return error?
+                // Current logic returns error.
+                info!(
+                    "ImageCache: Already being cached by another process: {}",
+                    original_url
+                );
+                return Err(format!("URL {} is already being cached", original_url));
+            }
 
-            // Cache in Redis
+            // 5. Acquire lock in Redis
             let _ = redis_cache
-                .set_with_ttl(&cache_key, &cdn_url, IMAGE_CACHE_TTL)
+                .set_with_ttl(&lock_key, &true, IMAGE_CACHE_LOCK_TTL)
                 .await;
 
-            // Invalidate API caches so next requests get updated CDN URLs
-            let _ = self.invalidate_api_caches().await;
+            // 6. Upload
+            info!("ImageCache: Miss - uploading {} to Picser", original_url);
 
-            Ok(cdn_url)
+            // Acquire permit if semaphore is set
+            let redis_clone = self.redis.clone();
+            let lock_key_for_error = lock_key.clone();
+            let _permit = if let Some(sem) = &self.semaphore {
+                Some(sem.acquire().await.map_err(|e| {
+                    let redis = redis_clone.clone();
+                    let lock = lock_key_for_error.clone();
+                    tokio::spawn(async move {
+                        let cache = Cache::new(&redis);
+                        let _ = cache.delete(&lock).await;
+                    });
+                    e.to_string()
+                })?)
+            } else {
+                None
+            };
+
+            // Work
+            let work_result = async {
+                // Upload to Picser
+                let cdn_url = self.upload_to_picser(original_url).await?;
+
+                // Save to database
+                self.save_to_db(original_url, &cdn_url).await?;
+
+                // Cache in Redis
+                let _ = redis_cache
+                    .set_with_ttl(&cache_key, &cdn_url, IMAGE_CACHE_TTL)
+                    .await;
+
+                // Invalidate API caches
+                let _ = self.invalidate_api_caches().await;
+
+                Ok(cdn_url)
+            }
+            .await;
+
+            // Release Redis lock
+            let _ = redis_cache.delete(&lock_key).await;
+
+            work_result
         }
         .await;
 
-        // Always release lock, regardless of success or failure
-        let _ = redis_cache.delete(&lock_key).await;
+        // Broadcast result
+        let _ = tx.send(result.clone());
+
+        // Remove from map
+        IN_FLIGHT_UPLOADS.remove(original_url);
 
         result
     }
@@ -275,7 +336,10 @@ impl ImageCache {
             expires_at: Set(None),
         };
 
-        model.insert(self.db.as_ref()).await.map_err(|e| e.to_string())?;
+        model
+            .insert(self.db.as_ref())
+            .await
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -443,19 +507,24 @@ pub fn cache_image_url_lazy(
     redis: &RedisPool,
     original_url: String,
 ) -> String {
+    // Optimized: No need to clone DB/Redis here if we change the signature to take Arc directly
+    // but for now we clone only what's needed for the closure
     let db_owned = db.clone();
     let redis_owned = redis.clone();
-    let url_clone = original_url.clone();
+
+    // Move string ownership into closure without extra clone if possible
+    let url_for_cache = original_url.clone();
+    let url_for_log = original_url.clone();
 
     // Spawn background task to cache
     tokio::spawn(async move {
         let cache = ImageCache::new(db_owned, redis_owned);
-        match cache.get_or_cache(&url_clone).await {
+        match cache.get_or_cache(&url_for_cache).await {
             Ok(cdn_url) => {
-                info!("[LazyImageCache] Cached: {} -> {}", url_clone, cdn_url);
+                info!("[LazyImageCache] Cached: {} -> {}", url_for_cache, cdn_url);
             }
             Err(e) => {
-                warn!("[LazyImageCache] Failed to cache {}: {}", url_clone, e);
+                warn!("[LazyImageCache] Failed to cache {}: {}", url_for_log, e);
             }
         }
     });
@@ -518,16 +587,24 @@ pub fn cache_image_urls_batch_lazy(
     redis: &RedisPool,
     urls: Vec<String>,
 ) -> Vec<String> {
+    if urls.is_empty() {
+        return urls;
+    }
+
     let db_owned = db.clone();
     let redis_owned = redis.clone();
+
+    // Avoid cloning the entire vector just for the background task if we return the original
+    // But since we need to return the original vector, we must clone it once.
     let urls_clone = urls.clone();
 
     // Spawn background task to cache all URLs
     tokio::spawn(async move {
         let cache = ImageCache::new(db_owned, redis_owned);
+        // Process sequentially to be nice to the semaphore/Picser API
         for url in urls_clone {
             if let Ok(cdn_url) = cache.get_or_cache(&url).await {
-                info!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
+                debug!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
             }
         }
     });

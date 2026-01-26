@@ -1,12 +1,13 @@
 //! Redis caching helpers.
 
+use crate::helpers::cache_ttl::CACHE_TTL_VERY_SHORT;
 use deadpool_redis::redis::AsyncCommands;
 use deadpool_redis::Pool;
 use serde::{de::DeserializeOwned, Serialize};
-use tracing::{error, info};
+use tracing::{debug, error};
 
 /// Default cache TTL in seconds (5 minutes).
-pub const DEFAULT_CACHE_TTL: u64 = 300;
+pub const DEFAULT_CACHE_TTL: u64 = CACHE_TTL_VERY_SHORT;
 
 /// Cache helper for Redis operations.
 pub struct Cache<'a> {
@@ -31,6 +32,12 @@ impl<'a> Cache<'a> {
 
         let cached: Option<String> = conn.get(key).await.ok()?;
 
+        if cached.is_some() {
+            debug!("Cache hit: {}", key);
+        } else {
+            debug!("Cache miss: {}", key);
+        }
+
         cached.and_then(|json| serde_json::from_str(&json).ok())
     }
 
@@ -54,7 +61,7 @@ impl<'a> Cache<'a> {
             .await
             .map_err(|e| e.to_string())?;
 
-        info!("Cache: set key {} with TTL {}s", key, ttl_secs);
+        debug!("Cache: set key {} with TTL {}s", key, ttl_secs);
         Ok(())
     }
 
@@ -62,7 +69,7 @@ impl<'a> Cache<'a> {
     pub async fn delete(&self, key: &str) -> Result<(), String> {
         let mut conn = self.pool.get().await.map_err(|e| e.to_string())?;
         conn.del::<_, ()>(key).await.map_err(|e| e.to_string())?;
-        info!("Cache: deleted key {}", key);
+        debug!("Cache: deleted key {}", key);
         Ok(())
     }
 
@@ -89,11 +96,11 @@ impl<'a> Cache<'a> {
     {
         // Try cache first
         if let Some(cached) = self.get::<T>(key).await {
-            info!("Cache hit: {}", key);
+            debug!("Cache hit: {}", key);
             return Ok(cached);
         }
 
-        info!("Cache miss: {}", key);
+        debug!("Cache miss: {}", key);
 
         // Compute the value
         let value = compute().await?;

@@ -16,7 +16,9 @@ impl HttpClient {
         let client = ClientBuilder::new()
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(10))
-            .pool_max_idle_per_host(10)
+            .pool_max_idle_per_host(20)
+            .pool_idle_timeout(Duration::from_secs(60))
+            .tcp_nodelay(true)
             .user_agent("RustExpress/1.0")
             .build()
             .expect("Failed to build HTTP client");

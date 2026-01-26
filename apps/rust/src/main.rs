@@ -14,7 +14,6 @@ use std::sync::Arc;
 
 use axum::Router;
 // use http::{header, Method};       <-- Removed to fix unused import error
-use log::LevelFilter;
 use sea_orm::{Database, DatabaseConnection};
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;
@@ -60,12 +59,12 @@ async fn main() -> anyhow::Result<()> {
 
     // SeaORM connection using validated config
     let mut opt = sea_orm::ConnectOptions::new(CONFIG.database_url.clone());
-    opt.max_connections(50)
-        .min_connections(5)
+    opt.max_connections(100)
+        .min_connections(10)
         .connect_timeout(std::time::Duration::from_secs(10))
-        .idle_timeout(std::time::Duration::from_secs(10))
-        .sqlx_logging(true)
-        .sqlx_logging_level(LevelFilter::Debug);
+        .idle_timeout(std::time::Duration::from_secs(300))
+        .acquire_timeout(std::time::Duration::from_secs(5))
+        .sqlx_logging(CONFIG.log_level == "debug"); // Only log SQL in debug mode
 
     let db: DatabaseConnection = Database::connect(opt)
         .await
@@ -87,8 +86,17 @@ async fn main() -> anyhow::Result<()> {
 
     let db_arc = Arc::new(db);
 
-    // Create semaphore for image processing (limit 5 concurrent to Picser API)
-    let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(5));
+    // Dynamic semaphore sizing based on CPU cores
+    let cpu_count = std::thread::available_parallelism()
+        .map(|p| p.get())
+        .unwrap_or(4);
+    let semaphore_permit = cpu_count * 2;
+    tracing::info!(
+        "Initializing image processing semaphore with {} permits (based on {} cores)",
+        semaphore_permit,
+        cpu_count
+    );
+    let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(semaphore_permit));
 
     // Initialize RoomManager for WebSocket rooms
     let room_manager = Arc::new(rustexpress::ws::room::RoomManager::new());

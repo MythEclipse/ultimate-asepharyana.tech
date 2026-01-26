@@ -57,7 +57,8 @@ lazy_static! {
     pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
     pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
 }
-const CACHE_TTL: u64 = 300; // 5 minutes
+use crate::helpers::cache_ttl::CACHE_TTL_VERY_SHORT;
+const CACHE_TTL: u64 = CACHE_TTL_VERY_SHORT; // 5 minutes
 
 #[utoipa::path(
     get,
