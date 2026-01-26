@@ -30,8 +30,12 @@ pub const IMAGE_CACHE_LOCK_PREFIX: &str = "img_cache_lock";
 /// Lock TTL (60 seconds - enough time for upload to complete)
 pub const IMAGE_CACHE_LOCK_TTL: u64 = 60;
 
-/// Picser API endpoint (web upload - no token required)
-pub const PICSER_API_URL: &str = "https://picser.pages.dev/api/upload";
+/// Primary Picser API endpoint
+pub const PICSER_API_URL_PRIMARY: &str =
+    "https://picser-asepharyana3864-pf9gzwsl.apn.leapcell.dev/api/upload";
+
+/// Backup Picser API endpoint
+pub const PICSER_API_URL_BACKUP: &str = "https://picser.pages.dev/api/upload";
 
 /// Create a hash of the URL for cache key
 pub fn url_hash(url: &str) -> String {
@@ -387,7 +391,58 @@ impl ImageCache {
         Ok(())
     }
 
-    /// Upload image to Picser CDN
+    /// Helper to perform a single upload attempt
+    async fn perform_single_upload(
+        &self,
+        api_url: &str,
+        image_bytes: &[u8],
+        filename: &str,
+    ) -> Result<PicserResponse, String> {
+        let part = reqwest::multipart::Part::bytes(image_bytes.to_vec())
+            .file_name(filename.to_string())
+            .mime_str("image/jpeg")
+            .map_err(|e| e.to_string())?;
+
+        let form = reqwest::multipart::Form::new().part("file", part);
+
+        let response = self
+            .client
+            .post(api_url)
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to upload to Picser ({}): {}", api_url, e))?;
+
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read Picser response ({}): {}", api_url, e))?;
+
+        // Log the raw response for debugging
+        info!(
+            "ImageCache: Picser raw response ({}): {}",
+            api_url, response_text
+        );
+
+        let picser_response: PicserResponse =
+            serde_json::from_str(&response_text).map_err(|e| {
+                format!(
+                    "Failed to parse Picser response: {} - Raw: {}",
+                    e, response_text
+                )
+            })?;
+
+        if !picser_response.success {
+            let err_msg = picser_response
+                .error
+                .unwrap_or_else(|| "Unknown error".to_string());
+            return Err(format!("Picser upload failed ({}): {}", api_url, err_msg));
+        }
+
+        Ok(picser_response)
+    }
+
+    /// Upload image to Picser CDN with failover support
     async fn upload_to_picser(&self, original_url: &str) -> Result<String, String> {
         // Download the image first
         let image_bytes = self
@@ -403,67 +458,57 @@ impl ImageCache {
         // Determine filename from URL
         let filename = self.extract_filename(original_url);
 
-        // Create multipart form - /api/upload only needs the file
-        let part = reqwest::multipart::Part::bytes(image_bytes.to_vec())
-            .file_name(filename.clone())
-            .mime_str("image/jpeg")
-            .map_err(|e| e.to_string())?;
-
-        let form = reqwest::multipart::Form::new().part("file", part);
-
-        // Upload to Picser
-        let response = self
-            .client
-            .post(PICSER_API_URL)
-            .multipart(form)
-            .send()
+        // Try primary URL first
+        debug!(
+            "ImageCache: Attempting upload to PRIMARY: {}",
+            PICSER_API_URL_PRIMARY
+        );
+        match self
+            .perform_single_upload(PICSER_API_URL_PRIMARY, &image_bytes, &filename)
             .await
-            .map_err(|e| format!("Failed to upload to Picser: {}", e))?;
-
-        let response_text = response
-            .text()
-            .await
-            .map_err(|e| format!("Failed to read Picser response: {}", e))?;
-
-        // Log the raw response for debugging
-        info!("ImageCache: Picser raw response: {}", response_text);
-
-        let picser_response: PicserResponse =
-            serde_json::from_str(&response_text).map_err(|e| {
-                format!(
-                    "Failed to parse Picser response: {} - Raw: {}",
-                    e, response_text
-                )
-            })?;
-
-        if !picser_response.success {
-            let err_msg = picser_response
-                .error
-                .unwrap_or_else(|| "Unknown error".to_string());
-            error!(
-                "ImageCache: Picser upload failed for {}: {}",
-                original_url, err_msg
-            );
-            return Err(format!("Picser upload failed: {}", err_msg));
+        {
+            Ok(response) => return self.extract_cdn_url(response, original_url),
+            Err(e) => {
+                warn!("ImageCache: Primary upload failed: {}. Trying BACKUP...", e);
+            }
         }
 
-        // Extract CDN URL - prefer jsdelivr_commit for permanence
-        let cdn_url = picser_response
+        // Try backup URL
+        debug!(
+            "ImageCache: Attempting upload to BACKUP: {}",
+            PICSER_API_URL_BACKUP
+        );
+        match self
+            .perform_single_upload(PICSER_API_URL_BACKUP, &image_bytes, &filename)
+            .await
+        {
+            Ok(response) => self.extract_cdn_url(response, original_url),
+            Err(e) => {
+                error!("ImageCache: Backup upload also failed: {}", e);
+                Err(format!("All upload attempts failed. Last error: {}", e))
+            }
+        }
+    }
+
+    /// Extract CDN URL from Picser response
+    fn extract_cdn_url(
+        &self,
+        response: PicserResponse,
+        original_url: &str,
+    ) -> Result<String, String> {
+        response
             .urls
             .as_ref()
             .and_then(|u| u.jsdelivr_commit.clone().or(u.jsdelivr.clone()))
-            .or(picser_response.url.clone())
-            .or(picser_response.github_url.clone())
+            .or(response.url.clone())
+            .or(response.github_url.clone())
             .ok_or_else(|| {
                 error!(
                     "ImageCache: No CDN URL in Picser response for {}",
                     original_url
                 );
                 "No CDN URL in Picser response".to_string()
-            })?;
-
-        info!("ImageCache: Uploaded {} -> {}", original_url, cdn_url);
-        Ok(cdn_url)
+            })
     }
 
     /// Extract filename from URL
