@@ -51,6 +51,16 @@ pub fn select_text(element: &ElementRef, css: &str) -> Option<String> {
     element.select(&sel).next().map(|e| text(&e))
 }
 
+/// Extract text from first matching element using a pre-compiled selector.
+pub fn text_from(element: &ElementRef, selector: &Selector) -> Option<String> {
+    element.select(selector).next().map(|e| text(&e))
+}
+
+/// Extract text from first matching element using a pre-compiled selector, or return default.
+pub fn text_from_or(element: &ElementRef, selector: &Selector, default: &str) -> String {
+    text_from(element, selector).unwrap_or_else(|| default.to_string())
+}
+
 /// Extract attribute from first matching element.
 pub fn select_attr(element: &ElementRef, css: &str, attr: &str) -> Option<String> {
     let sel = selector(css)?;
@@ -59,6 +69,25 @@ pub fn select_attr(element: &ElementRef, css: &str, attr: &str) -> Option<String
         .next()
         .and_then(|e| e.value().attr(attr))
         .map(String::from)
+}
+
+/// Extract attribute from first matching element using a pre-compiled selector.
+pub fn attr_from(element: &ElementRef, selector: &Selector, attr: &str) -> Option<String> {
+    element
+        .select(selector)
+        .next()
+        .and_then(|e| e.value().attr(attr))
+        .map(String::from)
+}
+
+/// Extract attribute from first matching element using a pre-compiled selector, or return default.
+pub fn attr_from_or(
+    element: &ElementRef,
+    selector: &Selector,
+    attr: &str,
+    default: &str,
+) -> String {
+    attr_from(element, selector, attr).unwrap_or_else(|| default.to_string())
 }
 
 /// Extract attribute from element.

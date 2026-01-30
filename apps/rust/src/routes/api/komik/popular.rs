@@ -1,4 +1,4 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::extract::{Query, State};
@@ -172,11 +172,7 @@ fn parse_popular_page(
     let mut rank: u32 = ((current_page - 1) * 20) + 1;
 
     for element in document.select(&ITEM_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
 
         let poster = element
             .select(&IMG_SELECTOR)
@@ -185,30 +181,13 @@ fn parse_popular_page(
             .unwrap_or("")
             .to_string();
 
-        let score = element
-            .select(&SCORE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or("N/A".to_string());
+        let score = text_from_or(&element, &SCORE_SELECTOR, "N/A");
 
-        let chapter = element
-            .select(&CHAPTER_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or("N/A".to_string());
+        let chapter = text_from_or(&element, &CHAPTER_SELECTOR, "N/A");
 
-        let komik_type = element
-            .select(&TYPE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or("Manga".to_string());
+        let komik_type = text_from_or(&element, &TYPE_SELECTOR, "Manga");
 
-        let komik_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let komik_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
 
         let slug = SLUG_REGEX
             .captures(&komik_url)

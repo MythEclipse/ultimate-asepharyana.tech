@@ -100,8 +100,8 @@ pub use image_cache::{
 
 // Scraping
 pub use scraping::{
-    extract_number, extract_slug, fetch_html_with_retry, parse_html, select_attr, select_text,
-    selector, strip_tags, text, Scraper,
+    attr_from, attr_from_or, extract_number, extract_slug, fetch_html_with_retry, parse_html,
+    select_attr, select_text, selector, strip_tags, text, text_from, text_from_or, Scraper,
 };
 
 // Strings

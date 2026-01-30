@@ -1,5 +1,5 @@
 use crate::core::types::ApiResponse;
-use crate::helpers::{parse_html, Cache, fetch_html_with_retry};
+use crate::helpers::{parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
 
 use crate::routes::AppState;
 use crate::utils::error::AppError;
@@ -165,39 +165,19 @@ fn parse_ongoing_anime(
     let mut ongoing_anime = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+
+        let slug = attr_from(&element, &LINK_SELECTOR, "href")
+            .as_deref()
+            .and_then(|href: &str| href.split('/').nth(4))
+            .map(String::from)
             .unwrap_or_default();
 
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
 
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
+        let current_episode = text_from_or(&element, &EPISODE_SELECTOR, "N/A");
 
-        let current_episode = element
-            .select(&EPISODE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
-
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
 
         if !title.is_empty() {
             ongoing_anime.push(OngoingAnimeItem {
@@ -219,39 +199,19 @@ fn parse_complete_anime(
     let mut complete_anime = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+
+        let slug = attr_from(&element, &LINK_SELECTOR, "href")
+            .as_deref()
+            .and_then(|href: &str| href.split('/').nth(4))
+            .map(String::from)
             .unwrap_or_default();
 
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
 
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
+        let episode_count = text_from_or(&element, &EPISODE_SELECTOR, "N/A");
 
-        let episode_count = element
-            .select(&EPISODE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
-
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
 
         if !title.is_empty() {
             complete_anime.push(CompleteAnimeItem {
