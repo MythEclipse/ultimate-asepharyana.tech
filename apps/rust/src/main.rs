@@ -1,7 +1,5 @@
 #![doc = "Logging Setup"]
 extern crate lazy_static;
-// Temporary comment to force recompile
-//
 // This application uses [`tracing`](https://docs.rs/tracing) for structured logging.
 // The log level is controlled by the `RUST_LOG` environment variable (e.g., `info`, `debug`, `warn`, `error`).
 // Example usage in `.env`:
@@ -13,7 +11,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-// use http::{header, Method};       <-- Removed to fix unused import error
+
 
 use sea_orm::{Database, DatabaseConnection};
 use tower_http::compression::{CompressionLayer, CompressionLevel};
@@ -70,12 +68,20 @@ async fn main() -> anyhow::Result<()> {
 
     // SeaORM connection using validated config
     let mut opt = sea_orm::ConnectOptions::new(CONFIG.database_url.clone());
-    opt.max_connections(100)
-        .min_connections(10)
-        .connect_timeout(std::time::Duration::from_secs(5))
-        .idle_timeout(std::time::Duration::from_secs(300)) // Increased from 60s to 300s
-        .acquire_timeout(std::time::Duration::from_secs(10)) // Increased from 3s to 10s
-        .max_lifetime(std::time::Duration::from_secs(1800))
+    opt.max_connections(CONFIG.db.max_connections)
+        .min_connections(CONFIG.db.min_connections)
+        .connect_timeout(std::time::Duration::from_secs(
+            CONFIG.db.connect_timeout_seconds,
+        ))
+        .idle_timeout(std::time::Duration::from_secs(
+            CONFIG.db.idle_timeout_seconds,
+        ))
+        .acquire_timeout(std::time::Duration::from_secs(
+            CONFIG.db.acquire_timeout_seconds,
+        ))
+        .max_lifetime(std::time::Duration::from_secs(
+            CONFIG.db.max_lifetime_seconds,
+        ))
         .sqlx_logging(CONFIG.log_level == "debug"); // Only log SQL in debug mode
 
     let db: DatabaseConnection = Database::connect(opt)
@@ -99,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
     let db_arc = Arc::new(db);
 
     // Limit background uploads to 5 as requested by user
-    let semaphore_permit = 5;
+    let semaphore_permit = CONFIG.image_processing_concurrency;
     tracing::info!(
         "Initializing image processing semaphore with {} permits (Global Upload Limit)",
         semaphore_permit
@@ -156,7 +162,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(CompressionLayer::new().quality(CompressionLevel::Fastest))
         .layer(cors);
 
-    let port = 4091;
+    let port = CONFIG.server_port;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     tracing::info!("Binding server to address: {}", addr);
 

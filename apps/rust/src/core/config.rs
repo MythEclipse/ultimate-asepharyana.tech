@@ -42,7 +42,45 @@ pub struct AppConfig {
 
     /// SMTP configuration for emails (optional)
     pub smtp: Option<SmtpConfig>,
+
+    /// Database pool configuration
+    #[serde(default)]
+    pub db: DbConfig,
+
+    /// Max concurrent image processing tasks
+    #[serde(default = "default_image_processing_concurrency")]
+    pub image_processing_concurrency: usize,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DbConfig {
+    #[serde(default = "default_db_max_connections")]
+    pub max_connections: u32,
+    #[serde(default = "default_db_min_connections")]
+    pub min_connections: u32,
+    #[serde(default = "default_db_connect_timeout")]
+    pub connect_timeout_seconds: u64,
+    #[serde(default = "default_db_idle_timeout")]
+    pub idle_timeout_seconds: u64,
+    #[serde(default = "default_db_acquire_timeout")]
+    pub acquire_timeout_seconds: u64,
+    #[serde(default = "default_db_max_lifetime")]
+    pub max_lifetime_seconds: u64,
+}
+
+impl Default for DbConfig {
+    fn default() -> Self {
+        Self {
+            max_connections: default_db_max_connections(),
+            min_connections: default_db_min_connections(),
+            connect_timeout_seconds: default_db_connect_timeout(),
+            idle_timeout_seconds: default_db_idle_timeout(),
+            acquire_timeout_seconds: default_db_acquire_timeout(),
+            max_lifetime_seconds: default_db_max_lifetime(),
+        }
+    }
+}
+
 
 /// SMTP configuration for sending emails
 #[derive(Debug, Clone, Deserialize)]
@@ -118,6 +156,34 @@ fn default_env() -> String {
 
 fn default_log_level() -> String {
     "info".to_string()
+}
+
+fn default_image_processing_concurrency() -> usize {
+    5
+}
+
+fn default_db_max_connections() -> u32 {
+    100
+}
+
+fn default_db_min_connections() -> u32 {
+    10
+}
+
+fn default_db_connect_timeout() -> u64 {
+    5
+}
+
+fn default_db_idle_timeout() -> u64 {
+    300
+}
+
+fn default_db_acquire_timeout() -> u64 {
+    10
+}
+
+fn default_db_max_lifetime() -> u64 {
+    1800
 }
 
 impl AppConfig {
