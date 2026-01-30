@@ -1,9 +1,10 @@
-use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
+use crate::core::types::ApiResponse;
+use crate::helpers::{default_backoff, parse_html, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
+use crate::utils::error::AppError;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
-use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
 use backoff::future::retry;
 use lazy_static::lazy_static;
@@ -18,7 +19,7 @@ pub const ENDPOINT_PATH: &str = "/api/anime";
 pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime endpoint.";
 pub const ENDPOINT_TAG: &str = "anime";
 pub const OPERATION_ID: &str = "anime_index";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<AnimeResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "Json<AnimeDataResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct OngoingAnimeItem {
@@ -44,11 +45,8 @@ pub struct AnimeData {
     pub complete_anime: Vec<CompleteAnimeItem>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct AnimeResponse {
-    pub status: String,
-    pub data: AnimeData,
-}
+pub type AnimeDataResponse = ApiResponse<AnimeData>;
+pub type EmptyResponse = ApiResponse<()>;
 
 lazy_static! {
     pub static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
@@ -66,13 +64,13 @@ const CACHE_TTL: u64 = CACHE_TTL_VERY_SHORT; // 5 minutes
     tag = "anime",
     operation_id = "anime_index",
     responses(
-        (status = 200, description = "Handles GET requests for the anime endpoint.", body = AnimeResponse),
+        (status = 200, description = "Handles GET requests for the anime endpoint.", body = AnimeDataResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn anime(
     State(app_state): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> Result<impl IntoResponse, AppError> {
     let start_time = std::time::Instant::now();
     info!("Handling request for anime index");
 
@@ -126,16 +124,13 @@ pub async fn anime(
                 }
             }
 
-            Ok(AnimeResponse {
-                status: "Ok".to_string(),
-                data,
-            })
+            Ok(ApiResponse::success(data))
         })
         .await
-        .map_err(internal_err)?;
+        .map_err(|e| AppError::Other(e.to_string()))?;
 
     info!("Anime index completed in {:?}", start_time.elapsed());
-    Ok(Json(response).into_response())
+    Ok(Json(response))
 }
 
 async fn fetch_anime_data() -> Result<AnimeData, Box<dyn std::error::Error + Send + Sync>> {

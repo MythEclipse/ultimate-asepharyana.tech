@@ -3,6 +3,7 @@
 //! This module groups essential framework components.
 
 pub mod config;
+pub mod types;
 pub mod error;
 pub mod jwt;
 pub mod ratelimit;

@@ -130,6 +130,7 @@ impl IntoResponse for AppError {
             _ => (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
 
-        (status, error_message).into_response()
+        let body = axum::Json(crate::core::types::ApiResponse::<()>::error(error_message));
+        (status, body).into_response()
     }
 }

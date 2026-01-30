@@ -69,7 +69,6 @@ use crate::routes::api::anime::genre::slug::Pagination as Pagination_7;
 use crate::routes::api::anime::genre_list::Genre as Genre_3;
 use crate::routes::api::anime::genre_list::GenresResponse as GenresResponse_1;
 use crate::routes::api::anime::index::AnimeData;
-use crate::routes::api::anime::index::AnimeResponse;
 use crate::routes::api::anime::index::CompleteAnimeItem as CompleteAnimeItem_3;
 use crate::routes::api::anime::index::OngoingAnimeItem as OngoingAnimeItem_2;
 use crate::routes::api::anime::latest::LatestAnimeItem as LatestAnimeItem_1;
@@ -253,7 +252,6 @@ components(
                   Genre_3,
                   GenresResponse_1,
                   AnimeData,
-                  AnimeResponse,
                   CompleteAnimeItem_3,
                   OngoingAnimeItem_2,
                   LatestAnimeItem_1,
