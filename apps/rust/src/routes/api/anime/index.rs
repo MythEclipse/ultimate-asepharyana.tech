@@ -287,6 +287,61 @@ fn parse_complete_anime(
     Ok(complete_anime)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_ongoing_anime() {
+        let html = r#"
+        <div class="venz">
+            <ul>
+                <li>
+                    <div class="thumbz">
+                        <h2 class="jdlflm">One Piece</h2>
+                    </div>
+                    <div class="epz">Episode 1000</div>
+                    <a href="https://otakudesu.cloud/anime/one-piece-slug/"></a>
+                    <img src="https://example.com/op.jpg" />
+                </li>
+            </ul>
+        </div>
+        "#;
+
+        let result = parse_ongoing_anime(html).expect("Failed to parse ongoing anime");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].title, "One Piece");
+        assert_eq!(result[0].slug, "one-piece-slug");
+        assert_eq!(result[0].current_episode, "Episode 1000");
+        assert_eq!(result[0].poster, "https://example.com/op.jpg");
+    }
+
+    #[test]
+    fn test_parse_complete_anime() {
+        let html = r#"
+        <div class="venz">
+            <ul>
+                <li>
+                    <div class="thumbz">
+                        <h2 class="jdlflm">Naruto</h2>
+                    </div>
+                    <div class="epz">500 Episodes</div>
+                    <a href="https://otakudesu.cloud/anime/naruto-slug/"></a>
+                    <img src="https://example.com/naruto.jpg" />
+                </li>
+            </ul>
+        </div>
+        "#;
+
+        let result = parse_complete_anime(html).expect("Failed to parse complete anime");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].title, "Naruto");
+        assert_eq!(result[0].slug, "naruto-slug");
+        assert_eq!(result[0].episode_count, "500 Episodes");
+        assert_eq!(result[0].poster, "https://example.com/naruto.jpg");
+    }
+}
+
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router.route(ENDPOINT_PATH, get(anime))
 }
