@@ -2,7 +2,9 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
+use crate::routes::AppState;
+use crate::scraping::urls::OTAKUDESU_BASE_URL;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -10,20 +12,14 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::future::retry;
-
 use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use tracing::{info, warn};
+use tracing::info;
 use utoipa::ToSchema;
 
-// Internal imports
-use crate::infra::proxy::fetch_with_proxy;
-use crate::routes::AppState;
-use crate::scraping::urls::OTAKUDESU_BASE_URL;
+use once_cell::sync::Lazy;
+use regex::Regex;
 
 // Pre-compiled regex for slug extraction
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
@@ -120,25 +116,7 @@ async fn fetch_ongoing_anime_page(
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let url = format!("{}/ongoing-anime/page/{}/", OTAKUDESU_BASE_URL, slug);
 
-    let backoff = default_backoff();
-
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation)
-        .await
-        .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
+    let html = fetch_html_with_retry(&url).await.map_err(|e| format!("Failed to fetch HTML: {}", e))?;
     let slug_clone = slug.clone();
 
     match tokio::task::spawn_blocking(move || {
@@ -164,38 +142,22 @@ fn parse_ongoing_anime_document(
     let mut anime_list = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
+
+        let score = text_from_or(&element, &EP_SELECTOR, "N/A");
+
+        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
+
+        let slug = attr_from(&element, &LINK_SELECTOR, "href")
+            .and_then(|href| {
+                SLUG_REGEX
+                    .captures(&href)
+                    .and_then(|cap| cap.get(1))
+                    .map(|m| m.as_str().to_string())
+            })
             .unwrap_or_default();
-
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
-
-        let score = element
-            .select(&EP_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or("N/A".to_string());
-
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
-
-        let slug = SLUG_REGEX
-            .captures(&anime_url)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("")
-            .to_string();
 
         if !title.is_empty() {
             anime_list.push(OngoingAnimeItem {

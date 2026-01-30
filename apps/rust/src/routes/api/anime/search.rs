@@ -9,19 +9,16 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::future::retry;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
+use crate::routes::AppState;
+use crate::scraping::urls::get_otakudesu_url;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use tracing::{info, warn};
+use tracing::info;
 use utoipa::ToSchema;
-
-// Internal imports
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
-use crate::routes::AppState;
-use crate::scraping::urls::get_otakudesu_url;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime/search";
@@ -155,25 +152,7 @@ pub async fn search(
 async fn fetch_and_parse_search(
     url: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = default_backoff();
-
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation)
-        .await
-        .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
+    let html = fetch_html_with_retry(url).await.map_err(|e| format!("Failed to fetch HTML: {}", e))?;
 
     match tokio::task::spawn_blocking(move || parse_search_html(&html)).await {
         Ok(inner_result) => inner_result,
@@ -188,25 +167,11 @@ fn parse_search_html(
     let mut anime_list = Vec::new();
 
     for element in document.select(&ITEM_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
 
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
 
         let slug = anime_url
             .split('/')
@@ -220,11 +185,7 @@ fn parse_search_html(
             .map(|e| e.text().collect::<String>().trim().to_string())
             .collect();
 
-        let status_text = element
-            .select(&STATUS_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>())
-            .unwrap_or_default();
+        let status_text = text_from_or(&element, &STATUS_SELECTOR, "");
 
         let episode = EPISODE_REGEX
             .captures(&status_text)
