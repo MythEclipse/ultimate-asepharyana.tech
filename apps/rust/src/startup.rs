@@ -88,7 +88,7 @@ impl Application {
             jwt_secret: CONFIG.jwt_secret.clone(),
             redis_pool: REDIS_POOL.clone(),
             db: db_arc.clone(),
-            pool: db_arc.clone(), // Legacy field if exists, usually same as db
+
             chat_tx,
             image_processing_semaphore,
             room_manager: room_manager.clone(),

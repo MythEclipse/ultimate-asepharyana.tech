@@ -10,7 +10,7 @@ pub struct AppState {
     pub jwt_secret: String,
     pub redis_pool: Pool,
     pub db: Arc<DatabaseConnection>,
-    pub pool: Arc<DatabaseConnection>, // SeaORM connection (alias for compatibility)
+
     pub chat_tx: tokio::sync::broadcast::Sender<crate::routes::ws::models::WsMessage>,
     pub image_processing_semaphore: Arc<tokio::sync::Semaphore>,
     pub room_manager: Arc<crate::ws::room::RoomManager>,
