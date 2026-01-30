@@ -1,10 +1,10 @@
-use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
+
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 use scraper::Selector;
@@ -177,25 +177,7 @@ async fn fetch_and_parse_search(
     Ok((data, pagination))
 }
 
-async fn fetch_html_with_retry(
-    url: &str,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = default_backoff();
 
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => Err(transient(e)),
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
-    Ok(html)
-}
 
 fn parse_search_document(
     document: &scraper::Html,
@@ -204,50 +186,21 @@ fn parse_search_document(
     let mut data = Vec::new();
 
     for element in document.select(&ANIMPOST_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
+
+        let chapter = text_from_or(&element, &CHAPTER_SELECTOR, "N/A");
+
+        let score = text_from_or(&element, &SCORE_SELECTOR, "N/A");
+
+        let date = text_from_or(&element, &DATE_SELECTOR, "N/A");
+
+        let r#type = text_from_or(&element, &TYPE_SELECTOR, "");
+
+        let slug = attr_from(&element, &LINK_SELECTOR, "href")
+            .and_then(|href| href.split('/').nth(3).map(String::from))
             .unwrap_or_default();
-
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
-
-        let chapter = element
-            .select(&CHAPTER_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
-
-        let score = element
-            .select(&SCORE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
-
-        let date = element
-            .select(&DATE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
-
-        let r#type = element
-            .select(&TYPE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
-
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(3))
-            .unwrap_or("")
-            .to_string();
 
         if !title.is_empty() {
             data.push(MangaItem {

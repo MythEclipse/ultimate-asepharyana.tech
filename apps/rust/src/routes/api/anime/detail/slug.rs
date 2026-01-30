@@ -2,7 +2,7 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
+use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache, text, text_from_or, attr_from_or};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -218,11 +218,7 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
         .unwrap_or("")
         .to_string();
 
-    let synopsis = document
-        .select(&synopsis_selector)
-        .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .unwrap_or_default();
+    let synopsis = text_from_or(&document.root_element(), &synopsis_selector, "");
 
     let mut genres = Vec::new();
     if let Some(genres_element) = document
@@ -230,7 +226,7 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
         .find(|e| e.text().collect::<String>().contains("Genres:"))
     {
         for genre_link in genres_element.select(&genre_link_selector) {
-            let name = genre_link.text().collect::<String>().trim().to_string();
+            let name = text(&genre_link);
             let anime_url = genre_link.value().attr("href").unwrap_or("").to_string();
             let genre_slug = anime_url.split('/').nth(4).unwrap_or("").to_string(); // Adjust as needed
             genres.push(Genre {
@@ -243,7 +239,7 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
 
     let mut episode_lists = Vec::new();
     for element in document.select(&episode_list_selector) {
-        let episode = element.text().collect::<String>().trim().to_string();
+        let episode = text(&element);
         let slug = element
             .value()
             .attr("href")
@@ -258,17 +254,8 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
 
     let mut recommendations = Vec::new();
     for element in document.select(&recommendation_selector) {
-        let title = element
-            .select(&recommendation_title_selector)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
-        let poster = element
-            .select(&recommendation_img_selector)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
+        let title = text_from_or(&element, &recommendation_title_selector, "");
+        let poster = attr_from_or(&element, &recommendation_img_selector, "src", "");
         let slug = element
             .select(&genre_link_selector) // Reusing genre_link_selector for general links
             .next()
