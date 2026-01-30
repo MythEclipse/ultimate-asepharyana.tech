@@ -61,3 +61,4 @@ pub mod scraping; // URLs, CDN, base URLs
 #[path = "../build_utils/mod.rs"]
 pub mod build_utils;
 pub mod routes;
+pub mod startup;
