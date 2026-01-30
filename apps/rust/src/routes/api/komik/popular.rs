@@ -1,18 +1,17 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
+
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::{info};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -157,19 +156,7 @@ async fn fetch_popular_komik(
         )
     };
 
-    let backoff = default_backoff();
-    let fetch_operation = || async {
-        info!("Fetching: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => Ok(response.data),
-            Err(e) => {
-                warn!("Failed: {:?}", e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
+    let html = fetch_html_with_retry(&url).await?;
     let (komik_list, pagination) =
         tokio::task::spawn_blocking(move || parse_popular_page(&html, page)).await??;
 

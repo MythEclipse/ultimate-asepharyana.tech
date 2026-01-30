@@ -1,8 +1,34 @@
 //! HTML scraping helpers using scraper crate.
 
+use crate::helpers::{default_backoff, transient};
+use crate::infra::proxy::fetch_with_proxy;
+use backoff::future::retry;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
+use tracing::{info, warn};
+
+/// Fetch HTML from URL with retry backoff and proxy support.
+pub async fn fetch_html_with_retry(
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let backoff = default_backoff();
+    let fetch_operation = || async {
+        info!("Fetching: {}", url);
+        match fetch_with_proxy(url).await {
+            Ok(response) => {
+                info!("Successfully fetched: {}", url);
+                Ok(response.data)
+            }
+            Err(e) => {
+                warn!("Failed to fetch: {}, error: {:?}", url, e);
+                Err(transient(e))
+            }
+        }
+    };
+
+    Ok(retry(backoff, fetch_operation).await?)
+}
 
 /// Parse HTML string into a document.
 pub fn parse_html(html: &str) -> Html {

@@ -1,17 +1,17 @@
 use crate::core::types::ApiResponse;
-use crate::helpers::{default_backoff, parse_html, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{parse_html, Cache, fetch_html_with_retry};
+
 use crate::routes::AppState;
 use crate::utils::error::AppError;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
+
 use lazy_static::lazy_static;
 use scraper::Selector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::{info};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -156,28 +156,7 @@ async fn fetch_anime_data() -> Result<AnimeData, Box<dyn std::error::Error + Sen
     })
 }
 
-async fn fetch_html_with_retry(
-    url: &str,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = default_backoff(); // Use helper instead of manual config
 
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e)) // Use helper
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
-    Ok(html)
-}
 
 fn parse_ongoing_anime(
     html: &str,
