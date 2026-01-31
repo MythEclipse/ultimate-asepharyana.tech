@@ -121,3 +121,92 @@ pub fn sanitize_tag(path_str: &str) -> String {
 pub fn is_dynamic_route_content(content: &str) -> bool {
     content.contains("//! DYNAMIC_ROUTE")
 }
+
+pub fn is_rust_keyword(s: &str) -> bool {
+    matches!(
+        s,
+        "as" | "break"
+            | "const"
+            | "continue"
+            | "crate"
+            | "else"
+            | "enum"
+            | "extern"
+            | "false"
+            | "fn"
+            | "for"
+            | "if"
+            | "impl"
+            | "in"
+            | "let"
+            | "loop"
+            | "match"
+            | "mod"
+            | "move"
+            | "mut"
+            | "pub"
+            | "ref"
+            | "return"
+            | "self"
+            | "Self"
+            | "static"
+            | "struct"
+            | "super"
+            | "trait"
+            | "true"
+            | "type"
+            | "unsafe"
+            | "use"
+            | "where"
+            | "while"
+            | "async"
+            | "await"
+            | "dyn"
+            | "abstract"
+            | "become"
+            | "box"
+            | "do"
+            | "final"
+            | "macro"
+            | "override"
+            | "priv"
+            | "typeof"
+            | "unsized"
+            | "virtual"
+            | "yield"
+    )
+}
+
+pub fn sanitize_module_name(name: &str) -> String {
+    let sanitized = name
+        .trim_matches(|c| c == '[' || c == ']')
+        .replace('-', "_");
+    if is_rust_keyword(&sanitized) {
+        format!("r#{}", sanitized)
+    } else {
+        sanitized
+    }
+}
+
+pub fn compute_module_path_prefix(current_dir: &std::path::Path, root_api_path: &std::path::Path) -> Result<String, anyhow::Error> {
+    let relative_path = current_dir
+        .strip_prefix(root_api_path)
+        .unwrap_or(std::path::Path::new(""));
+    let relative_path_str = relative_path
+        .to_str()
+        .ok_or_else(|| anyhow::anyhow!("Invalid path encoding for directory: {:?}", current_dir))?
+        .replace(std::path::MAIN_SEPARATOR, "::")
+        .replace('-', "_");
+
+    let module_path_prefix = if relative_path_str.is_empty() {
+        "crate::routes::api".to_string()
+    } else {
+        let sanitized_segments: Vec<String> = relative_path_str
+            .split("::")
+            .map(|s| sanitize_module_name(&s.replace("[", "").replace("]", "")))
+            .collect();
+        format!("crate::routes::api::{}", sanitized_segments.join("::"))
+    };
+
+    Ok(module_path_prefix)
+}

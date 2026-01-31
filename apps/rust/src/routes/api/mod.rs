@@ -127,9 +127,10 @@ use crate::routes::api::proxy::image_cache::ImageCacheRequest;
 use crate::routes::api::proxy::image_cache::ImageCacheResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheResult;
 use crate::routes::api::uploader::ListResponse as ListResponse_2;
+
 #[derive(utoipa::OpenApi)]
-#[openapi(
-paths(
+    #[openapi(
+        paths(
               crate::routes::api::proxy::croxy::fetch_with_proxy_only,
               crate::routes::api::proxy::image_cache::image_cache,
               crate::routes::api::komik::manhwa::slug::list,
@@ -175,7 +176,7 @@ paths(
               crate::routes::api::drivepng::drivepng,
               crate::routes::api::uploader::uploader
         ),
-components(
+        components(
             schemas(
                   AnimeDetailData,
                   DetailResponse,
@@ -292,30 +293,30 @@ components(
                   ListResponse_2
             )
         ),
-modifiers(&SecurityAddon),
-security((
+        modifiers(&SecurityAddon),
+        security((
             "bearer_auth" = []
         )),
-servers(
+        servers(
             (url = "https://ws.asepharyana.tech", description = "Production Server"),
             (url = "http://localhost:4091", description = "Local Development")
         ),
-info(
+        info(
             title = "Freefire API",
             version = "0.0.1",
             description = "Free API for anime, manga, and more"
         ),
-tags(
+        tags(
             (name = "api", description = "Main API"),
             (name = "auth", description = "Authentication endpoints")
         )
-)]
-#[allow(dead_code)]
-pub struct ApiDoc;
+    )]
+    #[allow(dead_code)]
+    pub struct ApiDoc;
 
-struct SecurityAddon;
+    struct SecurityAddon;
 
-impl utoipa::Modify for SecurityAddon {
+    impl utoipa::Modify for SecurityAddon {
         fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
             use utoipa::openapi::security::*;
             if let Some(components) = openapi.components.as_mut() {

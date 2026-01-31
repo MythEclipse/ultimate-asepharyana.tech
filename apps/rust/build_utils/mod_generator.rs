@@ -1,98 +1,11 @@
 use crate::build_utils::handler_updater::{update_handler_file, HandlerRouteInfo};
-use crate::build_utils::path_utils::is_dynamic_route_content;
+use crate::build_utils::path_utils::{
+    compute_module_path_prefix, is_dynamic_route_content, sanitize_module_name,
+};
 use anyhow::{Context, Result};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-fn is_rust_keyword(s: &str) -> bool {
-    matches!(
-        s,
-        "as" | "break"
-            | "const"
-            | "continue"
-            | "crate"
-            | "else"
-            | "enum"
-            | "extern"
-            | "false"
-            | "fn"
-            | "for"
-            | "if"
-            | "impl"
-            | "in"
-            | "let"
-            | "loop"
-            | "match"
-            | "mod"
-            | "move"
-            | "mut"
-            | "pub"
-            | "ref"
-            | "return"
-            | "self"
-            | "Self"
-            | "static"
-            | "struct"
-            | "super"
-            | "trait"
-            | "true"
-            | "type"
-            | "unsafe"
-            | "use"
-            | "where"
-            | "while"
-            | "async"
-            | "await"
-            | "dyn"
-            | "abstract"
-            | "become"
-            | "box"
-            | "do"
-            | "final"
-            | "macro"
-            | "override"
-            | "priv"
-            | "typeof"
-            | "unsized"
-            | "virtual"
-            | "yield"
-    )
-}
-
-fn sanitize_module_name(name: &str) -> String {
-    let sanitized = name
-        .trim_matches(|c| c == '[' || c == ']')
-        .replace('-', "_");
-    if is_rust_keyword(&sanitized) {
-        format!("r#{}", sanitized)
-    } else {
-        sanitized
-    }
-}
-
-fn compute_module_path_prefix(current_dir: &Path, root_api_path: &Path) -> Result<String> {
-    let relative_path = current_dir
-        .strip_prefix(root_api_path)
-        .unwrap_or(Path::new(""));
-    let relative_path_str = relative_path
-        .to_str()
-        .ok_or_else(|| anyhow::anyhow!("Invalid path encoding for directory: {:?}", current_dir))?
-        .replace(std::path::MAIN_SEPARATOR, "::")
-        .replace('-', "_");
-
-    let module_path_prefix = if relative_path_str.is_empty() {
-        "crate::routes::api".to_string()
-    } else {
-        let sanitized_segments: Vec<String> = relative_path_str
-            .split("::")
-            .map(|s| sanitize_module_name(&s.replace("[", "").replace("]", "")))
-            .collect();
-        format!("crate::routes::api::{}", sanitized_segments.join("::"))
-    };
-
-    Ok(module_path_prefix)
-}
 
 fn process_directory_entries(
     current_dir: &Path,
