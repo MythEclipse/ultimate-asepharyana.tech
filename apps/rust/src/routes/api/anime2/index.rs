@@ -1,4 +1,4 @@
-use crate::helpers::{internal_err, parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from_or, selector, extract_slug};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -6,8 +6,13 @@ use axum::{response::IntoResponse, routing::get, Json, Router};
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info};
+use tracing::info;
 use utoipa::ToSchema;
+
+// Import shared models and parsers
+use crate::models::anime2::{OngoingAnimeItem, CompleteAnimeItem};
+use crate::scraping::anime2 as parsers;
+use crate::helpers::anime2_cache as cache_utils;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime2";
@@ -15,24 +20,6 @@ pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime2 endp
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_index";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<Anime2Response>";
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct OngoingAnimeItem {
-    pub title: String,
-    pub slug: String,
-    pub poster: String,
-    pub current_episode: String,
-    pub anime_url: String,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct CompleteAnimeItem {
-    pub title: String,
-    pub slug: String,
-    pub poster: String,
-    pub episode_count: String,
-    pub anime_url: String,
-}
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Anime2Data {
@@ -71,11 +58,7 @@ pub async fn anime2(
         .get_or_set(CACHE_KEY, CACHE_TTL, || async {
             let mut data = fetch_anime_data().await.map_err(|e| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs
-            // Fire-and-forget background caching for posters to ensure max API speed
-            let db = app_state.db.clone();
-            let redis = app_state.redis_pool.clone();
-
+            // Use shared cache utility for batch poster caching
             let ongoing_posters: Vec<String> = data
                 .ongoing_anime
                 .iter()
@@ -88,13 +71,9 @@ pub async fn anime2(
                 .collect();
 
             let ongoing_len = ongoing_posters.len();
-
-            let all_posters = [ongoing_posters, complete_posters].concat();
-            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
-                db,
-                &redis,
-                all_posters,
-                Some(app_state.image_processing_semaphore.clone()),
+            let cached_posters: Vec<String> = cache_utils::cache_multiple_collections(
+                &app_state,
+                vec![ongoing_posters, complete_posters],
             )
             .await;
 
@@ -136,98 +115,14 @@ async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Se
     let complete_html = complete_html?;
 
     let ongoing_anime =
-        tokio::task::spawn_blocking(move || parse_ongoing_anime(&ongoing_html)).await??;
+        tokio::task::spawn_blocking(move || parsers::parse_ongoing_anime(&ongoing_html)).await??;
     let complete_anime =
-        tokio::task::spawn_blocking(move || parse_complete_anime(&complete_html)).await??;
+        tokio::task::spawn_blocking(move || parsers::parse_complete_anime(&complete_html)).await??;
 
     Ok(Anime2Data {
         ongoing_anime,
         complete_anime,
     })
-}
-
-fn parse_ongoing_anime(
-    html: &str,
-) -> Result<Vec<OngoingAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = parse_html(html);
-    let mut ongoing_anime = Vec::new();
-
-    let item_selector = selector("article.bs").unwrap();
-    let title_selector = selector(".tt h2").unwrap();
-    let link_selector = selector("a").unwrap();
-    let img_selector = selector("img").unwrap();
-    let episode_selector = selector(".epx").unwrap();
-
-    for element in document.select(&item_selector) {
-        let title = text_from_or(&element, &title_selector, "");
-
-        let href = attr_from_or(&element, &link_selector, "href", "");
-        let slug = extract_slug(&href);
-
-        let poster = element
-            .select(&img_selector)
-            .next()
-            .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
-            .unwrap_or("")
-            .to_string();
-
-        let current_episode = text_from_or(&element, &episode_selector, "N/A");
-
-        let anime_url = attr_from_or(&element, &link_selector, "href", "");
-
-        if !title.is_empty() {
-            ongoing_anime.push(OngoingAnimeItem {
-                title,
-                slug,
-                poster,
-                current_episode,
-                anime_url,
-            });
-        }
-    }
-    Ok(ongoing_anime)
-}
-
-fn parse_complete_anime(
-    html: &str,
-) -> Result<Vec<CompleteAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = parse_html(html);
-    let mut complete_anime = Vec::new();
-
-    let item_selector = selector("article.bs").unwrap();
-    let title_selector = selector(".tt h2").unwrap();
-    let link_selector = selector("a").unwrap();
-    let img_selector = selector("img").unwrap();
-    let episode_selector = selector(".epx").unwrap();
-
-    for element in document.select(&item_selector) {
-        let title = text_from_or(&element, &title_selector, "");
-
-        let href = attr_from_or(&element, &link_selector, "href", "");
-        let slug = extract_slug(&href);
-
-        let poster = element
-            .select(&img_selector)
-            .next()
-            .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
-            .unwrap_or("")
-            .to_string();
-
-        let episode_count = text_from_or(&element, &episode_selector, "N/A");
-
-        let anime_url = attr_from_or(&element, &link_selector, "href", "");
-
-        if !title.is_empty() {
-            complete_anime.push(CompleteAnimeItem {
-                title,
-                slug,
-                poster,
-                episode_count,
-                anime_url,
-            });
-        }
-    }
-    Ok(complete_anime)
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {

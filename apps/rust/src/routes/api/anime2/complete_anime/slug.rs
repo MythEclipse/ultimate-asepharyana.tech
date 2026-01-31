@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 // External crate imports
 use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
-use crate::helpers::scraping::{selector, text_from_or, attr_from_or, extract_slug, attr_from, text, attr};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -19,6 +18,10 @@ use utoipa::ToSchema;
 // Internal imports
 use crate::routes::AppState;
 
+// Import shared models and parsers
+use crate::models::anime2::{CompleteAnimeItem, Pagination};
+use crate::scraping::anime2 as parsers;
+
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime2/complete-anime/{slug}";
 pub const ENDPOINT_DESCRIPTION: &str =
@@ -26,25 +29,6 @@ pub const ENDPOINT_DESCRIPTION: &str =
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_complete_anime_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<CompleteAnimeResponse>";
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct CompleteAnimeItem {
-    pub title: String,
-    pub slug: String,
-    pub poster: String,
-    pub episode_count: String,
-    pub anime_url: String,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct Pagination {
-    pub current_page: u32,
-    pub last_visible_page: u32,
-    pub has_next_page: bool,
-    pub next_page: Option<u32>,
-    pub has_previous_page: bool,
-    pub previous_page: Option<u32>,
-}
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct CompleteAnimeResponse {
@@ -93,15 +77,14 @@ pub async fn slug(
             let (anime_list, pagination) =
                 tokio::task::spawn_blocking(move || parse_anime_page(&html, &slug_clone))
                     .await
-                    .map_err(|e| e.to_string())?
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e: tokio::task::JoinError| e.to_string())?
+                    .map_err(|e: String| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs
-            // Fire-and-forget background caching for posters to ensure max API speed
+            // Store posters in a separate vector to avoid borrow checker issues
+            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
             crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
@@ -131,69 +114,14 @@ fn parse_anime_page(
     info!("Starting to parse anime page for slug: {}", slug);
 
     let document = parse_html(html);
-    let mut anime_list = Vec::new();
+    
+    // Parse anime items using shared parser
+    let anime_list = parsers::parse_complete_anime(html)
+        .map_err(|e| format!("Failed to parse anime items: {}", e))?;
 
-    let item_selector = selector("article.bs").unwrap();
-    let title_selector = selector(".tt h2").unwrap();
-    let link_selector = selector("a").unwrap();
-    let img_selector = selector("img").unwrap();
-    let episode_selector = selector(".epx").unwrap();
-    let pagination_selector = selector(".pagination .page-numbers:not(.next)").unwrap();
-    let next_selector = selector(".pagination .next.page-numbers").unwrap();
-
-    for element in document.select(&item_selector) {
-        let title = text_from_or(&element, &title_selector, "");
-
-        let href = attr_from(&element, &link_selector, "href").unwrap_or_default();
-        let slug = extract_slug(&href);
-
-        let poster = element
-            .select(&img_selector)
-            .next()
-            .and_then(|e| attr(&e, "src").or(attr(&e, "data-src")))
-            .unwrap_or_default();
-
-        let episode_count = text_from_or(&element, &episode_selector, "N/A");
-
-        let anime_url = attr_from_or(&element, &link_selector, "href", "");
-
-        anime_list.push(CompleteAnimeItem {
-            title,
-            slug,
-            poster,
-            episode_count,
-            anime_url,
-        });
-    }
-
+    // Parse pagination using shared parser
     let current_page = slug.parse::<u32>().unwrap_or(1);
-    let last_visible_page = document
-        .select(&pagination_selector)
-        .next_back()
-        .and_then(|e| text(&e).parse::<u32>().ok())
-        .unwrap_or(1);
-
-    let has_next_page = document.select(&next_selector).next().is_some();
-    let next_page = if has_next_page {
-        Some(current_page + 1)
-    } else {
-        None
-    };
-    let has_previous_page = current_page > 1;
-    let previous_page = if has_previous_page {
-        Some(current_page - 1)
-    } else {
-        None
-    };
-
-    let pagination = Pagination {
-        current_page,
-        last_visible_page,
-        has_next_page,
-        next_page,
-        has_previous_page,
-        previous_page,
-    };
+    let pagination = parsers::parse_pagination(&document, current_page);
 
     let duration = start_time.elapsed();
     info!("Parsed {} anime items in {:?}", anime_list.len(), duration);

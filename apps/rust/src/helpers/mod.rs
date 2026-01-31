@@ -3,6 +3,7 @@
 //! Comprehensive collection of 30 utility modules for cleaner, more maintainable code.
 
 // Core helpers
+pub mod anime2_cache;
 pub mod api_response;
 pub mod errors;
 pub mod handler;

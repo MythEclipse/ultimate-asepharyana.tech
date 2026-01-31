@@ -1,5 +1,4 @@
 use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
-use crate::helpers::scraping::{selector, text_from_or, attr_from_or, extract_slug, text, attr};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -7,8 +6,12 @@ use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info};
+use tracing::info;
 use utoipa::ToSchema;
+
+// Import shared models and parsers
+use crate::models::anime2::{OngoingAnimeItemWithScore, Pagination};
+use crate::scraping::anime2 as parsers;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime2/ongoing-anime/{slug}";
@@ -19,28 +22,9 @@ pub const OPERATION_ID: &str = "anime2_ongoing_anime_slug";
 pub const SUCCESS_RESPONSE_BODY: &str = "Json<OngoingAnimeResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct OngoingAnimeItem {
-    pub title: String,
-    pub slug: String,
-    pub poster: String,
-    pub score: String,
-    pub anime_url: String,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct Pagination {
-    pub current_page: u32,
-    pub last_visible_page: u32,
-    pub has_next_page: bool,
-    pub next_page: Option<u32>,
-    pub has_previous_page: bool,
-    pub previous_page: Option<u32>,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct OngoingAnimeResponse {
     pub status: String,
-    pub data: Vec<OngoingAnimeItem>,
+    pub data: Vec<OngoingAnimeItemWithScore>,
     pub pagination: Pagination,
 }
 
@@ -73,13 +57,13 @@ pub async fn slug(
         .get_or_set(&cache_key, CACHE_TTL, || async {
             let (anime_list, pagination) = fetch_ongoing_anime_page(slug.clone())
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e: Box<dyn std::error::Error + Send + Sync>| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs
-            // Fire-and-forget background caching for posters to ensure max API speed
+            // Convert all poster URLs to CDN URLs concurrently
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
+            // Store posters in a separate vector to avoid borrow checker issues
             let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
             crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
@@ -104,7 +88,7 @@ pub async fn slug(
 
 async fn fetch_ongoing_anime_page(
     slug: String,
-) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
+) -> Result<(Vec<OngoingAnimeItemWithScore>, Pagination), String> {
     let url = format!(
         "https://alqanime.si/anime/page/{}/?status=ongoing&type=&order=update",
         slug
@@ -128,7 +112,7 @@ async fn fetch_ongoing_anime_page(
 fn parse_ongoing_anime_document(
     html: &str,
     slug: &str,
-) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
+) -> Result<(Vec<OngoingAnimeItemWithScore>, Pagination), String> {
     let start_time = std::time::Instant::now();
     info!(
         "Starting to parse ongoing anime document for slug: {}",
@@ -136,78 +120,14 @@ fn parse_ongoing_anime_document(
     );
     
     let document = parse_html(html);
-    let mut anime_list = Vec::new();
+    
+    // Parse anime items using shared parser
+    let anime_list = parsers::parse_ongoing_anime_with_score(html)
+        .map_err(|e| format!("Failed to parse anime items: {}", e))?;
 
-    let bs_selector = selector("article.bs").unwrap();
-    let title_selector = selector(".tt h2").unwrap();
-    let img_selector = selector("img").unwrap();
-    let score_selector = selector(".numscore").unwrap();
-    let link_selector = selector("a").unwrap();
-    let pagination_selector = selector(".pagination .page-numbers:not(.next)").unwrap();
-    let next_selector = selector(".pagination .next").unwrap();
-
-    for element in document.select(&bs_selector) {
-        let title = text_from_or(&element, &title_selector, "");
-
-        let poster = element
-            .select(&img_selector)
-            .next()
-            .and_then(|e| attr(&e, "src").or(attr(&e, "data-src")))
-            .unwrap_or_default();
-
-        let score = text_from_or(&element, &score_selector, "N/A");
-
-        let anime_url = attr_from_or(&element, &link_selector, "href", "");
-
-        let slug = extract_slug(&anime_url);
-
-        if !title.is_empty() {
-            anime_list.push(OngoingAnimeItem {
-                title,
-                slug,
-                poster,
-                score,
-                anime_url,
-            });
-        }
-    }
-
+    // Parse pagination using shared parser
     let current_page = slug.parse::<u32>().unwrap_or(1);
-
-    let last_visible_page = document
-        .select(&pagination_selector)
-        .next_back()
-        .map(|e| {
-            text(&e)
-                .trim()
-                .parse::<u32>()
-                .unwrap_or(1)
-        })
-        .unwrap_or(1);
-
-    let has_next_page = document.select(&next_selector).next().is_some();
-
-    let next_page = if has_next_page {
-        Some(current_page + 1)
-    } else {
-        None
-    };
-
-    let has_previous_page = current_page > 1;
-    let previous_page = if has_previous_page {
-        Some(current_page - 1)
-    } else {
-        None
-    };
-
-    let pagination = Pagination {
-        current_page,
-        last_visible_page,
-        has_next_page,
-        next_page,
-        has_previous_page,
-        previous_page,
-    };
+    let pagination = parsers::parse_pagination(&document, current_page);
 
     let duration = start_time.elapsed();
     info!(

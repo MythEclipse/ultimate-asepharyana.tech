@@ -14,9 +14,7 @@ pub mod komik;
 pub mod proxy;
 pub mod uploader;
 
-use crate::routes::api::anime2::complete_anime::slug::CompleteAnimeItem;
 use crate::routes::api::anime2::complete_anime::slug::CompleteAnimeResponse;
-use crate::routes::api::anime2::complete_anime::slug::Pagination;
 use crate::routes::api::anime2::detail::slug::AnimeDetailData;
 use crate::routes::api::anime2::detail::slug::DetailResponse;
 use crate::routes::api::anime2::detail::slug::DownloadItem;
@@ -27,31 +25,21 @@ use crate::routes::api::anime2::filter::AnimeItem;
 use crate::routes::api::anime2::filter::FilterQuery;
 use crate::routes::api::anime2::filter::FilterResponse;
 use crate::routes::api::anime2::filter::FiltersApplied;
-use crate::routes::api::anime2::filter::Pagination as Pagination_1;
-use crate::routes::api::anime2::genre::slug::AnimeItem as AnimeItem_1;
+use crate::routes::api::anime2::filter::Pagination;
 use crate::routes::api::anime2::genre::slug::GenreAnimeResponse;
 use crate::routes::api::anime2::genre::slug::GenreQuery;
-use crate::routes::api::anime2::genre::slug::Pagination as Pagination_2;
 use crate::routes::api::anime2::genre_list::Genre as Genre_1;
 use crate::routes::api::anime2::genre_list::GenresResponse;
 use crate::routes::api::anime2::index::Anime2Data;
 use crate::routes::api::anime2::index::Anime2Response;
-use crate::routes::api::anime2::index::CompleteAnimeItem as CompleteAnimeItem_1;
-use crate::routes::api::anime2::index::OngoingAnimeItem;
-use crate::routes::api::anime2::latest::LatestAnimeItem;
 use crate::routes::api::anime2::latest::LatestAnimeResponse;
 use crate::routes::api::anime2::latest::LatestQuery;
-use crate::routes::api::anime2::latest::Pagination as Pagination_3;
-use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_1;
 use crate::routes::api::anime2::ongoing_anime::slug::OngoingAnimeResponse;
-use crate::routes::api::anime2::ongoing_anime::slug::Pagination as Pagination_4;
-use crate::routes::api::anime2::search::AnimeItem as AnimeItem_2;
-use crate::routes::api::anime2::search::Pagination as Pagination_5;
 use crate::routes::api::anime2::search::SearchQuery;
 use crate::routes::api::anime2::search::SearchResponse;
-use crate::routes::api::anime::complete_anime::slug::CompleteAnimeItem as CompleteAnimeItem_2;
+use crate::routes::api::anime::complete_anime::slug::CompleteAnimeItem;
 use crate::routes::api::anime::complete_anime::slug::ListResponse;
-use crate::routes::api::anime::complete_anime::slug::Pagination as Pagination_6;
+use crate::routes::api::anime::complete_anime::slug::Pagination as Pagination_1;
 use crate::routes::api::anime::detail::slug::AnimeDetailData as AnimeDetailData_1;
 use crate::routes::api::anime::detail::slug::DetailResponse as DetailResponse_1;
 use crate::routes::api::anime::detail::slug::EpisodeList;
@@ -62,24 +50,24 @@ use crate::routes::api::anime::full::slug::AnimeInfo;
 use crate::routes::api::anime::full::slug::DownloadLink;
 use crate::routes::api::anime::full::slug::EpisodeInfo;
 use crate::routes::api::anime::full::slug::FullResponse;
-use crate::routes::api::anime::genre::slug::AnimeItem as AnimeItem_3;
+use crate::routes::api::anime::genre::slug::AnimeItem as AnimeItem_1;
 use crate::routes::api::anime::genre::slug::GenreAnimeResponse as GenreAnimeResponse_1;
 use crate::routes::api::anime::genre::slug::GenreQuery as GenreQuery_1;
-use crate::routes::api::anime::genre::slug::Pagination as Pagination_7;
+use crate::routes::api::anime::genre::slug::Pagination as Pagination_2;
 use crate::routes::api::anime::genre_list::Genre as Genre_3;
 use crate::routes::api::anime::genre_list::GenresResponse as GenresResponse_1;
 use crate::routes::api::anime::index::AnimeData;
-use crate::routes::api::anime::index::CompleteAnimeItem as CompleteAnimeItem_3;
-use crate::routes::api::anime::index::OngoingAnimeItem as OngoingAnimeItem_2;
-use crate::routes::api::anime::latest::LatestAnimeItem as LatestAnimeItem_1;
+use crate::routes::api::anime::index::CompleteAnimeItem as CompleteAnimeItem_1;
+use crate::routes::api::anime::index::OngoingAnimeItem;
+use crate::routes::api::anime::latest::LatestAnimeItem;
 use crate::routes::api::anime::latest::LatestAnimeResponse as LatestAnimeResponse_1;
 use crate::routes::api::anime::latest::LatestQuery as LatestQuery_1;
-use crate::routes::api::anime::latest::Pagination as Pagination_8;
-use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_3;
+use crate::routes::api::anime::latest::Pagination as Pagination_3;
+use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeItem as OngoingAnimeItem_1;
 use crate::routes::api::anime::ongoing_anime::slug::OngoingAnimeResponse as OngoingAnimeResponse_1;
-use crate::routes::api::anime::ongoing_anime::slug::Pagination as Pagination_9;
-use crate::routes::api::anime::search::AnimeItem as AnimeItem_4;
-use crate::routes::api::anime::search::Pagination as Pagination_10;
+use crate::routes::api::anime::ongoing_anime::slug::Pagination as Pagination_4;
+use crate::routes::api::anime::search::AnimeItem as AnimeItem_2;
+use crate::routes::api::anime::search::Pagination as Pagination_5;
 use crate::routes::api::anime::search::SearchQuery as SearchQuery_1;
 use crate::routes::api::anime::search::SearchResponse as SearchResponse_1;
 use crate::routes::api::auth::change_password::ChangePasswordRequest;
@@ -117,27 +105,27 @@ use crate::routes::api::komik::detail::KomikDetailRequest;
 use crate::routes::api::komik::genre::slug::GenreKomikResponse;
 use crate::routes::api::komik::genre::slug::GenreQuery as GenreQuery_2;
 use crate::routes::api::komik::genre::slug::KomikItem;
-use crate::routes::api::komik::genre::slug::Pagination as Pagination_11;
+use crate::routes::api::komik::genre::slug::Pagination as Pagination_6;
 use crate::routes::api::komik::genre_list::Genre as Genre_4;
 use crate::routes::api::komik::genre_list::GenresResponse as GenresResponse_2;
 use crate::routes::api::komik::manga::slug::MangaItem;
 use crate::routes::api::komik::manga::slug::MangaResponse;
-use crate::routes::api::komik::manga::slug::Pagination as Pagination_12;
+use crate::routes::api::komik::manga::slug::Pagination as Pagination_7;
 use crate::routes::api::komik::manga::slug::QueryParams;
 use crate::routes::api::komik::manhua::slug::ManhuaItem;
 use crate::routes::api::komik::manhua::slug::ManhuaResponse;
-use crate::routes::api::komik::manhua::slug::Pagination as Pagination_13;
+use crate::routes::api::komik::manhua::slug::Pagination as Pagination_8;
 use crate::routes::api::komik::manhua::slug::QueryParams as QueryParams_1;
 use crate::routes::api::komik::manhwa::slug::ManhwaItem;
 use crate::routes::api::komik::manhwa::slug::ManhwaResponse;
-use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_14;
+use crate::routes::api::komik::manhwa::slug::Pagination as Pagination_9;
 use crate::routes::api::komik::manhwa::slug::QueryParams as QueryParams_2;
-use crate::routes::api::komik::popular::Pagination as Pagination_15;
+use crate::routes::api::komik::popular::Pagination as Pagination_10;
 use crate::routes::api::komik::popular::PopularKomikItem;
 use crate::routes::api::komik::popular::PopularKomikResponse;
 use crate::routes::api::komik::popular::PopularQuery;
 use crate::routes::api::komik::search::MangaItem as MangaItem_1;
-use crate::routes::api::komik::search::Pagination as Pagination_16;
+use crate::routes::api::komik::search::Pagination as Pagination_11;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_2;
 use crate::routes::api::proxy::croxy::ProxyParams;
@@ -197,9 +185,7 @@ paths(
         ),
 components(
             schemas(
-                  CompleteAnimeItem,
                   CompleteAnimeResponse,
-                  Pagination,
                   AnimeDetailData,
                   DetailResponse,
                   DownloadItem,
@@ -210,31 +196,21 @@ components(
                   FilterQuery,
                   FilterResponse,
                   FiltersApplied,
-                  Pagination_1,
-                  AnimeItem_1,
+                  Pagination,
                   GenreAnimeResponse,
                   GenreQuery,
-                  Pagination_2,
                   Genre_1,
                   GenresResponse,
                   Anime2Data,
                   Anime2Response,
-                  CompleteAnimeItem_1,
-                  OngoingAnimeItem,
-                  LatestAnimeItem,
                   LatestAnimeResponse,
                   LatestQuery,
-                  Pagination_3,
-                  OngoingAnimeItem_1,
                   OngoingAnimeResponse,
-                  Pagination_4,
-                  AnimeItem_2,
-                  Pagination_5,
                   SearchQuery,
                   SearchResponse,
-                  CompleteAnimeItem_2,
+                  CompleteAnimeItem,
                   ListResponse,
-                  Pagination_6,
+                  Pagination_1,
                   AnimeDetailData_1,
                   DetailResponse_1,
                   EpisodeList,
@@ -245,24 +221,24 @@ components(
                   DownloadLink,
                   EpisodeInfo,
                   FullResponse,
-                  AnimeItem_3,
+                  AnimeItem_1,
                   GenreAnimeResponse_1,
                   GenreQuery_1,
-                  Pagination_7,
+                  Pagination_2,
                   Genre_3,
                   GenresResponse_1,
                   AnimeData,
-                  CompleteAnimeItem_3,
-                  OngoingAnimeItem_2,
-                  LatestAnimeItem_1,
+                  CompleteAnimeItem_1,
+                  OngoingAnimeItem,
+                  LatestAnimeItem,
                   LatestAnimeResponse_1,
                   LatestQuery_1,
-                  Pagination_8,
-                  OngoingAnimeItem_3,
+                  Pagination_3,
+                  OngoingAnimeItem_1,
                   OngoingAnimeResponse_1,
-                  Pagination_9,
-                  AnimeItem_4,
-                  Pagination_10,
+                  Pagination_4,
+                  AnimeItem_2,
+                  Pagination_5,
                   SearchQuery_1,
                   SearchResponse_1,
                   ChangePasswordRequest,
@@ -300,27 +276,27 @@ components(
                   GenreKomikResponse,
                   GenreQuery_2,
                   KomikItem,
-                  Pagination_11,
+                  Pagination_6,
                   Genre_4,
                   GenresResponse_2,
                   MangaItem,
                   MangaResponse,
-                  Pagination_12,
+                  Pagination_7,
                   QueryParams,
                   ManhuaItem,
                   ManhuaResponse,
-                  Pagination_13,
+                  Pagination_8,
                   QueryParams_1,
                   ManhwaItem,
                   ManhwaResponse,
-                  Pagination_14,
+                  Pagination_9,
                   QueryParams_2,
-                  Pagination_15,
+                  Pagination_10,
                   PopularKomikItem,
                   PopularKomikResponse,
                   PopularQuery,
                   MangaItem_1,
-                  Pagination_16,
+                  Pagination_11,
                   SearchQuery_2,
                   SearchResponse_2,
                   ProxyParams,
