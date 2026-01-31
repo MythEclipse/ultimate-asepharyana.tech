@@ -46,6 +46,33 @@ pub fn url_hash(url: &str) -> String {
     hex::encode(&result[..16]) // Use 16 bytes for collision-resistant key
 }
 
+/// Helper to convert any image URL to a fast WP.com (Jetpack) CDN URL.
+/// This acts as a high-speed proxy even before Picser finishes caching.
+pub fn to_wp_cdn(url: &str) -> String {
+    if url.is_empty() {
+        return url.to_string();
+    }
+
+    // If already a CDN URL, return as is
+    if url.contains("picser.pages.dev")
+        || url.contains("jsdelivr.net")
+        || url.contains("wp.com")
+        || url.contains("imagecdn.app")
+    {
+        return url.to_string();
+    }
+
+    // Remove protocol for wp.com format
+    let clean_url = url
+        .trim()
+        .replace("https://", "")
+        .replace("http://", "");
+
+    // Use i0, i1, i2 or i3 based on hash to distribute load
+    let hash = url.len() % 4;
+    format!("https://i{}.wp.com/{}", hash, clean_url)
+}
+
 /// Response from Picser API (/api/upload)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PicserResponse {
@@ -534,7 +561,7 @@ pub async fn cache_image_url(
         Ok(cdn_url) => cdn_url,
         Err(e) => {
             warn!("ImageCache: Failed to cache {}: {}", original_url, e);
-            original_url.to_string()
+            to_wp_cdn(original_url) // Use WP CDN as graceful fallback
         }
     }
 }
@@ -567,9 +594,9 @@ pub fn cache_image_url_lazy(
     original_url: String,
     semaphore: Option<Arc<tokio::sync::Semaphore>>,
 ) -> String {
-    let db_owned = db; // Arc is cheap to clone, no need for extra clone
+    let db_owned = db;
     let redis_owned = redis.clone();
-    let url = original_url.clone(); // Single clone for the async block
+    let url = original_url.clone();
     let sem_owned = semaphore.clone();
 
     // Spawn background task to cache
@@ -580,16 +607,12 @@ pub fn cache_image_url_lazy(
         }
 
         match cache.get_or_cache(&url).await {
-            Ok(cdn_url) => {
-                info!("[LazyImageCache] Cached: {} -> {}", url, cdn_url);
-            }
-            Err(e) => {
-                warn!("[LazyImageCache] Failed to cache {}: {}", url, e);
-            }
+            Ok(_) => {}
+            Err(_) => {}
         }
     });
 
-    original_url
+    to_wp_cdn(&original_url)
 }
 
 /// Convert image URL to CDN URL if already cached, otherwise return original
@@ -613,12 +636,7 @@ pub async fn get_cached_or_original(
     let lock_key = format!("{}:{}", IMAGE_CACHE_LOCK_PREFIX, url_hash(original_url));
     let redis_cache = Cache::new(redis);
     if redis_cache.get::<bool>(&lock_key).await.is_some() {
-        // Already being cached, just return original URL
-        info!(
-            "[ImageCache] URL already being cached by another process: {}",
-            original_url
-        );
-        return original_url.to_string();
+        return to_wp_cdn(original_url);
     }
 
     // Not cached and not being cached - start background caching
@@ -633,20 +651,10 @@ pub async fn get_cached_or_original(
             cache = cache.with_semaphore(sem);
         }
 
-        match cache.get_or_cache(&url).await {
-            Ok(cdn_url) => {
-                info!("[BgCache] Successfully cached: {} -> {}", url, cdn_url);
-            }
-            Err(e) => {
-                // Only warn if it's not already being cached
-                if !e.contains("already being cached") {
-                    warn!("[BgCache] Failed to cache {}: {}", url, e);
-                }
-            }
-        }
+        let _ = cache.get_or_cache(&url).await;
     });
 
-    original_url.to_string()
+    to_wp_cdn(original_url)
 }
 
 /// Batch process multiple image URLs - returns original URLs immediately
@@ -663,9 +671,8 @@ pub async fn cache_image_urls_batch_lazy(
         return urls;
     }
 
-    let cache = ImageCache::new(db.clone(), redis.clone());
-    let mut results = Vec::with_capacity(urls.len());
-    let mut missing_urls = Vec::new();
+    let mut results = vec![String::new(); urls.len()];
+    let mut missing_indices = Vec::new();
 
     // 1. Batch check Redis
     let redis_cache = Cache::new(redis);
@@ -674,71 +681,83 @@ pub async fn cache_image_urls_batch_lazy(
         .map(|url| format!("{}:{}", IMAGE_CACHE_PREFIX, url_hash(url)))
         .collect();
 
-    // Use mget for efficient batch retrieval
     let cached_values: Vec<Option<String>> = redis_cache.mget(&cache_keys).await;
 
-    for (i, url) in urls.iter().enumerate() {
-        let cache_key = &cache_keys[i];
-
-        if let Some(cdn_url) = &cached_values[i] {
-            // Redis hit
-            results.push(cdn_url.clone());
+    for (i, val) in cached_values.iter().enumerate() {
+        if let Some(cdn_url) = val {
+            results[i] = cdn_url.clone();
         } else {
-            // Redis miss - check DB?
-            // Checking DB for every image might be slow.
-            // Let's rely on Redis for "hot" cache and assume if it's not in Redis,
-            // we treat it as a "miss" for the fast path (lazy), OR we check DB.
-            // But checking DB individually is slow.
-            // Let's verify DB for misses.
-            if let Ok(Some(entry)) = cache.find_in_db(url).await {
-                // Determine if we should cache back to Redis? Yes.
-                let _ = redis_cache
-                    .set_with_ttl(cache_key, &entry.cdn_url, IMAGE_CACHE_TTL)
-                    .await;
-                results.push(entry.cdn_url);
-            } else {
-                // Real miss
-                results.push(url.clone());
-                missing_urls.push(url.clone());
-            }
+            missing_indices.push(i);
         }
     }
 
-    // 2. Trigger background caching for missing URLs
-    if !missing_urls.is_empty() {
-        let db_owned = db.clone();
-        let redis_owned = redis.clone();
-        let sem_owned = semaphore.clone();
-        let urls_to_cache = missing_urls;
+    // 2. Batch check Database for Redis misses
+    if !missing_indices.is_empty() {
+        let missing_urls: Vec<String> = missing_indices.iter().map(|&i| urls[i].clone()).collect();
+        
+        match image_cache::Entity::find()
+            .filter(image_cache::Column::OriginalUrl.is_in(missing_urls.clone()))
+            .all(db.as_ref())
+            .await
+        {
+            Ok(db_entries) => {
+                let db_map: std::collections::HashMap<String, String> = db_entries
+                    .into_iter()
+                    .map(|e| (e.original_url, e.cdn_url))
+                    .collect();
 
-        tokio::spawn(async move {
-            use futures::stream::{self, StreamExt};
+                let mut still_missing_indices = Vec::new();
 
-            let mut cache = ImageCache::new(db_owned, redis_owned);
-            if let Some(sem) = sem_owned {
-                cache = cache.with_semaphore(sem);
-            }
-
-            stream::iter(urls_to_cache)
-                .map(|url| {
-                    let cache_ref = &cache;
-                    async move {
-                        match cache_ref.get_or_cache(&url).await {
-                            Ok(cdn_url) => {
-                                debug!("[BatchLazyCache] Cached: {} -> {}", url, cdn_url);
-                            }
-                            Err(e) => {
-                                if !e.contains("already being cached") {
-                                    debug!("[BatchLazyCache] Failed to cache {}: {}", url, e);
-                                }
-                            }
-                        }
+                for &idx in &missing_indices {
+                    let url = &urls[idx];
+                    if let Some(cdn_url) = db_map.get(url) {
+                        results[idx] = cdn_url.clone();
+                        // Put back to Redis
+                        let _ = redis_cache
+                            .set_with_ttl(&cache_keys[idx], cdn_url, IMAGE_CACHE_TTL)
+                            .await;
+                    } else {
+                        // Real miss - return WP CDN proxy and trigger background upload
+                        results[idx] = to_wp_cdn(url);
+                        still_missing_indices.push(idx);
                     }
-                })
-                .buffer_unordered(50) // High concurrency for Redis checks; uploads throttled by global semaphore
-                .collect::<Vec<_>>()
-                .await;
-        });
+                }
+
+                // 3. Trigger background caching for still missing URLs
+                if !still_missing_indices.is_empty() {
+                    let db_owned = db.clone();
+                    let redis_owned = redis.clone();
+                    let sem_owned = semaphore.clone();
+                    let urls_to_cache: Vec<String> = still_missing_indices.iter().map(|&idx| urls[idx].clone()).collect();
+
+                    tokio::spawn(async move {
+                        use futures::stream::{self, StreamExt};
+                        let mut cache = ImageCache::new(db_owned, redis_owned);
+                        if let Some(sem) = sem_owned {
+                            cache = cache.with_semaphore(sem);
+                        }
+
+                        stream::iter(urls_to_cache)
+                            .map(|url| {
+                                let cache_ref = &cache;
+                                async move {
+                                    let _ = cache_ref.get_or_cache(&url).await;
+                                }
+                            })
+                            .buffer_unordered(20)
+                            .collect::<Vec<_>>()
+                            .await;
+                    });
+                }
+            }
+            Err(e) => {
+                error!("ImageCache: Batch DB check failed: {}", e);
+                // Fallback to original URLs (with WP CDN) for all missing
+                for &idx in &missing_indices {
+                    results[idx] = to_wp_cdn(&urls[idx]);
+                }
+            }
+        }
     }
 
     results

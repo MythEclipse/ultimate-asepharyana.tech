@@ -494,7 +494,7 @@ pub async fn ws_handler(ws: WebSocketUpgrade, State(app_state): State<Arc<AppSta
     ws.on_upgrade(|socket| handle_socket(socket, app_state))
 }
 
-async fn handle_socket(mut socket: WebSocket, _: Arc<AppState>) {
+async fn handle_socket(mut socket: WebSocket, app_state: Arc<AppState>) {
     info!("WebSocket connection established.");
 
     while let Some(msg) = socket.recv().await {
@@ -520,6 +520,17 @@ async fn handle_socket(mut socket: WebSocket, _: Arc<AppState>) {
                         // Fetch detail data
                         match fetch_komik_detail(komik_id).await {
                             Ok(mut detail_data) => {
+                                // Cache poster image
+                                if !detail_data.poster.is_empty() {
+                                    detail_data.poster = get_cached_or_original(
+                                        app_state.db.clone(),
+                                        &app_state.redis_pool,
+                                        &detail_data.poster,
+                                        Some(app_state.image_processing_semaphore.clone()),
+                                    )
+                                    .await;
+                                }
+
                                 // Send initial detail data (without chapters)
                                 let chapters_to_send =
                                     detail_data.chapters.drain(..).collect::<Vec<_>>(); // Temporarily remove chapters

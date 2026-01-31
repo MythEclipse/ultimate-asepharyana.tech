@@ -4,6 +4,7 @@ use std::sync::Arc;
 // External crate imports
 use crate::helpers::{
     default_backoff, internal_err, parse_html, transient, Cache,
+    get_cached_or_original, cache_image_urls_batch_lazy,
 };
 use crate::helpers::scraping::{attr, attr_from_or, extract_slug, selector, text, text_from_or};
 use crate::infra::proxy::fetch_with_proxy;
@@ -102,9 +103,33 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let data = fetch_anime_detail(slug.clone())
+            let mut data = fetch_anime_detail(slug.clone())
                 .await
                 .map_err(|e| e.to_string())?;
+
+            // 1. Individual cache for main poster
+            data.poster = get_cached_or_original(
+                app_state.db.clone(),
+                &app_state.redis_pool,
+                &data.poster,
+                Some(app_state.image_processing_semaphore.clone()),
+            ).await;
+
+            // 2. Batch cache for recommendations
+            let rec_posters: Vec<String> = data.recommendations.iter().map(|r| r.poster.clone()).collect();
+            let cached_rec_posters = cache_image_urls_batch_lazy(
+                app_state.db.clone(),
+                &app_state.redis_pool,
+                rec_posters,
+                Some(app_state.image_processing_semaphore.clone()),
+            ).await;
+
+            for (i, rec) in data.recommendations.iter_mut().enumerate() {
+                if let Some(url) = cached_rec_posters.get(i) {
+                    rec.poster = url.clone();
+                }
+            }
+
             Ok(DetailResponse {
                 status: Some("Ok".to_string()),
                 data,

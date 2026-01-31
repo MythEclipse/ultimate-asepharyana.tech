@@ -1,4 +1,4 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html, get_cached_or_original, cache_image_urls_batch_lazy};
 use crate::helpers::scraping::{selector, text_from_or, extract_slug, text, attr};
 use crate::routes::AppState;
 use axum::extract::State;
@@ -91,9 +91,40 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let data = fetch_anime_detail(slug.clone())
+            let mut data = fetch_anime_detail(slug.clone())
                 .await
                 .map_err(|e| e.to_string())?;
+
+            // 1. Cache posters
+            data.poster = get_cached_or_original(
+                app_state.db.clone(),
+                &app_state.redis_pool,
+                &data.poster,
+                Some(app_state.image_processing_semaphore.clone()),
+            ).await;
+            
+            data.poster2 = get_cached_or_original(
+                app_state.db.clone(),
+                &app_state.redis_pool,
+                &data.poster2,
+                Some(app_state.image_processing_semaphore.clone()),
+            ).await;
+
+            // 2. Batch cache for recommendations
+            let rec_posters: Vec<String> = data.recommendations.iter().map(|r| r.poster.clone()).collect();
+            let cached_rec_posters = cache_image_urls_batch_lazy(
+                app_state.db.clone(),
+                &app_state.redis_pool,
+                rec_posters,
+                Some(app_state.image_processing_semaphore.clone()),
+            ).await;
+
+            for (i, rec) in data.recommendations.iter_mut().enumerate() {
+                if let Some(url) = cached_rec_posters.get(i) {
+                    rec.poster = url.clone();
+                }
+            }
+
             Ok(DetailResponse {
                 status: "Ok".to_string(),
                 data,
