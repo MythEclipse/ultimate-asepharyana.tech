@@ -172,9 +172,10 @@ impl CleanupOldCache {
     }
 
     /// Simple hash function for URL (same as in image_cache.rs).
+    /// Simple hash function for URL (same as in image_cache.rs).
     fn hash_url(url: &str) -> String {
-        use sha1::{Digest, Sha1};
-        let mut hasher = Sha1::new();
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
         hasher.update(url.as_bytes());
         format!("{:x}", hasher.finalize())
     }
@@ -195,6 +196,6 @@ mod tests {
     #[test]
     fn test_hash_url() {
         let hash = CleanupOldCache::hash_url("https://example.com/image.jpg");
-        assert_eq!(hash.len(), 40); // SHA1 hash length
+        assert_eq!(hash.len(), 64); // SHA256 hash length
     }
 }

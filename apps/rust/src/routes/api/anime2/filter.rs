@@ -1,15 +1,16 @@
-use crate::helpers::{transient, default_backoff, internal_err, Cache};
+use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
+use crate::helpers::{default_backoff, transient, Cache};
 use crate::infra::proxy::fetch_with_proxy;
-use backoff::future::retry;
+use crate::models::anime2::{FilterAnimeItem, Pagination};
 use crate::routes::AppState;
 use axum::extract::{Query, State};
-use axum::http::StatusCode;
-use axum::{response::IntoResponse, routing::get, Json, Router};
-use lazy_static::lazy_static;
+use axum::{routing::get, Router};
+use backoff::future::retry;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::sync::Arc;
 use tracing::{info, warn};
 use utoipa::ToSchema;
@@ -19,36 +20,7 @@ pub const ENDPOINT_PATH: &str = "/api/anime2/filter";
 pub const ENDPOINT_DESCRIPTION: &str = "Advanced multi-filter search for anime2";
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_filter";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<FilterResponse>";
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct AnimeItem {
-    pub title: String,
-    pub slug: String,
-    pub poster: String,
-    pub score: String,
-    pub status: String,
-    pub r#type: String,
-    pub anime_url: String,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct Pagination {
-    pub current_page: u32,
-    pub last_visible_page: u32,
-    pub has_next_page: bool,
-    pub next_page: Option<u32>,
-    pub has_previous_page: bool,
-    pub previous_page: Option<u32>,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct FilterResponse {
-    pub status: String,
-    pub filters_applied: FiltersApplied,
-    pub data: Vec<AnimeItem>,
-    pub pagination: Pagination,
-}
+pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<FilterAnimeItem>>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct FiltersApplied {
@@ -67,19 +39,17 @@ pub struct FilterQuery {
     pub order: Option<String>,
 }
 
-lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref SCORE_SELECTOR: Selector = Selector::parse(".numscore").unwrap();
-    static ref STATUS_SELECTOR: Selector = Selector::parse(".status").unwrap();
-    static ref TYPE_SELECTOR: Selector = Selector::parse(".type").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-}
-
+// Static selectors using once_cell (replacing lazy_static)
+static ITEM_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("article.bs").unwrap());
+static TITLE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".tt h2").unwrap());
+static IMG_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("img").unwrap());
+static SCORE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".numscore").unwrap());
+static STATUS_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".status").unwrap());
+static TYPE_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".type").unwrap());
+static LINK_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("a").unwrap());
+static PAGINATION_SELECTOR: Lazy<Selector> =
+    Lazy::new(|| Selector::parse(".pagination .page-numbers:not(.next)").unwrap());
+static NEXT_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse(".pagination .next").unwrap());
 static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 const CACHE_TTL: u64 = 300;
@@ -97,14 +67,14 @@ const CACHE_TTL: u64 = 300;
     tag = "anime2",
     operation_id = "anime2_filter",
     responses(
-        (status = 200, description = "Advanced multi-filter search for anime2", body = FilterResponse),
+        (status = 200, description = "Advanced multi-filter search for anime2", body = ApiResponse<Vec<FilterAnimeItem>>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn filter(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<FilterQuery>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> ApiResult<Vec<FilterAnimeItem>> {
     let page = params.page.unwrap_or(1);
     let genre = params.genre.clone();
     let status = params.status.clone();
@@ -129,49 +99,45 @@ pub async fn filter(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (mut anime_list, pagination) =
+            let (data, pagination) =
                 fetch_filtered_anime(page, &genre, &status, &anime_type, &order)
                     .await
                     .map_err(|e| e.to_string())?;
 
-            // Convert all poster URLs to CDN URLs
             // Convert all poster URLs to CDN URLs concurrently
-            // Convert all poster URLs to CDN URLs
-            // Fire-and-forget background caching for posters to ensure max API speed
-            let db = app_state.db.clone();
-            let redis = app_state.redis_pool.clone();
-
-            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
+            let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
             let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
-                db,
-                &redis,
+                app_state.db.clone(),
+                &app_state.redis_pool,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
 
-            for (i, item) in anime_list.iter_mut().enumerate() {
+            let mut final_data = data;
+            for (i, item) in final_data.iter_mut().enumerate() {
                 if let Some(url) = cached_posters.get(i) {
                     item.poster = url.clone();
                 }
             }
 
-            Ok(FilterResponse {
-                status: "Ok".to_string(),
-                filters_applied: FiltersApplied {
-                    genre: genre_clone,
-                    status: status_clone,
-                    r#type: type_clone,
-                    order: order_clone,
+            let meta = json!({
+                "pagination": pagination,
+                "filters_applied": {
+                    "genre": genre_clone,
+                    "status": status_clone,
+                    "type": type_clone,
+                    "order": order_clone,
                 },
-                data: anime_list,
-                pagination,
-            })
+                "status": "Ok"
+            });
+
+            Ok(ApiResponse::success_with_meta(final_data, meta))
         })
         .await
         .map_err(|e| internal_err(&e))?;
 
-    Ok(Json(response).into_response())
+    Ok(response)
 }
 
 async fn fetch_filtered_anime(
@@ -180,7 +146,7 @@ async fn fetch_filtered_anime(
     status: &Option<String>,
     anime_type: &Option<String>,
     order: &str,
-) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<FilterAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let mut url = if page > 1 {
         format!("https://alqanime.si/anime/page/{}/?order={}", page, order)
     } else {
@@ -222,7 +188,7 @@ async fn fetch_filtered_anime(
 fn parse_filter_page(
     html: &str,
     current_page: u32,
-) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<FilterAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let document = Html::parse_document(html);
     let mut anime_list = Vec::new();
 
@@ -273,7 +239,7 @@ fn parse_filter_page(
             .to_string();
 
         if !title.is_empty() {
-            anime_list.push(AnimeItem {
+            anime_list.push(FilterAnimeItem {
                 title,
                 slug,
                 poster,

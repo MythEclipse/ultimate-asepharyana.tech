@@ -118,6 +118,18 @@ pub struct GenreAnimeItem {
     pub anime_url: String,
 }
 
+/// Anime item for advanced filtering (used in filter endpoint)
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
+pub struct FilterAnimeItem {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub score: String,
+    pub status: String,
+    pub r#type: String,
+    pub anime_url: String,
+}
+
 // ============================================================================
 // TRAITS
 // ============================================================================
@@ -178,6 +190,15 @@ impl HasPoster for SearchAnimeItem {
 }
 
 impl HasPoster for GenreAnimeItem {
+    fn poster(&self) -> &str {
+        &self.poster
+    }
+    fn set_poster(&mut self, url: String) {
+        self.poster = url;
+    }
+}
+
+impl HasPoster for FilterAnimeItem {
     fn poster(&self) -> &str {
         &self.poster
     }

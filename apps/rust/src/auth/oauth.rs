@@ -150,12 +150,12 @@ impl OAuthProvider for GoogleProvider {
             ])
             .send()
             .await
-            .map_err(|e| OAuthError::HttpError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::HttpError(e.to_string()))?;
 
         response
-            .json()
+            .json::<TokenResponse>()
             .await
-            .map_err(|e| OAuthError::TokenError(e.to_string()))
+            .map_err(|e: reqwest::Error| OAuthError::TokenError(e.to_string()))
     }
 
     async fn get_user(&self, access_token: &str) -> Result<OAuthUser, OAuthError> {
@@ -165,12 +165,12 @@ impl OAuthProvider for GoogleProvider {
             .bearer_auth(access_token)
             .send()
             .await
-            .map_err(|e| OAuthError::HttpError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::HttpError(e.to_string()))?;
 
         let data: serde_json::Value = response
-            .json()
+            .json::<serde_json::Value>()
             .await
-            .map_err(|e| OAuthError::InvalidResponse(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::InvalidResponse(e.to_string()))?;
 
         Ok(OAuthUser {
             id: data["id"].as_str().unwrap_or_default().to_string(),
@@ -238,12 +238,12 @@ impl OAuthProvider for GitHubProvider {
             ])
             .send()
             .await
-            .map_err(|e| OAuthError::HttpError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::HttpError(e.to_string()))?;
 
         response
-            .json()
+            .json::<TokenResponse>()
             .await
-            .map_err(|e| OAuthError::TokenError(e.to_string()))
+            .map_err(|e: reqwest::Error| OAuthError::TokenError(e.to_string()))
     }
 
     async fn get_user(&self, access_token: &str) -> Result<OAuthUser, OAuthError> {
@@ -254,12 +254,12 @@ impl OAuthProvider for GitHubProvider {
             .bearer_auth(access_token)
             .send()
             .await
-            .map_err(|e| OAuthError::HttpError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::HttpError(e.to_string()))?;
 
         let data: serde_json::Value = response
-            .json()
+            .json::<serde_json::Value>()
             .await
-            .map_err(|e| OAuthError::InvalidResponse(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::InvalidResponse(e.to_string()))?;
 
         Ok(OAuthUser {
             id: data["id"].to_string(),
@@ -331,12 +331,12 @@ impl OAuthProvider for DiscordProvider {
             ])
             .send()
             .await
-            .map_err(|e| OAuthError::HttpError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::HttpError(e.to_string()))?;
 
         response
-            .json()
+            .json::<TokenResponse>()
             .await
-            .map_err(|e| OAuthError::TokenError(e.to_string()))
+            .map_err(|e: reqwest::Error| OAuthError::TokenError(e.to_string()))
     }
 
     async fn get_user(&self, access_token: &str) -> Result<OAuthUser, OAuthError> {
@@ -346,12 +346,12 @@ impl OAuthProvider for DiscordProvider {
             .bearer_auth(access_token)
             .send()
             .await
-            .map_err(|e| OAuthError::HttpError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::HttpError(e.to_string()))?;
 
         let data: serde_json::Value = response
-            .json()
+            .json::<serde_json::Value>()
             .await
-            .map_err(|e| OAuthError::InvalidResponse(e.to_string()))?;
+            .map_err(|e: reqwest::Error| OAuthError::InvalidResponse(e.to_string()))?;
 
         let avatar = data["avatar"].as_str().map(|a| {
             format!(

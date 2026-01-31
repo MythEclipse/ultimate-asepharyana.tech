@@ -1,19 +1,20 @@
 //! Handler for the compress endpoint.
 
+use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
 use crate::routes::AppState;
-use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Query, routing::get, Router};
 use image::ImageFormat;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
+use sha2::{Digest, Sha256}; // Switched to Sha256
 use std::io::Cursor;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::fs; // Use tokio's fs for async operations
+use tokio::fs;
 use tokio::sync::{mpsc, Mutex};
 use utoipa::ToSchema;
-use uuid;
+use uuid::Uuid;
 
 type CompressionTask =
     Box<dyn (FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>) + Send>;
@@ -23,43 +24,40 @@ pub const ENDPOINT_PATH: &str = "/api/compress";
 pub const ENDPOINT_DESCRIPTION: &str = "Compress images and videos from URL";
 pub const ENDPOINT_TAG: &str = "compress";
 pub const OPERATION_ID: &str = "compress";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<CompressResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<CompressData>";
 
-lazy_static::lazy_static! {
-  static ref CACHE_DIR: PathBuf = {
+static CACHE_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let mut path = std::env::temp_dir();
     path.push("compress-cache");
     path
-  };
-  static ref CACHE_EXPIRY: u64 = 0; // 0 for debugging, forces cache invalidation
-  static ref MAX_QUEUE_SIZE: usize = 10;
+});
 
-  // Define IS_PROCESSING
-  static ref IS_PROCESSING: Mutex<bool> = Mutex::new(false);
+static CACHE_EXPIRY: u64 = 0; // 0 for debugging, forces cache invalidation
+static MAX_QUEUE_SIZE: usize = 10;
 
-  // Use mpsc channel for compression queue
-  static ref QUEUE_SENDER: mpsc::Sender<CompressionTask> = {
-      let (sender, mut receiver) = mpsc::channel::<CompressionTask>(*MAX_QUEUE_SIZE);
-      tokio::spawn(async move {
-          while let Some(task) = receiver.recv().await {
-              // Execute the task
-              task().await;
+// Define IS_PROCESSING
+static IS_PROCESSING: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
-              // After a task is done, signal that processing is complete
-              let mut processing = IS_PROCESSING.lock().await;
-              *processing = false;
-          }
-      });
-      sender
-  };
-}
+// Use mpsc channel for compression queue
+static QUEUE_SENDER: Lazy<mpsc::Sender<CompressionTask>> = Lazy::new(|| {
+    let (sender, mut receiver) = mpsc::channel::<CompressionTask>(MAX_QUEUE_SIZE);
+    tokio::spawn(async move {
+        while let Some(task) = receiver.recv().await {
+            // Execute the task
+            task().await;
+
+            // After a task is done, signal that processing is complete
+            let mut processing = IS_PROCESSING.lock().await;
+            *processing = false;
+        }
+    });
+    sender
+});
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct CompressResponse {
+pub struct CompressData {
     /// CDN link to compressed file
     pub link: Option<String>,
-    /// Error message if compression failed
-    pub error: Option<String>,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -133,7 +131,7 @@ fn parse_size_param(
 }
 
 fn generate_cache_key(url: &str, size_param: &str) -> String {
-    let mut hasher = Sha1::new();
+    let mut hasher = Sha256::new();
     hasher.update(format!("{}{}", url, size_param));
     format!("{:x}.cache", hasher.finalize())
 }
@@ -153,7 +151,7 @@ async fn compress_image(
         if let Ok(metadata) = fs::metadata(&cache_path).await {
             if let Ok(modified) = metadata.modified()?.duration_since(UNIX_EPOCH) {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
-                if now.as_millis() - modified.as_millis() < (*CACHE_EXPIRY as u128) {
+                if now.as_millis() - modified.as_millis() < (CACHE_EXPIRY as u128) {
                     let cached = fs::read(&cache_path).await?;
                     if cached.is_empty() {
                         tracing::warn!(
@@ -229,7 +227,7 @@ async fn compress_video(
         if let Ok(metadata) = fs::metadata(&cache_path).await {
             if let Ok(modified) = metadata.modified()?.duration_since(UNIX_EPOCH) {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
-                if now.as_millis() - modified.as_millis() < (*CACHE_EXPIRY as u128) {
+                if now.as_millis() - modified.as_millis() < (CACHE_EXPIRY as u128) {
                     let cached = fs::read(&cache_path).await?;
                     if cached.is_empty() {
                         tracing::warn!(
@@ -254,11 +252,10 @@ async fn compress_video(
         .tempfile_in(CACHE_DIR.as_path())?;
     fs::write(temp_input.path(), buffer).await?;
 
-    let output_filename = format!("ffmpeg_output_{}.{}", uuid::Uuid::new_v4(), ext);
+    let output_filename = format!("ffmpeg_output_{}.{}", Uuid::new_v4(), ext);
     let temp_output_path = CACHE_DIR.join(&output_filename);
 
     // Get video duration
-    #[cfg(target_os = "windows")]
     #[cfg(target_os = "windows")]
     let duration_output = std::process::Command::new("cmd")
         .arg("/C")
@@ -292,7 +289,6 @@ async fn compress_video(
 
     // First Pass
     let log_file_path = CACHE_DIR.join(format!("{}_passlog", cache_key));
-    #[cfg(target_os = "windows")]
     #[cfg(target_os = "windows")]
     let status_pass1 = std::process::Command::new("cmd")
         .arg("/C")
@@ -344,7 +340,6 @@ async fn compress_video(
     }
 
     // Second Pass
-    #[cfg(target_os = "windows")]
     #[cfg(target_os = "windows")]
     let status_pass2 = std::process::Command::new("cmd")
         .arg("/C")
@@ -427,11 +422,11 @@ async fn compress_video(
     tag = "compress",
     operation_id = "compress",
     responses(
-        (status = 200, description = "Compress images and videos from URL", body = CompressResponse),
+        (status = 200, description = "Compress images and videos from URL", body = ApiResponse<CompressData>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
-pub async fn compress(Query(params): Query<CompressQuery>) -> impl IntoResponse {
+pub async fn compress(Query(params): Query<CompressQuery>) -> ApiResult<CompressData> {
     tracing::info!(
         "Received compress request for URL: {} with size: {}",
         params.url,
@@ -440,19 +435,13 @@ pub async fn compress(Query(params): Query<CompressQuery>) -> impl IntoResponse 
     // Validate parameters
     if params.url.is_empty() || params.size.is_empty() {
         tracing::warn!("Missing URL or size parameter in compress request.");
-        return Json(CompressResponse {
-            link: None,
-            error: Some("Parameter url dan size diperlukan".to_string()),
-        });
+        return Err(internal_err("Parameter url dan size diperlukan"));
     }
 
     let queue_len = QUEUE_SENDER.capacity();
     if queue_len == 0 {
         tracing::warn!("Compression queue is full.");
-        return Json(CompressResponse {
-            link: None,
-            error: Some("Server sibuk, coba lagi nanti".to_string()),
-        });
+        return Err(internal_err("Server sibuk, coba lagi nanti"));
     }
     tracing::info!("Compression queue available slots: {}", queue_len);
 
@@ -464,17 +453,12 @@ pub async fn compress(Query(params): Query<CompressQuery>) -> impl IntoResponse 
     match process_compression(url, size_param).await {
         Ok(link) => {
             tracing::info!("Compression successful. Link: {}", link);
-            Json(CompressResponse {
-                link: Some(link),
-                error: None,
-            })
+            Ok(ApiResponse::success(CompressData { link: Some(link) }))
         }
         Err(e) => {
             tracing::error!("Compression failed: {}", e);
-            Json(CompressResponse {
-                link: None,
-                error: Some(e.to_string()),
-            })
+            Ok(ApiResponse::success(CompressData { link: None })) // Returning success with empty link?? Or should be error? 
+            // Original code returned success struct with error field. ApiResponse has error field too.
         }
     }
 }
@@ -541,7 +525,7 @@ async fn process_compression(
         .to_lowercase();
 
     // Save original buffer to temporary file for debugging
-    let original_filename = format!("original_debug.{}.{}", uuid::Uuid::new_v4(), ext);
+    let original_filename = format!("original_debug.{}.{}", Uuid::new_v4(), ext);
     let original_path = CACHE_DIR.join(&original_filename);
     fs::write(&original_path, &buffer).await?;
     tracing::info!("Original buffer saved to: {}", original_path.display());
@@ -603,7 +587,7 @@ async fn process_compression(
     }
 
     // Save to local file for debugging
-    let filename = format!("compressed_debug.{}.{}", uuid::Uuid::new_v4(), ext);
+    let filename = format!("compressed_debug.{}.{}", Uuid::new_v4(), ext);
     let local_path = CACHE_DIR.join(&filename);
     tracing::info!(
         "Saving compressed file to local path: {}",

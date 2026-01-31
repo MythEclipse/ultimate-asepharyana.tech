@@ -2,18 +2,16 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
+use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
-    response::IntoResponse,
     routing::get,
-    Json, Router,
+    Router,
 };
 
-use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tracing::info;
-use utoipa::ToSchema;
 
 // Internal imports
 use crate::routes::AppState;
@@ -28,14 +26,7 @@ pub const ENDPOINT_DESCRIPTION: &str =
     "Handles GET requests for the anime2/complete-anime/slug endpoint.";
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_complete_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<CompleteAnimeResponse>";
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct CompleteAnimeResponse {
-    pub status: String,
-    pub data: Vec<CompleteAnimeItem>,
-    pub pagination: Pagination,
-}
+pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<CompleteAnimeItem>>";
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -48,14 +39,14 @@ const CACHE_TTL: u64 = 300; // 5 minutes
     tag = "anime2",
     operation_id = "anime2_complete_anime_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = CompleteAnimeResponse),
+        (status = 200, description = "Handles GET requests for the anime2/complete-anime/slug endpoint.", body = ApiResponse<Vec<CompleteAnimeItem>>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn slug(
     State(app_state): State<Arc<AppState>>,
     Path(slug): Path<String>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> ApiResult<Vec<CompleteAnimeItem>> {
     let _start_time = std::time::Instant::now();
     info!("Handling request for complete_anime slug: {}", slug);
 
@@ -85,7 +76,7 @@ pub async fn slug(
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
 
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 posters,
@@ -93,17 +84,24 @@ pub async fn slug(
             )
             .await;
 
-            // Return original data explicitly for speed
-            Ok(CompleteAnimeResponse {
-                status: "Ok".to_string(),
-                data: anime_list,
-                pagination,
-            })
+            let mut final_data = anime_list;
+            for (i, item) in final_data.iter_mut().enumerate() {
+                if let Some(url) = cached_posters.get(i) {
+                    item.poster = url.clone();
+                }
+            }
+
+            let meta = json!({
+                "pagination": pagination,
+                "status": "Ok"
+            });
+
+            Ok(ApiResponse::success_with_meta(final_data, meta))
         })
         .await
         .map_err(|e| internal_err(&e))?;
 
-    Ok(Json(response).into_response())
+    Ok(response)
 }
 
 fn parse_anime_page(
