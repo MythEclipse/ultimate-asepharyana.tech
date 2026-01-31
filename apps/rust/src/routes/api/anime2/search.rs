@@ -2,7 +2,7 @@ use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
 use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use crate::routes::AppState;
 use axum::extract::State;
-use axum::{extract::Query, routing::get, Router};
+use axum::{extract::Query, Router};
 
 use serde::Deserialize;
 use serde_json::json;
@@ -15,12 +15,6 @@ use crate::models::anime2::{PaginationWithStringPages, SearchAnimeItem};
 use crate::scraping::anime2 as parsers;
 use crate::helpers::anime2_cache as cache_utils;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/search";
-pub const ENDPOINT_DESCRIPTION: &str = "Searches for anime2 based on query parameters.";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_search";
-pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<SearchAnimeItem>>";
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -103,5 +97,5 @@ fn parse_search_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(search))
+    router
 }

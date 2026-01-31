@@ -1,6 +1,6 @@
 //! Handler for refresh token endpoint.
 
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, response::IntoResponse, Json, Router};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -92,5 +92,5 @@ pub async fn refresh(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(refresh))
+    router
 }

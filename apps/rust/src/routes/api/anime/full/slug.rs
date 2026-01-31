@@ -6,7 +6,6 @@ use axum::http::StatusCode;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    routing::get,
     Json, Router,
 };
 
@@ -15,12 +14,6 @@ use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime/full/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime/full/{slug} endpoint.";
-pub const ENDPOINT_TAG: &str = "anime";
-pub const OPERATION_ID: &str = "anime_full_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<FullResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct AnimeInfo {
@@ -213,5 +206,5 @@ fn parse_anime_full_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

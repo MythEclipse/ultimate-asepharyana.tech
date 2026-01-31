@@ -59,7 +59,7 @@ fn generate_root_api_mod_internal(
     content.push_str(crate::build_utils::constants::SECURITY_ADDON_CODE);
     content.push('\n');
 
-    content.push_str(&generate_router_creation_code(modules));
+    content.push_str(&generate_router_creation_code(modules, all_handlers));
 
     let mod_file_path = api_routes_path.join("mod.rs");
     fs::write(&mod_file_path, content)?;
@@ -74,7 +74,7 @@ fn generate_root_api_mod_internal(
         
         use utoipa::OpenApi;
         #[derive(utoipa::OpenApi)]
-        #[openapi(paths(), components(schemas()), modifiers(&SecurityAddon), security(("bearer_auth" = [])), servers((url = "https://ws.asepharyana.tech", description = "Production Server"), (url = "http://localhost:4091", description = "Local Development")), tags((name = "api", description = "Main API")))]
+        #[openapi(paths(), components(schemas()), modifiers(&SecurityAddon), security(("bearer_auth" = [])), servers((url = "https://ws.asepharyana.tech", description = "Production Server"), (url = "http://localhost:4091", description = "Local Development")), tags())]
         struct TempApiDoc;
         struct SecurityAddon;
         impl utoipa::Modify for SecurityAddon {
@@ -98,21 +98,35 @@ fn generate_root_api_mod_internal(
 }
 
 /// Generates the router creation code for the root API module.
-fn generate_router_creation_code(modules: &[String]) -> String {
-    let router_registrations = modules
-        .iter()
-        .map(|m| format!("    router = {}::register_routes(router);", m))
-        .join("\n");
+fn generate_router_creation_code(modules: &[String], all_handlers: &[HandlerRouteInfo]) -> String {
+    let mut registrations = Vec::new();
 
-    let router_declaration = if modules.is_empty() {
-        "    let router = Router::new();"
-    } else {
-        "    let mut router = Router::new();"
-    };
+    // 1. Add module-level registrations (backward compatibility and manual routes)
+    for module in modules {
+        registrations.push(format!("    router = {}::register_routes(router);", module));
+    }
+
+    // 2. Add automatic route registrations for all handlers
+    for handler in all_handlers {
+        let auth_layer = if handler.is_protected {
+            ".layer(crate::middleware::auth::AuthMiddleware::layer())"
+        } else {
+            ""
+        };
+
+        registrations.push(format!(
+            "    router = router.route(\"{}\", axum::routing::{}({}::{}){});",
+            handler.route_path,
+            handler.http_method.to_lowercase(),
+            handler.handler_module_path,
+            handler.func_name,
+            auth_layer
+        ));
+    }
 
     format!(
-        "pub fn create_api_routes() -> Router<Arc<AppState>> {{\n{}\n{}\n    router\n}}\n",
-        router_declaration, router_registrations
+        "pub fn create_api_routes() -> Router<Arc<AppState>> {{\n    let mut router = Router::new();\n{}\n    router\n}}\n",
+        registrations.join("\n")
     )
 }
 

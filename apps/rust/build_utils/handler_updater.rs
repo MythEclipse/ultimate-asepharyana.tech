@@ -23,6 +23,9 @@ use crate::build_utils::path_utils::{
 pub struct HandlerRouteInfo {
     pub func_name: String,
     pub handler_module_path: String,
+    pub http_method: String,
+    pub route_path: String,
+    pub is_protected: bool,
 }
 
 pub fn update_handler_file(
@@ -30,58 +33,111 @@ pub fn update_handler_file(
     schemas: &mut HashSet<String>,
     module_path_prefix: &str,
     root_api_path: &Path,
-) -> Result<Option<HandlerRouteInfo>> {
+) -> Result<Vec<HandlerRouteInfo>> {
     let initial_content = read_and_check_file(path)?;
 
     let content = match initial_content {
         Some(c) => c,
         None => {
             handle_empty_file(path, root_api_path)?;
-            return Ok(None);
+            return Ok(Vec::new());
         }
     };
-    if is_scaffolded_file(&content) {
-        println!(
-            "cargo:warning=Detected scaffolded file {:?}, skipping handle_empty_file logic",
-            path
-        );
-    }
 
     let file_stem = get_file_stem(path)?;
-
     let doc_comment = get_doc_comment(&content);
 
-    let Metadata {
-        http_method,
-        route_path,
-        route_tag,
-        operation_id,
-        route_description,
-        response_body,
-        axum_path,
-    } = parse_and_normalize_metadata(&content, path, root_api_path, &file_stem, doc_comment)?;
+    // Try to find multiple handlers with utoipa::path
+    let mut handlers = Vec::new();
+    let mut has_utoipa = false;
+
+    for cap in crate::build_utils::constants::HANDLER_WITH_PATH_REGEX.captures_iter(&content) {
+        has_utoipa = true;
+        let macro_content = &cap[1];
+        let func_name = &cap[2];
+
+        // Parse individual handler metadata
+        let mut metadata = HashMap::new();
+        for method in ["get", "post", "put", "delete", "patch"] {
+            if regex::Regex::new(&format!(r"\b{}\b", method)).unwrap().is_match(macro_content) {
+                metadata.insert("ENDPOINT_METHOD".to_string(), method.to_string());
+                break;
+            }
+        }
+        let kv_regex = regex::Regex::new(r#"(path|tag|operation_id)\s*=\s*"([^"]*)""#).unwrap();
+        for kv_cap in kv_regex.captures_iter(macro_content) {
+             metadata.insert(match &kv_cap[1] {
+                "path" => "ENDPOINT_PATH",
+                "tag" => "ENDPOINT_TAG",
+                "operation_id" => "OPERATION_ID",
+                _ => continue,
+             }.to_string(), kv_cap[2].to_string());
+        }
+
+        let http_method = metadata.get("ENDPOINT_METHOD").cloned().unwrap_or_else(|| "get".to_string());
+        let route_path = metadata.get("ENDPOINT_PATH").cloned().unwrap_or_else(|| {
+             let rel = path.strip_prefix(root_api_path).unwrap().with_extension("");
+             let p = rel.to_string_lossy().to_string().replace("\\", "/");
+             if file_stem == "index" && p.ends_with("/index") {
+                 p.strip_suffix("/index").unwrap_or("/").to_string()
+             } else {
+                 p
+             }
+        });
+
+        handlers.push(HandlerRouteInfo {
+            func_name: func_name.to_string(),
+            handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
+            http_method,
+            route_path: normalize_route_path(&route_path),
+            is_protected: is_handler_protected(&content),
+        });
+    }
+
+    if has_utoipa {
+        inject_schemas(&content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
+        let final_content = generate_and_update_register_routes(&content, &content, "get", &file_stem, &HashMap::new())?;
+        write_updated_content(path, &content, &final_content, true)?;
+        return Ok(handlers);
+    }
+
+    // Fallback to old single-handler logic (for legacy constants/api_route)
+    let metadata_map = extract_and_normalize_metadata(&content, path, root_api_path, &file_stem, doc_comment)?;
+    let metadata = parse_and_normalize_metadata_from_map(&metadata_map)?;
 
     let (updated_content, utoipa_replaced) = generate_and_update_utoipa_macro(
         &content,
-        &http_method,
-        &route_path,
-        &route_tag,
-        response_body.as_deref(),
-        &route_description,
-        &operation_id,
+        &metadata.http_method,
+        &metadata.route_path,
+        &metadata.route_tag,
+        metadata.response_body.as_deref(),
+        &metadata.route_description,
+        &metadata.operation_id,
     )?;
 
-    let (mut final_content, _path_params) =
-        update_function_signature_with_path_params(updated_content, &content, &axum_path)?;
+    let (final_content_with_sigs, _path_params) =
+        update_function_signature_with_path_params(updated_content, &content, &metadata.axum_path)?;
 
-    final_content =
-        generate_and_update_register_routes(&final_content, &content, &http_method, &file_stem)?;
+    let final_content_with_routes =
+        generate_and_update_register_routes(&final_content_with_sigs, &content, &metadata.http_method, &file_stem, &metadata_map)?;
 
-    final_content = enhance_response_struct(&final_content, &axum_path)?;
+    let final_content = enhance_response_struct(&final_content_with_routes, &metadata.axum_path)?;
 
     write_updated_content(path, &content, &final_content, utoipa_replaced)?;
+    inject_schemas(&final_content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
 
-    inject_schemas_and_return_info(&final_content, module_path_prefix, &file_stem, schemas)
+    let res = HandlerRouteInfo {
+        func_name: HANDLER_FN_REGEX
+            .captures(&final_content)
+            .map(|c| c[1].to_string())
+            .unwrap_or_else(|| file_stem.to_string()),
+        handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
+        http_method: metadata.http_method,
+        route_path: metadata.route_path,
+        is_protected: is_handler_protected(&content),
+    };
+
+    Ok(vec![res])
 }
 
 fn is_scaffolded_file(content: &str) -> bool {
@@ -159,16 +215,9 @@ struct Metadata {
     axum_path: String,
 }
 
-fn parse_and_normalize_metadata(
-    content: &str,
-    path: &Path,
-    root_api_path: &Path,
-    file_stem: &str,
-    doc_comment: Option<String>,
+fn parse_and_normalize_metadata_from_map(
+    metadata_map: &HashMap<String, String>,
 ) -> Result<Metadata> {
-    let metadata_map =
-        extract_and_normalize_metadata(content, path, root_api_path, file_stem, doc_comment)?;
-
     let http_method = metadata_map.get("ENDPOINT_METHOD").cloned().unwrap();
     let route_path = metadata_map.get("ENDPOINT_PATH").cloned().unwrap();
     let route_tag = metadata_map.get("ENDPOINT_TAG").cloned().unwrap();
@@ -323,24 +372,17 @@ fn update_function_signature_with_path_params(
 fn generate_and_update_register_routes(
     content: &str,
     original_content: &str,
-    http_method: &str,
-    file_stem: &str,
+    _http_method: &str,
+    _file_stem: &str,
+    _metadata: &HashMap<String, String>,
 ) -> Result<String> {
-    let actual_func_name = HANDLER_FN_REGEX
-        .captures(content)
-        .map(|c| c[1].to_string())
-        .unwrap_or_else(|| file_stem.to_string());
 
-    let new_register_fn = format!(
-    "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{\n    router.route(ENDPOINT_PATH, {}({}))\n}}",
-    http_method.to_lowercase(),
-    actual_func_name
-  );
+    let new_register_fn = "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {\n    router\n}".to_string();
 
     let mut final_content = content.to_string();
 
     let register_regex =
-        Regex::new(r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*?\}\s*")
+        Regex::new(r"(?s)pub fn register_routes\(.*?\)\s*->\s*Router<Arc<AppState>>\s*\{.*\}\s*")
             .unwrap();
 
     if let Some(existing_register) = register_regex.find(&final_content) {
@@ -378,6 +420,9 @@ fn inject_schemas_and_return_info(
     module_path_prefix: &str,
     file_stem: &str,
     schemas: &mut HashSet<String>,
+    http_method: &str,
+    route_path: &str,
+    is_protected: bool,
 ) -> Result<Option<HandlerRouteInfo>> {
     inject_schemas(
         content,
@@ -391,6 +436,9 @@ fn inject_schemas_and_return_info(
             .map(|c| c[1].to_string())
             .unwrap_or_else(|| file_stem.to_string()),
         handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
+        http_method: http_method.to_string(),
+        route_path: route_path.to_string(),
+        is_protected,
     }))
 }
 
@@ -404,9 +452,91 @@ fn extract_and_normalize_metadata(
 ) -> Result<HashMap<String, String>> {
     let mut metadata = HashMap::new();
 
-    // Extract existing metadata
+    // Extract valid metadata
+    
+    // Check for #[utoipa::path(...)] macro first (Source of Truth)
+    if let Some(cap) = crate::build_utils::constants::UTOIPA_PATH_REGEX.captures(content) {
+        let macro_content = &cap[1];
+        
+        // Basic parsing for utoipa attributes
+        // 1. Method (bare word)
+        // 2. path = "..."
+        // 3. tag = "..."
+        // 4. operation_id = "..."
+        // 5. responses(...) -> body = Type
+
+        // Method finding
+        for method in ["get", "post", "put", "delete", "patch"] {
+            // Check if method exists as a standalone word (roughly)
+            if regex::Regex::new(&format!(r"\b{}\b", method)).unwrap().is_match(macro_content) {
+                metadata.insert("ENDPOINT_METHOD".to_string(), method.to_string());
+                break;
+            }
+        }
+
+        // Key-Value parsing
+        let kv_regex = regex::Regex::new(r#"(path|tag|operation_id)\s*=\s*"([^"]*)""#).unwrap();
+        for cap in kv_regex.captures_iter(macro_content) {
+             let key = &cap[1];
+             let val = &cap[2];
+             match key {
+                "path" => { metadata.insert("ENDPOINT_PATH".to_string(), val.to_string()); },
+                "tag" => { metadata.insert("ENDPOINT_TAG".to_string(), val.to_string()); },
+                "operation_id" => { metadata.insert("OPERATION_ID".to_string(), val.to_string()); },
+                _ => {}
+             }
+        }
+
+        // Responses parsing to find body
+        // looking for: (status = 200, ..., body = ResponseType)
+        // This is a bit complex with regex, simplified approach:
+        // Find `body = Type` inside `responses(...)`
+        if let Some(responses_match) = regex::Regex::new(r"responses\s*\(([\s\S]*?)\)").unwrap().find(macro_content) {
+            let responses_inner = responses_match.as_str();
+            // Look for body = Something associated with status = 200
+            // Simplified: just find `body = ([^,)]+)`
+            if let Some(body_cap) = regex::Regex::new(r"body\s*=\s*([a-zA-Z0-9_<>]+)").unwrap().captures(responses_inner) {
+                metadata.insert("SUCCESS_RESPONSE_BODY".to_string(), body_cap[1].to_string());
+            }
+        }
+    } else if let Some(cap) = crate::build_utils::constants::API_ROUTE_REGEX.captures(content) {
+        let macro_content = &cap[1];
+        
+        // Parse comma-separated key-value pairs or bare words (like 'get')
+        // Simple parser for extracting fields
+        let parts: Vec<&str> = macro_content.split(',').map(|s| s.trim()).collect();
+        for part in parts {
+            if part.is_empty() { continue; }
+            
+            // Check for HTTP methods (bare words)
+            let lower_part = part.to_lowercase();
+            if ["get", "post", "put", "delete", "patch"].contains(&lower_part.as_str()) {
+                metadata.insert("ENDPOINT_METHOD".to_string(), lower_part);
+                continue;
+            }
+
+            // Parse key=value or key="value"
+            if let Some((key, val)) = part.split_once('=') {
+                let key = key.trim();
+                let val = val.trim().trim_matches('"');
+                
+                match key {
+                    "path" => { metadata.insert("ENDPOINT_PATH".to_string(), val.to_string()); },
+                    "tag" => { metadata.insert("ENDPOINT_TAG".to_string(), val.to_string()); },
+                    "operation_id" => { metadata.insert("OPERATION_ID".to_string(), val.to_string()); },
+                    "description" => { metadata.insert("ENDPOINT_DESCRIPTION".to_string(), val.to_string()); },
+                    "response_body" => { metadata.insert("SUCCESS_RESPONSE_BODY".to_string(), val.to_string()); },
+                    _ => {} // Ignore unknown keys
+                }
+            }
+        }
+    }
+
+    // Fallback to constants if not set (Backward Compatibility)
     for cap in ENDPOINT_METADATA_REGEX.captures_iter(content) {
-        metadata.insert(cap[1].to_string(), cap[2].to_string());
+        if !metadata.contains_key(&cap[1]) {
+             metadata.insert(cap[1].to_string(), cap[2].to_string());
+        }
     }
 
     let relative_path_no_ext = path.strip_prefix(root_api_path).unwrap().with_extension("");

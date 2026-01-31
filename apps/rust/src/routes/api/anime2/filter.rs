@@ -4,7 +4,7 @@ use crate::infra::proxy::fetch_with_proxy;
 use crate::models::anime2::{FilterAnimeItem, Pagination};
 use crate::routes::AppState;
 use axum::extract::{Query, State};
-use axum::{routing::get, Router};
+use axum::Router;
 use backoff::future::retry;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -15,12 +15,6 @@ use std::sync::Arc;
 use tracing::{info, warn};
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/filter";
-pub const ENDPOINT_DESCRIPTION: &str = "Advanced multi-filter search for anime2";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_filter";
-pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<FilterAnimeItem>>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct FiltersApplied {
@@ -285,5 +279,5 @@ fn parse_filter_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(filter))
+    router
 }

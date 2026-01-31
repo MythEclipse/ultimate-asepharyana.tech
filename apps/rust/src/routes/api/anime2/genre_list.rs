@@ -3,7 +3,7 @@ use crate::helpers::scraping::{selector, text, attr};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{response::IntoResponse, Json, Router};
 
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -12,12 +12,6 @@ use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/genres";
-pub const ENDPOINT_DESCRIPTION: &str = "Get list of all available anime2 genres";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_genres";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<GenresResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Genre {
@@ -106,5 +100,5 @@ fn parse_genres(html: &str) -> Result<Vec<Genre>, Box<dyn std::error::Error + Se
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(genres))
+    router
 }

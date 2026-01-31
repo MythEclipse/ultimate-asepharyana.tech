@@ -2,7 +2,7 @@ use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{response::IntoResponse, Json, Router};
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -14,12 +14,6 @@ use crate::models::anime2::{OngoingAnimeItem, CompleteAnimeItem};
 use crate::scraping::anime2 as parsers;
 use crate::helpers::anime2_cache as cache_utils;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime2 endpoint.";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_index";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<Anime2Response>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Anime2Data {
@@ -126,5 +120,5 @@ async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Se
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(anime2))
+    router
 }

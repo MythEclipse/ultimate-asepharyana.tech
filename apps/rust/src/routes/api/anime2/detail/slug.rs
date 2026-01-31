@@ -3,20 +3,13 @@ use crate::helpers::scraping::{selector, text_from_or, extract_slug, text, attr}
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Path, response::IntoResponse, Json, Router};
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{info};
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/detail/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str =
-    "Handles GET requests for the anime2/detail/{slug} endpoint.";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_detail_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Genre {
@@ -311,5 +304,5 @@ fn parse_anime_detail_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

@@ -1,6 +1,6 @@
 //! Handler for the register endpoint - Enhanced with form_request validation.
 
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, response::IntoResponse, Json, Router};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -21,12 +21,6 @@ use crate::utils::error::AppError;
 use crate::helpers::email_template::welcome_email;
 use crate::helpers::form_request::{validate, ValidationRules};
 
-pub const ENDPOINT_METHOD: &str = "post";
-pub const ENDPOINT_PATH: &str = "/api/auth/register";
-pub const ENDPOINT_DESCRIPTION: &str = "Register a new user account";
-pub const ENDPOINT_TAG: &str = "auth";
-pub const OPERATION_ID: &str = "auth_register";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<RegisterResponse>";
 
 /// Register request payload
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
@@ -223,5 +217,5 @@ fn validate_password_strength(password: &str) -> Result<(), AppError> {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(register))
+    router
 }

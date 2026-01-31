@@ -7,7 +7,6 @@ use axum::{
     extract::{Multipart, State},
     http::HeaderMap,
     response::IntoResponse,
-    routing::post,
     Json, Router,
 };
 use serde::Serialize;
@@ -187,5 +186,5 @@ pub async fn upload_image(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(upload_image))
+    router
 }

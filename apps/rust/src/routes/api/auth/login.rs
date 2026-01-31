@@ -1,6 +1,6 @@
 //! Handler for the login endpoint - Enhanced with form_request validation.
 
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, response::IntoResponse, Json, Router};
 use bcrypt::verify;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -20,12 +20,6 @@ use crate::utils::error::AppError;
 // New helpers
 use crate::helpers::form_request::{validate, ValidationRules};
 
-pub const ENDPOINT_METHOD: &str = "post";
-pub const ENDPOINT_PATH: &str = "/api/auth/login";
-pub const ENDPOINT_DESCRIPTION: &str = "Authenticate user and return JWT tokens";
-pub const ENDPOINT_TAG: &str = "auth";
-pub const OPERATION_ID: &str = "auth_login";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<LoginResponse>";
 
 /// Login request payload
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
@@ -136,5 +130,5 @@ pub async fn login(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(login))
+    router
 }

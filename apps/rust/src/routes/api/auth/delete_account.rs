@@ -4,7 +4,6 @@ use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
-    routing::delete,
     Json, Router,
 };
 use bcrypt::verify;
@@ -157,5 +156,5 @@ pub async fn delete_account(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, delete(delete_account))
+    router
 }

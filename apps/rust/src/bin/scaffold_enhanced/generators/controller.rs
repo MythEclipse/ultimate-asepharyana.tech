@@ -50,110 +50,126 @@ fn generate_crud_routes(api_dir: &Path, resource: &str, model: &str) -> Result<(
 
 fn generate_list_handler(resource: &str, model: &str) -> String {
     format!(
-        r#"//! List all {}
+        r#"//! List all {resource}
 
-use axum::{{Extension, Json, response::IntoResponse, Router, routing::get}};
+use axum::{{Extension, Json, response::IntoResponse, Router}};
 use sea_orm::{{DatabaseConnection, EntityTrait}};
 use std::sync::Arc;
 use crate::routes::AppState;
-use crate::entities::{}::{{Entity as {}, Model}};
+use crate::entities::{model_low}::{{Entity as {model}, Model}};
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/{}";
-
+#[utoipa::path(
+    get,
+    path = "/{resource}",
+    tag = "{resource}",
+    responses(
+        (status = 200, description = "List all {resource}", body = [Model]),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
 pub async fn list(
     Extension(db): Extension<DatabaseConnection>,
 ) -> impl IntoResponse {{
-    match {}.find().all(&db).await {{
+    match {model}.find().all(&db).await {{
         Ok(items) => Json(items).into_response(),
         Err(e) => {{
-            eprintln!("Error listing {}: {{}}", e);
-            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to list {}").into_response()
+            eprintln!("Error listing {resource}: {{}}", e);
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to list {resource}").into_response()
         }}
     }}
 }}
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-    router.route(ENDPOINT_PATH, get(list))
+    router
 }}
 "#,
-        resource,
-        model.to_lowercase(),
-        model,
-        resource,
-        model,
-        resource,
-        resource
+        resource = resource,
+        model_low = model.to_lowercase(),
+        model = model
     )
 }
 
 fn generate_show_handler(resource: &str, model: &str) -> String {
     let singular = resource.trim_end_matches('s');
     format!(
-        r#"//! Get {} by ID
+        r#"//! Get {singular} by ID
 
-use axum::{{Extension, Json, extract::Path, response::IntoResponse, Router, routing::get}};
+use axum::{{Extension, Json, extract::Path, response::IntoResponse, Router}};
 use sea_orm::{{DatabaseConnection, EntityTrait}};
 use std::sync::Arc;
 use crate::routes::AppState;
-use crate::entities::{}::{{Entity as {}, Model}};
+use crate::entities::{model_low}::{{Entity as {model}, Model}};
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/{}/:id";
-
+#[utoipa::path(
+    get,
+    path = "/{resource}/{{id}}",
+    params(
+        ("id" = i32, Path, description = "{singular} ID")
+    ),
+    tag = "{resource}",
+    responses(
+        (status = 200, description = "Get {singular} details", body = Model),
+        (status = 404, description = "{singular} not found", body = String),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
 pub async fn show(
     Path(id): Path<i32>,
     Extension(db): Extension<DatabaseConnection>,
 ) -> impl IntoResponse {{
-    match {}.find_by_id(id).one(&db).await {{
+    match {model}.find_by_id(id).one(&db).await {{
         Ok(Some(item)) => Json(item).into_response(),
-        Ok(None) => (axum::http::StatusCode::NOT_FOUND, "{} not found").into_response(),
+        Ok(None) => (axum::http::StatusCode::NOT_FOUND, "{singular} not found").into_response(),
         Err(e) => {{
-            eprintln!("Error getting {}: {{}}", e);
-            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to get {}").into_response()
+            eprintln!("Error getting {singular}: {{}}", e);
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to get {singular}").into_response()
         }}
     }}
 }}
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-    router.route(ENDPOINT_PATH, get(show))
+    router
 }}
 "#,
-        singular,
-        model.to_lowercase(),
-        model,
-        resource,
-        model,
-        singular,
-        singular,
-        singular
+        singular = singular,
+        model_low = model.to_lowercase(),
+        model = model,
+        resource = resource
     )
 }
 
 fn generate_create_handler(resource: &str, model: &str) -> String {
     let singular = resource.trim_end_matches('s');
     format!(
-        r#"//! Create new {}
+        r#"//! Create new {singular}
 
-use axum::{{Extension, Json, response::IntoResponse, Router, routing::post}};
+use axum::{{Extension, Json, response::IntoResponse, Router}};
 use sea_orm::{{ActiveModelTrait, DatabaseConnection, Set}};
-use serde::Deserialize;
+use serde::{{Deserialize, Serialize}};
+use utoipa::ToSchema;
 use std::sync::Arc;
 use crate::routes::AppState;
-use crate::entities::{}::{{ActiveModel, Model}};
+use crate::entities::{model_low}::{{ActiveModel, Model}};
 
-pub const ENDPOINT_METHOD: &str = "post";
-pub const ENDPOINT_PATH: &str = "/{}";
-
-#[derive(Deserialize)]
-pub struct Create{}Dto {{
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct Create{model}Dto {{
     pub name: String,
     // Add your fields
 }}
 
+#[utoipa::path(
+    post,
+    path = "/{resource}",
+    tag = "{resource}",
+    request_body = Create{model}Dto,
+    responses(
+        (status = 201, description = "{singular} created successfully", body = Model),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
 pub async fn create(
     Extension(db): Extension<DatabaseConnection>,
-    Json(data): Json<Create{}Dto>,
+    Json(data): Json<Create{model}Dto>,
 ) -> impl IntoResponse {{
     let new_item = ActiveModel {{
         name: Set(data.name),
@@ -163,58 +179,67 @@ pub async fn create(
     match new_item.insert(&db).await {{
         Ok(item) => (axum::http::StatusCode::CREATED, Json(item)).into_response(),
         Err(e) => {{
-            eprintln!("Error creating {}: {{}}", e);
-            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to create {}").into_response()
+            eprintln!("Error creating {singular}: {{}}", e);
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to create {singular}").into_response()
         }}
     }}
 }}
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-    router.route(ENDPOINT_PATH, post(create))
+    router
 }}
 "#,
-        singular,
-        model.to_lowercase(),
-        resource,
-        model,
-        model,
-        singular,
-        singular
+        singular = singular,
+        model_low = model.to_lowercase(),
+        model = model,
+        resource = resource
     )
 }
 
 fn generate_update_handler(resource: &str, model: &str) -> String {
     let singular = resource.trim_end_matches('s');
     format!(
-        r#"//! Update {}
+        r#"//! Update {singular}
 
-use axum::{{Extension, Json, extract::Path, response::IntoResponse, Router, routing::put}};
+use axum::{{Extension, Json, extract::Path, response::IntoResponse, Router}};
 use sea_orm::{{ActiveModelTrait, DatabaseConnection, EntityTrait, Set}};
-use serde::Deserialize;
+use serde::{{Deserialize, Serialize}};
+use utoipa::ToSchema;
 use std::sync::Arc;
 use crate::routes::AppState;
-use crate::entities::{}::{{ActiveModel, Entity as {}, Model}};
+use crate::entities::{model_low}::{{ActiveModel, Entity as {model}, Model}};
 
-pub const ENDPOINT_METHOD: &str = "put";
-pub const ENDPOINT_PATH: &str = "/{}/:id";
-
-#[derive(Deserialize)]
-pub struct Update{}Dto {{
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct Update{model}Dto {{
     pub name: Option<String>,
     // Add your fields
 }}
 
+#[utoipa::path(
+    put,
+    path = "/{resource}/{{id}}",
+    params(
+        ("id" = i32, Path, description = "{singular} ID")
+    ),
+    tag = "{resource}",
+    request_body = Update{model}Dto,
+    responses(
+        (status = 200, description = "{singular} updated successfully", body = Model),
+        (status = 404, description = "{singular} not found", body = String),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
 pub async fn update(
     Path(id): Path<i32>,
     Extension(db): Extension<DatabaseConnection>,
-    Json(data): Json<Update{}Dto>,
+    Json(data): Json<Update{model}Dto>,
 ) -> impl IntoResponse {{
-    let item = match {}.find_by_id(id).one(&db).await {{
+    let item = match {model}.find_by_id(id).one(&db).await {{
         Ok(Some(item)) => item,
-        Ok(None) => return (axum::http::StatusCode::NOT_FOUND, "{} not found").into_response(),
+        Ok(None) => return (axum::http::StatusCode::NOT_FOUND, "{singular} not found").into_response(),
         Err(e) => {{
-            eprintln!("Error finding {}: {{}}", e);
-            return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to find {}").into_response();
+            eprintln!("Error finding {singular}: {{}}", e);
+            return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to find {singular}").into_response();
         }}
     }};
     
@@ -226,104 +251,105 @@ pub async fn update(
     match active_model.update(&db).await {{
         Ok(updated) => Json(updated).into_response(),
         Err(e) => {{
-            eprintln!("Error updating {}: {{}}", e);
-            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to update {}").into_response()
+            eprintln!("Error updating {singular}: {{}}", e);
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to update {singular}").into_response()
         }}
     }}
 }}
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-    router.route(ENDPOINT_PATH, put(update))
+    router
 }}
 "#,
-        singular,
-        model.to_lowercase(),
-        model,
-        resource,
-        model,
-        model,
-        model,
-        singular,
-        singular,
-        singular,
-        singular,
-        singular
+        singular = singular,
+        model_low = model.to_lowercase(),
+        model = model,
+        resource = resource
     )
 }
 
 fn generate_delete_handler(resource: &str, model: &str) -> String {
     let singular = resource.trim_end_matches('s');
     format!(
-        r#"//! Delete {}
+        r#"//! Delete {singular}
 
-use axum::{{Extension, extract::Path, response::IntoResponse, Router, routing::delete}};
+use axum::{{Extension, extract::Path, response::IntoResponse, Router}};
 use sea_orm::{{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel}};
 use std::sync::Arc;
 use crate::routes::AppState;
-use crate::entities::{}::{{Entity as {}}};
+use crate::entities::{model_low}::{{Entity as {model}}};
 
-pub const ENDPOINT_METHOD: &str = "delete";
-pub const ENDPOINT_PATH: &str = "/{}/:id";
-
+#[utoipa::path(
+    delete,
+    path = "/{resource}/{{id}}",
+    params(
+        ("id" = i32, Path, description = "{singular} ID")
+    ),
+    tag = "{resource}",
+    responses(
+        (status = 204, description = "{singular} deleted successfully"),
+        (status = 404, description = "{singular} not found", body = String),
+        (status = 500, description = "Internal Server Error", body = String)
+    )
+)]
 pub async fn destroy(
     Path(id): Path<i32>,
     Extension(db): Extension<DatabaseConnection>,
 ) -> impl IntoResponse {{
-    let item = match {}.find_by_id(id).one(&db).await {{
+    let item = match {model}.find_by_id(id).one(&db).await {{
         Ok(Some(item)) => item,
-        Ok(None) => return (axum::http::StatusCode::NOT_FOUND, "{} not found").into_response(),
+        Ok(None) => return (axum::http::StatusCode::NOT_FOUND, "{singular} not found").into_response(),
         Err(e) => {{
-            eprintln!("Error finding {}: {{}}", e);
-            return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to find {}").into_response();
+            eprintln!("Error finding {singular}: {{}}", e);
+            return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to find {singular}").into_response();
         }}
     }};
     
     match item.into_active_model().delete(&db).await {{
         Ok(_) => axum::http::StatusCode::NO_CONTENT.into_response(),
         Err(e) => {{
-            eprintln!("Error deleting {}: {{}}", e);
-            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete {}").into_response()
+            eprintln!("Error deleting {singular}: {{}}", e);
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete {singular}").into_response()
         }}
     }}
 }}
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-    router.route(ENDPOINT_PATH, delete(destroy))
+    router
 }}
 "#,
-        singular,
-        model.to_lowercase(),
-        model,
-        resource,
-        model,
-        singular,
-        singular,
-        singular,
-        singular,
-        singular
+        singular = singular,
+        model_low = model.to_lowercase(),
+        model = model,
+        resource = resource
     )
 }
 
 fn generate_basic_controller(api_dir: &Path, resource: &str) {
     let content = format!(
-        r#"//! {} controller
+        r#"//! {resource} controller
 
-use axum::{{Router, routing::get}};
+use axum::Router;
 use std::sync::Arc;
 use crate::routes::AppState;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/{}";
-
+#[utoipa::path(
+    get,
+    path = "/{resource}",
+    tag = "{resource}",
+    responses(
+        (status = 200, description = "{resource} endpoint", body = String)
+    )
+)]
 pub async fn index() -> &'static str {{
-    "{} endpoint"
+    "{resource} endpoint"
 }}
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
-    router.route(ENDPOINT_PATH, get(index))
+    router
 }}
 "#,
-        resource, resource, resource
+        resource = resource
     );
 
     let _ = fs::write(api_dir.join("index.rs"), content);

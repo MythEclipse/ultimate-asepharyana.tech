@@ -6,7 +6,6 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::get,
     Json, Router,
 };
 use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
@@ -18,12 +17,6 @@ use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime/search";
-pub const ENDPOINT_DESCRIPTION: &str = "Searches for anime based on query parameters.";
-pub const ENDPOINT_TAG: &str = "anime";
-pub const OPERATION_ID: &str = "anime_search";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct AnimeItem {
@@ -224,5 +217,5 @@ fn parse_search_html(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(search))
+    router
 }

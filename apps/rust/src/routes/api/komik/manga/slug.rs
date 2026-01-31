@@ -6,7 +6,7 @@ use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Query, response::IntoResponse, Json, Router};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -14,12 +14,6 @@ use std::sync::Arc;
 use tracing::{info};
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/manga";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the komik/manga endpoint.";
-pub const ENDPOINT_TAG: &str = "komik";
-pub const OPERATION_ID: &str = "komik_manga_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<MangaResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct MangaItem {
@@ -265,5 +259,5 @@ fn parse_manga_list_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(list))
+    router
 }

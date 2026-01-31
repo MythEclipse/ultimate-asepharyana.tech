@@ -3,18 +3,13 @@ use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{response::IntoResponse, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime/latest";
-pub const ENDPOINT_DESCRIPTION: &str = "Get latest anime updates with pagination";
-pub const ENDPOINT_TAG: &str = "anime";
-pub const OPERATION_ID: &str = "anime_latest";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<LatestAnimeResponse>";
+const CACHE_TTL: u64 = 120; // 2 minutes - latest updates change frequently
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct LatestAnimeItem {
@@ -48,9 +43,6 @@ pub struct LatestQuery {
     pub page: Option<u32>,
 }
 
-
-const CACHE_TTL: u64 = 120; // 2 minutes - latest updates change frequently
-
 #[utoipa::path(
     get,
     params(
@@ -60,7 +52,7 @@ const CACHE_TTL: u64 = 120; // 2 minutes - latest updates change frequently
     tag = "anime",
     operation_id = "anime_latest",
     responses(
-        (status = 200, description = "Get latest anime updates with pagination", body = LatestAnimeResponse),
+        (status = 200, description = "Handles GET requests for the /api/anime/latest endpoint.", body = LatestAnimeResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -216,5 +208,5 @@ fn parse_latest_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(latest))
+    router
 }

@@ -1,6 +1,6 @@
 //! Handler for reset password endpoint - Enhanced with form_request validation.
 
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, response::IntoResponse, Json, Router};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -174,5 +174,5 @@ fn validate_password_strength(password: &str) -> Result<(), AppError> {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(reset_password))
+    router
 }

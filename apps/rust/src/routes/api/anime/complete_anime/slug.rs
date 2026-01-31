@@ -12,20 +12,11 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::get,
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
-
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime/complete-anime/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str =
-    "Handles GET requests for the anime/complete-anime/slug endpoint.";
-pub const ENDPOINT_TAG: &str = "anime";
-pub const OPERATION_ID: &str = "anime_complete_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<ListResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct CompleteAnimeItem {
@@ -66,7 +57,7 @@ const CACHE_TTL: u64 = 300; // 5 minutes
     tag = "anime",
     operation_id = "anime_complete_anime_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the anime/complete-anime/slug endpoint.", body = ListResponse),
+        (status = 200, description = "Handles GET requests for the /api/anime/complete-anime/{slug} endpoint.", body = ListResponse),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -174,5 +165,5 @@ fn parse_anime_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

@@ -4,7 +4,6 @@ use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
-    routing::post,
     Json, Router,
 };
 use chrono::Utc;
@@ -21,12 +20,6 @@ use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
 
-pub const ENDPOINT_METHOD: &str = "post";
-pub const ENDPOINT_PATH: &str = "/api/auth/logout";
-pub const ENDPOINT_DESCRIPTION: &str = "Logout user and invalidate tokens";
-pub const ENDPOINT_TAG: &str = "auth";
-pub const OPERATION_ID: &str = "auth_logout";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<LogoutResponse>";
 
 /// Logout request payload
 #[derive(Debug, Deserialize, ToSchema)]
@@ -146,5 +139,5 @@ pub async fn logout(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(logout))
+    router
 }

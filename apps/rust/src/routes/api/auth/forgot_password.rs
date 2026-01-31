@@ -1,6 +1,6 @@
 //! Handler for forgot password endpoint - Enhanced with form_request validation.
 
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, response::IntoResponse, Json, Router};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -134,5 +134,5 @@ pub async fn forgot_password(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(forgot_password))
+    router
 }

@@ -91,12 +91,10 @@ fn process_directory_entries(
                 route_registrations.push(mod_name_from_file_stem.clone());
             }
 
-            if let Some(handler_info) =
+            let handler_infos =
                 update_handler_file(&path, all_schemas, module_path_prefix, root_api_path)
-                    .with_context(|| format!("Failed to update handler file: {:?}", path))?
-            {
-                all_handlers.push(handler_info);
-            }
+                    .with_context(|| format!("Failed to update handler file: {:?}", path))?;
+            all_handlers.extend(handler_infos);
 
             // If this is the root level and not an index file, add to modules
             if current_dir == root_api_path && !is_index_file {

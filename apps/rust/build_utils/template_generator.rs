@@ -102,13 +102,6 @@ pub fn generate_template_content(
     use serde_json;
     use utoipa::ToSchema;
 
-    pub const ENDPOINT_METHOD: &str = "get";
-    pub const ENDPOINT_PATH: &str = "/{}";
-    pub const ENDPOINT_DESCRIPTION: &str = "{}";
-    pub const ENDPOINT_TAG: &str = "{}";
-    pub const OPERATION_ID: &str = "{}";
-    pub const SUCCESS_RESPONSE_BODY: &str = "{}";
-
     /// Response structure for the {} endpoint.
     /// Replace `serde_json::Value` with your actual data types and implement `utoipa::ToSchema` for complex types.
     #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -117,12 +110,12 @@ pub fn generate_template_content(
 
     #[utoipa::path(
         get,
-        params(
-{}
-        ),
         path = "/{}",
         tag = "{}",
         operation_id = "{}",
+        params(
+{}
+        ),
         responses(
             (status = 200, description = "{}", body = {}),
             (status = 401, description = "Unauthorized", body = String),
@@ -136,22 +129,20 @@ pub fn generate_template_content(
         }})
     }}
 
-    /// {}
+    /// Register routes for this handler.
     pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{
         {middleware_layer}
-        router.route(ENDPOINT_PATH, get({}))
+        router
     }}
     "#,
         func_name,
         imports,
-        axum_path,
-        default_description,
-        default_tag,
-        operation_id,
-        response_info.success_body,
         pascal_case_name,
         response_info.struct_name,
         response_info.fields,
+        axum_path,
+        default_tag,
+        operation_id,
         if path_params.is_empty() {
             "".to_string()
         } else {
@@ -163,9 +154,6 @@ pub fn generate_template_content(
                 .collect::<Vec<_>>()
                 .join(",\n        ")
         },
-        axum_path,
-        default_tag,
-        operation_id,
         default_description,
         response_info.struct_name,
         security,
@@ -175,8 +163,6 @@ pub fn generate_template_content(
         response_info.struct_name,
         message_content,
         response_data,
-        default_description,
-        func_name
     );
 
     Ok(template)

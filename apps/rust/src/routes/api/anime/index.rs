@@ -5,19 +5,13 @@ use crate::routes::AppState;
 use crate::utils::error::AppError;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{response::IntoResponse, Json, Router};
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{info};
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the anime endpoint.";
-pub const ENDPOINT_TAG: &str = "anime";
-pub const OPERATION_ID: &str = "anime_index";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<AnimeDataResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct OngoingAnimeItem {
@@ -279,5 +273,5 @@ mod tests {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(anime))
+    router
 }

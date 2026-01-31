@@ -133,12 +133,14 @@ use crate::routes::api::uploader::ListResponse as ListResponse_2;
         paths(
               crate::routes::api::proxy::croxy::fetch_with_proxy_only,
               crate::routes::api::proxy::image_cache::image_cache,
+              crate::routes::api::proxy::image_cache::image_cache_batch,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manga::slug::list,
               crate::routes::api::komik::genre::slug::slug,
               crate::routes::api::komik::chapter::chapter,
               crate::routes::api::komik::detail::detail,
+              crate::routes::api::komik::detail::ws_handler,
               crate::routes::api::komik::genre_list::genres,
               crate::routes::api::komik::popular::popular,
               crate::routes::api::komik::search::search,
@@ -154,6 +156,7 @@ use crate::routes::api::uploader::ListResponse as ListResponse_2;
               crate::routes::api::auth::register::register,
               crate::routes::api::auth::reset_password::reset_password,
               crate::routes::api::auth::verify::verify,
+              crate::routes::api::auth::verify::resend_verification,
               crate::routes::api::anime2::ongoing_anime::slug::slug,
               crate::routes::api::anime2::genre::slug::slug,
               crate::routes::api::anime2::detail::slug::slug,
@@ -307,7 +310,6 @@ use crate::routes::api::uploader::ListResponse as ListResponse_2;
             description = "Free API for anime, manga, and more"
         ),
         tags(
-            (name = "api", description = "Main API"),
             (name = "auth", description = "Authentication endpoints")
         )
     )]
@@ -343,5 +345,52 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = komik::register_routes(router);
     router = proxy::register_routes(router);
     router = uploader::register_routes(router);
+    router = router.route("/api/proxy/croxy", axum::routing::get(crate::routes::api::proxy::croxy::fetch_with_proxy_only));
+    router = router.route("/api/proxy/image-cache", axum::routing::post(crate::routes::api::proxy::image_cache::image_cache));
+    router = router.route("/api/proxy/image-cache/batch", axum::routing::post(crate::routes::api::proxy::image_cache::image_cache_batch));
+    router = router.route("/api/komik/manhwa", axum::routing::get(crate::routes::api::komik::manhwa::slug::list));
+    router = router.route("/api/komik/manhua", axum::routing::get(crate::routes::api::komik::manhua::slug::list));
+    router = router.route("/api/komik/manga", axum::routing::get(crate::routes::api::komik::manga::slug::list));
+    router = router.route("/api/komik/genre/{slug}", axum::routing::get(crate::routes::api::komik::genre::slug::slug));
+    router = router.route("/api/komik/chapter", axum::routing::get(crate::routes::api::komik::chapter::chapter));
+    router = router.route("/api/komik/detail", axum::routing::get(crate::routes::api::komik::detail::detail));
+    router = router.route("/api/komik/detail/ws", axum::routing::get(crate::routes::api::komik::detail::ws_handler));
+    router = router.route("/api/komik/genres", axum::routing::get(crate::routes::api::komik::genre_list::genres));
+    router = router.route("/api/komik/popular", axum::routing::get(crate::routes::api::komik::popular::popular));
+    router = router.route("/api/komik/search", axum::routing::get(crate::routes::api::komik::search::search));
+    router = router.route("/api/auth/change-password", axum::routing::post(crate::routes::api::auth::change_password::change_password));
+    router = router.route("/api/auth/account", axum::routing::delete(crate::routes::api::auth::delete_account::delete_account));
+    router = router.route("/api/auth/forgot-password", axum::routing::post(crate::routes::api::auth::forgot_password::forgot_password));
+    router = router.route("/api/auth/login", axum::routing::post(crate::routes::api::auth::login::login));
+    router = router.route("/api/auth/logout", axum::routing::post(crate::routes::api::auth::logout::logout));
+    router = router.route("/api/auth/me", axum::routing::get(crate::routes::api::auth::me::get_me));
+    router = router.route("/api/auth/profile", axum::routing::put(crate::routes::api::auth::profile::update_profile));
+    router = router.route("/api/auth/profile/image", axum::routing::post(crate::routes::api::auth::profile_image::upload_image));
+    router = router.route("/api/auth/refresh", axum::routing::post(crate::routes::api::auth::refresh_token::refresh));
+    router = router.route("/api/auth/register", axum::routing::post(crate::routes::api::auth::register::register));
+    router = router.route("/api/auth/reset-password", axum::routing::post(crate::routes::api::auth::reset_password::reset_password));
+    router = router.route("/api/auth/verify", axum::routing::get(crate::routes::api::auth::verify::verify));
+    router = router.route("/api/auth/verify/resend", axum::routing::post(crate::routes::api::auth::verify::resend_verification));
+    router = router.route("/api/anime2/ongoing-anime/{slug}", axum::routing::get(crate::routes::api::anime2::ongoing_anime::slug::slug));
+    router = router.route("/api/anime2/genre/{slug}", axum::routing::get(crate::routes::api::anime2::genre::slug::slug));
+    router = router.route("/api/anime2/detail/{slug}", axum::routing::get(crate::routes::api::anime2::detail::slug::slug));
+    router = router.route("/api/anime2/complete-anime/{slug}", axum::routing::get(crate::routes::api::anime2::complete_anime::slug::slug));
+    router = router.route("/api/anime2", axum::routing::get(crate::routes::api::anime2::index::anime2));
+    router = router.route("/api/anime2/filter", axum::routing::get(crate::routes::api::anime2::filter::filter));
+    router = router.route("/api/anime2/genres", axum::routing::get(crate::routes::api::anime2::genre_list::genres));
+    router = router.route("/api/anime2/latest", axum::routing::get(crate::routes::api::anime2::latest::latest));
+    router = router.route("/api/anime2/search", axum::routing::get(crate::routes::api::anime2::search::search));
+    router = router.route("/api/anime/ongoing-anime/{slug}", axum::routing::get(crate::routes::api::anime::ongoing_anime::slug::slug));
+    router = router.route("/api/anime/genre/{slug}", axum::routing::get(crate::routes::api::anime::genre::slug::slug));
+    router = router.route("/api/anime/full/{slug}", axum::routing::get(crate::routes::api::anime::full::slug::slug));
+    router = router.route("/api/anime/detail/{slug}", axum::routing::get(crate::routes::api::anime::detail::slug::slug));
+    router = router.route("/api/anime/complete-anime/{slug}", axum::routing::get(crate::routes::api::anime::complete_anime::slug::slug));
+    router = router.route("/api/anime", axum::routing::get(crate::routes::api::anime::index::anime));
+    router = router.route("/api/anime/genres", axum::routing::get(crate::routes::api::anime::genre_list::genres));
+    router = router.route("/api/anime/latest", axum::routing::get(crate::routes::api::anime::latest::latest));
+    router = router.route("/api/anime/search", axum::routing::get(crate::routes::api::anime::search::search));
+    router = router.route("/api/compress", axum::routing::get(crate::routes::api::compress::compress));
+    router = router.route("/api/drivepng", axum::routing::get(crate::routes::api::drivepng::drivepng));
+    router = router.route("/api/uploader", axum::routing::get(crate::routes::api::uploader::uploader));
     router
 }

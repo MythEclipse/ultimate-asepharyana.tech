@@ -6,7 +6,6 @@ use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
 use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use axum::{
     extract::{Path, State},
-    routing::get,
     Router,
 };
 
@@ -20,13 +19,6 @@ use crate::routes::AppState;
 use crate::models::anime2::{CompleteAnimeItem, Pagination};
 use crate::scraping::anime2 as parsers;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/complete-anime/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str =
-    "Handles GET requests for the anime2/complete-anime/slug endpoint.";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_complete_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<CompleteAnimeItem>>";
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -128,5 +120,5 @@ fn parse_anime_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

@@ -11,7 +11,6 @@ use axum::{
     },
     http::StatusCode,
     response::Response,
-    routing::get,
     Json, Router,
 };
 
@@ -23,13 +22,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info, warn};
 use utoipa::ToSchema;
-
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/detail";
-pub const ENDPOINT_DESCRIPTION: &str = "Retrieves details for a specific komik by ID.";
-pub const ENDPOINT_TAG: &str = "komik";
-pub const OPERATION_ID: &str = "komik_detail";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<DetailResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Chapter {
@@ -489,6 +481,15 @@ fn parse_komik_detail_document(
     })
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/komik/detail/ws",
+    tag = "komik",
+    operation_id = "komik_detail_ws",
+    responses(
+        (status = 101, description = "WebSocket upgrade")
+    )
+)]
 pub async fn ws_handler(ws: WebSocketUpgrade, State(app_state): State<Arc<AppState>>) -> Response {
     ws.on_upgrade(|socket| handle_socket(socket, app_state))
 }
@@ -593,7 +594,7 @@ async fn handle_socket(mut socket: WebSocket, _: Arc<AppState>) {
                         if socket
                             .send(Message::Text(
                                 serde_json::to_string(&error_event).unwrap().into(),
-                            ))
+                              ))
                             .await
                             .is_err()
                         {
@@ -644,6 +645,4 @@ async fn handle_socket(mut socket: WebSocket, _: Arc<AppState>) {
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
-        .route(ENDPOINT_PATH, get(detail))
-        .route("/ws/komik/detail", get(ws_handler))
 }

@@ -4,19 +4,13 @@ use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{response::IntoResponse, Json, Router};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/genres";
-pub const ENDPOINT_DESCRIPTION: &str = "Get list of all available komik genres";
-pub const ENDPOINT_TAG: &str = "komik";
-pub const OPERATION_ID: &str = "komik_genres";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<GenresResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct Genre {
@@ -112,5 +106,5 @@ fn parse_genres(html: &str) -> Result<Vec<Genre>, Box<dyn std::error::Error + Se
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(genres))
+    router
 }

@@ -2,7 +2,7 @@
 
 use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
 use crate::routes::AppState;
-use axum::{extract::Query, routing::get, Router};
+use axum::{extract::Query, Router};
 use image::ImageFormat;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -600,5 +600,5 @@ async fn process_compression(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(compress))
+    router
 }

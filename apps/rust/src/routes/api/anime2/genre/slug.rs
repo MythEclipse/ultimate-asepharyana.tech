@@ -2,7 +2,7 @@ use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
 use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use crate::routes::AppState;
 use axum::extract::{Query, State};
-use axum::{extract::Path, routing::get, Router};
+use axum::{extract::Path, Router};
 
 use serde::Deserialize;
 use serde_json::json;
@@ -14,12 +14,6 @@ use utoipa::ToSchema;
 use crate::models::anime2::{GenreAnimeItem, Pagination};
 use crate::scraping::anime2 as parsers;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/genre/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str = "Filter anime2 by genre with advanced options";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_genre_filter";
-pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<GenreAnimeItem>>";
 
 #[derive(Deserialize, ToSchema)]
 pub struct GenreQuery {
@@ -139,5 +133,5 @@ fn parse_genre_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

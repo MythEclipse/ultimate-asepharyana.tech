@@ -1,7 +1,7 @@
 //! Handler for the drivepng endpoint.
 
 use crate::routes::AppState;
-use axum::{response::IntoResponse, routing::get, Json, Router};
+use axum::{response::IntoResponse, Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::sync::Arc;
@@ -47,5 +47,5 @@ pub async fn drivepng() -> impl IntoResponse {
 /// Handles GET requests for the drivepng endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(drivepng))
+    router
 }

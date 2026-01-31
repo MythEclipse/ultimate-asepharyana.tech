@@ -1,6 +1,6 @@
 //! Handler for change password endpoint.
 
-use axum::{extract::State, http::HeaderMap, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse, Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -138,5 +138,5 @@ pub async fn change_password(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, post(change_password))
+    router
 }

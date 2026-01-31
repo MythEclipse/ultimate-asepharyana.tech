@@ -62,11 +62,9 @@ fn generate_mod_for_directory_auto(
 
     // Update handler files
     for route in routes {
-        if let Some(handler_info) =
-            update_handler_file(&route.file_path, all_schemas, &module_path_prefix, api_root)?
-        {
-            all_handlers.push(handler_info);
-        }
+        let handler_infos =
+            update_handler_file(&route.file_path, all_schemas, &module_path_prefix, api_root)?;
+        all_handlers.extend(handler_infos);
     }
 
     // Collect module names and pub mods

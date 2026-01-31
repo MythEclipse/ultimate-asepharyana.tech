@@ -1,6 +1,6 @@
 //! Handler for update profile endpoint.
 
-use axum::{extract::State, http::HeaderMap, response::IntoResponse, routing::put, Json, Router};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
@@ -15,12 +15,6 @@ use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
 
-pub const ENDPOINT_METHOD: &str = "put";
-pub const ENDPOINT_PATH: &str = "/api/auth/profile";
-pub const ENDPOINT_DESCRIPTION: &str = "Update user profile";
-pub const ENDPOINT_TAG: &str = "auth";
-pub const OPERATION_ID: &str = "auth_update_profile";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<UpdateProfileResponse>";
 
 /// Update profile request
 #[derive(Debug, Deserialize, Validate, ToSchema)]
@@ -137,5 +131,5 @@ pub async fn update_profile(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, put(update_profile))
+    router
 }

@@ -1,7 +1,6 @@
 use axum::{
     extract::{Query, State},
     response::Response,
-    routing::get,
     Router,
 };
 use http::StatusCode;
@@ -13,12 +12,6 @@ use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::utils::error::AppError;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/proxy/croxy";
-pub const ENDPOINT_DESCRIPTION: &str = "Handles GET requests for the proxy endpoint.";
-pub const ENDPOINT_TAG: &str = "proxy";
-pub const OPERATION_ID: &str = "fetch_with_proxy_only";
-pub const SUCCESS_RESPONSE_BODY: &str = "Vec<u8>";
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ProxyParams {
@@ -65,5 +58,5 @@ pub async fn fetch_with_proxy_only(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(fetch_with_proxy_only))
+    router
 }

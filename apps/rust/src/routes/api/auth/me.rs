@@ -1,6 +1,6 @@
 //! Handler for get current user endpoint.
 
-use axum::{extract::State, http::HeaderMap, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse, Json, Router};
 use std::sync::Arc;
 
 // SeaORM imports
@@ -12,12 +12,6 @@ use crate::routes::AppState;
 use crate::utils::auth::decode_jwt;
 use crate::utils::error::AppError;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/auth/me";
-pub const ENDPOINT_DESCRIPTION: &str = "Get current authenticated user";
-pub const ENDPOINT_TAG: &str = "auth";
-pub const OPERATION_ID: &str = "auth_me";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<UserResponse>";
 
 /// Extract Bearer token from Authorization header
 fn extract_token(headers: &HeaderMap) -> Result<String, AppError> {
@@ -79,5 +73,5 @@ pub async fn get_me(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(get_me))
+    router
 }

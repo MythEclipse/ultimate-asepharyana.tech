@@ -4,7 +4,7 @@ use crate::helpers::scraping::{selector, text_from_or, attr_from, attr_from_or, 
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::http::StatusCode;
-use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Query, response::IntoResponse, Json, Router};
 
 
 use serde::{Deserialize, Serialize};
@@ -12,12 +12,6 @@ use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/search";
-pub const ENDPOINT_DESCRIPTION: &str = "Searches for komik based on query parameters.";
-pub const ENDPOINT_TAG: &str = "komik";
-pub const OPERATION_ID: &str = "komik_search";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct MangaItem {
@@ -233,5 +227,5 @@ fn parse_search_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(search))
+    router
 }

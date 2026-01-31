@@ -2,7 +2,7 @@ use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
 use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use crate::routes::AppState;
 use axum::extract::State;
-use axum::{extract::Path, routing::get, Router};
+use axum::{extract::Path, Router};
 
 use serde_json::json;
 use std::sync::Arc;
@@ -12,13 +12,6 @@ use tracing::info;
 use crate::models::anime2::{OngoingAnimeItemWithScore, Pagination};
 use crate::scraping::anime2 as parsers;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime2/ongoing-anime/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str =
-    "Handles GET requests for the anime2/ongoing-anime/{slug} endpoint.";
-pub const ENDPOINT_TAG: &str = "anime2";
-pub const OPERATION_ID: &str = "anime2_ongoing_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<OngoingAnimeItemWithScore>>";
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -126,5 +119,5 @@ fn parse_ongoing_anime_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

@@ -12,20 +12,12 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::get,
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/anime/ongoing-anime/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str =
-    "Handles GET requests for the anime/ongoing-anime/{slug} endpoint.";
-pub const ENDPOINT_TAG: &str = "anime";
-pub const OPERATION_ID: &str = "anime_ongoing_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<OngoingAnimeResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct OngoingAnimeItem {
@@ -203,5 +195,5 @@ fn parse_ongoing_anime_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }

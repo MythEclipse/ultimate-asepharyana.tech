@@ -2,7 +2,7 @@
 //!
 //! POST /api/proxy/image-cache - Cache an image and return CDN URL
 
-use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, response::IntoResponse, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
@@ -141,6 +141,16 @@ pub async fn image_cache(
 }
 
 /// Cache multiple images in batch
+#[utoipa::path(
+    post,
+    path = "/api/proxy/image-cache/batch",
+    tag = "proxy",
+    operation_id = "proxy_image_cache_batch",
+    request_body = ImageCacheBatchRequest,
+    responses(
+        (status = 200, description = "Batch image caching successful", body = ImageCacheBatchResponse)
+    )
+)]
 pub async fn image_cache_batch(
     State(state): State<Arc<AppState>>,
     Json(req): Json<ImageCacheBatchRequest>,
@@ -168,8 +178,7 @@ pub async fn image_cache_batch(
 }
 
 /// Register routes for this endpoint
+
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
-        .route(ENDPOINT_PATH, post(image_cache))
-        .route("/api/proxy/image-cache/batch", post(image_cache_batch))
 }

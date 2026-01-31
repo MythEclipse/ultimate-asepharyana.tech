@@ -4,7 +4,6 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
     Json, Router,
 };
 use chrono::Utc;
@@ -21,12 +20,6 @@ use crate::routes::AppState;
 use crate::utils::email::EmailService;
 use crate::utils::error::AppError;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/auth/verify";
-pub const ENDPOINT_DESCRIPTION: &str = "Verify user email address";
-pub const ENDPOINT_TAG: &str = "auth";
-pub const OPERATION_ID: &str = "auth_verify";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<VerifyResponse>";
 
 /// Verify email query parameters
 #[derive(Debug, Deserialize, ToSchema)]
@@ -235,6 +228,4 @@ pub async fn resend_verification(
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
-        .route(ENDPOINT_PATH, get(verify))
-        .route("/api/auth/verify/resend", post(resend_verification))
 }

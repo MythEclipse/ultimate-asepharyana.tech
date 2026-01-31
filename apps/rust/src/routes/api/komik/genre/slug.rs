@@ -4,7 +4,7 @@ use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
-use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Path, response::IntoResponse, Json, Router};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -12,12 +12,6 @@ use std::sync::Arc;
 use tracing::{info};
 use utoipa::ToSchema;
 
-pub const ENDPOINT_METHOD: &str = "get";
-pub const ENDPOINT_PATH: &str = "/api/komik/genre/{slug}";
-pub const ENDPOINT_DESCRIPTION: &str = "Filter komik by genre with pagination";
-pub const ENDPOINT_TAG: &str = "komik";
-pub const OPERATION_ID: &str = "komik_genre_filter";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<GenreKomikResponse>";
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
 pub struct KomikItem {
@@ -230,5 +224,5 @@ fn parse_genre_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router.route(ENDPOINT_PATH, get(slug))
+    router
 }
