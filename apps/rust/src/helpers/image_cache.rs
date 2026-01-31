@@ -30,12 +30,11 @@ pub const IMAGE_CACHE_LOCK_PREFIX: &str = "img_cache_lock";
 /// Lock TTL (60 seconds - enough time for upload to complete)
 pub const IMAGE_CACHE_LOCK_TTL: u64 = 60;
 
-/// Primary Picser API endpoint
-pub const PICSER_API_URL_PRIMARY: &str =
-    "https://picser-asepharyana3864-pf9gzwsl.apn.leapcell.dev/api/upload";
-
-/// Backup Picser API endpoint
-pub const PICSER_API_URL_BACKUP: &str = "https://picser.pages.dev/api/upload";
+/// Picser API endpoints in priority order
+pub const PICSER_API_ENDPOINTS: &[&str] = &[
+    "https://picser-8ux2jp5r6-asepharyana71s-projects.vercel.app/api/upload",
+    "https://picser.pages.dev/api/upload",
+];
 
 /// Create a hash of the URL for cache key
 pub fn url_hash(url: &str) -> String {
@@ -485,36 +484,22 @@ impl ImageCache {
         // Determine filename from URL
         let filename = self.extract_filename(original_url);
 
-        // Try primary URL first
-        debug!(
-            "ImageCache: Attempting upload to PRIMARY: {}",
-            PICSER_API_URL_PRIMARY
-        );
-        match self
-            .perform_single_upload(PICSER_API_URL_PRIMARY, &image_bytes, &filename)
-            .await
-        {
-            Ok(response) => return self.extract_cdn_url(response, original_url),
-            Err(e) => {
-                warn!("ImageCache: Primary upload failed: {}. Trying BACKUP...", e);
+        let mut last_error = String::from("No endpoints available");
+
+        // Try endpoints in priority order
+        for api_url in PICSER_API_ENDPOINTS {
+            debug!("ImageCache: Attempting upload to: {}", api_url);
+            match self.perform_single_upload(api_url, &image_bytes, &filename).await {
+                Ok(response) => return self.extract_cdn_url(response, original_url),
+                Err(e) => {
+                    warn!("ImageCache: Upload to {} failed: {}", api_url, e);
+                    last_error = e;
+                }
             }
         }
 
-        // Try backup URL
-        debug!(
-            "ImageCache: Attempting upload to BACKUP: {}",
-            PICSER_API_URL_BACKUP
-        );
-        match self
-            .perform_single_upload(PICSER_API_URL_BACKUP, &image_bytes, &filename)
-            .await
-        {
-            Ok(response) => self.extract_cdn_url(response, original_url),
-            Err(e) => {
-                error!("ImageCache: Backup upload also failed: {}", e);
-                Err(format!("All upload attempts failed. Last error: {}", e))
-            }
-        }
+        error!("ImageCache: All upload attempts failed for {}", original_url);
+        Err(format!("All upload attempts failed. Last error: {}", last_error))
     }
 
     /// Extract CDN URL from Picser response
