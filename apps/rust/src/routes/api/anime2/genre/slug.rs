@@ -1,10 +1,11 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
+use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use crate::routes::AppState;
 use axum::extract::{Query, State};
-use axum::http::StatusCode;
-use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Path, routing::get, Router};
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde_json::json;
 use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
@@ -18,15 +19,7 @@ pub const ENDPOINT_PATH: &str = "/api/anime2/genre/{slug}";
 pub const ENDPOINT_DESCRIPTION: &str = "Filter anime2 by genre with advanced options";
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_genre_filter";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<GenreAnimeResponse>";
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct GenreAnimeResponse {
-    pub status: String,
-    pub genre: String,
-    pub data: Vec<GenreAnimeItem>,
-    pub pagination: Pagination,
-}
+pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<GenreAnimeItem>>";
 
 #[derive(Deserialize, ToSchema)]
 pub struct GenreQuery {
@@ -49,7 +42,7 @@ const CACHE_TTL: u64 = 300;
     tag = "anime2",
     operation_id = "anime2_genre_filter",
     responses(
-        (status = 200, description = "Filter anime2 by genre with advanced options", body = GenreAnimeResponse),
+        (status = 200, description = "Filter anime2 by genre with advanced options", body = ApiResponse<Vec<GenreAnimeItem>>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
@@ -57,7 +50,7 @@ pub async fn slug(
     State(app_state): State<Arc<AppState>>,
     Path(genre_slug): Path<String>,
     Query(params): Query<GenreQuery>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> ApiResult<Vec<GenreAnimeItem>> {
     let page = params.page.unwrap_or(1);
     let status = params.status.clone().unwrap_or_default();
     let order = params.order.clone().unwrap_or("update".to_string());
@@ -72,37 +65,34 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (anime_list, pagination) =
+            let (data, pagination) =
                 fetch_genre_anime(&genre_slug, page, &status, &order)
                     .await
                     .map_err(|e: Box<dyn std::error::Error + Send + Sync>| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs concurrently
-            let db = app_state.db.clone();
-            let redis = app_state.redis_pool.clone();
-            
-            // Store posters in a separate vector to avoid borrow checker issues
-            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
+            let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
             crate::helpers::image_cache::cache_image_urls_batch_lazy(
-                db,
-                &redis,
+                app_state.db.clone(),
+                &app_state.redis_pool,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
 
-            // Return original data explicitly for speed
-            Ok(GenreAnimeResponse {
-                status: "Ok".to_string(),
-                genre: genre_slug.clone(),
-                data: anime_list,
-                pagination,
-            })
+            Ok(ApiResponse::success_with_meta(
+                data,
+                json!({
+                    "pagination": pagination,
+                    "genre": genre_slug,
+                    "status": "Ok"
+                }),
+            ))
         })
         .await
         .map_err(|e| internal_err(&e))?;
 
-    Ok(Json(response).into_response())
+    Ok(response)
 }
 
 async fn fetch_genre_anime(
@@ -138,7 +128,7 @@ fn parse_genre_page(
     current_page: u32,
 ) -> Result<(Vec<GenreAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let document = parse_html(html);
-    
+
     // Parse anime items using shared parser
     let anime_list = parsers::parse_genre_anime(html)?;
 

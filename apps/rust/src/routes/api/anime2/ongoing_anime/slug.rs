@@ -1,13 +1,12 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
+use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use crate::routes::AppState;
 use axum::extract::State;
-use axum::http::StatusCode;
-use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Path, routing::get, Router};
 
-use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::sync::Arc;
 use tracing::info;
-use utoipa::ToSchema;
 
 // Import shared models and parsers
 use crate::models::anime2::{OngoingAnimeItemWithScore, Pagination};
@@ -19,14 +18,7 @@ pub const ENDPOINT_DESCRIPTION: &str =
     "Handles GET requests for the anime2/ongoing-anime/{slug} endpoint.";
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_ongoing_anime_slug";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<OngoingAnimeResponse>";
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct OngoingAnimeResponse {
-    pub status: String,
-    pub data: Vec<OngoingAnimeItemWithScore>,
-    pub pagination: Pagination,
-}
+pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<OngoingAnimeItemWithScore>>";
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -39,14 +31,14 @@ const CACHE_TTL: u64 = 300; // 5 minutes
     tag = "anime2",
     operation_id = "anime2_ongoing_anime_slug",
     responses(
-        (status = 200, description = "Handles GET requests for the anime2/ongoing-anime/{slug} endpoint.", body = OngoingAnimeResponse),
+        (status = 200, description = "Handles GET requests for the anime2/ongoing-anime/{slug} endpoint.", body = ApiResponse<Vec<OngoingAnimeItemWithScore>>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn slug(
     State(app_state): State<Arc<AppState>>,
     Path(slug): Path<String>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> ApiResult<Vec<OngoingAnimeItemWithScore>> {
     let _start_time = std::time::Instant::now();
     info!("Handling request for ongoing_anime slug: {}", slug);
 
@@ -55,35 +47,29 @@ pub async fn slug(
 
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
-            let (anime_list, pagination) = fetch_ongoing_anime_page(slug.clone())
+            let (data, pagination) = fetch_ongoing_anime_page(slug.clone())
                 .await
                 .map_err(|e| e)?;
 
             // Convert all poster URLs to CDN URLs concurrently
-            let db = app_state.db.clone();
-            let redis = app_state.redis_pool.clone();
-
-            // Store posters in a separate vector to avoid borrow checker issues
-            let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
+            let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
             crate::helpers::image_cache::cache_image_urls_batch_lazy(
-                db,
-                &redis,
+                app_state.db.clone(),
+                &app_state.redis_pool,
                 posters,
                 Some(app_state.image_processing_semaphore.clone()),
             )
             .await;
 
-            // Return original data explicitly for speed
-            Ok(OngoingAnimeResponse {
-                status: "Ok".to_string(),
-                data: anime_list,
-                pagination,
-            })
+            Ok(ApiResponse::success_with_meta(
+                data,
+                json!({ "pagination": pagination, "status": "Ok" }),
+            ))
         })
         .await
         .map_err(|e| internal_err(&e))?;
 
-    Ok(Json(response).into_response())
+    Ok(response)
 }
 
 async fn fetch_ongoing_anime_page(

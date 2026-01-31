@@ -1,16 +1,17 @@
-use crate::helpers::{internal_err, parse_html, Cache, fetch_html_with_retry};
+use crate::helpers::api_response::{internal_err, ApiResult, ApiResponse};
+use crate::helpers::{fetch_html_with_retry, parse_html, Cache};
 use crate::routes::AppState;
 use axum::extract::State;
-use axum::http::StatusCode;
-use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
+use axum::{extract::Query, routing::get, Router};
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde_json::json;
 use std::sync::Arc;
 use tracing::info;
 use utoipa::ToSchema;
 
 // Import shared models and parsers
-use crate::models::anime2::{SearchAnimeItem, PaginationWithStringPages};
+use crate::models::anime2::{PaginationWithStringPages, SearchAnimeItem};
 use crate::scraping::anime2 as parsers;
 use crate::helpers::anime2_cache as cache_utils;
 
@@ -19,16 +20,9 @@ pub const ENDPOINT_PATH: &str = "/api/anime2/search";
 pub const ENDPOINT_DESCRIPTION: &str = "Searches for anime2 based on query parameters.";
 pub const ENDPOINT_TAG: &str = "anime2";
 pub const OPERATION_ID: &str = "anime2_search";
-pub const SUCCESS_RESPONSE_BODY: &str = "Json<SearchResponse>";
+pub const SUCCESS_RESPONSE_BODY: &str = "ApiResponse<Vec<SearchAnimeItem>>";
 
 const CACHE_TTL: u64 = 300; // 5 minutes
-
-#[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
-pub struct SearchResponse {
-    pub status: String,
-    pub data: Vec<SearchAnimeItem>,
-    pub pagination: PaginationWithStringPages,
-}
 
 #[derive(Deserialize, ToSchema)]
 pub struct SearchQuery {
@@ -44,14 +38,14 @@ pub struct SearchQuery {
     tag = "anime2",
     operation_id = "anime2_search",
     responses(
-        (status = 200, description = "Searches for anime2 based on query parameters.", body = SearchResponse),
+        (status = 200, description = "Searches for anime2 based on query parameters.", body = ApiResponse<Vec<SearchAnimeItem>>),
         (status = 500, description = "Internal Server Error", body = String)
     )
 )]
 pub async fn search(
     State(app_state): State<Arc<AppState>>,
     Query(params): Query<SearchQuery>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> ApiResult<Vec<SearchAnimeItem>> {
     let query = params.q.unwrap_or_else(|| "one".to_string());
     info!("Starting search for query: {}", query);
 
@@ -70,16 +64,15 @@ pub async fn search(
 
             // We return original data for speed on cold start
 
-            Ok(SearchResponse {
-                status: "Ok".to_string(),
+            Ok(ApiResponse::success_with_meta(
                 data,
-                pagination,
-            })
+                json!({ "pagination": pagination, "status": "Ok" }),
+            ))
         })
         .await
         .map_err(|e| internal_err(&e))?;
 
-    Ok(Json(response).into_response())
+    Ok(response)
 }
 
 async fn fetch_and_parse_search(
@@ -98,10 +91,10 @@ fn parse_search_document(
     html: &str,
 ) -> Result<(Vec<SearchAnimeItem>, PaginationWithStringPages), Box<dyn std::error::Error + Send + Sync>> {
     let document = parse_html(html);
-    
+
     // Parse anime items using shared parser
     let data = parsers::parse_search_anime(html)?;
-    
+
     // Parse pagination using shared parser
     let current_page = 1; // Search results always start at page 1
     let pagination = parsers::parse_pagination_with_string(&document, current_page);
