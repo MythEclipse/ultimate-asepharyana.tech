@@ -1,5 +1,4 @@
-use crate::helpers::{default_backoff, internal_err, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
 use crate::routes::AppState;
 use crate::scraping::urls::OTAKUDESU_BASE_URL;
 use axum::http::StatusCode;
@@ -9,7 +8,6 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::future::retry;
 
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
@@ -117,13 +115,7 @@ pub async fn slug(
 async fn fetch_anime_full(slug: String) -> Result<AnimeFullData, String> {
     let url = format!("{}/episode/{}", OTAKUDESU_BASE_URL, slug);
 
-    let operation = || async {
-        let response = fetch_with_proxy(&url).await?;
-        Ok(response.data)
-    };
-
-    let backoff = default_backoff();
-    let html = retry(backoff, operation)
+    let html = fetch_html_with_retry(&url)
         .await
         .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
 

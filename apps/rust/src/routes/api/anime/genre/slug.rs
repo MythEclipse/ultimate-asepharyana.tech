@@ -1,18 +1,16 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::info;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -129,22 +127,7 @@ async fn fetch_genre_anime(
         )
     };
 
-    let backoff = default_backoff();
-    let fetch_operation = || async {
-        info!("Fetching genre page: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => {
-                info!("Successfully fetched genre page");
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch genre page: {:?}", e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
+    let html = fetch_html_with_retry(&url).await.map_err(|e| format!("Failed to fetch HTML: {}", e))?;
 
     let (anime_list, pagination) =
         tokio::task::spawn_blocking(move || parse_genre_page(&html, page)).await??;
@@ -160,38 +143,19 @@ fn parse_genre_page(
     let mut anime_list = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
 
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
 
-        let score = element
-            .select(&EP_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or("N/A".to_string());
+        let score = text_from_or(&element, &EP_SELECTOR, "N/A");
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
 
         let slug = SLUG_REGEX
             .captures(&anime_url)
             .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("")
-            .to_string();
+            .map(|m| m.as_str().to_string())
+            .unwrap_or_default();
 
         // Try to determine status from score text
         let status_text = score.to_lowercase();

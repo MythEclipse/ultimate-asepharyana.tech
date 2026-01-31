@@ -1,18 +1,16 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::info;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -135,40 +133,13 @@ pub async fn latest(
 async fn fetch_latest_anime(
     page: u32,
 ) -> Result<(Vec<LatestAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    // Use ongoing-anime as latest updates source
     let url = if page == 1 {
         format!("{}/ongoing-anime/", get_otakudesu_url())
     } else {
         format!("{}/ongoing-anime/page/{}/", get_otakudesu_url(), page)
     };
 
-    let backoff = default_backoff();
-    let fetch_operation = || -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, backoff::Error<std::io::Error>>> + Send>> {
-        let url = url.clone();
-        Box::pin(async move {
-            info!("Fetching: {}", url);
-            match fetch_with_proxy(&url).await {
-                Ok(response) => Ok(response.data),
-                Err(e) => {
-                    warn!("Failed: {:?}", e);
-                    // Convert to a concrete error type or Box<dyn Error...>
-                    // transient expects the error type E.
-                    // We need to ensure E is Sized.
-                    Err(transient(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        e.to_string(),
-                    )))
-                }
-            }
-        })
-    };
-
-    let html = retry(backoff, fetch_operation).await.map_err(|e| {
-        Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        )) as Box<dyn std::error::Error + Send + Sync>
-    })?;
+    let html = fetch_html_with_retry(&url).await.map_err(|e| format!("Failed to fetch HTML: {}", e))?;
 
     let (anime_list, pagination) =
         tokio::task::spawn_blocking(move || parse_latest_page(&html, page)).await??;
@@ -184,38 +155,19 @@ fn parse_latest_page(
     let mut anime_list = Vec::new();
 
     for element in document.select(&VENZ_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let title = text_from_or(&element, &TITLE_SELECTOR, "");
 
-        let poster = element
-            .select(&IMG_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("src"))
-            .unwrap_or("")
-            .to_string();
+        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
 
-        let current_episode = element
-            .select(&EP_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or("N/A".to_string());
+        let current_episode = text_from_or(&element, &EP_SELECTOR, "N/A");
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
 
         let slug = SLUG_REGEX
             .captures(&anime_url)
             .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("")
-            .to_string();
+            .map(|m| m.as_str().to_string())
+            .unwrap_or_default();
 
         // Extract release time if available
         let release_time = "Recently".to_string(); // Could be enhanced with actual time

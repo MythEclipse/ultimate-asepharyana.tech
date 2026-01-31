@@ -1,18 +1,16 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::info;
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -77,25 +75,9 @@ pub async fn genres(
 }
 
 async fn fetch_genres() -> Result<Vec<Genre>, Box<dyn std::error::Error + Send + Sync>> {
-    // Fetch the genres page from Otakudesu
     let url = format!("{}/genre-list/", get_otakudesu_url());
 
-    let backoff = default_backoff();
-    let fetch_operation = || async {
-        info!("Fetching genres from URL: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => {
-                info!("Successfully fetched genres page");
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch genres: {:?}", e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
+    let html = fetch_html_with_retry(&url).await.map_err(|e| format!("Failed to fetch HTML: {}", e))?;
 
     let genres = tokio::task::spawn_blocking(move || parse_genres(&html)).await??;
 
@@ -113,9 +95,8 @@ fn parse_genres(html: &str) -> Result<Vec<Genre>, Box<dyn std::error::Error + Se
         let slug = SLUG_REGEX
             .captures(&url)
             .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("")
-            .to_string();
+            .map(|m| m.as_str().to_string())
+            .unwrap_or_default();
 
         if !name.is_empty() && !slug.is_empty() {
             genres.push(Genre { name, slug, url });
