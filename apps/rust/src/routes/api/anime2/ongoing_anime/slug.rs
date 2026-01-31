@@ -57,7 +57,7 @@ pub async fn slug(
         .get_or_set(&cache_key, CACHE_TTL, || async {
             let (anime_list, pagination) = fetch_ongoing_anime_page(slug.clone())
                 .await
-                .map_err(|e: Box<dyn std::error::Error + Send + Sync>| e.to_string())?;
+                .map_err(|e| e)?;
 
             // Convert all poster URLs to CDN URLs concurrently
             let db = app_state.db.clone();
