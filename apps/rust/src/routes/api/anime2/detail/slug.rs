@@ -1,17 +1,13 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::scraping::{selector, text_from_or, extract_slug, text, attr};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
 
-use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
-use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{info};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -75,32 +71,6 @@ pub struct DetailResponse {
     pub data: AnimeDetailData,
 }
 
-// Pre-compiled CSS selectors for performance
-lazy_static! {
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".entry-title").unwrap();
-    static ref ALT_TITLE_SELECTOR: Selector = Selector::parse(".alter").unwrap();
-    static ref POSTER_SELECTOR: Selector =
-        Selector::parse(".thumb img, .thumbook img, .wp-post-image, .ts-post-image").unwrap();
-    static ref POSTER2_SELECTOR: Selector =
-        Selector::parse(".bigcover img, .bixbox.animefull .bigcover .ime img").unwrap();
-    static ref SPE_SPAN_SELECTOR: Selector = Selector::parse(".info-content .spe span").unwrap();
-    static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".entry-content p").unwrap();
-    static ref GENRE_SELECTOR: Selector = Selector::parse(".genxed a").unwrap();
-    static ref DOWNLOAD_CONTAINER_SELECTOR: Selector = Selector::parse(".soraddl.dlone").unwrap();
-    static ref RESOLUTION_SELECTOR: Selector = Selector::parse(".res").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse(".slink a").unwrap();
-    static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
-    static ref RECOMMENDATION_SELECTOR: Selector = Selector::parse(".listupd .bs").unwrap();
-    static ref REC_TITLE_SELECTOR: Selector = Selector::parse(".ntitle").unwrap();
-    static ref REC_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref STATUS_SELECTOR: Selector = Selector::parse(".status").unwrap();
-    static ref TYPE_SELECTOR: Selector = Selector::parse(".typez").unwrap();
-}
-
-// Pre-compiled regex for slug extraction
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
-
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -145,154 +115,108 @@ pub async fn slug(
 async fn fetch_anime_detail(
     slug: String,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-    let url = format!("https://alqanime.net/{}/", slug);
+    let url = format!("https://alqanime.si/anime/{}/", slug);
 
-    // Retry logic with exponential backoff
-    let backoff = default_backoff();
+    let html = fetch_html_with_retry(&url)
+        .await
+        .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
+    let slug_clone = slug.clone();
 
-    let fetch_operation = || async {
-        info!("Fetching URL with browser: {}", url);
-
-        // Use browser scraping to bypass Cloudflare bot protection
-        let pool = crate::browser::pool::get_browser_pool()
-            .ok_or_else(|| anyhow::anyhow!("Browser pool not initialized"))?;
-
-        let tab = pool.get_tab().await.map_err(|e| transient(e))?;
-        tab.goto(&url).await.map_err(|e| transient(e))?;
-
-        // Inject JavaScript to hide webdriver
-        let _ = tab
-            .evaluate::<()>("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-            .await;
-
-        // Wait for page content to load (title is a good indicator)
-        // This effectively waits for Cloudflare challenge to complete if present
-        tab.wait_for_selector(".entry-title")
-            .await
-            .map_err(|e| transient(e))?;
-
-        // Also wait for poster to ensure image is loaded selection
-        // We use a lenient check or just proceed, but waiting for title is usually enough
-        // to say "Cloudflare is done".
-
-        let html = tab.content().await.map_err(|e| transient(e))?;
-
-        info!("Successfully fetched URL with browser: {}", url);
-        Ok(html)
-    };
-
-    match retry(backoff, fetch_operation).await {
-        Ok(html) => {
-            let html_clone = html.clone(); // Clone the html string
-            let slug_clone = slug.clone();
-
-            let parse_result = tokio::task::spawn_blocking(move || {
-                parse_anime_detail_document(&Html::parse_document(&html_clone), &slug_clone)
-            })
-            .await;
-
-            match parse_result {
-                Ok(inner_result) => match inner_result {
-                    Ok(data) => Ok(data),
-                    Err(e) => Err(e),
-                },
-                Err(join_err) => {
-                    Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>)
-                }
-            }
-        }
-        Err(e) => {
-            error!("Failed to fetch URL after retries: {}, error: {:?}", url, e);
-            Err(e.to_string().into())
-        }
+    match tokio::task::spawn_blocking(move || {
+        parse_anime_detail_document(&html, &slug_clone)
+    })
+    .await {
+        Ok(inner_result) => inner_result,
+        Err(join_err) => Err(format!("Failed to spawn blocking task: {}", join_err).into()),
     }
 }
 
 fn parse_anime_detail_document(
-    document: &Html,
+    html: &str,
     slug: &str,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
     info!("Starting to parse anime detail document for slug: {}", slug);
 
-    let title = document
-        .select(&TITLE_SELECTOR)
-        .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .unwrap_or_default();
+    let document = parse_html(html);
 
-    let alternative_title = document
-        .select(&ALT_TITLE_SELECTOR)
-        .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .unwrap_or_default();
+    let title_selector = selector(".entry-title").unwrap();
+    let alt_title_selector = selector(".alter").unwrap();
+    let poster_selector = selector(".thumb img, .thumbook img, .wp-post-image, .ts-post-image")
+        .unwrap();
+    let poster2_selector =
+        selector(".bigcover img, .bixbox.animefull .bigcover .ime img").unwrap();
+    let spe_span_selector = selector(".info-content .spe span").unwrap();
+    let a_selector = selector("a").unwrap();
+    let synopsis_selector = selector(".entry-content p").unwrap();
+    let genre_selector = selector(".genxed a").unwrap();
+    let download_container_selector = selector(".soraddl.dlone").unwrap();
+    let resolution_selector = selector(".res").unwrap();
+    let link_selector = selector(".slink a").unwrap();
+    let h3_selector = selector("h3").unwrap();
+    let recommendation_selector = selector(".listupd .bs").unwrap();
+    let rec_title_selector = selector(".ntitle").unwrap();
+    let rec_img_selector = selector("img").unwrap();
+    let status_selector = selector(".status").unwrap();
+    let type_selector = selector(".typez").unwrap();
+
+    let title = text_from_or(&document.root_element(), &title_selector, "");
+
+    let alternative_title = text_from_or(&document.root_element(), &alt_title_selector, "");
 
     let poster = document
-        .select(&POSTER_SELECTOR)
+        .select(&poster_selector)
         .next()
         .and_then(|e| {
-            e.value()
-                .attr("src")
-                .or_else(|| e.value().attr("data-src"))
-                .or_else(|| e.value().attr("data-lazy-src"))
+            attr(&e, "src")
+                .or_else(|| attr(&e, "data-src"))
+                .or_else(|| attr(&e, "data-lazy-src"))
         })
-        .unwrap_or("")
-        .to_string();
+        .unwrap_or_default();
 
     let poster2 = document
-        .select(&POSTER2_SELECTOR)
+        .select(&poster2_selector)
         .next()
         .and_then(|e| {
-            e.value()
-                .attr("src")
-                .or_else(|| e.value().attr("data-src"))
-                .or_else(|| e.value().attr("data-lazy-src"))
+            attr(&e, "src")
+                .or_else(|| attr(&e, "data-src"))
+                .or_else(|| attr(&e, "data-lazy-src"))
         })
-        .unwrap_or("")
-        .to_string();
+        .unwrap_or_default();
 
     let r#type = document
-        .select(&SPE_SPAN_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Tipe:"))
-        .and_then(|span| span.select(&A_SELECTOR).next())
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .select(&spe_span_selector)
+        .find(|e| text(&e).contains("Tipe:"))
+        .and_then(|span| span.select(&a_selector).next())
+        .map(|e| text(&e))
         .unwrap_or_default();
 
     let release_date = document
-        .select(&SPE_SPAN_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Dirilis:"))
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .select(&spe_span_selector)
+        .find(|e| text(&e).contains("Dirilis:"))
+        .map(|e| text(&e))
         .unwrap_or_default();
 
     let status = document
-        .select(&SPE_SPAN_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Status:"))
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .select(&spe_span_selector)
+        .find(|e| text(&e).contains("Status:"))
+        .map(|e| text(&e))
         .unwrap_or_default();
 
-    let synopsis = document
-        .select(&SYNOPSIS_SELECTOR)
-        .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .unwrap_or_default();
+    let synopsis = text_from_or(&document.root_element(), &synopsis_selector, "");
 
     let studio = document
-        .select(&SPE_SPAN_SELECTOR)
-        .find(|e| e.text().collect::<String>().contains("Studio:"))
-        .and_then(|span| span.select(&A_SELECTOR).next())
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .select(&spe_span_selector)
+        .find(|e| text(&e).contains("Studio:"))
+        .and_then(|span| span.select(&a_selector).next())
+        .map(|e| text(&e))
         .unwrap_or_default();
 
     let mut genres = Vec::new();
-    for element in document.select(&GENRE_SELECTOR) {
-        let name = element.text().collect::<String>().trim().to_string();
-        let anime_url = element.value().attr("href").unwrap_or("").to_string();
-        let genre_slug = SLUG_REGEX
-            .captures(&anime_url)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("")
-            .to_string();
+    for element in document.select(&genre_selector) {
+        let name = text(&element);
+        let anime_url = attr(&element, "href").unwrap_or_default();
+        let genre_slug = extract_slug(&anime_url);
         genres.push(Genre {
             name,
             slug: genre_slug,
@@ -304,25 +228,20 @@ fn parse_anime_detail_document(
     let mut ova = Vec::new();
     let mut downloads = Vec::new();
 
-    for element in document.select(&DOWNLOAD_CONTAINER_SELECTOR) {
-        let resolution = element
-            .select(&RESOLUTION_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+    for element in document.select(&download_container_selector) {
+        let resolution = text_from_or(&element, &resolution_selector, "");
 
         let mut links = Vec::new();
-        for link_element in element.select(&LINK_SELECTOR) {
-            let name = link_element.text().collect::<String>().trim().to_string();
-            let url = link_element.value().attr("href").unwrap_or("").to_string();
+        for link_element in element.select(&link_selector) {
+            let name = text(&link_element);
+            let url = attr(&link_element, "href").unwrap_or_default();
             links.push(Link { name, url });
         }
 
         let download_item = DownloadItem { resolution, links };
 
-        // Determine category based on parent h3 text
-        if let Some(h3) = element.select(&H3_SELECTOR).next() {
-            let category = h3.text().collect::<String>().to_lowercase();
+        if let Some(h3) = element.select(&h3_selector).next() {
+            let category = text(&h3).to_lowercase();
             if category.contains("batch") {
                 batch.push(download_item);
             } else if category.contains("ova") {
@@ -336,45 +255,26 @@ fn parse_anime_detail_document(
     }
 
     let mut recommendations = Vec::new();
-    for element in document.select(&RECOMMENDATION_SELECTOR) {
-        let title = element
-            .select(&REC_TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+    for element in document.select(&recommendation_selector) {
+        let title = text_from_or(&element, &rec_title_selector, "");
 
         let anime_url = element
-            .select(&A_SELECTOR)
+            .select(&a_selector)
             .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+            .and_then(|e| attr(&e, "href"))
+            .unwrap_or_default();
 
-        let rec_slug = SLUG_REGEX
-            .captures(&anime_url)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("")
-            .to_string();
+        let rec_slug = extract_slug(&anime_url);
 
         let poster = element
-            .select(&REC_IMG_SELECTOR)
+            .select(&rec_img_selector)
             .next()
-            .and_then(|e| e.value().attr("data-src").or_else(|| e.value().attr("src")))
-            .unwrap_or("")
-            .to_string();
-
-        let status = element
-            .select(&STATUS_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+            .and_then(|e| attr(&e, "data-src").or_else(|| attr(&e, "src")))
             .unwrap_or_default();
 
-        let r#type = element
-            .select(&TYPE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let status = text_from_or(&element, &status_selector, "");
+
+        let r#type = text_from_or(&element, &type_selector, "");
 
         recommendations.push(Recommendation {
             title,
@@ -402,7 +302,7 @@ fn parse_anime_detail_document(
         synopsis,
         studio,
         genres,
-        producers: vec![], // Empty as per Next.js implementation
+        producers: vec![],
         recommendations,
         batch,
         ova,

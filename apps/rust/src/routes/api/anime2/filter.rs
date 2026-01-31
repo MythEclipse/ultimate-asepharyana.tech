@@ -1,10 +1,10 @@
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{transient, default_backoff, internal_err, Cache};
 use crate::infra::proxy::fetch_with_proxy;
+use backoff::future::retry;
 use crate::routes::AppState;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use regex::Regex;

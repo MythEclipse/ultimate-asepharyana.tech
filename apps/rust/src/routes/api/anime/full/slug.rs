@@ -1,4 +1,5 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::scraping::{selector, text, attr};
 use crate::routes::AppState;
 use crate::scraping::urls::OTAKUDESU_BASE_URL;
 use axum::http::StatusCode;
@@ -9,8 +10,6 @@ use axum::{
     Json, Router,
 };
 
-use lazy_static::lazy_static;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
@@ -59,18 +58,6 @@ pub struct FullResponse {
     pub data: AnimeFullData,
 }
 
-lazy_static! {
-    pub static ref EPISODE_TITLE_SELECTOR: Selector = Selector::parse("h1.posttl").unwrap();
-    pub static ref IMAGE_SELECTOR: Selector = Selector::parse(".cukder img").unwrap();
-    pub static ref STREAM_SELECTOR: Selector = Selector::parse("#embed_holder iframe").unwrap();
-    pub static ref DOWNLOAD_ITEM_SELECTOR: Selector = Selector::parse(".download ul li").unwrap();
-    pub static ref RESOLUTION_SELECTOR: Selector = Selector::parse("strong").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref NEXT_EPISODE_SELECTOR: Selector =
-        Selector::parse(".flir a[title*='Episode Selanjutnya']").unwrap();
-    pub static ref PREVIOUS_EPISODE_SELECTOR: Selector =
-        Selector::parse(".flir a[title*='Episode Sebelumnya']").unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -120,8 +107,7 @@ async fn fetch_anime_full(slug: String) -> Result<AnimeFullData, String> {
         .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
 
     match tokio::task::spawn_blocking(move || {
-        let document = Html::parse_document(&html);
-        parse_anime_full_document(&document, &slug)
+        parse_anime_full_document(&html, &slug)
     })
     .await
     {
@@ -131,13 +117,24 @@ async fn fetch_anime_full(slug: String) -> Result<AnimeFullData, String> {
 }
 
 fn parse_anime_full_document(
-    document: &Html,
+    html: &str,
     slug: &str,
 ) -> Result<AnimeFullData, Box<dyn std::error::Error + Send + Sync>> {
+    let document = parse_html(html);
+
+    let episode_title_selector = selector("h1.posttl").unwrap();
+    let image_selector = selector(".cukder img").unwrap();
+    let stream_selector = selector("#embed_holder iframe").unwrap();
+    let download_item_selector = selector(".download ul li").unwrap();
+    let resolution_selector = selector("strong").unwrap();
+    let link_selector = selector("a").unwrap();
+    let next_episode_selector = selector(".flir a[title*='Episode Selanjutnya']").unwrap();
+    let previous_episode_selector = selector(".flir a[title*='Episode Sebelumnya']").unwrap();
+
     let episode = document
-        .select(&EPISODE_TITLE_SELECTOR)
+        .select(&episode_title_selector)
         .next()
-        .map(|e| e.text().collect::<String>().trim().to_string())
+        .map(|e| text(&e))
         .unwrap_or_default();
 
     let episode_number = episode
@@ -147,32 +144,30 @@ fn parse_anime_full_document(
         .unwrap_or_default();
 
     let image_url = document
-        .select(&IMAGE_SELECTOR)
+        .select(&image_selector)
         .next()
-        .and_then(|e| e.value().attr("src"))
-        .unwrap_or("")
-        .to_string();
+        .and_then(|e| attr(&e, "src"))
+        .unwrap_or_default();
 
     let stream_url = document
-        .select(&STREAM_SELECTOR)
+        .select(&stream_selector)
         .next()
-        .and_then(|e| e.value().attr("src"))
-        .unwrap_or("")
-        .to_string();
+        .and_then(|e| attr(&e, "src"))
+        .unwrap_or_default();
 
     let mut download_urls = std::collections::HashMap::new();
 
-    for element in document.select(&DOWNLOAD_ITEM_SELECTOR) {
+    for element in document.select(&download_item_selector) {
         let resolution = element
-            .select(&RESOLUTION_SELECTOR)
+            .select(&resolution_selector)
             .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+            .map(|e| text(&e))
             .unwrap_or_default();
 
         let mut links = Vec::new();
-        for link_element in element.select(&LINK_SELECTOR) {
-            let server = link_element.text().collect::<String>().trim().to_string();
-            let url = link_element.value().attr("href").unwrap_or("").to_string();
+        for link_element in element.select(&link_selector) {
+            let server = text(&link_element);
+            let url = attr(&link_element, "href").unwrap_or_default();
             links.push(DownloadLink { server, url });
         }
 
@@ -181,25 +176,25 @@ fn parse_anime_full_document(
         }
     }
 
-    let next_episode_element = document.select(&NEXT_EPISODE_SELECTOR).next();
+    let next_episode_element = document.select(&next_episode_selector).next();
 
-    let previous_episode_element = document.select(&PREVIOUS_EPISODE_SELECTOR).next();
+    let previous_episode_element = document.select(&previous_episode_selector).next();
 
     let next_episode_slug = next_episode_element
-        .and_then(|e| e.value().attr("href"))
+        .and_then(|e| attr(&e, "href"))
         .and_then(|href| {
             href.split('/')
                 .nth(href.split('/').count().saturating_sub(2))
-        })
-        .map(|s| s.to_string() + "/");
+                .map(|s| s.to_string() + "/")
+        });
 
     let previous_episode_slug = previous_episode_element
-        .and_then(|e| e.value().attr("href"))
+        .and_then(|e| attr(&e, "href"))
         .and_then(|href| {
             href.split('/')
                 .nth(href.split('/').count().saturating_sub(2))
-        })
-        .map(|s| s.to_string() + "/");
+                .map(|s| s.to_string() + "/")
+        });
 
     Ok(AnimeFullData {
         episode,

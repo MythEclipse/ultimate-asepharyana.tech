@@ -1,14 +1,12 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::scraping::{selector, text_from_or, attr_from_or, text, attr};
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
 
-use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
 use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{info};
@@ -56,23 +54,6 @@ pub struct PopularQuery {
     pub page: Option<u32>,
     pub period: Option<String>,
 }
-
-lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse("article, .ls4, .ls2").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse("h3 a, h4 a").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img.lazy, img").unwrap();
-    static ref SCORE_SELECTOR: Selector = Selector::parse(".up, .numscore, .epx").unwrap();
-    static ref CHAPTER_SELECTOR: Selector =
-        Selector::parse(".ls4s a, .ls24, .ls2l a, .new1 a").unwrap();
-    static ref TYPE_SELECTOR: Selector = Selector::parse(".ls3p, .type").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("h3 a, h4 a, a").unwrap();
-    static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".paging a, .pagination a:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector =
-        Selector::parse(".paging a.next, .pagination .next").unwrap();
-}
-
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 const CACHE_TTL: u64 = 600;
 
@@ -167,29 +148,40 @@ fn parse_popular_page(
     html: &str,
     current_page: u32,
 ) -> Result<(Vec<PopularKomikItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut komik_list = Vec::new();
     let mut rank: u32 = ((current_page - 1) * 20) + 1;
 
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+    let item_selector = selector("article, .ls4, .ls2").unwrap();
+    let title_selector = selector("h3 a, h4 a").unwrap();
+    let img_selector = selector("img.lazy, img").unwrap();
+    let score_selector = selector(".up, .numscore, .epx").unwrap();
+    let chapter_selector = selector(".ls4s a, .ls24, .ls2l a, .new1 a").unwrap();
+    let type_selector = selector(".ls3p, .type").unwrap();
+    let link_selector = selector("h3 a, h4 a, a").unwrap();
+    let pagination_selector = selector(".paging a, .pagination a:not(.next)").unwrap();
+    let next_selector = selector(".paging a.next, .pagination .next").unwrap();
+    let slug_regex = Regex::new(r"/([^/]+)/?$").unwrap();
+
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
 
         let poster = element
-            .select(&IMG_SELECTOR)
+            .select(&img_selector)
             .next()
-            .and_then(|e| e.value().attr("data-src").or(e.value().attr("src")))
-            .unwrap_or("")
+            .and_then(|e| attr(&e, "data-src").or(attr(&e, "src")))
+            .unwrap_or_else(|| "".to_string())
             .to_string();
 
-        let score = text_from_or(&element, &SCORE_SELECTOR, "N/A");
+        let score = text_from_or(&element, &score_selector, "N/A");
 
-        let chapter = text_from_or(&element, &CHAPTER_SELECTOR, "N/A");
+        let chapter = text_from_or(&element, &chapter_selector, "N/A");
 
-        let komik_type = text_from_or(&element, &TYPE_SELECTOR, "Manga");
+        let komik_type = text_from_or(&element, &type_selector, "Manga");
 
-        let komik_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
+        let komik_url = attr_from_or(&element, &link_selector, "href", "");
 
-        let slug = SLUG_REGEX
+        let slug = slug_regex
             .captures(&komik_url)
             .and_then(|cap| cap.get(1))
             .map(|m| m.as_str())
@@ -212,18 +204,17 @@ fn parse_popular_page(
     }
 
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .next_back()
         .map(|e| {
-            e.text()
-                .collect::<String>()
+            text(&e)
                 .trim()
                 .parse::<u32>()
                 .unwrap_or(1)
         })
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
     let pagination = Pagination {
         current_page,
         last_visible_page,

@@ -2,7 +2,14 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache, text, text_from_or, attr_from_or};
+use crate::helpers::{
+    default_backoff, internal_err, parse_html, transient, Cache,
+};
+use crate::helpers::scraping::{attr, attr_from_or, extract_slug, selector, text, text_from_or};
+use crate::infra::proxy::fetch_with_proxy;
+use crate::routes::AppState;
+use crate::scraping::urls::OTAKUDESU_BASE_URL;
+use crate::utils::error::AppError;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -11,18 +18,9 @@ use axum::{
     Json, Router,
 };
 use backoff::future::retry;
-
-use lazy_static::lazy_static;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 use utoipa::ToSchema;
-
-// Internal imports
-use crate::infra::proxy::fetch_with_proxy;
-use crate::routes::AppState;
-use crate::scraping::urls::OTAKUDESU_BASE_URL;
-use crate::utils::error::AppError;
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime/detail/{slug}";
@@ -84,19 +82,6 @@ pub struct DetailResponse {
     pub data: AnimeDetailData,
 }
 
-lazy_static! {
-    pub static ref INFO_SELECTOR: Selector = Selector::parse(".infozingle p").unwrap();
-    pub static ref POSTER_SELECTOR: Selector = Selector::parse(".fotoanime img").unwrap();
-    pub static ref SYNOPSIS_SELECTOR: Selector = Selector::parse(".sinopc").unwrap();
-    pub static ref GENRE_LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref EPISODE_LIST_SELECTOR: Selector =
-        Selector::parse(".episodelist ul li a").unwrap();
-    pub static ref RECOMMENDATION_SELECTOR: Selector =
-        Selector::parse("#recommend-anime-series .isi-anime").unwrap();
-    pub static ref RECOMMENDATION_TITLE_SELECTOR: Selector =
-        Selector::parse(".judul-anime a").unwrap();
-    pub static ref RECOMMENDATION_IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -163,22 +148,24 @@ async fn fetch_anime_detail(
         .await
         .map_err(|e| format!("Failed to fetch HTML with retry: {}", e))?;
 
-    match tokio::task::spawn_blocking(move || parse_anime_detail_document(&parse_html(&html))).await
+    match tokio::task::spawn_blocking(move || parse_anime_detail_document(&html)).await
     {
         Ok(inner_result) => inner_result.map_err(|e| e.into()),
         Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error + Send + Sync>),
     }
 }
 
-fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppError> {
-    let info_selector = Selector::parse(".infozingle p").unwrap();
-    let poster_selector = Selector::parse(".fotoanime img").unwrap();
-    let synopsis_selector = Selector::parse(".sinopc").unwrap();
-    let genre_link_selector = Selector::parse("a").unwrap();
-    let episode_list_selector = Selector::parse(".episodelist ul li a").unwrap();
-    let recommendation_selector = Selector::parse("#recommend-anime-series .isi-anime").unwrap();
-    let recommendation_title_selector = Selector::parse(".judul-anime a").unwrap();
-    let recommendation_img_selector = Selector::parse("img").unwrap();
+fn parse_anime_detail_document(html: &str) -> Result<AnimeDetailData, AppError> {
+    let document = parse_html(html);
+    
+    let info_selector = selector(".infozingle p").unwrap();
+    let poster_selector = selector(".fotoanime img").unwrap();
+    let synopsis_selector = selector(".sinopc").unwrap();
+    let genre_link_selector = selector("a").unwrap();
+    let episode_list_selector = selector(".episodelist ul li a").unwrap();
+    let recommendation_selector = selector("#recommend-anime-series .isi-anime").unwrap();
+    let recommendation_title_selector = selector(".judul-anime a").unwrap();
+    let recommendation_img_selector = selector("img").unwrap();
 
     let mut title = String::new();
     let mut alternative_title = String::new();
@@ -189,7 +176,7 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
     let producers = Vec::new(); // Not present in the original HTML, keeping empty
 
     for element in document.select(&info_selector) {
-        let text = element.text().collect::<String>();
+        let text = text(&element);
         if text.contains("Judul:") {
             title = text.replace("Judul:", "").trim().to_string();
         } else if text.contains("Japanese:") {
@@ -223,12 +210,12 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
     let mut genres = Vec::new();
     if let Some(genres_element) = document
         .select(&info_selector)
-        .find(|e| e.text().collect::<String>().contains("Genres:"))
+        .find(|e| text(&e).contains("Genres:"))
     {
         for genre_link in genres_element.select(&genre_link_selector) {
             let name = text(&genre_link);
-            let anime_url = genre_link.value().attr("href").unwrap_or("").to_string();
-            let genre_slug = anime_url.split('/').nth(4).unwrap_or("").to_string(); // Adjust as needed
+            let anime_url = attr(&genre_link, "href").unwrap_or_default();
+            let genre_slug = extract_slug(&anime_url);
             genres.push(Genre {
                 name,
                 slug: genre_slug,
@@ -240,12 +227,8 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
     let mut episode_lists = Vec::new();
     for element in document.select(&episode_list_selector) {
         let episode = text(&element);
-        let slug = element
-            .value()
-            .attr("href")
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+        let href = attr(&element, "href").unwrap_or_default();
+        let slug = extract_slug(&href);
         episode_lists.push(EpisodeList { episode, slug });
     }
 
@@ -256,13 +239,14 @@ fn parse_anime_detail_document(document: &Html) -> Result<AnimeDetailData, AppEr
     for element in document.select(&recommendation_selector) {
         let title = text_from_or(&element, &recommendation_title_selector, "");
         let poster = attr_from_or(&element, &recommendation_img_selector, "src", "");
-        let slug = element
+        let href = element
             .select(&genre_link_selector) // Reusing genre_link_selector for general links
             .next()
             .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+            .unwrap_or("");
+        
+        let slug = extract_slug(href);
+        
         recommendations.push(Recommendation {
             title,
             slug,

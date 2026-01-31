@@ -1,21 +1,17 @@
 //! Handler for the komik chapter endpoint.
 
-use crate::helpers::{
-    cache_image_urls_batch_lazy, default_backoff, internal_err, transient, Cache,
-};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, cache_image_urls_batch_lazy, parse_html};
+use crate::helpers::scraping::{selector, text, attr};
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, routing::get, Json, Router};
-use backoff::future::retry;
 
-use lazy_static::lazy_static;
-use scraper::{Html, Selector};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::{info};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -46,16 +42,6 @@ pub struct ChapterQuery {
     pub chapter_url: Option<String>,
 }
 
-lazy_static! {
-    static ref TITLE_SELECTOR: Selector = Selector::parse("title").unwrap();
-    static ref PREV_CHAPTER_SELECTOR: Selector =
-        Selector::parse(".nxpr a:not(.rl):not([href*='#Chapter']), .chprev a, a.prev").unwrap();
-    static ref LIST_CHAPTER_SELECTOR: Selector =
-        Selector::parse("table#Daftar_Chapter tbody tr").unwrap();
-    static ref NEXT_CHAPTER_SELECTOR: Selector =
-        Selector::parse(".nxpr a.rl, .nxpr a.next, .chnext a, a.next").unwrap();
-    static ref IMAGE_SELECTOR: Selector = Selector::parse("#Baca_Komik img").unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -114,43 +100,32 @@ pub async fn fetch_komik_chapter(
     let base_url = get_komik_url();
     let url = format!("{}/{}", base_url, chapter_url); // Keep as-is since chapter URLs might already have correct format
 
-    // Retry logic with exponential backoff
-    let backoff = default_backoff();
-
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(&url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
+    let html = fetch_html_with_retry(&url).await?;
 
     tokio::task::spawn_blocking(move || {
-        parse_komik_chapter_document(&Html::parse_document(&html), &chapter_url)
+        parse_komik_chapter_document(&html, &chapter_url)
     })
     .await?
 }
 
 fn parse_komik_chapter_document(
-    document: &Html,
+    html: &str,
     chapter_url: &str,
 ) -> Result<ChapterData, Box<dyn std::error::Error + Send + Sync>> {
+    let document = parse_html(html);
     let _start_time = std::time::Instant::now();
     info!("Starting to parse komik chapter document");
 
+    let title_selector = selector("title").unwrap();
+    let prev_chapter_selector = selector(".nxpr a:not(.rl):not([href*='#Chapter']), .chprev a, a.prev").unwrap();
+    let next_chapter_selector = selector(".nxpr a.rl, .nxpr a.next, .chnext a, a.next").unwrap();
+    let image_selector = selector("#Baca_Komik img").unwrap();
+
     let title = document
-        .select(&TITLE_SELECTOR)
+        .select(&title_selector)
         .next()
         .map(|e| {
-            let full_title = e.text().collect::<String>();
+            let full_title = text(&e);
             // Extract series title from "Chapter XX | Komik TITLE - Komiku"
             if let Some(start) = full_title.find("Komik ") {
                 if let Some(end) = full_title.find(" - Komiku") {
@@ -165,9 +140,9 @@ fn parse_komik_chapter_document(
         .unwrap_or_default();
 
     let next_chapter_id = document
-        .select(&NEXT_CHAPTER_SELECTOR)
+        .select(&next_chapter_selector)
         .next()
-        .and_then(|e| e.value().attr("href"))
+        .and_then(|e| attr(&e, "href"))
         .map(|href| {
             href.trim_end_matches('/')
                 .split('/')
@@ -223,9 +198,9 @@ fn parse_komik_chapter_document(
     } else {
         // Fall back to HTML parsing if URL pattern doesn't match
         document
-            .select(&PREV_CHAPTER_SELECTOR)
+            .select(&prev_chapter_selector)
             .next()
-            .and_then(|e| e.value().attr("href"))
+            .and_then(|e| attr(&e, "href"))
             .map(|href| {
                 href.trim_end_matches('/')
                     .split('/')
@@ -238,7 +213,7 @@ fn parse_komik_chapter_document(
     };
 
     fn get_list_chapter_from_url(chapter_url: &str) -> String {
-        let re = regex::Regex::new(r"-chapter-\d+").unwrap();
+        let re = Regex::new(r"-chapter-\d+").unwrap();
         re.replace_all(chapter_url, "").to_string()
     }
 
@@ -254,20 +229,17 @@ fn parse_komik_chapter_document(
         "/asset/img/komikuplus2.jpg",
         "https://komiku.org/asset/img/Loading.gif",
     ];
-    for el in document.select(&IMAGE_SELECTOR) {
-        if let Some(src) = el
-            .value()
-            .attr("src")
-            .or_else(|| el.value().attr("data-src"))
-            .or_else(|| el.value().attr("data-lazy-src"))
+    for el in document.select(&image_selector) {
+        if let Some(src) = attr(&el, "src")
+            .or_else(|| attr(&el, "data-src"))
+            .or_else(|| attr(&el, "data-lazy-src"))
             .or_else(|| {
-                el.value()
-                    .attr("srcset")
-                    .and_then(|s| s.split_whitespace().next())
+                attr(&el, "srcset")
+                    .and_then(|s| s.split_whitespace().next().map(|s| s.to_string()))
             })
         {
-            if !forbidden_images.contains(&src) {
-                images.push(src.to_string());
+            if !forbidden_images.contains(&src.as_str()) {
+                images.push(src);
             }
         }
     }

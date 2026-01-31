@@ -1,13 +1,10 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::scraping::{selector, extract_slug, text, attr};
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
-use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
@@ -32,12 +29,6 @@ pub struct GenresResponse {
     pub status: String,
     pub data: Vec<Genre>,
 }
-
-lazy_static! {
-    static ref GENRE_SELECTOR: Selector = Selector::parse(".genres li a, .genre-list a").unwrap();
-}
-
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 const CACHE_TTL: u64 = 3600; // 1 hour - genres don't change often
 
@@ -85,18 +76,14 @@ async fn fetch_genres() -> Result<Vec<Genre>, Box<dyn std::error::Error + Send +
 }
 
 fn parse_genres(html: &str) -> Result<Vec<Genre>, Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut genres = Vec::new();
+    let genre_selector = selector(".genres li a, .genre-list a").unwrap();
 
-    for element in document.select(&GENRE_SELECTOR) {
-        let name = element.text().collect::<String>().trim().to_string();
-        let url = element.value().attr("href").unwrap_or("").to_string();
-
-        let slug = SLUG_REGEX
-            .captures(&url)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str().to_string())
-            .unwrap_or_default();
+    for element in document.select(&genre_selector) {
+        let name = text(&element);
+        let url = attr(&element, "href").unwrap_or_default();
+        let slug = extract_slug(&url);
 
         if !name.is_empty() && !slug.is_empty() {
             genres.push(Genre { name, slug, url });

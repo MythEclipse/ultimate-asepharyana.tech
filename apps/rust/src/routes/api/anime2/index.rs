@@ -1,15 +1,12 @@
-use crate::helpers::{default_backoff, internal_err, parse_html, transient, Cache};
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::{internal_err, parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from_or, selector, extract_slug};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
-use lazy_static::lazy_static;
-use scraper::Selector;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{info, warn};
+use tracing::{info};
 use utoipa::ToSchema;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -126,14 +123,6 @@ pub async fn anime2(
     Ok(Json(response))
 }
 
-lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
-}
-
 async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Send + Sync>> {
     let ongoing_url = "https://alqanime.si/anime/?status=ongoing&type=&order=update";
     let complete_url = "https://alqanime.si/anime/?status=completed&type=&order=update";
@@ -157,69 +146,34 @@ async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Se
     })
 }
 
-async fn fetch_html_with_retry(
-    url: &str,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = default_backoff();
-
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
-    Ok(html)
-}
-
 fn parse_ongoing_anime(
     html: &str,
 ) -> Result<Vec<OngoingAnimeItem>, Box<dyn std::error::Error + Send + Sync>> {
     let document = parse_html(html);
     let mut ongoing_anime = Vec::new();
 
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+    let item_selector = selector("article.bs").unwrap();
+    let title_selector = selector(".tt h2").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let episode_selector = selector(".epx").unwrap();
 
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+
+        let href = attr_from_or(&element, &link_selector, "href", "");
+        let slug = extract_slug(&href);
 
         let poster = element
-            .select(&IMG_SELECTOR)
+            .select(&img_selector)
             .next()
             .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
             .unwrap_or("")
             .to_string();
 
-        let current_episode = element
-            .select(&EPISODE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
+        let current_episode = text_from_or(&element, &episode_selector, "N/A");
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
 
         if !title.is_empty() {
             ongoing_anime.push(OngoingAnimeItem {
@@ -240,40 +194,28 @@ fn parse_complete_anime(
     let document = parse_html(html);
     let mut complete_anime = Vec::new();
 
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+    let item_selector = selector("article.bs").unwrap();
+    let title_selector = selector(".tt h2").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let episode_selector = selector(".epx").unwrap();
 
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+
+        let href = attr_from_or(&element, &link_selector, "href", "");
+        let slug = extract_slug(&href);
 
         let poster = element
-            .select(&IMG_SELECTOR)
+            .select(&img_selector)
             .next()
             .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
             .unwrap_or("")
             .to_string();
 
-        let episode_count = element
-            .select(&EPISODE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
+        let episode_count = text_from_or(&element, &episode_selector, "N/A");
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
 
         if !title.is_empty() {
             complete_anime.push(CompleteAnimeItem {

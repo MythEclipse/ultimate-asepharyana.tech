@@ -4,10 +4,6 @@ use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{response::IntoResponse, routing::get, Json, Router};
-use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
-use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
@@ -52,18 +48,6 @@ pub struct LatestQuery {
     pub page: Option<u32>,
 }
 
-lazy_static! {
-    static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref EP_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-}
-
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 const CACHE_TTL: u64 = 120; // 2 minutes - latest updates change frequently
 
@@ -139,7 +123,9 @@ async fn fetch_latest_anime(
         format!("{}/ongoing-anime/page/{}/", get_otakudesu_url(), page)
     };
 
-    let html = fetch_html_with_retry(&url).await.map_err(|e| format!("Failed to fetch HTML: {}", e))?;
+    let html = fetch_html_with_retry(&url)
+        .await
+        .map_err(|e| format!("Failed to fetch HTML: {}", e))?;
 
     let (anime_list, pagination) =
         tokio::task::spawn_blocking(move || parse_latest_page(&html, page)).await??;
@@ -151,23 +137,29 @@ fn parse_latest_page(
     html: &str,
     current_page: u32,
 ) -> Result<(Vec<LatestAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = crate::helpers::scraping::parse_html(html);
     let mut anime_list = Vec::new();
 
-    for element in document.select(&VENZ_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
-
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
-
-        let current_episode = text_from_or(&element, &EP_SELECTOR, "N/A");
-
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
-
-        let slug = SLUG_REGEX
-            .captures(&anime_url)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str().to_string())
-            .unwrap_or_default();
+    let venz_selector = crate::helpers::scraping::selector(".venz ul li").unwrap();
+    let title_selector = crate::helpers::scraping::selector(".thumbz h2.jdlflm").unwrap();
+    let img_selector = crate::helpers::scraping::selector("img").unwrap();
+    let ep_selector = crate::helpers::scraping::selector(".epz").unwrap();
+    let link_selector = crate::helpers::scraping::selector("a").unwrap();
+    let pagination_selector =
+        crate::helpers::scraping::selector(".pagination .page-numbers:not(.next)").unwrap();
+    let next_selector = crate::helpers::scraping::selector(".pagination .next").unwrap();
+    
+    // We can use compile_regex from helpers if available, or just use the Lazy one from scraping.rs 
+    // But since SLUG_REGEX is already defined in scraping.rs, we can use extract_slug but need to be careful
+    // because here we are extracting from full URL, extracting slug is fine.
+    
+    for element in document.select(&venz_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
+        let current_episode = text_from_or(&element, &ep_selector, "N/A");
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
+        
+        let slug = crate::helpers::scraping::extract_slug(&anime_url);
 
         // Extract release time if available
         let release_time = "Recently".to_string(); // Could be enhanced with actual time
@@ -185,7 +177,7 @@ fn parse_latest_page(
     }
 
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .next_back()
         .map(|e| {
             e.text()
@@ -196,7 +188,7 @@ fn parse_latest_page(
         })
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
     let next_page = if has_next_page {
         Some(current_page + 1)
     } else {

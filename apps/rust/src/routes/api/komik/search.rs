@@ -1,13 +1,12 @@
-use crate::helpers::{internal_err, parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
+use crate::helpers::{internal_err, parse_html, Cache, fetch_html_with_retry};
+use crate::helpers::scraping::{selector, text_from_or, attr_from, attr_from_or, text};
 
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_api_url;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
 
-use lazy_static::lazy_static;
-use regex::Regex;
-use scraper::Selector;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
@@ -55,35 +54,6 @@ pub struct SearchQuery {
 
 use axum::extract::State;
 
-lazy_static! {
-    static ref ANIMPOST_SELECTOR: Selector = Selector::parse("div.bge, .listupd .bge").unwrap();
-    static ref TITLE_SELECTOR: Selector =
-        Selector::parse("div.kan h3, div.kan a h3, .tt h3").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("div.bgei img").unwrap();
-    static ref CHAPTER_SELECTOR: Selector =
-        Selector::parse("div.new1 a span:last-child, .new1 span, .lch").unwrap();
-    static ref SCORE_SELECTOR: Selector = Selector::parse(".up, .epx, .numscore").unwrap();
-    static ref DATE_SELECTOR: Selector =
-        Selector::parse("div.kan span.judul2, .mdis .date").unwrap();
-    static ref TYPE_SELECTOR: Selector =
-        Selector::parse("div.tpe1_inf b, .tpe1_inf span.type, .mdis .type").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("div.bgei a, div.kan a").unwrap();
-    static ref CHAPTER_REGEX: Regex = Regex::new(r"\d+(\.\d+)?").unwrap();
-    static ref CURRENT_SELECTOR: Selector = Selector::parse(
-        ".pagination > .current, .pagination > span.page-numbers.current, .hpage .current"
-    )
-    .unwrap();
-    static ref PAGE_SELECTORS: Selector = Selector::parse(
-        ".pagination > a, .pagination > .page-numbers:not(.next):not(.prev), .hpage a"
-    )
-    .unwrap();
-    static ref NEXT_SELECTOR: Selector =
-        Selector::parse(".pagination > a.next, .pagination > .next.page-numbers, .hpage .next")
-            .unwrap();
-    static ref PREV_SELECTOR: Selector =
-        Selector::parse(".pagination > a.prev, .pagination > .prev.page-numbers, .hpage .prev")
-            .unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -169,36 +139,46 @@ async fn fetch_and_parse_search(
 ) -> Result<(Vec<MangaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let html = fetch_html_with_retry(url).await?;
     let (data, pagination) = tokio::task::spawn_blocking(move || {
-        let document = parse_html(&html);
-        parse_search_document(&document, page)
+        parse_search_document(&html, page)
     })
     .await??;
 
     Ok((data, pagination))
 }
 
-
-
 fn parse_search_document(
-    document: &scraper::Html,
+    html: &str,
     current_page: u32,
 ) -> Result<(Vec<MangaItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+    let document = parse_html(html);
     let mut data = Vec::new();
 
-    for element in document.select(&ANIMPOST_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+    let animpost_selector = selector("div.bge, .listupd .bge").unwrap();
+    let title_selector = selector("div.kan h3, div.kan a h3, .tt h3").unwrap();
+    let img_selector = selector("div.bgei img").unwrap();
+    let chapter_selector = selector("div.new1 a span:last-child, .new1 span, .lch").unwrap();
+    let score_selector = selector(".up, .epx, .numscore").unwrap();
+    let date_selector = selector("div.kan span.judul2, .mdis .date").unwrap();
+    let type_selector = selector("div.tpe1_inf b, .tpe1_inf span.type, .mdis .type").unwrap();
+    let link_selector = selector("div.bgei a, div.kan a").unwrap();
+    let next_selector = selector(".pagination > a.next, .pagination > .next.page-numbers, .hpage .next").unwrap();
+    let prev_selector = selector(".pagination > a.prev, .pagination > .prev.page-numbers, .hpage .prev").unwrap();
+    let page_selectors = selector(".pagination > a, .pagination > .page-numbers:not(.next):not(.prev), .hpage a").unwrap();
 
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
+    for element in document.select(&animpost_selector) {
+        let title = text_from_or(&element, &title_selector, "");
 
-        let chapter = text_from_or(&element, &CHAPTER_SELECTOR, "N/A");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
 
-        let score = text_from_or(&element, &SCORE_SELECTOR, "N/A");
+        let chapter = text_from_or(&element, &chapter_selector, "N/A");
 
-        let date = text_from_or(&element, &DATE_SELECTOR, "N/A");
+        let score = text_from_or(&element, &score_selector, "N/A");
 
-        let r#type = text_from_or(&element, &TYPE_SELECTOR, "");
+        let date = text_from_or(&element, &date_selector, "N/A");
 
-        let slug = attr_from(&element, &LINK_SELECTOR, "href")
+        let r#type = text_from_or(&element, &type_selector, "");
+
+        let slug = attr_from(&element, &link_selector, "href")
             .and_then(|href| href.split('/').nth(3).map(String::from))
             .unwrap_or_default();
 
@@ -217,19 +197,19 @@ fn parse_search_document(
 
     // Pagination logic
     let last_visible_page = document
-        .select(&PAGE_SELECTORS)
+        .select(&page_selectors)
         .last()
-        .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
+        .and_then(|e| text(&e).parse::<u32>().ok())
         .unwrap_or(current_page);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
     let next_page = if has_next_page {
         Some(current_page + 1)
     } else {
         None
     };
 
-    let has_previous_page = document.select(&PREV_SELECTOR).next().is_some();
+    let has_previous_page = document.select(&prev_selector).next().is_some();
     let previous_page = if has_previous_page {
         if current_page > 1 {
             Some(current_page - 1)

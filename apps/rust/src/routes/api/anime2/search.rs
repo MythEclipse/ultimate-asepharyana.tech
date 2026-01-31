@@ -1,15 +1,12 @@
 use crate::helpers::{
-    default_backoff, get_cached_or_original, internal_err, join_all_limited, parse_html, transient,
-    Cache,
+    internal_err, parse_html, Cache, fetch_html_with_retry,
 };
-use crate::infra::proxy::fetch_with_proxy;
+use crate::helpers::scraping::{selector, text_from_or, attr_from_or, extract_slug, attr_from, text, attr};
 use crate::routes::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, response::IntoResponse, routing::get, Json, Router};
-use backoff::future::retry;
-use lazy_static::lazy_static;
-use scraper::Selector;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
@@ -45,20 +42,6 @@ pub struct Pagination {
     pub previous_page: Option<String>,
 }
 
-lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref DESC_SELECTOR: Selector = Selector::parse(".data .typez").unwrap();
-    static ref GENRE_SELECTOR: Selector = Selector::parse(".genres a").unwrap();
-    static ref RATING_SELECTOR: Selector = Selector::parse(".score").unwrap();
-    static ref TYPE_SELECTOR: Selector = Selector::parse(".typez").unwrap();
-    static ref SEASON_SELECTOR: Selector = Selector::parse(".season").unwrap();
-    static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]
@@ -99,28 +82,27 @@ pub async fn search(
     let response = cache
         .get_or_set(&cache_key, CACHE_TTL, || async {
             let url = format!("https://alqanime.si/?s={}", urlencoding::encode(&query));
-            let (mut data, pagination) = fetch_and_parse_search(&url)
+            let (data, pagination) = fetch_and_parse_search(&url)
                 .await
                 .map_err(|e| e.to_string())?;
 
             // Convert all poster URLs to CDN URLs concurrently
             let db = app_state.db.clone();
             let redis = app_state.redis_pool.clone();
-            let semaphore = app_state.image_processing_semaphore.clone();
-
-            data = join_all_limited(data, 20, |mut item| {
-                let db = db.clone();
-                let redis = redis.clone();
-                let semaphore = semaphore.clone();
-                async move {
-                    if !item.poster.is_empty() {
-                        item.poster =
-                            get_cached_or_original(db, &redis, &item.poster, Some(semaphore)).await;
-                    }
-                    item
-                }
-            })
+            
+            // Extract posters
+            let posters: Vec<String> = data.iter().map(|item| item.poster.clone()).collect();
+            
+            // Trigger lazy batch caching
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+                db.clone(),
+                &redis,
+                posters,
+                Some(app_state.image_processing_semaphore.clone()),
+            )
             .await;
+
+            // We return original data for speed on cold start
 
             Ok(SearchResponse {
                 status: "Ok".to_string(),
@@ -139,95 +121,57 @@ async fn fetch_and_parse_search(
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let html = fetch_html_with_retry(url).await?;
     let (data, pagination) = tokio::task::spawn_blocking(move || {
-        let document = parse_html(&html);
-        parse_search_document(&document)
+        parse_search_document(&html)
     })
     .await??;
 
     Ok((data, pagination))
 }
 
-async fn fetch_html_with_retry(
-    url: &str,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = default_backoff();
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => Err(transient(e)),
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
-    Ok(html)
-}
-
 fn parse_search_document(
-    document: &scraper::Html,
+    html: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
+    let document = parse_html(html);
     let mut data = Vec::new();
 
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+    let item_selector = selector("article.bs").unwrap();
+    let title_selector = selector(".tt h2").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let desc_selector = selector(".data .typez").unwrap();
+    let genre_selector = selector(".genres a").unwrap();
+    let rating_selector = selector(".score").unwrap();
+    let type_selector = selector(".typez").unwrap();
+    let season_selector = selector(".season").unwrap();
+    let pagination_selector = selector(".pagination .page-numbers:not(.next)").unwrap();
+    let next_selector = selector(".pagination .next").unwrap();
 
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split('/').nth(4))
-            .unwrap_or("")
-            .to_string();
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
 
+        let href = attr_from(&element, &link_selector, "href").unwrap_or_default();
+        let slug = extract_slug(&href);
+            
         let poster = element
-            .select(&IMG_SELECTOR)
+            .select(&img_selector)
             .next()
-            .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
-            .unwrap_or("")
-            .to_string();
-
-        let description = element
-            .select(&DESC_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
+            .and_then(|e| attr(&e, "src").or(attr(&e, "data-src")))
             .unwrap_or_default();
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let description = text_from_or(&element, &desc_selector, "");
+
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
 
         let genres = element
-            .select(&GENRE_SELECTOR)
-            .map(|e| e.text().collect::<String>().trim().to_string())
+            .select(&genre_selector)
+            .map(|e| text(&e))
             .collect();
 
-        let rating = element
-            .select(&RATING_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let rating = text_from_or(&element, &rating_selector, "");
 
-        let r#type = element
-            .select(&TYPE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let r#type = text_from_or(&element, &type_selector, "");
 
-        let season = element
-            .select(&SEASON_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+        let season = text_from_or(&element, &season_selector, "");
 
         if !title.is_empty() {
             data.push(AnimeItem {
@@ -246,26 +190,28 @@ fn parse_search_document(
 
     // Pagination logic
     let current_page = document
-        .select(&PAGINATION_SELECTOR)
-        .find(|e| e.value().attr("class").unwrap_or("").contains("current"))
-        .and_then(|e| e.text().collect::<String>().trim().parse().ok())
+        .select(&pagination_selector)
+        .find(|e| attr(&e, "class").unwrap_or_default().contains("current"))
+        .and_then(|e| text(&e).trim().parse().ok())
         .unwrap_or(1);
 
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .last()
-        .and_then(|e| e.text().collect::<String>().trim().parse().ok())
+        .and_then(|e| text(&e).trim().parse().ok())
         .unwrap_or(current_page);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
 
     let next_page = if has_next_page {
         document
-            .select(&NEXT_SELECTOR)
+            .select(&next_selector)
             .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| href.split("/page/").nth(1))
-            .and_then(|s| s.split('/').next())
+            .and_then(|e| attr(&e, "href"))
+            .and_then(|href| {
+                 href.split("/page/").nth(1).map(|s| s.to_string())
+            })
+            .and_then(|s| s.split('/').next().map(|s| s.to_string()))
             .map(|s| s.to_string())
     } else {
         None

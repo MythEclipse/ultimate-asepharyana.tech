@@ -2,7 +2,8 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{default_backoff, internal_err, transient, Cache};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::scraping::{selector, text_from_or, attr_from_or, extract_slug, attr_from, text, attr};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -10,18 +11,12 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use backoff::future::retry;
 
-use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
-use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use tracing::{info, warn};
+use tracing::info;
 use utoipa::ToSchema;
 
 // Internal imports
-use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 
 pub const ENDPOINT_METHOD: &str = "get";
@@ -57,22 +52,6 @@ pub struct CompleteAnimeResponse {
     pub data: Vec<CompleteAnimeItem>,
     pub pagination: Pagination,
 }
-
-// Pre-compiled CSS selectors for performance
-lazy_static! {
-    pub static ref ITEM_SELECTOR: Selector = Selector::parse("article.bs").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".tt h2").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epx").unwrap();
-    pub static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    pub static ref NEXT_SELECTOR: Selector =
-        Selector::parse(".pagination .next.page-numbers").unwrap();
-}
-
-// Pre-compiled regex for slug extraction
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -110,10 +89,9 @@ pub async fn slug(
                 .await
                 .map_err(|e| e.to_string())?;
 
-            let html_clone = html.clone();
             let slug_clone = slug.clone();
-            let (mut anime_list, pagination) =
-                tokio::task::spawn_blocking(move || parse_anime_page(&html_clone, &slug_clone))
+            let (anime_list, pagination) =
+                tokio::task::spawn_blocking(move || parse_anime_page(&html, &slug_clone))
                     .await
                     .map_err(|e| e.to_string())?
                     .map_err(|e| e.to_string())?;
@@ -124,7 +102,7 @@ pub async fn slug(
             let redis = app_state.redis_pool.clone();
 
             let posters: Vec<String> = anime_list.iter().map(|i| i.poster.clone()).collect();
-            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            crate::helpers::image_cache::cache_image_urls_batch_lazy(
                 db,
                 &redis,
                 posters,
@@ -132,12 +110,7 @@ pub async fn slug(
             )
             .await;
 
-            for (i, item) in anime_list.iter_mut().enumerate() {
-                if let Some(url) = cached_posters.get(i) {
-                    item.poster = url.clone();
-                }
-            }
-
+            // Return original data explicitly for speed
             Ok(CompleteAnimeResponse {
                 status: "Ok".to_string(),
                 data: anime_list,
@@ -150,29 +123,6 @@ pub async fn slug(
     Ok(Json(response).into_response())
 }
 
-async fn fetch_html_with_retry(
-    url: &str,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let backoff = default_backoff();
-
-    let fetch_operation = || async {
-        info!("Fetching URL: {}", url);
-        match fetch_with_proxy(url).await {
-            Ok(response) => {
-                info!("Successfully fetched URL: {}", url);
-                Ok(response.data)
-            }
-            Err(e) => {
-                warn!("Failed to fetch URL: {}, error: {:?}", url, e);
-                Err(transient(e))
-            }
-        }
-    };
-
-    let html = retry(backoff, fetch_operation).await?;
-    Ok(html)
-}
-
 fn parse_anime_page(
     html: &str,
     slug: &str,
@@ -180,48 +130,32 @@ fn parse_anime_page(
     let start_time = std::time::Instant::now();
     info!("Starting to parse anime page for slug: {}", slug);
 
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut anime_list = Vec::new();
 
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = element
-            .select(&TITLE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_default();
+    let item_selector = selector("article.bs").unwrap();
+    let title_selector = selector(".tt h2").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let episode_selector = selector(".epx").unwrap();
+    let pagination_selector = selector(".pagination .page-numbers:not(.next)").unwrap();
+    let next_selector = selector(".pagination .next.page-numbers").unwrap();
 
-        let slug = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .and_then(|href| {
-                SLUG_REGEX
-                    .captures(href)
-                    .and_then(|cap| cap.get(1))
-                    .map(|m| m.as_str())
-            })
-            .unwrap_or("")
-            .to_string();
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+
+        let href = attr_from(&element, &link_selector, "href").unwrap_or_default();
+        let slug = extract_slug(&href);
 
         let poster = element
-            .select(&IMG_SELECTOR)
+            .select(&img_selector)
             .next()
-            .and_then(|e| e.value().attr("src").or(e.value().attr("data-src")))
-            .unwrap_or("")
-            .to_string();
+            .and_then(|e| attr(&e, "src").or(attr(&e, "data-src")))
+            .unwrap_or_default();
 
-        let episode_count = element
-            .select(&EPISODE_SELECTOR)
-            .next()
-            .map(|e| e.text().collect::<String>().trim().to_string())
-            .unwrap_or_else(|| "N/A".to_string());
+        let episode_count = text_from_or(&element, &episode_selector, "N/A");
 
-        let anime_url = element
-            .select(&LINK_SELECTOR)
-            .next()
-            .and_then(|e| e.value().attr("href"))
-            .unwrap_or("")
-            .to_string();
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
 
         anime_list.push(CompleteAnimeItem {
             title,
@@ -234,12 +168,12 @@ fn parse_anime_page(
 
     let current_page = slug.parse::<u32>().unwrap_or(1);
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .next_back()
-        .and_then(|e| e.text().collect::<String>().parse::<u32>().ok())
+        .and_then(|e| text(&e).parse::<u32>().ok())
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
     let next_page = if has_next_page {
         Some(current_page + 1)
     } else {

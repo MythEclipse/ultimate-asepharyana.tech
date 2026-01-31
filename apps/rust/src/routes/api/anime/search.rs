@@ -9,13 +9,11 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::scraping::{selector, text_from_or, attr_from_or, extract_slug, text, extract_parentheses};
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 
-use lazy_static::lazy_static;
-use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
@@ -61,16 +59,6 @@ pub struct SearchQuery {
     pub q: Option<String>,
 }
 
-lazy_static! {
-    pub static ref ITEM_SELECTOR: Selector = Selector::parse("#venkonten .chivsrc li").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse("h2 a").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref GENRE_SELECTOR: Selector = Selector::parse(".set a").unwrap();
-    pub static ref STATUS_SELECTOR: Selector = Selector::parse(".set").unwrap();
-    pub static ref NEXT_SELECTOR: Selector = Selector::parse(".hpage .r").unwrap();
-    pub static ref EPISODE_REGEX: Regex = Regex::new(r"\(([^)]+)\)").unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -163,35 +151,35 @@ async fn fetch_and_parse_search(
 fn parse_search_html(
     html: &str,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut anime_list = Vec::new();
 
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+    let item_selector = selector("#venkonten .chivsrc li").unwrap();
+    let title_selector = selector("h2 a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let link_selector = selector("a").unwrap();
+    let genre_selector = selector(".set a").unwrap();
+    let status_selector = selector(".set").unwrap();
+    let next_selector = selector(".hpage .r").unwrap();
 
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
-
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
-
-        let slug = anime_url
-            .split('/')
-            .filter(|s| !s.is_empty())
-            .last()
-            .unwrap_or("")
-            .to_string();
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
+        let slug = extract_slug(&anime_url);
 
         let genres: Vec<String> = element
-            .select(&GENRE_SELECTOR)
-            .map(|e| e.text().collect::<String>().trim().to_string())
+            .select(&genre_selector)
+            .map(|e| text(&e))
             .collect();
 
-        let status_text = text_from_or(&element, &STATUS_SELECTOR, "");
+        let status_text = text_from_or(&element, &status_selector, "");
 
-        let episode = EPISODE_REGEX
-            .captures(&status_text)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str().to_string())
-            .unwrap_or("N/A".to_string());
+        // Use extract_parentheses or manual regex if needed, but regex is removed from imports
+        // Re-implementing simplified extraction or use helper if available.
+        // The original code used regex capture group 1 inside parentheses.
+        // Helper `extract_parentheses` does exactly that.
+        let episode = extract_parentheses(&status_text).unwrap_or("N/A".to_string());
 
         let status = if status_text.to_lowercase().contains("ongoing") {
             "Ongoing".to_string()
@@ -217,11 +205,13 @@ fn parse_search_html(
         }
     }
 
+    let has_next_page = document.select(&next_selector).next().is_some();
+
     let pagination = Pagination {
         current_page: 1,
         last_visible_page: 1,
-        has_next_page: document.select(&NEXT_SELECTOR).next().is_some(),
-        next_page: if document.select(&NEXT_SELECTOR).next().is_some() {
+        has_next_page,
+        next_page: if has_next_page {
             Some(2)
         } else {
             None

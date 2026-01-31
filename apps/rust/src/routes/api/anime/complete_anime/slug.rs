@@ -2,7 +2,10 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
+use crate::helpers::{
+    internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or, extract_slug,
+    parse_html, selector
+};
 use crate::routes::AppState;
 use crate::scraping::urls::OTAKUDESU_BASE_URL;
 use axum::{
@@ -12,16 +15,9 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use lazy_static::lazy_static;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
-
-use once_cell::sync::Lazy;
-use regex::Regex;
-
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime/complete-anime/{slug}";
@@ -56,18 +52,6 @@ pub struct ListResponse {
     pub data: Vec<CompleteAnimeItem>,
     pub total: Option<i64>,
     pub pagination: Option<Pagination>,
-}
-
-// Pre-compiled CSS selectors for performance
-lazy_static! {
-    static ref ITEM_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-    static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagenavix .page-numbers:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagenavix .next.page-numbers").unwrap();
 }
 
 // Cache configuration
@@ -126,27 +110,24 @@ fn parse_anime_page(
     html: &str,
     slug: &str,
 ) -> Result<(Vec<CompleteAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut anime_list = Vec::new();
 
+    let item_selector = selector(".venz ul li").unwrap();
+    let title_selector = selector(".thumbz h2.jdlflm").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let episode_selector = selector(".epz").unwrap();
+    let pagination_selector = selector(".pagenavix .page-numbers:not(.next)").unwrap();
+    let next_selector = selector(".pagenavix .next.page-numbers").unwrap();
+
     // Extract anime items
-    for element in document.select(&ITEM_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
-
-        let slug = attr_from(&element, &LINK_SELECTOR, "href")
-            .and_then(|href| {
-                SLUG_REGEX
-                    .captures(&href)
-                    .and_then(|cap| cap.get(1))
-                    .map(|m| m.as_str().to_string())
-            })
-            .unwrap_or_default();
-
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
-
-        let episode_count = text_from_or(&element, &EPISODE_SELECTOR, "N/A");
-
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
+    for element in document.select(&item_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
+        let slug = extract_slug(&anime_url);
+        let poster = attr_from_or(&element, &img_selector, "src", "");
+        let episode_count = text_from_or(&element, &episode_selector, "N/A");
 
         if !title.is_empty() {
             anime_list.push(CompleteAnimeItem {
@@ -162,12 +143,12 @@ fn parse_anime_page(
     // Extract pagination information
     let current_page = slug.parse::<u32>().unwrap_or(1);
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .next_back()
         .and_then(|e| e.text().collect::<String>().trim().parse::<u32>().ok())
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
     let next_page = if has_next_page {
         Some(current_page + 1)
     } else {

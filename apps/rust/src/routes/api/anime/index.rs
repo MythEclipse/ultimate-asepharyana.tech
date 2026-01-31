@@ -1,5 +1,5 @@
 use crate::core::types::ApiResponse;
-use crate::helpers::{parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
+use crate::helpers::{parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from_or, selector, extract_slug, attr_from};
 
 use crate::routes::AppState;
 use crate::utils::error::AppError;
@@ -7,8 +7,6 @@ use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::{response::IntoResponse, routing::get, Json, Router};
 
-use lazy_static::lazy_static;
-use scraper::Selector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{info};
@@ -48,13 +46,6 @@ pub struct AnimeData {
 pub type AnimeDataResponse = ApiResponse<AnimeData>;
 pub type EmptyResponse = ApiResponse<()>;
 
-lazy_static! {
-    pub static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref EPISODE_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-}
 use crate::helpers::cache_ttl::CACHE_TTL_VERY_SHORT;
 const CACHE_TTL: u64 = CACHE_TTL_VERY_SHORT; // 5 minutes
 
@@ -164,20 +155,23 @@ fn parse_ongoing_anime(
     let document = parse_html(html);
     let mut ongoing_anime = Vec::new();
 
-    for element in document.select(&VENZ_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+    let venz_selector = selector(".venz ul li").unwrap();
+    let title_selector = selector(".thumbz h2.jdlflm").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let episode_selector = selector(".epz").unwrap();
 
-        let slug = attr_from(&element, &LINK_SELECTOR, "href")
-            .as_deref()
-            .and_then(|href: &str| href.split('/').nth(4))
-            .map(String::from)
-            .unwrap_or_default();
+    for element in document.select(&venz_selector) {
+        let title = text_from_or(&element, &title_selector, "");
 
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
+        let href = attr_from(&element, &link_selector, "href").unwrap_or_default();
+        let slug = extract_slug(&href);
 
-        let current_episode = text_from_or(&element, &EPISODE_SELECTOR, "N/A");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
 
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
+        let current_episode = text_from_or(&element, &episode_selector, "N/A");
+
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
 
         if !title.is_empty() {
             ongoing_anime.push(OngoingAnimeItem {
@@ -198,20 +192,23 @@ fn parse_complete_anime(
     let document = parse_html(html);
     let mut complete_anime = Vec::new();
 
-    for element in document.select(&VENZ_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
+    let venz_selector = selector(".venz ul li").unwrap();
+    let title_selector = selector(".thumbz h2.jdlflm").unwrap();
+    let link_selector = selector("a").unwrap();
+    let img_selector = selector("img").unwrap();
+    let episode_selector = selector(".epz").unwrap();
+    
+    for element in document.select(&venz_selector) {
+        let title = text_from_or(&element, &title_selector, "");
 
-        let slug = attr_from(&element, &LINK_SELECTOR, "href")
-            .as_deref()
-            .and_then(|href: &str| href.split('/').nth(4))
-            .map(String::from)
-            .unwrap_or_default();
+        let href = attr_from(&element, &link_selector, "href").unwrap_or_default();
+        let slug = extract_slug(&href);
 
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
 
-        let episode_count = text_from_or(&element, &EPISODE_SELECTOR, "N/A");
+        let episode_count = text_from_or(&element, &episode_selector, "N/A");
 
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
 
         if !title.is_empty() {
             complete_anime.push(CompleteAnimeItem {

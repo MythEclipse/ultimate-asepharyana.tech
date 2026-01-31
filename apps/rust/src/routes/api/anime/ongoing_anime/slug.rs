@@ -2,7 +2,10 @@
 use std::sync::Arc;
 
 // External crate imports
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from, attr_from_or};
+use crate::helpers::{
+    internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or, extract_slug,
+    parse_html, selector
+};
 use crate::routes::AppState;
 use crate::scraping::urls::OTAKUDESU_BASE_URL;
 use axum::{
@@ -12,17 +15,9 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use lazy_static::lazy_static;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
-
-use once_cell::sync::Lazy;
-use regex::Regex;
-
-// Pre-compiled regex for slug extraction
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 pub const ENDPOINT_METHOD: &str = "get";
 pub const ENDPOINT_PATH: &str = "/api/anime/ongoing-anime/{slug}";
@@ -58,17 +53,6 @@ pub struct OngoingAnimeResponse {
     pub pagination: Pagination,
 }
 
-lazy_static! {
-    pub static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-    pub static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-    pub static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    pub static ref EP_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-    pub static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    pub static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    pub static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-    pub static ref EPISODE_REGEX: regex::Regex = regex::Regex::new(r"\(([^)]+)\)").unwrap();
-}
 const CACHE_TTL: u64 = 300; // 5 minutes
 
 #[utoipa::path(
@@ -120,7 +104,7 @@ async fn fetch_ongoing_anime_page(
     let slug_clone = slug.clone();
 
     match tokio::task::spawn_blocking(move || {
-        parse_ongoing_anime_document(&Html::parse_document(&html), &slug_clone)
+        parse_ongoing_anime_document(&html, &slug_clone)
     })
     .await
     {
@@ -130,7 +114,7 @@ async fn fetch_ongoing_anime_page(
 }
 
 fn parse_ongoing_anime_document(
-    document: &Html,
+    html: &str,
     slug: &str,
 ) -> Result<(Vec<OngoingAnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
@@ -139,30 +123,30 @@ fn parse_ongoing_anime_document(
         slug
     );
 
+    let document = parse_html(html);
     let mut anime_list = Vec::new();
 
-    for element in document.select(&VENZ_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
-
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
-
-        let score = text_from_or(&element, &EP_SELECTOR, "N/A");
-
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
-
-        let slug = attr_from(&element, &LINK_SELECTOR, "href")
-            .and_then(|href| {
-                SLUG_REGEX
-                    .captures(&href)
-                    .and_then(|cap| cap.get(1))
-                    .map(|m| m.as_str().to_string())
-            })
-            .unwrap_or_default();
+    let venz_selector = selector(".venz ul li").unwrap();
+    let title_selector = selector(".thumbz h2.jdlflm").unwrap();
+    let img_selector = selector("img").unwrap();
+    let ep_selector = selector(".epz").unwrap();
+    let link_selector = selector("a").unwrap();
+    let pagination_selector = selector(".pagination .page-numbers:not(.next)").unwrap();
+    let next_selector = selector(".pagination .next").unwrap();
+    
+    for element in document.select(&venz_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
+        let score = text_from_or(&element, &ep_selector, "N/A");
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
+        
+        // Extract slug from the anime URL, not the current page slug
+        let item_slug = extract_slug(&anime_url);
 
         if !title.is_empty() {
             anime_list.push(OngoingAnimeItem {
                 title,
-                slug,
+                slug: item_slug,
                 poster,
                 score,
                 anime_url,
@@ -173,7 +157,7 @@ fn parse_ongoing_anime_document(
     let current_page = slug.parse::<u32>().unwrap_or(1);
 
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .next_back()
         .map(|e| {
             e.text()
@@ -184,7 +168,7 @@ fn parse_ongoing_anime_document(
         })
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
 
     let next_page = if has_next_page {
         Some(current_page + 1)

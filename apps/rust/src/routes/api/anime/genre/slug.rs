@@ -1,13 +1,12 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or};
+use crate::helpers::{
+    internal_err, Cache, fetch_html_with_retry, text_from_or, attr_from_or, extract_slug,
+    parse_html, selector
+};
 use crate::routes::AppState;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{extract::Path, response::IntoResponse, routing::get, Json, Router};
-use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
-use regex::Regex;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
@@ -52,19 +51,6 @@ pub struct GenreAnimeResponse {
 pub struct GenreQuery {
     pub page: Option<u32>,
 }
-
-lazy_static! {
-    static ref VENZ_SELECTOR: Selector = Selector::parse(".venz ul li").unwrap();
-    static ref TITLE_SELECTOR: Selector = Selector::parse(".thumbz h2.jdlflm").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-    static ref EP_SELECTOR: Selector = Selector::parse(".epz").unwrap();
-    static ref LINK_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref PAGINATION_SELECTOR: Selector =
-        Selector::parse(".pagination .page-numbers:not(.next)").unwrap();
-    static ref NEXT_SELECTOR: Selector = Selector::parse(".pagination .next").unwrap();
-}
-
-static SLUG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"/([^/]+)/?$").unwrap());
 
 const CACHE_TTL: u64 = 300; // 5 minutes
 
@@ -139,23 +125,23 @@ fn parse_genre_page(
     html: &str,
     current_page: u32,
 ) -> Result<(Vec<AnimeItem>, Pagination), Box<dyn std::error::Error + Send + Sync>> {
-    let document = Html::parse_document(html);
+    let document = parse_html(html);
     let mut anime_list = Vec::new();
 
-    for element in document.select(&VENZ_SELECTOR) {
-        let title = text_from_or(&element, &TITLE_SELECTOR, "");
-
-        let poster = attr_from_or(&element, &IMG_SELECTOR, "src", "");
-
-        let score = text_from_or(&element, &EP_SELECTOR, "N/A");
-
-        let anime_url = attr_from_or(&element, &LINK_SELECTOR, "href", "");
-
-        let slug = SLUG_REGEX
-            .captures(&anime_url)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str().to_string())
-            .unwrap_or_default();
+    let venz_selector = selector(".venz ul li").unwrap();
+    let title_selector = selector(".thumbz h2.jdlflm").unwrap();
+    let img_selector = selector("img").unwrap();
+    let ep_selector = selector(".epz").unwrap();
+    let link_selector = selector("a").unwrap();
+    let pagination_selector = selector(".pagination .page-numbers:not(.next)").unwrap();
+    let next_selector = selector(".pagination .next").unwrap();
+    
+    for element in document.select(&venz_selector) {
+        let title = text_from_or(&element, &title_selector, "");
+        let poster = attr_from_or(&element, &img_selector, "src", "");
+        let score = text_from_or(&element, &ep_selector, "N/A");
+        let anime_url = attr_from_or(&element, &link_selector, "href", "");
+        let slug = extract_slug(&anime_url);
 
         // Try to determine status from score text
         let status_text = score.to_lowercase();
@@ -180,7 +166,7 @@ fn parse_genre_page(
     }
 
     let last_visible_page = document
-        .select(&PAGINATION_SELECTOR)
+        .select(&pagination_selector)
         .next_back()
         .map(|e| {
             e.text()
@@ -191,7 +177,7 @@ fn parse_genre_page(
         })
         .unwrap_or(1);
 
-    let has_next_page = document.select(&NEXT_SELECTOR).next().is_some();
+    let has_next_page = document.select(&next_selector).next().is_some();
     let next_page = if has_next_page {
         Some(current_page + 1)
     } else {
