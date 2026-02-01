@@ -8,6 +8,7 @@ pub use super::chat_room::Entity as ChatRoom;
 pub use super::chat_room_member::Entity as ChatRoomMember;
 pub use super::comments::Entity as Comments;
 pub use super::email_verification_token::Entity as EmailVerificationToken;
+pub use super::image_cache::Entity as ImageCache;
 pub use super::likes::Entity as Likes;
 pub use super::password_reset_token::Entity as PasswordResetToken;
 pub use super::permission::Entity as Permission;
