@@ -18,3 +18,4 @@ pub mod transaction;
 pub mod uuid_utils;
 pub mod versioning;
 pub mod mailer;
+pub mod ryzen_cdn;

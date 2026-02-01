@@ -30,12 +30,16 @@ pub fn generate_mods_auto(
 
     // Collect all unique directories
     let mut all_dirs: Vec<PathBuf> = routes_by_dir.keys().cloned().collect();
+    if !all_dirs.contains(&api_root.to_path_buf()) {
+        all_dirs.push(api_root.to_path_buf());
+    }
     all_dirs.sort();
 
     // Generate mod.rs for each directory (deepest first)
     all_dirs.reverse();
     for dir in &all_dirs {
-        let dir_routes = routes_by_dir.get(dir).unwrap();
+        let binding = Vec::new();
+        let dir_routes = routes_by_dir.get(dir).unwrap_or(&binding);
         generate_mod_for_directory_auto(
             dir,
             api_root,

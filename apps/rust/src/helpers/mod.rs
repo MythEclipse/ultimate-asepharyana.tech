@@ -9,7 +9,7 @@ pub mod dev;
 pub mod infra;
 pub mod io;
 pub mod web;
-pub mod ryzen_cdn;
+
 
 // Re-exports for convenience (backward compatibility)
 
@@ -79,7 +79,7 @@ pub use infra::versioning;
 pub use infra::mailer;
 
 // Ryzen CDN
-pub use ryzen_cdn::*;
+pub use infra::ryzen_cdn::*;
 
 
 // ============================================================================

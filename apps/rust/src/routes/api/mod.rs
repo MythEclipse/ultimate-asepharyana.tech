@@ -8,11 +8,9 @@ use crate::routes::AppState;
 pub mod anime;
 pub mod anime2;
 pub mod auth;
-pub mod compress;
-pub mod drivepng;
 pub mod komik;
 pub mod proxy;
-pub mod uploader;
+pub mod tools;
 
 use crate::routes::api::anime2::detail::slug::AnimeDetailData;
 use crate::routes::api::anime2::detail::slug::DetailResponse;
@@ -83,9 +81,6 @@ use crate::routes::api::auth::reset_password::ResetPasswordResponse;
 use crate::routes::api::auth::verify::ResendVerificationRequest;
 use crate::routes::api::auth::verify::VerifyQuery;
 use crate::routes::api::auth::verify::VerifyResponse;
-use crate::routes::api::compress::CompressData;
-use crate::routes::api::compress::CompressQuery;
-use crate::routes::api::drivepng::ListResponse as ListResponse_1;
 use crate::routes::api::komik::chapter::ChapterData;
 use crate::routes::api::komik::chapter::ChapterQuery;
 use crate::routes::api::komik::chapter::ChapterResponse;
@@ -126,11 +121,17 @@ use crate::routes::api::proxy::image_cache::ImageCacheBatchResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheRequest;
 use crate::routes::api::proxy::image_cache::ImageCacheResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheResult;
-use crate::routes::api::uploader::ListResponse as ListResponse_2;
+use crate::routes::api::tools::compress::CompressData;
+use crate::routes::api::tools::compress::CompressQuery;
+use crate::routes::api::tools::drivepng::ListResponse as ListResponse_1;
+use crate::routes::api::tools::uploader::ListResponse as ListResponse_2;
 
 #[derive(utoipa::OpenApi)]
     #[openapi(
         paths(
+              crate::routes::api::tools::compress::compress,
+              crate::routes::api::tools::drivepng::drivepng,
+              crate::routes::api::tools::uploader::uploader,
               crate::routes::api::proxy::croxy::fetch_with_proxy_only,
               crate::routes::api::proxy::image_cache::image_cache,
               crate::routes::api::proxy::image_cache::image_cache_batch,
@@ -174,10 +175,7 @@ use crate::routes::api::uploader::ListResponse as ListResponse_2;
               crate::routes::api::anime::index::anime,
               crate::routes::api::anime::genre_list::genres,
               crate::routes::api::anime::latest::latest,
-              crate::routes::api::anime::search::search,
-              crate::routes::api::compress::compress,
-              crate::routes::api::drivepng::drivepng,
-              crate::routes::api::uploader::uploader
+              crate::routes::api::anime::search::search
         ),
         components(
             schemas(
@@ -250,9 +248,6 @@ use crate::routes::api::uploader::ListResponse as ListResponse_2;
                   ResendVerificationRequest,
                   VerifyQuery,
                   VerifyResponse,
-                  CompressData,
-                  CompressQuery,
-                  ListResponse_1,
                   ChapterData,
                   ChapterQuery,
                   ChapterResponse,
@@ -293,6 +288,9 @@ use crate::routes::api::uploader::ListResponse as ListResponse_2;
                   ImageCacheRequest,
                   ImageCacheResponse,
                   ImageCacheResult,
+                  CompressData,
+                  CompressQuery,
+                  ListResponse_1,
                   ListResponse_2
             )
         ),
@@ -340,11 +338,12 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = anime::register_routes(router);
     router = anime2::register_routes(router);
     router = auth::register_routes(router);
-    router = compress::register_routes(router);
-    router = drivepng::register_routes(router);
     router = komik::register_routes(router);
     router = proxy::register_routes(router);
-    router = uploader::register_routes(router);
+    router = tools::register_routes(router);
+    router = router.route("/api/compress", axum::routing::get(crate::routes::api::tools::compress::compress));
+    router = router.route("/api/drivepng", axum::routing::get(crate::routes::api::tools::drivepng::drivepng));
+    router = router.route("/api/uploader", axum::routing::get(crate::routes::api::tools::uploader::uploader));
     router = router.route("/api/proxy/croxy", axum::routing::get(crate::routes::api::proxy::croxy::fetch_with_proxy_only));
     router = router.route("/api/proxy/image-cache", axum::routing::post(crate::routes::api::proxy::image_cache::image_cache));
     router = router.route("/api/proxy/image-cache/batch", axum::routing::post(crate::routes::api::proxy::image_cache::image_cache_batch));
@@ -389,8 +388,5 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = router.route("/api/anime/genres", axum::routing::get(crate::routes::api::anime::genre_list::genres));
     router = router.route("/api/anime/latest", axum::routing::get(crate::routes::api::anime::latest::latest));
     router = router.route("/api/anime/search", axum::routing::get(crate::routes::api::anime::search::search));
-    router = router.route("/api/compress", axum::routing::get(crate::routes::api::compress::compress));
-    router = router.route("/api/drivepng", axum::routing::get(crate::routes::api::drivepng::drivepng));
-    router = router.route("/api/uploader", axum::routing::get(crate::routes::api::uploader::uploader));
     router
 }
