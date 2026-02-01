@@ -22,14 +22,12 @@ export default function CreatePost(props: CreatePostProps) {
         setError('');
 
         try {
-            const response = await httpClient.fetchJson<{ success: boolean; post: Post }>(
+            const response = await httpClient.request<{ success: boolean; post: Post }>(
                 '/api/sosmed/posts',
+                'POST',
                 {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        content: content(),
-                        imageUrl: imageUrl() || undefined,
-                    }),
+                    content: content(),
+                    imageUrl: imageUrl() || undefined,
                 }
             );
 

@@ -22,12 +22,10 @@ export default function CommentSection(props: CommentSectionProps) {
         setIsLoading(true);
 
         try {
-            const response = await httpClient.fetchJson<{ success: boolean; comment: Comment }>(
+            const response = await httpClient.request<{ success: boolean; comment: Comment }>(
                 `/api/sosmed/posts/${props.postId}/comments`,
-                {
-                    method: 'POST',
-                    body: JSON.stringify({ content: content() }),
-                }
+                'POST',
+                { content: content() }
             );
 
             if (response.success) {

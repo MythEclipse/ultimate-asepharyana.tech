@@ -26,9 +26,9 @@ export default function PostCard(props: PostCardProps) {
 
         try {
             const method = isLiked() ? 'DELETE' : 'POST';
-            const response = await httpClient.fetchJson<{ success: boolean; like?: Like }>(
+            const response = await httpClient.request<{ success: boolean; like?: Like }>(
                 `/api/sosmed/posts/${props.post.id}/like`,
-                { method }
+                method
             );
 
             if (response.success) {
@@ -56,9 +56,7 @@ export default function PostCard(props: PostCardProps) {
         if (!confirm('Are you sure you want to delete this post?')) return;
 
         try {
-            await httpClient.fetchJson(`/api/sosmed/posts/${props.post.id}`, {
-                method: 'DELETE'
-            });
+            await httpClient.request(`/api/sosmed/posts/${props.post.id}`, 'DELETE');
             props.onDelete(props.post.id);
         } catch (err) {
             console.error(err);
