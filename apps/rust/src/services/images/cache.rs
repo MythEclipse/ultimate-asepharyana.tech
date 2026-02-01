@@ -32,7 +32,8 @@ pub const IMAGE_CACHE_LOCK_TTL: u64 = 60;
 
 /// Picser API endpoints in priority order
 pub const PICSER_API_ENDPOINTS: &[&str] = &[
-    "https://picser-8ux2jp5r6-asepharyana71s-projects.vercel.app/api/upload",
+    "https://picser-two.vercel.app/api/upload",
+    "https://picser-mytheclipse8647-ahoqi9ef.leapcell.dev/api/upload",
     "https://picser.pages.dev/api/upload",
 ];
 
