@@ -104,7 +104,7 @@ pub fn pluralize(word: &str) -> String {
 
     if lower.ends_with('y') {
         format!("{}ies", &lower[..lower.len() - 1])
-    } else if lower.ends_with('s') || lower.ends_with("ch") || lower.ends_with("sh") {
+    } else if lower.ends_with('s') || lower.ends_with("ch") || lower.ends_with("sh") || lower.ends_with('x') {
         format!("{}es", lower)
     } else {
         format!("{}s", lower)
