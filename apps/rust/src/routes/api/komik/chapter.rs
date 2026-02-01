@@ -1,6 +1,7 @@
 //! Handler for the komik chapter endpoint.
 
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, cache_image_urls_batch_lazy, parse_html};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::services::images::cache::cache_image_urls_batch_lazy;
 use crate::helpers::scraping::{selector, text, attr};
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;

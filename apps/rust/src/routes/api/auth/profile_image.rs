@@ -98,7 +98,7 @@ pub async fn upload_image(
     let user_id = &claims.user_id;
 
     // Check if storage is configured
-    if profile_storage::get_storage().is_none() {
+    if profile::get_storage().is_none() {
         return Err(AppError::Other(
             "Image storage is not configured".to_string(),
         ));

@@ -14,7 +14,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::infra::http_client::http_client;
 
-use super::cache::Cache;
+use crate::helpers::Cache;
 
 use crate::helpers::cache_ttl::CACHE_TTL_IMAGE;
 

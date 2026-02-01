@@ -1,77 +1,85 @@
 //! Helper utilities for easier development.
 //!
-//! Comprehensive collection of 30 utility modules for cleaner, more maintainable code.
+//! Comprehensive collection of updated utility modules for cleaner, more maintainable code.
 
-// Core helpers
-// pub mod anime2_cache; // Moved to scraping::anime::cache
-pub mod api_response;
-pub mod errors;
-pub mod handler;
-pub mod pagination;
-pub mod prelude;
-pub mod response;
+// Submodules
+pub mod core;
+pub mod data;
+pub mod dev;
+pub mod infra;
+pub mod io;
+pub mod web;
 
-// Data manipulation
-pub mod collections;
-pub mod convert;
-pub mod crypto;
-pub mod datetime;
-pub mod json;
-pub mod numbers;
-pub mod string;
-pub mod text;
+// Re-exports for convenience (backward compatibility)
 
-// I/O helpers
-pub mod cache;
-pub mod cache_tags;
-pub mod cache_ttl;
-pub mod file;
-// pub mod image_cache; // Moved to services::images::cache
-pub mod retry;
-pub mod soft_delete;
+// Core
+pub use core::api_response;
+pub use core::errors;
+pub use core::handler;
+pub use core::pagination;
+pub use core::prelude;
+pub use core::response;
 
-// Web/API helpers
-pub mod query;
-pub mod request;
-pub mod scraping;
-pub mod url;
-pub mod validation;
-pub mod http; // Added http helpers
+// Data
+pub use data::collections;
+pub use data::convert;
+pub use data::crypto;
+pub use data::datetime;
+pub use data::json;
+pub use data::numbers;
+pub use data::string;
+pub use data::text;
 
+// IO
+pub use io::cache;
+pub use io::cache_tags;
+pub use io::cache_ttl;
+pub use io::file;
+pub use io::retry;
+pub use io::soft_delete;
 
-// Development helpers
-pub mod async_utils;
-pub mod logging;
-pub mod memory;
-pub mod performance;
-pub mod result_ext;
-pub mod serde_helpers;
-pub mod testing;
+// Web
+pub use web::query;
+pub use web::request;
+pub use web::scraping;
+pub use web::url;
+pub use web::validation;
+pub use web::http;
 
-// Infrastructure helpers
-pub mod bulk;
-pub mod console;
-pub mod email_template;
-pub mod encryption;
-pub mod env;
-pub mod form_request;
-pub mod health_check;
-pub mod import_export;
-// pub mod profile_storage; // Moved to services::storage::profile
-pub mod query_profiler;
-pub mod resource;
-pub mod searchable;
-pub mod security;
-pub mod signed_url;
-pub mod sluggable;
-pub mod state_machine;
-pub mod tenant;
-pub mod transaction;
-pub mod uuid_utils;
-pub mod versioning;
+// Dev
+pub use dev::async_utils;
+pub use dev::logging;
+pub use dev::memory;
+pub use dev::performance;
+pub use dev::result_ext;
+pub use dev::serde_helpers;
+pub use dev::testing;
+
+// Infra
+pub use infra::bulk;
+pub use infra::console;
+pub use infra::email_template;
+pub use infra::encryption;
+pub use infra::env;
+pub use infra::form_request;
+pub use infra::health_check;
+pub use infra::import_export;
+pub use infra::query_profiler;
+pub use infra::resource;
+pub use infra::searchable;
+pub use infra::security;
+pub use infra::signed_url;
+pub use infra::sluggable;
+pub use infra::state_machine;
+pub use infra::tenant;
+pub use infra::transaction;
+pub use infra::uuid_utils;
+pub use infra::versioning;
+pub use infra::mailer;
+
 
 // ============================================================================
-// Re-exports for convenience
+// Original Re-exports (preserved)
 // ============================================================================
 
 // Prelude (common imports)
@@ -94,10 +102,6 @@ pub use retry::{
 
 // Caching
 pub use cache::{cache_key, cache_key_multi, Cache, DEFAULT_CACHE_TTL};
-
-// Image caching
-// Image caching - See services::images::cache
-
 
 // Scraping
 pub use scraping::{

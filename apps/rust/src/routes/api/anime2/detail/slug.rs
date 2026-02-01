@@ -1,4 +1,5 @@
-use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html, get_cached_or_original, cache_image_urls_batch_lazy};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::services::images::cache::{get_cached_or_original, cache_image_urls_batch_lazy};
 use crate::helpers::scraping::{selector, text_from_or, extract_slug, text, attr};
 use crate::routes::AppState;
 use axum::extract::State;

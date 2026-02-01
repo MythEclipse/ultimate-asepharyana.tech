@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
-use crate::helpers::ImageCache;
+use crate::services::images::cache::ImageCache;
 use crate::routes::AppState;
 
 pub const ENDPOINT_METHOD: &str = "post";

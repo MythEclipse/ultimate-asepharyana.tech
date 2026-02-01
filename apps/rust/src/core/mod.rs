@@ -9,7 +9,7 @@ pub mod jwt;
 pub mod ratelimit;
 
 pub use config::CONFIG;
-pub use error::{ErrorResponse, LibError};
+
 pub use jwt::{encode_jwt, decode_jwt, Claims};
 pub use ratelimit::rate_limit_middleware;
 

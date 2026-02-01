@@ -1,6 +1,7 @@
 //! Handler for the detail endpoint.
 
-use crate::helpers::{get_cached_or_original, internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::helpers::{internal_err, Cache, fetch_html_with_retry, parse_html};
+use crate::services::images::cache::get_cached_or_original;
 use crate::helpers::scraping::{selector, text_from_or, text, attr};
 use crate::routes::AppState;
 use crate::scraping::urls::get_komik_url;
