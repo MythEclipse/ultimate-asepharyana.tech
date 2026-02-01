@@ -140,6 +140,7 @@ pub fn update_handler_file(
     Ok(vec![res])
 }
 
+#[allow(dead_code)]
 fn is_scaffolded_file(content: &str) -> bool {
     content.contains("//! Handler for the")
         && content.contains("#![allow(dead_code)]")
@@ -415,6 +416,7 @@ fn write_updated_content(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn inject_schemas_and_return_info(
     content: &str,
     module_path_prefix: &str,

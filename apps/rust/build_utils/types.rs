@@ -32,6 +32,7 @@ pub struct ResponseStructInfo {
     /// Field definitions for the struct
     pub fields: &'static str,
     /// Type string for SUCCESS_RESPONSE_BODY
+    #[allow(dead_code)]
     pub success_body: &'static str,
 }
 
