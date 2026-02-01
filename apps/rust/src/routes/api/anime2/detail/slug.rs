@@ -140,7 +140,7 @@ pub async fn slug(
 async fn fetch_anime_detail(
     slug: String,
 ) -> Result<AnimeDetailData, Box<dyn std::error::Error + Send + Sync>> {
-    let url = format!("https://alqanime.si/anime/{}/", slug);
+    let url = format!("https://alqanime.net/{}/", slug);
 
     let html = fetch_html_with_retry(&url)
         .await
@@ -254,26 +254,51 @@ fn parse_anime_detail_document(
     let mut downloads = Vec::new();
 
     for element in document.select(&download_container_selector) {
-        let resolution = text_from_or(&element, &resolution_selector, "");
+        let title = element
+            .select(&h3_selector)
+            .next()
+            .map(|e| text(&e))
+            .unwrap_or_else(|| "Unknown".to_string());
 
-        let mut links = Vec::new();
-        for link_element in element.select(&link_selector) {
-            let name = text(&link_element);
-            let url = attr(&link_element, "href").unwrap_or_default();
-            links.push(Link { name, url });
+        let category = title.to_lowercase();
+        let is_batch = category.contains("batch");
+        let is_ova = category.contains("ova");
+
+        // If we want to group by "Episode" (or Batch title), we collect all links for this block
+        // but we must preserve resolution info in the link name since DownloadItem has only one 'resolution' field
+        // which we will use for the Title.
+        
+        let mut all_links = Vec::new();
+
+        // Iterate over table rows to get resolution context
+        let row_selector = selector("table tr").unwrap();
+        for row in element.select(&row_selector) {
+            let resolution = text_from_or(&row, &resolution_selector, "");
+            
+            for link_element in row.select(&link_selector) {
+                let provider = text(&link_element);
+                let url = attr(&link_element, "href").unwrap_or_default();
+                
+                // Format name as "Resolution - Provider" (e.g., "360p - AceFile")
+                let name = if !resolution.is_empty() {
+                    format!("{} - {}", resolution, provider)
+                } else {
+                    provider
+                };
+
+                all_links.push(Link { name, url });
+            }
         }
 
-        let download_item = DownloadItem { resolution, links };
+        let download_item = DownloadItem {
+            resolution: title, // Use the 'resolution' field to store the Episode Title
+            links: all_links,
+        };
 
-        if let Some(h3) = element.select(&h3_selector).next() {
-            let category = text(&h3).to_lowercase();
-            if category.contains("batch") {
-                batch.push(download_item);
-            } else if category.contains("ova") {
-                ova.push(download_item);
-            } else {
-                downloads.push(download_item);
-            }
+        if is_batch {
+            batch.push(download_item);
+        } else if is_ova {
+            ova.push(download_item);
         } else {
             downloads.push(download_item);
         }
