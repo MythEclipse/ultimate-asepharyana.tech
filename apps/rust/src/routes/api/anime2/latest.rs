@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 // Import shared models and parsers
 use crate::models::anime2::{LatestAnimeItem, Pagination};
 use crate::scraping::anime2 as parsers;
-use crate::helpers::anime2_cache as cache_utils;
+use crate::scraping::anime::cache as cache_utils;
 
 
 #[derive(Deserialize, ToSchema)]

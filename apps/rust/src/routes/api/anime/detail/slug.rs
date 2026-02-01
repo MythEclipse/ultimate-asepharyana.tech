@@ -10,7 +10,7 @@ use crate::helpers::scraping::{attr, attr_from_or, extract_slug, selector, text,
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
 use crate::scraping::urls::OTAKUDESU_BASE_URL;
-use crate::utils::error::AppError;
+use crate::core::error::AppError;
 use axum::{
     extract::{Path, State},
     http::StatusCode,

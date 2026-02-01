@@ -18,8 +18,8 @@ use crate::entities::{email_verification_token, password_reset_token, session, u
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::routes::AppState;
-use crate::utils::auth::decode_jwt;
-use crate::utils::error::AppError;
+use crate::core::jwt::decode_jwt;
+use crate::core::error::AppError;
 
 pub const ENDPOINT_METHOD: &str = "delete";
 pub const ENDPOINT_PATH: &str = "/api/auth/account";

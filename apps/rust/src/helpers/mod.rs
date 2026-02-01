@@ -3,7 +3,7 @@
 //! Comprehensive collection of 30 utility modules for cleaner, more maintainable code.
 
 // Core helpers
-pub mod anime2_cache;
+// pub mod anime2_cache; // Moved to scraping::anime::cache
 pub mod api_response;
 pub mod errors;
 pub mod handler;
@@ -26,7 +26,7 @@ pub mod cache;
 pub mod cache_tags;
 pub mod cache_ttl;
 pub mod file;
-pub mod image_cache;
+// pub mod image_cache; // Moved to services::images::cache
 pub mod retry;
 pub mod soft_delete;
 
@@ -36,6 +36,8 @@ pub mod request;
 pub mod scraping;
 pub mod url;
 pub mod validation;
+pub mod http; // Added http helpers
+
 
 // Development helpers
 pub mod async_utils;
@@ -55,7 +57,7 @@ pub mod env;
 pub mod form_request;
 pub mod health_check;
 pub mod import_export;
-pub mod profile_storage;
+// pub mod profile_storage; // Moved to services::storage::profile
 pub mod query_profiler;
 pub mod resource;
 pub mod searchable;
@@ -94,10 +96,8 @@ pub use retry::{
 pub use cache::{cache_key, cache_key_multi, Cache, DEFAULT_CACHE_TTL};
 
 // Image caching
-pub use image_cache::{
-    cache_image_url, cache_image_url_lazy, cache_image_urls, cache_image_urls_batch_lazy,
-    get_cached_or_original, url_hash, ImageCache, ImageCacheConfig,
-};
+// Image caching - See services::images::cache
+
 
 // Scraping
 pub use scraping::{

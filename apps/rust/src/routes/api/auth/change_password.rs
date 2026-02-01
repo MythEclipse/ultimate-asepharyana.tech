@@ -11,9 +11,9 @@ use crate::entities::user;
 use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 use crate::routes::AppState;
-use crate::utils::auth::decode_jwt;
-use crate::utils::email::EmailService;
-use crate::utils::error::AppError;
+use crate::core::jwt::decode_jwt;
+use crate::helpers::mailer::EmailService;
+use crate::core::error::AppError;
 
 pub const ENDPOINT_METHOD: &str = "post";
 pub const ENDPOINT_PATH: &str = "/api/auth/change-password";

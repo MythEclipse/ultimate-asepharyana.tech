@@ -1,76 +1,139 @@
-// Error module for crate-wide error handling
-
-use crate::utils::error::AppError;
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
-};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
+use axum::response::IntoResponse;
 use thiserror::Error;
-use tokio::task::JoinError;
 
 #[derive(Error, Debug)]
-pub enum LibError {
-    #[error("An unknown error occurred")]
-    Unknown,
+pub enum AppError {
+    #[error("Environment variable not found: {0}")]
+    EnvVarNotFound(String),
+    #[error("Redis error: {0}")]
+    RedisError(#[from] redis::RedisError),
+    #[error("Reqwest error: {0}")]
+    ReqwestError(#[from] reqwest::Error),
+    #[error("JSON serialization/deserialization error: {0}")]
+    SerdeJsonError(#[from] serde_json::Error),
+    #[error("URL parsing error: {0}")]
+    UrlParseError(#[from] url::ParseError),
+    #[error("JWT error: {0}")]
+    JwtError(#[from] jsonwebtoken::errors::Error),
+    #[error("Scraper error: {0}")]
+    ScraperError(String),
     #[error("Fantoccini error: {0}")]
     FantocciniError(String),
+    #[error("Chromiumoxide error: {0}")]
+    ChromiumoxideError(String),
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Timeout error: {0}")]
+    TimeoutError(String),
+    #[error("Other error: {0}")]
+    Other(String),
+    #[error("HTTP error: {0}")]
+    HttpError(#[from] http::Error),
+
+    // Authentication Errors
+    #[error("Invalid credentials")]
+    InvalidCredentials,
+    #[error("Email already exists")]
+    EmailAlreadyExists,
+    #[error("Username already exists")]
+    UsernameAlreadyExists,
+    #[error("User not found")]
+    UserNotFound,
+    #[error("Invalid token")]
+    InvalidToken,
+    #[error("Token expired")]
+    TokenExpired,
+    #[error("Email not verified")]
+    EmailNotVerified,
+    #[error("Account is inactive")]
+    AccountInactive,
+    #[error("Password too weak: {0}")]
+    WeakPassword(String),
+    #[error("Invalid email format")]
+    InvalidEmail,
+    #[error("Database error: {0}")]
+    DatabaseError(String),
+    #[error("Bcrypt error: {0}")]
+    BcryptError(String),
+    #[error("Unauthorized")]
+    Unauthorized,
+    #[error("Forbidden")]
+    Forbidden,
 }
 
-impl From<JoinError> for LibError {
-    fn from(_: JoinError) -> Self {
-        LibError::Unknown
+impl From<failure::Error> for AppError {
+    fn from(err: failure::Error) -> Self {
+        AppError::Other(err.to_string())
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: String,
-}
-
-impl From<AppError> for ErrorResponse {
-    fn from(app_error: AppError) -> Self {
-        ErrorResponse {
-            error: app_error.to_string(),
-        }
+impl From<&str> for AppError {
+    fn from(s: &str) -> Self {
+        AppError::Other(s.to_string())
     }
 }
-impl IntoResponse for ErrorResponse {
-    fn into_response(self) -> Response {
-        let (status, error_message) = match self.error.as_str() {
-            _ if self.error.contains("Environment variable not found") => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
+
+impl From<String> for AppError {
+    fn from(s: String) -> Self {
+        AppError::Other(s)
+    }
+}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
+    fn from(err: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
+impl From<anyhow::Error> for AppError {
+    fn from(err: anyhow::Error) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
+impl From<deadpool_redis::PoolError> for AppError {
+    fn from(err: deadpool_redis::PoolError) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
+impl From<tokio::task::JoinError> for AppError {
+    fn from(err: tokio::task::JoinError) -> Self {
+        AppError::Other(err.to_string())
+    }
+}
+
+impl From<bcrypt::BcryptError> for AppError {
+    fn from(err: bcrypt::BcryptError) -> Self {
+        AppError::BcryptError(err.to_string())
+    }
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        let (status, error_message) = match self {
+            AppError::InvalidCredentials => (http::StatusCode::UNAUTHORIZED, self.to_string()),
+            AppError::EmailAlreadyExists => (http::StatusCode::CONFLICT, self.to_string()),
+            AppError::UsernameAlreadyExists => (http::StatusCode::CONFLICT, self.to_string()),
+            AppError::UserNotFound => (http::StatusCode::NOT_FOUND, self.to_string()),
+            AppError::InvalidToken => (http::StatusCode::UNAUTHORIZED, self.to_string()),
+            AppError::TokenExpired => (http::StatusCode::UNAUTHORIZED, self.to_string()),
+            AppError::EmailNotVerified => (http::StatusCode::FORBIDDEN, self.to_string()),
+            AppError::AccountInactive => (http::StatusCode::FORBIDDEN, self.to_string()),
+            AppError::WeakPassword(_) => (http::StatusCode::BAD_REQUEST, self.to_string()),
+            AppError::InvalidEmail => (http::StatusCode::BAD_REQUEST, self.to_string()),
+            AppError::Unauthorized => (http::StatusCode::UNAUTHORIZED, self.to_string()),
+            AppError::Forbidden => (http::StatusCode::FORBIDDEN, self.to_string()),
+            AppError::DatabaseError(_) => {
+                (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
-            _ if self.error.contains("Redis error") => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
-            }
-            _ if self.error.contains("Reqwest error") => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
-            }
-            _ if self
-                .error
-                .contains("JSON serialization/deserialization error") =>
-            {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
-            }
-            _ if self.error.contains("URL parsing error") => (StatusCode::BAD_REQUEST, self.error),
-            _ if self.error.contains("JWT error") => (StatusCode::UNAUTHORIZED, self.error),
-            _ if self.error.contains("Scraper error") => (StatusCode::BAD_GATEWAY, self.error),
-            _ if self.error.contains("Fantoccini error") => (StatusCode::BAD_GATEWAY, self.error),
-            _ if self.error.contains("IO error") => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
-            _ if self.error.contains("Timeout error") => (StatusCode::REQUEST_TIMEOUT, self.error),
-            _ if self.error.contains("Join error") => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.error)
-            }
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, self.error),
+            _ => (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
 
-        let body = Json(json!({
-            "error": error_message,
-        }));
-
+        // Note: crate::core::types needs to be available. 
+        // If not, we might need to adjust this line or ensure types are there.
+        // Since we are validating structure, let's assume types is in core/types.rs
+        let body = axum::Json(crate::core::types::ApiResponse::<()>::error(error_message));
         (status, body).into_response()
     }
 }

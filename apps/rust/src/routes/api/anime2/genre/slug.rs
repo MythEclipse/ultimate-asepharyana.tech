@@ -66,7 +66,7 @@ pub async fn slug(
 
             // Convert all poster URLs to CDN URLs concurrently
             let posters: Vec<String> = data.iter().map(|i| i.poster.clone()).collect();
-            crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            crate::services::images::cache::cache_image_urls_batch_lazy(
                 app_state.db.clone(),
                 &app_state.redis_pool,
                 posters,

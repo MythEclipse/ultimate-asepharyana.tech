@@ -2,7 +2,7 @@ use crate::core::types::ApiResponse;
 use crate::helpers::{parse_html, Cache, fetch_html_with_retry, text_from_or, attr_from_or, selector, extract_slug, attr_from};
 
 use crate::routes::AppState;
-use crate::utils::error::AppError;
+use crate::core::error::AppError;
 use crate::scraping::urls::get_otakudesu_url;
 use axum::extract::State;
 use axum::{response::IntoResponse, Json, Router};
@@ -87,7 +87,7 @@ pub async fn anime(
             let ongoing_len = ongoing_posters.len();
 
             let all_posters = [ongoing_posters, complete_posters].concat();
-            let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
+            let cached_posters = crate::services::images::cache::cache_image_urls_batch_lazy(
                 db.clone(),
                 &redis,
                 all_posters,

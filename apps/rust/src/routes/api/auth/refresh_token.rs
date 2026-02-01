@@ -12,8 +12,8 @@ use crate::entities::user;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 
 use crate::routes::AppState;
-use crate::utils::auth::{encode_jwt, Claims};
-use crate::utils::error::AppError;
+use crate::core::jwt::{encode_jwt, Claims};
+use crate::core::error::AppError;
 
 pub const ENDPOINT_METHOD: &str = "post";
 pub const ENDPOINT_PATH: &str = "/api/auth/refresh";

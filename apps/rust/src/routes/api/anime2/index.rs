@@ -12,7 +12,7 @@ use utoipa::ToSchema;
 // Import shared models and parsers
 use crate::models::anime2::{OngoingAnimeItem, CompleteAnimeItem};
 use crate::scraping::anime2 as parsers;
-use crate::helpers::anime2_cache as cache_utils;
+use crate::scraping::anime::cache as cache_utils;
 
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone)]

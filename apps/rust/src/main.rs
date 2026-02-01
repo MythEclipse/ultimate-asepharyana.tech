@@ -1,5 +1,5 @@
 #![doc = "Logging Setup"]
-use rustexpress::startup::Application;
+use rustexpress::bootstrap::Application;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {

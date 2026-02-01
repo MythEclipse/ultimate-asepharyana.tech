@@ -14,8 +14,8 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 
 use crate::models::user::{LoginResponse, UserResponse};
 use crate::routes::AppState;
-use crate::utils::auth::{encode_jwt, Claims};
-use crate::utils::error::AppError;
+use crate::core::jwt::{encode_jwt, Claims};
+use crate::core::error::AppError;
 
 // New helpers
 use crate::helpers::form_request::{validate, ValidationRules};

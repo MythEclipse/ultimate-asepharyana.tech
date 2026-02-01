@@ -12,8 +12,8 @@ use crate::entities::{password_reset_token, user};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 
 use crate::routes::AppState;
-use crate::utils::email::EmailService;
-use crate::utils::error::AppError;
+use crate::helpers::mailer::EmailService;
+use crate::core::error::AppError;
 
 // New helpers
 use crate::helpers::email_template::password_reset_email;

@@ -1,7 +1,7 @@
 // JWT Authentication middleware for Axum
 
 use crate::routes::AppState;
-use crate::utils::auth::{decode_jwt, Claims};
+use crate::core::jwt::{decode_jwt, Claims};
 use axum::{
     extract::{FromRequestParts, Request, State},
     http::{request::Parts, HeaderMap, StatusCode},

@@ -48,7 +48,7 @@ pub mod ws; // WebSocket with room management
 pub mod entities; // SeaORM entities
 pub mod models; // Data models + types
 pub mod seeder; // Database seeding
-pub mod utils; // General utilities
+pub mod services; // Domain services
 
 // ============================================================================
 // Application-Specific (Scraping)
@@ -61,4 +61,4 @@ pub mod scraping; // URLs, CDN, base URLs
 #[path = "../build_utils/mod.rs"]
 pub mod build_utils;
 pub mod routes;
-pub mod startup;
+pub mod bootstrap;

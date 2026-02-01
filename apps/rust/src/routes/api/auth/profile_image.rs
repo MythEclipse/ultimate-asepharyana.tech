@@ -18,10 +18,10 @@ use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;
-use crate::utils::auth::decode_jwt;
-use crate::utils::error::AppError;
+use crate::core::jwt::decode_jwt;
+use crate::core::error::AppError;
 
-use crate::helpers::profile_storage::{
+use crate::services::storage::profile::{
     self, delete_profile_image, upload_profile_image, ProfileStorageError, MAX_FILE_SIZE,
 };
 

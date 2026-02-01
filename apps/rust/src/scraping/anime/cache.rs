@@ -17,7 +17,7 @@ pub async fn cache_posters<T: HasPoster>(
     let db = app_state.db.clone();
     let redis = app_state.redis_pool.clone();
     
-    crate::helpers::image_cache::cache_image_urls_batch_lazy(
+    crate::services::images::cache::cache_image_urls_batch_lazy(
         db,
         &redis,
         posters,
@@ -41,7 +41,7 @@ pub async fn cache_and_update_posters<T: HasPoster + Clone>(
     let db = app_state.db.clone();
     let redis = app_state.redis_pool.clone();
     
-    let cached_posters = crate::helpers::image_cache::cache_image_urls_batch_lazy(
+    let cached_posters = crate::services::images::cache::cache_image_urls_batch_lazy(
         db,
         &redis,
         posters,
@@ -74,7 +74,7 @@ pub async fn cache_multiple_collections(
     let db = app_state.db.clone();
     let redis = app_state.redis_pool.clone();
     
-    crate::helpers::image_cache::cache_image_urls_batch_lazy(
+    crate::services::images::cache::cache_image_urls_batch_lazy(
         db,
         &redis,
         all_posters,

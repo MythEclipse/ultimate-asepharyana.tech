@@ -10,9 +10,9 @@ use tracing::{debug, error, warn};
 use crate::helpers::cache_ttl::CACHE_TTL_VERY_SHORT;
 use crate::infra::http_client::http_client;
 use crate::infra::redis::get_redis_conn;
-use crate::utils::error::AppError;
-use crate::utils::headers::common_headers;
-use crate::utils::http::is_internet_baik_block_page;
+use crate::core::error::AppError;
+use crate::helpers::http::common_headers;
+use crate::helpers::http::is_internet_baik_block_page;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {

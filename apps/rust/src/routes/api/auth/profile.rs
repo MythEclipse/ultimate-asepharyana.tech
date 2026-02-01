@@ -12,8 +12,8 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 
 use crate::models::user::UserResponse;
 use crate::routes::AppState;
-use crate::utils::auth::decode_jwt;
-use crate::utils::error::AppError;
+use crate::core::jwt::decode_jwt;
+use crate::core::error::AppError;
 
 
 /// Update profile request

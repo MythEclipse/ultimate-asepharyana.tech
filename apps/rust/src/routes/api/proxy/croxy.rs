@@ -10,7 +10,7 @@ use utoipa::ToSchema;
 
 use crate::infra::proxy::fetch_with_proxy;
 use crate::routes::AppState;
-use crate::utils::error::AppError;
+use crate::core::error::AppError;
 
 
 #[derive(Debug, Deserialize, ToSchema)]

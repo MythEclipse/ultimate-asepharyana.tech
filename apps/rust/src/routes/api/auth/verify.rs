@@ -17,8 +17,8 @@ use crate::entities::{email_verification_token, user};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 
 use crate::routes::AppState;
-use crate::utils::email::EmailService;
-use crate::utils::error::AppError;
+use crate::helpers::mailer::EmailService;
+use crate::core::error::AppError;
 
 
 /// Verify email query parameters

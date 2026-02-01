@@ -1,5 +1,5 @@
 use crate::core::config::CONFIG;
-use crate::utils::error::AppError;
+use crate::core::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::env;
 
