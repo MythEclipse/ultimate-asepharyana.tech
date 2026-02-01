@@ -46,27 +46,9 @@ const PROJECTS: Project[] = [
     images: { light: '/project-komik.png', dark: '/project-komik.png' },
     linkUrl: '/komik',
   },
-  {
-    title: 'Sosmed Tools',
-    description: 'Unduh video dan media dari platform sosial media',
-    images: { light: '/project-sosmed.png', dark: '/project-sosmed.png' },
-    linkUrl: '/sosmed',
-  },
-  {
-    title: 'AI Chat',
-    description: 'Obrolan dengan AI menggunakan Google Gemini',
-    images: { light: '/project-chat.png', dark: '/project-chat.png' },
-    linkUrl: '/chat',
-  },
-  {
-    title: 'Compressor',
-    description: 'Kompres gambar dan video dengan mudah',
-    images: {
-      light: '/project-compressor.png',
-      dark: '/project-compressor.png',
-    },
-    linkUrl: '/compressor',
-  },
+
+
+
 ];
 
 function ProjectCard(props: { project: Project; imageSrc: string }) {
