@@ -3,7 +3,10 @@ import { createSignal, Show, For } from 'solid-js';
 import { useTheme } from '../providers/theme-provider';
 import { useAuth } from '~/lib/auth-context';
 
-const navLinks = [{ href: '/project', label: 'Project' }];
+const navLinks = [
+  { href: '/project', label: 'Project' },
+  { href: '/sosmed', label: 'Sosmed' },
+];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = createSignal(false);
@@ -48,12 +51,11 @@ export function Navbar() {
             {(link) => (
               <A
                 href={link.href}
-                class={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 ${
-                  location.pathname === link.href ||
-                  (link.href !== '/' && location.pathname.startsWith(link.href))
+                class={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 ${location.pathname === link.href ||
+                    (link.href !== '/' && location.pathname.startsWith(link.href))
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground'
-                }`}
+                  }`}
               >
                 {link.label}
                 <Show
@@ -182,11 +184,10 @@ export function Navbar() {
               {(link) => (
                 <A
                   href={link.href}
-                  class={`block py-3 px-4 text-sm font-medium rounded-lg transition-all ${
-                    location.pathname === link.href
+                  class={`block py-3 px-4 text-sm font-medium rounded-lg transition-all ${location.pathname === link.href
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
-                  }`}
+                    }`}
                   onClick={() => setIsOpen(false)}
                 >
                   {link.label}
