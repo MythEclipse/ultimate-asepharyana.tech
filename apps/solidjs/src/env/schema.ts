@@ -9,8 +9,10 @@ export const serverScheme = z.object({
   AUTH_SECRET: z.string(),
   AUTH_TRUST_HOST: z.string().optional(),
   AUTH_URL: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
 });
 
 export const clientScheme = z.object({
   MODE: z.enum(['development', 'production', 'test']).default('development'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
 });

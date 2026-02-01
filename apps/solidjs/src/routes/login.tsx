@@ -6,7 +6,7 @@ import { useAuth } from '~/lib/auth-context';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, user, loading } = useAuth();
+  const { login, googleLogin, user, loading } = useAuth();
 
   const [formData, setFormData] = createSignal({
     email: '',
@@ -20,6 +20,63 @@ export default function LoginPage() {
   createEffect(() => {
     if (user() && !loading()) {
       navigate('/dashboard');
+    }
+  });
+
+  const handleGoogleCallback = async (response: any) => {
+    try {
+      setIsLoading(true);
+      await googleLogin(response.credential);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+      setError('Google login failed. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  createEffect(() => {
+    if (!document.getElementById('google-client-script')) {
+      const script = document.createElement('script');
+      script.id = 'google-client-script';
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (window.google) {
+          window.google.accounts.id.initialize({
+            client_id: import.meta.env.GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+            callback: handleGoogleCallback,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+          const btnContainer = document.getElementById('google-btn-container');
+          if (btnContainer) {
+            window.google.accounts.id.renderButton(btnContainer, {
+              theme: 'outline',
+              size: 'large',
+              width: '100%',
+              text: 'continue_with',
+            });
+          }
+        }
+      };
+      document.body.appendChild(script);
+    } else if (window.google) {
+      // Re-render if script already loaded (e.g. navigation back)
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+        callback: handleGoogleCallback,
+      });
+      const btnContainer = document.getElementById('google-btn-container');
+      if (btnContainer) {
+        window.google.accounts.id.renderButton(btnContainer, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          text: 'continue_with',
+        });
+      }
     }
   });
 
@@ -127,6 +184,22 @@ export default function LoginPage() {
                     <p class="text-sm text-destructive">{error()}</p>
                   </Motion.div>
                 </Show>
+
+                {/* Google Login */}
+                <div class="mb-6">
+                  <div id="google-btn-container" class="w-full flex justify-center h-[40px]" />
+                </div>
+
+                <div class="relative mb-6">
+                  <div class="absolute inset-0 flex items-center">
+                    <span class="w-full border-t border-border/50"></span>
+                  </div>
+                  <div class="relative flex justify-center text-xs uppercase">
+                    <span class="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} class="space-y-5">

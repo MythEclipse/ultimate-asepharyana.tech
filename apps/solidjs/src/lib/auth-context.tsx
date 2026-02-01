@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  googleLogin: (idToken: string) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -49,6 +50,15 @@ export function AuthProvider(props: ParentProps) {
     setUser(data.user);
   };
 
+  const googleLogin = async (idToken: string) => {
+    const data = await httpClient.request<{ user: User }>(
+      '/api/auth/google',
+      'POST',
+      { idToken },
+    );
+    setUser(data.user);
+  };
+
   const register = async (data: RegisterData) => {
     await httpClient.request('/api/auth/register', 'POST', data);
     // After registration, login automatically
@@ -73,6 +83,7 @@ export function AuthProvider(props: ParentProps) {
         login,
         register,
         logout,
+        googleLogin,
         refreshUser,
       }}
     >
