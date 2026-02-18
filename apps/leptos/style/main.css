@@ -244,6 +244,16 @@
   animation: float-slow 18s ease-in-out infinite -10s;
 }
 
+/* Scroll Reveal Animations */
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-stagger-1.is-visible { transition-delay: 100ms; }
+.reveal-stagger-2.is-visible { transition-delay: 200ms; }
+.reveal-stagger-3.is-visible { transition-delay: 300ms; }
+
 /* Selection */
 ::selection {
   background: hsla(var(--primary), 0.3);

@@ -2,6 +2,7 @@ use leptos::*;
 use leptos_meta::Title;
 use crate::components::sosmed::post_card::PostCard;
 use crate::components::sosmed::create_post::CreatePost;
+use crate::components::ui::scroll_observer::ScrollObserver;
 use crate::api::social::get_posts;
 
 #[component]
@@ -66,16 +67,17 @@ pub fn SosmedPage() -> impl IntoView {
                             view! {
                                 <div class="space-y-8">
                                     {posts.into_iter().enumerate().map(|(i, post)| view! {
-                                        <div 
-                                            class="animate-slide-up opacity-0 fill-mode-forwards" 
-                                            style=format!("animation-delay: {}ms", i * 100 + 400)
+                                        <ScrollObserver 
+                                            class="w-full"
+                                            // Stagger the first few items for initial impact
+                                            observe_class=if i < 3 { format!("reveal-on-scroll reveal-stagger-{}", i + 1) } else { "reveal-on-scroll".to_string() }
                                         >
                                             <PostCard
                                                 post=post
                                                 on_post_updated=handle_refresh
                                                 on_delete=handle_delete
                                             />
-                                        </div>
+                                        </ScrollObserver>
                                     }).collect_view()}
                                 </div>
                             }.into_view()

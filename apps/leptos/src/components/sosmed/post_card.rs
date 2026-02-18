@@ -1,4 +1,5 @@
 use leptos::*;
+use std::time::Duration;
 use crate::types::Post;
 use crate::providers::use_auth;
 use gloo_storage::{LocalStorage, Storage};
@@ -20,6 +21,8 @@ pub fn PostCard(
     let (post, _set_post) = create_signal(post);
     let (show_comments, set_show_comments) = create_signal(false);
     let (is_liking, set_is_liking) = create_signal(false);
+    let (show_heart_anim, set_show_heart_anim) = create_signal(false);
+    let (image_loaded, set_image_loaded) = create_signal(false);
 
     let is_liked = move || {
         let current_user_id = user.get().map(|u| u.id);
@@ -44,6 +47,10 @@ pub fn PostCard(
         
         if let Ok(token) = LocalStorage::get::<String>("access_token") {
             set_is_liking.set(true);
+            set_show_heart_anim.set(true);
+            // Reset animation state after a short delay
+            set_timeout(move || set_show_heart_anim.set(false), Duration::from_millis(800));
+
             let post_id = post.get().id;
             
             spawn_local(async move {
@@ -122,11 +129,16 @@ pub fn PostCard(
                 </p>
 
                 <Show when=move || post.get().image_url.is_some()>
-                    <div class="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group/img">
+                    <div class="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group/img bg-white/5">
+                        <div class=move || format!("absolute inset-0 bg-white/5 animate-shimmer {}", if image_loaded.get() { "hidden" } else { "block" }) />
                         <img
                             src=move || post.get().image_url.unwrap_or_default()
                             alt="Visual Attachment"
-                            class="w-full h-auto max-h-[600px] object-cover transition-transform duration-1000 group-hover/img:scale-105"
+                            on:load=move |_| set_image_loaded.set(true)
+                            class=move || format!(
+                                "w-full h-auto max-h-[600px] object-cover transition-all duration-1000 group-hover/img:scale-105 {}",
+                                if image_loaded.get() { "opacity-100" } else { "opacity-0" }
+                            )
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
                     </div>
@@ -134,18 +146,27 @@ pub fn PostCard(
             </div>
 
             // Actions
-            <div class="flex items-center gap-4 pt-8 mt-8 border-t border-white/5">
+            <div class="flex items-center gap-4 pt-8 mt-8 border-t border-white/5 relative">
+                // Heart Explosion layer
+                <Show when=move || show_heart_anim.get()>
+                     <div class="absolute left-12 -top-12 pointer-events-none z-50">
+                        <span class="absolute animate-bounce-in text-4xl">"❤️"</span>
+                        <span class="absolute animate-ping text-4xl text-red-500 opacity-75">"❤️"</span>
+                     </div>
+                </Show>
+
                 <button
                     on:click=handle_like
                     disabled=move || is_liking.get()
                     class=move || format!(
-                        "flex-1 flex items-center justify-center gap-3 py-3 rounded-2xl glass transition-all active:scale-95 {}",
+                        "flex-1 flex items-center justify-center gap-3 py-3 rounded-2xl glass transition-all active:scale-95 group/like relative overflow-hidden {}",
                         if is_liked() { "bg-red-500/10 text-red-500 border-red-500/40" } else { "border-white/5 text-muted-foreground/60 hover:bg-white/5 hover:text-foreground" }
                     )
                 >
+                    <div class="absolute inset-0 bg-red-500/20 scale-0 group-hover/like:scale-150 transition-transform duration-500 rounded-full blur-xl opacity-0 group-hover/like:opacity-100" />
                     <svg
-                        class=move || format!("w-5 h-5 transition-all duration-300 {}",
-                            if is_liked() { "scale-110 fill-current" } else { "fill-none" },
+                        class=move || format!("w-5 h-5 transition-all duration-300 relative z-10 {}",
+                            if is_liked() { "scale-110 fill-current" } else { "fill-none group-hover/like:scale-110" },
                         )
                         stroke="currentColor"
                         stroke-width="2.5"
@@ -153,7 +174,7 @@ pub fn PostCard(
                     >
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <span class="text-[10px] font-black uppercase tracking-widest">{move || post.get().likes.len()}</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest relative z-10">{move || post.get().likes.len()}</span>
                 </button>
 
                 <button
