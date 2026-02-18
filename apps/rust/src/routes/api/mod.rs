@@ -10,6 +10,7 @@ pub mod anime2;
 pub mod auth;
 pub mod komik;
 pub mod proxy;
+pub mod social;
 pub mod tools;
 
 use crate::routes::api::anime2::detail::slug::AnimeDetailData;
@@ -121,6 +122,11 @@ use crate::routes::api::proxy::image_cache::ImageCacheBatchResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheRequest;
 use crate::routes::api::proxy::image_cache::ImageCacheResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheResult;
+use crate::routes::api::social::CommentResponse;
+use crate::routes::api::social::CreatePostRequest;
+use crate::routes::api::social::LikeResponse;
+use crate::routes::api::social::PostResponse;
+use crate::routes::api::social::UserResponse;
 use crate::routes::api::tools::compress::CompressData;
 use crate::routes::api::tools::compress::CompressQuery;
 use crate::routes::api::tools::drivepng::ListResponse as ListResponse_1;
@@ -175,7 +181,11 @@ use crate::routes::api::tools::uploader::ListResponse as ListResponse_2;
               crate::routes::api::anime::index::anime,
               crate::routes::api::anime::genre_list::genres,
               crate::routes::api::anime::latest::latest,
-              crate::routes::api::anime::search::search
+              crate::routes::api::anime::search::search,
+              crate::routes::api::social::get_posts,
+              crate::routes::api::social::create_post,
+              crate::routes::api::social::delete_post,
+              crate::routes::api::social::like_post
         ),
         components(
             schemas(
@@ -288,6 +298,11 @@ use crate::routes::api::tools::uploader::ListResponse as ListResponse_2;
                   ImageCacheRequest,
                   ImageCacheResponse,
                   ImageCacheResult,
+                  CommentResponse,
+                  CreatePostRequest,
+                  LikeResponse,
+                  PostResponse,
+                  UserResponse,
                   CompressData,
                   CompressQuery,
                   ListResponse_1,
@@ -340,6 +355,7 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = auth::register_routes(router);
     router = komik::register_routes(router);
     router = proxy::register_routes(router);
+    router = social::register_routes(router);
     router = tools::register_routes(router);
     router = router.route("/api/compress", axum::routing::get(crate::routes::api::tools::compress::compress));
     router = router.route("/api/drivepng", axum::routing::get(crate::routes::api::tools::drivepng::drivepng));
@@ -388,5 +404,9 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = router.route("/api/anime/genres", axum::routing::get(crate::routes::api::anime::genre_list::genres));
     router = router.route("/api/anime/latest", axum::routing::get(crate::routes::api::anime::latest::latest));
     router = router.route("/api/anime/search", axum::routing::get(crate::routes::api::anime::search::search));
+    router = router.route("/api/social/posts", axum::routing::get(crate::routes::api::social::get_posts));
+    router = router.route("/api/social/posts", axum::routing::post(crate::routes::api::social::create_post));
+    router = router.route("/api/social/posts/{id}", axum::routing::delete(crate::routes::api::social::delete_post));
+    router = router.route("/api/social/posts/{id}/like", axum::routing::post(crate::routes::api::social::like_post));
     router
 }

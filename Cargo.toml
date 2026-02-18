@@ -3,6 +3,7 @@
 resolver = '2'
 members = [
 	'apps/rust',
+    'apps/leptos',
 ]
 [profile.dev]
 opt-level = 0          # paling cepat compile (runtime agak lambat, tapi cukup buat dev)

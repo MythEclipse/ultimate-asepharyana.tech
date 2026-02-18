@@ -59,6 +59,8 @@ pub enum AppError {
     Unauthorized,
     #[error("Forbidden")]
     Forbidden,
+    #[error("Not Found: {0}")]
+    NotFound(String),
 }
 
 impl From<failure::Error> for AppError {
@@ -124,6 +126,7 @@ impl IntoResponse for AppError {
             AppError::InvalidEmail => (http::StatusCode::BAD_REQUEST, self.to_string()),
             AppError::Unauthorized => (http::StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::Forbidden => (http::StatusCode::FORBIDDEN, self.to_string()),
+            AppError::NotFound(_) => (http::StatusCode::NOT_FOUND, self.to_string()),
             AppError::DatabaseError(_) => {
                 (http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
