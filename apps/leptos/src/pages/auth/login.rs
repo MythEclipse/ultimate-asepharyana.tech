@@ -1,5 +1,6 @@
 use leptos::*;
 use leptos_router::*;
+use leptos_meta::Title;
 use crate::providers::use_auth;
 use crate::api::types::LoginRequest;
 
@@ -13,7 +14,7 @@ pub fn LoginPage() -> impl IntoView {
 
     // Redirect if already logged in
     create_effect(move |_| {
-        if let Some(_) = auth.user.get() {
+        if auth.user.get().is_some() {
              let navigate = use_navigate();
              navigate("/dashboard", Default::default());
         }
@@ -23,9 +24,8 @@ pub fn LoginPage() -> impl IntoView {
         ev.prevent_default();
         set_error.set("".to_string());
         
-        // Basic validation
         if email.get().is_empty() || password.get().is_empty() {
-            set_error.set("Please fill in all fields".to_string());
+            set_error.set("Security clearance requires complete credentials.".to_string());
             return;
         }
 
@@ -37,85 +37,110 @@ pub fn LoginPage() -> impl IntoView {
     };
 
     view! {
-        <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden animate-fade-in">
-             // Animated Background (Simplified for Leptos)
-            <div class="absolute inset-0 -z-10">
-                <div class="absolute w-[400px] h-[400px] left-[-10%] top-[20%] bg-primary/20 blur-[100px] rounded-full animate-float" />
-                <div class="absolute w-[500px] h-[500px] right-[-15%] bottom-[10%] bg-purple-500/20 blur-[100px] rounded-full animate-float-delayed" />
+        <Title text="Authentication | Secure Access Gate"/>
+        <main class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-black/20">
+            // Cinematic Background Infrastructure
+            <div class="fixed inset-0 pointer-events-none z-0">
+                <div class="absolute top-[-10%] left-[-10%] w-[50rem] h-[50rem] bg-indigo-500/10 rounded-full blur-[120px] animate-tilt" />
+                <div class="absolute bottom-[-15%] right-[-5%] w-[45rem] h-[45rem] bg-blue-500/10 rounded-full blur-[120px] animate-tilt-reverse" />
             </div>
 
-            <div class="w-full max-w-md glass-card rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 hover:shadow-primary/10">
-                <div class="p-8">
-                    // Header
-                    <div class="text-center mb-8">
-                        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary via-accent to-cyan-400 flex items-center justify-center shadow-lg shadow-primary/25 transform transition-transform hover:scale-110 duration-500">
-                             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                             </svg>
-                        </div>
-                        <h1 class="text-2xl font-bold gradient-text">"Welcome Back"</h1>
-                        <p class="text-muted-foreground mt-1">"Sign in to your account"</p>
-                    </div>
-
-                    // Error Message
-                    <Show when=move || !error.get().is_empty()>
-                        <div class="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 animate-fade-in">
-                            <span class="text-destructive font-bold">"!"</span>
-                            <p class="text-sm text-destructive">{move || error.get()}</p>
-                        </div>
-                    </Show>
-
-                    <form on:submit=on_submit class="space-y-5">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-foreground">"Email"</label>
-                            <input
-                                type="email"
-                                placeholder="your@email.com"
-                                class="w-full pl-4 pr-4 py-3.5 rounded-xl border border-border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-muted-foreground/60"
-                                prop:value=email
-                                on:input=move |ev| set_email.set(event_target_value(&ev))
-                                required
-                            />
-                        </div>
-
-                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-foreground">"Password"</label>
-                            <div class="relative">
-                                <input
-                                    type=move || if show_password.get() { "text" } else { "password" }
-                                    placeholder="••••••••"
-                                    class="w-full pl-4 pr-12 py-3.5 rounded-xl border border-border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-muted-foreground/60"
-                                    prop:value=password
-                                    on:input=move |ev| set_password.set(event_target_value(&ev))
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    on:click=move |_| set_show_password.update(|s| *s = !*s)
-                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    {move || if show_password.get() { "Hide" } else { "Show" }}
-                                </button>
+            <div class="w-full max-w-[480px] relative z-10 animate-fade-in group/main">
+                <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-[3rem] blur-2xl opacity-10 group-hover/main:opacity-20 transition-opacity duration-1000" />
+                
+                <div class="glass-card rounded-[3rem] border border-white/10 overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.4)] transition-all duration-700 hover:border-white/20">
+                    <div class="p-12 space-y-10">
+                        // Security Header
+                        <header class="text-center space-y-6">
+                            <div class="relative w-24 h-24 mx-auto group">
+                                <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full scale-125 animate-pulse" />
+                                <div class="relative w-full h-full rounded-[2rem] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-4xl shadow-2xl transition-transform duration-700 group-hover:scale-110">
+                                    <span class="relative z-10">"🛡️"</span>
+                                </div>
                             </div>
-                        </div>
+                            <div class="space-y-2">
+                                <h1 class="text-3xl font-black italic tracking-tighter uppercase leading-none">
+                                    "Access " <span class="bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">"Portal"</span>
+                                </h1>
+                                <p class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">"Validate Identity Signature"</p>
+                            </div>
+                        </header>
 
-                        <button
-                            type="submit"
-                            class="w-full py-3.5 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
-                            disabled=move || auth.login.pending().get()
-                        >
-                            {move || if auth.login.pending().get() { "Signing in..." } else { "Sign In" }}
-                        </button>
-                    </form>
+                        // Error Notification
+                        <Show when=move || !error.get().is_empty()>
+                            <div class="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 flex items-center gap-4 animate-slide-up">
+                                <span class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center text-red-500 font-black">"!"</span>
+                                <p class="text-[10px] font-black uppercase tracking-widest text-red-400 leading-tight">{move || error.get()}</p>
+                            </div>
+                        </Show>
 
-                     <div class="mt-6 text-center">
-                        <p class="text-sm text-muted-foreground">
-                            "Don't have an account? "
-                            <a href="/register" class="text-primary hover:underline font-semibold">"Sign up"</a>
-                        </p>
+                        <form on:submit=on_submit class="space-y-8">
+                            <div class="space-y-6">
+                                <div class="space-y-2 group/input">
+                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-blue-500">"Uplink ID"</label>
+                                    <div class="relative">
+                                        <div class="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground/30">
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="email"
+                                            placeholder="identity@network.root"
+                                            class="w-full bg-white/2 border border-white/5 rounded-2xl py-5 pl-16 pr-6 focus:outline-none focus:border-blue-500/30 transition-all text-sm font-medium tracking-tight placeholder:text-muted-foreground/10"
+                                            prop:value=email
+                                            on:input=move |ev| set_email.set(event_target_value(&ev))
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 group/input">
+                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-blue-500">"Encryption Key"</label>
+                                    <div class="relative">
+                                        <div class="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground/30">
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type=move || if show_password.get() { "text" } else { "password" }
+                                            placeholder="••••••••"
+                                            class="w-full bg-white/2 border border-white/5 rounded-2xl py-5 pl-16 pr-20 focus:outline-none focus:border-blue-500/30 transition-all text-sm font-medium tracking-tight placeholder:text-muted-foreground/10"
+                                            prop:value=password
+                                            on:input=move |ev| set_password.set(event_target_value(&ev))
+                                        />
+                                        <button
+                                            type="button"
+                                            on:click=move |_| set_show_password.update(|s| *s = !*s)
+                                            class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 hover:text-blue-500 transition-colors"
+                                        >
+                                            {move || if show_password.get() { "Obscure" } else { "Reveal" }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="w-full py-6 rounded-2xl bg-foreground text-background font-black uppercase text-xs tracking-[0.3em] hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.3)] disabled:opacity-30 disabled:scale-100 relative group/btn overflow-hidden"
+                                disabled=move || auth.login.pending().get()
+                            >
+                                <span class="relative z-10 transition-transform group-hover/btn:translate-x-1">
+                                    {move || if auth.login.pending().get() { "Decrypting..." } else { "Authenticate" }}
+                                </span>
+                                <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-0 group-hover/btn:opacity-10 transition-opacity" />
+                            </button>
+                        </form>
+
+                        <footer class="text-center">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                                "Unauthorized Access Attempt? "
+                                <a href="/register" class="text-blue-500 hover:text-blue-400 transition-colors">"Initialization Protocol"</a>
+                            </p>
+                        </footer>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     }
 }

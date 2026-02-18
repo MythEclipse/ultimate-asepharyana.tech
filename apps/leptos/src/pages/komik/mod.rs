@@ -56,88 +56,81 @@ async fn fetch_komik_data() -> Option<HomeData> {
 
 #[component]
 fn KomikCard(item: KomikItem, index: usize) -> impl IntoView {
-    let delay_style = format!("animation-delay: {}s", index as f64 * 0.08);
+    let delay_style = format!("animation-delay: {}ms", index * 50);
     let type_bg = match item.r#type.as_str() {
-        "Manga" => "bg-orange-500/90 text-white",
-        "Manhwa" => "bg-blue-500/90 text-white",
-        "Manhua" => "bg-red-500/90 text-white",
-        _ => "bg-primary/90 text-primary-foreground",
+        "Manga" => "from-orange-500 to-red-600 shadow-orange-500/20",
+        "Manhwa" => "from-blue-500 to-indigo-600 shadow-blue-500/20",
+        "Manhua" => "from-red-500 to-pink-600 shadow-red-500/20",
+        _ => "from-primary to-primary/80 shadow-primary/20",
     };
 
     let has_score = item.score.is_some();
     let score_text = item.score.clone();
-    
     let has_chapter = item.chapter.is_some();
     let chapter_text = item.chapter.clone();
 
     view! {
         <div 
-            class="group perspective-1000 animate-fade-in"
+            class="group animate-slide-up opacity-0 fill-mode-forwards"
             style=delay_style
         >
             <a
                 href=format!("/komik/detail?komik_id={}", item.slug)
-                class="block relative overflow-hidden rounded-2xl bg-card border border-border shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500 transform-gpu hover:-translate-y-3 hover:scale-[1.02]"
+                class="block relative group/card perspective-1000"
             >
-                 // Glow effect on hover
-                <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-t from-primary/20 via-transparent to-transparent blur-xl" />
-
-                 // Animated border glow
-                <div class="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-sm" />
-
-                <div class="aspect-[3/4] overflow-hidden relative">
+                <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-white/5 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-orange-500/20 group-hover:border-white/20">
+                    // Poster with parallax zoom
                     <img
                         src=item.poster
                         alt=item.title.clone()
-                        class="w-full h-full object-cover transform-gpu group-hover:scale-110 transition-transform duration-700 ease-out"
+                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115"
                         loading="lazy"
                     />
-                     // Shine effect
-                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                </div>
-
-                 // Gradient overlay
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
-
-                 // Type Badge
-                <div class="absolute top-3 right-3 text-white">
-                    <span class=format!("px-2 py-1 rounded-lg text-[10px] font-black shadow-lg {}", type_bg)>
-                        {item.r#type.clone()}
-                    </span>
-                </div>
-
-                 // Score Badge
-                <Show when=move || has_score>
-                    <div class="absolute top-3 left-3">
-                        <span class="px-2 py-1 rounded-lg text-xs font-bold bg-yellow-500/90 text-black shadow-lg backdrop-blur-sm flex items-center gap-1">
-                            "⭐ " {score_text.clone()}
-                        </span>
+                    
+                    // Glassy Overlay
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                    
+                    // Top Badges
+                    <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
+                        <Show when=move || has_score>
+                            <div class="glass-subtle px-3 py-1.5 rounded-xl border border-white/20 text-xs font-black text-yellow-500 flex items-center gap-1.5 shadow-2xl">
+                                "⭐" {score_text.clone()}
+                            </div>
+                        </Show>
+                        <div class=format!("glass px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white shadow-2xl bg-gradient-to-br {}", type_bg)>
+                            {item.r#type.clone()}
+                        </div>
                     </div>
-                </Show>
 
-                 // Content
-                <div class="absolute bottom-0 left-0 right-0 p-4">
-                    <h3 class="text-white text-sm font-bold line-clamp-2 drop-shadow-lg mb-2 group-hover:text-orange-200 transition-colors duration-300">
-                        {item.title}
-                    </h3>
-                    <Show when=move || has_chapter>
-                        <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/80 text-white backdrop-blur-sm">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            {chapter_text.clone()}
-                        </span>
-                    </Show>
+                    // Bottom Content
+                    <div class="absolute bottom-0 left-0 right-0 p-6 space-y-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                        <Show when=move || has_chapter>
+                             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-orange-500/20 border border-orange-500/30 backdrop-blur-md text-[10px] font-black uppercase tracking-wider text-orange-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                                {chapter_text.clone()}
+                            </div>
+                        </Show>
+                        
+                        <h3 class="text-lg font-black text-white leading-tight line-clamp-2 [text-shadow:0_4px_12px_rgba(0,0,0,0.5)] group-hover:text-orange-200 transition-colors">
+                            {item.title}
+                        </h3>
+                    </div>
+
+                    // Interaction Glow
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-orange-500/10 via-transparent to-red-500/10 transition-opacity duration-500 pointer-events-none" />
                 </div>
+                
+                // Card Shadow Accent
+                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-4 bg-orange-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </a>
         </div>
     }
 }
 
-// ... KomikGrid and SectionHeader preserved ...
-
 #[component]
 fn KomikGrid(items: Vec<KomikItem>) -> impl IntoView {
     view! {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8">
             {items.into_iter().enumerate().map(|(i, item)| view! { <KomikCard item=item index=i/> }).collect_view()}
         </div>
     }
@@ -151,22 +144,28 @@ fn SectionHeader(
     href: &'static str,
 ) -> impl IntoView {
     view! {
-        <div class="flex items-center justify-between mb-6 animate-slide-in-right">
-            <div class="flex items-center gap-3">
-                <div class=format!("w-12 h-12 rounded-xl bg-gradient-to-br {} flex items-center justify-center text-2xl shadow-lg", gradient)>
-                    {emoji}
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 animate-slide-up">
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class=format!("w-16 h-16 rounded-3xl bg-gradient-to-br {} flex items-center justify-center text-3xl shadow-2xl relative group overflow-hidden", gradient)>
+                        <div class="absolute inset-0 bg-white/20 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-2xl" />
+                        <span class="relative z-10">{emoji}</span>
+                    </div>
+                    <div>
+                        <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">
+                            {title}
+                        </h2>
+                        <div class=format!("h-1.5 w-20 bg-gradient-to-r {} rounded-full mt-2", gradient) />
+                    </div>
                 </div>
-                <h2 class=format!("text-2xl font-bold bg-gradient-to-r {} bg-clip-text text-transparent", gradient)>
-                    {title}
-                </h2>
             </div>
-            <a
+             <a
                 href=href
-                class="group flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                class="group flex items-center gap-4 px-8 py-4 rounded-2xl glass border border-white/10 text-foreground font-black uppercase tracking-widest text-sm hover:border-white/40 transition-all hover:scale-105 active:scale-95"
             >
-                "View All"
-                <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                "View Library"
+                <svg class="w-5 h-5 group-hover:translate-x-2 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
             </a>
         </div>
@@ -175,93 +174,99 @@ fn SectionHeader(
 
 #[component]
 pub fn KomikPage() -> impl IntoView {
-     let data = create_resource(|| (), |_| fetch_komik_data());
-     let (search_query, set_search_query) = create_signal("".to_string());
+    let data = create_resource(|| (), |_| fetch_komik_data());
+    let (search_query, set_search_query) = create_signal("".to_string());
 
     view! {
-        <Title text="Komik | Asepharyana"/>
-        <main class="min-h-screen bg-background text-foreground">
-             // Hero Section
-            <div class="relative overflow-hidden">
-                 // Background Orbs
-                <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div class="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 blur-3xl" />
-                    <div class="absolute top-1/2 -left-40 w-60 h-60 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 blur-3xl" />
-                </div>
-
-                <div class="relative z-10 p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
-                    // Header
-                    <div class="text-center mb-10 animate-fade-in">
-                        <h1 class="text-5xl md:text-6xl font-bold mb-4">
-                            <span class="gradient-text">"Komik"</span>
-                        </h1>
-                        <p class="text-muted-foreground text-lg">
-                            "Read your favorite manga, manhwa, and manhua"
-                        </p>
-                    </div>
-
-                    // Search Bar
-                    <form action="/komik/search" method="get" class="mb-12 animate-fade-in">
-                        <div class="max-w-2xl mx-auto relative">
-                             <div class="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-2xl blur-sm opacity-50" />
-                            <div class="relative flex gap-3 p-2 rounded-2xl glass-card">
-                                <input
-                                    type="text"
-                                    name="q"
-                                    prop:value=search_query
-                                    on:input=move |ev| set_search_query.set(event_target_value(&ev))
-                                    placeholder="Search manga, manhwa, manhua..."
-                                    class="flex-1 px-5 py-3 rounded-xl bg-background/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
-                                />
-                                <button
-                                    type="submit"
-                                    class="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
-                                >
-                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                    "Search"
-                                </button>
-                            </div>
+        <Title text="Discovery | Komik Hub"/>
+        <main class="min-h-screen py-24 px-6 md:px-12 relative overflow-hidden">
+            <div class="max-w-7xl mx-auto space-y-32">
+                // Cinematic Header
+                <header class="text-center space-y-12 animate-fade-in">
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-white/10 shadow-2xl">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                            </span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">"New Chapters Released"</span>
                         </div>
-                    </form>
-
-                    // Category Tabs
-                    <div class="flex justify-center gap-3 mb-12 flex-wrap animate-fade-in">
-                        <a href="/komik/manga/page/1" class="px-6 py-3 rounded-xl glass-subtle hover:bg-orange-500/20 hover:text-orange-500 transition-all duration-300 font-medium">
-                            "📚 All Manga"
-                        </a>
-                        <a href="/komik/manhwa/page/1" class="px-6 py-3 rounded-xl glass-subtle hover:bg-blue-500/20 hover:text-blue-500 transition-all duration-300 font-medium">
-                            "🇰🇷 All Manhwa"
-                        </a>
-                        <a href="/komik/manhua/page/1" class="px-6 py-3 rounded-xl glass-subtle hover:bg-red-500/20 hover:text-red-500 transition-all duration-300 font-medium">
-                            "🇨🇳 All Manhua"
-                        </a>
+                        <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
+                            <span class="bg-gradient-to-r from-orange-400 via-red-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
+                                "Reader"
+                            </span>
+                            <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Universe"</span>
+                        </h1>
                     </div>
 
-                    <Suspense fallback=move || view! { <div class="text-center">"Loading..."</div> }>
-                        <Show when=move || data.get().flatten().is_some() fallback=move || view! { <div>"Failed to load"</div> }>
-                            {move || {
-                                let d = data.get().flatten().unwrap();
-                                view! {
-                                    <section class="mb-16">
-                                        <SectionHeader title="Manga" gradient="from-orange-500 to-red-500" emoji="📚" href="/komik/manga/page/1"/>
+                    // Premium Search Bar
+                    <div class="max-w-3xl mx-auto relative group">
+                        <div class="absolute -inset-1 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-[2.5rem] opacity-20 blur-2xl group-focus-within:opacity-50 transition-opacity duration-700" />
+                        <form action="/komik/search" method="get" class="relative flex gap-4 p-2 rounded-[2.5rem] glass border border-white/20 shadow-2xl backdrop-blur-3xl">
+                            <input
+                                type="text"
+                                name="q"
+                                prop:value=search_query
+                                on:input=move |ev| set_search_query.set(event_target_value(&ev))
+                                placeholder="Search manga, manhwa, manhua..."
+                                class="flex-1 bg-transparent px-8 py-5 focus:outline-none text-lg font-bold placeholder:text-muted-foreground/50"
+                            />
+                            <button
+                                type="submit"
+                                class="px-10 py-5 rounded-[2rem] bg-foreground text-background font-black uppercase tracking-widest hover:scale-95 transition-transform"
+                            >
+                                "Search"
+                            </button>
+                        </form>
+                    </div>
+
+                    // Refined Category Tabs
+                    <div class="flex justify-center gap-4 flex-wrap animate-fade-in [animation-delay:200ms]">
+                        <a href="/komik/manga/page/1" class="px-8 py-4 rounded-2xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-orange-500/10 hover:text-orange-500 transition-all hover:-translate-y-1">
+                            "📚 Manga"
+                        </a>
+                        <a href="/komik/manhwa/page/1" class="px-8 py-4 rounded-2xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-blue-500/10 hover:text-blue-500 transition-all hover:-translate-y-1">
+                            "🇰🇷 Manhwa"
+                        </a>
+                        <a href="/komik/manhua/page/1" class="px-8 py-4 rounded-2xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-red-500/10 hover:text-red-500 transition-all hover:-translate-y-1">
+                            "🇨🇳 Manhua"
+                        </a>
+                    </div>
+                </header>
+
+                <Suspense fallback=move || view! { 
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
+                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-white/5 animate-pulse" /> }).collect_view()}
+                    </div>
+                }>
+                    <Show when=move || data.get().flatten().is_some() fallback=move || view! { 
+                        <div class="glass-card p-12 rounded-[2rem] text-center border border-red-500/20">
+                            <div class="text-4xl mb-4">"❌"</div>
+                            <h3 class="text-xl font-black uppercase italic">"Connection Failure"</h3>
+                            <p class="text-muted-foreground">"Unable to synchronize with the komik database."</p>
+                        </div>
+                    }>
+                        {move || {
+                            let d = data.get().flatten().unwrap();
+                            view! {
+                                <div class="space-y-32">
+                                    <section>
+                                        <SectionHeader title="Manga" gradient="from-orange-500 to-red-600" emoji="📚" href="/komik/manga/page/1"/>
                                         <KomikGrid items=d.manga/>
                                     </section>
-                                    <section class="mb-16">
-                                        <SectionHeader title="Manhwa" gradient="from-blue-500 to-purple-500" emoji="🇰🇷" href="/komik/manhwa/page/1"/>
+                                    <section>
+                                        <SectionHeader title="Manhwa" gradient="from-blue-500 to-indigo-600" emoji="🇰🇷" href="/komik/manhwa/page/1"/>
                                         <KomikGrid items=d.manhwa/>
                                     </section>
-                                    <section class="mb-16">
-                                        <SectionHeader title="Manhua" gradient="from-red-500 to-yellow-500" emoji="🇨🇳" href="/komik/manhua/page/1"/>
+                                    <section>
+                                        <SectionHeader title="Manhua" gradient="from-red-500 to-pink-600" emoji="🇨🇳" href="/komik/manhua/page/1"/>
                                         <KomikGrid items=d.manhua/>
                                     </section>
-                                }
-                            }}
-                        </Show>
-                    </Suspense>
-
-                </div>
+                                </div>
+                            }
+                        }}
+                    </Show>
+                </Suspense>
             </div>
         </main>
     }

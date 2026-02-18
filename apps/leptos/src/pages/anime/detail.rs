@@ -24,8 +24,16 @@ pub fn AnimeDetailPage() -> impl IntoView {
     );
 
     view! {
-        <main class="min-h-screen bg-background text-foreground pb-20">
-            <Suspense fallback=move || view! { <div class="p-20 text-center">"Loading anime details..."</div> }>
+        <main class="min-h-screen relative overflow-hidden">
+            <Suspense fallback=move || view! { 
+                <div class="p-24 text-center space-y-8 animate-pulse">
+                    <div class="h-[400px] w-full bg-white/5 rounded-[3rem]" />
+                    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
+                        <div class="lg:col-span-2 h-96 bg-white/5 rounded-[2rem]" />
+                        <div class="h-96 bg-white/5 rounded-[2rem]" />
+                    </div>
+                </div>
+            }>
                 {move || anime_data.get().flatten().map(|data| {
                     let episodes = if !data.episode_lists.is_empty() {
                         data.episode_lists.clone()
@@ -45,28 +53,39 @@ pub fn AnimeDetailPage() -> impl IntoView {
                     let base_detail_path = if is_anime2() { "/anime2/detail" } else { "/anime/detail" };
 
                     view! {
-                    <Title text=format!("{} | Asepharyana", data.title)/>
+                    <Title text=format!("{} | Anime Details", data.title)/>
                     
-                    // Banner/Hero Section
-                    <div class="relative h-[400px] w-full overflow-hidden">
-                        <div class="absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-110" style=format!("background-image: url('{}')", data.poster) />
-                        <div class="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+                    // Cinematic Cinema Banner
+                    <div class="relative h-[500px] md:h-[600px] w-full overflow-hidden">
+                        // Blurred Background
+                        <div class="absolute inset-0 z-0">
+                            <img src=data.poster.clone() class="w-full h-full object-cover blur-[100px] opacity-40 scale-125" alt="" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                        </div>
                         
-                        <div class="container mx-auto px-4 h-full flex items-end pb-12 relative z-10">
-                            <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
-                                <div class="w-64 aspect-[3/4] rounded-2xl shadow-2xl overflow-hidden border-4 border-white/10 shrink-0 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <div class="container mx-auto px-6 h-full flex items-end pb-16 relative z-10">
+                            <div class="flex flex-col md:flex-row gap-12 items-center md:items-end w-full">
+                                // Sharp Floating Poster
+                                <div class="w-64 md:w-80 aspect-[3/4.2] rounded-[2.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] overflow-hidden border-2 border-white/20 shrink-0 transform -rotate-2 hover:rotate-0 transition-all duration-700 hover-tilt">
                                     <img src=data.poster.clone() class="w-full h-full object-cover" alt=data.title.clone() />
                                 </div>
-                                <div class="flex-1 text-center md:text-left">
-                                    <h1 class="text-4xl md:text-6xl font-black mb-4 gradient-text drop-shadow-lg">
-                                        {data.title.clone()}
-                                    </h1>
-                                    <p class="text-xl text-muted-foreground mb-6 font-medium italic">
-                                        {data.alternative_title.clone()}
-                                    </p>
+                                
+                                <div class="flex-1 text-center md:text-left space-y-6 animate-slide-up">
+                                    <div class="space-y-2">
+                                        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-widest text-blue-400">
+                                            "Series Details"
+                                        </div>
+                                        <h1 class="text-5xl md:text-7xl font-black italic tracking-tighter leading-none [text-shadow:0_10px_30px_rgba(0,0,0,0.5)]">
+                                            {data.title.clone()}
+                                        </h1>
+                                        <p class="text-xl md:text-2xl text-muted-foreground/80 font-bold italic opacity-60">
+                                            {data.alternative_title.clone()}
+                                        </p>
+                                    </div>
+
                                     <div class="flex flex-wrap gap-3 justify-center md:justify-start">
                                         {data.genres.iter().map(|g| view! {
-                                            <span class="px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm font-bold backdrop-blur-md">
+                                            <span class="px-5 py-2 rounded-xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:border-white/30 transition-colors">
                                                 {g.name.clone()}
                                             </span>
                                         }).collect_view()}
@@ -76,45 +95,48 @@ pub fn AnimeDetailPage() -> impl IntoView {
                         </div>
                     </div>
 
-                    <div class="container mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        // Main Content
-                        <div class="lg:col-span-2 space-y-12">
-                            // Synopsis
-                            <section class="glass-card p-8 rounded-3xl relative overflow-hidden group">
-                                <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                                    <span class="text-6xl">"📝"</span>
+                    <div class="max-w-7xl mx-auto px-6 mt-16 grid grid-cols-1 lg:grid-cols-3 gap-16 pb-32">
+                        // Main Cinematic Content
+                        <div class="lg:col-span-2 space-y-20">
+                            // Synopsis with Glass design
+                            <section class="space-y-8 animate-fade-in">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center text-2xl shadow-2xl shadow-blue-500/10">"📝"</div>
+                                    <h2 class="text-3xl font-black uppercase tracking-tighter italic">"The Story"</h2>
                                 </div>
-                                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
-                                    <span class="w-2 h-8 bg-blue-500 rounded-full" />
-                                    "Synopsis"
-                                </h2>
-                                <p class="text-muted-foreground leading-relaxed text-lg text-justify whitespace-pre-line">
-                                    {data.synopsis.clone()}
-                                </p>
+                                <div class="glass-card p-10 rounded-[3rem] border border-white/10 relative overflow-hidden group">
+                                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px]" />
+                                    <p class="text-muted-foreground/90 leading-relaxed text-lg font-medium text-justify whitespace-pre-line relative z-10">
+                                        {data.synopsis.clone()}
+                                    </p>
+                                </div>
                             </section>
 
-                            // Episode List
-                            <section>
-                                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
-                                    <span class="w-2 h-8 bg-purple-500 rounded-full" />
-                                    "Episode List"
-                                </h2>
+                            // Episode List with Premium Buttons
+                            <section class="space-y-8 animate-fade-in [animation-delay:200ms]">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center text-2xl shadow-2xl shadow-purple-500/10">"🎞️"</div>
+                                    <h2 class="text-3xl font-black uppercase tracking-tighter italic">"Episodes"</h2>
+                                </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {episodes.iter().map(|ep| {
                                         let ep_slug = ep.slug.clone();
                                         view! {
                                             <a 
                                                 href=format!("{}/{}", base_watch_path, ep_slug)
-                                                class="flex items-center justify-between p-5 rounded-2xl glass-subtle hover:bg-white/10 border border-white/5 transition-all group"
+                                                class="group flex items-center justify-between p-6 rounded-[2rem] glass border border-white/5 hover:border-white/20 transition-all hover:scale-[1.03] active:scale-95 shadow-xl hover:shadow-blue-500/10"
                                             >
-                                                <span class="font-medium group-hover:text-blue-400 transition-colors">
-                                                    {ep.episode.clone()}
-                                                </span>
-                                                <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                                                        <path d="M8 5v14l11-7z" />
-                                                    </svg>
+                                                <div class="flex items-center gap-4">
+                                                    <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center font-black text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                                        "▶"
+                                                    </div>
+                                                    <span class="font-black uppercase tracking-wide text-sm group-hover:text-blue-400 transition-colors">
+                                                        {ep.episode.clone()}
+                                                    </span>
                                                 </div>
+                                                <svg class="w-6 h-6 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                </svg>
                                             </a>
                                         }
                                     }).collect_view()}
@@ -122,31 +144,32 @@ pub fn AnimeDetailPage() -> impl IntoView {
                             </section>
                         </div>
 
-                        // Sidebar
-                        <div class="space-y-12">
-                            // Info Card
-                            <section class="glass-card p-6 rounded-3xl border border-white/10">
-                                <h3 class="text-xl font-bold mb-6 pb-4 border-b border-white/5">"Information"</h3>
-                                <div class="space-y-5">
-                                    <InfoItem label="Status" value=data.status.clone().unwrap_or_default() icon="📊" />
-                                    <InfoItem label="Type" value=data.r#type.clone().unwrap_or_default() icon="📺" />
-                                    <InfoItem label="Released" value=data.release_date.clone() icon="📅" />
-                                    <InfoItem label="Studio" value=data.studio.clone() icon="🏢" />
+                        // Cinematic Sidebar
+                        <div class="space-y-20 animate-fade-in [animation-delay:400ms]">
+                            // Info Module
+                            <section class="space-y-8">
+                                <h3 class="text-xl font-black uppercase tracking-[0.2em] opacity-40 italic">"Overview"</h3>
+                                <div class="glass-card p-8 rounded-[3rem] border border-white/10 space-y-8 shadow-2xl">
+                                    <InfoItem label="Current Status" value=data.status.clone().unwrap_or_default() icon="📊" accent="text-green-500" />
+                                    <InfoItem label="Media Type" value=data.r#type.clone().unwrap_or_default() icon="📺" accent="text-blue-500" />
+                                    <InfoItem label="Air Date" value=data.release_date.clone() icon="📅" accent="text-purple-500" />
+                                    <InfoItem label="Production" value=data.studio.clone() icon="🏢" accent="text-pink-500" />
                                 </div>
                             </section>
 
-                            // Recommendations
-                            <section>
-                                <h3 class="text-xl font-bold mb-6">"Recommendations"</h3>
-                                <div class="space-y-4">
-                                    {data.recommendations.iter().take(4).map(|rec| view! {
-                                        <a href=format!("{}/{}", base_detail_path, rec.slug) class="flex gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all group">
-                                            <div class="w-20 aspect-[3/4] rounded-xl overflow-hidden shadow-lg shrink-0">
-                                                <img src=rec.poster.clone() class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            // Visual Recommendations
+                            <section class="space-y-8">
+                                <h3 class="text-xl font-black uppercase tracking-[0.2em] opacity-40 italic">"Related"</h3>
+                                <div class="space-y-6">
+                                    {data.recommendations.iter().take(5).map(|rec| view! {
+                                        <a href=format!("{}/{}", base_detail_path, rec.slug) class="flex gap-6 p-4 rounded-[2rem] glass border border-white/5 hover:border-white/20 transition-all group shadow-xl">
+                                            <div class="w-24 aspect-[3/4.2] rounded-2xl overflow-hidden shadow-2xl shrink-0 border border-white/10">
+                                                <img src=rec.poster.clone() class="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700" alt="" />
                                             </div>
-                                            <div class="flex-1 py-1">
-                                                <h4 class="font-bold text-sm line-clamp-2 group-hover:text-blue-400 transition-colors">{rec.title.clone()}</h4>
-                                                <span class="text-xs text-muted-foreground mt-2 block">"Series"</span>
+                                            <div class="flex-1 flex flex-col justify-center gap-2">
+                                                <h4 class="font-black text-sm uppercase tracking-tight line-clamp-2 group-hover:text-blue-400 transition-colors leading-tight">{rec.title.clone()}</h4>
+                                                <div class="h-1 w-8 bg-blue-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                                                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">"Library Item"</span>
                                             </div>
                                         </a>
                                     }).collect_view()}
@@ -161,17 +184,17 @@ pub fn AnimeDetailPage() -> impl IntoView {
 }
 
 #[component]
-fn InfoItem(label: &'static str, value: String, icon: &'static str) -> impl IntoView {
+fn InfoItem(label: &'static str, value: String, icon: &'static str, accent: &'static str) -> impl IntoView {
     view! {
-        <div class="flex items-center gap-4 group">
-            <div class="w-10 h-10 rounded-xl bg-background/50 flex items-center justify-center text-lg border border-white/5 group-hover:scale-110 transition-transform duration-300">
+        <div class="flex items-center gap-5 group">
+            <div class=format!("w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-2xl border border-white/5 group-hover:scale-110 group-hover:bg-white/10 transition-all duration-500 shadow-xl {}", accent)>
                 {icon}
             </div>
-            <div>
-                <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-black">
+            <div class="space-y-1">
+                <p class="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black">
                     {label}
                 </p>
-                <p class="font-bold text-sm">{value}</p>
+                <p class="font-black text-base italic tracking-tight">{value}</p>
             </div>
         </div>
     }

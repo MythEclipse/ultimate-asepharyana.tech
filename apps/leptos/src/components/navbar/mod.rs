@@ -25,156 +25,163 @@ pub fn Navbar() -> impl IntoView {
     let location = use_location();
 
     view! {
-        <nav class="sticky top-0 z-50 w-full glass-subtle border-b border-white/10">
-            <div class="container mx-auto flex h-16 items-center justify-between px-4">
-                // Logo
-                <A href="/" class="flex items-center space-x-2 group">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary via-accent to-neon-cyan flex items-center justify-center shadow-lg group-hover:shadow-primary/30 transition-shadow">
-                        <span class="text-white font-bold text-sm">"A"</span>
+        <nav class="sticky top-0 z-[100] w-full backdrop-blur-3xl bg-black/5 border-b border-indigo-500/10">
+            <div class="container mx-auto flex h-24 items-center justify-between px-8">
+                // Logo Protocol
+                <A href="/" class="flex items-center space-x-6 group">
+                    <div class="relative">
+                        <div class="absolute -inset-4 bg-indigo-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-pulse" />
+                        <div class="w-12 h-12 rounded-2xl bg-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500 relative z-10">
+                            <span class="text-background font-black text-xl italic tracking-tighter">"A"</span>
+                        </div>
                     </div>
-                    <span class="text-xl font-bold gradient-text-animated">
-                        "Asepharyana"
-                    </span>
+                    <div class="hidden sm:block space-y-0.5">
+                        <span class="text-xl font-black italic tracking-tighter uppercase leading-none block group-hover:text-indigo-500 transition-colors">
+                            "Asep" <span class="text-indigo-500 group-hover:text-foreground transition-colors">"Haryana"</span>
+                        </span>
+                        <span class="text-[8px] font-black uppercase tracking-[0.5em] text-muted-foreground/40 block">"Identity Interface"</span>
+                    </div>
                 </A>
 
-                // Desktop Navigation
-                <div class="hidden md:flex items-center space-x-1">
-                     <A href="/project" class=move || {
-                        let is_active = location.pathname.get().starts_with("/project");
-                        if is_active {
-                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-primary"
-                        } else {
-                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground"
-                        }
-                     }>
-                        "Project"
-                        <Show when=move || location.pathname.get().starts_with("/project")>
-                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
-                        </Show>
-                     </A>
-                     <A href="/sosmed" class=move || {
-                        let is_active = location.pathname.get().starts_with("/sosmed");
-                        if is_active {
-                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-primary"
-                        } else {
-                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground"
-                        }
-                     }>
-                        "Sosmed"
-                        <Show when=move || location.pathname.get().starts_with("/sosmed")>
-                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
-                        </Show>
-                     </A>
+                // Cinematic Link Array
+                <div class="hidden md:flex items-center space-x-2">
+                     <NavLink href="/project" label="Projects" current_path=location.pathname />
+                     <NavLink href="/sosmed" label="Pulse" current_path=location.pathname />
+                     <NavLink href="/anime" label="Anime" current_path=location.pathname />
+                     <NavLink href="/komik" label="Nexus" current_path=location.pathname />
 
-                     // Theme Toggle
+                     <div class="w-8 h-px bg-white/5 mx-4" />
+
+                     // Theme Engine
                      <button
                         on:click=cycle_theme
-                        class="p-2.5 rounded-lg hover:bg-white/10 transition-all group"
-                        title=move || format!("Theme: {:?}", theme.get())
+                        class="p-4 rounded-2xl hover:bg-white/5 transition-all group relative overflow-hidden active:scale-95"
+                        title=move || format!("Engine State: {:?}", theme.get())
                      >
-                        <div class="relative w-5 h-5">
+                        <div class="relative z-10 w-5 h-5 flex items-center justify-center">
                             <Show
                                 when=move || theme.get() == Theme::Dark
                                 fallback=move || view! {
-                                    <svg class="w-5 h-5 text-amber-500 group-hover:rotate-45 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    <svg class="w-5 h-5 text-amber-500 group-hover:rotate-180 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
                                 }
                             >
-                                <svg class="w-5 h-5 text-indigo-400 group-hover:-rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                <svg class="w-5 h-5 text-indigo-400 group-hover:-rotate-12 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                                 </svg>
                             </Show>
                         </div>
+                        <div class="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                      </button>
                      
-                     // Auth
+                     // Security Handshake
                      <Show
                         when=move || user.get().is_some()
                         fallback=|| view! {
-                             <A href="/login" class="ml-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25">
-                                "Sign In"
+                             <A href="/login" class="ml-4 px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-2xl relative group/auth overflow-hidden">
+                                <span class="relative z-10">"Initiate Session"</span>
+                                <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover/auth:opacity-10 transition-opacity" />
                              </A>
                         }
                      >
-                        <div class="flex items-center gap-2 ml-2">
-                             <A href="/dashboard" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                                "Dashboard"
+                        <div class="flex items-center gap-4 ml-4">
+                             <A href="/dashboard" class="px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl glass border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/5 hover:border-indigo-500/40 transition-all active:scale-95">
+                                "Command"
                              </A>
                         </div>
                      </Show>
                 </div>
 
-                // Mobile Menu Button
+                // Mobile Navigation Trigger
                 <button
-                    class="md:hidden p-2.5 rounded-lg hover:bg-white/10 transition-colors"
+                    class="md:hidden p-4 rounded-2xl hover:bg-white/5 transition-all active:scale-95"
                     on:click=toggle_menu
                 >
-                    <Show
-                        when=move || is_open.get()
-                        fallback=move || view! {
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        }
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </Show>
+                    <div class="space-y-1.5 w-6">
+                        <div class=move || format!("h-0.5 bg-foreground rounded-full transition-all duration-500 {}", if is_open.get() { "rotate-45 translate-y-2" } else { "w-full" }) />
+                        <div class=move || format!("h-0.5 bg-foreground rounded-full transition-all duration-500 {}", if is_open.get() { "opacity-0" } else { "w-2/3" }) />
+                        <div class=move || format!("h-0.5 bg-foreground rounded-full transition-all duration-500 {}", if is_open.get() { "-rotate-45 -translate-y-2" } else { "w-full" }) />
+                    </div>
                 </button>
             </div>
             
-            // Mobile Menu
+            // Expanded Mobile Interface
             <Show when=move || is_open.get()>
-                 <div class="md:hidden glass-card border-t border-white/10 animate-slide-down">
-                    <div class="container mx-auto px-4 py-4 space-y-1">
-                        <A href="/project" 
-                           class=move || {
-                               let is_active = location.pathname.get().starts_with("/project");
-                               format!("block py-3 px-4 text-sm font-medium rounded-lg transition-all {}",
-                                   if is_active { "bg-primary/10 text-primary" } else { "text-muted-foreground hover:bg-white/5 hover:text-foreground" }
-                               )
-                           }
-                           on:click=move |_| set_is_open.set(false)
-                        >
-                            "Project"
-                        </A>
-                        <A href="/sosmed" 
-                           class=move || {
-                               let is_active = location.pathname.get().starts_with("/sosmed");
-                               format!("block py-3 px-4 text-sm font-medium rounded-lg transition-all {}",
-                                   if is_active { "bg-primary/10 text-primary" } else { "text-muted-foreground hover:bg-white/5 hover:text-foreground" }
-                               )
-                           }
-                           on:click=move |_| set_is_open.set(false)
-                        >
-                            "Sosmed"
-                        </A>
+                 <div class="md:hidden border-t border-indigo-500/10 bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
+                    <div class="container mx-auto px-8 py-10 space-y-4">
+                        <MobileNavLink href="/project" label="Project Catalog" is_active=move || location.pathname.get().starts_with("/project") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/sosmed" label="Neural Pulse" is_active=move || location.pathname.get().starts_with("/sosmed") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/anime" label="Streaming Core" is_active=move || location.pathname.get().starts_with("/anime") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/komik" label="Nexus Archive" is_active=move || location.pathname.get().starts_with("/komik") on_click=move |_| set_is_open.set(false) />
                         
-                         <div class="flex items-center justify-between pt-4 mt-4 border-t border-border/50">
+                         <div class="pt-8 mt-8 border-t border-white/5 flex items-center justify-between">
                             <button
                                 on:click=cycle_theme
-                                class="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2 rounded-lg hover:bg-white/5"
+                                class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-6 py-4 rounded-2xl glass border border-white/5 hover:border-white/20 transition-all"
                             > 
-                                <Show
-                                    when=move || theme.get() == Theme::Dark
-                                    fallback=move || view! {
-                                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                    }
-                                >
-                                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                    </svg>
-                                </Show>
+                                <span class="text-lg">
+                                    {move || match theme.get() {
+                                        Theme::Light => "☀️",
+                                        Theme::Dark => "🌙",
+                                        Theme::System => "💻",
+                                    }}
+                                </span>
                                 {move || format!("{:?}", theme.get())}
                             </button>
+                            
+                            <A href="/login" on:click=move |_| set_is_open.set(false) class="px-8 py-4 rounded-2xl bg-indigo-500 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl">
+                                "Access Gate"
+                            </A>
                          </div>
                     </div>
                  </div>
             </Show>
         </nav>
+    }
+}
+
+#[component]
+fn NavLink(href: &'static str, label: &'static str, current_path: Memo<String>) -> impl IntoView {
+    let is_active = move || current_path.get().starts_with(href) || (href == "/" && current_path.get() == "/");
+    
+    view! {
+        <A href=href class=move || {
+            format!(
+                "px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500 rounded-xl relative group/link {}",
+                if is_active() { "text-indigo-400" } else { "text-muted-foreground hover:text-foreground hover:bg-white/5" }
+            )
+        }>
+            <span class="relative z-10">{label}</span>
+            <Show when=is_active>
+                <div class="absolute inset-0 bg-indigo-500/5 rounded-xl border border-indigo-500/10 animate-fade-in" />
+                <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-indigo-500 rounded-full blur-[2px] animate-pulse" />
+            </Show>
+        </A>
+    }
+}
+
+#[component]
+fn MobileNavLink<A, C>(
+    href: &'static str, 
+    label: &'static str, 
+    is_active: A, 
+    on_click: C
+) -> impl IntoView 
+where 
+    A: Fn() -> bool + 'static,
+    C: Fn(leptos::ev::MouseEvent) + 'static
+{
+    view! {
+        <A 
+            href=href 
+            class=move || format!(
+                "block py-5 px-8 text-lg font-black italic uppercase tracking-tighter border rounded-3xl transition-all duration-500 active:scale-95 {}",
+                if is_active() { "bg-indigo-500/10 border-indigo-500/20 text-indigo-400" } else { "border-white/5 hover:bg-white/5 hover:border-white/10 text-muted-foreground hover:text-foreground" }
+            )
+            on:click=on_click
+        >
+            {label}
+        </A>
     }
 }

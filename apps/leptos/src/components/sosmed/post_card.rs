@@ -55,8 +55,6 @@ pub fn PostCard(
                 }
                 set_is_liking.set(false);
             });
-        } else {
-            logging::warn!("Login required to like");
         }
     };
 
@@ -76,93 +74,107 @@ pub fn PostCard(
         }
     };
 
-    // Derived values for view
     let post_val = move || post.get();
-    let image_url = move || post.get().image_url;
-    
     let user_name = move || post_val().user.as_ref().map(|u| u.name.clone()).unwrap_or("Unknown".to_string());
     let user_image = move || post_val().user.as_ref().and_then(|u| u.image.clone()).unwrap_or_else(|| format!("https://ui-avatars.com/api/?name={}", user_name()));
 
     view! {
-        <div class="glass-card p-6 rounded-2xl mb-6 last:mb-0 transition-opacity duration-500 animate-fade-in">
-             // Header
-            <div class="flex justify-between items-start mb-4">
-                <div class="flex gap-3 items-center">
-                    <img
-                        src=user_image
-                        alt=user_name
-                        class="w-10 h-10 rounded-full object-cover border border-border"
-                    />
+        <article class="glass-card p-8 rounded-[2.5rem] border border-white/5 transition-all duration-700 hover:border-white/20 group/card relative overflow-hidden shadow-2xl">
+            <div class="absolute inset-0 bg-indigo-500/5 blur-3xl opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none" />
+            
+            // Header
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex gap-4 items-center">
+                    <div class="relative">
+                        <img
+                            src=user_image
+                            alt=user_name.clone()
+                            class="w-12 h-12 rounded-2xl object-cover border-2 border-white/10 shadow-xl"
+                        />
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-muted shadow-lg" />
+                    </div>
                     <div>
-                        <h3 class="font-semibold">{user_name}</h3>
-                        <p class="text-xs text-muted-foreground">
-                            {move || post.get().created_at} // Format distance to now TODO
+                        <h3 class="font-black italic tracking-tighter uppercase text-sm group-hover/card:text-indigo-400 transition-colors">{user_name}</h3>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                            {move || post.get().created_at}
                         </p>
                     </div>
                 </div>
 
-                <Show when=is_owner>
-                    <button
-                        on:click=handle_delete
-                        class="text-muted-foreground hover:text-destructive transition-colors p-2"
-                        title="Delete Post"
-                    >
-                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
-                </Show>
+                <div class="flex items-center gap-2">
+                    <Show when=is_owner>
+                        <button
+                            on:click=handle_delete
+                            class="w-10 h-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all active:scale-95"
+                        >
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </Show>
+                </div>
             </div>
 
             // Content
-            <p class="text-foreground/90 mb-4 whitespace-pre-wrap">{move || post.get().content}</p>
+            <div class="space-y-6">
+                <p class="text-foreground font-medium text-lg leading-relaxed tracking-tight whitespace-pre-wrap">
+                    {move || post.get().content}
+                </p>
 
-            <Show when=move || image_url().is_some()>
-                <div class="mb-4 rounded-xl overflow-hidden border border-border/50">
-                    <img
-                        src=move || image_url().unwrap()
-                        alt="Post content"
-                        class="w-full h-auto max-h-[500px] object-cover"
-                    />
-                </div>
-            </Show>
+                <Show when=move || post.get().image_url.is_some()>
+                    <div class="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group/img">
+                        <img
+                            src=move || post.get().image_url.unwrap_or_default()
+                            alt="Visual Attachment"
+                            class="w-full h-auto max-h-[600px] object-cover transition-transform duration-1000 group-hover/img:scale-105"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
+                    </div>
+                </Show>
+            </div>
 
             // Actions
-            <div class="flex items-center gap-6 pt-4 border-t border-border/50">
+            <div class="flex items-center gap-4 pt-8 mt-8 border-t border-white/5">
                 <button
                     on:click=handle_like
                     disabled=move || is_liking.get()
-                    class=move || format!("flex items-center gap-2 text-sm font-medium transition-colors {}", 
-                        if is_liked() { "text-red-500" } else { "text-muted-foreground hover:text-red-500" }
+                    class=move || format!(
+                        "flex-1 flex items-center justify-center gap-3 py-3 rounded-2xl glass transition-all active:scale-95 {}",
+                        if is_liked() { "bg-red-500/10 text-red-500 border-red-500/40" } else { "border-white/5 text-muted-foreground/60 hover:bg-white/5 hover:text-foreground" }
                     )
                 >
                     <svg
-                        class=move || format!("w-5 h-5 {}", if is_liked() { "fill-current" } else { "fill-none" })
+                        class=move || format!("w-5 h-5 transition-all duration-300 {}",
+                            if is_liked() { "scale-110 fill-current" } else { "fill-none" },
+                        )
                         stroke="currentColor"
+                        stroke-width="2.5"
                         viewBox="0 0 24 24"
                     >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <span>{move || post.get().likes.len()} " Likes"</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest">{move || post.get().likes.len()}</span>
                 </button>
 
                 <button
                     on:click=move |_| set_show_comments.update(|s| *s = !*s)
-                    class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                    class="flex-1 flex items-center justify-center gap-3 py-3 rounded-2xl glass border border-white/5 text-muted-foreground/60 hover:bg-white/5 hover:text-indigo-400 hover:border-indigo-500/40 transition-all active:scale-95"
                 >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
-                    <span>{move || post.get().comments.len()} " Comments"</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest">{move || post.get().comments.len()}</span>
                 </button>
             </div>
 
             <Show when=move || show_comments.get()>
-                <CommentSection
-                    post_id=Signal::derive(move || post.get().id)
-                    comments=Signal::derive(move || post.get().comments)
-                />
+                <div class="mt-8 pt-8 border-t border-white/5 animate-slide-up">
+                    <CommentSection
+                        post_id=Signal::derive(move || post.get().id)
+                        comments=Signal::derive(move || post.get().comments)
+                    />
+                </div>
             </Show>
-        </div>
+        </article>
     }
 }

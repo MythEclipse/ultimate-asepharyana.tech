@@ -52,16 +52,7 @@ const PROJECTS: &[Project] = &[
 #[component]
 fn CardSkeleton() -> impl IntoView {
     view! {
-        <div class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 animate-pulse">
-            <div class="h-56 bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700" />
-            <div class="p-6 space-y-4">
-                <div class="h-7 bg-gray-300 dark:bg-gray-600 rounded-lg w-2/3" />
-                <div class="space-y-2">
-                    <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full" />
-                    <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-4/5" />
-                </div>
-            </div>
-        </div>
+        <div class="aspect-video lg:aspect-[3/4.2] rounded-[2.5rem] bg-white/5 animate-pulse border border-white/5" />
     }
 }
 
@@ -78,45 +69,56 @@ fn ProjectCard(project: Project) -> impl IntoView {
     };
 
     let card_content = move || {
-        let is_external = is_external; // Capture
-        let image_src = image_src; // Capture
+        let is_external_val = is_external;
+        let img_src = image_src();
         view! {
-            <article class="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-500 transform group-hover:scale-[1.03] group-hover:-translate-y-1">
-                 // Image Container with Overlay
-                <div class="relative h-56 overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
-                    <img
-                        src=image_src
-                        alt=project.title
-                        loading="lazy"
-                        class="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                    />
-                     // Gradient Overlay
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
-                     // External badge
-                    <Show when=move || is_external>
-                        <div class="absolute top-3 right-3 px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            "API"
-                        </div>
-                    </Show>
-                </div>
+            <div class="relative group/card perspective-1000 h-full">
+                <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-[2.5rem] opacity-20 blur-2xl group-hover/card:opacity-40 transition-opacity duration-700" />
+                
+                <article class="relative h-full flex flex-col bg-muted/30 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl transition-all duration-700 hover-tilt group-hover/card:border-white/20">
+                    // Image Container with 3D Parallax
+                    <div class="relative h-64 overflow-hidden">
+                        <img
+                            src=img_src
+                            alt=project.title
+                            loading="lazy"
+                            class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/card:scale-115"
+                        />
+                        
+                        // Glassy Overlay
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity duration-500" />
+                        
+                        // External Badge
+                        <Show when=move || is_external_val>
+                            <div class="absolute top-6 right-6 glass px-3 py-1.5 rounded-xl border border-white/20 text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-2 shadow-2xl">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                                "External Link"
+                            </div>
+                        </Show>
+                    </div>
 
-                <div class="p-6 space-y-3">
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center gap-2">
-                        {project.title}
-                         <svg class="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                    </h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                        {project.description}
-                    </p>
-                </div>
-                 // Bottom Accent Line
-                <div class="h-1 w-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 ease-out" />
-            </article>
+                    <div class="flex-1 p-8 flex flex-col justify-between space-y-4 relative z-10">
+                        <div class="space-y-3">
+                            <h3 class="text-3xl font-black italic tracking-tighter uppercase leading-none group-hover/card:text-blue-400 transition-colors">
+                                {project.title}
+                            </h3>
+                            <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed line-clamp-3">
+                                {project.description}
+                            </p>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 group-hover/card:text-blue-500 transition-colors">"Analyze Entry"</span>
+                            <svg class="w-5 h-5 transform transition-transform duration-500 group-hover/card:translate-x-2 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    // Interaction Glow
+                    <div class="absolute inset-0 opacity-0 group-hover/card:opacity-100 bg-gradient-to-tr from-blue-500/10 via-transparent to-purple-500/10 transition-opacity duration-700 pointer-events-none" />
+                </article>
+            </div>
         }
     };
 
@@ -124,7 +126,7 @@ fn ProjectCard(project: Project) -> impl IntoView {
         <Show
             when=move || is_external
             fallback=move || view! {
-                <a href=project.link_url class="block group">
+                <a href=project.link_url class="block group animate-slide-up opacity-0 fill-mode-forwards" style="animation-duration: 0.8s">
                     {card_content()}
                 </a>
             }
@@ -133,7 +135,8 @@ fn ProjectCard(project: Project) -> impl IntoView {
                 href=project.link_url
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block group"
+                class="block group animate-slide-up opacity-0 fill-mode-forwards"
+                style="animation-duration: 0.8s"
             >
                 {card_content()}
             </a>
@@ -150,37 +153,59 @@ pub fn ProjectPage() -> impl IntoView {
     });
 
     view! {
-        <Title text="Project Terbaru | Asepharyana"/>
-        <main class="min-h-screen p-6 bg-background text-foreground">
-            <div class="max-w-7xl mx-auto space-y-8">
-                // Header
-                <div class="flex items-center gap-4 mb-8 animate-fade-in">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
+        <Title text="Archive | Portfolio Showcase"/>
+        <main class="min-h-screen relative overflow-hidden pb-40">
+            // Background Orbs
+            <div class="fixed inset-0 pointer-events-none z-0">
+                <div class="absolute top-[10%] left-[5%] w-[40rem] h-[40rem] bg-blue-500/10 rounded-full blur-[120px] animate-tilt" />
+                <div class="absolute bottom-[20%] right-[5%] w-[35rem] h-[35rem] bg-purple-500/10 rounded-full blur-[120px] animate-tilt-reverse" />
+            </div>
+
+            <div class="max-w-7xl mx-auto px-6 py-24 space-y-32 relative z-10">
+                // Cinematic Header
+                <header class="text-center space-y-12 animate-fade-in">
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-white/10 shadow-2xl">
+                             <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">"Production Archives"</span>
+                        </div>
+                        <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
+                            <span class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
+                                "Creative"
+                            </span>
+                            <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Vault"</span>
+                        </h1>
+                        <p class="max-w-2xl mx-auto text-muted-foreground/60 text-lg font-medium tracking-tight">
+                            "A collection of engineering prototypes and digital artifacts built with "
+                            <span class="text-white font-black">"Rust, Leptos, and High-Performance"</span>
+                            " logic."
+                        </p>
                     </div>
-                    <div>
-                        <h1 class="text-3xl md:text-4xl font-bold text-foreground">"Project Terbaru"</h1>
-                        <p class="text-muted-foreground">"Berikut adalah kumpulan project yang saya buat"</p>
+
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-6 animate-fade-in [animation-delay:200ms]">
+                        <div class="h-px w-20 bg-gradient-to-r from-transparent to-white/20 hidden md:block" />
+                        <div class="flex items-center gap-4 text-xs font-black uppercase tracking-[0.4em] text-muted-foreground/40">
+                            "Total Deployments"
+                            <span class="text-white px-3 py-1 bg-white/5 rounded-lg border border-white/10">{PROJECTS.len()}</span>
+                        </div>
+                        <div class="h-px w-20 bg-gradient-to-l from-transparent to-white/20 hidden md:block" />
                     </div>
-                </div>
+                </header>
 
                 // Project Grid
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                      <Show
                         when=move || mounted.get()
                         fallback=move || view! {
                             <CardSkeleton/>
                             <CardSkeleton/>
                             <CardSkeleton/>
-                            <CardSkeleton/>
-                            <CardSkeleton/>
-                            <CardSkeleton/>
                         }
                     >
-                        {PROJECTS.iter().map(|project| view! {
-                            <ProjectCard project=project.clone()/>
+                        {PROJECTS.iter().enumerate().map(|(i, project)| view! {
+                            <div style=format!("animation-delay: {}ms", i * 150)>
+                                <ProjectCard project=project.clone()/>
+                            </div>
                         }).collect_view()}
                     </Show>
                 </div>

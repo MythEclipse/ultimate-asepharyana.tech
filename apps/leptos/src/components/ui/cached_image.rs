@@ -31,7 +31,12 @@ pub fn CachedImage(
             <img
                 src=src
                 alt=alt
-                class=move || format!("{} {}", cls, if !loaded.get() || error.get() { "opacity-0" } else { "opacity-100" })
+                class=move || format!(
+                    "{} transition-opacity duration-500 ease-out transform-gpu {} {}",
+                    cls,
+                    if !loaded.get() || error.get() { "opacity-0 scale-105 blur-sm" } else { "opacity-100 scale-100 blur-0" },
+                    if error.get() { "grayscale" } else { "" }
+                )
                 loading=load_mode
                 on:load=move |_| set_loaded.set(true)
                 on:error=move |_| set_error.set(true)
