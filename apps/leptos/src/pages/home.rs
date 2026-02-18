@@ -8,7 +8,7 @@ use crate::components::logo::social_icons::{Instagram, LinkedIn, GitHub};
 pub fn HomePage() -> impl IntoView {
     view! {
         <Title text="Identity Protocol | Asep Haryana"/>
-        <main class="relative z-10 w-full">
+        <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: The Grand Reveal
             <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden">
                 <div class="absolute inset-0 opacity-20 pointer-events-none">
@@ -27,11 +27,10 @@ pub fn HomePage() -> impl IntoView {
                         </span>
                     </div>
 
-                    // Main Cinematic Headline
-                    <div class="space-y-8 animate-slide-up">
-                        <h1 class="text-6xl sm:text-7xl md:text-9xl font-black italic tracking-tighter leading-[0.9] uppercase">
-                            <span class="text-foreground/20 block translate-y-4 scale-y-95">"Developing"</span>
-                            <span class="gradient-text-animated block py-4 [text-shadow:0_20px_60px_rgba(99,102,241,0.3)]">
+                    <div class="space-y-8 animate-slide-up fill-mode-forwards">
+                        <h1 class="text-6xl sm:text-7xl md:text-10xl font-black italic tracking-tighter leading-[0.9] uppercase">
+                            <span class="text-foreground/50 block translate-y-4 scale-y-95 tracking-[-0.05em]">"Developing"</span>
+                            <span class="gradient-text-animated block py-4 [text-shadow:0_20px_100px_rgba(99,102,241,0.5)]">
                                 "Digital" <br/> "Destiny"
                             </span>
                         </h1>
@@ -63,8 +62,22 @@ pub fn HomePage() -> impl IntoView {
                     </div>
                 </div>
 
+                // Neural Marquee: The Moving Text Protocol
+                <div class="absolute bottom-0 w-full py-12 bg-black/5 border-y border-white/5 backdrop-blur-sm overflow-hidden rotate-[-2deg] scale-110">
+                    <div class="flex whitespace-nowrap animate-marquee hover:[animation-play-state:paused]">
+                        {(0..10).map(|_| view! {
+                            <div class="flex items-center gap-12 px-6">
+                                <span class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-foreground/5">"Architecture"</span>
+                                <span class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-indigo-500/10">"Performance"</span>
+                                <span class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-foreground/5">"Immersion"</span>
+                                <span class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase text-purple-500/10">"Protocol"</span>
+                            </div>
+                        }).collect_view()}
+                    </div>
+                </div>
+
                 // Scroll Indicator
-                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce opacity-20">
+                <div class="absolute bottom-24 left-1/2 -translate-x-1/2 animate-bounce opacity-20">
                     <div class="w-6 h-10 rounded-full border-2 border-foreground flex justify-center p-2">
                         <div class="w-1.5 h-1.5 rounded-full bg-foreground animate-scroll-pill" />
                     </div>

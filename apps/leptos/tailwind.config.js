@@ -140,7 +140,16 @@ module.exports = {
                 'spin-slow': {
                     '0%': { transform: 'rotate(0deg)' },
                     '100%': { transform: 'rotate(360deg)' },
-                }
+                },
+                marquee: {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-50%)' },
+                },
+                tilt: {
+                    '0%, 50%, 100%': { transform: 'rotate(0deg) translateY(0)' },
+                    '25%': { transform: 'rotate(1.5deg) translateY(-10px)' },
+                    '75%': { transform: 'rotate(-1.5deg) translateY(10px)' },
+                },
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -151,5 +160,19 @@ module.exports = {
     },
     plugins: [
         require('@kobalte/tailwindcss'),
+        ({ addUtilities }) => {
+            const newUtilities = {
+                '.fill-mode-forwards': {
+                    'animation-fill-mode': 'forwards',
+                },
+                '.fill-mode-backwards': {
+                    'animation-fill-mode': 'backwards',
+                },
+                '.fill-mode-both': {
+                    'animation-fill-mode': 'both',
+                },
+            }
+            addUtilities(newUtilities)
+        }
     ],
 }

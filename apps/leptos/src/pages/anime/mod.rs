@@ -145,7 +145,7 @@ fn SectionHeader(
     link_gradient: &'static str,
 ) -> impl IntoView {
     view! {
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 animate-slide-up">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 animate-slide-up fill-mode-forwards">
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
                     <div class=format!("w-16 h-16 rounded-3xl bg-gradient-to-br {} flex items-center justify-center text-3xl shadow-2xl relative group overflow-hidden", gradient)>
@@ -153,10 +153,10 @@ fn SectionHeader(
                         <span class="relative z-10">{icon}</span>
                     </div>
                     <div>
-                        <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">
+                        <h2 class="text-4xl md:text-5xl font-black tracking-tighter uppercase italic text-foreground leading-none drop-shadow-2xl">
                             {title}
                         </h2>
-                        <div class=format!("h-1.5 w-20 bg-gradient-to-r {} rounded-full mt-2", link_gradient) />
+                        <div class=format!("h-2 w-24 bg-gradient-to-r {} rounded-full mt-3", link_gradient) />
                     </div>
                 </div>
             </div>

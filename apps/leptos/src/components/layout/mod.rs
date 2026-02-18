@@ -11,7 +11,7 @@ pub fn ClientLayout(children: Children) -> impl IntoView {
     provide_auth();
 
     view! {
-        <div class="min-h-screen flex flex-col relative overflow-x-hidden bg-[#02040a]">
+        <div class="min-h-screen flex flex-col relative overflow-x-hidden bg-background text-foreground transition-colors duration-700">
             // Premium Cinematic Infrastructure (Global Background)
             <div class="fixed inset-0 pointer-events-none -z-50 select-none overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-50" />
