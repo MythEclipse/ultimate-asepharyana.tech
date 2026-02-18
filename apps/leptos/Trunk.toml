@@ -58,3 +58,12 @@ open = false
 # tls_cert_path = "self_signed_certs/cert.pem"
 # Additional headers to send. NOTE: header names must be valid HTTP headers.
 # headers = { "X-Foo" = "bar" }
+
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = ["-c", "./node_modules/.bin/tailwindcss -i style/main.css -o style/output.css"]
+
+[[proxy]]
+rewrite = "/api/"
+backend = "https://ws.asepharyana.tech/api/"

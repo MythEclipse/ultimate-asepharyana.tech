@@ -2,6 +2,7 @@ use crate::api::types::Pagination;
 use crate::api::API_BASE_URL;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use leptos::logging;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MangaItem {
@@ -33,7 +34,9 @@ async fn fetch_komik_type(type_: &str, page: u32) -> Result<MangaResponse, Strin
         .map_err(|e| e.to_string())?;
 
     if response.status().is_success() {
-        response.json::<MangaResponse>().await.map_err(|e| e.to_string())
+        let res = response.json::<MangaResponse>().await.map_err(|e| e.to_string())?;
+        logging::log!("Fetched {} {} items", type_, res.data.len());
+        Ok(res)
     } else {
         Err(format!("Failed to fetch {}", type_))
     }
@@ -94,6 +97,35 @@ pub async fn fetch_komik_detail(komik_id: String) -> Result<DetailData, String> 
         }
     } else {
         Err("Failed to fetch komik detail".to_string())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChapterData {
+    pub title: String,
+    pub next_chapter_id: String,
+    pub prev_chapter_id: String,
+    pub list_chapter: String,
+    pub images: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChapterResponse {
+    pub message: String,
+    pub data: ChapterData,
+}
+
+pub async fn fetch_chapter(slug: String) -> Result<ChapterData, String> {
+    let client = Client::new();
+    let url = format!("{}/komik/chapter?chapter_url={}", API_BASE_URL, urlencoding::encode(&slug));
+
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+
+    if response.status().is_success() {
+        let api_res = response.json::<ChapterResponse>().await.map_err(|e| e.to_string())?;
+        Ok(api_res.data)
+    } else {
+        Err("Failed to fetch chapter".to_string())
     }
 }
 

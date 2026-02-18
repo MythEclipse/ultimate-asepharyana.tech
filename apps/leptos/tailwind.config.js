@@ -67,9 +67,20 @@ module.exports = {
                 'bounce-in': 'bounce-in 0.5s ease-out',
                 'glow': 'glow-pulse 2s ease-in-out infinite',
                 'spin-slow': 'spin-slow 20s linear infinite',
+                'spin-reverse': 'spin-reverse 30s linear infinite',
+                'wave': 'wave 2s ease-in-out infinite',
                 'morph': 'morph 8s ease-in-out infinite',
             },
             keyframes: {
+                wave: {
+                    '0%, 100%': { transform: 'rotate(0deg)' },
+                    '25%': { transform: 'rotate(20deg)' },
+                    '75%': { transform: 'rotate(-10deg)' },
+                },
+                'spin-reverse': {
+                    from: { transform: 'rotate(360deg)' },
+                    to: { transform: 'rotate(0deg)' },
+                },
                 fadeIn: {
                     '0%': { opacity: '0' },
                     '100%': { opacity: '1' },
@@ -120,6 +131,10 @@ module.exports = {
                     '0%': { transform: 'rotate(0deg)' },
                     '100%': { transform: 'rotate(360deg)' },
                 }
+            },
+            backgroundImage: {
+                'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
             },
         },
     },

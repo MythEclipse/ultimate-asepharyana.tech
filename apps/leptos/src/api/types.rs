@@ -39,7 +39,9 @@ pub struct Pagination {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
+    #[serde(default)]
     pub success: bool,
+    pub status: Option<String>,
     pub data: Option<T>,
     pub message: Option<String>,
     pub meta: Option<serde_json::Value>,

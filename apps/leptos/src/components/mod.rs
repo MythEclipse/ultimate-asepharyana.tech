@@ -3,3 +3,5 @@ pub mod navbar;
 pub mod footer;
 pub mod sosmed;
 pub mod ui;
+pub mod text;
+pub mod logo;

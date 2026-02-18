@@ -1,5 +1,6 @@
 pub mod detail;
 pub mod search;
+pub mod read;
 use leptos::*;
 use leptos_meta::*;
 use serde::{Serialize, Deserialize};

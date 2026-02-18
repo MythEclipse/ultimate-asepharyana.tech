@@ -46,9 +46,13 @@ pub fn App() -> impl IntoView {
                             <Route path="sosmed" view=SosmedPage/>
                             <Route path="anime" view=AnimePage/>
                             <Route path="anime/detail/:slug" view=crate::pages::anime::detail::AnimeDetailPage/>
+                            <Route path="anime/watch/:slug" view=crate::pages::anime::watch::WatchPage/>
+                            <Route path="anime2/detail/:slug" view=crate::pages::anime::detail::AnimeDetailPage/>
+                            <Route path="anime2/watch/:slug" view=crate::pages::anime::watch::WatchPage/>
                             <Route path="anime/search" view=crate::pages::anime::search::AnimeSearchPage/>
                             <Route path="komik" view=KomikPage/>
                             <Route path="komik/detail" view=crate::pages::komik::detail::KomikDetailPage/>
+                            <Route path="komik/read/:slug" view=crate::pages::komik::read::ReadPage/>
                             <Route path="komik/search" view=crate::pages::komik::search::KomikSearchPage/>
                             <Route path="/*any" view=NotFound/>
                         </Routes>

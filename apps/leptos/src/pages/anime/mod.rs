@@ -1,5 +1,6 @@
 pub mod detail;
 pub mod search;
+pub mod watch;
 use leptos::*;
 use leptos_meta::*;
 use serde::{Serialize, Deserialize};
@@ -72,7 +73,7 @@ fn AnimeCard(item: AnimeItem, index: usize) -> impl IntoView {
             style=delay_style
         >
              <a
-                href=format!("/anime/detail/{}", item.slug)
+                href=format!("/anime2/detail/{}", item.slug)
                 class="block relative overflow-hidden rounded-2xl bg-card border border-border shadow-lg hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 transform-gpu hover:-translate-y-4 hover:rotate-1"
             >
                 // ... (Visual effects preserved) ...

@@ -20,31 +20,31 @@ const PROJECTS: &[Project] = &[
     Project {
         title: "Elysia API",
         description: "API Backend menggunakan ElysiaJS dengan dokumentasi Swagger",
-        images: ProjectImages { light: "/project-elysia.png", dark: "/project-elysia.png" },
+        images: ProjectImages { light: "/public/project-elysia.png", dark: "/public/project-elysia.png" },
         link_url: "https://elysia.asepharyana.tech/docs",
     },
     Project {
         title: "Rust API",
         description: "API performa tinggi menggunakan Rust dengan dokumentasi Swagger",
-        images: ProjectImages { light: "/project-rust.png", dark: "/project-rust.png" },
+        images: ProjectImages { light: "/public/project-rust.png", dark: "/public/project-rust.png" },
         link_url: "https://ws.asepharyana.tech/docs",
     },
     Project {
         title: "Anime",
         description: "Nonton dan download anime dari otakudesu.cloud",
-        images: ProjectImages { light: "/project-anime.png", dark: "/project-anime.png" },
+        images: ProjectImages { light: "/public/project-anime.png", dark: "/public/project-anime.png" },
         link_url: "/anime",
     },
     Project {
         title: "Anime2",
         description: "Nonton dan download anime dari alqanime.net",
-        images: ProjectImages { light: "/project-anime2.png", dark: "/project-anime2.png" },
+        images: ProjectImages { light: "/public/project-anime2.png", dark: "/public/project-anime2.png" },
         link_url: "/anime2",
     },
     Project {
         title: "Komik",
         description: "Baca komik, manga, manhwa dari komikindo1.com",
-        images: ProjectImages { light: "/project-komik.png", dark: "/project-komik.png" },
+        images: ProjectImages { light: "/public/project-komik.png", dark: "/public/project-komik.png" },
         link_url: "/komik",
     },
 ];

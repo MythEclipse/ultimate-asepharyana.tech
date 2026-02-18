@@ -22,6 +22,8 @@ pub fn Navbar() -> impl IntoView {
         });
     };
 
+    let location = use_location();
+
     view! {
         <nav class="sticky top-0 z-50 w-full glass-subtle border-b border-white/10">
             <div class="container mx-auto flex h-16 items-center justify-between px-4">
@@ -37,22 +39,52 @@ pub fn Navbar() -> impl IntoView {
 
                 // Desktop Navigation
                 <div class="hidden md:flex items-center space-x-1">
-                     <A href="/project" class="relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground">
+                     <A href="/project" class=move || {
+                        let is_active = location.pathname.get().starts_with("/project");
+                        if is_active {
+                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-primary"
+                        } else {
+                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                        }
+                     }>
                         "Project"
+                        <Show when=move || location.pathname.get().starts_with("/project")>
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
+                        </Show>
                      </A>
-                     <A href="/sosmed" class="relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground">
+                     <A href="/sosmed" class=move || {
+                        let is_active = location.pathname.get().starts_with("/sosmed");
+                        if is_active {
+                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-primary"
+                        } else {
+                            "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                        }
+                     }>
                         "Sosmed"
+                        <Show when=move || location.pathname.get().starts_with("/sosmed")>
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
+                        </Show>
                      </A>
 
                      // Theme Toggle
                      <button
                         on:click=cycle_theme
                         class="p-2.5 rounded-lg hover:bg-white/10 transition-all group"
-                        title="Toggle Theme"
+                        title=move || format!("Theme: {:?}", theme.get())
                      >
                         <div class="relative w-5 h-5">
-                            // Simplified Icon
-                            <span class="text-xs">{move || format!("{:?}", theme.get())}</span>
+                            <Show
+                                when=move || theme.get() == Theme::Dark
+                                fallback=move || view! {
+                                    <svg class="w-5 h-5 text-amber-500 group-hover:rotate-45 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                }
+                            >
+                                <svg class="w-5 h-5 text-indigo-400 group-hover:-rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                </svg>
+                            </Show>
                         </div>
                      </button>
                      
@@ -78,9 +110,18 @@ pub fn Navbar() -> impl IntoView {
                     class="md:hidden p-2.5 rounded-lg hover:bg-white/10 transition-colors"
                     on:click=toggle_menu
                 >
-                    <span class="sr-only">"Toggle menu"</span>
-                    // Icon placeholder
-                    "Menu"
+                    <Show
+                        when=move || is_open.get()
+                        fallback=move || view! {
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        }
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </Show>
                 </button>
             </div>
             
@@ -88,12 +129,49 @@ pub fn Navbar() -> impl IntoView {
             <Show when=move || is_open.get()>
                  <div class="md:hidden glass-card border-t border-white/10 animate-slide-down">
                     <div class="container mx-auto px-4 py-4 space-y-1">
-                        <A href="/project" class="block py-3 px-4 text-sm font-medium rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground transition-all">
+                        <A href="/project" 
+                           class=move || {
+                               let is_active = location.pathname.get().starts_with("/project");
+                               format!("block py-3 px-4 text-sm font-medium rounded-lg transition-all {}",
+                                   if is_active { "bg-primary/10 text-primary" } else { "text-muted-foreground hover:bg-white/5 hover:text-foreground" }
+                               )
+                           }
+                           on:click=move |_| set_is_open.set(false)
+                        >
                             "Project"
                         </A>
-                        <A href="/sosmed" class="block py-3 px-4 text-sm font-medium rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground transition-all">
+                        <A href="/sosmed" 
+                           class=move || {
+                               let is_active = location.pathname.get().starts_with("/sosmed");
+                               format!("block py-3 px-4 text-sm font-medium rounded-lg transition-all {}",
+                                   if is_active { "bg-primary/10 text-primary" } else { "text-muted-foreground hover:bg-white/5 hover:text-foreground" }
+                               )
+                           }
+                           on:click=move |_| set_is_open.set(false)
+                        >
                             "Sosmed"
                         </A>
+                        
+                         <div class="flex items-center justify-between pt-4 mt-4 border-t border-border/50">
+                            <button
+                                on:click=cycle_theme
+                                class="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2 rounded-lg hover:bg-white/5"
+                            > 
+                                <Show
+                                    when=move || theme.get() == Theme::Dark
+                                    fallback=move || view! {
+                                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    }
+                                >
+                                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                    </svg>
+                                </Show>
+                                {move || format!("{:?}", theme.get())}
+                            </button>
+                         </div>
                     </div>
                  </div>
             </Show>

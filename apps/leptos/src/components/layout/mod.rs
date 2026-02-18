@@ -17,7 +17,7 @@ pub fn ClientLayout(children: Children) -> impl IntoView {
             <main class="flex-1">
                 {children()}
             </main>
-            <Footer/>
+            // Footer removed to match SolidJS
         </div>
         // Toaster would go here
     }

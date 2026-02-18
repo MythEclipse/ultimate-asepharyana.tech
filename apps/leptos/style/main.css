@@ -252,6 +252,17 @@ body {
   }
 }
 
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
 @keyframes bounce-in {
   0% {
     transform: scale(0.5);
@@ -262,6 +273,17 @@ body {
   }
   100% {
     transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-up {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -294,6 +316,66 @@ body {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Animated Gradient Background */
+.animated-bg {
+  background: linear-gradient(
+    -45deg,
+    hsl(var(--background)),
+    hsla(var(--gradient-start), 0.1),
+    hsl(var(--background)),
+    hsla(var(--gradient-end), 0.1)
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Gradient Orb */
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.6;
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.gradient-orb-1 {
+  background: linear-gradient(
+    135deg,
+    hsla(var(--neon-purple), 0.5),
+    hsla(var(--neon-magenta), 0.5)
+  );
+}
+
+.gradient-orb-2 {
+  background: linear-gradient(
+    135deg,
+    hsla(var(--neon-cyan), 0.4),
+    hsla(var(--gradient-end), 0.4)
+  );
+  animation-delay: -4s;
+}
+
+.gradient-orb-3 {
+  background: linear-gradient(
+    135deg,
+    hsla(var(--neon-magenta), 0.4),
+    hsla(var(--neon-purple), 0.4)
+  );
+  animation-delay: -2s;
+}
+
+/* Shimmer Loading */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--secondary)) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 /* Scrollbar Styling */

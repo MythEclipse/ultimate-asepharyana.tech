@@ -1,22 +1,50 @@
 use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
-use crate::api::anime::fetch_anime_detail;
+use crate::api::anime::{fetch_anime_detail, EpisodeList};
 
 #[component]
 pub fn AnimeDetailPage() -> impl IntoView {
     let params = use_params_map();
     let slug = move || params.get().get("slug").cloned().unwrap_or_default();
     
-    let anime_data = create_resource(slug, |s| async move {
-        if s.is_empty() { return None; }
-        fetch_anime_detail(s).await.ok()
-    });
+    let location = use_location();
+    let is_anime2 = move || location.pathname.get().contains("/anime2/");
+
+    let anime_data = create_resource(
+        move || (slug(), is_anime2()), 
+        |(s, is_a2)| async move {
+            if s.is_empty() { return None; }
+            if is_a2 {
+                crate::api::anime::fetch_anime2_detail(s).await.ok()
+            } else {
+                fetch_anime_detail(s).await.ok()
+            }
+        }
+    );
 
     view! {
         <main class="min-h-screen bg-background text-foreground pb-20">
             <Suspense fallback=move || view! { <div class="p-20 text-center">"Loading anime details..."</div> }>
-                {move || anime_data.get().flatten().map(|data| view! {
+                {move || anime_data.get().flatten().map(|data| {
+                    let episodes = if !data.episode_lists.is_empty() {
+                        data.episode_lists.clone()
+                    } else if !data.downloads.is_empty() {
+                        data.downloads.iter().map(|d| {
+                            let ep_num = d.resolution.replace("Episode ", "").replace(" ", "");
+                            EpisodeList {
+                                episode: d.resolution.clone(),
+                                slug: format!("{}-episode-{}", slug(), ep_num),
+                            }
+                        }).collect()
+                    } else {
+                        vec![]
+                    };
+
+                    let base_watch_path = if is_anime2() { "/anime2/watch" } else { "/anime/watch" };
+                    let base_detail_path = if is_anime2() { "/anime2/detail" } else { "/anime/detail" };
+
+                    view! {
                     <Title text=format!("{} | Asepharyana", data.title)/>
                     
                     // Banner/Hero Section
@@ -72,11 +100,11 @@ pub fn AnimeDetailPage() -> impl IntoView {
                                     "Episode List"
                                 </h2>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {data.episode_lists.iter().map(|ep| {
+                                    {episodes.iter().map(|ep| {
                                         let ep_slug = ep.slug.clone();
                                         view! {
                                             <a 
-                                                href=format!("/anime/watch/{}", ep_slug)
+                                                href=format!("{}/{}", base_watch_path, ep_slug)
                                                 class="flex items-center justify-between p-5 rounded-2xl glass-subtle hover:bg-white/10 border border-white/5 transition-all group"
                                             >
                                                 <span class="font-medium group-hover:text-blue-400 transition-colors">
@@ -112,7 +140,7 @@ pub fn AnimeDetailPage() -> impl IntoView {
                                 <h3 class="text-xl font-bold mb-6">"Recommendations"</h3>
                                 <div class="space-y-4">
                                     {data.recommendations.iter().take(4).map(|rec| view! {
-                                        <a href=format!("/anime/detail/{}", rec.slug) class="flex gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all group">
+                                        <a href=format!("{}/{}", base_detail_path, rec.slug) class="flex gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all group">
                                             <div class="w-20 aspect-[3/4] rounded-xl overflow-hidden shadow-lg shrink-0">
                                                 <img src=rec.poster.clone() class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                             </div>
@@ -126,7 +154,7 @@ pub fn AnimeDetailPage() -> impl IntoView {
                             </section>
                         </div>
                     </div>
-                }).collect_view()}
+                }}).collect_view()}
             </Suspense>
         </main>
     }
