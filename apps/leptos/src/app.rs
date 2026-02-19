@@ -19,61 +19,38 @@ use crate::pages::komik::KomikPage;
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-    let (intro_complete, set_intro_complete) = create_signal(false);
-
-    let on_intro_done = move || {
-        if !intro_complete.get_untracked() {
-            set_intro_complete.set(true);
-        }
-    };
-
     view! {
-        <Html lang="en" dir="ltr" attr:class="bg-background text-foreground"/>
-        
-        <Stylesheet id="leptos" href="/pkg/apps-leptos.css"/>
-
-        <Title text="Asepharyana"/>
-
-        <Show
-            when=move || intro_complete.get()
-            fallback=move || view! { 
-                <crate::components::ui::cinematic_intro::CinematicIntro 
-                    on_complete=std::rc::Rc::new(on_intro_done) 
-                /> 
-            }
-        >
-            <Router>
-                <ErrorBoundary fallback=move |err| {
-                    let msg = format!("{:?}", err.get());
-                    view! { <ErrorFallback error=msg/> }
-                }>
-                    <ClientLayout>
-                        <PageTransition>
-                            <Routes>
-                                <Route path="" view=HomePage/>
-                                <Route path="login" view=LoginPage/>
-                                <Route path="register" view=RegisterPage/>
-                                <Route path="dashboard" view=DashboardPage/>
-                                <Route path="project" view=ProjectPage/>
-                                <Route path="settings" view=SettingsPage/>
-                                <Route path="sosmed" view=SosmedPage/>
-                                <Route path="anime" view=AnimePage/>
-                                <Route path="anime/detail/:slug" view=crate::pages::anime::detail::AnimeDetailPage/>
-                                <Route path="anime/watch/:slug" view=crate::pages::anime::watch::WatchPage/>
-                                <Route path="anime2/detail/:slug" view=crate::pages::anime::detail::AnimeDetailPage/>
-                                <Route path="anime2/watch/:slug" view=crate::pages::anime::watch::WatchPage/>
-                                <Route path="anime/search" view=crate::pages::anime::search::AnimeSearchPage/>
-                                <Route path="komik" view=KomikPage/>
-                                <Route path="komik/detail" view=crate::pages::komik::detail::KomikDetailPage/>
-                                <Route path="komik/read/:slug" view=crate::pages::komik::read::ReadPage/>
-                                <Route path="komik/search" view=crate::pages::komik::search::KomikSearchPage/>
-                                <Route path="/*any" view=NotFound/>
-                            </Routes>
-                        </PageTransition>
-                    </ClientLayout>
-                </ErrorBoundary>
-            </Router>
-        </Show>
+        <Router>
+            <ErrorBoundary fallback=move |err| {
+                let msg = format!("{:?}", err.get());
+                view! { <ErrorFallback error=msg/> }
+            }>
+                <ClientLayout>
+                    <PageTransition>
+                        <Routes>
+                            <Route path="" view=HomePage/>
+                            <Route path="login" view=LoginPage/>
+                            <Route path="register" view=RegisterPage/>
+                            <Route path="dashboard" view=DashboardPage/>
+                            <Route path="project" view=ProjectPage/>
+                            <Route path="settings" view=SettingsPage/>
+                            <Route path="sosmed" view=SosmedPage/>
+                            <Route path="anime" view=AnimePage/>
+                            <Route path="anime/detail/:slug" view=crate::pages::anime::detail::AnimeDetailPage/>
+                            <Route path="anime/watch/:slug" view=crate::pages::anime::watch::WatchPage/>
+                            <Route path="anime2/detail/:slug" view=crate::pages::anime::detail::AnimeDetailPage/>
+                            <Route path="anime2/watch/:slug" view=crate::pages::anime::watch::WatchPage/>
+                            <Route path="anime/search" view=crate::pages::anime::search::AnimeSearchPage/>
+                            <Route path="komik" view=KomikPage/>
+                            <Route path="komik/detail" view=crate::pages::komik::detail::KomikDetailPage/>
+                            <Route path="komik/read/:slug" view=crate::pages::komik::read::ReadPage/>
+                            <Route path="komik/search" view=crate::pages::komik::search::KomikSearchPage/>
+                            <Route path="/*any" view=NotFound/>
+                        </Routes>
+                    </PageTransition>
+                </ClientLayout>
+            </ErrorBoundary>
+        </Router>
     }
 }
 

@@ -3,11 +3,50 @@ use leptos_meta::Title;
 use leptos_router::A;
 use crate::components::logo::tech_icons::TECH_STACK;
 use crate::components::logo::social_icons::{Instagram, LinkedIn, GitHub};
+use crate::components::ui::LoadingOverlay;
 
 #[component]
 pub fn HomePage() -> impl IntoView {
+    let (visuals_ready, set_visuals_ready) = create_signal(false);
+
+    // Listen for Bevy's Readiness Signal (Local Background)
+    create_effect(move |_| {
+        #[cfg(feature = "csr")]
+        {
+            use wasm_bindgen::prelude::*;
+            use wasm_bindgen::JsCast;
+
+            let handle_message = Closure::wrap(Box::new(move |ev: web_sys::MessageEvent| {
+                if let Some(msg) = ev.data().as_string() {
+                    if msg == "PROTOCOL_READY" {
+                        set_visuals_ready.set(true);
+                    }
+                }
+            }) as Box<dyn FnMut(web_sys::MessageEvent)>);
+
+            window()
+                .add_event_listener_with_callback("message", handle_message.as_ref().unchecked_ref())
+                .unwrap();
+            
+            handle_message.forget(); // Keep the listener alive
+        }
+
+        // Fallback for asset readiness
+        set_timeout(
+            move || {
+                if !visuals_ready.get_untracked() {
+                    set_visuals_ready.set(true);
+                }
+            },
+            std::time::Duration::from_millis(8000),
+        );
+    });
+
     view! {
         <Title text="Full-Stack Developer | Asep Haryana"/>
+        
+        <LoadingOverlay is_ready=visuals_ready />
+
         <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: Professional Identity
             <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden scanlines">
