@@ -3075,6 +3075,11 @@ body::before {
   color: rgb(59 130 246 / var(--tw-text-opacity, 1));
 }
 
+.text-cyan-400 {
+  --tw-text-opacity: 1;
+  color: rgb(34 211 238 / var(--tw-text-opacity, 1));
+}
+
 .text-destructive {
   color: hsl(var(--destructive));
 }
@@ -3103,6 +3108,18 @@ body::before {
 .text-green-500 {
   --tw-text-opacity: 1;
   color: rgb(34 197 94 / var(--tw-text-opacity, 1));
+}
+
+.text-indigo-100\/90 {
+  color: rgb(224 231 255 / 0.9);
+}
+
+.text-indigo-200\/40 {
+  color: rgb(199 210 254 / 0.4);
+}
+
+.text-indigo-300\/40 {
+  color: rgb(165 180 252 / 0.4);
 }
 
 .text-indigo-400 {
@@ -3522,6 +3539,16 @@ body::before {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
+.drop-shadow-\[0_0_15px_rgba\(129\2c 140\2c 248\2c 0\.4\)\] {
+  --tw-drop-shadow: drop-shadow(0 0 15px rgba(129,140,248,0.4));
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.drop-shadow-\[0_0_15px_rgba\(192\2c 132\2c 252\2c 0\.4\)\] {
+  --tw-drop-shadow: drop-shadow(0 0 15px rgba(192,132,252,0.4));
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
 .grayscale {
   --tw-grayscale: grayscale(100%);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
@@ -3741,7 +3768,7 @@ body::before {
 
 .dark {
   --background: 240 25% 2%;
-  --foreground: 0 0% 100%;
+  --foreground: 240 20% 96%;
   --card: 240 20% 6%;
   --card-foreground: 0 0% 98%;
   --popover: 240 20% 6%;
@@ -3751,7 +3778,7 @@ body::before {
   --secondary: 240 15% 12%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 15% 12%;
-  --muted-foreground: 240 10% 75%;
+  --muted-foreground: 240 15% 70%;
   --accent: 280 85% 70%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;

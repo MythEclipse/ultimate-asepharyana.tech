@@ -38,7 +38,7 @@
 /* Premium Color Palette - Dark Mode */
 .dark {
   --background: 240 25% 2%;
-  --foreground: 0 0% 100%;
+  --foreground: 240 20% 96%;
   --card: 240 20% 6%;
   --card-foreground: 0 0% 98%;
   --popover: 240 20% 6%;
@@ -48,7 +48,7 @@
   --secondary: 240 15% 12%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 15% 12%;
-  --muted-foreground: 240 10% 75%;
+  --muted-foreground: 240 15% 70%;
   --accent: 280 85% 70%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;

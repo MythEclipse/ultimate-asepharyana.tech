@@ -76,21 +76,21 @@ pub fn HomePage() -> impl IntoView {
 
                     <div class="space-y-12 animate-slide-up fill-mode-forwards">
                         <h1 class="text-7xl sm:text-8xl md:text-11xl font-black italic tracking-tighter leading-[0.8] uppercase font-display">
-                            <span class="text-foreground/80 block translate-y-8 scale-y-90 tracking-[-0.08em] glitch-heavy mb-8" data-text="Asep">
+                            <span class="text-indigo-100/90 block translate-y-8 scale-y-90 tracking-[-0.08em] glitch-heavy mb-8" data-text="Asep">
                                 "Asep"
                                 <div class="glitch-layer whitespace-nowrap" data-text="Asep"></div>
                             </span>
                             <div class="block py-8">
-                                <span class="text-foreground/80 block glitch-heavy" data-text="Haryana Saputra">
+                                <span class="text-indigo-100/90 block glitch-heavy" data-text="Haryana Saputra">
                                     "Haryana Saputra"
                                     <div class="glitch-layer whitespace-nowrap" data-text="Haryana Saputra"></div>
                                 </span>
                             </div>
                         </h1>
                         <div class="max-w-4xl mx-auto space-y-8">
-                            <p class="text-2xl md:text-3xl text-muted-foreground/50 leading-relaxed font-medium italic font-sans tracking-tight">
-                                "Crafting robust " <span class="text-indigo-400 font-black">"Backend"</span> 
-                                " systems with high-performance " <span class="text-indigo-400 font-black">"Frontend"</span> 
+                            <p class="text-2xl md:text-3xl text-indigo-200/40 leading-relaxed font-medium italic font-sans tracking-tight">
+                                "Crafting robust " <span class="text-indigo-400 font-black drop-shadow-[0_0_15px_rgba(129,140,248,0.4)]">"Backend"</span> 
+                                " systems with high-performance " <span class="text-purple-400 font-black drop-shadow-[0_0_15px_rgba(192,132,252,0.4)]">"Frontend"</span> 
                                 " solutions to build seamless digital experiences."
                             </p>
                             <div class="flex items-center justify-center gap-4">

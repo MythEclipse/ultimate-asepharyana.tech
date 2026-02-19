@@ -56,15 +56,15 @@ pub fn LoadingOverlay(#[prop(into)] is_ready: Signal<bool>) -> impl IntoView {
 
                     // Technical Readouts
                     <div class="flex flex-col gap-1">
-                        <div class="flex justify-between text-[7px] tracking-[0.1em] text-white/40">
+                        <div class="flex justify-between text-[7px] tracking-[0.1em] text-indigo-300/40">
                             <span>"SHADERS"</span>
-                            <span class="text-emerald-500">"OPTIMIZED"</span>
+                            <span class="text-cyan-400">"OPTIMIZED"</span>
                         </div>
-                        <div class="flex justify-between text-[7px] tracking-[0.1em] text-white/40">
+                        <div class="flex justify-between text-[7px] tracking-[0.1em] text-indigo-300/40">
                             <span>"WASM_BUFFER"</span>
                             <span class="animate-pulse">"MOUNTING..."</span>
                         </div>
-                        <div class="flex justify-between text-[7px] tracking-[0.1em] text-white/40">
+                        <div class="flex justify-between text-[7px] tracking-[0.1em] text-indigo-300/40">
                             <span>"SPATIAL_SYNC"</span>
                             <span class="text-indigo-400">"WAITING_HANDSHAKE"</span>
                         </div>
