@@ -437,3 +437,24 @@
 .hover-magnetic:hover {
   transform: translateY(-2px) scale(1.02);
 }
+
+/* Technical Loading Animations */
+@keyframes scan {
+  0% { top: -20%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 120%; opacity: 0; }
+}
+
+.animate-scan {
+  animation: scan 3s linear infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.1; transform: scaleX(0.95); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+.animate-pulse-segments {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}

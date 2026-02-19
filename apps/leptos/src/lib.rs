@@ -9,12 +9,4 @@ pub mod providers;
 pub mod types;
 pub mod app;
 
-use crate::app::App;
-
-#[component]
-pub fn AppRoot() -> impl IntoView {
-    provide_meta_context();
-    view! {
-        <App />
-    }
-}
+pub use crate::app::App as AppRoot;

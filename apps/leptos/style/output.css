@@ -2459,6 +2459,11 @@ body::before {
   --tw-gradient-stops: var(--tw-gradient-from), #6366f1 var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
+.via-indigo-500\/10 {
+  --tw-gradient-to: rgb(99 102 241 / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.1) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
 .via-indigo-500\/30 {
   --tw-gradient-to: rgb(99 102 241 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.3) var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -2786,6 +2791,10 @@ body::before {
   padding-bottom: 4rem;
 }
 
+.pb-2 {
+  padding-bottom: 0.5rem;
+}
+
 .pb-32 {
   padding-bottom: 8rem;
 }
@@ -2913,6 +2922,10 @@ body::before {
   font-size: 12rem;
 }
 
+.text-\[7px\] {
+  font-size: 7px;
+}
+
 .text-\[8px\] {
   font-size: 8px;
 }
@@ -2990,6 +3003,10 @@ body::before {
   letter-spacing: -0.08em;
 }
 
+.tracking-\[0\.1em\] {
+  letter-spacing: 0.1em;
+}
+
 .tracking-\[0\.2em\] {
   letter-spacing: 0.2em;
 }
@@ -3058,6 +3075,11 @@ body::before {
   color: hsl(var(--destructive));
 }
 
+.text-emerald-500 {
+  --tw-text-opacity: 1;
+  color: rgb(16 185 129 / var(--tw-text-opacity, 1));
+}
+
 .text-foreground {
   color: hsl(var(--foreground));
 }
@@ -3091,6 +3113,10 @@ body::before {
 
 .text-indigo-500\/10 {
   color: rgb(99 102 241 / 0.1);
+}
+
+.text-indigo-500\/50 {
+  color: rgb(99 102 241 / 0.5);
 }
 
 .text-muted-foreground {
@@ -3236,6 +3262,10 @@ body::before {
 
 .opacity-40 {
   opacity: 0.4;
+}
+
+.opacity-5 {
+  opacity: 0.05;
 }
 
 .opacity-50 {
@@ -3465,6 +3495,11 @@ body::before {
 
 .blur-xl {
   --tw-blur: blur(24px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.brightness-110 {
+  --tw-brightness: brightness(1.1);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
@@ -4082,6 +4117,48 @@ body::before {
 
 .hover-magnetic:hover {
   transform: translateY(-2px) scale(1.02);
+}
+
+/* Technical Loading Animations */
+
+@keyframes scan {
+  0% {
+    top: -20%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 120%;
+    opacity: 0;
+  }
+}
+
+.animate-scan {
+  animation: scan 3s linear infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scaleX(0.95);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.animate-pulse-segments {
+  animation: pulse-subtle 2s ease-in-out infinite;
 }
 
 .selection\:bg-orange-500\/30 *::-moz-selection {
