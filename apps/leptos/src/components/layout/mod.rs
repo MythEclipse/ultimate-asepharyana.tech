@@ -1,6 +1,5 @@
 use leptos::*;
 use crate::components::navbar::Navbar;
-use crate::components::footer::Footer;
 use crate::components::ui::navigation_progress::NavigationProgress;
 use crate::providers::{provide_theme, provide_auth};
 

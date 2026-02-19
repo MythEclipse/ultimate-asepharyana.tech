@@ -1,6 +1,3 @@
-use leptos::*;
-use leptos_meta::*;
-use leptos_router::*;
 
 pub mod api;
 pub mod components;

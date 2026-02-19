@@ -1,4 +1,3 @@
-use leptos::*;
 
 #[derive(Clone, Debug)]
 pub struct TechIcon {

@@ -2,7 +2,6 @@ use leptos::*;
 use leptos_meta::Title;
 use leptos_router::*;
 use crate::api::anime::fetch_anime_stream;
-use crate::providers::use_auth;
 
 #[component]
 pub fn WatchPage() -> impl IntoView {
