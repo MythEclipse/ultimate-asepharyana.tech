@@ -1,20 +1,32 @@
 use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
-use crate::api::anime::{search_anime, SearchAnimeItem};
+use crate::api::anime::{search_anime1, search_anime2, SearchAnimeItem};
 
 #[component]
 pub fn AnimeSearchPage() -> impl IntoView {
     let query = use_query_map();
     let q = move || query.get().get("q").cloned().unwrap_or_default();
     
-    let search_results = create_resource(q, |s| async move {
-        if s.is_empty() { return None; }
-        search_anime(s).await.ok()
-    });
+    let location = use_location();
+    let is_anime2 = move || location.pathname.get().contains("/anime2/");
+
+    let search_results = create_resource(
+        move || (q(), is_anime2()), 
+        |(s, is_a2)| async move {
+            if s.is_empty() { return None; }
+            if is_a2 {
+                search_anime2(s).await.ok()
+            } else {
+                search_anime1(s).await.ok()
+            }
+        }
+    );
+
+    let prefix = move || if is_anime2() { "anime2" } else { "anime" };
 
     view! {
-        <Title text=move || format!("Searching \"{}\" | Anime Hub", q())/>
+        <Title text=move || format!("Searching \"{}\" | {} Hub", q(), if is_anime2() { "Anime 2" } else { "Anime" })/>
         <main class="min-h-screen relative overflow-hidden pb-40">
             <div class="max-w-7xl mx-auto px-6 py-24 space-y-24">
                 // Cinematic Search Header
@@ -56,7 +68,7 @@ pub fn AnimeSearchPage() -> impl IntoView {
                                         <h3 class="text-3xl font-black uppercase tracking-tighter italic">"No Signal Detected"</h3>
                                         <p class="text-muted-foreground/60 font-medium leading-relaxed">"The library archives don't contain any entries matching your query. Please recalibrate your search terms."</p>
                                     </div>
-                                    <a href="/anime" class="inline-flex px-8 py-4 rounded-2xl bg-foreground text-background font-black uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-2xl">
+                                    <a href=format!("/{}", prefix()) class="inline-flex px-8 py-4 rounded-2xl bg-foreground text-background font-black uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-2xl">
                                         "Back to Hub"
                                     </a>
                                 </div>
@@ -66,7 +78,7 @@ pub fn AnimeSearchPage() -> impl IntoView {
                         view! {
                             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
                                 {items.into_iter().enumerate().map(|(i, item)| view! {
-                                    <SearchAnimeCard item=item index=i />
+                                    <SearchAnimeCard item=item index=i source=if is_anime2() { 2 } else { 1 } />
                                 }).collect_view()}
                             </div>
                         }.into_view()
@@ -83,15 +95,16 @@ pub fn AnimeSearchPage() -> impl IntoView {
 }
 
 #[component]
-fn SearchAnimeCard(item: SearchAnimeItem, index: usize) -> impl IntoView {
+fn SearchAnimeCard(item: SearchAnimeItem, index: usize, source: u8) -> impl IntoView {
     let delay = format!("animation-delay: {}ms", index * 50);
+    let prefix = if source == 2 { "anime2" } else { "anime" };
     
     view! {
         <div 
             class="group animate-slide-up opacity-0 fill-mode-forwards" 
             style=delay
         >
-            <a href=format!("/anime/detail/{}", item.slug) class="block relative group/card perspective-1000">
+            <a href=format!("/{}/detail/{}", prefix, item.slug) class="block relative group/card perspective-1000">
                 <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-white/5 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-blue-500/20 group-hover:border-white/20">
                     <img 
                         src=item.poster 
@@ -105,10 +118,10 @@ fn SearchAnimeCard(item: SearchAnimeItem, index: usize) -> impl IntoView {
                     <div class="absolute bottom-0 left-0 right-0 p-6 space-y-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-1 rounded-lg bg-blue-500/20 border border-blue-500/30 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-blue-400">
-                                {item.episode}
+                                {item.info}
                             </span>
                             <span class="px-2 py-1 rounded-lg bg-yellow-500/90 text-[10px] font-black uppercase tracking-widest text-black shadow-lg">
-                                {item.status}
+                                {item.sub_info}
                             </span>
                         </div>
                         <h3 class="text-sm font-black text-white leading-tight line-clamp-2 [text-shadow:0_4px_12px_rgba(0,0,0,0.5)] group-hover:text-blue-200 transition-colors">

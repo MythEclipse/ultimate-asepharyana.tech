@@ -4,7 +4,9 @@ pub mod watch;
 use leptos::*;
 use leptos_meta::*;
 use serde::{Serialize, Deserialize};
-use crate::api::anime::{fetch_ongoing_anime, fetch_complete_anime};
+use crate::api::anime::{
+    fetch_anime1_index, fetch_anime2_index
+};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnimeItem {
@@ -22,43 +24,52 @@ pub struct HomeData {
     pub complete_anime: Vec<AnimeItem>,
 }
 
-async fn fetch_anime_data() -> Option<HomeData> {
-    let ongoing_res = fetch_ongoing_anime(1).await;
-    let complete_res = fetch_complete_anime(1).await;
-
-
-    let ongoing_anime = match ongoing_res {
-        Ok((data, _)) => data.into_iter().map(|item| AnimeItem {
-            title: item.title,
-            slug: item.slug,
-            poster: item.poster,
-            current_episode: None, // Endpoint has score, not episode
-            episode_count: None,
-            score: Some(item.score),
-        }).collect(),
-        Err(_) => vec![],
-    };
-
-    let complete_anime = match complete_res {
-        Ok((data, _)) => data.into_iter().map(|item| AnimeItem {
-            title: item.title,
-            slug: item.slug,
-            poster: item.poster,
-            current_episode: None,
-            episode_count: Some(item.episode_count),
-            score: None,
-        }).collect(),
-        Err(_) => vec![],
-    };
-
-    Some(HomeData {
-        ongoing_anime,
-        complete_anime,
-    })
+async fn fetch_anime_data(source: u8) -> Option<HomeData> {
+    if source == 2 {
+        let data = fetch_anime2_index().await.ok()?;
+        Some(HomeData {
+            ongoing_anime: data.ongoing_anime.into_iter().map(|item| AnimeItem {
+                title: item.title,
+                slug: item.slug,
+                poster: item.poster,
+                current_episode: Some(item.current_episode),
+                episode_count: None,
+                score: None,
+            }).collect(),
+            complete_anime: data.complete_anime.into_iter().map(|item| AnimeItem {
+                title: item.title,
+                slug: item.slug,
+                poster: item.poster,
+                current_episode: None,
+                episode_count: Some(item.episode_count),
+                score: None,
+            }).collect(),
+        })
+    } else {
+        let data = fetch_anime1_index().await.ok()?;
+        Some(HomeData {
+            ongoing_anime: data.ongoing_anime.into_iter().map(|item| AnimeItem {
+                title: item.title,
+                slug: item.slug,
+                poster: item.poster,
+                current_episode: Some(item.current_episode),
+                episode_count: None,
+                score: None,
+            }).collect(),
+            complete_anime: data.complete_anime.into_iter().map(|item| AnimeItem {
+                title: item.title,
+                slug: item.slug,
+                poster: item.poster,
+                current_episode: None,
+                episode_count: Some(item.episode_count),
+                score: None,
+            }).collect(),
+        })
+    }
 }
 
 #[component]
-fn AnimeCard(item: AnimeItem, index: usize) -> impl IntoView {
+fn AnimeCard(item: AnimeItem, index: usize, source: u8) -> impl IntoView {
     let delay_style = format!("animation-delay: {}ms", index * 50);
     let has_episode = item.current_episode.is_some();
     let current_episode_text = item.current_episode.clone();
@@ -67,13 +78,15 @@ fn AnimeCard(item: AnimeItem, index: usize) -> impl IntoView {
     let has_count = item.episode_count.is_some();
     let count_text = item.episode_count.clone();
 
+    let prefix = if source == 2 { "anime2" } else { "anime" };
+
     view! {
         <div 
             class="group animate-slide-up opacity-0 fill-mode-forwards"
             style=delay_style
         >
              <a
-                href=format!("/anime2/detail/{}", item.slug)
+                href=format!("/{}/detail/{}", prefix, item.slug)
                 class="block relative group/card perspective-1000"
             >
                 <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-white/5 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-blue-500/20 group-hover:border-white/20">
@@ -128,10 +141,10 @@ fn AnimeCard(item: AnimeItem, index: usize) -> impl IntoView {
 }
 
 #[component]
-fn AnimeGrid(items: Vec<AnimeItem>) -> impl IntoView {
+fn AnimeGrid(items: Vec<AnimeItem>, source: u8) -> impl IntoView {
     view! {
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8">
-            {items.into_iter().enumerate().map(|(i, item)| view! { <AnimeCard item=item index=i/> }).collect_view()}
+            {items.into_iter().enumerate().map(|(i, item)| view! { <AnimeCard item=item index=i source=source/> }).collect_view()}
         </div>
     }
 }
@@ -141,7 +154,7 @@ fn SectionHeader(
     title: &'static str,
     icon: &'static str,
     gradient: &'static str,
-    link: &'static str,
+    link: String,
     link_gradient: &'static str,
 ) -> impl IntoView {
     view! {
@@ -174,11 +187,12 @@ fn SectionHeader(
 }
 
 #[component]
-pub fn AnimePage() -> impl IntoView {
-    let data = create_resource(|| (), |_| fetch_anime_data());
+pub fn AnimePage(#[prop(default = 1)] source: u8) -> impl IntoView {
+    let data = create_resource(move || source, |s| fetch_anime_data(s));
+    let source_title = if source == 2 { "Source 2" } else { "Source 1" };
 
     view! {
-        <Title text="Anime | Media Hub"/>
+        <Title text=format!("Anime {} | Media Hub", source_title)/>
         <main class="min-h-screen py-24 px-6 md:px-12 relative overflow-hidden">
             <div class="max-w-7xl mx-auto space-y-32">
                 // Cinematic Header
@@ -186,9 +200,9 @@ pub fn AnimePage() -> impl IntoView {
                     <div class="space-y-6">
                         <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-white/10 shadow-2xl">
                              <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">"Streaming Library"</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">{format!("Streaming Library ({})", source_title)}</span>
                         </div>
-                        <h1 class="text-6xl md::text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
+                        <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
                             <span class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
                                 "Anime"
                             </span>
@@ -199,7 +213,7 @@ pub fn AnimePage() -> impl IntoView {
                     // Premium Search Bar
                     <div class="max-w-3xl mx-auto relative group">
                         <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-[2.5rem] opacity-20 blur-2xl group-focus-within:opacity-50 transition-opacity duration-700" />
-                        <form action="/anime/search" method="get" class="relative flex gap-4 p-2 rounded-[2.5rem] glass border border-white/20 shadow-2xl backdrop-blur-3xl">
+                        <form action=format!("/anime{}/search", if source == 2 { "2" } else { "" }) method="get" class="relative flex gap-4 p-2 rounded-[2.5rem] glass border border-white/20 shadow-2xl backdrop-blur-3xl">
                             <input
                                 type="text"
                                 name="q"
@@ -230,6 +244,7 @@ pub fn AnimePage() -> impl IntoView {
                     }>
                         {move || {
                             let d = data.get().flatten().unwrap();
+                            let prefix = if source == 2 { "anime2" } else { "anime" };
                             view! {
                                 <div class="space-y-32">
                                     <section>
@@ -237,10 +252,10 @@ pub fn AnimePage() -> impl IntoView {
                                             title="Ongoing"
                                             icon="🔥"
                                             gradient="from-blue-600 to-indigo-700"
-                                            link="/anime/ongoing-anime/1"
+                                            link=format!("/{}/ongoing-anime/1", prefix)
                                             link_gradient="from-blue-500 to-indigo-500"
                                         />
-                                        <AnimeGrid items=d.ongoing_anime/>
+                                        <AnimeGrid items=d.ongoing_anime source=source/>
                                     </section>
 
                                     <section>
@@ -248,10 +263,10 @@ pub fn AnimePage() -> impl IntoView {
                                             title="Complete"
                                             icon="✨"
                                             gradient="from-purple-600 to-pink-700"
-                                            link="/anime/complete-anime/1"
+                                            link=format!("/{}/complete-anime/1", prefix)
                                             link_gradient="from-purple-500 to-pink-500"
                                         />
-                                        <AnimeGrid items=d.complete_anime/>
+                                        <AnimeGrid items=d.complete_anime source=source/>
                                     </section>
                                 </div>
                             }

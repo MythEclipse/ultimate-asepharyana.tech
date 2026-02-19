@@ -3,21 +3,28 @@ use crate::api::API_BASE_URL;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use urlencoding;
-use leptos::logging;
+
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OngoingAnimeItem {
+pub struct Anime1OngoingItem {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub current_episode: String,
+    pub anime_url: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anime2OngoingItem {
     pub title: String,
     pub slug: String,
     pub poster: String,
     pub score: String,
     pub anime_url: String,
-    // Helper for frontend compatibility if needed
-    // pub current_episode: Option<String>, 
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CompleteAnimeItem {
+pub struct Anime2CompleteItem {
     pub title: String,
     pub slug: String,
     pub poster: String,
@@ -26,14 +33,54 @@ pub struct CompleteAnimeItem {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OngoingAnimeResponse {
+pub struct OngoingAnime1Response {
+    pub data: Vec<Anime1OngoingItem>,
     pub pagination: Pagination,
     pub status: String,
 }
 
-pub async fn fetch_ongoing_anime(page: u32) -> Result<(Vec<OngoingAnimeItem>, Pagination), String> {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anime1Data {
+    pub ongoing_anime: Vec<Anime1OngoingItem>,
+    pub complete_anime: Vec<Anime2CompleteItem>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anime2Data {
+    pub ongoing_anime: Vec<Anime1OngoingItem>, // OpenAPI says OngoingAnimeItem for Source 2 Index too
+    pub complete_anime: Vec<Anime2CompleteItem>,
+}
+
+pub async fn fetch_anime1_index() -> Result<Anime1Data, String> {
     let client = Client::new();
-    // Using slug as page number
+    let url = format!("{}/anime", API_BASE_URL);
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+
+    if response.status().is_success() {
+        let api_res = response.json::<ApiResponse<Anime1Data>>().await.map_err(|e| e.to_string())?;
+        api_res.data.ok_or_else(|| "No data found".to_string())
+    } else {
+        Err("Failed to fetch anime 1 index".to_string())
+    }
+}
+
+pub async fn fetch_anime2_index() -> Result<Anime2Data, String> {
+    let client = Client::new();
+    let url = format!("{}/anime2", API_BASE_URL);
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+
+    if response.status().is_success() {
+        #[derive(Deserialize)]
+        struct Res { data: Anime2Data }
+        let api_res = response.json::<Res>().await.map_err(|e| e.to_string())?;
+        Ok(api_res.data)
+    } else {
+        Err("Failed to fetch anime 2 index".to_string())
+    }
+}
+
+pub async fn fetch_anime2_ongoing(page: u32) -> Result<(Vec<Anime2OngoingItem>, Pagination), String> {
+    let client = Client::new();
     let url = format!("{}/anime2/ongoing-anime/{}", API_BASE_URL, page);
 
     let response = client
@@ -43,30 +90,39 @@ pub async fn fetch_ongoing_anime(page: u32) -> Result<(Vec<OngoingAnimeItem>, Pa
         .map_err(|e| e.to_string())?;
 
     if response.status().is_success() {
-        let api_response = response.json::<ApiResponse<Vec<OngoingAnimeItem>>>().await.map_err(|e| e.to_string())?;
+        let api_response = response.json::<ApiResponse<Vec<Anime2OngoingItem>>>().await.map_err(|e| e.to_string())?;
         if let Some(data) = api_response.data {
-            logging::log!("Fetched ongoing anime: {} items", data.len());
-             let pagination = if let Some(meta) = api_response.meta {
-                serde_json::from_value::<OngoingAnimeResponse>(meta)
-                    .map(|r| r.pagination)
-                    .unwrap_or_else(|_| Pagination {
-                        current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
-                    })
-            } else {
-                 Pagination {
-                    current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
-                }
-            };
+             let pagination = api_response.pagination.unwrap_or_else(|| Pagination {
+                current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
+            });
             Ok((data, pagination))
         } else {
             Err("No data returned".to_string())
         }
     } else {
-        Err("Failed to fetch ongoing anime".to_string())
+        Err("Failed to fetch ongoing anime from source 2".to_string())
     }
 }
 
-pub async fn fetch_complete_anime(page: u32) -> Result<(Vec<CompleteAnimeItem>, Pagination), String> {
+pub async fn fetch_anime1_ongoing(page: u32) -> Result<(Vec<Anime1OngoingItem>, Pagination), String> {
+    let client = Client::new();
+    let url = format!("{}/anime/ongoing-anime/{}", API_BASE_URL, page);
+
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if response.status().is_success() {
+        let api_response = response.json::<OngoingAnime1Response>().await.map_err(|e| e.to_string())?;
+        Ok((api_response.data, api_response.pagination))
+    } else {
+        Err("Failed to fetch ongoing anime from source 1".to_string())
+    }
+}
+
+pub async fn fetch_anime2_complete(page: u32) -> Result<(Vec<Anime2CompleteItem>, Pagination), String> {
     let client = Client::new();
     let url = format!("{}/anime2/complete-anime/{}", API_BASE_URL, page);
 
@@ -77,25 +133,48 @@ pub async fn fetch_complete_anime(page: u32) -> Result<(Vec<CompleteAnimeItem>, 
         .map_err(|e| e.to_string())?;
 
     if response.status().is_success() {
-        let api_response = response.json::<ApiResponse<Vec<CompleteAnimeItem>>>().await.map_err(|e| e.to_string())?;
+        let api_response = response.json::<ApiResponse<Vec<Anime2CompleteItem>>>().await.map_err(|e| e.to_string())?;
          if let Some(data) = api_response.data {
-             let pagination = if let Some(meta) = api_response.meta {
-                serde_json::from_value::<OngoingAnimeResponse>(meta)
-                    .map(|r| r.pagination)
-                    .unwrap_or_else(|_| Pagination {
-                        current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
-                    })
-            } else {
-                 Pagination {
-                    current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
-                }
-            };
+             let pagination = api_response.pagination.unwrap_or_else(|| Pagination {
+                current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
+            });
             Ok((data, pagination))
         } else {
              Err("No data returned".to_string())
         }
     } else {
-        Err("Failed to fetch complete anime".to_string())
+        Err("Failed to fetch complete anime from source 2".to_string())
+    }
+}
+
+pub async fn fetch_anime1_complete(page: u32) -> Result<(Vec<Anime2CompleteItem>, Pagination), String> {
+    let client = Client::new();
+    let url = format!("{}/anime/complete-anime/{}", API_BASE_URL, page);
+
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if response.status().is_success() {
+        // Source 1 uses ListResponse { message, data, pagination, total }
+        // We reuse Anime2CompleteItem because fields match (title, slug, poster, episode_count, anime_url)
+        // message field is ignored by deserialize if not present in struct
+        #[derive(Deserialize)]
+        struct ListRes {
+            data: Vec<Anime2CompleteItem>,
+            pagination: Option<Pagination>,
+        }
+        let api_response = response.json::<ListRes>().await.map_err(|e| e.to_string())?;
+        
+        let pagination = api_response.pagination.unwrap_or_else(|| Pagination {
+            current_page: 1, last_visible_page: 1, has_next_page: false, next_page: None, has_previous_page: false, previous_page: None
+        });
+
+        Ok((api_response.data, pagination))
+    } else {
+        Err("Failed to fetch complete anime from source 1".to_string())
     }
 }
 
@@ -153,13 +232,37 @@ pub struct AnimeDetailData {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SearchAnimeItem {
+pub struct Anime1SearchItem {
     pub title: String,
     pub slug: String,
     pub poster: String,
     pub episode: String,
+    pub anime_url: String,
+    pub genres: Vec<String>,
     pub status: String,
     pub rating: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anime2SearchItem {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub description: String,
+    pub anime_url: String,
+    pub genres: Vec<String>,
+    pub rating: String,
+    pub r#type: String,
+    pub season: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SearchAnimeItem {
+    pub title: String,
+    pub slug: String,
+    pub poster: String,
+    pub info: String, // Unified field for 'episode' or 'rating/type'
+    pub sub_info: String,
 }
 
 pub async fn fetch_anime_detail(slug: String) -> Result<AnimeDetailData, String> {
@@ -288,15 +391,54 @@ pub async fn fetch_anime2_stream(slug: String) -> Result<AnimeFullData, String> 
     }
 }
 
-pub async fn search_anime(query: String) -> Result<Vec<SearchAnimeItem>, String> {
+pub async fn search_anime1(query: String) -> Result<Vec<SearchAnimeItem>, String> {
     let client = Client::new();
     let url = format!("{}/anime/search?q={}", API_BASE_URL, urlencoding::encode(&query));
 
     let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
 
     if response.status().is_success() {
-        let api_res = response.json::<ApiResponse<Vec<SearchAnimeItem>>>().await.map_err(|e| e.to_string())?;
-        api_res.data.ok_or_else(|| "No results".to_string())
+        // Source 1 search response wrapper
+        #[derive(Deserialize)]
+        struct SearchRes {
+            data: Vec<Anime1SearchItem>,
+        }
+        let api_res = response.json::<SearchRes>().await.map_err(|e| e.to_string())?;
+        
+        let mapped = api_res.data.into_iter().map(|item| SearchAnimeItem {
+            title: item.title,
+            slug: item.slug,
+            poster: item.poster,
+            info: item.episode,
+            sub_info: item.rating,
+        }).collect();
+        
+        Ok(mapped)
+    } else {
+        Err("Search failed".to_string())
+    }
+}
+
+pub async fn search_anime2(query: String) -> Result<Vec<SearchAnimeItem>, String> {
+    let client = Client::new();
+    let url = format!("{}/anime2/search?q={}", API_BASE_URL, urlencoding::encode(&query));
+
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+
+    if response.status().is_success() {
+        let api_res = response.json::<ApiResponse<Vec<Anime2SearchItem>>>().await.map_err(|e| e.to_string())?;
+        if let Some(data) = api_res.data {
+            let mapped = data.into_iter().map(|item| SearchAnimeItem {
+                title: item.title,
+                slug: item.slug,
+                poster: item.poster,
+                info: format!("{} | {}", item.r#type, item.season),
+                sub_info: item.rating,
+            }).collect();
+            Ok(mapped)
+        } else {
+            Ok(vec![])
+        }
     } else {
         Err("Search failed".to_string())
     }

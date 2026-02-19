@@ -44,6 +44,7 @@ pub struct ApiResponse<T> {
     pub status: Option<String>,
     pub data: Option<T>,
     pub message: Option<String>,
+    pub pagination: Option<Pagination>,
     pub meta: Option<serde_json::Value>,
 }
 
