@@ -1,7 +1,7 @@
-
 use serde::{Deserialize, Serialize};
 use crate::types::Post;
 use crate::api::types::ApiError;
+use crate::api::API_BASE_URL;
 use reqwest::Client;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -12,8 +12,9 @@ pub struct CreatePostRequest {
 
 pub async fn get_posts() -> Result<Vec<Post>, ApiError> {
     let client = Client::new();
+    let url = format!("{}/social/posts", API_BASE_URL);
     let response = client
-        .get("http://localhost:4091/api/social/posts")
+        .get(&url)
         .send()
         .await
         .map_err(|e| ApiError { message: e.to_string(), code: None, details: None })?;
@@ -31,8 +32,9 @@ pub async fn get_posts() -> Result<Vec<Post>, ApiError> {
 
 pub async fn create_post(token: String, request: CreatePostRequest) -> Result<String, ApiError> {
     let client = Client::new();
+    let url = format!("{}/social/posts", API_BASE_URL);
     let response = client
-        .post("http://localhost:4091/api/social/posts")
+        .post(&url)
         .bearer_auth(token)
         .json(&request)
         .send()
@@ -52,8 +54,9 @@ pub async fn create_post(token: String, request: CreatePostRequest) -> Result<St
 
 pub async fn like_post(token: String, post_id: String) -> Result<String, ApiError> {
     let client = Client::new();
+    let url = format!("{}/social/posts/{}/like", API_BASE_URL, post_id);
     let response = client
-        .post(format!("http://localhost:4091/api/social/posts/{}/like", post_id))
+        .post(&url)
         .bearer_auth(token)
         .send()
         .await
@@ -72,8 +75,9 @@ pub async fn like_post(token: String, post_id: String) -> Result<String, ApiErro
 
 pub async fn delete_post(token: String, post_id: String) -> Result<String, ApiError> {
     let client = Client::new();
+    let url = format!("{}/social/posts/{}", API_BASE_URL, post_id);
     let response = client
-        .delete(format!("http://localhost:4091/api/social/posts/{}", post_id))
+        .delete(&url)
         .bearer_auth(token)
         .send()
         .await

@@ -27,12 +27,12 @@ pub fn RegisterPage() -> impl IntoView {
         set_error.set("".to_string());
         
         if password.get() != confirm_password.get() {
-            set_error.set("Encryption keys do not synchronize. Verification failed.".to_string());
+            set_error.set("Passwords do not match. Please verify.".to_string());
             return;
         }
 
         if password.get().len() < 6 {
-            set_error.set("Security mandates a minimum 6-character encryption key.".to_string());
+            set_error.set("Password must be at least 6 characters long.".to_string());
             return;
         }
 
@@ -44,7 +44,7 @@ pub fn RegisterPage() -> impl IntoView {
     };
 
     view! {
-        <Title text="Initialization | Identity Protocol"/>
+        <Title text="Register | Asep Haryana"/>
         <main class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-black/20">
             // Cinematic Background Infrastructure
             <div class="fixed inset-0 pointer-events-none z-0">
@@ -61,9 +61,9 @@ pub fn RegisterPage() -> impl IntoView {
                         <header class="text-center space-y-4">
                             <div class="space-y-2">
                                 <h1 class="text-3xl font-black italic tracking-tighter uppercase leading-none">
-                                    "Identity " <span class="bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">"Protocol"</span>
+                                    "Create " <span class="bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">"Account"</span>
                                 </h1>
-                                <p class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">"Initialize New User Instance"</p>
+                                <p class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">"Join the community today"</p>
                             </div>
                         </header>
 
@@ -78,10 +78,10 @@ pub fn RegisterPage() -> impl IntoView {
                         <form on:submit=on_submit class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-2 group/input">
-                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Alias"</label>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Full Name"</label>
                                     <input
                                         type="text"
-                                        placeholder="User Entity"
+                                        placeholder="Your Name"
                                         class="w-full bg-white/2 border border-white/5 rounded-2xl py-4 px-6 focus:outline-none focus:border-purple-500/30 transition-all text-sm font-medium tracking-tight placeholder:text-muted-foreground/10"
                                         prop:value=name
                                         on:input=move |ev| set_name.set(event_target_value(&ev))
@@ -89,10 +89,10 @@ pub fn RegisterPage() -> impl IntoView {
                                     />
                                 </div>
                                 <div class="space-y-2 group/input">
-                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Uplink ID"</label>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Email Address"</label>
                                     <input
                                         type="email"
-                                        placeholder="id@network.root"
+                                        placeholder="your@email.com"
                                         class="w-full bg-white/2 border border-white/5 rounded-2xl py-4 px-6 focus:outline-none focus:border-purple-500/30 transition-all text-sm font-medium tracking-tight placeholder:text-muted-foreground/10"
                                         prop:value=email
                                         on:input=move |ev| set_email.set(event_target_value(&ev))
@@ -102,7 +102,7 @@ pub fn RegisterPage() -> impl IntoView {
                             </div>
 
                             <div class="space-y-2 group/input">
-                                <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Initial Encryption Key"</label>
+                                <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Password"</label>
                                 <div class="relative">
                                     <input
                                         type=move || if show_password.get() { "text" } else { "password" }
@@ -117,13 +117,13 @@ pub fn RegisterPage() -> impl IntoView {
                                         on:click=move |_| set_show_password.update(|s| *s = !*s)
                                         class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 hover:text-purple-500 transition-colors"
                                     >
-                                        {move || if show_password.get() { "Obscure" } else { "Reveal" }}
+                                        {move || if show_password.get() { "Hide" } else { "Show" }}
                                     </button>
                                 </div>
                             </div>
 
                             <div class="space-y-2 group/input">
-                                <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Key Verification"</label>
+                                <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-purple-500">"Confirm Password"</label>
                                 <input
                                     type=move || if show_password.get() { "text" } else { "password" }
                                     placeholder="••••••••"
@@ -140,7 +140,7 @@ pub fn RegisterPage() -> impl IntoView {
                                 disabled=move || auth.login.pending().get()
                             >
                                 <span class="relative z-10 transition-transform group-hover/btn:translate-x-1">
-                                    {move || if auth.login.pending().get() { "Synchronizing..." } else { "Initialize Identity" }}
+                                    {move || if auth.login.pending().get() { "Registering..." } else { "Register" }}
                                 </span>
                                 <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-600 opacity-0 group-hover/btn:opacity-10 transition-opacity" />
                             </button>
@@ -148,8 +148,8 @@ pub fn RegisterPage() -> impl IntoView {
 
                         <footer class="text-center pt-4">
                             <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
-                                "Already Authenticated? "
-                                <a href="/login" class="text-purple-500 hover:text-purple-400 transition-colors">"Access Gate"</a>
+                                "Already have an account? "
+                                <a href="/login" class="text-purple-500 hover:text-purple-400 transition-colors">"Login"</a>
                             </p>
                         </footer>
                     </div>

@@ -25,7 +25,7 @@ pub fn LoginPage() -> impl IntoView {
         set_error.set("".to_string());
         
         if email.get().is_empty() || password.get().is_empty() {
-            set_error.set("Security clearance requires complete credentials.".to_string());
+            set_error.set("Please enter your email and password.".to_string());
             return;
         }
 
@@ -37,7 +37,7 @@ pub fn LoginPage() -> impl IntoView {
     };
 
     view! {
-        <Title text="Authentication | Secure Access Gate"/>
+        <Title text="Login | Asep Haryana"/>
         <main class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-black/20">
             // Cinematic Background Infrastructure
             <div class="fixed inset-0 pointer-events-none z-0">
@@ -60,9 +60,9 @@ pub fn LoginPage() -> impl IntoView {
                             </div>
                             <div class="space-y-2">
                                 <h1 class="text-3xl font-black italic tracking-tighter uppercase leading-none">
-                                    "Access " <span class="bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">"Portal"</span>
+                                    "Account " <span class="bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">"Login"</span>
                                 </h1>
-                                <p class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">"Validate Identity Signature"</p>
+                                <p class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">"Sign in to your account"</p>
                             </div>
                         </header>
 
@@ -77,7 +77,7 @@ pub fn LoginPage() -> impl IntoView {
                         <form on:submit=on_submit class="space-y-8">
                             <div class="space-y-6">
                                 <div class="space-y-2 group/input">
-                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-blue-500">"Uplink ID"</label>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-blue-500">"Email Address"</label>
                                     <div class="relative">
                                         <div class="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground/30">
                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,7 +86,7 @@ pub fn LoginPage() -> impl IntoView {
                                         </div>
                                         <input
                                             type="email"
-                                            placeholder="identity@network.root"
+                                            placeholder="your@email.com"
                                             class="w-full bg-white/2 border border-white/5 rounded-2xl py-5 pl-16 pr-6 focus:outline-none focus:border-blue-500/30 transition-all text-sm font-medium tracking-tight placeholder:text-muted-foreground/10"
                                             prop:value=email
                                             on:input=move |ev| set_email.set(event_target_value(&ev))
@@ -95,7 +95,7 @@ pub fn LoginPage() -> impl IntoView {
                                 </div>
 
                                 <div class="space-y-2 group/input">
-                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-blue-500">"Encryption Key"</label>
+                                    <label class="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 px-2 transition-colors group-focus-within/input:text-blue-500">"Password"</label>
                                     <div class="relative">
                                         <div class="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground/30">
                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -114,7 +114,7 @@ pub fn LoginPage() -> impl IntoView {
                                             on:click=move |_| set_show_password.update(|s| *s = !*s)
                                             class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 hover:text-blue-500 transition-colors"
                                         >
-                                            {move || if show_password.get() { "Obscure" } else { "Reveal" }}
+                                            {move || if show_password.get() { "Hide" } else { "Show" }}
                                         </button>
                                     </div>
                                 </div>
@@ -126,7 +126,7 @@ pub fn LoginPage() -> impl IntoView {
                                 disabled=move || auth.login.pending().get()
                             >
                                 <span class="relative z-10 transition-transform group-hover/btn:translate-x-1">
-                                    {move || if auth.login.pending().get() { "Decrypting..." } else { "Authenticate" }}
+                                    {move || if auth.login.pending().get() { "Signing In..." } else { "Sign In" }}
                                 </span>
                                 <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-0 group-hover/btn:opacity-10 transition-opacity" />
                             </button>
@@ -134,8 +134,8 @@ pub fn LoginPage() -> impl IntoView {
 
                         <footer class="text-center">
                             <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
-                                "Unauthorized Access Attempt? "
-                                <a href="/register" class="text-blue-500 hover:text-blue-400 transition-colors">"Initialization Protocol"</a>
+                                "Don't have an account? "
+                                <a href="/register" class="text-blue-500 hover:text-blue-400 transition-colors">"Register Now"</a>
                             </p>
                         </footer>
                     </div>

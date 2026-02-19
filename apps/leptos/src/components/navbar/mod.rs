@@ -46,9 +46,9 @@ pub fn Navbar() -> impl IntoView {
                 // Cinematic Link Array
                 <div class="hidden md:flex items-center space-x-2">
                      <NavLink href="/project" label="Projects" current_path=location.pathname />
-                     <NavLink href="/sosmed" label="Feed" current_path=location.pathname />
+                     <NavLink href="/sosmed" label="Social" current_path=location.pathname />
                      <NavLink href="/anime" label="Anime" current_path=location.pathname />
-                     <NavLink href="/komik" label="Comics" current_path=location.pathname />
+                     <NavLink href="/komik" label="Manga" current_path=location.pathname />
 
                      <div class="w-8 h-px bg-white/5 mx-4" />
 
@@ -56,7 +56,7 @@ pub fn Navbar() -> impl IntoView {
                      <button
                         on:click=cycle_theme
                         class="p-4 rounded-2xl hover:bg-white/5 transition-all group relative overflow-hidden active:scale-95"
-                        title=move || format!("Engine State: {:?}", theme.get())
+                        title=move || format!("Theme: {:?}", theme.get())
                      >
                         <div class="relative z-10 w-5 h-5 flex items-center justify-center">
                             <Show
@@ -80,14 +80,14 @@ pub fn Navbar() -> impl IntoView {
                         when=move || user.get().is_some()
                         fallback=|| view! {
                              <A href="/login" class="ml-4 px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-2xl relative group/auth overflow-hidden">
-                                <span class="relative z-10">"Initiate Session"</span>
+                                <span class="relative z-10">"Login"</span>
                                 <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover/auth:opacity-10 transition-opacity" />
                              </A>
                         }
                      >
                         <div class="flex items-center gap-4 ml-4">
                              <A href="/dashboard" class="px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl glass border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/5 hover:border-indigo-500/40 transition-all active:scale-95">
-                                "Command"
+                                "Dashboard"
                              </A>
                         </div>
                      </Show>
@@ -111,9 +111,9 @@ pub fn Navbar() -> impl IntoView {
                  <div class="md:hidden border-t border-indigo-500/10 bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
                     <div class="container mx-auto px-8 py-10 space-y-4">
                         <MobileNavLink href="/project" label="Projects" is_active=move || location.pathname.get().starts_with("/project") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/sosmed" label="Community Feed" is_active=move || location.pathname.get().starts_with("/sosmed") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/anime" label="Anime Streaming" is_active=move || location.pathname.get().starts_with("/anime") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/komik" label="Manga Library" is_active=move || location.pathname.get().starts_with("/komik") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/sosmed" label="Social" is_active=move || location.pathname.get().starts_with("/sosmed") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/anime" label="Anime" is_active=move || location.pathname.get().starts_with("/anime") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/komik" label="Manga" is_active=move || location.pathname.get().starts_with("/komik") on_click=move |_| set_is_open.set(false) />
                         
                          <div class="pt-8 mt-8 border-t border-white/5 flex items-center justify-between">
                             <button
@@ -131,7 +131,7 @@ pub fn Navbar() -> impl IntoView {
                             </button>
                             
                             <A href="/login" on:click=move |_| set_is_open.set(false) class="px-8 py-4 rounded-2xl bg-indigo-500 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl">
-                                "Access Gate"
+                                "Login"
                             </A>
                          </div>
                     </div>

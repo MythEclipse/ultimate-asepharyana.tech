@@ -63,17 +63,6 @@ pub fn HomePage() -> impl IntoView {
                 </div>
 
                 <div class="max-w-7xl mx-auto w-full flex flex-col items-center text-center space-y-24 relative z-10">
-                    // Signature Protocol
-                    <div class="inline-flex items-center gap-4 px-6 py-2 rounded-full glass border border-white/10 shadow-3xl animate-fade-in hover-magnetic cyber-glow">
-                        <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                        </span>
-                        <span class="text-[10px] font-black uppercase tracking-[0.6em] text-indigo-400 font-sans">
-                            "Available for New Projects"
-                        </span>
-                    </div>
-
                     <div class="space-y-12 animate-slide-up fill-mode-forwards">
                         <h1 class="text-7xl sm:text-8xl md:text-11xl font-black italic tracking-tighter leading-[0.8] uppercase font-display">
                             <GlitchText text="Asep" class="text-indigo-100/90 block translate-y-8 scale-y-90 tracking-[-0.08em] mb-8" />
