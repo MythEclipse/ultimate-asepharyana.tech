@@ -5,12 +5,7 @@ use bevy::asset::AssetMetaCheck;
 use bevy::color::palettes::css::*;
 use rand::RngExt;
 
-#[derive(States, Debug, Clone, Eq, PartialEq, Hash, Default)]
-enum CinematicState {
-    #[default]
-    Intro,
-    Simulation,
-}
+// CinematicState removed to allow infinite simulation without state transition.
 
 const BACKGROUND_STAR_COUNT: usize = 1500;
 
@@ -100,7 +95,10 @@ struct BackgroundStar;
 struct CinematicCamera;
 
 #[derive(Resource)]
-struct CinematicTimer(Timer);
+struct CinematicTimer {
+    elapsed: f32,
+    duration: f32,
+}
 
 fn main() {
     App::new()
@@ -126,15 +124,13 @@ fn main() {
             ..default()
         }))
         .insert_resource(ClearColor(Color::BLACK))
-        .insert_resource(CinematicTimer(Timer::from_seconds(10.0, TimerMode::Once)))
-        .init_state::<CinematicState>()
+        .insert_resource(CinematicTimer { elapsed: 0.0, duration: 10.0 })
         .add_systems(Startup, (setup, signal_readiness))
         .add_systems(Update, (
-            handle_cinematic_transition,
+            update_cinematic_timer,
             orbital_mechanics,
-            cinematic_camera_movement.run_if(in_state(CinematicState::Intro)),
+            cinematic_camera_movement,
         ))
-        .add_systems(OnEnter(CinematicState::Simulation), cleanup_intro)
         .run();
 }
 
@@ -157,24 +153,23 @@ fn setup(
 ) {
     // 3D Camera with Bloom and HDR
     commands.spawn((
+        Camera::default(),
         Camera3d::default(),
-        Camera {
-            ..default()
-        },
-        bevy::render::view::Hdr, // Stands as a component in 0.18
-        bevy::post_process::bloom::Bloom::default(), // Component in 0.18
+        bevy::render::camera::CameraRenderGraph::new(bevy::core_pipeline::core_3d::graph::Core3d),
+        Transform::from_xyz(0.0, 800.0, 1500.0).looking_at(Vec3::ZERO, Dir3::Y),
         Projection::Perspective(PerspectiveProjection {
             far: 20000.0,
             ..default()
         }),
         bevy::core_pipeline::tonemapping::Tonemapping::TonyMcMapface,
-        Transform::from_xyz(0.0, 800.0, 1500.0).looking_at(Vec3::ZERO, Dir3::Y),
+        bevy::render::view::Hdr, // Stands as a component in 0.18
+        bevy::post_process::bloom::Bloom::default(), // Component in 0.18
         CinematicCamera,
     ));
 
     // The Sun: Realistic Texture + High Emissive + Unlit
     let sun_texture = asset_server.load("sun.jpg");
-    
+
     commands.spawn((
         Mesh3d(meshes.add(Sphere::new(45.0))),
         MeshMaterial3d(materials.add(StandardMaterial {
@@ -207,7 +202,7 @@ fn setup(
 
         let path = planet_type.texture_path();
         let planet_texture = asset_server.load(path);
-        
+
         let fallback_color = match planet_type {
             PlanetType::Mercury => SILVER,
             PlanetType::Venus => YELLOW,
@@ -246,11 +241,11 @@ fn setup(
                 angle,
             },
         )).id();
-        
+
         // Special Case: Saturn's Rings
         if matches!(planet_type, PlanetType::Saturn) {
             let ring_texture = asset_server.load("saturn_ring.jpg");
-            
+
             commands.entity(planet_entity).with_children(|parent| {
                 parent.spawn((
                     Mesh3d(meshes.add(Annulus::new(1.2, 2.8))), // Realistic thin ring disc
@@ -280,7 +275,7 @@ fn setup(
         let dist = rng.random_range(2000.0..4000.0);
         let theta = rng.random_range(0.0..std::f32::consts::TAU);
         let phi = rng.random_range(0.0..std::f32::consts::PI);
-        
+
         let x = dist * phi.sin() * theta.cos();
         let y = dist * phi.sin() * theta.sin();
         let z = dist * phi.cos();
@@ -300,18 +295,7 @@ fn setup(
     });
 }
 
-fn cleanup_intro(
-    mut commands: Commands,
-    sun_query: Query<Entity, With<Sun>>,
-    planet_query: Query<Entity, With<Planet>>,
-) {
-    for entity in &sun_query {
-        commands.entity(entity).despawn();
-    }
-    for entity in &planet_query {
-        commands.entity(entity).despawn();
-    }
-}
+// cleanup_intro removed. Simulation continues indefinitely.
 
 fn orbital_mechanics(
     time: Res<Time>,
@@ -322,42 +306,58 @@ fn orbital_mechanics(
         planet.angle += planet.orbit_speed * dt;
         transform.translation.x = planet.orbit_radius * planet.angle.cos();
         transform.translation.z = planet.orbit_radius * planet.angle.sin();
-        
+
         // Tilt the orbit slightly for aesthetics
         transform.translation.y = (planet.orbit_radius * 0.1) * (planet.angle * 0.5).cos();
     }
 }
 
-fn handle_cinematic_transition(
+fn update_cinematic_timer(
     time: Res<Time>,
     mut timer: ResMut<CinematicTimer>,
-    state: Res<State<CinematicState>>,
-    mut next_state: ResMut<NextState<CinematicState>>,
 ) {
-    if *state.get() == CinematicState::Intro {
-        if timer.0.tick(time.delta()).just_finished() {
-            next_state.set(CinematicState::Simulation);
-        }
-    }
+    timer.elapsed += time.delta().as_secs_f32();
 }
 
 fn cinematic_camera_movement(
-    _time: Res<Time>,
     mut query: Query<&mut Transform, With<CinematicCamera>>,
     timer: Res<CinematicTimer>,
 ) {
     let mut transform = query.single_mut().unwrap();
-    let progress = timer.0.fraction();
+
+    let t = timer.elapsed;
+    let d = timer.duration;
     
-    // Orbital fly-by path
-    let radius = 1200.0 - (progress * 600.0); // Close in from 1200 to 600
-    let rot_angle = progress * std::f32::consts::TAU * 0.25; // Rotate 90 degrees
-    let height = 400.0 * (1.0 - progress); // Drop from 400 to 0 (looking flat at the star)
+    // Initial fly-by transition (progress 0.0 to 1.0 during duration)
+    let progress = (t / d).min(1.0);
+    
+    // Smooth transition from intro fly-by to infinite drift
+    // Radius starts at 1200, moves to 700 during intro, then slow oscillation
+    let base_radius = 1200.0 - (progress * 500.0);
+    let drift_radius = if t > d { (t - d).sin() * 50.0 } else { 0.0 };
+    let radius = base_radius + drift_radius;
+
+    // Rotation continues forever
+    let rot_speed = 0.15;
+    let rot_angle = t * rot_speed;
+
+    // Height targets 0.0 from 400.0, then slow vertical drift
+    let base_height = 400.0 * (1.0 - progress);
+    let drift_height = if t > d { ((t - d) * 0.5).cos() * 100.0 } else { 0.0 };
+    let height = base_height + drift_height;
 
     transform.translation.x = radius * rot_angle.cos();
     transform.translation.z = radius * rot_angle.sin();
     transform.translation.y = height;
+
+    // Look at sun with a slight dynamic offset to keep it "cinematic"
+    let look_offset = if t > d {
+        Vec3::new((t * 0.3).sin() * 20.0, (t * 0.2).cos() * 10.0, 0.0)
+    } else {
+        Vec3::ZERO
+    };
     
-    transform.look_at(Vec3::ZERO, Dir3::Y);
+    transform.look_at(Vec3::ZERO + look_offset, Dir3::Y);
 }
+
 
