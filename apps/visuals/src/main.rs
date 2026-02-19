@@ -1,11 +1,9 @@
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
-use rand::Rng;
 
-use bevy::core_pipeline::bloom::BloomSettings;
-use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::asset::AssetMetaCheck;
 use bevy::color::palettes::css::*;
+use rand::RngExt;
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash, Default)]
 enum CinematicState {
@@ -109,7 +107,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Phantom Solar Protocol".into(),
-                resolution: WindowResolution::new(1920.0, 1080.0),
+                resolution: WindowResolution::new(1920, 1080),
                 canvas: Some("#bevy".into()),
                 fit_canvas_to_parent: true,
                 prevent_default_event_handling: false,
@@ -119,6 +117,12 @@ fn main() {
         }).set(AssetPlugin {
             file_path: "assets".to_string(),
             meta_check: AssetMetaCheck::Never,
+            ..default()
+        }).set(bevy::render::RenderPlugin {
+            render_creation: bevy::render::settings::RenderCreation::Automatic(bevy::render::settings::WgpuSettings {
+                backends: Some(bevy::render::settings::Backends::all()),
+                ..default()
+            }),
             ..default()
         }))
         .insert_resource(ClearColor(Color::BLACK))
@@ -152,60 +156,54 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // 3D Camera with Bloom and HDR
-
-    // 3D Camera with Bloom and HDR
     commands.spawn((
-        Camera3dBundle {
-            projection: Projection::Perspective(PerspectiveProjection {
-                far: 20000.0,
-                ..default()
-            }),
-            camera: Camera {
-                hdr: true,
-                ..default()
-            },
-            tonemapping: Tonemapping::TonyMcMapface,
-            transform: Transform::from_xyz(0.0, 800.0, 1500.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Camera3d::default(),
+        Camera {
             ..default()
         },
-        BloomSettings::default(),
+        bevy::render::view::Hdr, // Stands as a component in 0.18
+        bevy::post_process::bloom::Bloom::default(), // Component in 0.18
+        Projection::Perspective(PerspectiveProjection {
+            far: 20000.0,
+            ..default()
+        }),
+        bevy::core_pipeline::tonemapping::Tonemapping::TonyMcMapface,
+        Transform::from_xyz(0.0, 800.0, 1500.0).looking_at(Vec3::ZERO, Dir3::Y),
         CinematicCamera,
     ));
 
-    // The Sun: Realistic Texture + High Emissive + PointLight
+    // The Sun: Realistic Texture + High Emissive + Unlit
     let sun_texture = asset_server.load("sun.jpg");
     
     commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Sphere::new(45.0)),
-            material: materials.add(StandardMaterial {
-                base_color: ORANGE.into(),
-                base_color_texture: Some(sun_texture),
-                emissive: LinearRgba::new(1.0, 0.4, 0.1, 1.0) * 80.0,
-                ..default()
-            }),
+        Mesh3d(meshes.add(Sphere::new(45.0))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::from(ORANGE),
+            base_color_texture: Some(sun_texture),
+            emissive: LinearRgba::new(1.0, 0.4, 0.1, 1.0) * 12.0, // Boosted emissive for Bloom
+            unlit: true,
+            ..default()
+        })),
+        Sun,
+    ));
+
+    // Global Light (Sun representation)
+    commands.spawn((
+        DirectionalLight {
+            color: Color::WHITE,
+            illuminance: 15000.0,
+            shadows_enabled: true, // Re-enabled for WebGPU
             ..default()
         },
-        Sun,
-    )).with_children(|parent| {
-        parent.spawn(PointLightBundle {
-            point_light: PointLight {
-                color: Color::WHITE,
-                intensity: 2_000_000_000.0,
-                range: 20000.0,
-                shadows_enabled: true,
-                ..default()
-            },
-            ..default()
-        });
-    });
+        Transform::from_xyz(0.0, 100.0, 100.0).looking_at(Vec3::ZERO, Dir3::Y),
+    ));
 
     // Realistic Planets
     for planet_type in PLANETS {
         let orbit_radius = planet_type.orbit_radius();
         let orbit_speed = planet_type.orbit_speed();
         let size = planet_type.size();
-        let angle = rand::random::<f32>() * std::f32::consts::TAU;
+        let angle = rand::rng().random_range(0.0..std::f32::consts::TAU);
 
         let path = planet_type.texture_path();
         let planet_texture = asset_server.load(path);
@@ -221,23 +219,27 @@ fn setup(
             PlanetType::Neptune => DARK_BLUE,
         };
 
+        let mut transform = Transform::from_xyz(
+            orbit_radius * angle.cos(),
+            0.0,
+            orbit_radius * angle.sin(),
+        ).with_scale(Vec3::splat(size));
+
+        // Add axial tilt if Saturn
+        if matches!(planet_type, PlanetType::Saturn) {
+            transform = transform.with_rotation(Quat::from_rotation_z(26.7f32.to_radians()));
+        }
+
         let planet_entity = commands.spawn((
-            PbrBundle {
-                mesh: meshes.add(Sphere::new(1.0)),
-                material: materials.add(StandardMaterial {
-                    base_color: fallback_color.into(),
-                    base_color_texture: Some(planet_texture),
-                    metallic: 0.1,
-                    perceptual_roughness: 0.8,
-                    ..default()
-                }),
-                transform: Transform::from_xyz(
-                    orbit_radius * angle.cos(),
-                    0.0,
-                    orbit_radius * angle.sin(),
-                ).with_scale(Vec3::splat(size)),
+            Mesh3d(meshes.add(Sphere::new(1.0))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::from(fallback_color),
+                base_color_texture: Some(planet_texture),
+                metallic: 0.1,
+                perceptual_roughness: 0.8,
                 ..default()
-            },
+            })),
+            transform,
             Planet {
                 orbit_radius,
                 orbit_speed,
@@ -250,16 +252,17 @@ fn setup(
             let ring_texture = asset_server.load("saturn_ring.jpg");
             
             commands.entity(planet_entity).with_children(|parent| {
-                parent.spawn(PbrBundle {
-                    mesh: meshes.add(Torus::new(0.2, 2.2)),
-                    material: materials.add(StandardMaterial {
+                parent.spawn((
+                    Mesh3d(meshes.add(Annulus::new(1.2, 2.8))), // Realistic thin ring disc
+                    MeshMaterial3d(materials.add(StandardMaterial {
                         base_color_texture: Some(ring_texture),
                         alpha_mode: AlphaMode::Blend,
+                        cull_mode: None, // Visible from both sides
+                        unlit: false,
                         ..default()
-                    }),
-                    transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
-                    ..default()
-                });
+                    })),
+                    Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
+                ));
             });
         }
     }
@@ -272,30 +275,28 @@ fn setup(
         ..default()
     });
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     for _ in 0..BACKGROUND_STAR_COUNT {
-        let dist = rng.gen_range(2000.0..4000.0);
-        let theta = rng.gen_range(0.0..std::f32::consts::TAU);
-        let phi = rng.gen_range(0.0..std::f32::consts::PI);
+        let dist = rng.random_range(2000.0..4000.0);
+        let theta = rng.random_range(0.0..std::f32::consts::TAU);
+        let phi = rng.random_range(0.0..std::f32::consts::PI);
         
         let x = dist * phi.sin() * theta.cos();
         let y = dist * phi.sin() * theta.sin();
         let z = dist * phi.cos();
 
         commands.spawn((
-            PbrBundle {
-                mesh: star_mesh.clone(),
-                material: star_material.clone(),
-                transform: Transform::from_xyz(x, y, z),
-                ..default()
-            },
+            Mesh3d(star_mesh.clone()),
+            MeshMaterial3d(star_material.clone()),
+            Transform::from_xyz(x, y, z),
             BackgroundStar,
         ));
     }
 
-    commands.insert_resource(AmbientLight {
+    commands.spawn(AmbientLight {
         color: Color::WHITE,
-        brightness: 0.15,
+        brightness: 80.0,
+        ..default()
     });
 }
 
@@ -305,10 +306,10 @@ fn cleanup_intro(
     planet_query: Query<Entity, With<Planet>>,
 ) {
     for entity in &sun_query {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
     for entity in &planet_query {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 
@@ -316,7 +317,7 @@ fn orbital_mechanics(
     time: Res<Time>,
     mut query: Query<(&mut Transform, &mut Planet)>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     for (mut transform, mut planet) in &mut query {
         planet.angle += planet.orbit_speed * dt;
         transform.translation.x = planet.orbit_radius * planet.angle.cos();
@@ -345,18 +346,18 @@ fn cinematic_camera_movement(
     mut query: Query<&mut Transform, With<CinematicCamera>>,
     timer: Res<CinematicTimer>,
 ) {
-    let mut transform = query.single_mut();
+    let mut transform = query.single_mut().unwrap();
     let progress = timer.0.fraction();
     
     // Orbital fly-by path
     let radius = 1200.0 - (progress * 600.0); // Close in from 1200 to 600
-    let rot_angle = progress * std::f32::consts::PI * 0.5; // Rotate 90 degrees
+    let rot_angle = progress * std::f32::consts::TAU * 0.25; // Rotate 90 degrees
     let height = 400.0 * (1.0 - progress); // Drop from 400 to 0 (looking flat at the star)
 
     transform.translation.x = radius * rot_angle.cos();
     transform.translation.z = radius * rot_angle.sin();
     transform.translation.y = height;
     
-    transform.look_at(Vec3::ZERO, Vec3::Y);
+    transform.look_at(Vec3::ZERO, Dir3::Y);
 }
 

@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.14", features = ["bevy_pbr", "bevy_render", "bevy_core_pipeline", "bevy_asset", "bevy_scene", "bevy_winit", "bevy_text", "bevy_ui", "jpeg", "multi_threaded", "webgl2", "tonemapping_luts"] }
+bevy = { version = "0.18", features = ["bevy_pbr", "bevy_render", "bevy_core_pipeline", "bevy_asset", "bevy_scene", "bevy_winit", "bevy_text", "bevy_ui", "bevy_state", "bevy_color", "jpeg", "multi_threaded", "webgpu", "tonemapping_luts"] }
 wasm-bindgen = "0.2"
 web-sys = { version = "0.3", features = ["Window", "Document", "Element"] }
-rand = "0.8"
-getrandom = { version = "=0.2.17", features = ["js"] }
-uuid = { version = "1.10.0", features = ["v4", "js"] }
+rand = "0.10"
+getrandom = { version = "0.4", features = ["wasm_js"] }
+uuid = { version = "1.21.0", features = ["v4", "js"] }
 
 [profile.release]
 opt-level = "s"
