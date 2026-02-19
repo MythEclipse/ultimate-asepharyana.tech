@@ -3,7 +3,7 @@ use leptos_meta::Title;
 use leptos_router::A;
 use crate::components::logo::tech_icons::TECH_STACK;
 use crate::components::logo::social_icons::{Instagram, LinkedIn, GitHub};
-use crate::components::ui::LoadingOverlay;
+use crate::components::ui::{LoadingOverlay, GlitchText};
 
 #[component]
 pub fn HomePage() -> impl IntoView {
@@ -76,15 +76,9 @@ pub fn HomePage() -> impl IntoView {
 
                     <div class="space-y-12 animate-slide-up fill-mode-forwards">
                         <h1 class="text-7xl sm:text-8xl md:text-11xl font-black italic tracking-tighter leading-[0.8] uppercase font-display">
-                            <span class="text-indigo-100/90 block translate-y-8 scale-y-90 tracking-[-0.08em] glitch-heavy mb-8" data-text="Asep">
-                                "Asep"
-                                <div class="glitch-layer whitespace-nowrap" data-text="Asep"></div>
-                            </span>
+                            <GlitchText text="Asep" class="text-indigo-100/90 block translate-y-8 scale-y-90 tracking-[-0.08em] mb-8" />
                             <div class="block py-8">
-                                <span class="text-indigo-100/90 block glitch-heavy" data-text="Haryana Saputra">
-                                    "Haryana Saputra"
-                                    <div class="glitch-layer whitespace-nowrap" data-text="Haryana Saputra"></div>
-                                </span>
+                                <GlitchText text="Haryana Saputra" class="text-indigo-100/90 block" />
                             </div>
                         </h1>
                         <div class="max-w-4xl mx-auto space-y-8">
