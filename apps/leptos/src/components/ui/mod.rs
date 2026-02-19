@@ -2,7 +2,6 @@ pub mod cached_image;
 pub mod navigation_progress;
 pub mod error_fallback;
 pub mod page_transition;
-pub mod scroll_observer;
 
 // Re-exports for ergonomic imports (allow `components::ui::ErrorFallback`)
 pub use error_fallback::ErrorFallback;

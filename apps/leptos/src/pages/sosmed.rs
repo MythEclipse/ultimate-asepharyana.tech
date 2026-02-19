@@ -2,7 +2,6 @@ use leptos::*;
 use leptos_meta::Title;
 use crate::components::sosmed::post_card::PostCard;
 use crate::components::sosmed::create_post::CreatePost;
-use crate::components::ui::scroll_observer::ScrollObserver;
 use crate::api::social::get_posts;
 
 #[component]
@@ -23,7 +22,7 @@ pub fn SosmedPage() -> impl IntoView {
     };
 
     view! {
-        <Title text="Social Feed | Community Hub"/>
+        <Title text="Social Feed | Digital Agora"/>
         <main class="min-h-screen relative overflow-hidden pb-40">
             // Background Ambient Accents
             <div class="fixed inset-0 pointer-events-none z-0">
@@ -35,7 +34,7 @@ pub fn SosmedPage() -> impl IntoView {
                 // Cinematic Header
                 <header class="text-center space-y-6 animate-fade-in">
                     <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
-                        "Developer Community"
+                        "Pulse Engine"
                     </div>
                     <h1 class="text-5xl font-black italic tracking-tighter uppercase leading-none">
                         "Social " <span class="text-indigo-500">"Feed"</span>
@@ -58,8 +57,8 @@ pub fn SosmedPage() -> impl IntoView {
                                 <div class="glass-card p-24 text-center rounded-[2.5rem] border border-white/10 space-y-8 animate-fade-in">
                                     <div class="w-24 h-24 rounded-[2rem] bg-white/5 border border-white/5 flex items-center justify-center text-5xl mx-auto shadow-2xl">"🌌"</div>
                                     <div class="space-y-3">
-                                        <h3 class="text-2xl font-black uppercase tracking-tighter italic">"Quiet Agora"</h3>
-                                        <p class="text-muted-foreground/60 font-medium italic leading-relaxed">"The feed is quiet. Be the first to share your thoughts with the community."</p>
+                                        <h3 class="text-2xl font-black uppercase tracking-tighter italic">"Radio Silence"</h3>
+                                        <p class="text-muted-foreground/60 font-medium italic leading-relaxed">"The digital agora is quiet. Be the first to broadcast into the void."</p>
                                     </div>
                                 </div> 
                             }.into_view()
@@ -67,17 +66,16 @@ pub fn SosmedPage() -> impl IntoView {
                             view! {
                                 <div class="space-y-8">
                                     {posts.into_iter().enumerate().map(|(i, post)| view! {
-                                        <ScrollObserver 
-                                            class="w-full"
-                                            // Stagger the first few items for initial impact
-                                            observe_class=if i < 3 { format!("reveal-on-scroll reveal-stagger-{}", i + 1) } else { "reveal-on-scroll".to_string() }
+                                        <div 
+                                            class="animate-slide-up opacity-0 fill-mode-forwards" 
+                                            style=format!("animation-delay: {}ms", i * 100 + 400)
                                         >
                                             <PostCard
                                                 post=post
                                                 on_post_updated=handle_refresh
                                                 on_delete=handle_delete
                                             />
-                                        </ScrollObserver>
+                                        </div>
                                     }).collect_view()}
                                 </div>
                             }.into_view()
@@ -85,8 +83,8 @@ pub fn SosmedPage() -> impl IntoView {
                         Err(_) => view! { 
                             <div class="glass-card p-12 text-center rounded-3xl border border-red-500/20 bg-red-500/5">
                                 <span class="text-4xl mb-4 block">"⚠️"</span>
-                                <p class="text-red-400 font-black uppercase tracking-widest text-[10px]">"Connection Error"</p>
-                                <p class="text-muted-foreground mt-2">"Unable to load feed. Please check your connection."</p>
+                                <p class="text-red-400 font-black uppercase tracking-widest text-[10px]">"Uplink Failure"</p>
+                                <p class="text-muted-foreground mt-2">"Unable to synchronize feed. Attempting reconnection..."</p>
                             </div> 
                         }.into_view()
                     })}

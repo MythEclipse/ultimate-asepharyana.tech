@@ -10,21 +10,22 @@ pub fn HomePage() -> impl IntoView {
         <Title text="Full-Stack Developer | Asep Haryana"/>
         <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: Professional Identity
-            <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden">
+            <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden scanlines">
                 // Bevy Visuals Integration
                 <iframe 
                     src="http://localhost:3001" 
-                    class="absolute inset-0 w-full h-full border-0 -z-10 opacity-70 mix-blend-screen pointer-events-none"
+                    class="absolute inset-0 w-full h-full border-0 -z-10 opacity-60 mix-blend-screen pointer-events-none grayscale brightness-150"
                     title="Neural Particle Simulation"
                 />
 
-                <div class="absolute inset-0 opacity-30 pointer-events-none">
-                    <div class="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/10 rounded-full blur-[140px] animate-pulse-slow" />
+                <div class="absolute inset-0 opacity-40 pointer-events-none">
+                    <div class="absolute top-1/4 left-1/4 w-[50rem] h-[50rem] bg-indigo-500/20 rounded-full blur-[160px] animate-pulse-slow" />
+                    <div class="absolute bottom-1/4 right-1/4 w-[40rem] h-[40rem] bg-purple-500/10 rounded-full blur-[140px] animate-pulse-slow [animation-delay:2s]" />
                 </div>
 
                 <div class="max-w-7xl mx-auto w-full flex flex-col items-center text-center space-y-24 relative z-10">
                     // Signature Protocol
-                    <div class="inline-flex items-center gap-4 px-6 py-2 rounded-full glass border border-white/10 shadow-3xl animate-fade-in hover-magnetic">
+                    <div class="inline-flex items-center gap-4 px-6 py-2 rounded-full glass border border-white/10 shadow-3xl animate-fade-in hover-magnetic cyber-glow">
                         <span class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
@@ -35,11 +36,17 @@ pub fn HomePage() -> impl IntoView {
                     </div>
 
                     <div class="space-y-12 animate-slide-up fill-mode-forwards">
-                        <h1 class="text-7xl sm:text-8xl md:text-10xl font-black italic tracking-tighter leading-[0.85] uppercase font-display">
-                            <span class="text-foreground/30 block translate-y-6 scale-y-90 tracking-[-0.08em] glitch" data-text="Asep">"Asep"</span>
-                            <span class="gradient-text-animated block py-6 [text-shadow:0_30px_120px_rgba(99,102,241,0.6)]">
-                                "Haryana" <br/> "Saputra"
+                        <h1 class="text-7xl sm:text-8xl md:text-11xl font-black italic tracking-tighter leading-[0.8] uppercase font-display">
+                            <span class="text-foreground/80 block translate-y-8 scale-y-90 tracking-[-0.08em] glitch-heavy mb-8" data-text="Asep">
+                                "Asep"
+                                <div class="glitch-layer whitespace-nowrap" data-text="Asep"></div>
                             </span>
+                            <div class="block py-8">
+                                <span class="text-foreground/80 block glitch-heavy" data-text="Haryana Saputra">
+                                    "Haryana Saputra"
+                                    <div class="glitch-layer whitespace-nowrap" data-text="Haryana Saputra"></div>
+                                </span>
+                            </div>
                         </h1>
                         <div class="max-w-4xl mx-auto space-y-8">
                             <p class="text-2xl md:text-3xl text-muted-foreground/50 leading-relaxed font-medium italic font-sans tracking-tight">
@@ -57,9 +64,9 @@ pub fn HomePage() -> impl IntoView {
 
                     // Primary CTAs (Elite Variant)
                     <div class="flex flex-wrap items-center justify-center gap-10 animate-fade-in [animation-delay:400ms]">
-                        <A href="/project" class="group relative px-16 py-8 rounded-[2.5rem] bg-foreground text-background font-black text-xs uppercase tracking-[0.4em] shadow-[0_50px_100px_rgba(0,0,0,0.6)] hover:scale-105 active:scale-95 transition-all duration-700 overflow-hidden hover-magnetic font-display">
+                        <A href="/project" class="group relative px-16 py-8 rounded-[2.5rem] bg-foreground text-background font-black text-xs uppercase tracking-[0.4em] shadow-[0_50px_100px_rgba(0,0,0,0.6)] hover:scale-105 active:scale-95 transition-all duration-700 overflow-hidden industrial-snap font-display">
                             <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-30 transition-opacity" />
-                            <span class="relative z-10 flex items-center gap-6">
+                            <span class="relative z-10 flex items-center gap-6 chromatic-hover">
                                 "View Portfolio"
                                 <svg class="w-6 h-6 group-hover:translate-x-3 transition-transform duration-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -67,7 +74,7 @@ pub fn HomePage() -> impl IntoView {
                             </span>
                         </A>
                         
-                        <a href="mailto:superaseph@gmail.com" class="px-16 py-8 rounded-[2.5rem] glass border border-white/10 text-foreground font-black text-xs uppercase tracking-[0.4em] hover:bg-white/5 hover:border-indigo-500/40 transition-all duration-700 hover:scale-105 hover-magnetic font-display">
+                        <a href="mailto:superaseph@gmail.com" class="px-16 py-8 rounded-[2.5rem] glass border border-white/10 text-foreground font-black text-xs uppercase tracking-[0.4em] hover:bg-white/5 hover:border-indigo-500/40 transition-all duration-700 hover:scale-105 industrial-snap font-display chromatic-hover">
                             "Contact Me"
                         </a>
                     </div>

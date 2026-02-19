@@ -24,8 +24,8 @@ pub fn DashboardPage() -> impl IntoView {
 
     view! {
          <Show when=move || auth.user.get().is_some()>
-            <Title text="Dashboard | Command Center" />
-            <main class="min-h-screen relative overflow-hidden pb-40">
+            <Title text="Dashboard | Session Overview" />
+            <main class="min-h-screen relative overflow-hidden pb-40 scanlines">
                 // Background Ambient Systems
                 <div class="fixed inset-0 pointer-events-none z-0">
                     <div class="absolute top-[10%] left-[-5%] w-[45rem] h-[45rem] bg-blue-500/5 rounded-full blur-[120px] animate-tilt" />
@@ -37,7 +37,7 @@ pub fn DashboardPage() -> impl IntoView {
                     <header class="flex flex-col md:flex-row md:items-end justify-between gap-12 animate-fade-in">
                         <div class="space-y-4">
                             <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.4em] text-blue-400">
-                                "Command Interface"
+                                "User Dashboard"
                             </div>
                             <h1 class="text-4xl md:text-6xl font-black italic tracking-tighter uppercase leading-tight">
                                 {greeting} <span class="text-blue-500">{user_name}</span>
@@ -50,13 +50,13 @@ pub fn DashboardPage() -> impl IntoView {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span class="text-[10px] font-black uppercase tracking-widest">"System Config"</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest">"Settings"</span>
                             </a>
                             <button
                                 on:click=move |_| auth.logout.dispatch(())
-                                class="px-8 py-4 rounded-2xl bg-red-500 text-white font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(239,68,68,0.2)]"
+                                class="px-8 py-4 rounded-2xl bg-red-500 text-white font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(239,68,68,0.2)] industrial-snap"
                             >
-                                "Terminate Session"
+                                "Logout"
                             </button>
                         </div>
                     </header>
@@ -68,8 +68,8 @@ pub fn DashboardPage() -> impl IntoView {
                              <div class="relative z-10 space-y-6">
                                 <div class="w-16 h-16 rounded-3xl bg-blue-500/20 flex items-center justify-center text-4xl shadow-2xl group-hover:scale-110 transition-transform duration-500">"📺"</div>
                                 <div class="space-y-2">
-                                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">"Anime" <span class="text-blue-500">"Archive"</span></h2>
-                                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-relaxed">"Synchronized Stream Interface"</p>
+                                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">"Anime" <span class="text-blue-500">"Library"</span></h2>
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-relaxed">"Media Streaming Service"</p>
                                 </div>
                              </div>
                         </a>
@@ -79,8 +79,8 @@ pub fn DashboardPage() -> impl IntoView {
                              <div class="relative z-10 space-y-6">
                                 <div class="w-16 h-16 rounded-3xl bg-orange-500/20 flex items-center justify-center text-4xl shadow-2xl group-hover:scale-110 transition-transform duration-500">"📖"</div>
                                 <div class="space-y-2">
-                                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">"Manga" <span class="text-orange-500">"Nexus"</span></h2>
-                                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-relaxed">"Visual Narrative Deck"</p>
+                                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">"Comic" <span class="text-orange-500">"Library"</span></h2>
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-relaxed">"Digital Comic Reader"</p>
                                 </div>
                              </div>
                         </a>
@@ -90,8 +90,8 @@ pub fn DashboardPage() -> impl IntoView {
                              <div class="relative z-10 space-y-6">
                                 <div class="w-16 h-16 rounded-3xl bg-purple-500/20 flex items-center justify-center text-4xl shadow-2xl group-hover:scale-110 transition-transform duration-500">"💼"</div>
                                 <div class="space-y-2">
-                                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">"Project" <span class="text-purple-500">"Vault"</span></h2>
-                                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-relaxed">"Build Manifest & Metrics"</p>
+                                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">"Project" <span class="text-purple-500">"Gallery"</span></h2>
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 leading-relaxed">"Portfolio & Case Studies"</p>
                                 </div>
                              </div>
                         </a>
@@ -104,8 +104,8 @@ pub fn DashboardPage() -> impl IntoView {
                             <div class="relative z-10 space-y-6">
                                 <div class="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center text-5xl mx-auto shadow-2xl">"🔭"</div>
                                 <div class="space-y-2">
-                                    <h3 class="text-2xl font-black uppercase italic tracking-tighter">"Operational Silence"</h3>
-                                    <p class="text-muted-foreground/40 font-medium italic">"No recent telemetry data recorded for this sector."</p>
+                                    <h3 class="text-2xl font-black uppercase italic tracking-tighter">"No New Notifications"</h3>
+                                    <p class="text-muted-foreground/40 font-medium italic">"You have no new notifications at this time."</p>
                                 </div>
                             </div>
                         </div>
