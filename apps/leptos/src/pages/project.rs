@@ -19,31 +19,31 @@ struct ProjectImages {
 const PROJECTS: &[Project] = &[
     Project {
         title: "Elysia API",
-        description: "API Backend menggunakan ElysiaJS dengan dokumentasi Swagger",
+        description: "A robust backend API implementation using ElysiaJS, optimized for speed and developer experience with full OpenAPI support.",
         images: ProjectImages { light: "/public/project-elysia.png", dark: "/public/project-elysia.png" },
         link_url: "https://elysia.asepharyana.tech/docs",
     },
     Project {
         title: "Rust API",
-        description: "API performa tinggi menggunakan Rust dengan dokumentasi Swagger",
+        description: "High-performance, memory-safe backend infrastructure developed with Rust and Axum, featuring interactive API documentation.",
         images: ProjectImages { light: "/public/project-rust.png", dark: "/public/project-rust.png" },
         link_url: "https://ws.asepharyana.tech/docs",
     },
     Project {
-        title: "Anime",
-        description: "Nonton dan download anime dari otakudesu.cloud",
+        title: "Anime Streaming",
+        description: "A comprehensive media hub for streaming and discovering anime content, featuring a modern cinematic interface.",
         images: ProjectImages { light: "/public/project-anime.png", dark: "/public/project-anime.png" },
         link_url: "/anime",
     },
     Project {
-        title: "Anime2",
-        description: "Nonton dan download anime dari alqanime.net",
+        title: "Media Library",
+        description: "An advanced digital archive for managing and consuming media content with a focus on ease of navigation.",
         images: ProjectImages { light: "/public/project-anime2.png", dark: "/public/project-anime2.png" },
         link_url: "/anime2",
     },
     Project {
-        title: "Komik",
-        description: "Baca komik, manga, manhwa dari komikindo1.com",
+        title: "Manga Reader",
+        description: "An immersive digital reading platform designed for high-resolution comics and manga with smooth transitions.",
         images: ProjectImages { light: "/public/project-komik.png", dark: "/public/project-komik.png" },
         link_url: "/komik",
     },
@@ -108,7 +108,7 @@ fn ProjectCard(project: Project) -> impl IntoView {
                         </div>
                         
                         <div class="flex items-center gap-3 pt-4 border-t border-white/5">
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 group-hover/card:text-blue-500 transition-colors">"Analyze Entry"</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 group-hover/card:text-blue-500 transition-colors">"Read More"</span>
                             <svg class="w-5 h-5 transform transition-transform duration-500 group-hover/card:translate-x-2 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
@@ -153,7 +153,7 @@ pub fn ProjectPage() -> impl IntoView {
     });
 
     view! {
-        <Title text="Archive | Portfolio Showcase"/>
+        <Title text="Projects | Portfolio Showcase"/>
         <main class="min-h-screen relative overflow-hidden pb-40">
             // Background Orbs
             <div class="fixed inset-0 pointer-events-none z-0">
@@ -167,25 +167,25 @@ pub fn ProjectPage() -> impl IntoView {
                     <div class="space-y-6">
                         <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-white/10 shadow-2xl">
                              <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">"Production Archives"</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">"Selected Works"</span>
                         </div>
                         <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
                             <span class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
-                                "Creative"
+                                "Project"
                             </span>
-                            <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Vault"</span>
+                            <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Showcase"</span>
                         </h1>
                         <p class="max-w-2xl mx-auto text-muted-foreground/60 text-lg font-medium tracking-tight">
-                            "A collection of engineering prototypes and digital artifacts built with "
-                            <span class="text-white font-black">"Rust, Leptos, and High-Performance"</span>
-                            " logic."
+                            "A selection of software engineering projects and technical demonstrations built with modern "
+                            <span class="text-white font-black">"Rust and Frontend"</span>
+                            " technologies."
                         </p>
                     </div>
 
                     <div class="flex flex-col md:flex-row items-center justify-center gap-6 animate-fade-in [animation-delay:200ms]">
                         <div class="h-px w-20 bg-gradient-to-r from-transparent to-white/20 hidden md:block" />
                         <div class="flex items-center gap-4 text-xs font-black uppercase tracking-[0.4em] text-muted-foreground/40">
-                            "Total Deployments"
+                            "Total Projects"
                             <span class="text-white px-3 py-1 bg-white/5 rounded-lg border border-white/10">{PROJECTS.len()}</span>
                         </div>
                         <div class="h-px w-20 bg-gradient-to-l from-transparent to-white/20 hidden md:block" />

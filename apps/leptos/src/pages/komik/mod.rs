@@ -178,24 +178,21 @@ pub fn KomikPage() -> impl IntoView {
     let (search_query, set_search_query) = create_signal("".to_string());
 
     view! {
-        <Title text="Discovery | Komik Hub"/>
+        <Title text="Comics | Media Hub"/>
         <main class="min-h-screen py-24 px-6 md:px-12 relative overflow-hidden">
             <div class="max-w-7xl mx-auto space-y-32">
                 // Cinematic Header
                 <header class="text-center space-y-12 animate-fade-in">
                     <div class="space-y-6">
                         <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-white/10 shadow-2xl">
-                            <span class="relative flex h-2 w-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                            </span>
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">"New Chapters Released"</span>
+                             <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">"Latest Updates"</span>
                         </div>
                         <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
                             <span class="bg-gradient-to-r from-orange-400 via-red-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
-                                "Reader"
+                                "Digital"
                             </span>
-                            <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Universe"</span>
+                            <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Library"</span>
                         </h1>
                     </div>
 
@@ -208,7 +205,7 @@ pub fn KomikPage() -> impl IntoView {
                                 name="q"
                                 prop:value=search_query
                                 on:input=move |ev| set_search_query.set(event_target_value(&ev))
-                                placeholder="Search manga, manhwa, manhua..."
+                                placeholder="Search comics, manga, or authors..."
                                 class="flex-1 bg-transparent px-8 py-5 focus:outline-none text-lg font-bold placeholder:text-muted-foreground/50"
                             />
                             <button
@@ -242,8 +239,8 @@ pub fn KomikPage() -> impl IntoView {
                     <Show when=move || data.get().flatten().is_some() fallback=move || view! { 
                         <div class="glass-card p-12 rounded-[2rem] text-center border border-red-500/20">
                             <div class="text-4xl mb-4">"❌"</div>
-                            <h3 class="text-xl font-black uppercase italic">"Connection Failure"</h3>
-                            <p class="text-muted-foreground">"Unable to synchronize with the komik database."</p>
+                            <h3 class="text-xl font-black uppercase italic">"Connection Error"</h3>
+                            <p class="text-muted-foreground">"Unable to load comic database. Please try again later."</p>
                         </div>
                     }>
                         {move || {

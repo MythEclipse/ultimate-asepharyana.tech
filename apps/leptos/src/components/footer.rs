@@ -16,7 +16,7 @@ pub fn Footer() -> impl IntoView {
                         <span class="font-semibold text-foreground">"Asepharyana"</span>
                     </a>
                     <p class="text-xs text-muted-foreground">
-                        "© " {current_year} " Asepharyana. Made with ❤️ in Indonesia"
+                        "© " {current_year} " Asep Haryana. Built with Passion"
                     </p>
                 </div>
             </div>

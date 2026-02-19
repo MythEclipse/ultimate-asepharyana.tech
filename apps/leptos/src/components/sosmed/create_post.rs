@@ -64,7 +64,7 @@ pub fn CreatePost(
                     <span class=move || format!(
                         "text-[10px] font-black uppercase tracking-[0.4em] transition-colors duration-300 {}",
                         if is_focused.get() { "text-indigo-400" } else { "text-muted-foreground/60" }
-                    )>"New Broadcast"</span>
+                    )>"Create Post"</span>
                 </div>
 
                 <textarea
@@ -72,7 +72,7 @@ pub fn CreatePost(
                     on:input=move |e| set_content.set(event_target_value(&e))
                     on:focus=move |_| set_is_focused.set(true)
                     on:blur=move |_| set_is_focused.set(false)
-                    placeholder="What's circulating in your sector?"
+                    placeholder="Share your thoughts with the community..."
                     class="w-full h-32 bg-white/2 border border-white/5 rounded-2xl p-6 focus:outline-none focus:border-indigo-500/30 transition-all resize-none text-foreground placeholder:text-muted-foreground/30 font-medium tracking-tight"
                 ></textarea>
                 
@@ -89,7 +89,7 @@ pub fn CreatePost(
                             on:input=move |e| set_image_url.set(event_target_value(&e))
                             on:focus=move |_| set_is_focused.set(true)
                             on:blur=move |_| set_is_focused.set(false)
-                            placeholder="Attach visual link (optional)"
+                            placeholder="Image URL (optional)"
                             class="w-full bg-white/2 border border-white/5 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-indigo-500/30 transition-all text-sm font-medium tracking-tight placeholder:text-muted-foreground/20"
                         />
                     </div>
@@ -105,7 +105,7 @@ pub fn CreatePost(
                         <Show when=move || is_submitting.get() fallback=move || {
                             view! {
                                 <Show when=move || is_success.get() fallback=move || view! {
-                                    <span class="relative z-10 transition-transform group-hover/btn:translate-x-1">"Broadcast"</span>
+                                    <span class="relative z-10 transition-transform group-hover/btn:translate-x-1">"Post"</span>
                                     <svg class="w-4 h-4 relative z-10 group-hover/btn:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                     </svg>

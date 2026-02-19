@@ -39,16 +39,16 @@ pub fn Navbar() -> impl IntoView {
                         <span class="text-xl font-black italic tracking-tighter uppercase leading-none block group-hover:text-indigo-500 transition-colors">
                             "Asep" <span class="text-indigo-500 group-hover:text-foreground transition-colors">"Haryana"</span>
                         </span>
-                        <span class="text-[8px] font-black uppercase tracking-[0.5em] text-muted-foreground/40 block">"Identity Interface"</span>
+                        <span class="text-[8px] font-black uppercase tracking-[0.5em] text-muted-foreground/40 block">"Personal Portfolio"</span>
                     </div>
                 </A>
 
                 // Cinematic Link Array
                 <div class="hidden md:flex items-center space-x-2">
                      <NavLink href="/project" label="Projects" current_path=location.pathname />
-                     <NavLink href="/sosmed" label="Pulse" current_path=location.pathname />
+                     <NavLink href="/sosmed" label="Feed" current_path=location.pathname />
                      <NavLink href="/anime" label="Anime" current_path=location.pathname />
-                     <NavLink href="/komik" label="Nexus" current_path=location.pathname />
+                     <NavLink href="/komik" label="Comics" current_path=location.pathname />
 
                      <div class="w-8 h-px bg-white/5 mx-4" />
 
@@ -110,10 +110,10 @@ pub fn Navbar() -> impl IntoView {
             <Show when=move || is_open.get()>
                  <div class="md:hidden border-t border-indigo-500/10 bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
                     <div class="container mx-auto px-8 py-10 space-y-4">
-                        <MobileNavLink href="/project" label="Project Catalog" is_active=move || location.pathname.get().starts_with("/project") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/sosmed" label="Neural Pulse" is_active=move || location.pathname.get().starts_with("/sosmed") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/anime" label="Streaming Core" is_active=move || location.pathname.get().starts_with("/anime") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/komik" label="Nexus Archive" is_active=move || location.pathname.get().starts_with("/komik") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/project" label="Projects" is_active=move || location.pathname.get().starts_with("/project") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/sosmed" label="Community Feed" is_active=move || location.pathname.get().starts_with("/sosmed") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/anime" label="Anime Streaming" is_active=move || location.pathname.get().starts_with("/anime") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink href="/komik" label="Manga Library" is_active=move || location.pathname.get().starts_with("/komik") on_click=move |_| set_is_open.set(false) />
                         
                          <div class="pt-8 mt-8 border-t border-white/5 flex items-center justify-between">
                             <button
