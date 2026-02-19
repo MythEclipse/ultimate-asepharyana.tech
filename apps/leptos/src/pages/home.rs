@@ -83,8 +83,8 @@ pub fn HomePage() -> impl IntoView {
                         </h1>
                         <div class="max-w-4xl mx-auto space-y-8">
                             <p class="text-2xl md:text-3xl text-indigo-200/40 leading-relaxed font-medium italic font-sans tracking-tight">
-                                "Crafting robust " <span class="text-indigo-400 font-black drop-shadow-[0_0_15px_rgba(129,140,248,0.4)]">"Backend"</span> 
-                                " systems with high-performance " <span class="text-purple-400 font-black drop-shadow-[0_0_15px_rgba(192,132,252,0.4)]">"Frontend"</span> 
+                                "Crafting robust " <GlitchText text="Backend" class="text-indigo-400 font-black drop-shadow-[0_0_15px_rgba(129,140,248,0.4)]" />
+                                " systems with high-performance " <GlitchText text="Frontend" class="text-purple-400 font-black drop-shadow-[0_0_15px_rgba(192,132,252,0.4)]" />
                                 " solutions to build seamless digital experiences."
                             </p>
                             <div class="flex items-center justify-center gap-4">
@@ -143,7 +143,7 @@ pub fn HomePage() -> impl IntoView {
                             "Professional Background"
                         </div>
                         <h2 class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-none">
-                            "Technical " <span class="text-indigo-500">"Stack"</span>
+                            "Technical " <GlitchText text="Stack" class="text-indigo-500" />
                         </h2>
                         <div class="h-2 w-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 mx-auto rounded-full shadow-glow" />
                     </div>
@@ -182,7 +182,7 @@ pub fn HomePage() -> impl IntoView {
                             "Showcase"
                         </div>
                         <h2 class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-none">
-                            "Featured " <span class="text-indigo-500">"Projects"</span>
+                            "Featured " <GlitchText text="Projects" class="text-indigo-500" />
                         </h2>
                         <div class="h-2 w-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 mx-auto rounded-full shadow-glow" />
                     </div>
@@ -245,7 +245,7 @@ pub fn HomePage() -> impl IntoView {
                                     "Communication"
                                 </span>
                                 <h2 class="text-6xl md:text-9xl font-black italic tracking-tighter leading-none uppercase">
-                                    "Get In " <br/> <span class="text-indigo-500">"Touch"</span>
+                                    "Get In " <br/> <GlitchText text="Touch" class="text-indigo-500" />
                                 </h2>
                                 <p class="text-2xl md:text-3xl text-muted-foreground/50 leading-relaxed max-w-2xl mx-auto font-medium italic tracking-tight">
                                     "I am always open to discussing new projects, creative ideas or professional opportunities."
