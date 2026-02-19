@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asepharyana Visuals</title>
+    <link data-trunk rel="rust" data-bin="visuals" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: transparent;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Prevent right-click context menu
+      document.addEventListener('contextmenu', (event) =>
+        event.preventDefault(),
+      );
+    </script>
+  </body>
+</html>

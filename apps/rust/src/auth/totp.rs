@@ -181,18 +181,18 @@ impl Totp {
 /// Generate a random base32 secret.
 pub fn generate_secret() -> String {
     use rand::Rng;
-    let mut rng = rand::rng();
-    let bytes: Vec<u8> = (0..20).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let bytes: Vec<u8> = (0..20).map(|_| rng.gen()).collect();
     base32_encode(&bytes)
 }
 
 /// Generate backup codes.
 pub fn generate_backup_codes(count: usize) -> Vec<String> {
     use rand::Rng;
-    let mut rng = rand::rng();
+    let mut rng = rand::thread_rng();
     (0..count)
         .map(|_| {
-            let code: u32 = rng.random_range(10000000..99999999);
+            let code: u32 = rng.gen_range(10000000..99999999);
             format!("{}-{}", &code.to_string()[..4], &code.to_string()[4..])
         })
         .collect()

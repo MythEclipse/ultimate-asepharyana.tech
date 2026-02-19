@@ -1,0 +1,18 @@
+[package]
+name = "visuals"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.14", default-features = true }
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element"] }
+rand = "0.8"
+getrandom = { version = "=0.2.17", features = ["js"] }
+uuid = { version = "1.10.0", features = ["v4", "js"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

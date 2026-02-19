@@ -66,10 +66,10 @@ impl Encryptor {
     /// Generate a random IV.
     fn generate_iv() -> [u8; 16] {
         use rand::Rng;
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         let mut iv = [0u8; 16];
         for byte in &mut iv {
-            *byte = rng.random();
+            *byte = rng.gen();
         }
         iv
     }

@@ -178,8 +178,8 @@ pub mod random {
     use rand::Rng;
 
     pub fn string(len: usize) -> String {
-        use rand::distr::Alphanumeric;
-        rand::rng()
+        use rand::distributions::Alphanumeric;
+        rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(len)
             .map(char::from)
@@ -191,15 +191,15 @@ pub mod random {
     }
 
     pub fn int(min: i64, max: i64) -> i64 {
-        rand::rng().random_range(min..=max)
+        rand::thread_rng().gen_range(min..=max)
     }
 
     pub fn bool() -> bool {
-        rand::rng().random()
+        rand::thread_rng().gen()
     }
 
     pub fn choice<T: Clone>(items: &[T]) -> T {
-        let idx = rand::rng().random_range(0..items.len());
+        let idx = rand::thread_rng().gen_range(0..items.len());
         items[idx].clone()
     }
 }

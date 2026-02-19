@@ -55,10 +55,10 @@ pub fn mask_email(email: &str) -> String {
 pub fn random_string(len: usize) -> String {
     use rand::Rng;
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let mut rng = rand::rng();
+    let mut rng = rand::thread_rng();
     (0..len)
         .map(|_| {
-            let idx = rng.random_range(0..CHARSET.len());
+            let idx = rng.gen_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect()
@@ -68,10 +68,10 @@ pub fn random_string(len: usize) -> String {
 pub fn random_code(len: usize) -> String {
     use rand::Rng;
     const CHARSET: &[u8] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let mut rng = rand::rng();
+    let mut rng = rand::thread_rng();
     (0..len)
         .map(|_| {
-            let idx = rng.random_range(0..CHARSET.len());
+            let idx = rng.gen_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect()

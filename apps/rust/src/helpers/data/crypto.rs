@@ -48,16 +48,16 @@ pub fn base64_url_decode(encoded: &str) -> anyhow::Result<Vec<u8>> {
 /// Generate a secure random token.
 pub fn generate_token(length: usize) -> String {
     use rand::Rng;
-    let mut rng = rand::rng();
-    let bytes: Vec<u8> = (0..length).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let bytes: Vec<u8> = (0..length).map(|_| rng.gen()).collect();
     hex::encode(bytes)
 }
 
 /// Generate a short verification code (6 digits).
 pub fn generate_verification_code() -> String {
     use rand::Rng;
-    let mut rng = rand::rng();
-    format!("{:06}", rng.random_range(0..1000000))
+    let mut rng = rand::thread_rng();
+    format!("{:06}", rng.gen_range(0..1000000))
 }
 
 /// Hash for cache keys (short, fast).

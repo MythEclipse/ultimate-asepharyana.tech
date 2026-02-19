@@ -127,7 +127,7 @@ impl CsrfToken {
 /// Generate a cryptographically secure random token.
 fn generate_token(length: usize) -> String {
     let mut bytes = vec![0u8; length];
-    rand::rng().fill_bytes(&mut bytes);
+    rand::thread_rng().fill_bytes(&mut bytes);
     URL_SAFE_NO_PAD.encode(&bytes)
 }
 

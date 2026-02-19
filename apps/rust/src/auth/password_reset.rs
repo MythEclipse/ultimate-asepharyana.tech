@@ -79,8 +79,8 @@ impl PasswordReset {
     /// Generate a secure token.
     fn generate_token() -> String {
         use rand::Rng;
-        let mut rng = rand::rng();
-        let bytes: Vec<u8> = (0..32).map(|_| rng.random()).collect();
+        let mut rng = rand::thread_rng();
+        let bytes: Vec<u8> = (0..32).map(|_| rng.gen()).collect();
         hex::encode(bytes)
     }
 

@@ -11,31 +11,38 @@ pub fn HomePage() -> impl IntoView {
         <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: The Grand Reveal
             <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden">
+                // Bevy Visuals Integration
+                <iframe 
+                    src="http://localhost:3001" 
+                    class="absolute inset-0 w-full h-full border-0 -z-10 opacity-60 mix-blend-screen pointer-events-none"
+                    title="Cyberpunk Particles"
+                />
+
                 <div class="absolute inset-0 opacity-20 pointer-events-none">
                     <div class="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse-slow" />
                 </div>
 
                 <div class="max-w-7xl mx-auto w-full flex flex-col items-center text-center space-y-20 relative z-10">
                     // Identity Tag
-                    <div class="inline-flex items-center gap-4 px-6 py-2 rounded-full glass border border-white/10 shadow-2xl animate-fade-in">
+                    <div class="inline-flex items-center gap-4 px-6 py-2 rounded-full glass border border-white/10 shadow-2xl animate-fade-in hover-magnetic">
                         <span class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                         </span>
-                        <span class="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400">
+                        <span class="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400 font-sans">
                             "Protocol: Full-Stack Architect"
                         </span>
                     </div>
 
                     <div class="space-y-8 animate-slide-up fill-mode-forwards">
-                        <h1 class="text-6xl sm:text-7xl md:text-10xl font-black italic tracking-tighter leading-[0.9] uppercase">
-                            <span class="text-foreground/50 block translate-y-4 scale-y-95 tracking-[-0.05em]">"Developing"</span>
+                        <h1 class="text-6xl sm:text-7xl md:text-10xl font-black italic tracking-tighter leading-[0.9] uppercase font-display">
+                            <span class="text-foreground/50 block translate-y-4 scale-y-95 tracking-[-0.05em] glitch" data-text="Developing">"Developing"</span>
                             <span class="gradient-text-animated block py-4 [text-shadow:0_20px_100px_rgba(99,102,241,0.5)]">
                                 "Digital" <br/> "Destiny"
                             </span>
                         </h1>
                         <div class="max-w-3xl mx-auto space-y-6">
-                            <p class="text-xl md:text-2xl text-muted-foreground/60 leading-relaxed font-medium italic">
+                            <p class="text-xl md:text-2xl text-muted-foreground/60 leading-relaxed font-medium italic font-sans">
                                 "Synthesizing high-performance " <span class="text-indigo-400 font-black">"Rust"</span> 
                                 " architecture with immersive " <span class="text-indigo-400 font-black">"Leptos"</span> 
                                 " interfaces to bridge the void between concept and reality."
@@ -46,7 +53,7 @@ pub fn HomePage() -> impl IntoView {
 
                     // Primary CTAs
                     <div class="flex flex-wrap items-center justify-center gap-8 animate-fade-in [animation-delay:400ms]">
-                        <A href="/project" class="group relative px-12 py-6 rounded-3xl bg-foreground text-background font-black text-sm uppercase tracking-[0.3em] shadow-[0_30px_60px_rgba(0,0,0,0.4)] hover:scale-105 active:scale-95 transition-all duration-700 overflow-hidden">
+                        <A href="/project" class="group relative px-12 py-6 rounded-3xl bg-foreground text-background font-black text-sm uppercase tracking-[0.3em] shadow-[0_30px_60px_rgba(0,0,0,0.4)] hover:scale-105 active:scale-95 transition-all duration-700 overflow-hidden hover-magnetic font-display">
                             <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-20 transition-opacity" />
                             <span class="relative z-10 flex items-center gap-4">
                                 "Open Archives"
@@ -56,7 +63,7 @@ pub fn HomePage() -> impl IntoView {
                             </span>
                         </A>
                         
-                        <a href="mailto:superaseph@gmail.com" class="px-12 py-6 rounded-3xl glass border border-white/10 text-foreground font-black text-sm uppercase tracking-[0.3em] hover:bg-white/5 hover:border-indigo-500/40 transition-all duration-500 hover:scale-105">
+                        <a href="mailto:superaseph@gmail.com" class="px-12 py-6 rounded-3xl glass border border-white/10 text-foreground font-black text-sm uppercase tracking-[0.3em] hover:bg-white/5 hover:border-indigo-500/40 transition-all duration-500 hover:scale-105 hover-magnetic font-display">
                             "Secure Uplink"
                         </a>
                     </div>

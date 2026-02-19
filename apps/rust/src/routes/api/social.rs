@@ -1,7 +1,6 @@
 use axum::{
     extract::{State, Path},
     response::IntoResponse,
-    routing::{get, post, delete},
     Json, Router,
 };
 use sea_orm::{
@@ -267,7 +266,4 @@ pub async fn like_post(
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     router
-        .route("/api/social/posts", get(get_posts).post(create_post))
-        .route("/api/social/posts/:id", delete(delete_post))
-        .route("/api/social/posts/:id/like", post(like_post))
 }

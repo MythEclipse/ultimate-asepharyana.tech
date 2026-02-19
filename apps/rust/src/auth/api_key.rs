@@ -95,14 +95,14 @@ impl ApiKeyManager {
     /// Generate an API key.
     fn generate_key() -> (String, String) {
         use rand::Rng;
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
 
         // Prefix: 8 chars
-        let prefix_bytes: Vec<u8> = (0..4).map(|_| rng.random()).collect();
+        let prefix_bytes: Vec<u8> = (0..4).map(|_| rng.gen()).collect();
         let prefix = format!("sk_{}", hex::encode(&prefix_bytes));
 
         // Secret: 32 chars
-        let secret_bytes: Vec<u8> = (0..16).map(|_| rng.random()).collect();
+        let secret_bytes: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
         let secret = hex::encode(&secret_bytes);
 
         let full_key = format!("{}_{}", prefix, secret);

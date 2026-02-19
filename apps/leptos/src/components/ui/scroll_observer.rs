@@ -14,10 +14,10 @@ pub fn ScrollObserver(
     create_effect(move |_| {
         if let Some(el) = element_ref.get() {
             // Options for the observer
-            let mut options = IntersectionObserverInit::new();
-            options.root(None); // browser viewport
-            options.root_margin("0px");
-            options.threshold(&JsValue::from_f64(0.1)); // Trigger when 10% visible
+            let options = IntersectionObserverInit::new();
+            options.set_root(None); // browser viewport
+            options.set_root_margin("0px");
+            options.set_threshold(&JsValue::from_f64(0.1)); // Trigger when 10% visible
 
             // Callback
             let callback = Closure::wrap(Box::new(move |entries: Vec<JsValue>, _observer: IntersectionObserver| {
