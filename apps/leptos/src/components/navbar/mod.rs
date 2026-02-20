@@ -111,11 +111,51 @@ pub fn Navbar() -> impl IntoView {
             <Show when=move || is_open.get()>
                  <div class="md:hidden border-t border-indigo-500/10 bg-black/95 backdrop-blur-3xl animate-fade-in overflow-hidden">
                     <div class="container mx-auto px-8 py-10 space-y-4">
-                        <MobileNavLink href="/project" label="Projects" is_active=move || location.pathname.get().starts_with("/project") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/sosmed" label="Social" is_active=move || location.pathname.get().starts_with("/sosmed") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/anime" label="Anime 1" is_active=move || location.pathname.get().starts_with("/anime") && !location.pathname.get().starts_with("/anime2") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/anime2" label="Anime 2" is_active=move || location.pathname.get().starts_with("/anime2") on_click=move |_| set_is_open.set(false) />
-                        <MobileNavLink href="/komik" label="Manga" is_active=move || location.pathname.get().starts_with("/komik") on_click=move |_| set_is_open.set(false) />
+                        <MobileNavLink 
+                            href="/project" 
+                            label="Projects" 
+                            is_active=move || {
+                                let p = location.pathname.get();
+                                p == "/project" || p.starts_with("/project/")
+                            } 
+                            on_click=move |_| set_is_open.set(false) 
+                        />
+                        <MobileNavLink 
+                            href="/sosmed" 
+                            label="Social" 
+                            is_active=move || {
+                                let p = location.pathname.get();
+                                p == "/sosmed" || p.starts_with("/sosmed/")
+                            } 
+                            on_click=move |_| set_is_open.set(false) 
+                        />
+                        <MobileNavLink 
+                            href="/anime" 
+                            label="Anime 1" 
+                            is_active=move || {
+                                let p = location.pathname.get();
+                                p == "/anime" || p.starts_with("/anime/")
+                            } 
+                            on_click=move |_| set_is_open.set(false) 
+                        />
+                        <MobileNavLink 
+                            href="/anime2" 
+                            label="Anime 2" 
+                            is_active=move || {
+                                let p = location.pathname.get();
+                                p == "/anime2" || p.starts_with("/anime2/")
+                            } 
+                            on_click=move |_| set_is_open.set(false) 
+                        />
+                        <MobileNavLink 
+                            href="/komik" 
+                            label="Manga" 
+                            is_active=move || {
+                                let p = location.pathname.get();
+                                p == "/komik" || p.starts_with("/komik/")
+                            } 
+                            on_click=move |_| set_is_open.set(false) 
+                        />
                         
                          <div class="pt-8 mt-8 border-t border-white/5 flex items-center justify-between">
                             <button
@@ -145,7 +185,16 @@ pub fn Navbar() -> impl IntoView {
 
 #[component]
 fn NavLink(href: &'static str, label: &'static str, current_path: Memo<String>) -> impl IntoView {
-    let is_active = move || current_path.get().starts_with(href) || (href == "/" && current_path.get() == "/");
+    let is_active = move || {
+        let path = current_path.get();
+        if path == href {
+            return true;
+        }
+        if href != "/" && path.starts_with(href) {
+            return path.chars().nth(href.len()) == Some('/');
+        }
+        false
+    };
     
     view! {
         <A href=href class=move || {

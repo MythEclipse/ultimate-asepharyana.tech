@@ -23,7 +23,18 @@ pub struct HomeData {
     pub manhua: Vec<KomikItem>,
 }
 
+thread_local! {
+    static KOMIK_CACHE: std::cell::RefCell<Option<HomeData>> = std::cell::RefCell::new(None);
+}
+
 async fn fetch_komik_data() -> Option<HomeData> {
+    #[cfg(feature = "csr")]
+    {
+        let cached = KOMIK_CACHE.with(|cache| cache.borrow().clone());
+        if cached.is_some() {
+            return cached;
+        }
+    }
      // Fetch all 3 sequentially for now
     let manga_res = fetch_manga(1).await;
     let manhwa_res = fetch_manhwa(1).await;
@@ -47,11 +58,16 @@ async fn fetch_komik_data() -> Option<HomeData> {
     let manhwa = convert(manhwa_res);
     let manhua = convert(manhua_res);
 
-    Some(HomeData {
+    let data = HomeData {
         manga,
         manhwa,
         manhua,
-    })
+    };
+    
+    #[cfg(feature = "csr")]
+    KOMIK_CACHE.with(|cache| *cache.borrow_mut() = Some(data.clone()));
+
+    Some(data)
 }
 
 #[component]

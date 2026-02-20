@@ -24,10 +24,27 @@ pub struct HomeData {
     pub complete_anime: Vec<AnimeItem>,
 }
 
+thread_local! {
+    static ANIME1_CACHE: std::cell::RefCell<Option<HomeData>> = std::cell::RefCell::new(None);
+    static ANIME2_CACHE: std::cell::RefCell<Option<HomeData>> = std::cell::RefCell::new(None);
+}
+
 async fn fetch_anime_data(source: u8) -> Option<HomeData> {
+    #[cfg(feature = "csr")]
+    {
+        let cached = if source == 2 {
+            ANIME2_CACHE.with(|cache| cache.borrow().clone())
+        } else {
+            ANIME1_CACHE.with(|cache| cache.borrow().clone())
+        };
+        if cached.is_some() {
+            return cached;
+        }
+    }
+
     if source == 2 {
         let data = fetch_anime2_index().await.ok()?;
-        Some(HomeData {
+        let mapped = HomeData {
             ongoing_anime: data.ongoing_anime.into_iter().map(|item| AnimeItem {
                 title: item.title,
                 slug: item.slug,
@@ -44,10 +61,13 @@ async fn fetch_anime_data(source: u8) -> Option<HomeData> {
                 episode_count: Some(item.episode_count),
                 score: None,
             }).collect(),
-        })
+        };
+        #[cfg(feature = "csr")]
+        ANIME2_CACHE.with(|cache| *cache.borrow_mut() = Some(mapped.clone()));
+        Some(mapped)
     } else {
         let data = fetch_anime1_index().await.ok()?;
-        Some(HomeData {
+        let mapped = HomeData {
             ongoing_anime: data.ongoing_anime.into_iter().map(|item| AnimeItem {
                 title: item.title,
                 slug: item.slug,
@@ -64,7 +84,10 @@ async fn fetch_anime_data(source: u8) -> Option<HomeData> {
                 episode_count: Some(item.episode_count),
                 score: None,
             }).collect(),
-        })
+        };
+        #[cfg(feature = "csr")]
+        ANIME1_CACHE.with(|cache| *cache.borrow_mut() = Some(mapped.clone()));
+        Some(mapped)
     }
 }
 

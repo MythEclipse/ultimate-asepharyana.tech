@@ -4,13 +4,20 @@ use leptos_router::A;
 use crate::components::logo::tech_icons::TECH_STACK;
 use crate::components::logo::social_icons::{Instagram, LinkedIn, GitHub};
 use crate::components::ui::{LoadingOverlay, GlitchText};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static VISUALS_READY: AtomicBool = AtomicBool::new(false);
 
 #[component]
 pub fn HomePage() -> impl IntoView {
-    let (visuals_ready, set_visuals_ready) = create_signal(false);
+    let (visuals_ready, set_visuals_ready) = create_signal(VISUALS_READY.load(Ordering::Relaxed));
 
     // Listen for Bevy's Readiness Signal (Local Background)
     create_effect(move |_| {
+        if visuals_ready.get_untracked() {
+            return;
+        }
+
         #[cfg(feature = "csr")]
         {
             use wasm_bindgen::prelude::*;
@@ -20,6 +27,7 @@ pub fn HomePage() -> impl IntoView {
                 if let Some(msg) = ev.data().as_string() {
                     if msg == "PROTOCOL_READY" {
                         set_visuals_ready.set(true);
+                        VISUALS_READY.store(true, Ordering::Relaxed);
                     }
                 }
             }) as Box<dyn FnMut(web_sys::MessageEvent)>);
@@ -36,6 +44,7 @@ pub fn HomePage() -> impl IntoView {
             move || {
                 if !visuals_ready.get_untracked() {
                     set_visuals_ready.set(true);
+                    VISUALS_READY.store(true, Ordering::Relaxed);
                 }
             },
             std::time::Duration::from_millis(8000),
