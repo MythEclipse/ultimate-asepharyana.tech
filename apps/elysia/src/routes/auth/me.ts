@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { getDb, users, eq } from '@asepharyana/services';
+import { getDb, users, eq } from '../../services';
 import { verifyJWT } from '../../utils/jwt';
 import { isTokenBlacklisted } from '../../utils/redis';
 import { authLogger } from '../../utils/logger';

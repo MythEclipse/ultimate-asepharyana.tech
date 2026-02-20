@@ -4,7 +4,7 @@ import {
   users,
   emailVerificationTokens,
   eq,
-} from '@asepharyana/services';
+} from '../../services';
 
 export const verifyRoute = new Elysia().get(
   '/verify',

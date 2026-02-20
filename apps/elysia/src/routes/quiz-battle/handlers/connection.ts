@@ -21,7 +21,7 @@ import {
   quizFriendships,
   eq,
   and,
-} from '@asepharyana/services';
+} from '../../../services';
 import { wsLogger } from '../../../utils/logger';
 
 // Reconnect payload type

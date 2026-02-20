@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDb, users, passwordResetTokens, eq } from '@asepharyana/services';
+import { getDb, users, passwordResetTokens, eq } from '../../services';
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) {

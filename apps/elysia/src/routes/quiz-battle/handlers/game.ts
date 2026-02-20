@@ -26,7 +26,7 @@ import {
   eq,
   and,
   sql,
-} from '@asepharyana/services';
+} from '../../../services';
 
 // Load random questions based on difficulty and category
 async function loadQuestions(

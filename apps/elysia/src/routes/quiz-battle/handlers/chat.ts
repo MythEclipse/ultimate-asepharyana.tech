@@ -10,7 +10,7 @@ import type {
 } from '../types';
 
 import { wsManager } from '../ws-manager';
-import { getDb, users, eq } from '@asepharyana/services';
+import { getDb, users, eq } from '../../../services';
 
 const globalMessages: ChatGlobalMessagePayload[] = [];
 const privateMessages = new Map<string, ChatPrivateMessagePayload[]>();

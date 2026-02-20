@@ -7,8 +7,8 @@ import {
   eq,
   desc,
   and,
-} from '@asepharyana/services';
-import type { NewPost, NewComment, NewLike } from '@asepharyana/services';
+} from '../services';
+import type { NewPost, NewComment, NewLike } from '../services';
 import { verifyJWT } from '../utils/jwt';
 
 export const sosmedRoutes = new Elysia({ prefix: '/api/sosmed' })

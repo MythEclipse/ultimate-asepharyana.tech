@@ -14,7 +14,7 @@ import { logger } from './middleware';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimit } from './middleware/rateLimit';
 import { config } from './config';
-import { initializeDb, closeDb } from '@asepharyana/services';
+import { initializeDb, closeDb } from './services';
 import { getRedis } from './utils/redis';
 
 let isDbInitialized = false;

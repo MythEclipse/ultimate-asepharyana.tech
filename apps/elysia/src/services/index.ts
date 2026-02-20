@@ -1,6 +1,7 @@
-export * from './database';
-export * from './types';
-export * from './image-cache';
+export * from './lib/database';
+export * from './lib/types';
+export * from './lib/image-cache';
+export * from './lib/schema';
 
 // Re-export commonly used drizzle-orm operators
 export {

@@ -9,7 +9,7 @@ import type {
   NotificationDeletePayload,
   NotificationReceivedPayload,
 } from '../types';
-import { getDb, quizNotifications, eq, and, desc } from '@asepharyana/services';
+import { getDb, quizNotifications, eq, and, desc } from '../../../services';
 
 // Handler: Get notification list
 export async function handleNotificationListSync(

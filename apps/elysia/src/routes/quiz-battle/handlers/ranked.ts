@@ -10,7 +10,7 @@ import type {
   RankedTier,
   RankedDivision,
 } from '../types';
-import { getDb, users, quizUserStats, eq, desc } from '@asepharyana/services';
+import { getDb, users, quizUserStats, eq, desc } from '../../../services';
 
 const TIER_THRESHOLDS = {
   Bronze: { min: 0, max: 999 },

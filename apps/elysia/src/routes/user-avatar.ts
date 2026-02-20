@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { authMiddleware } from '../middleware/auth';
 import { config } from '../config';
 import { putObject, buildPublicUrl } from '../utils/minio';
-import { getDb, users, eq } from '@asepharyana/services';
+import { getDb, users, eq } from '../services';
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);

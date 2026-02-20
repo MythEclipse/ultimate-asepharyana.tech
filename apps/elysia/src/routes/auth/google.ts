@@ -6,14 +6,14 @@ import {
   accounts,
   sessions,
   quizUserStats,
-} from '@asepharyana/services';
+} from '../../services';
 import type {
   NewUser,
   NewAccount,
   NewSession,
   User,
-} from '@asepharyana/services';
-import { eq, and } from '@asepharyana/services';
+} from '../../services';
+import { eq, and } from '../../services';
 import { config } from '../../config';
 import { signJWT } from '../../utils/jwt';
 

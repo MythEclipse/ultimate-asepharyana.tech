@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { getDb, users, passwordResetTokens, eq } from '@asepharyana/services';
-import type { NewPasswordResetToken } from '@asepharyana/services';
+import { getDb, users, passwordResetTokens, eq } from '../../services';
+import type { NewPasswordResetToken } from '../../services';
 import { sendPasswordResetEmail } from '../../utils/email';
 
 function generateToken(): string {

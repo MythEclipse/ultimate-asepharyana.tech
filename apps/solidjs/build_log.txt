@@ -1,0 +1,74 @@
+$ vinxi build --verbose
+vinxi v0.5.11
+
+
+⚙  Building your app...
+vinxi v0.5.11
+
+
+⚙ Building your router ssr...
+
+
+📦 Compiling ssr router...
+vinxi building router ssr in http mode
+vite v6.4.1 building SSR bundle for production...
+transforming...
+✓ 40 modules transformed.
+✗ Build failed in 626ms
+Error building router ssr: [vite]: Rollup failed to resolve import "date-fns" from "/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/sosmed/PostCard.tsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteLog (file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46374:15)
+    at onRollupLog (file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46424:5)
+    at onLog (file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46072:7)
+    at file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/rollup/dist/es/shared/node-entry.js:20958:32
+    at Object.logger [as onLog] (file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/rollup/dist/es/shared/node-entry.js:22945:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/rollup/dist/es/shared/node-entry.js:21689:26)
+    at file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/rollup/dist/es/shared/node-entry.js:21647:26 {
+  watchFiles: [
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime/index.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime/ongoing-anime/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime/complete-anime/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime/detail/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime2/complete-anime/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime/search/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime2/detail/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime/full/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime2/ongoing-anime/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime2/search/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/api/auth/[...solidauth].ts',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/anime2/index.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/dashboard.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/index.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/komik/chapter/[chapterId].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/komik/detail/[slug].tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/komik/index.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/login.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/project.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/register.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/settings.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/routes/sosmed.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/entry-server.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/package.json',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/server/auth.ts',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/@solidjs/meta/dist/index.jsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/@solidjs/router/dist/index.jsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/providers/theme-provider.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/lib/http-client.ts',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/lib/auth-context.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/sosmed/CreatePost.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/solid-motionone/dist/index.jsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/CachedImage.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/sosmed/PostCard.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/@solidjs/start/dist/server/index.jsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/background/BackgroundBeamsWithCollision.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/text/AnimatedHeader.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/logo/SocialIcons.tsx',
+    '/run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/src/components/logo/TechIcons.tsx'
+  ]
+}
+Error building router ssr: Error: Exited with code: 1
+    at CommandChild.pipedStdoutBuffer (file:///run/media/asephs/b147e4d3-826a-5c47-9a73-5b2b9a19cd71/bp3/ultimate-asepharyana.cloud/apps/solidjs/node_modules/dax-sh/esm/mod.js:8476:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+error: script "build" exited with code 1

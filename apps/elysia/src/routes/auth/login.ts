@@ -1,8 +1,8 @@
 import { Elysia, t } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { getDb, users, sessions } from '@asepharyana/services';
-import type { NewSession } from '@asepharyana/services';
-import { eq } from '@asepharyana/services';
+import { getDb, users, sessions } from '../../services';
+import type { NewSession } from '../../services';
+import { eq } from '../../services';
 import { signJWT } from '../../utils/jwt';
 import { rateLimit } from '../../middleware/rateLimit';
 import { sanitizeEmail } from '../../utils/validation';

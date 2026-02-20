@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { getDb } from '@asepharyana/services';
+import { getDb } from '../services';
 import { authMiddleware } from '../middleware/auth';
 import {
   chatRooms,
@@ -7,8 +7,8 @@ import {
   chatMessagesWithRoom,
   NewChatRoom,
   NewChatRoomMember,
-} from '@asepharyana/services';
-import { eq, and } from '@asepharyana/services';
+} from '../services';
+import { eq, and } from '../services';
 import { chatLogger } from '../utils/logger';
 
 // Type for authenticated user from middleware

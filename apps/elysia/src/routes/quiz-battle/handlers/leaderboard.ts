@@ -19,7 +19,7 @@ import {
   and,
   or,
   desc,
-} from '@asepharyana/services';
+} from '../../../services';
 
 /**
  * Handle global leaderboard sync

@@ -4,7 +4,7 @@
  */
 
 import Elysia, { t } from 'elysia';
-import { getOrCacheImage } from '@asepharyana/services';
+import { getOrCacheImage } from '../services';
 
 export const imageCacheRoutes = new Elysia({ prefix: '/api' })
   .post(

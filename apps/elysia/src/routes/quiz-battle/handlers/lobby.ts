@@ -29,7 +29,7 @@ import {
   quizUserStats,
   eq,
   and,
-} from '@asepharyana/services';
+} from '../../../services';
 
 /**
  * Generate unique lobby code

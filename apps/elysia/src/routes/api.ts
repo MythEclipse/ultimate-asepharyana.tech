@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { getDb, users, eq, desc } from '@asepharyana/services';
+import { getDb, users, eq, desc } from '../services';
 
 export const apiRoutes = new Elysia({ prefix: '/api' })
   .get('/users', async () => {

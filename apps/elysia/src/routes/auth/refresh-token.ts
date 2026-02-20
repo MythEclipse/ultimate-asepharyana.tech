@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { getDb, users, sessions, eq } from '@asepharyana/services';
-import type { NewSession } from '@asepharyana/services';
+import { getDb, users, sessions, eq } from '../../services';
+import type { NewSession } from '../../services';
 import { signJWT } from '../../utils/jwt';
 
 export const refreshTokenRoute = new Elysia().post(

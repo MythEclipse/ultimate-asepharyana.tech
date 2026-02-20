@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { getDb, quizMatches, eq, desc, or } from '@asepharyana/services';
+import { getDb, quizMatches, eq, desc, or } from '../services';
 import { authMiddleware } from '../middleware/auth';
 import { historyLogger } from '../utils/logger';
 

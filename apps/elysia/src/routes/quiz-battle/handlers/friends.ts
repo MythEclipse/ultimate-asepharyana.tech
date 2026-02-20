@@ -35,7 +35,7 @@ import {
   eq,
   and,
   or,
-} from '@asepharyana/services';
+} from '../../../services';
 import { friendLogger } from '../../../utils/logger';
 
 // Store pending match invites in memory

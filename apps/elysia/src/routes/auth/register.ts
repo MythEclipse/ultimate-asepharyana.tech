@@ -5,9 +5,9 @@ import {
   users,
   emailVerificationTokens,
   quizUserStats,
-} from '@asepharyana/services';
-import type { NewUser, NewEmailVerificationToken } from '@asepharyana/services';
-import { eq } from '@asepharyana/services';
+} from '../../services';
+import type { NewUser, NewEmailVerificationToken } from '../../services';
+import { eq } from '../../services';
 import { sendVerificationEmail } from '../../utils/email';
 import { rateLimit } from '../../middleware/rateLimit';
 import { sanitizeEmail, sanitizeString } from '../../utils/validation';

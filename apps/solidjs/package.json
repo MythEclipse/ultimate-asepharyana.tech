@@ -29,6 +29,7 @@
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "postcss": "^8.4.40",
     "solid-js": "^1.9.5",
     "solid-motionone": "^1.0.0",

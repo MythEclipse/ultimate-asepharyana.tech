@@ -22,7 +22,7 @@ import {
   quizUserStats,
   quizMatches,
   eq,
-} from '@asepharyana/services';
+} from '../../../services';
 
 // Store pending match confirmations
 const pendingConfirmations = new Map<
