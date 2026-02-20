@@ -2,11 +2,12 @@ use leptos::*;
 
 #[component]
 pub fn LoadingOverlay(#[prop(into)] is_ready: Signal<bool>) -> impl IntoView {
-    let (fade_out, set_fade_out) = create_signal(false);
-    let (hidden, set_hidden) = create_signal(false);
+    let initial_ready = is_ready.get_untracked();
+    let (fade_out, set_fade_out) = create_signal(initial_ready);
+    let (hidden, set_hidden) = create_signal(initial_ready);
 
     create_effect(move |_| {
-        if is_ready.get() {
+        if is_ready.get() && !hidden.get_untracked() {
             // Start fade out after a short delay to ensure smooth transition
             let fade_timer = gloo_timers::callback::Timeout::new(500, move || {
                 set_fade_out.set(true);

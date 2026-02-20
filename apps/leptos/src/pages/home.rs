@@ -54,7 +54,9 @@ pub fn HomePage() -> impl IntoView {
     view! {
         <Title text="Full-Stack Developer | Asep Haryana"/>
         
-        <LoadingOverlay is_ready=visuals_ready />
+        <Show when=move || !visuals_ready.get()>
+            <LoadingOverlay is_ready=visuals_ready />
+        </Show>
 
         <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: Professional Identity
