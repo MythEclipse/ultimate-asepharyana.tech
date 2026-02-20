@@ -1,12 +1,8 @@
 // API Base URLs - use localhost in development
 const isDev =
   typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const RUST_API = isDev
-  ? 'http://localhost:4091'
-  : 'https://ws.asepharyana.tech'; // For anime, komik endpoints
-const ELYSIA_API = isDev
-  ? 'http://localhost:4091'
-  : 'https://elysia.asepharyana.tech'; // For auth, chat endpoints
+const RUST_API = import.meta.env.VITE_RUST_API || (isDev ? 'http://localhost:4091' : 'http://rust-api:4091');
+const ELYSIA_API = import.meta.env.VITE_ELYSIA_API || (isDev ? 'http://localhost:4092' : 'http://elysia-api:4092');
 
 interface RequestOptions {
   headers?: Record<string, string>;
