@@ -31,19 +31,19 @@ const PROJECTS: &[Project] = &[
     },
     Project {
         title: "Anime Streaming",
-        description: "A comprehensive media hub for streaming and discovering anime content, featuring a modern cinematic interface.",
+        description: "A comprehensive media hub for streaming anime, powered by advanced scraping from Otakudesu.",
         images: ProjectImages { light: "/public/project-anime.png", dark: "/public/project-anime.png" },
         link_url: "/anime",
     },
     Project {
         title: "Media Library",
-        description: "An advanced digital archive for managing and consuming media content with a focus on ease of navigation.",
+        description: "An advanced digital archive for consuming anime content, featuring intelligent data extraction from Alqanime.",
         images: ProjectImages { light: "/public/project-anime2.png", dark: "/public/project-anime2.png" },
         link_url: "/anime2",
     },
     Project {
         title: "Manga Reader",
-        description: "An immersive digital reading platform designed for high-resolution comics and manga with smooth transitions.",
+        description: "An immersive digital reading platform designed for high-resolution comics and manga, extracting data from Komiku.",
         images: ProjectImages { light: "/public/project-komik.png", dark: "/public/project-komik.png" },
         link_url: "/komik",
     },
