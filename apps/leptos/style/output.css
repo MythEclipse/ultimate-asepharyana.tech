@@ -673,6 +673,14 @@ body::before {
   inset: 0px;
 }
 
+.inset-12 {
+  inset: 3rem;
+}
+
+.inset-6 {
+  inset: 1.5rem;
+}
+
 .inset-x-0 {
   left: 0px;
   right: 0px;
@@ -940,12 +948,20 @@ body::before {
   margin-left: 0.25rem;
 }
 
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
 .ml-4 {
   margin-left: 1rem;
 }
 
 .mr-2 {
   margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
 }
 
 .mt-16 {
@@ -1110,6 +1126,10 @@ body::before {
   height: 1px;
 }
 
+.h-\[30rem\] {
+  height: 30rem;
+}
+
 .h-\[35rem\] {
   height: 35rem;
 }
@@ -1264,6 +1284,10 @@ body::before {
 
 .w-80 {
   width: 20rem;
+}
+
+.w-\[30rem\] {
+  width: 30rem;
 }
 
 .w-\[35rem\] {
@@ -1490,6 +1514,36 @@ body::before {
 
 .transform-gpu {
   transform: translate3d(var(--tw-translate-x), var(--tw-translate-y), 0) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-\[spin_3s_linear_infinite_reverse\] {
+  animation: spin 3s linear infinite reverse;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-\[spin_4s_linear_infinite\] {
+  animation: spin 4s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-\[spin_8s_linear_infinite\] {
+  animation: spin 8s linear infinite;
 }
 
 @keyframes bounce {
@@ -1954,6 +2008,10 @@ body::before {
   border-color: hsl(var(--background) / 0.3);
 }
 
+.border-blue-400\/30 {
+  border-color: rgb(96 165 250 / 0.3);
+}
+
 .border-blue-500\/30 {
   border-color: rgb(59 130 246 / 0.3);
 }
@@ -2002,6 +2060,10 @@ body::before {
   border-color: hsl(var(--primary) / 0.2);
 }
 
+.border-purple-500\/20 {
+  border-color: rgb(168 85 247 / 0.2);
+}
+
 .border-purple-500\/40 {
   border-color: rgb(168 85 247 / 0.4);
 }
@@ -2030,12 +2092,32 @@ body::before {
   border-color: rgb(255 255 255 / 0.05);
 }
 
+.border-b-purple-500 {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(168 85 247 / var(--tw-border-opacity, 1));
+}
+
+.border-l-purple-500 {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(168 85 247 / var(--tw-border-opacity, 1));
+}
+
 .border-t-background {
   border-top-color: hsl(var(--background));
 }
 
+.border-t-indigo-500 {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(99 102 241 / var(--tw-border-opacity, 1));
+}
+
 .border-t-primary {
   border-top-color: hsl(var(--primary));
+}
+
+.bg-\[\#030305\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(3 3 5 / var(--tw-bg-opacity, 1));
 }
 
 .bg-background {
@@ -2065,6 +2147,10 @@ body::before {
 
 .bg-black\/20 {
   background-color: rgb(0 0 0 / 0.2);
+}
+
+.bg-black\/40 {
+  background-color: rgb(0 0 0 / 0.4);
 }
 
 .bg-black\/5 {
@@ -2216,6 +2302,10 @@ body::before {
   background-color: rgb(239 68 68 / 0.05);
 }
 
+.bg-red-500\/50 {
+  background-color: rgb(239 68 68 / 0.5);
+}
+
 .bg-secondary {
   background-color: hsl(var(--secondary));
 }
@@ -2232,8 +2322,16 @@ body::before {
   background-color: rgb(255 255 255 / 0.05);
 }
 
+.bg-yellow-500\/50 {
+  background-color: rgb(234 179 8 / 0.5);
+}
+
 .bg-yellow-500\/90 {
   background-color: rgb(234 179 8 / 0.9);
+}
+
+.bg-\[linear-gradient\(rgba\(255\2c 255\2c 255\2c 0\.1\)_1px\2c transparent_1px\)\2c linear-gradient\(90deg\2c rgba\(255\2c 255\2c 255\2c 0\.1\)_1px\2c transparent_1px\)\] {
+  background-image: linear-gradient(rgba(255,255,255,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.1) 1px,transparent 1px);
 }
 
 .bg-\[url\(\'https\:\/\/grainy-gradients\.vercel\.app\/noise\.svg\'\)\] {
@@ -2468,6 +2566,11 @@ body::before {
   --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.3) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
+.via-indigo-500\/5 {
+  --tw-gradient-to: rgb(99 102 241 / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.05) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
 .via-primary\/10 {
   --tw-gradient-to: hsl(var(--primary) / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--primary) / 0.1) var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -2600,6 +2703,10 @@ body::before {
 
 .bg-\[length\:200\%_auto\] {
   background-size: 200% auto;
+}
+
+.bg-\[size\:40px_40px\] {
+  background-size: 40px 40px;
 }
 
 .bg-clip-text {
@@ -3070,11 +3177,6 @@ body::before {
   color: rgb(59 130 246 / var(--tw-text-opacity, 1));
 }
 
-.text-cyan-400 {
-  --tw-text-opacity: 1;
-  color: rgb(34 211 238 / var(--tw-text-opacity, 1));
-}
-
 .text-destructive {
   color: hsl(var(--destructive));
 }
@@ -3113,10 +3215,6 @@ body::before {
   color: rgb(199 210 254 / 0.4);
 }
 
-.text-indigo-300\/40 {
-  color: rgb(165 180 252 / 0.4);
-}
-
 .text-indigo-400 {
   --tw-text-opacity: 1;
   color: rgb(129 140 248 / var(--tw-text-opacity, 1));
@@ -3133,6 +3231,10 @@ body::before {
 
 .text-indigo-500\/50 {
   color: rgb(99 102 241 / 0.5);
+}
+
+.text-indigo-500\/80 {
+  color: rgb(99 102 241 / 0.8);
 }
 
 .text-muted-foreground {
@@ -3239,6 +3341,10 @@ body::before {
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
+.text-white\/30 {
+  color: rgb(255 255 255 / 0.3);
+}
+
 .text-white\/40 {
   color: rgb(255 255 255 / 0.4);
 }
@@ -3304,6 +3410,10 @@ body::before {
   opacity: 0.9;
 }
 
+.opacity-\[0\.02\] {
+  opacity: 0.02;
+}
+
 .opacity-\[0\.03\] {
   opacity: 0.03;
 }
@@ -3337,6 +3447,12 @@ body::before {
 .shadow-\[0_0_20px_rgba\(99\2c 102\2c 241\2c 0\.5\)\] {
   --tw-shadow: 0 0 20px rgba(99,102,241,0.5);
   --tw-shadow-colored: 0 0 20px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0_0_30px_rgba\(99\2c 102\2c 241\2c 0\.2\)\] {
+  --tw-shadow: 0 0 30px rgba(99,102,241,0.2);
+  --tw-shadow-colored: 0 0 30px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -3544,6 +3660,11 @@ body::before {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
+.drop-shadow-\[0_0_15px_rgba\(255\2c 255\2c 255\2c 0\.5\)\] {
+  --tw-drop-shadow: drop-shadow(0 0 15px rgba(255,255,255,0.5));
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
 .grayscale {
   --tw-grayscale: grayscale(100%);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
@@ -3724,6 +3845,10 @@ body::before {
 
 .\[text-shadow\:0_4px_12px_rgba\(0\2c 0\2c 0\2c 0\.5\)\] {
   text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.\[transform\:perspective\(500px\)_rotateX\(60deg\)_translateY\(-100px\)_scale\(2\)\] {
+  transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(2);
 }
 
 /* Premium Color Palette - Light Mode */
@@ -4185,6 +4310,43 @@ body::before {
 
 .animate-pulse-segments {
   animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+.mask-image-b-fade {
+  mask-image: linear-gradient(to top, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 80%, transparent 100%);
 }
 
 .selection\:bg-orange-500\/30 *::-moz-selection {
@@ -4805,6 +4967,10 @@ body::before {
     display: none;
   }
 
+  .md\:h-80 {
+    height: 20rem;
+  }
+
   .md\:h-\[600px\] {
     height: 600px;
   }
@@ -4849,6 +5015,10 @@ body::before {
     padding: 8rem;
   }
 
+  .md\:p-6 {
+    padding: 1.5rem;
+  }
+
   .md\:px-12 {
     padding-left: 3rem;
     padding-right: 3rem;
@@ -4891,6 +5061,11 @@ body::before {
   .md\:text-9xl {
     font-size: 8rem;
     line-height: 1;
+  }
+
+  .md\:text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
   }
 }
 

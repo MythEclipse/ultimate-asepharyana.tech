@@ -32,6 +32,7 @@ gloo-storage = "0.3"
 gloo-timers = "0.3"
 mime_guess = "2.0"
 urlencoding = "2.1"
+js-sys = "0.3"
 
 [features]
 csr = ["leptos/csr", "leptos_meta/csr", "leptos_router/csr"]
