@@ -46,10 +46,6 @@ pub fn Navbar() -> impl IntoView {
                 // Cinematic Link Array
                 <div class="hidden md:flex items-center space-x-2">
                      <NavLink href="/project" label="Projects" current_path=location.pathname />
-                     <NavLink href="/sosmed" label="Social" current_path=location.pathname />
-                     <NavLink href="/anime" label="Anime 1" current_path=location.pathname />
-                     <NavLink href="/anime2" label="Anime 2" current_path=location.pathname />
-                     <NavLink href="/komik" label="Manga" current_path=location.pathname />
 
                      <div class="w-8 h-px bg-white/5 mx-4" />
 
@@ -117,42 +113,6 @@ pub fn Navbar() -> impl IntoView {
                             is_active=move || {
                                 let p = location.pathname.get();
                                 p == "/project" || p.starts_with("/project/")
-                            } 
-                            on_click=move |_| set_is_open.set(false) 
-                        />
-                        <MobileNavLink 
-                            href="/sosmed" 
-                            label="Social" 
-                            is_active=move || {
-                                let p = location.pathname.get();
-                                p == "/sosmed" || p.starts_with("/sosmed/")
-                            } 
-                            on_click=move |_| set_is_open.set(false) 
-                        />
-                        <MobileNavLink 
-                            href="/anime" 
-                            label="Anime 1" 
-                            is_active=move || {
-                                let p = location.pathname.get();
-                                p == "/anime" || p.starts_with("/anime/")
-                            } 
-                            on_click=move |_| set_is_open.set(false) 
-                        />
-                        <MobileNavLink 
-                            href="/anime2" 
-                            label="Anime 2" 
-                            is_active=move || {
-                                let p = location.pathname.get();
-                                p == "/anime2" || p.starts_with("/anime2/")
-                            } 
-                            on_click=move |_| set_is_open.set(false) 
-                        />
-                        <MobileNavLink 
-                            href="/komik" 
-                            label="Manga" 
-                            is_active=move || {
-                                let p = location.pathname.get();
-                                p == "/komik" || p.starts_with("/komik/")
                             } 
                             on_click=move |_| set_is_open.set(false) 
                         />
