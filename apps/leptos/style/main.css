@@ -338,13 +338,20 @@
   animation: glitch-anim-2 5s infinite linear alternate-reverse;
 }
 
-/* Heavy Cinematic Glitch (Discord Style) */
+/* Heavy Cinematic Glitch (Cyberpunk Style) */
 .glitch-heavy {
   position: relative;
   display: inline-block;
-  /* Remove fixed color to allow text-foreground/20 override */
-  /* Static "Background" Text Shadow */
-  text-shadow: 0 0 10px hsla(var(--primary), 0.1);
+  /* Add a pulsing core glow */
+  text-shadow: 
+    0 0 8px hsla(var(--gradient-start), 0.4),
+    0 0 16px hsla(var(--gradient-mid), 0.2);
+  animation: cyber-flicker 4s infinite;
+}
+
+@keyframes cyber-flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; text-shadow: 0 0 8px hsla(var(--gradient-start), 0.4), 0 0 16px hsla(var(--gradient-mid), 0.2); }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.7; text-shadow: none; }
 }
 
 .glitch-heavy::before,
@@ -357,14 +364,14 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  /* A brighter blend mode for cyber aesthetic */
   mix-blend-mode: screen;
-  /* Apply Animated Gradient to Glitch Layers */
   background: linear-gradient(
     135deg,
-    hsl(var(--gradient-start)),
+    hsl(var(--neon-cyan)),
     hsl(var(--gradient-mid)),
-    hsl(var(--gradient-end)),
-    hsl(var(--gradient-start))
+    hsl(var(--neon-magenta)),
+    hsl(var(--neon-cyan))
   );
   background-size: 300% 300%;
   -webkit-background-clip: text;
@@ -374,56 +381,55 @@
 }
 
 .glitch-heavy::before {
-  left: 2px;
-  /* text-shadow: -1px 0 #ff00c1; Remove fixed text-shadow to use gradient instead */
-  filter: drop-shadow(-2px 0 #ff00c1);
+  left: 3px;
+  filter: drop-shadow(-3px 0 #ff007b);
   clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-  animation: glitch-intense-1 3s infinite linear, gradient-shift 6s ease infinite;
-  opacity: 1;
+  animation: cyber-glitch-1 4s infinite linear alternate-reverse;
+  z-index: 2;
+  opacity: 0;
 }
 
 .glitch-heavy::after {
-  left: -2px;
-  filter: drop-shadow(2px 0 #00fff9);
+  left: -3px;
+  filter: drop-shadow(3px 0 #00fff9);
   clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-  animation: glitch-intense-2 3s infinite linear, gradient-shift 6s ease infinite;
-  opacity: 1;
+  animation: cyber-glitch-2 5s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94) alternate-reverse;
+  z-index: 3;
+  opacity: 0;
 }
 
 .glitch-heavy .glitch-layer {
   left: 0;
-  filter: drop-shadow(1px 0 #00ff00);
+  filter: drop-shadow(0 0 5px #ff00ff);
   clip-path: polygon(0 33%, 100% 33%, 100% 67%, 0 67%);
-  animation: glitch-intense-3 3s infinite linear, gradient-shift 6s ease infinite;
-  opacity: 0.9;
+  animation: cyber-glitch-3 3.5s infinite steps(2, end) alternate-reverse;
+  z-index: 1;
+  opacity: 0;
 }
 
-@keyframes glitch-intense-1 {
-  0% { transform: translate(0); clip-path: inset(10% 0 80% 0); opacity: 1; }
-  2% { transform: translate(-5px, 2px); clip-path: inset(30% 0 20% 0); }
-  4% { transform: translate(5px, -2px); clip-path: inset(60% 0 10% 0); }
-  6% { transform: translate(-3px, 5px); clip-path: inset(80% 0 5% 0); }
-  8% { transform: translate(3px, -5px); clip-path: inset(5% 0 90% 0); }
-  10% { transform: translate(0); clip-path: inset(10% 0 80% 0); opacity: 1; }
-  11%, 100% { transform: translate(0); clip-path: inset(0 0 0 0); opacity: 0; }
+@keyframes cyber-glitch-1 {
+  0% { transform: translate(0) skewX(0); clip-path: inset(10% 0 80% 0); opacity: 0; }
+  2% { transform: translate(-8px, 1px) skewX(10deg); clip-path: inset(30% 0 20% 0); opacity: 1; }
+  4% { transform: translate(8px, -1px) skewX(-10deg); clip-path: inset(60% 0 10% 0); opacity: 1; }
+  6% { transform: translate(-4px, 2px) skewX(0); clip-path: inset(80% 0 5% 0); opacity: 1; }
+  8% { transform: translate(4px, -2px) skewX(5deg); clip-path: inset(5% 0 90% 0); opacity: 1; }
+  10%, 100% { transform: translate(0) skewX(0); clip-path: inset(0 0 0 0); opacity: 0; }
 }
 
-@keyframes glitch-intense-2 {
-  0% { transform: translate(0); clip-path: inset(80% 0 5% 0); opacity: 1; }
-  3% { transform: translate(5px, -3px); clip-path: inset(10% 0 70% 0); }
-  6% { transform: translate(-5px, 3px); clip-path: inset(50% 0 30% 0); }
-  9% { transform: translate(2px, 5px); clip-path: inset(40% 0 40% 0); }
-  12% { transform: translate(0); clip-path: inset(80% 0 5% 0); opacity: 1; }
-  13%, 100% { transform: translate(0); clip-path: inset(0 0 0 0); opacity: 0; }
+@keyframes cyber-glitch-2 {
+  0% { transform: translate(0) skewX(0); clip-path: inset(80% 0 5% 0); opacity: 0; }
+  3% { transform: translate(6px, -2px) skewX(-5deg); clip-path: inset(10% 0 70% 0); opacity: 1; }
+  6% { transform: translate(-6px, 2px) skewX(15deg); clip-path: inset(50% 0 30% 0); opacity: 1; }
+  9% { transform: translate(3px, 3px) skewX(0); clip-path: inset(40% 0 40% 0); opacity: 1; }
+  12%, 100% { transform: translate(0) skewX(0); clip-path: inset(0 0 0 0); opacity: 0; }
 }
 
-@keyframes glitch-intense-3 {
-  0% { opacity: 0.9; transform: scaleY(1) skewX(0); }
-  4% { opacity: 0.5; transform: scaleY(1.1) skewX(20deg); }
-  8% { opacity: 0.9; transform: scaleY(1) skewX(0); }
-  12% { opacity: 0.8; transform: scaleY(0.9) skewX(-10deg); }
-  15% { opacity: 0.9; transform: scaleY(1) skewX(0); }
-  16%, 100% { opacity: 0; transform: scaleY(1) skewX(0); }
+@keyframes cyber-glitch-3 {
+  0% { opacity: 0; transform: scale(1); clip-path: inset(40% 0 40% 0); }
+  4% { opacity: 0.8; transform: scale(1.02) translate(-2px, 1px); clip-path: inset(20% 0 60% 0); }
+  8% { opacity: 0.4; transform: scale(0.98); clip-path: inset(60% 0 20% 0); }
+  12% { opacity: 0.9; transform: scale(1.05) translate(2px, -1px); clip-path: inset(30% 0 50% 0); }
+  16%, 100% { opacity: 0; transform: scale(1); clip-path: inset(0 0 0 0); }
 }
 
 .cyber-glow {
