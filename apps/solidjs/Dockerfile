@@ -1,11 +1,24 @@
+# build stage
+FROM oven/bun:alpine AS builder
+WORKDIR /app
+
+# install dependencies
+COPY apps/solidjs/package.json apps/solidjs/bun.lock ./
+RUN bun install
+
+# build the application
+COPY apps/solidjs ./
+RUN bun run build
+
+# runtime stage
 FROM oven/bun:alpine
 WORKDIR /app
 
-# Copy Nitro output from the host
-COPY apps/solidjs/.output ./output
+# copy build artifacts and necessary runtime files
+COPY --from=builder /app/.output ./.output
 COPY apps/solidjs/package.json ./
 
 EXPOSE 4090
 
 # Vinxi/Nitro start command
-CMD ["bun", "run", "output/server/index.mjs"]
+CMD ["bun", "run", ".output/server/index.mjs"]

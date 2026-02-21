@@ -11,11 +11,11 @@ WORKDIR /app/apps/rust
 # build the release binary using the default host target (glibc)
 RUN cargo build --release
 
-# final runtime image based on Rust base (matches builder) to ensure compatible libc
-FROM rust:latest AS runtime
-# install only required runtime dependencies
+# final runtime image based on a slim Debian distribution
+FROM debian:bookworm-slim AS runtime
+# install only required runtime dependencies (libssl is critical for most Rust apps)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl && rm -rf /var/lib/apt/lists/*
+    ca-certificates curl libssl3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

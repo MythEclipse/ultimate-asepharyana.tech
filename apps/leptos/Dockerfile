@@ -2,24 +2,25 @@
 FROM rust:latest AS builder
 WORKDIR /app
 
-COPY apps/leptos/Cargo.toml apps/leptos/Trunk.toml ./
-COPY apps/leptos/index.html ./
-COPY apps/leptos/style ./style
-COPY apps/leptos/src ./src
+# install Bun for faster frontend dependency management
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
 
-# install Node.js and npm for tailwind build hook
-RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
+# ensure WASM target is available for building
+RUN rustup target add wasm32-unknown-unknown
 
-# copy package files so we can install frontend dependencies
-COPY apps/leptos/package.json ./
-# use npm install since we may not have a lockfile
-RUN npm install
+# copy manifest and lockfiles first for caching
+COPY apps/leptos/Cargo.toml apps/leptos/Cargo.lock apps/leptos/Trunk.toml ./
+COPY apps/leptos/package.json apps/leptos/bun.lock ./
 
-# allow passing visuals URL at build time (defaults to local nginx host)
-ARG VISUALS_URL="http://visuals.localhost"
-ENV VISUALS_URL=${VISUALS_URL}
+# install frontend dependencies using bun
+RUN bun install
 
+# install trunk
 RUN cargo install trunk --locked
+
+# copy source and build
+COPY apps/leptos ./
 RUN trunk build --release --public-url "/"
 
 # runtime stage
