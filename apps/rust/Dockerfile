@@ -1,13 +1,29 @@
-FROM alpine:latest
-RUN apk add --no-cache openssl ca-certificates curl gcompat libgcc
+# multi-stage build: compile inside a Rust builder image using a modern toolchain
+FROM rust:latest AS builder
 
 WORKDIR /app
 
-# Copy pre-built binary from the host
-COPY apps/rust/target/release/rustexpress /app/rustexpress
+# copy the entire rust application so cargo can resolve workspace paths if any
+COPY apps/rust ./apps/rust
 
-# Expose port
+WORKDIR /app/apps/rust
+
+# build the release binary using the default host target (glibc)
+RUN cargo build --release
+
+# final runtime image based on Rust base (matches builder) to ensure compatible libc
+FROM rust:latest AS runtime
+# install only required runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# copy the compiled binary from the builder stage
+COPY --from=builder /app/apps/rust/target/release/rustexpress /app/rustexpress
+
+# expose service port
 EXPOSE 4091
 
-# Run the binary
+# run the binary
 CMD ["./rustexpress"]

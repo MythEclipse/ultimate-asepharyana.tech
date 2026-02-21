@@ -1,6 +1,26 @@
+# build stage using trunk to produce dist
+FROM rust:latest AS builder
+WORKDIR /app
+
+COPY apps/leptos/Cargo.toml apps/leptos/Trunk.toml ./
+COPY apps/leptos/index.html ./
+COPY apps/leptos/style ./style
+COPY apps/leptos/src ./src
+
+RUN cargo install trunk --locked
+RUN trunk build --release --public-url "/"
+
+# runtime stage
 FROM nginx:alpine
-# Copy pre-built Trunk distribution
-COPY apps/leptos/dist /usr/share/nginx/html
-RUN sed -i 's/listen \(.*\)80;/listen 8081;/' /etc/nginx/conf.d/default.conf
+
+# Copy generated files
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Add entrypoint script to adjust port at runtime
+COPY apps/leptos/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# default exposed port (can be changed via PORT env at runtime)
 EXPOSE 8081
-CMD ["nginx", "-g", "daemon off;"]
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

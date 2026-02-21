@@ -121,8 +121,22 @@ services:
     networks: [app-net]
     environment:
       - PORT=8081
+      - NEXT_PUBLIC_ANIME=/api/rust
+      - NEXT_PUBLIC_KOMIK=/api/rust
     depends_on:
       - rust-api
+
+  visuals:
+    build:
+      context: .
+      dockerfile: apps/visuals/Dockerfile
+    restart: always
+    networks: [app-net]
+    ports:
+      - "4080:80"    # static visuals site exposed on host 4080
+    depends_on:
+      - rust-api
+      - elysia-api
 
   # ──────────────────────────────────────────────
   # Reverse Proxy — single ingress point

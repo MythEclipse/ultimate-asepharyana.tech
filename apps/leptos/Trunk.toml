@@ -34,7 +34,8 @@ ignore = []
 
 [serve]
 # The address to serve on.
-addresses = ["127.0.0.1"]
+# Allow external connections (e.g. from Docker) by binding to 0.0.0.0
+addresses = ["0.0.0.0"]
 # The port to serve on.
 port = 3000
 # Aliases to serve, typically found in an /etc/hosts file.
