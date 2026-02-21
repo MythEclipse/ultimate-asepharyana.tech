@@ -11,7 +11,7 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
         let on_complete = on_complete.clone();
         create_effect(move |_| {
             let _on_complete = on_complete.clone();
-            
+
             #[cfg(feature = "csr")]
             {
                 use wasm_bindgen::prelude::*;
@@ -28,7 +28,7 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
                 window()
                     .add_event_listener_with_callback("message", handle_message.as_ref().unchecked_ref())
                     .unwrap();
-                
+
                 handle_message.forget(); // Keep the listener alive
             }
 
@@ -44,10 +44,12 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
         });
     }
 
+    // build-time parameter for visuals host (defaults to visuals.localhost)
+    let visuals_url = option_env!("VISUALS_URL").unwrap_or("http://visuals.localhost/");
+
     create_effect({
         let on_complete = on_complete.clone();
         move |_| {
-            if is_ready.get() {
                 let fade_timer = gloo_timers::callback::Timeout::new(9000, move || {
                     set_fade_out.set(true);
                 });
@@ -82,7 +84,7 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
                     <div class="w-full max-w-md px-12 flex flex-col gap-6 font-mono">
                         // Vertical Scanning Line
                         <div class="absolute inset-0 z-50 pointer-events-none bg-gradient-to-b from-transparent via-indigo-500/10 to-transparent h-20 animate-scan" />
-                        
+
                         // Main Progress Header
                         <div class="flex justify-between items-end border-b border-indigo-500/20 pb-2">
                             <span class="text-[10px] text-indigo-400 font-black tracking-[0.3em]">"INITIALIZING_CORE"</span>
@@ -92,7 +94,7 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
                         // Animated Progress Bar (Multi-Segment)
                         <div class="flex gap-1.5 h-1.5">
                             { (0..15).map(|i| view! {
-                                <div 
+                                <div
                                     class="flex-1 bg-indigo-500/20 rounded-sm animate-pulse-segments"
                                     style=format!("animation-delay: {}s", i as f32 * 0.1)
                                 />
@@ -119,8 +121,8 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
             >
                 // Bevy 3D Solar System (Intro Stage)
                 <div class="absolute inset-0 z-0 animate-fade-in transition-opacity duration-1000">
-                    <iframe 
-                        src="http://localhost:3001/" 
+                    <iframe
+                        src={visuals_url}
                         class="w-full h-full border-0 brightness-110"
                         title="3D Cinematic Visuals"
                     />
@@ -129,7 +131,7 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
 
             // Scanlines Overlay
             <div class="absolute inset-0 pointer-events-none scanlines opacity-5" />
-            
+
         </div>
     }
 }

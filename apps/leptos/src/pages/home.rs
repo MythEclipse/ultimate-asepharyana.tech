@@ -35,7 +35,7 @@ pub fn HomePage() -> impl IntoView {
             window()
                 .add_event_listener_with_callback("message", handle_message.as_ref().unchecked_ref())
                 .unwrap();
-            
+
             handle_message.forget(); // Keep the listener alive
         }
 
@@ -51,9 +51,12 @@ pub fn HomePage() -> impl IntoView {
         );
     });
 
+    // determine visuals iframe URL at compile time (env override allowed)
+    let visuals_url = option_env!("VISUALS_URL").unwrap_or("http://visuals.localhost");
+
     view! {
         <Title text="Full-Stack Developer | Asep Haryana"/>
-        
+
         <Show when=move || !visuals_ready.get()>
             <LoadingOverlay is_ready=visuals_ready />
         </Show>
@@ -62,8 +65,8 @@ pub fn HomePage() -> impl IntoView {
             // Hero Section: Professional Identity
             <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden scanlines">
                 // Bevy Visuals Integration
-                <iframe 
-                    src="http://localhost:3001" 
+                <iframe
+                    src={visuals_url}
                     class="absolute inset-0 w-full h-full border-0 -z-10 opacity-60 mix-blend-screen pointer-events-none grayscale brightness-150"
                     title="Neural Particle Simulation"
                 />
@@ -106,7 +109,7 @@ pub fn HomePage() -> impl IntoView {
                                 </svg>
                             </span>
                         </A>
-                        
+
                         <a href="mailto:superaseph@gmail.com" class="px-16 py-8 rounded-[2.5rem] glass border border-white/10 text-foreground font-black text-xs uppercase tracking-[0.4em] hover:bg-white/5 hover:border-indigo-500/40 transition-all duration-700 hover:scale-105 industrial-snap font-display chromatic-hover">
                             "Contact Me"
                         </a>
@@ -237,7 +240,7 @@ pub fn HomePage() -> impl IntoView {
                 <div class="max-w-7xl mx-auto rounded-[5rem] p-12 md:p-32 relative overflow-hidden glass border border-white/10 shadow-[0_120px_250px_rgba(0,0,0,0.6)]">
                     <div class="absolute -right-60 -top-60 w-[50rem] h-[50rem] bg-indigo-500/10 rounded-full blur-[180px] animate-tilt-slow opacity-60" />
                     <div class="absolute -left-60 -bottom-60 w-[50rem] h-[50rem] bg-purple-500/10 rounded-full blur-[180px] animate-tilt-reverse-slow opacity-40" />
-                    
+
                     <div class="relative z-10 flex flex-col items-center text-center space-y-24">
                         <div class="space-y-14">
                             <div class="space-y-8">
@@ -251,7 +254,7 @@ pub fn HomePage() -> impl IntoView {
                                     "I am always open to discussing new projects, creative ideas or professional opportunities."
                                 </p>
                             </div>
-                            
+
                             <div class="flex flex-wrap items-center justify-center gap-8">
                                 <SocialLink href="https://github.com/MythEclipse" icon=view! { <GitHub/> } label="GitHub" />
                                 <SocialLink href="https://www.linkedin.com/in/asep-haryana-saputra-2014a5294/" icon=view! { <LinkedIn/> } label="LinkedIn" />
@@ -268,9 +271,9 @@ pub fn HomePage() -> impl IntoView {
 #[component]
 fn SocialLink(href: &'static str, icon: impl IntoView, label: &'static str) -> impl IntoView {
     view! {
-        <a 
-            href=href 
-            target="_blank" 
+        <a
+            href=href
+            target="_blank"
             class="group relative p-6 rounded-3xl glass border border-white/10 hover:bg-white/5 transition-all hover:scale-110 active:scale-95 shadow-2xl"
         >
             <div class="absolute inset-0 bg-indigo-500/10 rounded-3xl scale-0 group-hover:scale-110 transition-transform blur-xl" />

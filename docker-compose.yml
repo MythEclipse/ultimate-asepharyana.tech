@@ -117,6 +117,8 @@ services:
     build:
       context: .
       dockerfile: apps/leptos/Dockerfile
+      args:
+        - VISUALS_URL=http://visuals.localhost
     restart: always
     networks: [app-net]
     environment:

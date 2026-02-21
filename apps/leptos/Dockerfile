@@ -15,6 +15,10 @@ COPY apps/leptos/package.json ./
 # use npm install since we may not have a lockfile
 RUN npm install
 
+# allow passing visuals URL at build time (defaults to local nginx host)
+ARG VISUALS_URL="http://visuals.localhost"
+ENV VISUALS_URL=${VISUALS_URL}
+
 RUN cargo install trunk --locked
 RUN trunk build --release --public-url "/"
 
