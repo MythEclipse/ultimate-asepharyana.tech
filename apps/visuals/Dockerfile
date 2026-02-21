@@ -12,6 +12,10 @@ COPY apps/visuals/src ./src
 
 # install trunk and build
 RUN cargo install trunk --locked
+
+# ensure WASM target is available for building
+RUN rustup target add wasm32-unknown-unknown
+
 RUN trunk build --release --public-url "/"
 
 # runtime image serving static files

@@ -7,6 +7,14 @@ COPY apps/leptos/index.html ./
 COPY apps/leptos/style ./style
 COPY apps/leptos/src ./src
 
+# install Node.js and npm for tailwind build hook
+RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
+
+# copy package files so we can install frontend dependencies
+COPY apps/leptos/package.json ./
+# use npm install since we may not have a lockfile
+RUN npm install
+
 RUN cargo install trunk --locked
 RUN trunk build --release --public-url "/"
 
