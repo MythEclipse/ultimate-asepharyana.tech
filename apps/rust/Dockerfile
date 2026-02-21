@@ -1,6 +1,6 @@
-FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y openssl ca-certificates curl && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
+FROM alpine:latest
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirror.kartolo.sby.datautama.net.id/g' /etc/apk/repositories && \
+    apk add --no-cache openssl ca-certificates curl gcompat libgcc
 
 WORKDIR /app
 

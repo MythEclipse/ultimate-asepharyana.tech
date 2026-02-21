@@ -1,4 +1,5 @@
 FROM oven/bun:alpine
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirror.kartolo.sby.datautama.net.id/g' /etc/apk/repositories
 WORKDIR /app
 
 # Copy Nitro output from the host

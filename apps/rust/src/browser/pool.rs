@@ -13,9 +13,15 @@ use tracing::{debug, info, warn};
 /// Configuration for the browser pool.
 #[derive(Debug, Clone)]
 pub struct BrowserPoolConfig {
+    /// Remote Chrome DevTools Protocol WebSocket URL.
+    /// When set (e.g. `ws://browserless:3000`), the pool connects to an external
+    /// Chrome instance instead of spawning one locally. Takes precedence over
+    /// `chrome_path`. Controlled via the `CHROME_REMOTE_WS` environment variable.
+    pub remote_websocket_url: Option<String>,
     /// Maximum number of concurrent tabs
     pub max_tabs: usize,
-    /// Chrome/Chromium executable path (None = auto-detect)
+    /// Chrome/Chromium executable path (None = auto-detect). Only used when
+    /// `remote_websocket_url` is `None`.
     pub chrome_path: Option<String>,
     /// Whether to run headless
     pub headless: bool,
@@ -29,32 +35,43 @@ pub struct BrowserPoolConfig {
 
 impl Default for BrowserPoolConfig {
     fn default() -> Self {
-        // Check for common paths or env var
-        let chrome_path = std::env::var("CHROME_BIN").ok().or_else(|| {
-            let possible_paths = [
-                "/usr/bin/google-chrome",
-                "/usr/bin/chromium",
-                "/usr/bin/chromium-browser",
-                // Path when installed via our script
-                &format!(
-                    "{}/bin/chrome-linux64/chrome",
-                    std::env::var("HOME").unwrap_or_default()
-                ),
-            ];
+        // Remote CDP takes absolute priority. When CHROME_REMOTE_WS is set we
+        // skip local Chrome detection entirely — the sidecar handles the browser.
+        let remote_websocket_url = std::env::var("CHROME_REMOTE_WS").ok();
 
-            for path in possible_paths {
-                if std::path::Path::new(path).exists() {
-                    return Some(path.to_string());
-                }
-            }
+        // Only probe local Chrome paths when no remote URL is configured.
+        let chrome_path = if remote_websocket_url.is_some() {
             None
-        });
+        } else {
+            std::env::var("CHROME_BIN").ok().or_else(|| {
+                let home = std::env::var("HOME").unwrap_or_default();
+                let possible_paths = [
+                    "/usr/bin/google-chrome",
+                    "/usr/bin/chromium",
+                    "/usr/bin/chromium-browser",
+                    "/usr/bin/chromium-browser",
+                ];
+                let dynamic_path = format!("{}/bin/chrome-linux64/chrome", home);
+                let all_paths = possible_paths
+                    .iter()
+                    .copied()
+                    .chain(std::iter::once(dynamic_path.as_str()));
+
+                for path in all_paths {
+                    if std::path::Path::new(path).exists() {
+                        return Some(path.to_string());
+                    }
+                }
+                None
+            })
+        };
 
         Self {
+            remote_websocket_url,
             max_tabs: 10,
             chrome_path,
             headless: true,
-            sandbox: false, // Usually disabled for servers
+            sandbox: false,
             user_agent: None,
             window_size: Some((1920, 1080)),
         }
@@ -91,90 +108,98 @@ pub struct BrowserPool {
 }
 
 impl BrowserPool {
-    /// Create a new browser pool and launch the browser.
+    /// Create a new browser pool.
+    ///
+    /// When `config.remote_websocket_url` is set the pool will **connect** to
+    /// an already-running Chrome/Chromium instance via the Chrome DevTools
+    /// Protocol WebSocket endpoint (e.g. a `browserless/chrome` Docker sidecar).
+    /// Otherwise it **launches** a local Chrome/Chromium process.
     pub async fn new(config: BrowserPoolConfig) -> anyhow::Result<Arc<Self>> {
         info!(
-            "🌐 Launching browser pool with max {} tabs",
+            "🌐 Initializing browser pool with max {} tabs",
             config.max_tabs
         );
 
-        // Build browser configuration
-        let mut browser_config = BrowserConfig::builder();
-
-        if !config.headless {
-            browser_config = browser_config.with_head();
-        }
-
-        if !config.sandbox {
-            browser_config = browser_config.no_sandbox();
-        }
-
-        if let Some(ref path) = config.chrome_path {
-            browser_config = browser_config.chrome_executable(path);
-        }
-
-        if let Some((width, height)) = config.window_size {
-            browser_config = browser_config.window_size(width, height);
-        }
-
-        // User agent set via command line arg if provided
-        if let Some(ref ua) = config.user_agent {
-            browser_config = browser_config.arg(format!("--user-agent={}", ua));
+        let (browser, mut handler) = if let Some(ref ws_url) = config.remote_websocket_url {
+            info!("🔗 Connecting to remote Chrome via CDP: {}", ws_url);
+            Browser::connect(ws_url)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to connect to remote browser at {}: {}", ws_url, e))?
         } else {
-            // Use realistic user agent if not provided
-            browser_config = browser_config.arg("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        }
+            info!("🚀 Launching local Chrome instance");
 
-        // Add common args for better performance and stealth
-        browser_config = browser_config
-            .arg("--disable-blink-features=AutomationControlled")
-            .arg("--disable-gpu")
-            .arg("--disable-dev-shm-usage")
-            .arg("--disable-setuid-sandbox")
-            .arg("--no-first-run")
-            .arg("--no-zygote")
-            .arg("--disable-extensions")
-            .arg("--disable-background-networking")
-            .arg("--disable-background-timer-throttling")
-            .arg("--disable-backgrounding-occluded-windows")
-            .arg("--disable-breakpad")
-            .arg("--disable-component-extensions-with-background-pages")
-            .arg("--disable-ipc-flooding-protection")
-            .arg("--disable-renderer-backgrounding")
-            .arg("--enable-features=NetworkService,NetworkServiceInProcess")
-            .arg("--force-color-profile=srgb")
-            .arg("--disable-web-security")
-            .arg("--disable-features=IsolateOrigins,site-per-process")
-            .arg("--allow-running-insecure-content")
-            .arg("--disable-infobars")
-            .arg("--window-position=0,0")
-            .arg("--ignore-certificate-errors")
-            .arg("--ignore-certificate-errors-spki-list")
-            .arg("--disable-blink-features");
+            let mut browser_config = BrowserConfig::builder();
 
-        // Use a unique user data directory to avoid "SingletonLock" errors
-        // when multiple instances run or previous instance crashed
-        let unique_id = uuid_v4();
-        let user_data_dir = std::env::temp_dir().join(format!("rustexpress-browser-{}", unique_id));
-        let browser_config = browser_config.user_data_dir(&user_data_dir);
+            if !config.headless {
+                browser_config = browser_config.with_head();
+            }
 
-        let browser_config = browser_config
-            .build()
-            .map_err(|e| anyhow::anyhow!("Failed to build browser config: {}", e))?;
+            if !config.sandbox {
+                browser_config = browser_config.no_sandbox();
+            }
 
-        // Launch browser
-        let (browser, mut handler) = Browser::launch(browser_config)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to launch browser: {}", e))?;
+            if let Some(ref path) = config.chrome_path {
+                browser_config = browser_config.chrome_executable(path);
+            }
 
-        // Spawn browser event handler
+            if let Some((width, height)) = config.window_size {
+                browser_config = browser_config.window_size(width, height);
+            }
+
+            if let Some(ref ua) = config.user_agent {
+                browser_config = browser_config.arg(format!("--user-agent={}", ua));
+            } else {
+                browser_config = browser_config.arg("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            }
+
+            browser_config = browser_config
+                .arg("--disable-blink-features=AutomationControlled")
+                .arg("--disable-gpu")
+                .arg("--disable-dev-shm-usage")
+                .arg("--disable-setuid-sandbox")
+                .arg("--no-first-run")
+                .arg("--no-zygote")
+                .arg("--disable-extensions")
+                .arg("--disable-background-networking")
+                .arg("--disable-background-timer-throttling")
+                .arg("--disable-backgrounding-occluded-windows")
+                .arg("--disable-breakpad")
+                .arg("--disable-component-extensions-with-background-pages")
+                .arg("--disable-ipc-flooding-protection")
+                .arg("--disable-renderer-backgrounding")
+                .arg("--enable-features=NetworkService,NetworkServiceInProcess")
+                .arg("--force-color-profile=srgb")
+                .arg("--disable-web-security")
+                .arg("--disable-features=IsolateOrigins,site-per-process")
+                .arg("--allow-running-insecure-content")
+                .arg("--disable-infobars")
+                .arg("--window-position=0,0")
+                .arg("--ignore-certificate-errors")
+                .arg("--ignore-certificate-errors-spki-list")
+                .arg("--disable-blink-features");
+
+            let unique_id = uuid_v4();
+            let user_data_dir =
+                std::env::temp_dir().join(format!("rustexpress-browser-{}", unique_id));
+            let browser_config = browser_config.user_data_dir(&user_data_dir);
+
+            let browser_config = browser_config
+                .build()
+                .map_err(|e| anyhow::anyhow!("Failed to build browser config: {}", e))?;
+
+            Browser::launch(browser_config)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to launch local browser: {}", e))?
+        };
+
+        // Spawn browser event handler — required regardless of local/remote mode
         tokio::spawn(async move {
             while let Some(event) = handler.next().await {
                 debug!("Browser event: {:?}", event);
             }
         });
 
-        info!("✅ Browser launched successfully");
+        info!("✅ Browser ready");
 
         let pool = Arc::new(Self {
             browser: Arc::new(browser),

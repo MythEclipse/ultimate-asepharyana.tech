@@ -107,7 +107,7 @@ impl Application {
 
         // Listener
         let port = CONFIG.server_port;
-        let addr = SocketAddr::from(([127, 0, 0, 1], port));
+        let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let listener = TcpListener::bind(&addr).await?;
         tracing::info!("Server listening on {}", listener.local_addr()?);
 
