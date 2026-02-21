@@ -24,13 +24,13 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
-    #[sea_orm(column_name = "originalUrl")]
+    #[sea_orm(column_name = "original_url")]
     OriginalUrl,
-    #[sea_orm(column_name = "cdnUrl")]
+    #[sea_orm(column_name = "cdn_url")]
     CdnUrl,
-    #[sea_orm(column_name = "createdAt")]
+    #[sea_orm(column_name = "created_at")]
     CreatedAt,
-    #[sea_orm(column_name = "expiresAt")]
+    #[sea_orm(column_name = "expires_at")]
     ExpiresAt,
 }
 
@@ -54,8 +54,8 @@ impl ColumnTrait for Column {
     fn def(&self) -> ColumnDef {
         match self {
             Self::Id => ColumnType::String(StringLen::N(36u32)).def(),
-            Self::OriginalUrl => ColumnType::Text.def().unique(),
-            Self::CdnUrl => ColumnType::Text.def(),
+            Self::OriginalUrl => ColumnType::String(StringLen::N(512u32)).def().unique(),
+            Self::CdnUrl => ColumnType::String(StringLen::N(512u32)).def(),
             Self::CreatedAt => ColumnType::Timestamp.def(),
             Self::ExpiresAt => ColumnType::Timestamp.def().null(),
         }

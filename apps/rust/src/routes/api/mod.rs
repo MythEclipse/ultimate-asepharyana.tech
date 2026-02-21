@@ -315,6 +315,7 @@ use crate::routes::api::tools::uploader::ListResponse as ListResponse_2;
         )),
         servers(
             (url = "https://ws.asepharyana.tech", description = "Production Server"),
+            (url = "http://rust-api:4091", description = "Docker Service"),
             (url = "http://localhost:4091", description = "Local Development")
         ),
         info(

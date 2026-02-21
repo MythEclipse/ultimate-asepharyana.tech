@@ -207,7 +207,7 @@ process.on('SIGTERM', async () => {
 initializeConnections().then(() => {
   app.listen({
     port: config.port,
-    hostname: '0.0.0.0',
+    hostname: '127.0.0.1',
   });
 
   console.log(

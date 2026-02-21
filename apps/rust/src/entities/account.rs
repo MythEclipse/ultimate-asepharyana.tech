@@ -31,11 +31,11 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
-    #[sea_orm(column_name = "userId")]
+    #[sea_orm(column_name = "user_id")]
     UserId,
     Type,
     Provider,
-    #[sea_orm(column_name = "providerAccountId")]
+    #[sea_orm(column_name = "provider_account_id")]
     ProviderAccountId,
     RefreshToken,
     AccessToken,

@@ -27,13 +27,13 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
-    #[sea_orm(column_name = "userId")]
+    #[sea_orm(column_name = "user_id")]
     UserId,
     Text,
     Email,
-    #[sea_orm(column_name = "imageProfile")]
+    #[sea_orm(column_name = "image_profile")]
     ImageProfile,
-    #[sea_orm(column_name = "imageMessage")]
+    #[sea_orm(column_name = "image_message")]
     ImageMessage,
     Role,
     Timestamp,

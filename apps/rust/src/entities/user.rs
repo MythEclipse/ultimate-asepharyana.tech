@@ -29,11 +29,11 @@ pub enum Column {
     Id,
     Name,
     Email,
-    #[sea_orm(column_name = "emailVerified")]
+    #[sea_orm(column_name = "email_verified")]
     EmailVerified,
     Image,
     Password,
-    #[sea_orm(column_name = "refreshToken")]
+    #[sea_orm(column_name = "refresh_token")]
     RefreshToken,
     Role,
 }

@@ -1,36 +1,39 @@
 services:
-  # Databases
+  # Databases (Isolated via localhost-only binding in host mode)
   mysql:
     image: mysql:8
     restart: always
+    network_mode: host
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: sosmed
       MYSQL_USER: asephs
       MYSQL_PASSWORD: hunterz
-    ports:
-      - "3306:3306"
+    command: --bind-address=127.0.0.1 --port=3307
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3307"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
     restart: always
-    ports:
-      - "6379:6379"
+    network_mode: host
+    command: redis-server --bind 127.0.0.1 --port 6380
     volumes:
       - redis_data:/data
 
   minio:
     image: minio/minio
     restart: always
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    network_mode: host
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: mytheclipse
-    command: server /data --console-address ":9001"
+    command: server /data --console-address "127.0.0.1:9001" --address "127.0.0.1:9000"
     volumes:
       - minio_data:/data
 
@@ -39,36 +42,40 @@ services:
     build:
       context: .
       dockerfile: apps/rust/Dockerfile
+      network: host
     restart: always
-    ports:
-      - "4091:4091"
+    network_mode: host
     environment:
-      - DATABASE_URL=mysql://asephs:hunterz@mysql:3306/sosmed
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=mysql://asephs:hunterz@127.0.0.1:3307/sosmed
+      - REDIS_URL=redis://127.0.0.1:6380
       - JWT_SECRET=273742
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
 
   elysia-api:
     build:
       context: .
       dockerfile: apps/elysia/Dockerfile
     restart: always
-    ports:
-      - "4092:4092"
+    network_mode: host
     environment:
-      - DATABASE_URL=mysql://asephs:hunterz@mysql:3306/sosmed
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=mysql://asephs:hunterz@127.0.0.1:3307/sosmed
+      - REDIS_URL=redis://127.0.0.1:6380
       - JWT_SECRET=273742
-      - MINIO_ENDPOINT=minio
+      - MINIO_ENDPOINT=http://127.0.0.1:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=mytheclipse
       - MINIO_BUCKET_NAME=api
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
-      - mysql
-      - redis
-      - minio
+      mysql:
+        condition: service_healthy
 
   # Frontend Services
   solidjs-web:
@@ -76,11 +83,11 @@ services:
       context: .
       dockerfile: apps/solidjs/Dockerfile
     restart: always
-    ports:
-      - "3000:4090"
+    network_mode: host
     environment:
-      - NEXT_PUBLIC_ANIME=http://rust-api:4091
-      - NEXT_PUBLIC_KOMIK=http://rust-api:4091
+      - NEXT_PUBLIC_ANIME=/api/rust
+      - NEXT_PUBLIC_KOMIK=/api/rust
+      - PORT=4090
     depends_on:
       - rust-api
       - elysia-api
@@ -90,10 +97,21 @@ services:
       context: .
       dockerfile: apps/leptos/Dockerfile
     restart: always
-    ports:
-      - "8080:80"
+    network_mode: host
     depends_on:
       - rust-api
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    network_mode: host
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - rust-api
+      - elysia-api
+      - solidjs-web
+      - leptos-web
 
 volumes:
   mysql_data:

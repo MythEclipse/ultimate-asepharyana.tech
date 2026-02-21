@@ -24,12 +24,12 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
-    #[sea_orm(column_name = "roomId")]
+    #[sea_orm(column_name = "room_id")]
     RoomId,
-    #[sea_orm(column_name = "userId")]
+    #[sea_orm(column_name = "user_id")]
     UserId,
     Role,
-    #[sea_orm(column_name = "joinedAt")]
+    #[sea_orm(column_name = "joined_at")]
     JoinedAt,
 }
 

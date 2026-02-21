@@ -16,10 +16,10 @@ export const users = mysqlTable(
     id: varchar('id', { length: 255 }).primaryKey(),
     name: varchar('name', { length: 255 }),
     email: varchar('email', { length: 255 }),
-    emailVerified: timestamp('emailVerified'),
+    emailVerified: timestamp('email_verified'),
     image: text('image'),
     password: varchar('password', { length: 255 }),
-    refreshToken: text('refreshToken'),
+    refreshToken: text('refresh_token'),
     role: varchar('role', { length: 50 }).notNull().default('user'),
   },
   (table) => ({
@@ -32,12 +32,14 @@ export const accounts = mysqlTable(
   'Account',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     type: varchar('type', { length: 255 }).notNull(),
     provider: varchar('provider', { length: 255 }).notNull(),
-    providerAccountId: varchar('providerAccountId', { length: 255 }).notNull(),
+    providerAccountId: varchar('provider_account_id', {
+      length: 255,
+    }).notNull(),
     refresh_token: text('refresh_token'),
     access_token: text('access_token'),
     expires_at: int('expires_at'),
@@ -56,8 +58,8 @@ export const sessions = mysqlTable(
   'Session',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    sessionToken: varchar('sessionToken', { length: 255 }).notNull().unique(),
-    userId: varchar('userId', { length: 255 })
+    sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     expires: timestamp('expires').notNull(),
@@ -86,10 +88,10 @@ export const permissions = mysqlTable('Permission', {
 export const userRoles = mysqlTable(
   'UserRole',
   {
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    roleId: varchar('roleId', { length: 255 })
+    roleId: varchar('role_id', { length: 255 })
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
   },
@@ -102,10 +104,10 @@ export const userRoles = mysqlTable(
 export const rolePermissions = mysqlTable(
   'RolePermission',
   {
-    roleId: varchar('roleId', { length: 255 })
+    roleId: varchar('role_id', { length: 255 })
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
-    permissionId: varchar('permissionId', { length: 255 })
+    permissionId: varchar('permission_id', { length: 255 })
       .notNull()
       .references(() => permissions.id, { onDelete: 'cascade' }),
   },
@@ -119,10 +121,10 @@ export const posts = mysqlTable(
   'Posts',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    authorId: varchar('authorId', { length: 255 })
+    authorId: varchar('author_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
@@ -142,13 +144,13 @@ export const comments = mysqlTable(
   'Comments',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    postId: varchar('postId', { length: 255 })
+    postId: varchar('post_id', { length: 255 })
       .notNull()
       .references(() => posts.id, { onDelete: 'cascade' }),
-    authorId: varchar('authorId', { length: 255 })
+    authorId: varchar('author_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
@@ -166,10 +168,10 @@ export const comments = mysqlTable(
 export const likes = mysqlTable(
   'Likes',
   {
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    postId: varchar('postId', { length: 255 })
+    postId: varchar('post_id', { length: 255 })
       .notNull()
       .references(() => posts.id, { onDelete: 'cascade' }),
   },
@@ -183,10 +185,10 @@ export const replies = mysqlTable(
   'Replies',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    commentId: varchar('commentId', { length: 255 })
+    commentId: varchar('comment_id', { length: 255 })
       .notNull()
       .references(() => comments.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
@@ -203,13 +205,13 @@ export const chatMessages = mysqlTable(
   'ChatMessage',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     text: text('text').notNull(),
     email: varchar('email', { length: 255 }),
-    imageProfile: text('imageProfile'),
-    imageMessage: text('imageMessage'),
+    imageProfile: text('image_profile'),
+    imageMessage: text('image_message'),
     role: varchar('role', { length: 50 }),
     timestamp: timestamp('timestamp').notNull().defaultNow(),
   },
@@ -224,12 +226,12 @@ export const emailVerificationTokens = mysqlTable(
   'EmailVerificationToken',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     token: varchar('token', { length: 255 }).notNull().unique(),
-    expiresAt: timestamp('expiresAt').notNull(),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
@@ -242,12 +244,12 @@ export const passwordResetTokens = mysqlTable(
   'PasswordResetToken',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     token: varchar('token', { length: 255 }).notNull().unique(),
-    expiresAt: timestamp('expiresAt').notNull(),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
     used: int('used').notNull().default(0),
   },
   (table) => ({
@@ -263,9 +265,9 @@ export const chatRooms = mysqlTable(
     id: varchar('id', { length: 255 }).primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
-    isPrivate: int('isPrivate').notNull().default(0),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+    isPrivate: int('is_private').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
   },
   (table) => ({
     createdAtIdx: index('createdAt_idx').on(table.createdAt),
@@ -277,15 +279,15 @@ export const chatMessagesWithRoom = mysqlTable(
   'ChatMessage_room',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    roomId: varchar('roomId', { length: 255 })
+    roomId: varchar('room_id', { length: 255 })
       .notNull()
       .references(() => chatRooms.id, { onDelete: 'cascade' }),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
   },
   (table) => ({
     roomIdIdx: index('roomId_idx').on(table.roomId),
@@ -299,14 +301,14 @@ export const chatRoomMembers = mysqlTable(
   'ChatRoomMember',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    roomId: varchar('roomId', { length: 255 })
+    roomId: varchar('room_id', { length: 255 })
       .notNull()
       .references(() => chatRooms.id, { onDelete: 'cascade' }),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     role: varchar('role', { length: 50 }).notNull().default('member'),
-    joinedAt: timestamp('joinedAt').notNull().defaultNow(),
+    joinedAt: timestamp('joined_at').notNull().defaultNow(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.roomId, table.userId] }),
@@ -501,9 +503,9 @@ export const quizQuestions = mysqlTable(
     text: text('text').notNull(),
     category: varchar('category', { length: 100 }).notNull(),
     difficulty: varchar('difficulty', { length: 50 }).notNull(), // easy, medium, hard
-    correctAnswer: int('correctAnswer').notNull(), // index 0-3
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+    correctAnswer: int('correct_answer').notNull(), // index 0-3
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
   },
   (table) => ({
     categoryIdx: index('category_idx').on(table.category),
@@ -516,11 +518,11 @@ export const quizAnswers = mysqlTable(
   'QuizAnswer',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    questionId: varchar('questionId', { length: 255 })
+    questionId: varchar('question_id', { length: 255 })
       .notNull()
       .references(() => quizQuestions.id, { onDelete: 'cascade' }),
     text: text('text').notNull(),
-    answerIndex: int('answerIndex').notNull(), // 0-3
+    answerIndex: int('answer_index').notNull(), // 0-3
   },
   (table) => ({
     questionIdIdx: index('questionId_idx').on(table.questionId),
@@ -532,7 +534,7 @@ export const quizUserStats = mysqlTable(
   'QuizUserStats',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' })
       .unique(),
@@ -540,15 +542,15 @@ export const quizUserStats = mysqlTable(
     wins: int('wins').notNull().default(0),
     losses: int('losses').notNull().default(0),
     draws: int('draws').notNull().default(0),
-    totalGames: int('totalGames').notNull().default(0),
-    currentStreak: int('currentStreak').notNull().default(0),
-    bestStreak: int('bestStreak').notNull().default(0),
-    totalCorrectAnswers: int('totalCorrectAnswers').notNull().default(0),
-    totalQuestions: int('totalQuestions').notNull().default(0),
+    totalGames: int('total_games').notNull().default(0),
+    currentStreak: int('current_streak').notNull().default(0),
+    bestStreak: int('best_streak').notNull().default(0),
+    totalCorrectAnswers: int('total_correct_answers').notNull().default(0),
+    totalQuestions: int('total_questions').notNull().default(0),
     level: int('level').notNull().default(1),
     experience: int('experience').notNull().default(0),
     coins: int('coins').notNull().default(0),
-    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
   },
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
@@ -561,27 +563,27 @@ export const quizMatches = mysqlTable(
   'QuizMatch',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    player1Id: varchar('player1Id', { length: 255 })
+    player1Id: varchar('player1_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    player2Id: varchar('player2Id', { length: 255 })
+    player2Id: varchar('player2_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    winnerId: varchar('winnerId', { length: 255 }).references(() => users.id),
-    gameMode: varchar('gameMode', { length: 50 }).notNull(), // ranked, casual, friend
+    winnerId: varchar('winner_id', { length: 255 }).references(() => users.id),
+    gameMode: varchar('game_mode', { length: 50 }).notNull(), // ranked, casual, friend
     difficulty: varchar('difficulty', { length: 50 }).notNull(),
     category: varchar('category', { length: 100 }).notNull(),
     status: varchar('status', { length: 50 }).notNull().default('waiting'), // waiting, playing, finished, cancelled
-    player1Score: int('player1Score').notNull().default(0),
-    player2Score: int('player2Score').notNull().default(0),
-    player1Health: int('player1Health').notNull().default(100),
-    player2Health: int('player2Health').notNull().default(100),
-    currentQuestionIndex: int('currentQuestionIndex').notNull().default(0),
-    totalQuestions: int('totalQuestions').notNull().default(5),
-    timePerQuestion: int('timePerQuestion').notNull().default(10),
-    startedAt: timestamp('startedAt'),
-    finishedAt: timestamp('finishedAt'),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    player1Score: int('player1_score').notNull().default(0),
+    player2Score: int('player2_score').notNull().default(0),
+    player1Health: int('player1_health').notNull().default(100),
+    player2Health: int('player2_health').notNull().default(100),
+    currentQuestionIndex: int('current_question_index').notNull().default(0),
+    totalQuestions: int('total_questions').notNull().default(5),
+    timePerQuestion: int('time_per_question').notNull().default(10),
+    startedAt: timestamp('started_at'),
+    finishedAt: timestamp('finished_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => ({
     player1IdIdx: index('player1Id_idx').on(table.player1Id),
@@ -596,13 +598,13 @@ export const quizMatchQuestions = mysqlTable(
   'QuizMatchQuestion',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    matchId: varchar('matchId', { length: 255 })
+    matchId: varchar('match_id', { length: 255 })
       .notNull()
       .references(() => quizMatches.id, { onDelete: 'cascade' }),
-    questionId: varchar('questionId', { length: 255 })
+    questionId: varchar('question_id', { length: 255 })
       .notNull()
       .references(() => quizQuestions.id, { onDelete: 'cascade' }),
-    questionIndex: int('questionIndex').notNull(),
+    questionIndex: int('question_index').notNull(),
   },
   (table) => ({
     matchIdIdx: index('matchId_idx').on(table.matchId),
@@ -614,21 +616,21 @@ export const quizMatchAnswers = mysqlTable(
   'QuizMatchAnswer',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    matchId: varchar('matchId', { length: 255 })
+    matchId: varchar('match_id', { length: 255 })
       .notNull()
       .references(() => quizMatches.id, { onDelete: 'cascade' }),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    questionId: varchar('questionId', { length: 255 })
+    questionId: varchar('question_id', { length: 255 })
       .notNull()
       .references(() => quizQuestions.id, { onDelete: 'cascade' }),
-    questionIndex: int('questionIndex').notNull(),
-    answerIndex: int('answerIndex').notNull(),
-    isCorrect: int('isCorrect').notNull(),
-    answerTime: int('answerTime').notNull(), // milliseconds
+    questionIndex: int('question_index').notNull(),
+    answerIndex: int('answer_index').notNull(),
+    isCorrect: int('is_correct').notNull(),
+    answerTime: int('answer_time').notNull(), // milliseconds
     points: int('points').notNull().default(0),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => ({
     matchIdIdx: index('matchId_idx').on(table.matchId),
@@ -641,15 +643,15 @@ export const quizFriendships = mysqlTable(
   'QuizFriendship',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    friendId: varchar('friendId', { length: 255 })
+    friendId: varchar('friend_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     status: varchar('status', { length: 50 }).notNull().default('pending'), // pending, accepted, rejected
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    updatedAt: timestamp('updatedAt').notNull().defaultNow().onUpdateNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.friendId] }),
@@ -664,19 +666,19 @@ export const quizLobbies = mysqlTable(
   'QuizLobby',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    lobbyCode: varchar('lobbyCode', { length: 8 }).notNull().unique(),
-    hostId: varchar('hostId', { length: 255 })
+    lobbyCode: varchar('lobby_code', { length: 8 }).notNull().unique(),
+    hostId: varchar('host_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    isPrivate: int('isPrivate').notNull().default(1),
-    maxPlayers: int('maxPlayers').notNull().default(2),
+    isPrivate: int('is_private').notNull().default(1),
+    maxPlayers: int('max_players').notNull().default(2),
     status: varchar('status', { length: 50 }).notNull().default('waiting'), // waiting, starting, playing, finished
     difficulty: varchar('difficulty', { length: 50 }).notNull(),
     category: varchar('category', { length: 100 }).notNull(),
-    totalQuestions: int('totalQuestions').notNull().default(5),
-    timePerQuestion: int('timePerQuestion').notNull().default(10),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    expiresAt: timestamp('expiresAt').notNull(),
+    totalQuestions: int('total_questions').notNull().default(5),
+    timePerQuestion: int('time_per_question').notNull().default(10),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at').notNull(),
   },
   (table) => ({
     lobbyCodeIdx: index('lobbyCode_idx').on(table.lobbyCode),
@@ -690,15 +692,15 @@ export const quizLobbyMembers = mysqlTable(
   'QuizLobbyMember',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    lobbyId: varchar('lobbyId', { length: 255 })
+    lobbyId: varchar('lobby_id', { length: 255 })
       .notNull()
       .references(() => quizLobbies.id, { onDelete: 'cascade' }),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    isHost: int('isHost').notNull().default(0),
-    isReady: int('isReady').notNull().default(0),
-    joinedAt: timestamp('joinedAt').notNull().defaultNow(),
+    isHost: int('is_host').notNull().default(0),
+    isReady: int('is_ready').notNull().default(0),
+    joinedAt: timestamp('joined_at').notNull().defaultNow(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.lobbyId, table.userId] }),
@@ -712,17 +714,17 @@ export const quizNotifications = mysqlTable(
   'QuizNotification',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('userId', { length: 255 })
+    userId: varchar('user_id', { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     type: varchar('type', { length: 50 }).notNull(), // friend_request, challenge, match_invite, system
     title: varchar('title', { length: 255 }).notNull(),
     message: text('message').notNull(),
     data: text('data'), // JSON data
-    isRead: int('isRead').notNull().default(0),
+    isRead: int('is_read').notNull().default(0),
     priority: varchar('priority', { length: 50 }).notNull().default('medium'), // low, medium, high
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    expiresAt: timestamp('expiresAt'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at'),
   },
   (table) => ({
     userIdIdx: index('userId_idx').on(table.userId),
@@ -856,10 +858,10 @@ export const imageCache = mysqlTable(
   'ImageCache',
   {
     id: varchar('id', { length: 36 }).primaryKey(),
-    originalUrl: text('originalUrl').notNull(),
-    cdnUrl: text('cdnUrl').notNull(),
-    createdAt: timestamp('createdAt').notNull().defaultNow(),
-    expiresAt: timestamp('expiresAt'),
+    originalUrl: text('original_url').notNull(),
+    cdnUrl: text('cdn_url').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at'),
   },
   (table) => ({
     originalUrlIdx: index('originalUrl_idx').on(table.originalUrl),

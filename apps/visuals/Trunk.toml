@@ -2,6 +2,7 @@
 target = "index.html"
 dist = "dist"
 public_url = "/"
+wasm_opt = false
 
 [serve]
 addresses = ["127.0.0.1"]

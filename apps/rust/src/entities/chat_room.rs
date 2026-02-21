@@ -27,11 +27,11 @@ pub enum Column {
     Id,
     Name,
     Description,
-    #[sea_orm(column_name = "isPrivate")]
+    #[sea_orm(column_name = "is_private")]
     IsPrivate,
-    #[sea_orm(column_name = "createdAt")]
+    #[sea_orm(column_name = "created_at")]
     CreatedAt,
-    #[sea_orm(column_name = "updatedAt")]
+    #[sea_orm(column_name = "updated_at")]
     UpdatedAt,
 }
 
