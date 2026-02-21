@@ -1,6 +1,5 @@
 FROM alpine:latest
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirror.kartolo.sby.datautama.net.id/g' /etc/apk/repositories && \
-    apk add --no-cache openssl ca-certificates curl gcompat libgcc
+RUN apk add --no-cache openssl ca-certificates curl gcompat libgcc
 
 WORKDIR /app
 
