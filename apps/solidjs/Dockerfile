@@ -14,11 +14,20 @@ RUN bun run build
 FROM oven/bun:1-alpine
 WORKDIR /app
 
+# install nginx and supervisor
+RUN apk add --no-cache nginx supervisor
+
 # copy build artifacts and necessary runtime files
 COPY --from=builder /app/.output ./.output
 COPY apps/solidjs/package.json ./
 
-EXPOSE 4090
+# copy nginx config
+COPY apps/solidjs/nginx.conf /etc/nginx/http.d/default.conf
 
-# Vinxi/Nitro start command
-CMD ["bun", "run", ".output/server/index.mjs"]
+# copy supervisor config
+COPY apps/solidjs/supervisord.conf /etc/supervisord.conf
+
+EXPOSE 80
+
+# run supervisor to manage both processes
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
