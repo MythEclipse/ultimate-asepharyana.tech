@@ -61,9 +61,7 @@ services:
   # Backend Services
   # ──────────────────────────────────────────────
   rust-api:
-    build:
-      context: .
-      dockerfile: apps/rust/Dockerfile
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:latest
     restart: always
     networks: [app-net]
     environment:
@@ -79,9 +77,7 @@ services:
         condition: service_started
 
   elysia-api:
-    build:
-      context: .
-      dockerfile: apps/elysia/Dockerfile
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/elysia-api:latest
     restart: always
     networks: [app-net]
     environment:
@@ -100,9 +96,7 @@ services:
   # Frontend Services
   # ──────────────────────────────────────────────
   solidjs-web:
-    build:
-      context: .
-      dockerfile: apps/solidjs/Dockerfile
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/solidjs-web:latest
     restart: always
     networks: [app-net]
     environment:
@@ -114,11 +108,7 @@ services:
       - elysia-api
 
   leptos-web:
-    build:
-      context: .
-      dockerfile: apps/leptos/Dockerfile
-      args:
-        - VISUALS_URL=http://visuals.localhost
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:latest
     restart: always
     networks: [app-net]
     environment:
@@ -129,9 +119,7 @@ services:
       - rust-api
 
   visuals:
-    build:
-      context: .
-      dockerfile: apps/visuals/Dockerfile
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:latest
     restart: always
     networks: [app-net]
     ports:
