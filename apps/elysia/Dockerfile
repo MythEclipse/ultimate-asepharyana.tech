@@ -1,17 +1,17 @@
 # build stage
-FROM oven/bun:alpine AS builder
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
 
 # install dependencies
 COPY apps/elysia/package.json apps/elysia/bun.lock ./
-RUN bun install
+RUN bun install --frozen-lockfile
 
 # build the application
 COPY apps/elysia ./
 RUN bun run build
 
 # runtime stage
-FROM oven/bun:alpine
+FROM oven/bun:1-alpine
 WORKDIR /app
 
 # copy build artifacts and necessary runtime files

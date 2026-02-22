@@ -1,39 +1,37 @@
-# build stage using trunk to produce dist
-FROM rust:latest AS builder
+# Build stage using nightly Rust
+FROM lukemathwalker/cargo-chef:latest-rust-nightly-bookworm AS chef
 WORKDIR /app
 
-# install Bun for faster frontend dependency management
+# Install Bun for TailwindCSS
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
 
-# ensure WASM target is available for building
+FROM chef AS planner
+COPY apps/leptos ./apps/leptos
+WORKDIR /app/apps/leptos
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+WORKDIR /app
+COPY --from=planner /app/apps/leptos/recipe.json recipe.json
 RUN rustup target add wasm32-unknown-unknown
+# Build dependencies
+RUN cargo chef cook --release --target wasm32-unknown-unknown --recipe-path recipe.json
 
-# copy manifest and lockfiles first for caching
-COPY apps/leptos/Cargo.toml apps/leptos/Cargo.lock apps/leptos/Trunk.toml ./
-COPY apps/leptos/package.json apps/leptos/bun.lock ./
+# Install trunk (pre-compiled binary to save time)
+RUN curl -L https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
 
-# install frontend dependencies using bun
+# Build application
+COPY apps/leptos ./apps/leptos
+WORKDIR /app/apps/leptos
 RUN bun install
-
-# install trunk
-RUN cargo install trunk --locked
-
-# copy source and build
-COPY apps/leptos ./
 RUN trunk build --release --public-url "/"
 
 # runtime stage
 FROM nginx:alpine
-
-# Copy generated files
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Add entrypoint script to adjust port at runtime
+COPY --from=builder /app/apps/leptos/dist /usr/share/nginx/html
 COPY apps/leptos/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# default exposed port (can be changed via PORT env at runtime)
 EXPOSE 8081
-
 ENTRYPOINT ["/docker-entrypoint.sh"]

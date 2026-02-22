@@ -1,29 +1,28 @@
-# multi-stage build: compile inside a Rust builder image using a modern toolchain
-FROM rust:latest AS builder
-
+FROM lukemathwalker/cargo-chef:latest-rust-1.85-bookworm AS chef
 WORKDIR /app
 
-# copy the entire rust application so cargo can resolve workspace paths if any
+FROM chef AS planner
 COPY apps/rust ./apps/rust
-
 WORKDIR /app/apps/rust
+RUN cargo chef prepare --recipe-path recipe.json
 
-# build the release binary using the default host target (glibc)
+FROM chef AS builder
+COPY --from=planner /app/apps/rust/recipe.json recipe.json
+# Build dependencies - this is the caching layer
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Build application
+COPY apps/rust ./apps/rust
+WORKDIR /app/apps/rust
 RUN cargo build --release
 
-# final runtime image based on a slim Debian distribution
+# final runtime image
 FROM debian:bookworm-slim AS runtime
-# install only required runtime dependencies (libssl is critical for most Rust apps)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl libssl3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# copy the compiled binary from the builder stage
 COPY --from=builder /app/apps/rust/target/release/rustexpress /app/rustexpress
 
-# expose service port
 EXPOSE 4091
-
-# run the binary
 CMD ["./rustexpress"]
