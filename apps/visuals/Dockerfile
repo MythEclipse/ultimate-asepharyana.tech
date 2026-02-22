@@ -28,10 +28,19 @@ RUN cargo chef cook --release --target wasm32-unknown-unknown --recipe-path reci
 # Install trunk (pre-compiled binary)
 RUN curl -L https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
 
-# Build application
+# Install binaryen (provides wasm-opt with full feature support)
+RUN apt-get update && apt-get install -y --no-install-recommends binaryen && rm -rf /var/lib/apt/lists/*
+
+# Build application (trunk's built-in wasm-opt is disabled in Trunk.toml)
 COPY apps/visuals ./apps/visuals
 WORKDIR /app/apps/visuals
 RUN trunk build --release --public-url "/"
+
+# Run wasm-opt manually with bulk-memory + nontrapping-float-to-int features
+RUN find dist -name '*.wasm' -exec wasm-opt -Os \
+    --enable-bulk-memory \
+    --enable-nontrapping-float-to-int \
+    {} -o {} \;
 
 # runtime image
 FROM nginx:alpine
