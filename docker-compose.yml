@@ -122,8 +122,7 @@ services:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:latest
     restart: always
     networks: [app-net]
-    ports:
-      - "4080:80"    # static visuals site exposed on host 4080
+    # No host ports — Coolify routes traffic via Docker network
     depends_on:
       - rust-api
       - elysia-api
@@ -135,8 +134,7 @@ services:
     image: nginx:alpine
     restart: always
     networks: [app-net]
-    ports:
-      - "80:80"
+    # No host ports — Coolify's reverse proxy routes traffic via Docker network
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
