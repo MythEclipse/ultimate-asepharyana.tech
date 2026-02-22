@@ -102,7 +102,6 @@ services:
     environment:
       - NEXT_PUBLIC_ANIME=/api/rust
       - NEXT_PUBLIC_KOMIK=/api/rust
-      - PORT=4090
     depends_on:
       - rust-api
       - elysia-api
