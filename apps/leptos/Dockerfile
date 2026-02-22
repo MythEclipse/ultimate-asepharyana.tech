@@ -30,8 +30,9 @@ RUN cargo chef cook --release --target wasm32-unknown-unknown --recipe-path reci
 # Install trunk (pre-compiled binary)
 RUN curl -L https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
 
-# Install binaryen (provides wasm-opt with full feature support)
-RUN apt-get update && apt-get install -y --no-install-recommends binaryen && rm -rf /var/lib/apt/lists/*
+# Install binaryen 121 from GitHub (Debian's is too old for --enable-all)
+RUN curl -L https://github.com/WebAssembly/binaryen/releases/download/version_121/binaryen-version_121-x86_64-linux.tar.gz \
+    | tar -xzf- --strip-components=2 -C /usr/local/bin binaryen-version_121/bin/wasm-opt
 
 # Build application (trunk's built-in wasm-opt is disabled in Trunk.toml)
 COPY apps/leptos ./apps/leptos
