@@ -127,22 +127,6 @@ services:
       - rust-api
       - elysia-api
 
-  # ──────────────────────────────────────────────
-  # Reverse Proxy — single ingress point
-  # ──────────────────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    restart: always
-    networks: [app-net]
-    # No host ports — Coolify's reverse proxy routes traffic via Docker network
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - rust-api
-      - elysia-api
-      - solidjs-web
-      - leptos-web
-
 networks:
   app-net:
     driver: bridge
