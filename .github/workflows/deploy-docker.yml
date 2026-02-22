@@ -27,21 +27,20 @@ jobs:
           echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key $VPS_USER@$VPS_HOST "
             cd $VPS_TARGET_DIR
-            # Pull latest changes (including updated docker-compose.yml)
+
+            # Pull latest source (docker-compose.yml, nginx config, etc.)
             git fetch origin main
             git reset --hard origin/main
-            
-            # Login to GHCR (might need a personal access token if repo is private)
-            # Actually, if the runner is logged in, that's for push. 
-            # On VPS, we need to ensure it can pull.
-            # Assuming VPS is already logged in or uses a helper.
-            
-            # Pull new images
-            docker compose pull
-            
-            # Restart services
+
+            # Pull only images that have new tags (skips unchanged)
+            docker compose pull --ignore-pull-failures
+
+            # Restart only containers whose images changed
             docker compose up -d --remove-orphans
-            
+
+            # Remove dangling images to reclaim disk space
+            docker image prune -f
+
             echo \"✅ Docker deployment successful!\"
           "
           rm -f /tmp/deploy_key
