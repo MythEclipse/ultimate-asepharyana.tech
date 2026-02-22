@@ -1,5 +1,10 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS chef
+# Use stable chef image only to extract the binary
+FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS stable-chef
+
+# Build stage using official nightly Rust
+FROM rustlang/rust:nightly-bookworm AS chef
 WORKDIR /app
+COPY --from=stable-chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
 
 FROM chef AS planner
 COPY apps/rust ./apps/rust
@@ -8,7 +13,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/apps/rust/recipe.json recipe.json
-# Build dependencies
+# Build dependencies using nightly chef
 RUN cargo chef cook --release --recipe-path recipe.json
 
 # Build application
