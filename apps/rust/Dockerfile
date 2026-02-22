@@ -1,10 +1,13 @@
 # Use stable chef image only to extract the binary
 FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS stable-chef
 
-# Build stage using official nightly Rust
-FROM rustlang/rust:nightly-bookworm AS chef
+# Build stage using official library nightly Rust
+FROM rust:nightly-bookworm AS chef
 WORKDIR /app
 COPY --from=stable-chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
+
+# Install Node.js for potential build scripts/hooks
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
 
 FROM chef AS planner
 COPY apps/rust ./apps/rust
