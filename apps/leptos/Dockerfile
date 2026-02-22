@@ -39,11 +39,8 @@ WORKDIR /app/apps/leptos
 RUN bun install
 RUN trunk build --release --public-url "/"
 
-# Run wasm-opt manually with bulk-memory + nontrapping-float-to-int features
-RUN find dist -name '*.wasm' -exec wasm-opt -Os \
-    --enable-bulk-memory \
-    --enable-nontrapping-float-to-int \
-    {} -o {} \;
+# Run wasm-opt manually with all features enabled
+RUN find dist -name '*.wasm' -exec wasm-opt -Os --enable-all {} -o {} \;
 
 # runtime stage
 FROM nginx:alpine
