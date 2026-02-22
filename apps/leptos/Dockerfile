@@ -13,6 +13,7 @@ RUN rustup toolchain install nightly && rustup default nightly
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
+ENV RUSTFLAGS="-C target-feature=+bulk-memory"
 
 FROM chef AS planner
 COPY apps/leptos ./apps/leptos

@@ -11,6 +11,7 @@ RUN rustup toolchain install nightly && rustup default nightly
 
 # Install Node.js for potential build scripts/hooks
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
+ENV RUSTFLAGS="-C target-feature=+bulk-memory"
 
 FROM chef AS planner
 COPY apps/visuals ./apps/visuals
