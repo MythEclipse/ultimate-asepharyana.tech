@@ -5,7 +5,7 @@
 
 # Leptos Client-Side Rendered (CSR) App Starter Template
 
-This is a template for use with the [Leptos][Leptos] web framework using the [Trunk][Trunk] tool to compile and serve your app in development.
+This is a template for use with the [Leptos][Leptos] web framework using the [Trunk][Trunk] tool to compile and serve your app in development.a
 
 ## Creating your repo from the template
 
