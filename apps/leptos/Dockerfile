@@ -1,6 +1,10 @@
-# Build stage using nightly Rust
-FROM lukemathwalker/cargo-chef:latest-rust-nightly-bookworm AS chef
+# Use stable chef image only to extract the binary
+FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS stable-chef
+
+# Build stage using official nightly Rust
+FROM rustlang/rust:nightly-bookworm AS chef
 WORKDIR /app
+COPY --from=stable-chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
 
 # Install Bun for TailwindCSS
 RUN curl -fsSL https://bun.sh/install | bash
@@ -15,10 +19,10 @@ FROM chef AS builder
 WORKDIR /app
 COPY --from=planner /app/apps/leptos/recipe.json recipe.json
 RUN rustup target add wasm32-unknown-unknown
-# Build dependencies
+# Build dependencies using nightly chef
 RUN cargo chef cook --release --target wasm32-unknown-unknown --recipe-path recipe.json
 
-# Install trunk (pre-compiled binary to save time)
+# Install trunk (pre-compiled binary)
 RUN curl -L https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
 
 # Build application
