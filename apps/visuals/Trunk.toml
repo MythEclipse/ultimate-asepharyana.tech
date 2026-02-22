@@ -2,9 +2,11 @@
 target = "index.html"
 dist = "dist"
 public_url = "/"
-wasm_opt = false
 
 [serve]
 addresses = ["127.0.0.1"]
 port = 3001
 open = false
+
+[wasm_opt]
+args = ["-Os", "--enable-bulk-memory"]
