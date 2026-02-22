@@ -112,7 +112,6 @@ services:
     restart: always
     networks: [app-net]
     environment:
-      - PORT=8081
       - NEXT_PUBLIC_ANIME=/api/rust
       - NEXT_PUBLIC_KOMIK=/api/rust
     depends_on:
