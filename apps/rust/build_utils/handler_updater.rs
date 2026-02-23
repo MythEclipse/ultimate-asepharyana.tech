@@ -23,9 +23,6 @@ use crate::build_utils::path_utils::{
 pub struct HandlerRouteInfo {
     pub func_name: String,
     pub handler_module_path: String,
-    pub http_method: String,
-    pub route_path: String,
-    pub is_protected: bool,
 }
 
 pub fn update_handler_file(
@@ -74,24 +71,11 @@ pub fn update_handler_file(
              }.to_string(), kv_cap[2].to_string());
         }
 
-        let http_method = metadata.get("ENDPOINT_METHOD").cloned().unwrap_or_else(|| "get".to_string());
-        let route_path = metadata.get("ENDPOINT_PATH").cloned().unwrap_or_else(|| {
-             let rel = path.strip_prefix(root_api_path).unwrap().with_extension("");
-             let p = rel.to_string_lossy().to_string().replace("\\", "/");
-             if file_stem == "index" && p.ends_with("/index") {
-                 p.strip_suffix("/index").unwrap_or("/").to_string()
-             } else {
-                 p
-             }
-        });
-
         handlers.push(HandlerRouteInfo {
             func_name: func_name.to_string(),
             handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
-            http_method,
-            route_path: normalize_route_path(&route_path),
-            is_protected: is_handler_protected(&content),
         });
+
     }
 
     if has_utoipa {
@@ -132,9 +116,6 @@ pub fn update_handler_file(
             .map(|c| c[1].to_string())
             .unwrap_or_else(|| file_stem.to_string()),
         handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
-        http_method: metadata.http_method,
-        route_path: metadata.route_path,
-        is_protected: is_handler_protected(&content),
     };
 
     Ok(vec![res])
@@ -422,9 +403,9 @@ fn inject_schemas_and_return_info(
     module_path_prefix: &str,
     file_stem: &str,
     schemas: &mut HashSet<String>,
-    http_method: &str,
-    route_path: &str,
-    is_protected: bool,
+    _http_method: &str,
+    _route_path: &str,
+    _is_protected: bool,
 ) -> Result<Option<HandlerRouteInfo>> {
     inject_schemas(
         content,
@@ -438,9 +419,6 @@ fn inject_schemas_and_return_info(
             .map(|c| c[1].to_string())
             .unwrap_or_else(|| file_stem.to_string()),
         handler_module_path: format!("{}::{}", module_path_prefix, file_stem),
-        http_method: http_method.to_string(),
-        route_path: route_path.to_string(),
-        is_protected,
     }))
 }
 
