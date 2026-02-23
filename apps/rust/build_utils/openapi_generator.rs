@@ -98,30 +98,15 @@ fn generate_root_api_mod_internal(
 }
 
 /// Generates the router creation code for the root API module.
-fn generate_router_creation_code(modules: &[String], all_handlers: &[HandlerRouteInfo]) -> String {
+fn generate_router_creation_code(modules: &[String], _all_handlers: &[HandlerRouteInfo]) -> String {
     let mut registrations = Vec::new();
 
-    // 1. Add module-level registrations (backward compatibility and manual routes)
+    // Register each top-level module's routes. Each submodule already has its
+    // own auto-generated register_routes that chains down to individual handlers,
+    // so we must NOT register handlers individually here — that would produce
+    // duplicate route registrations and cause an axum panic at startup.
     for module in modules {
         registrations.push(format!("    router = {}::register_routes(router);", module));
-    }
-
-    // 2. Add automatic route registrations for all handlers
-    for handler in all_handlers {
-        let auth_layer = if handler.is_protected {
-            ".layer(crate::middleware::auth::AuthMiddleware::layer())"
-        } else {
-            ""
-        };
-
-        registrations.push(format!(
-            "    router = router.route(\"{}\", axum::routing::{}({}::{}){});",
-            handler.route_path,
-            handler.http_method.to_lowercase(),
-            handler.handler_module_path,
-            handler.func_name,
-            auth_layer
-        ));
     }
 
     format!(
