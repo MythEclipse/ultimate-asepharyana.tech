@@ -97,5 +97,5 @@ fn parse_search_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/anime2/search", axum::routing::get(search))
 }

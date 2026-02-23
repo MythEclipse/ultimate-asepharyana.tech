@@ -361,5 +361,5 @@ fn parse_anime_detail_document(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/anime2/detail/{slug}", axum::routing::get(slug))
 }

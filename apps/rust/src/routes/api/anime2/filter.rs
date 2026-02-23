@@ -279,5 +279,5 @@ fn parse_filter_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/anime2/filter", axum::routing::get(filter))
 }

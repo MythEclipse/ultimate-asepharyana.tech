@@ -174,5 +174,5 @@ fn validate_password_strength(password: &str) -> Result<(), AppError> {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/reset-password", axum::routing::post(reset_password))
 }

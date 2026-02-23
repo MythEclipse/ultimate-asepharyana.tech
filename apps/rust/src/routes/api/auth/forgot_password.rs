@@ -134,5 +134,5 @@ pub async fn forgot_password(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/forgot-password", axum::routing::post(forgot_password))
 }

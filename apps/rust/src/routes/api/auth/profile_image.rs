@@ -186,5 +186,5 @@ pub async fn upload_image(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/profile/image", axum::routing::post(upload_image))
 }

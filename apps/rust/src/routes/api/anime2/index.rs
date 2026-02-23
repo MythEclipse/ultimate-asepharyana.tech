@@ -120,5 +120,5 @@ async fn fetch_anime_data() -> Result<Anime2Data, Box<dyn std::error::Error + Se
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/anime2", axum::routing::get(anime2))
 }

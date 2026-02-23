@@ -227,5 +227,5 @@ pub async fn resend_verification(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/verify", axum::routing::get(verify))
 }

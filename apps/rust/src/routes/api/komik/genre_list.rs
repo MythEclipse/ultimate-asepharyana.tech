@@ -106,5 +106,5 @@ fn parse_genres(html: &str) -> Result<Vec<Genre>, Box<dyn std::error::Error + Se
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/komik/genres", axum::routing::get(genres))
 }

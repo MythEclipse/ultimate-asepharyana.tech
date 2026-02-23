@@ -156,5 +156,5 @@ pub async fn delete_account(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/account", axum::routing::delete(delete_account))
 }

@@ -58,5 +58,5 @@ pub async fn fetch_with_proxy_only(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/proxy/croxy", axum::routing::get(fetch_with_proxy_only))
 }

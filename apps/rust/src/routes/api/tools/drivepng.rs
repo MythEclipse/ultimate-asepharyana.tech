@@ -47,5 +47,5 @@ pub async fn drivepng() -> impl IntoResponse {
 /// Handles GET requests for the drivepng endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/drivepng", axum::routing::get(drivepng))
 }

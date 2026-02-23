@@ -130,5 +130,5 @@ pub async fn login(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/login", axum::routing::post(login))
 }

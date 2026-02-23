@@ -73,5 +73,5 @@ pub async fn get_me(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/me", axum::routing::get(get_me))
 }

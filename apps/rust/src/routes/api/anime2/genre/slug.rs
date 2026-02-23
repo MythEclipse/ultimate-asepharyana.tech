@@ -133,5 +133,5 @@ fn parse_genre_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/anime2/genre/{slug}", axum::routing::get(slug))
 }
