@@ -157,3 +157,89 @@ pub fn provide_auth() {
 pub fn use_auth() -> AuthContext {
     use_context::<AuthContext>().expect("AuthContext not found")
 }
+
+// --- WebSocket Provider ---
+
+use web_sys::{WebSocket, MessageEvent, ErrorEvent, CloseEvent};
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use crate::api::types::WsMessage;
+use crate::api::WS_BASE_URL;
+
+#[derive(Clone)]
+pub struct WsContext {
+    pub last_message: ReadSignal<Option<WsMessage>>,
+    pub send_message: Callback<WsMessage>,
+}
+
+pub fn provide_ws() {
+    let (last_message, set_last_message) = create_signal(None::<WsMessage>);
+
+    // We use a stored reference to the websocket to keep it alive
+    let ws_ref: StoredValue<Option<WebSocket>> = store_value(None);
+
+    let connect = move || {
+        let url = format!("{}/ws/chat", WS_BASE_URL);
+        tracing::info!("Connecting to WebSocket: {}", url);
+        
+        match WebSocket::new(&url) {
+            Ok(ws) => {
+                ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
+                
+                // On message
+                let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
+                    if let Some(text) = e.data().as_string() {
+                        if let Ok(msg) = serde_json::from_str::<WsMessage>(&text) {
+                            set_last_message.set(Some(msg));
+                        }
+                    }
+                }) as Box<dyn FnMut(MessageEvent)>);
+                ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
+                onmessage_callback.forget();
+
+                // On error
+                let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
+                    tracing::error!("WebSocket error: {:?}", e);
+                }) as Box<dyn FnMut(ErrorEvent)>);
+                ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
+                onerror_callback.forget();
+
+                // On close
+                let onclose_callback = Closure::wrap(Box::new(move |e: CloseEvent| {
+                    tracing::warn!("WebSocket closed: {:?}", e);
+                    // Reconnect logic could be added here with a delay
+                }) as Box<dyn FnMut(CloseEvent)>);
+                ws.set_onclose(Some(onclose_callback.as_ref().unchecked_ref()));
+                onclose_callback.forget();
+
+                ws_ref.set_value(Some(ws));
+            }
+            Err(e) => tracing::error!("Failed to create WebSocket: {:?}", e),
+        }
+    };
+
+    // Effect to connect in the browser
+    create_effect(move |_| {
+        connect();
+    });
+
+    let ws_ref_for_send = ws_ref; 
+    let send_message = Callback::new(move |msg: WsMessage| {
+        if let Some(ws) = ws_ref_for_send.get_value() {
+            if ws.ready_state() == WebSocket::OPEN {
+                if let Ok(text) = serde_json::to_string(&msg) {
+                    let _ = ws.send_with_str(&text);
+                }
+            }
+        }
+    });
+
+    provide_context(WsContext {
+        last_message: last_message.into(),
+        send_message,
+    });
+}
+
+pub fn use_ws() -> WsContext {
+    use_context::<WsContext>().expect("WsContext not found")
+}

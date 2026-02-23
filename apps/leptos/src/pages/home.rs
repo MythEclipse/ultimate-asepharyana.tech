@@ -3,7 +3,7 @@ use leptos_meta::Title;
 use leptos_router::A;
 use crate::components::logo::tech_icons::TECH_STACK;
 use crate::components::logo::social_icons::{Instagram, LinkedIn, GitHub};
-use crate::components::ui::{LoadingOverlay, GlitchText};
+use crate::components::ui::{LoadingOverlay, GlitchText, CachedImage};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static VISUALS_READY: AtomicBool = AtomicBool::new(false);
@@ -161,7 +161,11 @@ pub fn HomePage() -> impl IntoView {
                                         <div class="absolute -right-12 -top-12 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-colors" />
                                         <div class="w-24 h-24 relative flex items-center justify-center">
                                             <div class="absolute inset-0 bg-white/5 rounded-3xl blur-2xl scale-0 group-hover:scale-175 transition-transform duration-1000" />
-                                            <img src=skill.image alt=skill.name class="w-16 h-16 relative z-10 drop-shadow-33xl brightness-90 group-hover:brightness-110 transition-all filter group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
+                                            <CachedImage 
+                                                src=skill.image.to_string() 
+                                                alt=skill.name.to_string() 
+                                                class="w-16 h-16 relative z-10 drop-shadow-33xl brightness-90 group-hover:brightness-110 transition-all filter group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]".to_string() 
+                                            />
                                         </div>
                                         <div class="space-y-2 text-center">
                                             <span class="text-[11px] font-black uppercase tracking-[0.4em] text-muted-foreground group-hover:text-indigo-400 transition-colors block">

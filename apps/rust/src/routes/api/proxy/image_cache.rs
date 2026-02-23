@@ -9,6 +9,7 @@ use utoipa::ToSchema;
 
 use crate::services::images::cache::ImageCache;
 use crate::routes::AppState;
+use crate::events::bus::ImageRepaired;
 
 pub const ENDPOINT_METHOD: &str = "post";
 pub const ENDPOINT_PATH: &str = "/api/proxy/image-cache";
@@ -286,14 +287,22 @@ pub async fn audit_image_cache(
         let _ = cache.invalidate(&req.url).await;
         
         match cache.get_or_cache(&req.url).await {
-            Ok(new_cdn_url) => Json(AuditImageCacheResponse {
-                success: true,
-                original_url: req.url,
-                cdn_url: Some(new_cdn_url),
-                was_accessible: false,
-                re_uploaded: true,
-                message: "CDN URL was inaccessible, successfully re-uploaded".to_string(),
-            }),
+            Ok(new_cdn_url) => {
+                // Publish event for real-time refresh
+                state.event_bus.publish(ImageRepaired {
+                    original_url: req.url.clone(),
+                    cdn_url: new_cdn_url.clone(),
+                }).await;
+
+                Json(AuditImageCacheResponse {
+                    success: true,
+                    original_url: req.url,
+                    cdn_url: Some(new_cdn_url),
+                    was_accessible: false,
+                    re_uploaded: true,
+                    message: "CDN URL was inaccessible, successfully re-uploaded".to_string(),
+                })
+            },
             Err(e) => Json(AuditImageCacheResponse {
                 success: false,
                 original_url: req.url,
@@ -306,14 +315,22 @@ pub async fn audit_image_cache(
     } else {
         // Not cached yet, cache it now
         match cache.get_or_cache(&req.url).await {
-            Ok(new_cdn_url) => Json(AuditImageCacheResponse {
-                success: true,
-                original_url: req.url,
-                cdn_url: Some(new_cdn_url),
-                was_accessible: false,
-                re_uploaded: true,
-                message: "Not cached previously, successfully uploaded".to_string(),
-            }),
+            Ok(new_cdn_url) => {
+                // Publish event for real-time refresh
+                state.event_bus.publish(ImageRepaired {
+                    original_url: req.url.clone(),
+                    cdn_url: new_cdn_url.clone(),
+                }).await;
+
+                Json(AuditImageCacheResponse {
+                    success: true,
+                    original_url: req.url,
+                    cdn_url: Some(new_cdn_url),
+                    was_accessible: false,
+                    re_uploaded: true,
+                    message: "Not cached previously, successfully uploaded".to_string(),
+                })
+            },
             Err(e) => Json(AuditImageCacheResponse {
                 success: false,
                 original_url: req.url,

@@ -7,6 +7,7 @@ use serde::{Serialize, Deserialize};
 use crate::api::anime::{
     fetch_anime1_index, fetch_anime2_index
 };
+use crate::components::ui::CachedImage;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnimeItem {
@@ -114,11 +115,10 @@ fn AnimeCard(item: AnimeItem, index: usize, source: u8) -> impl IntoView {
             >
                 <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-white/5 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-blue-500/20 group-hover:border-white/20">
                     // Poster with parallax-like zoom
-                    <img
-                        src=item.poster
+                    <CachedImage 
+                        src=item.poster 
                         alt=item.title.clone()
-                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115"
-                        loading="lazy"
+                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115".to_string()
                     />
                     
                     // Glassy Overlay for Info
