@@ -100,8 +100,8 @@ services:
     restart: always
     networks: [app-net]
     environment:
-      - NEXT_PUBLIC_ANIME=/api/rust
-      - NEXT_PUBLIC_KOMIK=/api/rust
+      - VITE_RUST_API=https://rust.asepharyana.tech
+      - VITE_ELYSIA_API=https://elysia.asepharyana.tech
     depends_on:
       - rust-api
       - elysia-api
@@ -111,8 +111,7 @@ services:
     restart: always
     networks: [app-net]
     environment:
-      - NEXT_PUBLIC_ANIME=/api/rust
-      - NEXT_PUBLIC_KOMIK=/api/rust
+      - VITE_RUST_API=https://rust.asepharyana.tech
     depends_on:
       - rust-api
 
