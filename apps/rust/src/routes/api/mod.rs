@@ -117,6 +117,10 @@ use crate::routes::api::komik::search::Pagination as Pagination_10;
 use crate::routes::api::komik::search::SearchQuery as SearchQuery_2;
 use crate::routes::api::komik::search::SearchResponse as SearchResponse_1;
 use crate::routes::api::proxy::croxy::ProxyParams;
+use crate::routes::api::proxy::image_cache::AuditImageCacheRequest;
+use crate::routes::api::proxy::image_cache::AuditImageCacheResponse;
+use crate::routes::api::proxy::image_cache::DeleteImageCacheRequest;
+use crate::routes::api::proxy::image_cache::DeleteImageCacheResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheBatchRequest;
 use crate::routes::api::proxy::image_cache::ImageCacheBatchResponse;
 use crate::routes::api::proxy::image_cache::ImageCacheRequest;
@@ -141,6 +145,8 @@ use crate::routes::api::tools::uploader::ListResponse as ListResponse_2;
               crate::routes::api::proxy::croxy::fetch_with_proxy_only,
               crate::routes::api::proxy::image_cache::image_cache,
               crate::routes::api::proxy::image_cache::image_cache_batch,
+              crate::routes::api::proxy::image_cache::delete_image_cache,
+              crate::routes::api::proxy::image_cache::audit_image_cache,
               crate::routes::api::komik::manhwa::slug::list,
               crate::routes::api::komik::manhua::slug::list,
               crate::routes::api::komik::manga::slug::list,
@@ -293,6 +299,10 @@ use crate::routes::api::tools::uploader::ListResponse as ListResponse_2;
                   SearchQuery_2,
                   SearchResponse_1,
                   ProxyParams,
+                  AuditImageCacheRequest,
+                  AuditImageCacheResponse,
+                  DeleteImageCacheRequest,
+                  DeleteImageCacheResponse,
                   ImageCacheBatchRequest,
                   ImageCacheBatchResponse,
                   ImageCacheRequest,
@@ -364,6 +374,8 @@ pub fn create_api_routes() -> Router<Arc<AppState>> {
     router = router.route("/api/proxy/croxy", axum::routing::get(crate::routes::api::proxy::croxy::fetch_with_proxy_only));
     router = router.route("/api/proxy/image-cache", axum::routing::post(crate::routes::api::proxy::image_cache::image_cache));
     router = router.route("/api/proxy/image-cache/batch", axum::routing::post(crate::routes::api::proxy::image_cache::image_cache_batch));
+    router = router.route("/api/proxy/image-cache", axum::routing::delete(crate::routes::api::proxy::image_cache::delete_image_cache));
+    router = router.route("/api/proxy/image-cache/audit", axum::routing::post(crate::routes::api::proxy::image_cache::audit_image_cache));
     router = router.route("/api/komik/manhwa", axum::routing::get(crate::routes::api::komik::manhwa::slug::list));
     router = router.route("/api/komik/manhua", axum::routing::get(crate::routes::api::komik::manhua::slug::list));
     router = router.route("/api/komik/manga", axum::routing::get(crate::routes::api::komik::manga::slug::list));
