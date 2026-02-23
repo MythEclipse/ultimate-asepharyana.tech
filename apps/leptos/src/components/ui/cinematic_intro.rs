@@ -45,7 +45,7 @@ pub fn CinematicIntro(on_complete: Rc<dyn Fn()>) -> impl IntoView {
     }
 
     // build-time parameter for visuals host (defaults to visuals.localhost)
-    let visuals_url = option_env!("VISUALS_URL").unwrap_or("http://visuals.localhost/");
+    let visuals_url = option_env!("VISUALS_URL").unwrap_or("https://visuals.asepharyana.tech/");
 
     create_effect({
         let on_complete = on_complete.clone();

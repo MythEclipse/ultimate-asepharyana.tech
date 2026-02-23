@@ -179,7 +179,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VISUALS_URL=http://visuals.localhost
+            VISUALS_URL=https://visuals.asepharyana.tech/
           cache-from: type=gha,scope=leptos-web
           cache-to: type=gha,mode=max,scope=leptos-web
 
