@@ -230,5 +230,5 @@ fn parse_popular_page(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/komik/popular", axum::routing::get(popular))
 }

@@ -47,5 +47,5 @@ pub async fn uploader() -> impl IntoResponse {
 /// Handles GET requests for the uploader endpoint.
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/uploader", axum::routing::get(uploader))
 }

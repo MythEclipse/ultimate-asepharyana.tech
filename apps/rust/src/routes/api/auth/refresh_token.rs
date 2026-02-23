@@ -92,5 +92,5 @@ pub async fn refresh(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/refresh", axum::routing::post(refresh))
 }

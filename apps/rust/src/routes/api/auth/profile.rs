@@ -131,5 +131,5 @@ pub async fn update_profile(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/profile", axum::routing::put(update_profile))
 }

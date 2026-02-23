@@ -138,5 +138,5 @@ pub async fn change_password(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/change-password", axum::routing::post(change_password))
 }

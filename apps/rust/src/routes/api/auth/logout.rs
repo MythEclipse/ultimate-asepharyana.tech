@@ -139,5 +139,5 @@ pub async fn logout(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/auth/logout", axum::routing::post(logout))
 }

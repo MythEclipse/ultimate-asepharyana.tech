@@ -265,5 +265,5 @@ pub async fn like_post(
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/social/posts", axum::routing::get(get_posts))
 }

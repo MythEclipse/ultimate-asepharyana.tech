@@ -80,7 +80,24 @@ pub fn update_handler_file(
 
     if has_utoipa {
         inject_schemas(&content, &format!("{}::{}", module_path_prefix, file_stem), schemas)?;
-        let final_content = generate_and_update_register_routes(&content, &content, "get", &file_stem, &HashMap::new())?;
+        
+        // Extract metadata again for registration if needed, or pass handlers
+        let mut handler_meta = HashMap::new();
+        if let Some(cap) = crate::build_utils::constants::HANDLER_WITH_PATH_REGEX.captures(&content) {
+             let macro_content = &cap[1];
+             for method in ["get", "post", "put", "delete", "patch"] {
+                if regex::Regex::new(&format!(r"\b{}\b", method)).unwrap().is_match(macro_content) {
+                    handler_meta.insert("ENDPOINT_METHOD".to_string(), method.to_string());
+                    break;
+                }
+            }
+            let kv_regex = regex::Regex::new(r#"(path)\s*=\s*"([^"]*)""#).unwrap();
+            if let Some(kv_cap) = kv_regex.captures(macro_content) {
+                handler_meta.insert("ENDPOINT_PATH".to_string(), kv_cap[2].to_string());
+            }
+        }
+
+        let final_content = generate_and_update_register_routes(&content, &content, "get", &file_stem, &handler_meta)?;
         write_updated_content(path, &content, &final_content, true)?;
         return Ok(handlers);
     }
@@ -356,10 +373,26 @@ fn generate_and_update_register_routes(
     original_content: &str,
     _http_method: &str,
     _file_stem: &str,
-    _metadata: &HashMap<String, String>,
+    metadata: &HashMap<String, String>,
 ) -> Result<String> {
+    let method = metadata.get("ENDPOINT_METHOD").cloned().unwrap_or_else(|| "get".to_string());
+    let path = metadata.get("ENDPOINT_PATH").cloned().unwrap_or_else(|| "/".to_string());
+    
+    // Normalize path for axum (convert {param} to :param if needed, but project seems to use {param} with axum-extra or similar?)
+    // Actually Axum 0.7+ uses {param} syntax if using certain layers, but standard axum uses :param.
+    // However, the project's bootstrap.rs shows it just merges routes.
+    // Let's check how it was supposed to look. Usually: .route("/path", get(handler))
+    
+    let func_name = HANDLER_FN_REGEX
+        .captures(content)
+        .map(|c| c[1].to_string())
+        .unwrap_or_else(|| _file_stem.to_string());
 
-    let new_register_fn = "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {\n    router\n}".to_string();
+    let route_call = format!(".route(\"{}\", axum::routing::{}({}))", path, method, func_name);
+    let new_register_fn = format!(
+        "pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {{\n    router{}\n}}",
+        route_call
+    );
 
     let mut final_content = content.to_string();
 
@@ -369,6 +402,7 @@ fn generate_and_update_register_routes(
 
     if let Some(existing_register) = register_regex.find(&final_content) {
         let route_count = existing_register.as_str().matches(".route(").count();
+        // If it's a complex manually modified register_routes, don't touch it
         if route_count > 1 {
             final_content = original_content.to_string();
         } else {

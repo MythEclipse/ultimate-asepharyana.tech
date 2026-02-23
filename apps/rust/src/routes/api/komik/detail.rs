@@ -656,5 +656,5 @@ async fn handle_socket(mut socket: WebSocket, app_state: Arc<AppState>) {
 }
 
 pub fn register_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
-    router
+    router.route("/api/komik/detail", axum::routing::get(detail))
 }
