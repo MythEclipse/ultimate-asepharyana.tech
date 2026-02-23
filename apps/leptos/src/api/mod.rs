@@ -7,5 +7,5 @@ pub mod types;
 pub const API_BASE_URL: &str = if cfg!(debug_assertions) {
     "http://localhost:4091/api"
 } else {
-    "/api/rust"
+    "https://rust.asepharyana.tech/api"
 };

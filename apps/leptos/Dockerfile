@@ -57,22 +57,6 @@ RUN printf "server {\n\
     index  index.html index.htm;\n\
     try_files \$uri \$uri/ /index.html;\n\
     }\n\
-    \n\
-    location /api/rust/ {\n\
-    proxy_pass http://rust-api:4091/api/;\n\
-    proxy_set_header Host \$host;\n\
-    proxy_set_header X-Real-IP \$remote_addr;\n\
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
-    proxy_set_header X-Forwarded-Proto \$scheme;\n\
-    }\n\
-    \n\
-    location /api/elysia/ {\n\
-    proxy_pass http://elysia-api:4092/api/;\n\
-    proxy_set_header Host \$host;\n\
-    proxy_set_header X-Real-IP \$remote_addr;\n\
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
-    proxy_set_header X-Forwarded-Proto \$scheme;\n\
-    }\n\
     }\n" > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
