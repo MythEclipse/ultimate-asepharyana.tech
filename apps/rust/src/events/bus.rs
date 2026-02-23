@@ -142,3 +142,14 @@ pub struct OrderCreated {
 impl Event for OrderCreated {
     const NAME: &'static str = "order.created";
 }
+
+/// Image repaired event.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ImageRepaired {
+    pub original_url: String,
+    pub cdn_url: String,
+}
+
+impl Event for ImageRepaired {
+    const NAME: &'static str = "image.repaired";
+}

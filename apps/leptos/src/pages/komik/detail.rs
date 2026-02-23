@@ -2,6 +2,7 @@ use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
 use crate::api::komik::fetch_komik_detail;
+use crate::components::ui::CachedImage;
 
 #[component]
 pub fn KomikDetailPage() -> impl IntoView {
@@ -36,7 +37,7 @@ pub fn KomikDetailPage() -> impl IntoView {
                                 <div class="relative group perspective-1000">
                                     <div class="absolute -inset-4 bg-orange-500/10 rounded-[3rem] blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                                     <div class="aspect-[3/4.2] rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-2 border-white/20 transform -rotate-1 group-hover:rotate-0 transition-all duration-700 hover-tilt">
-                                        <img src=data.poster.clone() class="w-full h-full object-cover" alt=data.title.clone() />
+                                        <CachedImage src=data.poster.clone() alt=data.title.clone() class="w-full h-full object-cover".to_string() />
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
                                     </div>
                                 </div>

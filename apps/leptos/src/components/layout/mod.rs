@@ -8,6 +8,7 @@ pub fn ClientLayout(children: Children) -> impl IntoView {
     // Provide contexts at the layout level
     provide_theme();
     provide_auth();
+    crate::providers::provide_ws();
 
     view! {
         <div class="min-h-screen flex flex-col relative overflow-x-hidden bg-background text-foreground transition-colors duration-700">

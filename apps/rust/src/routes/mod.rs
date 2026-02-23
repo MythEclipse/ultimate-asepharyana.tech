@@ -14,6 +14,7 @@ pub struct AppState {
     pub chat_tx: tokio::sync::broadcast::Sender<crate::routes::ws::models::WsMessage>,
     pub image_processing_semaphore: Arc<tokio::sync::Semaphore>,
     pub room_manager: Arc<crate::ws::room::RoomManager>,
+    pub event_bus: Arc<crate::events::bus::EventBus>,
 }
 
 impl AppState {

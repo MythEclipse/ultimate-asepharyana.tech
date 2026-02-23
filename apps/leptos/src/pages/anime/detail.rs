@@ -2,6 +2,7 @@ use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
 use crate::api::anime::{fetch_anime_detail, EpisodeList};
+use crate::components::ui::CachedImage;
 
 #[component]
 pub fn AnimeDetailPage() -> impl IntoView {
@@ -58,8 +59,8 @@ pub fn AnimeDetailPage() -> impl IntoView {
                     // Cinematic Cinema Banner
                     <div class="relative h-[500px] md:h-[600px] w-full overflow-hidden">
                         // Blurred Background
-                        <div class="absolute inset-0 z-0">
-                            <img src=data.poster.clone() class="w-full h-full object-cover blur-[100px] opacity-40 scale-125" alt="" />
+                        <div class="absolute inset-0 z-0 opacity-40 scale-125 blur-[100px]">
+                            <CachedImage src=data.poster.clone() alt="".to_string() />
                             <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                         </div>
                         
@@ -67,7 +68,7 @@ pub fn AnimeDetailPage() -> impl IntoView {
                             <div class="flex flex-col md:flex-row gap-12 items-center md:items-end w-full">
                                 // Sharp Floating Poster
                                 <div class="w-64 md:w-80 aspect-[3/4.2] rounded-[2.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] overflow-hidden border-2 border-white/20 shrink-0 transform -rotate-2 hover:rotate-0 transition-all duration-700 hover-tilt">
-                                    <img src=data.poster.clone() class="w-full h-full object-cover" alt=data.title.clone() />
+                                    <CachedImage src=data.poster.clone() alt=data.title.clone() class="w-full h-full object-cover".to_string() />
                                 </div>
                                 
                                 <div class="flex-1 text-center md:text-left space-y-6 animate-slide-up">
@@ -164,7 +165,7 @@ pub fn AnimeDetailPage() -> impl IntoView {
                                     {data.recommendations.iter().take(5).map(|rec| view! {
                                         <a href=format!("{}/{}", base_detail_path, rec.slug) class="flex gap-6 p-4 rounded-[2rem] glass border border-white/5 hover:border-white/20 transition-all group shadow-xl">
                                             <div class="w-24 aspect-[3/4.2] rounded-2xl overflow-hidden shadow-2xl shrink-0 border border-white/10">
-                                                <img src=rec.poster.clone() class="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700" alt="" />
+                                                <CachedImage src=rec.poster.clone() alt="".to_string() class="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700".to_string() />
                                             </div>
                                             <div class="flex-1 flex flex-col justify-center gap-2">
                                                 <h4 class="font-black text-sm uppercase tracking-tight line-clamp-2 group-hover:text-blue-400 transition-colors leading-tight">{rec.title.clone()}</h4>

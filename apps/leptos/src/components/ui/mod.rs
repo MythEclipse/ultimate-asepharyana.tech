@@ -9,4 +9,5 @@ pub mod glitch_text;
 pub use error_fallback::ErrorFallback;
 pub use page_transition::PageTransition;
 pub use loading_overlay::LoadingOverlay;
+pub use cached_image::CachedImage;
 pub use glitch_text::GlitchText;

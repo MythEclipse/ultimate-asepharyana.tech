@@ -83,19 +83,35 @@ impl Application {
         let db_arc = Arc::new(db);
         let image_processing_semaphore = Arc::new(tokio::sync::Semaphore::new(CONFIG.image_processing_concurrency));
         let room_manager = Arc::new(crate::ws::room::RoomManager::new());
+        let event_bus = Arc::new(crate::events::bus::EventBus::new());
 
         let app_state = Arc::new(AppState {
             jwt_secret: CONFIG.jwt_secret.clone(),
             redis_pool: REDIS_POOL.clone(),
             db: db_arc.clone(),
 
-            chat_tx,
+            chat_tx: chat_tx.clone(),
             image_processing_semaphore,
             room_manager: room_manager.clone(),
+            event_bus: event_bus.clone(),
         });
 
         // Scheduler
         Self::init_scheduler(db_arc.clone(), room_manager).await?;
+
+        // Forward internal events to WebSocket
+        let event_bus_clone = event_bus.clone();
+        let chat_tx_clone = chat_tx.clone();
+        tokio::spawn(async move {
+            let mut rx = event_bus_clone.subscribe::<crate::events::bus::ImageRepaired>().await;
+            while let Ok(event) = rx.recv().await {
+                let msg = crate::routes::ws::models::WsMessage::ImageRepaired {
+                    original_url: event.original_url,
+                    cdn_url: event.cdn_url,
+                };
+                let _ = chat_tx_clone.send(msg);
+            }
+        });
 
         // Router
         let app = Router::new()

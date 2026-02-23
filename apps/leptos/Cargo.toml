@@ -23,9 +23,9 @@ thiserror = "1"
 tracing = { version = "0.1", optional = true }
 http = "1"
 serde = { version = "1", features = ["derive"] }
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 cfg-if = "1"
-web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "DomTokenList", "MediaQueryList"] }
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "DomTokenList", "MediaQueryList", "WebSocket", "MessageEvent", "ErrorEvent", "CloseEvent"] }
 reqwest = { version = "0.11", features = ["json"] }
 serde_json = "1.0"
 gloo-storage = "0.3"

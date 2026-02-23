@@ -54,3 +54,49 @@ pub struct ApiError {
     pub code: Option<String>,
     pub details: Option<serde_json::Value>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct ChatMessage {
+    pub id: String,
+    pub room_id: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub content: String,
+    pub message_type: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum WsMessage {
+    Join {
+        room_id: String,
+        user_id: String,
+        user_name: String,
+    },
+    Leave {
+        room_id: String,
+        user_id: String,
+    },
+    Message {
+        room_id: String,
+        message: ChatMessage,
+    },
+    UserJoined {
+        room_id: String,
+        user_id: String,
+        user_name: String,
+    },
+    UserLeft {
+        room_id: String,
+        user_id: String,
+        user_name: String,
+    },
+    Error {
+        message: String,
+    },
+    ImageRepaired {
+        original_url: String,
+        cdn_url: String,
+    },
+}

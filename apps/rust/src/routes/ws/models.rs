@@ -94,4 +94,8 @@ pub enum WsMessage {
     Error {
         message: String,
     },
+    ImageRepaired {
+        original_url: String,
+        cdn_url: String,
+    },
 }
