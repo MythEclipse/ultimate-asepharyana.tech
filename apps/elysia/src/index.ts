@@ -19,7 +19,7 @@ import { getRedis } from './utils/redis';
 
 let isDbInitialized = false;
 
-// Initialize database and Redis connections
+// Initialize database and Redis connectionsa
 const initializeConnections = async () => {
   try {
     // Connect to database
