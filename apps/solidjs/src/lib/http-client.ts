@@ -1,8 +1,8 @@
 // API Base URLs - use localhost in development
 const isDev =
   typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const RUST_API = import.meta.env.VITE_RUST_API || (isDev ? 'http://localhost:4091' : 'http://rust-api:4091');
-const ELYSIA_API = import.meta.env.VITE_ELYSIA_API || (isDev ? 'http://localhost:4092' : 'http://elysia-api:4092');
+const RUST_API = import.meta.env.VITE_RUST_API || (isDev ? 'http://localhost:4091' : '/api/rust');
+const ELYSIA_API = import.meta.env.VITE_ELYSIA_API || (isDev ? 'http://localhost:4092' : '/api/elysia');
 
 interface RequestOptions {
   headers?: Record<string, string>;

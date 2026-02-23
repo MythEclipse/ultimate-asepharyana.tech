@@ -17,30 +17,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy to VPS
+      - name: Trigger Coolify Deployment
         env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_TARGET_DIR: ~/ultimate-asepharyana.cloud
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
         run: |
-          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key $VPS_USER@$VPS_HOST "
-            cd $VPS_TARGET_DIR
+          if [ -z "$COOLIFY_WEBHOOK" ]; then
+            echo "❌ COOLIFY_WEBHOOK secret is not set!"
+            exit 1
+          fi
 
-            # Pull latest source (docker-compose.yml, nginx config, etc.)
-            git fetch origin main
-            git reset --hard origin/main
-
-            # Pull only images that have new tags (skips unchanged)
-            docker compose pull --ignore-pull-failures
-
-            # Restart only containers whose images changed
-            docker compose up -d --remove-orphans
-
-            # Remove dangling images to reclaim disk space
-            docker image prune -f
-
-            echo \"✅ Docker deployment successful!\"
-          "
-          rm -f /tmp/deploy_key
+          echo "🚀 Triggering Coolify deployment..."
+          curl -X POST "$COOLIFY_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            --fail-with-body

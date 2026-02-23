@@ -52,7 +52,7 @@ pub fn HomePage() -> impl IntoView {
     });
 
     // determine visuals iframe URL at compile time (env override allowed)
-    let visuals_url = option_env!("VISUALS_URL").unwrap_or("http://visuals.localhost");
+    let visuals_url = option_env!("VISUALS_URL").unwrap_or("https://visuals.asepharyana.tech/");
 
     view! {
         <Title text="Full-Stack Developer | Asep Haryana"/>

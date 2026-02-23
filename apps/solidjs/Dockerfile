@@ -32,6 +32,8 @@ RUN printf "server {\n\
     proxy_set_header X-Real-IP \$remote_addr;\n\
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
     proxy_set_header X-Forwarded-Proto \$scheme;\n\
+    proxy_set_header X-Forwarded-Host \$host;\n\
+    proxy_set_header X-Forwarded-Port \$server_port;\n\
     }\n\
     \n\
     location /api/rust/ {\n\
