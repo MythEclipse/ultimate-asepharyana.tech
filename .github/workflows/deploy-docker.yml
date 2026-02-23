@@ -20,13 +20,20 @@ jobs:
       - name: Trigger Coolify Deployment
         env:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
           if [ -z "$COOLIFY_WEBHOOK" ]; then
             echo "❌ COOLIFY_WEBHOOK secret is not set!"
             exit 1
           fi
 
+          if [ -z "$COOLIFY_TOKEN" ]; then
+            echo "❌ COOLIFY_TOKEN secret is not set!"
+            exit 1
+          fi
+
           echo "🚀 Triggering Coolify deployment..."
           curl -X POST "$COOLIFY_WEBHOOK" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
             -H "Content-Type: application/json" \
             --fail-with-body
