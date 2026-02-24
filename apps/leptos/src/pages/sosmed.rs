@@ -26,20 +26,20 @@ pub fn SosmedPage() -> impl IntoView {
         <main class="min-h-screen relative overflow-hidden pb-40">
             // Background Ambient Accents
             <div class="fixed inset-0 pointer-events-none z-0">
-                <div class="absolute top-[20%] right-[10%] w-[40rem] h-[40rem] bg-indigo-500/5 rounded-full blur-[120px] animate-tilt" />
-                <div class="absolute bottom-[10%] left-[5%] w-[35rem] h-[35rem] bg-purple-500/5 rounded-full blur-[120px] animate-tilt-reverse" />
+                <div class="absolute top-[20%] right-[10%] w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[120px] animate-tilt-slow" />
+                <div class="absolute bottom-[10%] left-[5%] w-[35rem] h-[35rem] bg-accent/5 rounded-full blur-[120px] animate-tilt-reverse-slow" />
             </div>
 
             <div class="container mx-auto max-w-2xl px-6 py-24 space-y-16 relative z-10">
                 // Cinematic Header
                 <header class="text-center space-y-6 animate-fade-in">
-                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
+                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
                         "Pulse Engine"
                     </div>
                     <h1 class="text-5xl font-black italic tracking-tighter uppercase leading-none">
-                        "Social " <span class="text-indigo-500">"Feed"</span>
+                        "Social " <span class="text-primary">"Feed"</span>
                     </h1>
-                    <div class="w-12 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full" />
+                    <div class="w-12 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
                 </header>
                 
                 <section class="animate-slide-up [animation-delay:200ms]">

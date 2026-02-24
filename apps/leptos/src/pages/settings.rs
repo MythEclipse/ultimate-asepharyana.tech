@@ -22,27 +22,27 @@ pub fn SettingsPage() -> impl IntoView {
             <main class="min-h-screen relative overflow-hidden pb-40">
                 // Background Ambient Systems
                 <div class="fixed inset-0 pointer-events-none z-0">
-                    <div class="absolute top-[20%] right-[10%] w-[40rem] h-[40rem] bg-indigo-500/5 rounded-full blur-[120px] animate-tilt" />
-                    <div class="absolute bottom-[10%] left-[5%] w-[35rem] h-[35rem] bg-blue-500/5 rounded-full blur-[120px] animate-tilt-reverse" />
+                    <div class="absolute top-[20%] right-[10%] w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[120px] animate-tilt-slow" />
+                    <div class="absolute bottom-[10%] left-[5%] w-[35rem] h-[35rem] bg-accent/5 rounded-full blur-[120px] animate-tilt-reverse-slow" />
                 </div>
 
                 <div class="container mx-auto max-w-3xl px-8 pt-24 space-y-16 relative z-10">
                     // Cinematic Settings Header
                     <header class="text-center space-y-6 animate-fade-in">
-                        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">
+                        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.4em] text-primary">
                             "System Parameters"
                         </div>
                         <h1 class="text-5xl font-black italic tracking-tighter uppercase leading-none">
-                            "Neural " <span class="text-indigo-500">"Config"</span>
+                            "Neural " <span class="text-primary">"Config"</span>
                         </h1>
-                        <div class="w-12 h-1 bg-gradient-to-r from-indigo-500 to-blue-500 mx-auto rounded-full" />
+                        <div class="w-12 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
                     </header>
 
                     <div class="space-y-12">
                         // Profile Intelligence Section
                         <section class="glass-card rounded-[3rem] p-10 border border-white/5 animate-slide-up [animation-delay:200ms] group hover:border-white/20 transition-all duration-700">
                             <div class="flex items-center gap-4 mb-10">
-                                <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-2xl shadow-2xl">"🧠"</div>
+                                <div class="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-2xl shadow-2xl">"🧠"</div>
                                 <div class="space-y-1">
                                     <h2 class="text-2xl font-black italic tracking-tighter uppercase">"Profile" <span class="text-muted-foreground/40">"Identity"</span></h2>
                                     <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">"Current Instance Parameters"</p>
@@ -97,7 +97,7 @@ pub fn SettingsPage() -> impl IntoView {
                                         <span class="text-3xl block transition-transform group-hover/btn:scale-125 duration-500">"🌙"</span>
                                         <span class="text-[10px] font-black uppercase tracking-[0.2em]">"Dark"</span>
                                     </div>
-                                    <div class="absolute inset-x-0 bottom-0 h-1 bg-indigo-500 scale-x-0 group-hover/btn:scale-x-50 transition-transform origin-center" />
+                                    <div class="absolute inset-x-0 bottom-0 h-1 bg-primary scale-x-0 group-hover/btn:scale-x-50 transition-transform origin-center" />
                                 </button>
 
                                 <button

@@ -118,7 +118,7 @@ fn AnimeCard(item: AnimeItem, index: usize, source: u8) -> impl IntoView {
                     <CachedImage 
                         src=item.poster 
                         alt=item.title.clone()
-                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115".to_string()
+                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110".to_string()
                     />
                     
                     // Glassy Overlay for Info

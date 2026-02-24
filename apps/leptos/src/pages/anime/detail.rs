@@ -165,7 +165,7 @@ pub fn AnimeDetailPage() -> impl IntoView {
                                     {data.recommendations.iter().take(5).map(|rec| view! {
                                         <a href=format!("{}/{}", base_detail_path, rec.slug) class="flex gap-6 p-4 rounded-[2rem] glass border border-border/5 hover:border-border/20 transition-all group shadow-xl">
                                             <div class="w-24 aspect-[3/4.2] rounded-2xl overflow-hidden shadow-2xl shrink-0 border border-border/10">
-                                                <CachedImage src=rec.poster.clone() alt="".to_string() class="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700".to_string() />
+                                                <CachedImage src=rec.poster.clone() alt="".to_string() class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700".to_string() />
                                             </div>
                                             <div class="flex-1 flex flex-col justify-center gap-2">
                                                 <h4 class="font-black text-sm uppercase tracking-tight line-clamp-2 group-hover:text-primary transition-colors leading-tight">{rec.title.clone()}</h4>

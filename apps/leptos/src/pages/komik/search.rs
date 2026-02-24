@@ -141,7 +141,7 @@ fn SearchKomikCard(item: MangaItem, index: usize) -> impl IntoView {
                 <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-border/10 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-primary/20 group-hover:border-primary/40">
                     <img 
                         src=item.poster 
-                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115" 
+                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110" 
                         alt=item.title.clone() 
                         loading="lazy"
                     />
