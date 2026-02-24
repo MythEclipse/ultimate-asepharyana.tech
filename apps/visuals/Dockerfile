@@ -38,7 +38,7 @@ WORKDIR /app/apps/visuals
 RUN trunk build --release --public-url "/"
 
 # Run wasm-opt manually with all features enabled
-RUN find dist -name '*.wasm' -exec wasm-opt -Os --enable-all {} -o {} \;
+RUN find dist -name '*.wasm' -exec wasm-opt -Os --all-features {} -o {} \;
 
 # runtime image
 FROM nginx:alpine
