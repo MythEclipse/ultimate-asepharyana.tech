@@ -129,53 +129,112 @@ impl BrowserPool {
             config: config.clone(),
         });
 
-        // Spawn browser event handler & automatic restarter
+        // Spawn browser event handler & automatic restarter.
+        //
+        // Failure model:
+        //   - Every time the WS stream terminates (handler.next() → None) we
+        //     increment `fail_count` and attempt a reconnect.
+        //   - Every time a reconnect *attempt* itself fails we also increment
+        //     `fail_count` (previously this path was missing the increment,
+        //     allowing infinite loops through the failure branch).
+        //   - A successful reconnect resets `fail_count` to 0 so the new
+        //     session gets a fresh 5-attempt budget.
+        //   - Backoff is exponential (2^n seconds) capped at 30 s to avoid
+        //     storm-reconnecting on rapid RST drops (ResetWithoutClosingHandshake).
         let pool_clone = pool.clone();
         tokio::spawn(async move {
             let mut current_handler = handler;
-            let mut fail_count = 0;
+            let mut fail_count: u32 = 0;
+            const MAX_FAILS: u32 = 5;
 
             loop {
+                // Drain the event stream. Any event received means the
+                // connection is alive; reset the failure counter.
                 while let Some(event) = current_handler.next().await {
-                    // Reset fail count if we are actively receiving events
-                    fail_count = 0;
+                    if fail_count > 0 {
+                        fail_count = 0;
+                    }
                     debug!("Browser event: {:?}", event);
                 }
 
-                // If handler.next() returns None, the WebSocket is dead/closed.
+                // Stream exhausted — WS is dead (incl. ResetWithoutClosingHandshake).
                 fail_count += 1;
-                tracing::error!("chromiumoxide::handler: WS Connection dropped. Auto-restart attempt {}/5", fail_count);
+                tracing::error!(
+                    fail_count,
+                    max = MAX_FAILS,
+                    "Browser WS connection dropped — scheduling reconnect"
+                );
 
-                if fail_count > 5 {
-                    tracing::error!("Browser connection completely failed after 5 retries. Shutting down application (off).");
+                if fail_count > MAX_FAILS {
+                    tracing::error!(
+                        "Browser connection failed {} consecutive times. Shutting down.",
+                        MAX_FAILS
+                    );
                     std::process::exit(1);
                 }
 
-                tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-                tracing::info!("Attempting to reconnect browser...");
+                // Exponential backoff: 2, 4, 8, 16, 30 seconds (capped).
+                let backoff_secs = std::cmp::min(2u64.pow(fail_count), 30);
+                tracing::warn!(
+                    "Reconnect attempt {}/{} in {}s…",
+                    fail_count, MAX_FAILS, backoff_secs
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(backoff_secs)).await;
 
                 match Self::connect_or_launch(&pool_clone.config).await {
                     Ok((new_browser, new_handler)) => {
-                        tracing::info!("✅ Successfully reconnected browser.");
-                        
-                        // Swap the new browser instance into the pool
-                        let mut b = pool_clone.browser.write().await;
-                        *b = Arc::new(new_browser);
-                        
-                        // Clear out old dead tabs
+                        tracing::info!("✅ Successfully reconnected browser (was fail #{}).", fail_count);
+
+                        // Reset counter — fresh budget for the new session.
+                        fail_count = 0;
+
+                        // Atomically swap in the new Browser Arc.
+                        {
+                            let mut b = pool_clone.browser.write().await;
+                            *b = Arc::new(new_browser);
+                        }
+
+                        // Discard every stale Page handle — they all reference
+                        // the old (now-dead) CDP session.
                         pool_clone.available_tabs.lock().await.clear();
+
+                        // Adopt the new event stream.
                         current_handler = new_handler;
-                        
-                        // Re-warm tabs
+
+                        // Re-warm the tab pool so the first request after a
+                        // reconnect is still fast.
                         let warm_count = std::cmp::min(5, pool_clone.config.max_tabs);
-                        for _i in 0..warm_count {
-                            if let Ok(tab) = pool_clone.create_new_tab().await {
-                                pool_clone.available_tabs.lock().await.push(tab);
+                        for _ in 0..warm_count {
+                            match pool_clone.create_new_tab().await {
+                                Ok(tab) => pool_clone.available_tabs.lock().await.push(tab),
+                                Err(e) => {
+                                    tracing::warn!("Failed to pre-warm tab after reconnect: {}", e);
+                                    break;
+                                }
                             }
                         }
+                        tracing::info!(
+                            "✅ Browser pool re-warmed with {} tabs.",
+                            pool_clone.available_tabs.lock().await.len()
+                        );
                     }
                     Err(e) => {
-                        tracing::error!("Failed to reconnect: {} (Will retry)", e);
+                        // Reconnect attempt itself failed — this counts as
+                        // another failure toward the shutdown threshold.
+                        fail_count += 1;
+                        tracing::error!(
+                            fail_count,
+                            max = MAX_FAILS,
+                            "Reconnect attempt failed: {}",
+                            e
+                        );
+                        if fail_count > MAX_FAILS {
+                            tracing::error!(
+                                "Browser reconnect failed {} consecutive times. Shutting down.",
+                                MAX_FAILS
+                            );
+                            std::process::exit(1);
+                        }
                     }
                 }
             }
