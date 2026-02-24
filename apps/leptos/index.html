@@ -126,16 +126,18 @@
           visuals: { received: 0, total: 0 },
           lastUpdate: performance.now(),
           lastBytes: 0,
-          speed: '0 B/s'
+          speed: '0 B/s',
         };
 
         function addLog(msg, color = '#818cf8') {
           const div = document.createElement('div');
-          div.className = 'text-[10px] md:text-xs font-medium tracking-wider animate-slide-up';
+          div.className =
+            'text-[10px] md:text-xs font-medium tracking-wider animate-slide-up';
           div.style.color = color;
           div.innerHTML = `<span class="text-white/30 mr-3">>_</span>${msg}`;
           logsEl.appendChild(div);
-          while (logsEl.children.length > 6) logsEl.removeChild(logsEl.firstChild);
+          while (logsEl.children.length > 6)
+            logsEl.removeChild(logsEl.firstChild);
         }
 
         function formatBytes(bytes) {
@@ -146,8 +148,9 @@
 
         function updateUI() {
           const totalReceived = stats.app.received + stats.visuals.received;
-          const totalExpected = (stats.app.total || 3000000) + (stats.visuals.total || 4500000);
-          
+          const totalExpected =
+            (stats.app.total || 3000000) + (stats.visuals.total || 4500000);
+
           const now = performance.now();
           if (now - stats.lastUpdate > 400) {
             const duration = (now - stats.lastUpdate) / 1000;
@@ -157,27 +160,32 @@
             stats.lastBytes = totalReceived;
           }
 
-          const progress = Math.min(99, Math.floor((totalReceived / totalExpected) * 100));
+          const progress = Math.min(
+            99,
+            Math.floor((totalReceived / totalExpected) * 100),
+          );
           progressEl.textContent = progress.toString().padStart(2, '0');
           statusEl.innerHTML = `<span class="text-indigo-400 font-bold">${formatBytes(totalReceived)}</span> / ${formatBytes(totalExpected)} <span class="text-white/20 px-2">|</span> <span class="text-green-400 font-bold">${stats.speed}</span>`;
         }
 
-        addLog("INITIALIZING GLOBAL_SYNC_V4...");
-        
+        addLog('INITIALIZING GLOBAL_SYNC_V4...');
+
         const safetyTimer = setTimeout(() => {
           if (overlay.style.display !== 'none') {
-            addLog("ERR: SYNC_TIMEOUT // BYPASSING_OVERLAY", "#f87171");
+            addLog('ERR: SYNC_TIMEOUT // BYPASSING_OVERLAY', '#f87171');
             overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 1000);
+            setTimeout(() => (overlay.style.display = 'none'), 1000);
           }
         }, 60000);
 
         async function fetchWithProgress(url, type) {
           try {
-            const response = await fetch(url, { cache: 'no-cache' });
+            // Remove cache: 'no-cache' to allow browser to use preloads
+            const response = await fetch(url);
             if (!response.ok) return;
 
-            stats[type].total = +response.headers.get('Content-Length') || stats[type].total;
+            stats[type].total =
+              +response.headers.get('Content-Length') || stats[type].total;
             const reader = response.body.getReader();
 
             while (true) {
@@ -225,17 +233,38 @@
           }
         })();
 
+        const hideOverlay = () => {
+          addLog('ALL_PROTOCOLS_READY // ENTERING MAINFRAME', '#4ade80');
+          progressEl.textContent = '100';
+          clearTimeout(safetyTimer);
+          setTimeout(() => {
+            overlay.style.opacity = '0';
+            setTimeout(() => (overlay.style.display = 'none'), 1000);
+          }, 500);
+        };
+
+        const tryFinish = () => {
+          // Check both the custom event flag and the promises
+          if (window.__LEPTOS_READY) {
+            Promise.all([mainWasmPromise, visualsPromise]).then(hideOverlay);
+          }
+        };
+
+        // Listen for the app being mounted from Rust
         window.addEventListener('app-ready', () => {
-          Promise.all([mainWasmPromise, visualsPromise]).then(() => {
-            addLog('ALL_PROTOCOLS_READY // ENTERING MAINFRAME', '#4ade80');
-            progressEl.textContent = '100';
-            clearTimeout(safetyTimer);
-            setTimeout(() => {
-              overlay.style.opacity = '0';
-              setTimeout(() => (overlay.style.display = 'none'), 1000);
-            }, 500);
-          });
+          window.__LEPTOS_READY = true;
+          tryFinish();
         });
+
+        // Polling as a fallback for missed events
+        const pollTimer = setInterval(() => {
+          if (window.__LEPTOS_READY) {
+            clearInterval(pollTimer);
+            tryFinish();
+          }
+        }, 100);
+
+        addLog('MOUNTING_WASM_INSTANCE...', '#4ade80');
       }
       main();
     </script>
