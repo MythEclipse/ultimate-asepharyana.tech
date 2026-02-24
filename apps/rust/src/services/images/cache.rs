@@ -483,6 +483,18 @@ impl ImageCache {
             .await
             .map_err(|e| format!("Failed to read image bytes: {}", e))?;
 
+        // Validate that we actually downloaded an image, not an HTML error page or Cloudflare challenge
+        let is_valid_image = match infer::get(&image_bytes) {
+            Some(kind) => kind.mime_type().starts_with("image/"),
+            None => false,
+        };
+
+        if !is_valid_image {
+            let trace_preview = String::from_utf8_lossy(&image_bytes).chars().take(100).collect::<String>();
+            error!("ImageCache: Original URL {}, returned non-image data (Preview: {})", original_url, trace_preview);
+            return Err("Original URL did not return a valid image buffer.".to_string());
+        }
+
         // Determine filename from URL
         let filename = self.extract_filename(original_url);
 
