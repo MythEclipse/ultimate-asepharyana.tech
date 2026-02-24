@@ -10,7 +10,9 @@ pub struct MangaItem {
     pub poster: String,
     pub chapter: String,
     pub date: String,
+    #[serde(default)]
     pub reader_count: Option<String>,
+    #[serde(default)]
     pub score: Option<String>,
     pub r#type: String,
     pub slug: String,

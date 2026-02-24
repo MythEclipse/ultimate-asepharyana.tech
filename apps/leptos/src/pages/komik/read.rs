@@ -35,7 +35,20 @@ pub fn ReadPage() -> impl IntoView {
                         <div class="glass border-b border-border/50 py-6 px-10 shadow-2xl">
                             <div class="max-w-7xl mx-auto flex items-center justify-between">
                                 <div class="flex items-center gap-8">
-                                    <a href=if !data.list_chapter.is_empty() { data.list_chapter.clone() } else { "/komik".to_string() } class="group flex items-center gap-3 px-5 py-2.5 rounded-2xl glass-subtle border border-border/50 hover:border-primary/40 transition-all">
+                                    <a 
+                                        href={
+                                            if data.list_chapter.is_empty() { 
+                                                "/komik".to_string() 
+                                            } else { 
+                                                let slug = data.list_chapter.trim_end_matches('/')
+                                                    .split('/')
+                                                    .last()
+                                                    .unwrap_or(&data.list_chapter);
+                                                format!("/komik/detail?komik_id={}", slug)
+                                            }
+                                        } 
+                                        class="group flex items-center gap-3 px-5 py-2.5 rounded-2xl glass-subtle border border-border/50 hover:border-primary/40 transition-all"
+                                    >
                                         <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
                                         </svg>

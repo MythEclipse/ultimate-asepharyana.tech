@@ -208,8 +208,13 @@ fn parse_komik_chapter_document(
     };
 
     fn get_list_chapter_from_url(chapter_url: &str) -> String {
-        let re = Regex::new(r"-chapter-\d+").unwrap();
-        re.replace_all(chapter_url, "").to_string()
+        // Find the LAST occurrence of "-chapter-" to correctly handle cases where the series title
+        // might contain "chapter" or when there are sub-chapters like "-chapter-01-1"
+        if let Some(pos) = chapter_url.rfind("-chapter-") {
+            chapter_url[..pos].to_string()
+        } else {
+            chapter_url.to_string()
+        }
     }
 
     let list_chapter = get_list_chapter_from_url(chapter_url);
