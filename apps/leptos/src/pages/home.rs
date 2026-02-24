@@ -3,7 +3,7 @@ use leptos_meta::Title;
 use leptos_router::A;
 use crate::components::logo::tech_icons::TECH_STACK;
 use crate::components::logo::social_icons::{Instagram, LinkedIn, GitHub};
-use crate::components::ui::{LoadingOverlay, GlitchText, CachedImage};
+use crate::components::ui::{GlitchText, CachedImage};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static VISUALS_READY: AtomicBool = AtomicBool::new(false);
@@ -57,9 +57,6 @@ pub fn HomePage() -> impl IntoView {
     view! {
         <Title text="Full-Stack Developer | Asep Haryana"/>
 
-        <Show when=move || !visuals_ready.get()>
-            <LoadingOverlay is_ready=visuals_ready />
-        </Show>
 
         <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: Professional Identity

@@ -22,7 +22,49 @@
   </head>
   <body>
     <canvas id="bevy"></canvas>
-    <script>
+    <script type="module">
+      async function trackProgress() {
+        const wasmLink =
+          document.querySelector('link[rel="preload"][as="fetch"]') ||
+          document.querySelector('link[rel="modulepreload"][href$=".wasm"]');
+        if (!wasmLink) return;
+
+        const wasmUrl = wasmLink.href;
+        try {
+          const response = await fetch(wasmUrl);
+          const contentLength = +response.headers.get('Content-Length');
+          const reader = response.body.getReader();
+          let receivedLength = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            receivedLength += value.length;
+
+            if (window.parent !== window) {
+              window.parent.postMessage(
+                {
+                  type: 'iframe-progress',
+                  received: receivedLength,
+                  total: contentLength,
+                  url: wasmUrl,
+                },
+                '*',
+              );
+            }
+          }
+        } catch (e) {
+          console.error('Iframe progress tracking failed', e);
+        }
+      }
+      trackProgress();
+
+      window.addEventListener('load', () => {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'iframe-ready' }, '*');
+        }
+      });
+
       // Prevent right-click context menu
       document.addEventListener('contextmenu', (event) =>
         event.preventDefault(),

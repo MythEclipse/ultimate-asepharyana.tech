@@ -1041,10 +1041,6 @@ body::before {
   display: grid;
 }
 
-.\!hidden {
-  display: none !important;
-}
-
 .hidden {
   display: none;
 }
@@ -3297,6 +3293,11 @@ body::before {
   letter-spacing: 0.1em;
 }
 
+.text-\[\#818cf8\] {
+  --tw-text-opacity: 1;
+  color: rgb(129 140 248 / var(--tw-text-opacity, 1));
+}
+
 .text-amber-500 {
   --tw-text-opacity: 1;
   color: rgb(245 158 11 / var(--tw-text-opacity, 1));
@@ -3354,6 +3355,11 @@ body::before {
 
 .text-foreground\/80 {
   color: hsl(var(--foreground) / 0.8);
+}
+
+.text-green-400 {
+  --tw-text-opacity: 1;
+  color: rgb(74 222 128 / var(--tw-text-opacity, 1));
 }
 
 .text-green-500 {
@@ -3503,6 +3509,10 @@ body::before {
   color: rgb(255 255 255 / 0.15);
 }
 
+.text-white\/20 {
+  color: rgb(255 255 255 / 0.2);
+}
+
 .text-white\/30 {
   color: rgb(255 255 255 / 0.3);
 }
@@ -3574,10 +3584,6 @@ body::before {
 
 .opacity-90 {
   opacity: 0.9;
-}
-
-.opacity-\[0\.02\] {
-  opacity: 0.02;
 }
 
 .opacity-\[0\.03\] {
