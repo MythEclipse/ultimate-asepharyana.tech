@@ -61,7 +61,7 @@ services:
   # Backend Services
   # ──────────────────────────────────────────────
   rust-api:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:sha-37fe32b
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:sha-8ef1692
     restart: always
     networks: [app-net]
     environment:
