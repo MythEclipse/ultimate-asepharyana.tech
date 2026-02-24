@@ -41,7 +41,7 @@ RUN bun install
 RUN trunk build --release --public-url "/"
 
 # Run wasm-opt manually with all features enabled
-RUN find dist -name '*.wasm' -exec wasm-opt -Os --enable-all {} -o {} \;
+RUN find dist -name '*.wasm' -exec wasm-opt -Os --all-features {} -o {} \;
 
 # runtime stage
 FROM nginx:alpine
