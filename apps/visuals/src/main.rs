@@ -7,7 +7,7 @@ use rand::RngExt;
 
 // CinematicState removed to allow infinite simulation without state transition.
 
-const BACKGROUND_STAR_COUNT: usize = 1500;
+const BACKGROUND_STAR_COUNT: usize = 800;
 
 #[derive(Debug, Clone, Copy)]
 enum PlanetType {
@@ -88,8 +88,7 @@ struct Planet {
     angle: f32,
 }
 
-#[derive(Component)]
-struct BackgroundStar;
+
 
 #[derive(Component)]
 struct CinematicCamera;
@@ -187,7 +186,7 @@ fn setup(
         DirectionalLight {
             color: Color::WHITE,
             illuminance: 15000.0,
-            shadows_enabled: true, // Re-enabled for WebGPU
+            shadows_enabled: false,
             ..default()
         },
         Transform::from_xyz(0.0, 100.0, 100.0).looking_at(Vec3::ZERO, Dir3::Y),
@@ -284,7 +283,6 @@ fn setup(
             Mesh3d(star_mesh.clone()),
             MeshMaterial3d(star_material.clone()),
             Transform::from_xyz(x, y, z),
-            BackgroundStar,
         ));
     }
 
