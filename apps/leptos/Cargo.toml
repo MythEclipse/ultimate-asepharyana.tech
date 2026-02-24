@@ -77,3 +77,11 @@ reload-port = 3003
 
 # [Optional] Command to use when running end2end tests. It will run in the background.
 end2end-cmd = "npx playwright test"
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+incremental = false
