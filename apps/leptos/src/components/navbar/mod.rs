@@ -26,7 +26,7 @@ pub fn Navbar() -> impl IntoView {
 
     view! {
         <nav class="sticky top-0 z-[100] w-full backdrop-blur-3xl bg-background/70 border-b border-border/50">
-            <div class="container mx-auto flex h-24 items-center justify-between px-8">
+            <div class="container mx-auto flex h-16 items-center justify-between px-8">
                 // Logo Protocol
                 <A href="/" class="flex items-center space-x-6 group">
                     <div class="relative">
@@ -160,13 +160,13 @@ fn NavLink(href: &'static str, label: &'static str, current_path: Memo<String>) 
         <A href=href class=move || {
             format!(
                 "px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500 rounded-xl relative group/link {}",
-                if is_active() { "text-indigo-400" } else { "text-muted-foreground hover:text-foreground hover:bg-white/5" }
+                if is_active() { "text-primary" } else { "text-muted-foreground hover:text-foreground hover:bg-white/5" }
             )
         }>
             <span class="relative z-10">{label}</span>
             <Show when=is_active>
-                <div class="absolute inset-0 bg-indigo-500/5 rounded-xl border border-indigo-500/10 animate-fade-in" />
-                <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-indigo-500 rounded-full blur-[2px] animate-pulse" />
+                <div class="absolute inset-0 bg-primary/5 rounded-xl border border-primary/10 animate-fade-in" />
+                <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-primary rounded-full blur-[2px] animate-pulse" />
             </Show>
         </A>
     }
@@ -188,7 +188,7 @@ where
             href=href 
             class=move || format!(
                 "block py-5 px-8 text-lg font-black italic uppercase tracking-tighter border rounded-3xl transition-all duration-500 active:scale-95 {}",
-                if is_active() { "bg-indigo-500/10 border-indigo-500/20 text-indigo-400" } else { "border-white/5 hover:bg-white/5 hover:border-white/10 text-muted-foreground hover:text-foreground" }
+                if is_active() { "bg-primary/10 border-primary/20 text-primary" } else { "border-white/5 hover:bg-white/5 hover:border-white/10 text-muted-foreground hover:text-foreground" }
             )
             on:click=on_click
         >

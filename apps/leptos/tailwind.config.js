@@ -79,12 +79,28 @@ module.exports = {
                 'wave': 'wave 2.5s ease-in-out infinite',
                 'morph': 'morph 10s ease-in-out infinite',
                 'tilt': 'tilt 10s infinite linear',
+                'tilt-slow': 'tilt 18s infinite linear',
+                'tilt-reverse-slow': 'tilt-reverse 22s infinite linear',
+                'marquee': 'marquee 30s linear infinite',
+                'scroll-pill': 'scroll-pill 1.5s ease-in-out infinite',
+            },
+            scale: {
+                '115': '1.15',
             },
             keyframes: {
                 tilt: {
-                    '0%, 50%, 100%': { transform: 'rotate(0deg)' },
-                    '25%': { transform: 'rotate(0.5deg)' },
-                    '75%': { transform: 'rotate(-0.5deg)' },
+                    '0%, 50%, 100%': { transform: 'rotate(0deg) translateY(0)' },
+                    '25%': { transform: 'rotate(1.5deg) translateY(-10px)' },
+                    '75%': { transform: 'rotate(-1.5deg) translateY(10px)' },
+                },
+                'tilt-reverse': {
+                    '0%, 50%, 100%': { transform: 'rotate(0deg) translateY(0)' },
+                    '25%': { transform: 'rotate(-1.5deg) translateY(10px)' },
+                    '75%': { transform: 'rotate(1.5deg) translateY(-10px)' },
+                },
+                'scroll-pill': {
+                    '0%, 100%': { transform: 'translateY(0)', opacity: '1' },
+                    '50%': { transform: 'translateY(8px)', opacity: '0.4' },
                 },
                 wave: {
                     '0%, 100%': { transform: 'rotate(0deg)' },
@@ -148,11 +164,6 @@ module.exports = {
                 marquee: {
                     '0%': { transform: 'translateX(0)' },
                     '100%': { transform: 'translateX(-50%)' },
-                },
-                tilt: {
-                    '0%, 50%, 100%': { transform: 'rotate(0deg) translateY(0)' },
-                    '25%': { transform: 'rotate(1.5deg) translateY(-10px)' },
-                    '75%': { transform: 'rotate(-1.5deg) translateY(10px)' },
                 },
             },
             backgroundImage: {

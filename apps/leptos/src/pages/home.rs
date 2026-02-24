@@ -130,22 +130,22 @@ pub fn HomePage() -> impl IntoView {
                 // Scroll Indicator
                 <div class="absolute bottom-32 left-1/2 -translate-x-1/2 animate-bounce opacity-30">
                     <div class="w-7 h-12 rounded-full border-2 border-foreground/20 flex justify-center p-2.5">
-                        <div class="w-2 h-2 rounded-full bg-indigo-500 animate-scroll-pill shadow-[0_0_10px_rgba(99,102,241,1)]" />
+                        <div class="w-2 h-2 rounded-full bg-primary animate-scroll-pill shadow-[0_0_10px_hsla(var(--primary),1)]" />
                     </div>
                 </div>
             </section>
 
             // The Arsenal: Bento-Style Grid
-            <section class="py-64 px-6 relative">
-                 <div class="max-w-7xl mx-auto space-y-40">
+            <section class="py-24 md:py-40 lg:py-56 px-6 relative">
+                 <div class="max-w-7xl mx-auto space-y-20 md:space-y-32">
                     <div class="text-center space-y-8">
-                        <div class="inline-flex items-center gap-4 px-5 py-1.5 rounded-full glass border border-white/10 text-[9px] font-black uppercase tracking-[0.6em] text-indigo-400 mb-6 shadow-2xl">
+                        <div class="inline-flex items-center gap-4 px-5 py-1.5 rounded-full glass border border-white/10 text-[9px] font-black uppercase tracking-[0.6em] text-primary mb-6 shadow-2xl">
                             "Professional Background"
                         </div>
                         <h2 class="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-none">
-                            "Technical " <GlitchText text="Stack" class="text-indigo-500" />
+                            "Technical " <GlitchText text="Stack" class="text-primary" />
                         </h2>
-                        <div class="h-2 w-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 mx-auto rounded-full shadow-glow" />
+                        <div class="h-2 w-48 bg-gradient-to-r from-primary via-accent to-primary mx-auto rounded-full shadow-glow" />
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
@@ -179,8 +179,8 @@ pub fn HomePage() -> impl IntoView {
             </section>
 
             // Featured Projects Preview
-            <section class="py-64 px-6 bg-accent/[0.02] relative">
-                <div class="max-w-7xl mx-auto space-y-40">
+            <section class="py-24 md:py-40 lg:py-56 px-6 bg-accent/[0.02] relative">
+                    <div class="max-w-7xl mx-auto space-y-20 md:space-y-32">
                     <div class="text-center space-y-8">
                         <div class="inline-flex items-center gap-4 px-5 py-1.5 rounded-full glass border border-border/20 text-[9px] font-black uppercase tracking-[0.6em] text-primary mb-6 shadow-2xl">
                             "Showcase"
@@ -233,9 +233,9 @@ pub fn HomePage() -> impl IntoView {
             </section>
 
             // Connection Section
-            <section class="py-64 px-6 overflow-hidden relative">
+            <section class="py-24 md:py-40 lg:py-56 px-6 overflow-hidden relative">
                 <div class="absolute inset-0 pointer-events-none">
-                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                 </div>
 
                 <div class="max-w-7xl mx-auto rounded-[3rem] md:rounded-[5rem] p-8 md:p-32 relative overflow-hidden glass border border-border/10 shadow-[0_80px_160px_rgba(0,0,0,0.2)] dark:shadow-[0_120px_250px_rgba(0,0,0,0.6)]">

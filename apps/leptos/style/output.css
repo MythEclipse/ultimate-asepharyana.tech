@@ -578,7 +578,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  background-image: url('/public/noise.svg');
   opacity: 0.3;
   pointer-events: none;
   z-index: 100;
@@ -1173,10 +1173,6 @@ body::before {
   height: 40rem;
 }
 
-.h-\[420px\] {
-  height: 420px;
-}
-
 .h-\[450px\] {
   height: 450px;
 }
@@ -1299,6 +1295,10 @@ body::before {
 
 .w-5 {
   width: 1.25rem;
+}
+
+.w-5\/6 {
+  width: 83.333333%;
 }
 
 .w-6 {
@@ -1649,6 +1649,20 @@ body::before {
   animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
 @keyframes ping {
   75%, 100% {
     transform: scale(2);
@@ -1678,6 +1692,22 @@ body::before {
 
 .animate-pulse-slow {
   animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes scroll-pill {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(8px);
+    opacity: 0.4;
+  }
+}
+
+.animate-scroll-pill {
+  animation: scroll-pill 1.5s ease-in-out infinite;
 }
 
 @keyframes shimmer {
@@ -1736,6 +1766,42 @@ body::before {
 
 .animate-tilt {
   animation: tilt 10s infinite linear;
+}
+
+@keyframes tilt-reverse {
+  0%, 50%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  25% {
+    transform: rotate(-1.5deg) translateY(10px);
+  }
+
+  75% {
+    transform: rotate(1.5deg) translateY(-10px);
+  }
+}
+
+.animate-tilt-reverse-slow {
+  animation: tilt-reverse 22s infinite linear;
+}
+
+@keyframes tilt {
+  0%, 50%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  25% {
+    transform: rotate(1.5deg) translateY(-10px);
+  }
+
+  75% {
+    transform: rotate(-1.5deg) translateY(10px);
+  }
+}
+
+.animate-tilt-slow {
+  animation: tilt 18s infinite linear;
 }
 
 .cursor-pointer {
@@ -1924,12 +1990,6 @@ body::before {
   margin-bottom: calc(1rem * var(--tw-space-y-reverse));
 }
 
-.space-y-40 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(10rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(10rem * var(--tw-space-y-reverse));
-}
-
 .space-y-6 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
@@ -2101,10 +2161,6 @@ body::before {
   border-color: hsl(var(--foreground) / 0.2);
 }
 
-.border-indigo-500\/10 {
-  border-color: rgb(99 102 241 / 0.1);
-}
-
 .border-indigo-500\/20 {
   border-color: rgb(99 102 241 / 0.2);
 }
@@ -2123,6 +2179,10 @@ body::before {
 
 .border-orange-500\/30 {
   border-color: rgb(249 115 22 / 0.3);
+}
+
+.border-primary\/10 {
+  border-color: hsl(var(--primary) / 0.1);
 }
 
 .border-primary\/20 {
@@ -2247,6 +2307,10 @@ body::before {
   background-color: rgb(59 130 246 / 0.1);
 }
 
+.bg-blue-500\/15 {
+  background-color: rgb(59 130 246 / 0.15);
+}
+
 .bg-blue-500\/20 {
   background-color: rgb(59 130 246 / 0.2);
 }
@@ -2329,6 +2393,10 @@ body::before {
 
 .bg-orange-500\/10 {
   background-color: rgb(249 115 22 / 0.1);
+}
+
+.bg-orange-500\/15 {
+  background-color: rgb(249 115 22 / 0.15);
 }
 
 .bg-orange-500\/20 {
@@ -2414,8 +2482,8 @@ body::before {
   background-image: linear-gradient(rgba(255,255,255,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.1) 1px,transparent 1px);
 }
 
-.bg-\[url\(\'https\:\/\/grainy-gradients\.vercel\.app\/noise\.svg\'\)\] {
-  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+.bg-\[url\(\'\/public\/noise\.svg\'\)\] {
+  background-image: url('/public/noise.svg');
 }
 
 .bg-gradient-to-b {
@@ -2666,11 +2734,6 @@ body::before {
   --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.1) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
-.via-indigo-500\/30 {
-  --tw-gradient-to: rgb(99 102 241 / 0)  var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.3) var(--tw-gradient-via-position), var(--tw-gradient-to);
-}
-
 .via-indigo-500\/5 {
   --tw-gradient-to: rgb(99 102 241 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(99 102 241 / 0.05) var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -2679,6 +2742,11 @@ body::before {
 .via-primary\/10 {
   --tw-gradient-to: hsl(var(--primary) / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--primary) / 0.1) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+.via-primary\/30 {
+  --tw-gradient-to: hsl(var(--primary) / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--primary) / 0.3) var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
 .via-purple-500 {
@@ -2842,10 +2910,6 @@ body::before {
   padding: 3rem;
 }
 
-.p-16 {
-  padding: 4rem;
-}
-
 .p-2 {
   padding: 0.5rem;
 }
@@ -2987,11 +3051,6 @@ body::before {
 .py-6 {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
-}
-
-.py-64 {
-  padding-top: 16rem;
-  padding-bottom: 16rem;
 }
 
 .py-8 {
@@ -3333,6 +3392,10 @@ body::before {
   color: hsl(var(--foreground) / 0.05);
 }
 
+.text-foreground\/60 {
+  color: hsl(var(--foreground) / 0.6);
+}
+
 .text-foreground\/80 {
   color: hsl(var(--foreground) / 0.8);
 }
@@ -3570,8 +3633,8 @@ body::before {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-.shadow-\[0_0_10px_rgba\(99\2c 102\2c 241\2c 1\)\] {
-  --tw-shadow: 0 0 10px rgba(99,102,241,1);
+.shadow-\[0_0_10px_hsla\(var\(--primary\)\2c 1\)\] {
+  --tw-shadow: 0 0 10px hsla(var(--primary),1);
   --tw-shadow-colored: 0 0 10px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
@@ -4683,6 +4746,12 @@ body::before {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.hover\:scale-\[1\.02\]:hover {
+  --tw-scale-x: 1.02;
+  --tw-scale-y: 1.02;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .hover\:scale-\[1\.03\]:hover {
   --tw-scale-x: 1.03;
   --tw-scale-y: 1.03;
@@ -4971,6 +5040,12 @@ body::before {
 .group:hover .group-hover\:scale-110 {
   --tw-scale-x: 1.1;
   --tw-scale-y: 1.1;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.group:hover .group-hover\:scale-115 {
+  --tw-scale-x: 1.15;
+  --tw-scale-y: 1.15;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -5265,6 +5340,12 @@ body::before {
     margin-bottom: calc(6rem * var(--tw-space-y-reverse));
   }
 
+  .md\:space-y-32 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(8rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(8rem * var(--tw-space-y-reverse));
+  }
+
   .md\:rounded-3xl {
     border-radius: calc(var(--radius) + 16px);
   }
@@ -5310,6 +5391,11 @@ body::before {
   .md\:py-2\.5 {
     padding-top: 0.625rem;
     padding-bottom: 0.625rem;
+  }
+
+  .md\:py-40 {
+    padding-top: 10rem;
+    padding-bottom: 10rem;
   }
 
   .md\:py-6 {
@@ -5411,6 +5497,11 @@ body::before {
 
   .lg\:flex-row {
     flex-direction: row;
+  }
+
+  .lg\:py-56 {
+    padding-top: 14rem;
+    padding-bottom: 14rem;
   }
 }
 

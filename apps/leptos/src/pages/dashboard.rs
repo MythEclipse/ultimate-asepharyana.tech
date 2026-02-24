@@ -97,15 +97,40 @@ pub fn DashboardPage() -> impl IntoView {
                         </a>
                     </section>
                     
-                    // Intelligence Feed Placeholder
+                    // Quick Links Panel
                     <section class="animate-slide-up [animation-delay:400ms]">
-                        <div class="glass-card rounded-[3rem] p-16 text-center border border-white/5 relative overflow-hidden group">
-                            <div class="absolute inset-0 bg-white/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div class="glass-card rounded-[3rem] p-10 border border-white/5 relative overflow-hidden">
+                            <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
                             <div class="relative z-10 space-y-6">
-                                <div class="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center text-5xl mx-auto shadow-2xl">"🔭"</div>
-                                <div class="space-y-2">
-                                    <h3 class="text-2xl font-black uppercase italic tracking-tighter">"No New Notifications"</h3>
-                                    <p class="text-muted-foreground/40 font-medium italic">"You have no new notifications at this time."</p>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-xl">"⚡"</div>
+                                    <h3 class="text-lg font-black uppercase tracking-[0.2em] text-foreground/60 italic">"Quick Links"</h3>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <a href="https://rust.asepharyana.tech/docs" target="_blank" rel="noopener noreferrer"
+                                        class="group flex items-center gap-4 p-5 rounded-2xl glass border border-border/10 hover:border-primary/30 transition-all hover:scale-[1.02] active:scale-95">
+                                        <div class="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center text-lg shrink-0">"🦀"</div>
+                                        <div>
+                                            <p class="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors">"Rust API"</p>
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">"Swagger Docs"</p>
+                                        </div>
+                                    </a>
+                                    <a href="https://elysia.asepharyana.tech/docs" target="_blank" rel="noopener noreferrer"
+                                        class="group flex items-center gap-4 p-5 rounded-2xl glass border border-border/10 hover:border-primary/30 transition-all hover:scale-[1.02] active:scale-95">
+                                        <div class="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center text-lg shrink-0">"🔷"</div>
+                                        <div>
+                                            <p class="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors">"Elysia API"</p>
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">"Swagger Docs"</p>
+                                        </div>
+                                    </a>
+                                    <a href="https://github.com/MythEclipse" target="_blank" rel="noopener noreferrer"
+                                        class="group flex items-center gap-4 p-5 rounded-2xl glass border border-border/10 hover:border-primary/30 transition-all hover:scale-[1.02] active:scale-95">
+                                        <div class="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center text-lg shrink-0">"🐙"</div>
+                                        <div>
+                                            <p class="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors">"GitHub"</p>
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">"Source Code"</p>
+                                        </div>
+                                    </a>
                                 </div>
                             </div>
                         </div>

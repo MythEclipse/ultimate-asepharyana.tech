@@ -24,7 +24,7 @@ pub fn ClientLayout(children: Children) -> impl IntoView {
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-primary/5 rounded-full blur-[180px] opacity-20" />
                 
                 // Static Noise layer for texture depth
-                <div class="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+                <div class="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('/public/noise.svg')]" />
             </div>
 
             <NavigationProgress/>
