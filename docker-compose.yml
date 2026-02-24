@@ -61,7 +61,7 @@ services:
   # Backend Services
   # ──────────────────────────────────────────────
   rust-api:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:sha-8b91636
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:sha-4d0cdf2
     restart: always
     networks: [app-net]
     environment:
@@ -107,7 +107,7 @@ services:
       - elysia-api
 
   leptos-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-605c112
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-4d0cdf2
     restart: always
     networks: [app-net]
     environment:
