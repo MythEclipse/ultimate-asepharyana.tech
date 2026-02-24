@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use crate::api::anime::{
     fetch_anime1_index, fetch_anime2_index
 };
-use crate::components::ui::CachedImage;
+use crate::components::ui::{CachedImage, GlitchText};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnimeItem {
@@ -226,9 +226,10 @@ pub fn AnimePage(#[prop(default = 1)] source: u8) -> impl IntoView {
                             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">{format!("Streaming Library ({})", source_title)}</span>
                         </div>
                         <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
-                            <span class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
-                                "Anime"
-                            </span>
+                            <GlitchText 
+                                text="Anime" 
+                                class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]"
+                            />
                             <span class="text-foreground/20 block translate-y-[-0.5em] scale-y-75 uppercase">"Hub"</span>
                         </h1>
                     </div>

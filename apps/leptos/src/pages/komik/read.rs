@@ -7,7 +7,10 @@ use urlencoding;
 #[component]
 pub fn ReadPage() -> impl IntoView {
     let params = use_params_map();
-    let slug = move || params.get().get("slug").cloned().unwrap_or_default();
+    let slug = move || {
+        let raw = params.get().get("slug").cloned().unwrap_or_default();
+        urlencoding::decode(&raw).unwrap_or(std::borrow::Cow::Borrowed(&raw)).into_owned()
+    };
     
     let chapter_data = create_resource(slug, |s| async move {
         if s.is_empty() { return None; }
