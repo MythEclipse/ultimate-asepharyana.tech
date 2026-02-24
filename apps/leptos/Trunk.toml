@@ -69,5 +69,5 @@ command_arguments = ["-c", "./node_modules/.bin/tailwindcss -i style/main.css -o
 
 [[proxy]]
 rewrite = "/api/"
-backend = "https://ws.asepharyana.tech/api/"
+backend = "https://rust.asepharyana.tech/api/"
 

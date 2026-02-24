@@ -14,5 +14,5 @@ pub const API_BASE_URL: &str = if cfg!(debug_assertions) {
 pub const WS_BASE_URL: &str = if cfg!(debug_assertions) {
     "ws://localhost:4091"
 } else {
-    "wss://ws.asepharyana.tech"
+    "wss://rust.asepharyana.tech"
 };
