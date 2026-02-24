@@ -180,7 +180,7 @@ pub fn provide_ws() {
 
     let connect = move || {
         let url = format!("{}/ws/chat", WS_BASE_URL);
-        tracing::info!("Connecting to WebSocket: {}", url);
+        log::info!("Connecting to WebSocket: {}", url);
         
         match WebSocket::new(&url) {
             Ok(ws) => {
@@ -199,14 +199,14 @@ pub fn provide_ws() {
 
                 // On error
                 let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
-                    tracing::error!("WebSocket error: {:?}", e);
+                    log::error!("WebSocket error: {:?}", e);
                 }) as Box<dyn FnMut(ErrorEvent)>);
                 ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
                 onerror_callback.forget();
 
                 // On close
                 let onclose_callback = Closure::wrap(Box::new(move |e: CloseEvent| {
-                    tracing::warn!("WebSocket closed: {:?}", e);
+                    log::warn!("WebSocket closed: {:?}", e);
                     // Reconnect logic could be added here with a delay
                 }) as Box<dyn FnMut(CloseEvent)>);
                 ws.set_onclose(Some(onclose_callback.as_ref().unchecked_ref()));
@@ -214,7 +214,7 @@ pub fn provide_ws() {
 
                 ws_ref.set_value(Some(ws));
             }
-            Err(e) => tracing::error!("Failed to create WebSocket: {:?}", e),
+            Err(e) => log::error!("Failed to create WebSocket: {:?}", e),
         }
     };
 
