@@ -32,12 +32,12 @@ pub fn AnimeSearchPage() -> impl IntoView {
                 // Cinematic Search Header
                 <header class="flex flex-col md:flex-row md:items-end justify-between gap-8 animate-slide-up">
                     <div class="space-y-6">
-                        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">
+                        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-border/10 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
                             "Discovery Engine"
                         </div>
                         <div class="flex items-center gap-6">
-                            <div class="w-16 h-16 rounded-[2rem] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-3xl shadow-2xl relative group overflow-hidden">
-                                <div class="absolute inset-0 bg-white/20 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-3xl" />
+                            <div class="w-16 h-16 rounded-[2rem] bg-gradient-to-br from-primary to-accent flex items-center justify-center text-3xl shadow-2xl relative group overflow-hidden">
+                                <div class="absolute inset-0 bg-primary/20 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-3xl" />
                                 <span class="relative z-10">"🔍"</span>
                             </div>
                             <div>
@@ -55,15 +55,15 @@ pub fn AnimeSearchPage() -> impl IntoView {
 
                 <Suspense fallback=move || view! { 
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-white/5 animate-pulse" /> }).collect_view()}
+                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-muted/50 animate-pulse" /> }).collect_view()}
                     </div>
                 }>
                     {move || search_results.get().flatten().map(|items| {
                         if items.is_empty() {
                             return view! {
-                                <div class="glass-card p-24 text-center rounded-[3rem] border border-white/10 max-w-2xl mx-auto space-y-8 animate-fade-in relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-blue-500/5 blur-3xl -z-10" />
-                                    <div class="w-32 h-32 rounded-[2.5rem] bg-white/5 border border-white/5 flex items-center justify-center text-6xl mx-auto shadow-2xl">"🏜️"</div>
+                                <div class="glass-card p-24 text-center rounded-[3rem] border border-border/10 max-w-2xl mx-auto space-y-8 animate-fade-in relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-primary/5 blur-3xl -z-10" />
+                                    <div class="w-32 h-32 rounded-[2.5rem] bg-muted border border-border/10 flex items-center justify-center text-6xl mx-auto shadow-2xl">"🏜️"</div>
                                     <div class="space-y-4">
                                         <h3 class="text-3xl font-black uppercase tracking-tighter italic">"No Signal Detected"</h3>
                                         <p class="text-muted-foreground/60 font-medium leading-relaxed">"The library archives don't contain any entries matching your query. Please recalibrate your search terms."</p>
@@ -105,7 +105,7 @@ fn SearchAnimeCard(item: SearchAnimeItem, index: usize, source: u8) -> impl Into
             style=delay
         >
             <a href=format!("/{}/detail/{}", prefix, item.slug) class="block relative group/card perspective-1000">
-                <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-white/5 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-blue-500/20 group-hover:border-white/20">
+                <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-border/10 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-primary/20 group-hover:border-primary/40">
                     <img 
                         src=item.poster 
                         class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115" 
@@ -113,18 +113,18 @@ fn SearchAnimeCard(item: SearchAnimeItem, index: usize, source: u8) -> impl Into
                         loading="lazy"
                     />
                     
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
                     
                     <div class="absolute bottom-0 left-0 right-0 p-6 space-y-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                         <div class="flex items-center gap-2">
-                            <span class="px-2 py-1 rounded-lg bg-blue-500/20 border border-blue-500/30 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-blue-400">
+                            <span class="px-2 py-1 rounded-lg bg-primary/20 border border-primary/30 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-primary">
                                 {item.info}
                             </span>
-                            <span class="px-2 py-1 rounded-lg bg-yellow-500/90 text-[10px] font-black uppercase tracking-widest text-black shadow-lg">
+                            <span class="px-2 py-1 rounded-lg bg-yellow-500 text-[10px] font-black uppercase tracking-widest text-foreground shadow-lg">
                                 {item.sub_info}
                             </span>
                         </div>
-                        <h3 class="text-sm font-black text-white leading-tight line-clamp-2 [text-shadow:0_4px_12px_rgba(0,0,0,0.5)] group-hover:text-blue-200 transition-colors">
+                        <h3 class="text-sm font-black text-foreground leading-tight line-clamp-2 [text-shadow:0_4px_12px_rgba(0,0,0,0.5)] group-hover:text-primary transition-colors">
                             {item.title}
                         </h3>
                     </div>

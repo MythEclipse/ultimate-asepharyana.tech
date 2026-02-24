@@ -27,9 +27,9 @@ pub fn WatchPage() -> impl IntoView {
         <main class="min-h-screen relative overflow-hidden pb-32">
             <Suspense fallback=move || view! { 
                 <div class="max-w-7xl mx-auto px-6 pt-12 space-y-12 animate-pulse">
-                    <div class="aspect-video w-full bg-white/5 rounded-[3rem]" />
-                    <div class="h-12 w-1/2 bg-white/5 rounded-2xl" />
-                    <div class="h-24 w-full bg-white/5 rounded-3xl" />
+                    <div class="aspect-video w-full bg-muted/50 rounded-[3rem]" />
+                    <div class="h-12 w-1/2 bg-muted/50 rounded-2xl" />
+                    <div class="h-24 w-full bg-muted/50 rounded-3xl" />
                 </div>
             }>
                 {move || stream_data.get().flatten().map(|data| {
@@ -42,7 +42,7 @@ pub fn WatchPage() -> impl IntoView {
                         // Cinematic Immersion Header
                         <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 animate-slide-up">
                             <div class="space-y-4">
-                                <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-widest text-blue-400">
+                                <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full glass border border-border/10 text-[10px] font-black uppercase tracking-widest text-primary">
                                     "Now Streaming"
                                 </div>
                                 <h1 class="text-4xl md:text-6xl font-black italic tracking-tighter uppercase leading-tight">
@@ -53,13 +53,13 @@ pub fn WatchPage() -> impl IntoView {
                             <div class="flex items-center gap-4">
                                 <div class="text-right hidden md:block">
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">"Chapter Index"</p>
-                                    <p class="text-2xl font-black italic text-blue-500">
+                                    <p class="text-2xl font-black italic text-primary">
                                         "EP. " {data.episode_number.clone()}
                                     </p>
                                 </div>
-                                <div class="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center text-3xl shadow-2xl relative">
+                                <div class="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-3xl shadow-2xl relative">
                                     <span class="relative z-10">"💎"</span>
-                                    <div class="absolute inset-0 bg-blue-500/20 blur-xl animate-pulse" />
+                                    <div class="absolute inset-0 bg-primary/20 blur-xl animate-pulse" />
                                 </div>
                             </div>
                         </div>
@@ -67,9 +67,9 @@ pub fn WatchPage() -> impl IntoView {
                         // Premium Video Player with Ambient Glow
                         <div class="relative group perspective-1000 animate-fade-in [animation-delay:200ms]">
                             // Ambient Glow Effect
-                            <div class="absolute -inset-4 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 rounded-[4rem] blur-[80px] opacity-40 group-hover:opacity-60 transition-opacity duration-1000" />
+                            <div class="absolute -inset-4 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-[4rem] blur-[80px] opacity-40 group-hover:opacity-60 transition-opacity duration-1000" />
                             
-                            <div class="relative aspect-video w-full rounded-[3rem] overflow-hidden bg-black border-4 border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.6)] group-hover:border-blue-500/30 transition-all duration-700">
+                            <div class="relative aspect-video w-full rounded-[3rem] overflow-hidden bg-black border-4 border-border/50 shadow-[0_50px_100px_rgba(0,0,0,0.6)] group-hover:border-primary/30 transition-all duration-700">
                                 <iframe
                                     src=data.stream_url
                                     class="w-full h-full"
@@ -88,9 +88,9 @@ pub fn WatchPage() -> impl IntoView {
                                 {move || if data.has_previous_episode && data.previous_episode.is_some() {
                                     let prev = data.previous_episode.clone().unwrap();
                                     view! {
-                                        <a href=format!("{}/{}", base_watch_path, prev.slug) class="flex items-center justify-between px-8 py-6 rounded-[2rem] glass border border-white/5 hover:border-white/20 hover:bg-white/5 transition-all group lg:min-w-[280px]">
+                                    <a href=format!("{}/{}", base_watch_path, prev.slug) class="flex items-center justify-between px-8 py-6 rounded-[2rem] glass border border-border/10 hover:border-border/30 hover:bg-muted transition-all group lg:min-w-[280px]">
                                             <div class="flex items-center gap-4">
-                                                <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-xl group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                                <div class="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-xl group-hover:bg-primary group-hover:text-white transition-all">
                                                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" />
                                                     </svg>
@@ -103,14 +103,14 @@ pub fn WatchPage() -> impl IntoView {
                                         </a>
                                     }.into_view()
                                 } else {
-                                    view! { <div class="px-8 py-6 rounded-[2rem] bg-white/2 opacity-30 border border-dashed border-white/10" /> }.into_view()
+                                    view! { <div class="px-8 py-6 rounded-[2rem] bg-muted/20 opacity-30 border border-dashed border-border/20" /> }.into_view()
                                 }}
                             </div>
 
-                            <div class="glass flex items-center justify-center px-12 py-6 rounded-[2rem] border border-white/10 shadow-xl overflow-hidden relative">
-                                <div class="absolute inset-0 bg-blue-500/5 blur-3xl" />
+                            <div class="glass flex items-center justify-center px-12 py-6 rounded-[2rem] border border-border/10 shadow-xl overflow-hidden relative">
+                                <div class="absolute inset-0 bg-primary/5 blur-3xl" />
                                 <div class="relative z-10 text-center space-y-1">
-                                    <span class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500">"Session"</span>
+                                    <span class="text-[10px] font-black uppercase tracking-[0.4em] text-primary">"Session"</span>
                                     <p class="text-2xl font-black italic tracking-tighter">
                                         "EP. "{data.episode_number.clone()}
                                     </p>
@@ -134,7 +134,7 @@ pub fn WatchPage() -> impl IntoView {
                                         </a>
                                     }.into_view()
                                 } else {
-                                    view! { <div class="px-8 py-6 rounded-[2rem] bg-white/2 opacity-30 border border-dashed border-white/10" /> }.into_view()
+                                    view! { <div class="px-8 py-6 rounded-[2rem] bg-muted/20 opacity-30 border border-dashed border-border/20" /> }.into_view()
                                 }}
                             </div>
                         </div>
@@ -148,22 +148,22 @@ pub fn WatchPage() -> impl IntoView {
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {data.download_urls.iter().map(|(res, links)| view! {
-                                    <div class="glass-card rounded-[2.5rem] p-8 space-y-6 border border-white/10 relative overflow-hidden group">
-                                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div class="glass-card rounded-[2.5rem] p-8 space-y-6 border border-border/10 relative overflow-hidden group">
+                                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                         
-                                        <div class="flex items-center justify-between border-b border-white/5 pb-4">
+                                        <div class="flex items-center justify-between border-b border-border/10 pb-4">
                                             <div class="space-y-1">
                                                 <span class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">"Resolution Level"</span>
-                                                <p class="text-2xl font-black italic text-blue-400">{res}</p>
+                                                <p class="text-2xl font-black italic text-primary">{res}</p>
                                             </div>
-                                            <div class="px-4 py-2 rounded-xl bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-500/30">
+                                            <div class="px-4 py-2 rounded-xl bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/30">
                                                 "Active Mirrors"
                                             </div>
                                         </div>
                                         
                                         <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                             {links.iter().map(|link| view! {
-                                                <a href=link.url.clone() target="_blank" class="flex items-center justify-center px-4 py-3 rounded-2xl glass-subtle border border-white/5 hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-400 transition-all text-[11px] font-black uppercase tracking-widest text-center shadow-lg group/link">
+                                                <a href=link.url.clone() target="_blank" class="flex items-center justify-center px-4 py-3 rounded-2xl glass-subtle border border-border/5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-all text-[11px] font-black uppercase tracking-widest text-center shadow-lg group/link">
                                                     <span class="group-hover/link:translate-y-[-1px] transition-transform">{link.server.clone()}</span>
                                                 </a>
                                             }).collect_view()}

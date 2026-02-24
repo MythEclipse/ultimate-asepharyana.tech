@@ -94,8 +94,8 @@ fn ProjectCard(project: Project, delay_ms: usize) -> impl IntoView {
                     <div class="absolute inset-0 bg-gradient-to-t from-card/95 via-card/30 to-transparent pointer-events-none" />
 
                     // Source/External badge — top-right
-                    <div class="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-cyan-500/20 text-[9px] font-black uppercase tracking-widest text-cyan-300">
-                        <span class="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+                    <div class="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/50 backdrop-blur-md border border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary">
+                        <span class="w-1 h-1 rounded-full bg-primary animate-pulse" />
                         {project.tag}
                     </div>
                 </div>
@@ -117,7 +117,7 @@ fn ProjectCard(project: Project, delay_ms: usize) -> impl IntoView {
                         <span class="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 group-hover:text-cyan-400 transition-colors">
                             {if is_external { "View Docs" } else { "Explore" }}
                         </span>
-                        <svg class="w-4 h-4 text-cyan-400 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 text-primary transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                     </div>
@@ -189,10 +189,10 @@ pub fn ProjectPage() -> impl IntoView {
                         <h1 class="text-7xl md:text-[9rem] font-black tracking-tighter uppercase leading-[0.9] text-center">
                             <GlitchText
                                 text="Project"
-                                class="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent"
+                                class="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent"
                             />
                         </h1>
-                        <p class="text-3xl md:text-4xl font-black uppercase tracking-[0.3em] text-white/15 text-center">
+                        <p class="text-3xl md:text-4xl font-black uppercase tracking-[0.3em] text-foreground/10 text-center">
                             "Showcase"
                         </p>
                     </div>
@@ -207,11 +207,11 @@ pub fn ProjectPage() -> impl IntoView {
 
                     // Stat strip
                     <div class="flex items-center gap-4 text-xs font-black uppercase tracking-[0.35em] text-muted-foreground/40">
-                        <div class="h-px w-16 bg-gradient-to-r from-transparent to-white/15" />
+                        <div class="h-px w-16 bg-gradient-to-r from-transparent to-border/50" />
                         "Total"
-                        <span class="text-white/80 px-3 py-1 bg-white/5 rounded-md border border-white/8">{PROJECTS.len()}</span>
+                        <span class="text-foreground/80 px-3 py-1 bg-muted/50 rounded-md border border-border/50">{PROJECTS.len()}</span>
                         "Projects"
-                        <div class="h-px w-16 bg-gradient-to-l from-transparent to-white/15" />
+                        <div class="h-px w-16 bg-gradient-to-l from-transparent to-border/50" />
                     </div>
                 </header>
 
