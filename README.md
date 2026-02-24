@@ -1,135 +1,88 @@
 # 🚀 Ultimate Asepharyana Cloud
 
-My personal portfolio monorepo – a full-stack web application showcasing various projects, APIs, and interactive features.
+A modern, high-performance distributed services architecture powering the personal portfolio and various interactive features of **Asep Haryana Saputra**.
 
-[![Turborepo](https://img.shields.io/badge/Turborepo-EF4444?style=for-the-badge&logo=turborepo&logoColor=white)](https://turbo.build/)
-[![Bun](https://img.shields.io/badge/Bun-%23000000.svg?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh/)
-[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![SolidJS](https://img.shields.io/badge/SolidJS-2c4f7c?style=for-the-badge&logo=solid&logoColor=white)](https://www.solidjs.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+This project has evolved from a monorepo into a **decoupled services architecture**, leveraging Rust, TypeScript, and Docker for maximum scalability and reliability.
 
-## 📦 Tech Stack
+---
 
-| Layer                    | Technology                       |
-| ------------------------ | -------------------------------- |
-| **Frontend**             | SolidJS, TailwindCSS, Kobalte UI |
-| **Backend (TypeScript)** | Elysia.js (Bun runtime)          |
-| **Backend (Rust)**       | Axum, SeaORM, Utoipa (OpenAPI)   |
-| **Database**             | MySQL, Redis                     |
-| **Build System**         | Turborepo + Bun Workspaces       |
-| **Documentation**        | Swagger UI (auto-generated)      |
+## 🏗️ System Architecture
 
-## 🏗️ Project Structure
+The ecosystem consists of several specialized services communicating over a shared Docker network and managed via **Docker Compose** and **Coolify**.
 
-```
-ultimate-asepharyana.cloud/
-├── apps/
-│   ├── solidjs/          # Frontend - SolidJS with SSR
-│   ├── elysia/           # Backend - Elysia.js (real-time, quiz, auth)
-│   └── rust/             # Backend - Rust Axum (scraping APIs)
-├── packages/
-│   └── services/         # Shared services (Drizzle ORM, utilities)
-└── turbo.json            # Turborepo configuration
-```
+### 🛠 Core Services
 
-## 🚀 Getting Started
+| Service                         | Technology                  | Description                                                                     |
+| :------------------------------ | :-------------------------- | :------------------------------------------------------------------------------ |
+| **[Rust API](apps/rust)**       | Rust (Axum, SeaORM)         | High-performance core backend for scraping, media proxy, and heavy computation. |
+| **[Elysia API](apps/elysia)**   | TypeScript (Elysia.js, Bun) | Real-time features, interactive quizzes (WebSocket), and session handling.      |
+| **[SolidJS Web](apps/solidjs)** | SolidJS, TailwindCSS        | The main client-side application for the portfolio and media viewer.            |
+| **[Leptos Web](apps/leptos)**   | Rust (Leptos, WASM)         | experimental high-performance frontend components compiled to WebAssembly.      |
+| **[Visuals](apps/visuals)**     | Rust (Bevy/WGPU)            | Specialized WebGL/WebGPU rendering and interactive visual experiments.          |
 
-### Prerequisites
+### 🛰 Infrastructure sidecars
 
-- [Bun](https://bun.sh/) >= 1.3.5
-- [Rust](https://rustup.rs/) (latest stable)
-- MySQL & Redis instances
+- **MySQL 8**: Primary relational data storage.
+- **Redis**: High-speed caching, session storage, and request coalescing.
+- **Minio**: S3-compatible object storage for media assets.
+- **Browserless**: Dedicated headless Chrome cluster for robust web scraping.
 
-### Installation
+---
+
+## ⚡ Deployment & CI/CD
+
+We use a **GitOps-driven deployment strategy** with automated tagging and manifest updates.
+
+### ⚓ Tagging Strategy (SHA-based)
+
+Unlike the traditional `latest` tag approach, our pipeline generates unique tags based on **GitHub Commit SHA** (`sha-<short-sha>`).
+
+1. **Build**: GitHub Actions builds individual services only if code within their directory changes.
+2. **Manifest Update**: Upon a successful build, the CI automatically updates `docker-compose.yml` with the new specific SHA tag.
+3. **Trigger**: Coolify detects the manifest change and performs a precise rolling update to the target environment.
+
+### 🚀 Local Development
+
+While each service can be run independently (via `cargo run` or `bun dev`), the entire stack is best initialized via Docker:
 
 ```bash
 # Clone the repository
 git clone https://github.com/MythEclipse/ultimate-asepharyana.cloud.git
 cd ultimate-asepharyana.cloud
 
-# Install dependencies
-bun install
-
-# Copy environment variables
-cp .env.example .env
-# Edit .env with your configuration
+# Start the entire ecosystem
+docker compose up -d
 ```
-
-### Development
-
-```bash
-# Run all apps in development mode
-bun run dev
-
-# Run specific apps
-bun run elysia:dev      # Elysia backend
-bun run rust:dev        # Rust backend
-
-# Build all apps
-bun run build
-```
-
-## 🔗 API Endpoints
-
-### Rust API (Port 4091)
-
-| Endpoint        | Description                |
-| --------------- | -------------------------- |
-| `/api/anime/*`  | Anime scraping & streaming |
-| `/api/anime2/*` | Alternative anime source   |
-| `/api/komik/*`  | Manga/comic scraping       |
-| `/api/proxy/*`  | Media proxy service        |
-| `/api/auth/*`   | Authentication endpoints   |
-| `/docs`         | Swagger UI documentation   |
-
-### Elysia API (Port 4092)
-
-| Endpoint      | Description                     |
-| ------------- | ------------------------------- |
-| `/api/quiz/*` | Real-time quiz game (WebSocket) |
-| `/api/auth/*` | User authentication             |
-| `/swagger`    | API documentation               |
-
-### SolidJS Frontend (Port 4090)
-
-| Route    | Description              |
-| -------- | ------------------------ |
-| `/`      | Landing page / Portfolio |
-| `/anime` | Anime streaming viewer   |
-| `/komik` | Manga/comic reader       |
-
-## 🛠️ Available Scripts
-
-| Script               | Description                   |
-| -------------------- | ----------------------------- |
-| `bun run dev`        | Run all apps in dev mode      |
-| `bun run build`      | Build all apps for production |
-| `bun run lint`       | Lint all packages             |
-| `bun run format`     | Format code with Prettier     |
-| `bun run rust:build` | Build Rust backend (release)  |
-| `bun run copyenv`    | Copy root .env to all apps    |
-
-## 🔧 Rust Scaffold System
-
-Generate new API endpoints quickly using the scaffold CLI:
-
-```bash
-# Create a new endpoint
-cargo run --bin scaffold -- products/list
-
-# Build to generate handler template
-cargo build
-
-# Edit the generated handler
-# src/routes/api/products/list.rs
-```
-
-See [Scaffold Documentation](apps/rust/src/bin/scaffold.md) for more details.
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
-**Author:** [Asep Haryana Saputra](https://asepharyana.cloud)
+## 🧪 Advanced Features
+
+### 🖼️ Intelligent Image Cache (Rust API)
+
+The Rust service provides a sophisticated image proxy and caching mechanism:
+
+- **Resilient Uploads**: Multi-provider failover for CDN uploads (Picser, Leapcell, Vercel).
+- **Audit & Repair**: Automated auditing via `POST /api/proxy/image-cache/audit` that verifies CDN link accessibility and re-uploads broken images.
+- **Background Caching**: Non-blocking "Lazy Mode" for instantaneous user response while ensuring eventual consistency in the CDN.
+
+### ⚙️ Scaffold System
+
+Generate new Rust endpoints with professional-grade boilerplate:
+
+```bash
+cd apps/rust
+cargo run --bin scaffold -- my-category/new-feature
+```
+
+---
+
+## 📜 Documentation
+
+- **Rust API Reference**: `https://rust.asepharyana.tech/docs`
+- **Elysia API Reference**: `https://elysia.asepharyana.tech/docs`
+
+---
+
+**Author:** [Asep Haryana Saputra](https://asepharyana.cloud)  
+**License:** MIT
