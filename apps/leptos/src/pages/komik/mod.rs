@@ -35,10 +35,11 @@ async fn fetch_komik_data() -> Option<HomeData> {
             return cached;
         }
     }
-     // Fetch all 3 sequentially for now
-    let manga_res = fetch_manga(1).await;
-    let manhwa_res = fetch_manhwa(1).await;
-    let manhua_res = fetch_manhua(1).await;
+    let (manga_res, manhwa_res, manhua_res) = futures::join!(
+        fetch_manga(1),
+        fetch_manhwa(1),
+        fetch_manhua(1)
+    );
 
     let convert = |res: Result<crate::api::komik::MangaResponse, String>| -> Vec<KomikItem> {
         match res {
@@ -99,7 +100,7 @@ fn KomikCard(item: KomikItem, index: usize) -> impl IntoView {
                     <img
                         src=item.poster
                         alt=item.title.clone()
-                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-115"
+                        class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
                         loading="lazy"
                     />
                     

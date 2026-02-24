@@ -53,6 +53,7 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "console_log",
+ "futures",
  "gloo-storage",
  "gloo-timers",
  "http 1.4.0",

@@ -2248,6 +2248,10 @@ body::before {
   background-color: hsl(var(--accent) / 0.1);
 }
 
+.bg-accent\/5 {
+  background-color: hsl(var(--accent) / 0.05);
+}
+
 .bg-accent\/\[0\.02\] {
   background-color: hsl(var(--accent) / 0.02);
 }
@@ -3417,11 +3421,6 @@ body::before {
 .text-indigo-400 {
   --tw-text-opacity: 1;
   color: rgb(129 140 248 / var(--tw-text-opacity, 1));
-}
-
-.text-indigo-500 {
-  --tw-text-opacity: 1;
-  color: rgb(99 102 241 / var(--tw-text-opacity, 1));
 }
 
 .text-indigo-500\/10 {
@@ -5040,12 +5039,6 @@ body::before {
 .group:hover .group-hover\:scale-110 {
   --tw-scale-x: 1.1;
   --tw-scale-y: 1.1;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-.group:hover .group-hover\:scale-115 {
-  --tw-scale-x: 1.15;
-  --tw-scale-y: 1.15;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
