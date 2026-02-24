@@ -151,6 +151,10 @@ impl BrowserPool {
                 // Drain the event stream. Any event received means the
                 // connection is alive; reset the failure counter.
                 while let Some(event) = current_handler.next().await {
+                    if let Err(e) = event {
+                        tracing::error!("Browser WS connection error detected in stream: {:?}", e);
+                        break;
+                    }
                     if fail_count > 0 {
                         fail_count = 0;
                     }
