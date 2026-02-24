@@ -98,7 +98,7 @@ impl Default for BrowserPoolConfig {
 /// ```
 pub struct BrowserPool {
     /// The browser instance (single process)
-    browser: Arc<Browser>,
+    browser: tokio::sync::RwLock<Arc<Browser>>,
     /// Available (idle) tabs
     available_tabs: Mutex<Vec<Arc<Page>>>,
     /// Semaphore to limit concurrent tabs
@@ -120,13 +120,99 @@ impl BrowserPool {
             config.max_tabs
         );
 
-        let (browser, mut handler) = if let Some(ref ws_url) = config.remote_websocket_url {
-            info!("🔗 Connecting to remote Chrome via CDP: {}", ws_url);
+        let (browser, handler) = Self::connect_or_launch(&config).await?;
+
+        let pool = Arc::new(Self {
+            browser: tokio::sync::RwLock::new(Arc::new(browser)),
+            available_tabs: Mutex::new(Vec::new()),
+            semaphore: Arc::new(Semaphore::new(config.max_tabs)),
+            config: config.clone(),
+        });
+
+        // Spawn browser event handler & automatic restarter
+        let pool_clone = pool.clone();
+        tokio::spawn(async move {
+            let mut current_handler = handler;
+            let mut fail_count = 0;
+
+            loop {
+                while let Some(event) = current_handler.next().await {
+                    // Reset fail count if we are actively receiving events
+                    fail_count = 0;
+                    debug!("Browser event: {:?}", event);
+                }
+
+                // If handler.next() returns None, the WebSocket is dead/closed.
+                fail_count += 1;
+                tracing::error!("chromiumoxide::handler: WS Connection dropped. Auto-restart attempt {}/5", fail_count);
+
+                if fail_count > 5 {
+                    tracing::error!("Browser connection completely failed after 5 retries. Shutting down application (off).");
+                    std::process::exit(1);
+                }
+
+                tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                tracing::info!("Attempting to reconnect browser...");
+
+                match Self::connect_or_launch(&pool_clone.config).await {
+                    Ok((new_browser, new_handler)) => {
+                        tracing::info!("✅ Successfully reconnected browser.");
+                        
+                        // Swap the new browser instance into the pool
+                        let mut b = pool_clone.browser.write().await;
+                        *b = Arc::new(new_browser);
+                        
+                        // Clear out old dead tabs
+                        pool_clone.available_tabs.lock().await.clear();
+                        current_handler = new_handler;
+                        
+                        // Re-warm tabs
+                        let warm_count = std::cmp::min(5, pool_clone.config.max_tabs);
+                        for _i in 0..warm_count {
+                            if let Ok(tab) = pool_clone.create_new_tab().await {
+                                pool_clone.available_tabs.lock().await.push(tab);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to reconnect: {} (Will retry)", e);
+                    }
+                }
+            }
+        });
+
+        info!("✅ Browser ready");
+
+        // Pre-warm tabs for faster first requests
+        // Dynamic "pool dinamis" as requested: warm up half of max tabs or at least 5
+        let warm_count = std::cmp::min(5, config.max_tabs);
+        for i in 0..warm_count {
+            match pool.create_new_tab().await {
+                Ok(tab) => {
+                    pool.available_tabs.lock().await.push(tab);
+                    debug!("Pre-warmed tab {}/{}", i + 1, warm_count);
+                }
+                Err(e) => {
+                    warn!("Failed to pre-warm tab: {}", e);
+                    break;
+                }
+            }
+        }
+        info!(
+            "✅ Browser pool initialized with {} warm tabs",
+            pool.available_tabs.lock().await.len()
+        );        Ok(pool)
+    }
+
+    /// Internal method to establish connection or launch Chrome
+    async fn connect_or_launch(config: &BrowserPoolConfig) -> anyhow::Result<(Browser, chromiumoxide::Handler)> {
+        if let Some(ref ws_url) = config.remote_websocket_url {
+            tracing::info!("🔗 Connecting to remote Chrome via CDP: {}", ws_url);
             Browser::connect(ws_url)
                 .await
-                .map_err(|e| anyhow::anyhow!("Failed to connect to remote browser at {}: {}", ws_url, e))?
+                .map_err(|e| anyhow::anyhow!("Failed to connect to remote browser at {}: {}", ws_url, e))
         } else {
-            info!("🚀 Launching local Chrome instance");
+            tracing::info!("🚀 Launching local Chrome instance");
 
             let mut browser_config = BrowserConfig::builder();
 
@@ -189,46 +275,8 @@ impl BrowserPool {
 
             Browser::launch(browser_config)
                 .await
-                .map_err(|e| anyhow::anyhow!("Failed to launch local browser: {}", e))?
-        };
-
-        // Spawn browser event handler — required regardless of local/remote mode
-        tokio::spawn(async move {
-            while let Some(event) = handler.next().await {
-                debug!("Browser event: {:?}", event);
-            }
-        });
-
-        info!("✅ Browser ready");
-
-        let pool = Arc::new(Self {
-            browser: Arc::new(browser),
-            available_tabs: Mutex::new(Vec::new()),
-            semaphore: Arc::new(Semaphore::new(config.max_tabs)),
-            config: config.clone(),
-        });
-
-        // Pre-warm tabs for faster first requests
-        // Dynamic "pool dinamis" as requested: warm up half of max tabs or at least 5
-        let warm_count = std::cmp::min(5, config.max_tabs);
-        for i in 0..warm_count {
-            match pool.create_new_tab().await {
-                Ok(tab) => {
-                    pool.available_tabs.lock().await.push(tab);
-                    debug!("Pre-warmed tab {}/{}", i + 1, warm_count);
-                }
-                Err(e) => {
-                    warn!("Failed to pre-warm tab: {}", e);
-                    break;
-                }
-            }
+                .map_err(|e| anyhow::anyhow!("Failed to launch local browser: {}", e))
         }
-        info!(
-            "✅ Browser pool initialized with {} warm tabs",
-            pool.available_tabs.lock().await.len()
-        );
-
-        Ok(pool)
     }
 
     /// Get a tab from the pool.
@@ -271,8 +319,8 @@ impl BrowserPool {
 
     /// Create a new tab.
     async fn create_new_tab(&self) -> anyhow::Result<Arc<Page>> {
-        let page = self
-            .browser
+        let browser = self.browser.read().await.clone();
+        let page = browser
             .new_page("about:blank")
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create new tab: {}", e))?;
