@@ -1,5 +1,6 @@
 use apps_leptos::AppRoot;
 use leptos::*;
+use wasm_bindgen::prelude::*;
 
 fn main() {
     // set up logging
