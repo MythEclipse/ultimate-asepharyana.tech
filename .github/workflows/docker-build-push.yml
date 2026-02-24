@@ -214,3 +214,74 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=visuals
           cache-to: type=gha,mode=max,scope=visuals
+
+  update-manifest:
+    needs:
+      [
+        changes,
+        build-rust-api,
+        build-elysia-api,
+        build-solidjs-web,
+        build-leptos-web,
+        build-visuals,
+      ]
+    if: |
+      always() &&
+      (needs.build-rust-api.result == 'success' || 
+       needs.build-elysia-api.result == 'success' || 
+       needs.build-solidjs-web.result == 'success' || 
+       needs.build-leptos-web.result == 'success' || 
+       needs.build-visuals.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Get Short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Update docker-compose.yml tags
+        run: |
+          SHA="sha-${{ steps.vars.outputs.sha_short }}"
+          echo "Updating docker-compose.yml with tag: $SHA"
+
+          # Update images only if they match the specified prefix
+          # We use a loop or multiple seds to ensure we only update what's needed
+
+          if [ "${{ needs.changes.outputs.rust-api }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:$SHA|g" docker-compose.yml
+          fi
+
+          if [ "${{ needs.changes.outputs.elysia-api }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:$SHA|g" docker-compose.yml
+          fi
+
+          if [ "${{ needs.changes.outputs.solidjs-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:$SHA|g" docker-compose.yml
+          fi
+
+          if [ "${{ needs.changes.outputs.leptos-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:$SHA|g" docker-compose.yml
+          fi
+
+          if [ "${{ needs.changes.outputs.visuals }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:$SHA|g" docker-compose.yml
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if git diff --quiet docker-compose.yml; then
+            echo "No changes to docker-compose.yml"
+          else
+            git add docker-compose.yml
+            git commit -m "chore: update docker tags to sha-${{ steps.vars.outputs.sha_short }} [skip ci]"
+            git push origin main
+          fi
