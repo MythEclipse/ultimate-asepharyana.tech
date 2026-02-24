@@ -107,7 +107,7 @@ services:
       - elysia-api
 
   leptos-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-4d0cdf2
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-0467421
     restart: always
     networks: [app-net]
     environment:
