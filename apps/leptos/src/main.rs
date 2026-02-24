@@ -10,5 +10,10 @@ fn main() {
         view! {
             <AppRoot />
         }
-    })
+    });
+
+    // Signal that the app is ready
+    if let Some(window) = web_sys::window() {
+        let _ = window.dispatch_event(&web_sys::Event::new("app-ready").unwrap());
+    }
 }
