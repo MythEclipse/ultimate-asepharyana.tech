@@ -24,7 +24,7 @@ pub fn CachedImage(
         if let Some(msg) = ws.last_message.get() {
             if let WsMessage::ImageRepaired { original_url, cdn_url } = msg {
                 if original_url == src_for_refresh {
-                    tracing::info!("Real-time refresh triggered for: {}", src_for_refresh);
+                    log::info!("Real-time refresh triggered for: {}", src_for_refresh);
                     set_active_src.set(cdn_url);
                     set_error.set(false);
                     set_loaded.set(false); // Retrigger animation
@@ -70,10 +70,10 @@ pub fn CachedImage(
                         let url = src.clone();
                         
                         spawn_local(async move {
-                            tracing::info!("Image failed to load, auditing: {}", url);
+                            log::info!("Image failed to load, auditing: {}", url);
                             match audit_image_cache(url.clone()).await {
                                 Ok(res) => {
-                                    tracing::info!("Audit successful: {}", res.message);
+                                    log::info!("Audit successful: {}", res.message);
                                     if res.re_uploaded {
                                         // Reset error and try reloading
                                         set_error.set(false);
@@ -84,7 +84,7 @@ pub fn CachedImage(
                                         }
                                     }
                                 }
-                                Err(e) => tracing::error!("Audit failed: {}", e),
+                                Err(e) => log::error!("Audit failed: {}", e),
                             }
                         });
                     }
