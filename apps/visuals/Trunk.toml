@@ -2,9 +2,7 @@
 target = "index.html"
 dist = "dist"
 public_url = "/"
-# Disable trunk's built-in wasm-opt; we run binaryen manually in Dockerfile
-# with --enable-bulk-memory --enable-nontrapping-float-to-int
-wasm_opt = false
+wasm_opt = "z"
 
 [serve]
 addresses = ["127.0.0.1"]
