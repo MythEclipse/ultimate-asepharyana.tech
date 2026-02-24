@@ -107,7 +107,7 @@ services:
       - elysia-api
 
   leptos-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-8ed3a5c
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-6f19f7f
     restart: always
     networks: [app-net]
     environment:
@@ -116,7 +116,7 @@ services:
       - rust-api
 
   visuals:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:sha-591451c
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:sha-6f19f7f
     restart: always
     networks: [app-net]
     # No host ports — Coolify routes traffic via Docker network
