@@ -45,8 +45,9 @@ pub fn CachedImage(
             </Show>
             
             <Show when=move || error.get()>
-                 <div class=format!("{} flex items-center justify-center text-muted-foreground", fallback_cls_err)>
-                    "Failed to load image"
+                <div class=format!("absolute inset-0 {} flex flex-col items-center justify-center gap-2 text-center", fallback_cls_err)>
+                    <span class="text-2xl opacity-40">{"🖼️"}</span>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">{"Unavailable"}</p>
                 </div>
             </Show>
 
