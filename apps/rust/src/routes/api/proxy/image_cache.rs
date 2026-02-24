@@ -264,26 +264,66 @@ pub async fn audit_image_cache(
     let cdn_url_opt = cache.get_cdn_url(&req.url).await;
     
     if let Some(cdn_url) = &cdn_url_opt {
-        // Check if accessible
+        // Download and validate the full image
         let client = crate::infra::http_client::http_client().client();
-        let is_accessible = match client.head(cdn_url).send().await {
-            Ok(resp) => resp.status().is_success(),
-            Err(_) => false,
+        let mut is_accessible_and_valid = false;
+        
+        match client.get(cdn_url.clone()).send().await {
+            Ok(resp) if resp.status().is_success() => {
+                if let Ok(bytes) = resp.bytes().await {
+                    // Perform structural verification using the image crate
+                    if image::load_from_memory(&bytes).is_ok() {
+                        is_accessible_and_valid = true;
+                    } else {
+                        tracing::warn!("CDN URL {} for {} returned invalid/corrupt image data.", cdn_url, req.url);
+                    }
+                }
+            },
+            Ok(resp) => tracing::warn!("CDN URL {} returned status {}", cdn_url, resp.status()),
+            Err(e) => tracing::warn!("CDN URL {} failed to fetch: {}", cdn_url, e),
         };
 
-        if is_accessible {
+        if is_accessible_and_valid {
             return Json(AuditImageCacheResponse {
                 success: true,
                 original_url: req.url,
                 cdn_url: Some(cdn_url.clone()),
                 was_accessible: true,
                 re_uploaded: false,
-                message: "CDN URL is accessible".to_string(),
+                message: "CDN URL is accessible and the image is valid".to_string(),
             });
         }
 
-        // Not accessible, invalidate and re-upload
-        tracing::info!("CDN URL {} for {} is inaccessible, re-uploading...", cdn_url, req.url);
+        // Image is either unaccessible or corrupted, meaning we need to purge the cache, delete the source from Github (if possible), and re-upload
+        tracing::info!("CDN URL {} for {} is inaccessible/corrupted, purging from github and re-uploading...", cdn_url, req.url);
+        
+        // 1. Send DELETE request to Picser to purge the file from GitHub
+        let picser_delete_url = "https://picser.asepharyana.tech/api/upload";
+        
+        // Extract filename from the CDN URL
+        let filename = cdn_url.split('/').last().unwrap_or_default().to_string();
+        
+        if !filename.is_empty() {
+             let delete_payload = serde_json::json!({ "filename": filename });
+             match client.delete(picser_delete_url)
+                .json(&delete_payload)
+                .send()
+                .await 
+             {
+                 Ok(resp) => {
+                     if resp.status().is_success() {
+                         tracing::info!("Successfully deleted {} via Picser API", filename);
+                     } else {
+                         tracing::warn!("Failed to delete {} via Picser API. Status: {}", filename, resp.status());
+                     }
+                 },
+                 Err(e) => {
+                     tracing::warn!("Failed to call Picser DELETE API for {}: {}", filename, e);
+                 }
+             }
+        }
+        
+        // 2. Invalidate local database/redis cache
         let _ = cache.invalidate(&req.url).await;
         
         match cache.get_or_cache(&req.url).await {
