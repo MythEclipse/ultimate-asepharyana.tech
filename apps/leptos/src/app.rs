@@ -9,7 +9,6 @@ use crate::pages::sosmed::SosmedPage;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
-use http::StatusCode;
 
 use crate::components::layout::ClientLayout;
 use crate::components::ui::{ErrorFallback, PageTransition};

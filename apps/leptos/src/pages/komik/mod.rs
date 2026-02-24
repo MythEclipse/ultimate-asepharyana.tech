@@ -94,7 +94,7 @@ fn KomikCard(item: KomikItem, index: usize) -> impl IntoView {
                 href=format!("/komik/detail?komik_id={}", item.slug)
                 class="block relative group/card perspective-1000"
             >
-                <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-white/5 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-orange-500/20 group-hover:border-white/20">
+                <div class="relative aspect-[3/4.2] rounded-[2rem] overflow-hidden bg-muted border border-border/50 shadow-2xl transition-all duration-700 hover-tilt group-hover:shadow-primary/20 group-hover:border-primary/40">
                     // Poster with parallax zoom
                     <img
                         src=item.poster
@@ -104,16 +104,16 @@ fn KomikCard(item: KomikItem, index: usize) -> impl IntoView {
                     />
                     
                     // Glassy Overlay
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
                     
                     // Top Badges
                     <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
                         <Show when=move || has_score>
-                            <div class="glass-subtle px-3 py-1.5 rounded-xl border border-white/20 text-xs font-black text-yellow-500 flex items-center gap-1.5 shadow-2xl">
+                            <div class="glass-subtle px-3 py-1.5 rounded-xl border border-border/20 text-xs font-black text-yellow-500 flex items-center gap-1.5 shadow-2xl">
                                 "⭐" {score_text.clone()}
                             </div>
                         </Show>
-                        <div class=format!("glass px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-white shadow-2xl bg-gradient-to-br {}", type_bg)>
+                        <div class=format!("glass px-3 py-1.5 rounded-xl border border-border/10 text-[10px] font-black uppercase tracking-widest text-foreground shadow-2xl bg-gradient-to-br {}", type_bg)>
                             {item.r#type.clone()}
                         </div>
                     </div>
@@ -127,7 +127,7 @@ fn KomikCard(item: KomikItem, index: usize) -> impl IntoView {
                             </div>
                         </Show>
                         
-                        <h3 class="text-lg font-black text-white leading-tight line-clamp-2 [text-shadow:0_4px_12px_rgba(0,0,0,0.5)] group-hover:text-orange-200 transition-colors">
+                        <h3 class="text-lg font-black text-foreground leading-tight line-clamp-2 [text-shadow:0_4px_12px_rgba(0,0,0,0.5)] group-hover:text-primary transition-colors">
                             {item.title}
                         </h3>
                     </div>
@@ -164,7 +164,7 @@ fn SectionHeader(
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
                     <div class=format!("w-16 h-16 rounded-3xl bg-gradient-to-br {} flex items-center justify-center text-3xl shadow-2xl relative group overflow-hidden", gradient)>
-                        <div class="absolute inset-0 bg-white/20 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-2xl" />
+                        <div class="absolute inset-0 bg-foreground/10 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full blur-2xl" />
                         <span class="relative z-10">{emoji}</span>
                     </div>
                     <div>
@@ -177,7 +177,7 @@ fn SectionHeader(
             </div>
              <a
                 href=href
-                class="group flex items-center gap-4 px-8 py-4 rounded-2xl glass border border-white/10 text-foreground font-black uppercase tracking-widest text-sm hover:border-white/40 transition-all hover:scale-105 active:scale-95"
+                class="group flex items-center gap-4 px-8 py-4 rounded-2xl glass border border-border/10 text-foreground font-black uppercase tracking-widest text-sm hover:border-border/40 transition-all hover:scale-105 active:scale-95"
             >
                 "View Library"
                 <svg class="w-5 h-5 group-hover:translate-x-2 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -200,9 +200,9 @@ pub fn KomikPage() -> impl IntoView {
                 // Cinematic Header
                 <header class="text-center space-y-12 animate-fade-in">
                     <div class="space-y-6">
-                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-white/10 shadow-2xl">
-                             <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">"Latest Updates"</span>
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full glass border border-border/10 shadow-2xl">
+                             <div class="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">"Latest Updates"</span>
                         </div>
                         <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase italic line-height-1 mt-4">
                             <span class="bg-gradient-to-r from-orange-400 via-red-500 to-pink-400 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
@@ -215,7 +215,7 @@ pub fn KomikPage() -> impl IntoView {
                     // Premium Search Bar
                     <div class="max-w-3xl mx-auto relative group">
                         <div class="absolute -inset-1 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-[2.5rem] opacity-20 blur-2xl group-focus-within:opacity-50 transition-opacity duration-700" />
-                        <form action="/komik/search" method="get" class="relative flex gap-4 p-2 rounded-[2.5rem] glass border border-white/20 shadow-2xl backdrop-blur-3xl">
+                        <form action="/komik/search" method="get" class="relative flex gap-4 p-2 rounded-[2.5rem] glass border border-border/20 shadow-2xl backdrop-blur-3xl">
                             <input
                                 type="text"
                                 name="q"
@@ -234,14 +234,14 @@ pub fn KomikPage() -> impl IntoView {
                     </div>
 
                     // Refined Category Tabs
-                    <div class="flex justify-center gap-4 flex-wrap animate-fade-in [animation-delay:200ms]">
-                        <a href="/komik/manga/page/1" class="px-8 py-4 rounded-2xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-orange-500/10 hover:text-orange-500 transition-all hover:-translate-y-1">
+                     <div class="flex justify-center gap-4 flex-wrap animate-fade-in [animation-delay:200ms]">
+                        <a href="/komik/manga/page/1" class="px-8 py-4 rounded-2xl glass border border-border/10 text-xs font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all hover:-translate-y-1">
                             "📚 Manga"
                         </a>
-                        <a href="/komik/manhwa/page/1" class="px-8 py-4 rounded-2xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-blue-500/10 hover:text-blue-500 transition-all hover:-translate-y-1">
+                        <a href="/komik/manhwa/page/1" class="px-8 py-4 rounded-2xl glass border border-border/10 text-xs font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all hover:-translate-y-1">
                             "🇰🇷 Manhwa"
                         </a>
-                        <a href="/komik/manhua/page/1" class="px-8 py-4 rounded-2xl glass border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-red-500/10 hover:text-red-500 transition-all hover:-translate-y-1">
+                        <a href="/komik/manhua/page/1" class="px-8 py-4 rounded-2xl glass border border-border/10 text-xs font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all hover:-translate-y-1">
                             "🇨🇳 Manhua"
                         </a>
                     </div>
@@ -249,7 +249,7 @@ pub fn KomikPage() -> impl IntoView {
 
                 <Suspense fallback=move || view! { 
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-white/5 animate-pulse" /> }).collect_view()}
+                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-muted/50 animate-pulse" /> }).collect_view()}
                     </div>
                 }>
                     <Show when=move || data.get().flatten().is_some() fallback=move || view! { 
