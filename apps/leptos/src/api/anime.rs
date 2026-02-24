@@ -7,28 +7,43 @@ use urlencoding;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Anime1OngoingItem {
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub slug: String,
+    #[serde(default)]
     pub poster: String,
+    #[serde(default)]
     pub current_episode: String,
+    #[serde(default)]
     pub anime_url: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Anime2OngoingItem {
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub slug: String,
+    #[serde(default)]
     pub poster: String,
+    #[serde(default)]
     pub score: String,
+    #[serde(default)]
     pub anime_url: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Anime2CompleteItem {
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub slug: String,
+    #[serde(default)]
     pub poster: String,
+    #[serde(default)]
     pub episode_count: String,
+    #[serde(default)]
     pub anime_url: String,
 }
 
@@ -212,14 +227,21 @@ pub struct DownloadGroup {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnimeDetailData {
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub alternative_title: String,
+    #[serde(default)]
     pub poster: String,
     pub r#type: Option<String>,
     pub status: Option<String>,
+    #[serde(default)]
     pub release_date: String,
+    #[serde(default)]
     pub studio: String,
+    #[serde(default)]
     pub genres: Vec<Genre>,
+    #[serde(default)]
     pub synopsis: String,
     #[serde(default)]
     pub episode_lists: Vec<EpisodeList>,
@@ -233,26 +255,43 @@ pub struct AnimeDetailData {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Anime1SearchItem {
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub slug: String,
+    #[serde(default)]
     pub poster: String,
+    #[serde(default)]
     pub episode: String,
+    #[serde(default)]
     pub anime_url: String,
+    #[serde(default)]
     pub genres: Vec<String>,
+    #[serde(default)]
     pub status: String,
+    #[serde(default)]
     pub rating: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Anime2SearchItem {
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub slug: String,
+    #[serde(default)]
     pub poster: String,
+    #[serde(default)]
     pub description: String,
+    #[serde(default)]
     pub anime_url: String,
+    #[serde(default)]
     pub genres: Vec<String>,
+    #[serde(default)]
     pub rating: String,
+    #[serde(default)]
     pub r#type: String,
+    #[serde(default)]
     pub season: String,
 }
 
@@ -310,14 +349,20 @@ pub struct DownloadLink {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnimeFullData {
+    #[serde(default)]
     pub episode: String,
+    #[serde(default)]
     pub episode_number: String,
     pub anime: AnimeInfo,
+    #[serde(default)]
     pub has_next_episode: bool,
+    #[serde(default)]
     pub has_previous_episode: bool,
+    #[serde(default)]
     pub stream_url: String,
     #[serde(default)]
     pub download_urls: std::collections::HashMap<String, Vec<DownloadLink>>,
+    #[serde(default)]
     pub image_url: String,
     pub next_episode: Option<EpisodeInfo>,
     pub previous_episode: Option<EpisodeInfo>,

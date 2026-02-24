@@ -59,7 +59,15 @@ const PROJECTS: &[Project] = &[
 #[component]
 fn CardSkeleton() -> impl IntoView {
     view! {
-        <div class="w-full rounded-2xl bg-white/5 animate-pulse border border-white/5 h-[420px]" />
+        <div class="w-full rounded-2xl bg-white/5 animate-pulse border border-white/5 flex flex-col overflow-hidden">
+            <div class="h-52 bg-white/8 shrink-0" />
+            <div class="p-6 space-y-3 flex-1">
+                <div class="h-7 w-3/4 bg-white/8 rounded-lg" />
+                <div class="h-4 w-full bg-white/5 rounded-lg" />
+                <div class="h-4 w-5/6 bg-white/5 rounded-lg" />
+                <div class="h-4 w-2/3 bg-white/5 rounded-lg mt-auto" />
+            </div>
+        </div>
     }
 }
 
