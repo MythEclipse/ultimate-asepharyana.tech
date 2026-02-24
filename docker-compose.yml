@@ -61,7 +61,7 @@ services:
   # Backend Services
   # ──────────────────────────────────────────────
   rust-api:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:sha-5ebf569
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/rust-api:sha-8b91636
     restart: always
     networks: [app-net]
     environment:
@@ -77,7 +77,7 @@ services:
         condition: service_started
 
   elysia-api:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/elysia-api:sha-f2ac7ae
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/elysia-api:sha-8b91636
     restart: always
     networks: [app-net]
     environment:
@@ -96,7 +96,7 @@ services:
   # Frontend Services
   # ──────────────────────────────────────────────
   solidjs-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/solidjs-web:sha-f2ac7ae
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/solidjs-web:sha-8b91636
     restart: always
     networks: [app-net]
     environment:
@@ -107,7 +107,7 @@ services:
       - elysia-api
 
   leptos-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-6f19f7f
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/leptos-web:sha-8b91636
     restart: always
     networks: [app-net]
     environment:
@@ -116,7 +116,7 @@ services:
       - rust-api
 
   visuals:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:sha-6f19f7f
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:sha-8b91636
     restart: always
     networks: [app-net]
     # No host ports — Coolify routes traffic via Docker network
