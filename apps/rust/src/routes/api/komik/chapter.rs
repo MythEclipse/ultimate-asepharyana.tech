@@ -9,7 +9,6 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Query, Json, Router};
 
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{info};
