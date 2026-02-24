@@ -18,6 +18,25 @@ pub fn HomePage() -> impl IntoView {
             return;
         }
 
+        // Immediately mark ready on mobile (no iframe = no PROTOCOL_READY ever)
+        #[cfg(feature = "csr")]
+        {
+            use web_sys::window;
+            if let Some(win) = window() {
+                let is_mobile = win
+                    .match_media("(max-width: 767px)")
+                    .ok()
+                    .flatten()
+                    .map(|m| m.matches())
+                    .unwrap_or(false);
+                if is_mobile {
+                    set_visuals_ready.set(true);
+                    VISUALS_READY.store(true, Ordering::Relaxed);
+                    return;
+                }
+            }
+        }
+
         #[cfg(feature = "csr")]
         {
             use wasm_bindgen::prelude::*;
@@ -61,12 +80,14 @@ pub fn HomePage() -> impl IntoView {
         <main class="relative z-10 w-full overflow-hidden">
             // Hero Section: Professional Identity
             <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-32 relative group overflow-hidden scanlines">
-                // Bevy Visuals Integration
-                <iframe
-                    src={visuals_url}
-                    class="absolute inset-0 w-full h-full border-0 -z-10 opacity-60 mix-blend-screen pointer-events-none grayscale brightness-150 dark:brightness-100 dark:mix-blend-screen mix-blend-multiply"
-                    title="Neural Particle Simulation"
-                />
+                // Bevy Visuals Integration — desktop only (too heavy for mobile bandwidth)
+                <div class="absolute inset-0 -z-10 hidden md:block">
+                    <iframe
+                        src={visuals_url}
+                        class="w-full h-full border-0 opacity-60 mix-blend-screen pointer-events-none grayscale brightness-150 dark:brightness-100 dark:mix-blend-screen mix-blend-multiply"
+                        title="Neural Particle Simulation"
+                    />
+                </div>
 
                 <div class="absolute inset-0 opacity-40 pointer-events-none">
                     <div class="absolute top-1/4 left-1/4 w-[50rem] h-[50rem] bg-primary/20 rounded-full blur-[160px] animate-pulse-slow" />

@@ -236,7 +236,7 @@ pub fn AnimePage(#[prop(default = 1)] source: u8) -> impl IntoView {
 
                     // Premium Search Bar
                     <div class="max-w-3xl mx-auto relative group">
-                        <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-[2.5rem] opacity-20 blur-2xl group-focus-within:opacity-50 transition-opacity duration-700" />
+                        <div class="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-[2.5rem] opacity-20 blur-2xl group-focus-within:opacity-50 transition-opacity duration-700" />
                          <form action=format!("/anime{}/search", if source == 2 { "2" } else { "" }) method="get" class="relative flex gap-4 p-2 rounded-[2.5rem] glass border border-border/20 shadow-2xl backdrop-blur-3xl">
                             <input
                                 type="text"

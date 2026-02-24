@@ -591,3 +591,47 @@
   mask-image: linear-gradient(to top, black 80%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, black 80%, transparent 100%);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Mobile Performance Optimizations
+   backdrop-filter: blur() is the single most expensive CSS operation
+   on mobile GPUs — degrade gracefully below the md breakpoint.
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Reduce noise texture cost */
+  body::before {
+    opacity: 0.08;
+  }
+
+  /* Scanlines are imperceptible on small screens — remove the layer */
+  .scanlines::before {
+    display: none;
+  }
+
+  /* Downgrade glass blur from 24px→8px. Visual difference is minimal
+     because mobile viewports are smaller and elements are smaller. */
+  .glass {
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+  }
+
+  .glass-subtle {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .glass-card {
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+  }
+
+  /* Disable expensive blur-[n]px utility overrides on mobile */
+  .blur-\[180px\],
+  .blur-\[160px\],
+  .blur-\[140px\],
+  .blur-\[120px\],
+  .blur-\[80px\] {
+    filter: blur(40px);
+  }
+}
+
