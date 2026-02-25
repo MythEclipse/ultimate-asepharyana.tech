@@ -9,6 +9,8 @@ use crate::pages::sosmed::SosmedPage;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 
 use crate::components::layout::ClientLayout;
 use crate::components::ui::{ErrorFallback, PageTransition};
@@ -19,6 +21,30 @@ use crate::pages::komik::KomikPage;
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+
+    // Dispatch `leptos-content-ready` once after the first reactive render
+    // cycle completes. Index.html waits for this (not `app-ready`) to hide
+    // the initial loading overlay, so the overlay covers both WASM download
+    // AND the first data fetch — resulting in ONE seamless loading screen.
+    create_effect(move |_| {
+        if let Some(window) = web_sys::window() {
+            let cb = Closure::once(move || {
+                if let Some(w) = web_sys::window() {
+                    let _ = w.dispatch_event(
+                        &web_sys::Event::new("leptos-content-ready").unwrap(),
+                    );
+                }
+            });
+            // Use a short delay so Suspense fallbacks have time to resolve
+            // for fast connections; on slow ones the overlay stays until data comes
+            let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+                cb.as_ref().unchecked_ref(),
+                100,
+            );
+            cb.forget();
+        }
+    });
+
     view! {
         <Router>
             <ErrorBoundary fallback=move |err| {

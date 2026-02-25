@@ -2,6 +2,8 @@ use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
 use crate::api::komik::{search_komik, MangaItem};
+use crate::components::ui::PageLoadingOverlay;
+
 
 #[component]
 pub fn KomikSearchPage() -> impl IntoView {
@@ -42,11 +44,8 @@ pub fn KomikSearchPage() -> impl IntoView {
                     </div>
                 </header>
 
-                <Suspense fallback=move || view! { 
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-muted/50 animate-pulse" /> }).collect_view()}
-                    </div>
-                }>
+                <Suspense fallback=move || view! { <PageLoadingOverlay label="SEARCH" /> }>
+
                     {move || search_results.get().flatten().map(|res| {
                         let items = res.data;
                         if items.is_empty() {

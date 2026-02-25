@@ -2,6 +2,8 @@ use leptos::*;
 use leptos_meta::Title;
 use leptos_router::*;
 use crate::api::anime::fetch_anime_stream;
+use crate::components::ui::PageLoadingOverlay;
+
 
 #[component]
 pub fn WatchPage() -> impl IntoView {
@@ -25,13 +27,8 @@ pub fn WatchPage() -> impl IntoView {
 
     view! {
         <main class="min-h-screen relative overflow-hidden pb-32">
-            <Suspense fallback=move || view! { 
-                <div class="max-w-7xl mx-auto px-6 pt-12 space-y-12 animate-pulse">
-                    <div class="aspect-video w-full bg-muted/50 rounded-[3rem]" />
-                    <div class="h-12 w-1/2 bg-muted/50 rounded-2xl" />
-                    <div class="h-24 w-full bg-muted/50 rounded-3xl" />
-                </div>
-            }>
+            <Suspense fallback=move || view! { <PageLoadingOverlay label="EPISODE" /> }>
+
                 {move || stream_data.get().flatten().map(|data| {
                     let base_watch_path = if is_anime2() { "/anime2/watch" } else { "/anime/watch" };
 

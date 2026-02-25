@@ -2,7 +2,9 @@ use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
 use crate::api::komik::fetch_chapter;
+use crate::components::ui::PageLoadingOverlay;
 use urlencoding;
+
 
 #[component]
 pub fn ReadPage() -> impl IntoView {
@@ -21,12 +23,8 @@ pub fn ReadPage() -> impl IntoView {
 
     view! {
         <main class="min-h-screen bg-background text-foreground selection:bg-primary/30">
-            <Suspense fallback=move || view! { 
-                <div class="h-screen flex flex-col items-center justify-center space-y-6 animate-pulse">
-                    <div class="w-20 h-20 rounded-3xl bg-muted border border-border/50 flex items-center justify-center text-3xl">"📖"</div>
-                    <div class="text-xs font-black uppercase tracking-[0.4em] opacity-40">"Synchronizing Scroll"</div>
-                </div> 
-            }>
+            <Suspense fallback=move || view! { <PageLoadingOverlay label="CHAPTER" /> }>
+
                 {move || chapter_data.get().flatten().map(|data| view! {
                     <Title text=format!("{} | Reader Mode", data.title)/>
                     

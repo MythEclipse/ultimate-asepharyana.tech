@@ -2,7 +2,8 @@ use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
 use crate::api::komik::fetch_komik_detail;
-use crate::components::ui::CachedImage;
+use crate::components::ui::{CachedImage, PageLoadingOverlay};
+
 
 #[component]
 pub fn KomikDetailPage() -> impl IntoView {
@@ -16,17 +17,8 @@ pub fn KomikDetailPage() -> impl IntoView {
 
     view! {
         <main class="min-h-screen relative overflow-hidden pb-40">
-            <Suspense fallback=move || view! { 
-                <div class="max-w-7xl mx-auto px-6 pt-12 animate-pulse space-y-12">
-                    <div class="flex flex-col md:flex-row gap-12">
-                        <div class="w-80 h-[450px] bg-muted/50 rounded-[2.5rem]" />
-                        <div class="flex-1 space-y-8">
-                            <div class="h-16 w-3/4 bg-muted/50 rounded-2xl" />
-                            <div class="h-32 w-full bg-muted/50 rounded-3xl" />
-                        </div>
-                    </div>
-                </div>
-            }>
+            <Suspense fallback=move || view! { <PageLoadingOverlay label="MANGA" /> }>
+
                 {move || komik_data.get().flatten().map(|data| view! {
                     <Title text=format!("{} | Reader Hub", data.title)/>
                     
