@@ -213,33 +213,110 @@ pub fn HomePage() -> impl IntoView {
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
-                         <div class="glass-card p-10 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border border-border/10 space-y-6 group hover:border-primary/30 transition-all duration-700">
-                            <div class="h-40 md:h-48 rounded-[1.5rem] md:rounded-[2rem] bg-primary/5 border border-border/10 overflow-hidden">
-                                <img src="/public/project-rust.png" alt="Rust API" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                            </div>
-                            <div class="space-y-4">
-                                <h3 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter">"Rust Infrastructure"</h3>
-                                <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed">"High-performance backend systems built with memory-safe Rust architecture."</p>
-                            </div>
+
+                         // ── Card 01: Rust Infrastructure ──
+                         <div class="group relative">
+                             // Ambient glow behind card
+                             <div class="absolute -inset-px rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary/40 via-accent/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl pointer-events-none" />
+                             <div class="relative glass-card rounded-[2.5rem] md:rounded-[3rem] border border-border/10 group-hover:border-primary/50 transition-all duration-700 overflow-hidden flex flex-col">
+                                 // Image block
+                                 <div class="relative h-52 md:h-60 overflow-hidden">
+                                     <img src="/public/project-rust.png" alt="Rust API" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                     // Number badge
+                                     <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-black uppercase tracking-[0.35em] text-primary">"01"</span>
+                                     // Category chip
+                                     <span class="absolute top-4 right-4 px-3 py-1 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 text-[9px] font-black uppercase tracking-[0.3em] text-primary">"Backend"</span>
+                                 </div>
+                                 // Content block
+                                 <div class="p-8 md:p-10 flex flex-col gap-5 flex-1">
+                                     <div class="space-y-2">
+                                         <h3 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter leading-tight group-hover:text-primary transition-colors duration-500">"Rust Infrastructure"</h3>
+                                         <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed">"High-performance backend systems built with memory-safe Rust architecture. Zero-cost abstractions at scale."</p>
+                                     </div>
+                                     // Tech badges
+                                     <div class="flex flex-wrap gap-2">
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"Rust"</span>
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"Axum"</span>
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"SeaORM"</span>
+                                     </div>
+                                     // CTA
+                                     <div class="mt-auto pt-4 border-t border-border/10">
+                                         <A href="/project" class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.35em] text-primary group-hover:gap-4 transition-all duration-500">
+                                             "View Project"
+                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                             </svg>
+                                         </A>
+                                     </div>
+                                 </div>
+                             </div>
                          </div>
-                         <div class="glass-card p-10 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border border-border/10 space-y-6 group hover:border-primary/30 transition-all duration-700">
-                            <div class="h-40 md:h-48 rounded-[1.5rem] md:rounded-[2rem] bg-primary/5 border border-border/10 overflow-hidden">
-                                <img src="/public/project-elysia.png" alt="Elysia API" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                            </div>
-                            <div class="space-y-4">
-                                <h3 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter">"Elysia Discovery"</h3>
-                                <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed">"Scalable API services featuring ultra-fast response times and full OpenAPI documentation."</p>
-                            </div>
+
+                         // ── Card 02: Elysia Discovery ──
+                         <div class="group relative">
+                             <div class="absolute -inset-px rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-accent/40 via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl pointer-events-none" />
+                             <div class="relative glass-card rounded-[2.5rem] md:rounded-[3rem] border border-border/10 group-hover:border-accent/50 transition-all duration-700 overflow-hidden flex flex-col">
+                                 <div class="relative h-52 md:h-60 overflow-hidden">
+                                     <img src="/public/project-elysia.png" alt="Elysia API" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                     <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-black uppercase tracking-[0.35em] text-accent">"02"</span>
+                                     <span class="absolute top-4 right-4 px-3 py-1 rounded-full bg-accent/20 backdrop-blur-sm border border-accent/30 text-[9px] font-black uppercase tracking-[0.3em] text-accent">"API"</span>
+                                 </div>
+                                 <div class="p-8 md:p-10 flex flex-col gap-5 flex-1">
+                                     <div class="space-y-2">
+                                         <h3 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter leading-tight group-hover:text-accent transition-colors duration-500">"Elysia Discovery"</h3>
+                                         <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed">"Scalable API services featuring ultra-fast response times, full OpenAPI documentation, and sub-millisecond latency."</p>
+                                     </div>
+                                     <div class="flex flex-wrap gap-2">
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"Bun"</span>
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"ElysiaJS"</span>
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"OpenAPI"</span>
+                                     </div>
+                                     <div class="mt-auto pt-4 border-t border-border/10">
+                                         <A href="/project" class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.35em] text-accent group-hover:gap-4 transition-all duration-500">
+                                             "View Project"
+                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                             </svg>
+                                         </A>
+                                     </div>
+                                 </div>
+                             </div>
                          </div>
-                         <div class="glass-card p-10 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border border-border/10 space-y-6 group hover:border-primary/30 transition-all duration-700">
-                            <div class="h-40 md:h-48 rounded-[1.5rem] md:rounded-[2rem] bg-primary/5 border border-border/10 overflow-hidden">
-                                <img src="/public/project-anime.png" alt="Anime Streaming" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                            </div>
-                            <div class="space-y-4">
-                                <h3 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter">"Media Ecosystem"</h3>
-                                <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed">"Cinematic frontend experiences designed for high-end content delivery and interaction."</p>
-                            </div>
+
+                         // ── Card 03: Media Ecosystem ──
+                         <div class="group relative md:col-span-2 lg:col-span-1">
+                             <div class="absolute -inset-px rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary/30 via-purple-500/20 to-accent/30 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl pointer-events-none" />
+                             <div class="relative glass-card rounded-[2.5rem] md:rounded-[3rem] border border-border/10 group-hover:border-purple-500/50 transition-all duration-700 overflow-hidden flex flex-col">
+                                 <div class="relative h-52 md:h-60 overflow-hidden">
+                                     <img src="/public/project-anime.png" alt="Anime Streaming" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                     <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-black uppercase tracking-[0.35em] text-purple-400">"03"</span>
+                                     <span class="absolute top-4 right-4 px-3 py-1 rounded-full bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 text-[9px] font-black uppercase tracking-[0.3em] text-purple-400">"Frontend"</span>
+                                 </div>
+                                 <div class="p-8 md:p-10 flex flex-col gap-5 flex-1">
+                                     <div class="space-y-2">
+                                         <h3 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors duration-500">"Media Ecosystem"</h3>
+                                         <p class="text-muted-foreground/80 text-sm font-medium leading-relaxed">"Cinematic frontend experiences designed for high-end content delivery, immersive streaming, and seamless interaction."</p>
+                                     </div>
+                                     <div class="flex flex-wrap gap-2">
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"Leptos"</span>
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"WASM"</span>
+                                         <span class="px-2.5 py-1 rounded-lg bg-muted/40 border border-border/20 text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">"SolidJS"</span>
+                                     </div>
+                                     <div class="mt-auto pt-4 border-t border-border/10">
+                                         <A href="/project" class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.35em] text-purple-400 group-hover:gap-4 transition-all duration-500">
+                                             "View Project"
+                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                             </svg>
+                                         </A>
+                                     </div>
+                                 </div>
+                             </div>
                          </div>
+
                     </div>
 
                     <div class="text-center">
