@@ -2,7 +2,8 @@ use leptos::*;
 use leptos_router::*;
 use leptos_meta::*;
 use crate::api::anime::{fetch_anime_detail, EpisodeList};
-use crate::components::ui::CachedImage;
+use crate::components::ui::{CachedImage, PageLoadingOverlay};
+
 
 #[component]
 pub fn AnimeDetailPage() -> impl IntoView {
@@ -26,15 +27,8 @@ pub fn AnimeDetailPage() -> impl IntoView {
 
     view! {
         <main class="min-h-screen relative overflow-hidden">
-            <Suspense fallback=move || view! { 
-                <div class="p-24 text-center space-y-8 animate-pulse">
-                    <div class="h-[400px] w-full bg-muted/50 rounded-[3rem]" />
-                    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <div class="lg:col-span-2 h-96 bg-muted/50 rounded-[2rem]" />
-                        <div class="h-96 bg-muted/50 rounded-[2rem]" />
-                    </div>
-                </div>
-            }>
+            <Suspense fallback=move || view! { <PageLoadingOverlay label="ANIME" /> }>
+
                 {move || anime_data.get().flatten().map(|data| {
                     let episodes = if !data.episode_lists.is_empty() {
                         data.episode_lists.clone()

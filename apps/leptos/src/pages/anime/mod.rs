@@ -7,7 +7,8 @@ use serde::{Serialize, Deserialize};
 use crate::api::anime::{
     fetch_anime1_index, fetch_anime2_index
 };
-use crate::components::ui::{CachedImage, GlitchText};
+use crate::components::ui::{CachedImage, GlitchText, PageLoadingOverlay};
+
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnimeItem {
@@ -254,11 +255,8 @@ pub fn AnimePage(#[prop(default = 1)] source: u8) -> impl IntoView {
                     </div>
                 </header>
 
-                <Suspense fallback=move || view! { 
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-                        {(0..12).map(|_| view! { <div class="aspect-[3/4.2] rounded-[2rem] bg-muted/50 animate-pulse" /> }).collect_view()}
-                    </div>
-                }>
+                <Suspense fallback=move || view! { <PageLoadingOverlay label="ANIME" /> }>
+
                     <Show when=move || data.get().flatten().is_some() fallback=move || view! { 
                         <div class="glass-card p-12 rounded-[2rem] text-center border border-red-500/20">
                             <div class="text-4xl mb-4">"❌"</div>

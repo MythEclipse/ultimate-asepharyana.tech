@@ -3,6 +3,8 @@ use leptos_meta::Title;
 use crate::components::sosmed::post_card::PostCard;
 use crate::components::sosmed::create_post::CreatePost;
 use crate::api::social::get_posts;
+use crate::components::ui::PageLoadingOverlay;
+
 
 #[component]
 pub fn SosmedPage() -> impl IntoView {
@@ -46,11 +48,8 @@ pub fn SosmedPage() -> impl IntoView {
                     <CreatePost on_post_created=handle_post_created />
                 </section>
 
-                <Suspense fallback=move || view! { 
-                    <div class="space-y-8">
-                        {(0..3).map(|_| view! { <div class="h-64 rounded-3xl bg-white/5 animate-pulse border border-white/5" /> }).collect_view()}
-                    </div>
-                }>
+                <Suspense fallback=move || view! { <PageLoadingOverlay label="FEED" /> }>
+
                     {move || posts_resource.get().map(|res| match res {
                         Ok(posts) => if posts.is_empty() {
                             view! { 

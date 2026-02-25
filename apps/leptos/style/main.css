@@ -635,3 +635,64 @@
   }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   Loading Overlay — Shared CSS (DRY)
+   Used by BOTH index.html pre-WASM overlay AND PageLoadingOverlay.
+   ═══════════════════════════════════════════════════════════════ */
+:root.light-overlay {
+  --lo-bg: #f8fafc;
+  --lo-fg: #0f172a;
+  --lo-fg-dim: rgba(15,23,42,0.40);
+  --lo-fg-muted: rgba(15,23,42,0.08);
+  --lo-terminal-bg: rgba(255,255,255,0.85);
+  --lo-terminal-border: rgba(15,23,42,0.10);
+  --lo-terminal-text: rgba(79,70,229,1);
+  --lo-terminal-prompt: rgba(15,23,42,0.30);
+  --lo-status-text: rgba(15,23,42,0.45);
+  --lo-dot-yellow: rgba(202,138,4,0.80);
+  --lo-dot-green: rgba(22,163,74,1);
+  --lo-progress-text: #0f172a;
+  --lo-percent-text: rgba(99,102,241,0.8);
+}
+
+#loading-overlay, .lo-overlay { background: var(--lo-bg); }
+#loading-progress, .lo-progress-num { color: var(--lo-progress-text, #fff); }
+#loading-percent,  .lo-percent     { color: var(--lo-percent-text, rgba(99,102,241,0.8)); }
+#loading-label,    .lo-label       { color: var(--lo-terminal-text, rgba(129,140,248,1)); }
+#loading-status,   .lo-status      { color: var(--lo-status-text, rgba(255,255,255,0.4)); }
+#loading-terminal, .lo-terminal    { background: var(--lo-terminal-bg, rgba(0,0,0,0.5)); border-color: var(--lo-terminal-border, rgba(255,255,255,0.08)); }
+
+.lo-prompt  { color: var(--lo-terminal-prompt, rgba(255,255,255,0.25)); }
+.lo-dot-red { background: rgba(239,68,68,0.50); }
+.lo-dot-yel { background: var(--lo-dot-yellow, rgba(234,179,8,0.50)); }
+.lo-dot-grn { background: var(--lo-dot-green, rgba(34,197,94,1)); }
+.lo-term-id { color: var(--lo-fg-muted, rgba(255,255,255,0.12)); }
+.lo-orb1    { background: rgba(99,102,241,0.12); }
+.lo-orb2    { background: rgba(168,85,247,0.10); }
+
+@keyframes lo-log-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lo-log-line {
+  animation: lo-log-appear 0.35s ease-out forwards;
+  opacity: 0;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--lo-terminal-text, rgba(129,140,248,1));
+}
+.lo-log-1 { animation-delay: 0.10s; }
+.lo-log-2 { animation-delay: 0.65s; }
+.lo-log-3 { animation-delay: 1.20s; }
+.lo-log-4 { animation-delay: 1.90s; }
+.lo-log-5 { animation-delay: 2.70s; }
+
+/* PageLoadingOverlay text colors adaptive for light mode */
+:root.light-overlay .lo-overlay .lo-prompt,
+:root.light-overlay .lo-overlay .lo-log-line {
+  color: var(--lo-terminal-text);
+}
+:root.light-overlay .lo-overlay .text-white\/25 { color: rgba(15,23,42,0.30); }
+:root.light-overlay .lo-overlay .text-white\/40 { color: rgba(15,23,42,0.50); }
