@@ -1,9 +1,0 @@
-/target
-/result
-.env
-*.db
-.vscode/
-node_modules/
-logs/
-*.log
-mysql-data/
