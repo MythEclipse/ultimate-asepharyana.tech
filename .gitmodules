@@ -1,0 +1,15 @@
+[submodule "apps/elysia"]
+	path = apps/elysia
+	url = git@github.com:MythEclipse/ultimate-asepharyana-elysia.git
+[submodule "apps/leptos"]
+	path = apps/leptos
+	url = git@github.com:MythEclipse/ultimate-asepharyana-leptos.git
+[submodule "apps/rust"]
+	path = apps/rust
+	url = git@github.com:MythEclipse/ultimate-asepharyana-rust.git
+[submodule "apps/solidjs"]
+	path = apps/solidjs
+	url = git@github.com:MythEclipse/ultimate-asepharyana-solidjs.git
+[submodule "apps/visuals"]
+	path = apps/visuals
+	url = git@github.com:MythEclipse/ultimate-asepharyana-visuals.git
