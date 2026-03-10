@@ -8,12 +8,12 @@ on:
       - 'apps/**'
       - 'packages/**'
       - '.github/workflows/docker-build-push.yml'
-      - 'docker-compose.yml'
+      - 'infra/compose/**'
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_PREFIX: mytheclipse/ultimate-asepharyana.cloud
+  IMAGE_NAME_PREFIX: mytheclipse/ultimate-asepharyana.tech
 
 # ──────────────────────────────────────────────
 # Phase 1: Detect which services have changed
@@ -261,29 +261,29 @@ jobs:
       - name: Update docker-compose.yml tags
         run: |
           SHA="sha-${{ steps.vars.outputs.sha_short }}"
-          echo "Updating docker-compose.yml with tag: $SHA"
+          echo "Updating infra/compose/ with tag: $SHA"
 
           # Update images only if they match the specified prefix
           # We use a loop or multiple seds to ensure we only update what's needed
 
           if [ "${{ needs.changes.outputs.rust-api }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:$SHA|g" docker-compose.yml
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:$SHA|g" infra/compose/rust.yml
           fi
 
           if [ "${{ needs.changes.outputs.elysia-api }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:$SHA|g" docker-compose.yml
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:$SHA|g" infra/compose/elysia.yml
           fi
 
           if [ "${{ needs.changes.outputs.solidjs-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:$SHA|g" docker-compose.yml
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:$SHA|g" infra/compose/solidjs.yml
           fi
 
           if [ "${{ needs.changes.outputs.leptos-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:$SHA|g" docker-compose.yml
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:$SHA|g" infra/compose/leptos.yml
           fi
 
           if [ "${{ needs.changes.outputs.visuals }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:$SHA|g" docker-compose.yml
+            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:$SHA|g" infra/compose/visuals.yml
           fi
 
       - name: Commit and push changes
@@ -291,10 +291,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          if git diff --quiet docker-compose.yml; then
-            echo "No changes to docker-compose.yml"
+          if git diff --quiet infra/compose/; then
+            echo "No changes to compose files"
           else
-            git add docker-compose.yml
+            git add infra/compose/
             git commit -m "chore: update docker tags to sha-${{ steps.vars.outputs.sha_short }} [skip ci]"
             git push origin main
           fi
