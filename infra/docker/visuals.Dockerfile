@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -r
 ENV RUSTFLAGS="-C target-feature=+bulk-memory"
 
 FROM chef AS planner
-COPY apps/visuals ./apps/visuals
-WORKDIR /app/apps/visuals
+WORKDIR /app
+COPY apps/visuals .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 WORKDIR /app
-COPY --from=planner /app/apps/visuals/recipe.json recipe.json
+COPY --from=planner /app/recipe.json recipe.json
 RUN rustup target add wasm32-unknown-unknown
 # Build dependencies using nightly chef
 RUN cargo chef cook --release --target wasm32-unknown-unknown --recipe-path recipe.json
@@ -33,8 +33,7 @@ RUN curl -L https://github.com/WebAssembly/binaryen/releases/download/version_12
     | tar -xzf- --strip-components=2 -C /usr/local/bin binaryen-version_121/bin/wasm-opt
 
 # Build application (trunk's built-in wasm-opt is disabled in Trunk.toml)
-COPY apps/visuals ./apps/visuals
-WORKDIR /app/apps/visuals
+COPY apps/visuals .
 RUN trunk build --release --public-url "/"
 
 # Run wasm-opt manually with all features enabled
@@ -42,7 +41,7 @@ RUN find dist -name '*.wasm' -exec wasm-opt -Oz --all-features {} -o {} \;
 
 # runtime image
 FROM nginx:alpine
-COPY --from=builder /app/apps/visuals/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

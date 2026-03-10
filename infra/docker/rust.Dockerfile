@@ -13,18 +13,17 @@ RUN rustup toolchain install nightly && rustup default nightly
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
 
 FROM chef AS planner
-COPY apps/rust ./apps/rust
-WORKDIR /app/apps/rust
+WORKDIR /app
+COPY apps/rust .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
-COPY --from=planner /app/apps/rust/recipe.json recipe.json
+COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies using nightly chef
 RUN cargo chef cook --release --recipe-path recipe.json
 
 # Build application
-COPY apps/rust ./apps/rust
-WORKDIR /app/apps/rust
+COPY apps/rust .
 RUN cargo build --release
 
 # Final runtime image
@@ -33,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl libssl3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY --from=builder /app/apps/rust/target/release/rustexpress /app/rustexpress
+COPY --from=builder /app/target/release/rustexpress /app/rustexpress
 
 EXPOSE 4091
 CMD ["./rustexpress"]

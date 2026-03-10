@@ -16,13 +16,13 @@ ENV PATH="/root/.bun/bin:${PATH}"
 ENV RUSTFLAGS="-C target-feature=+bulk-memory"
 
 FROM chef AS planner
-COPY apps/leptos ./apps/leptos
-WORKDIR /app/apps/leptos
+WORKDIR /app
+COPY apps/leptos .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 WORKDIR /app
-COPY --from=planner /app/apps/leptos/recipe.json recipe.json
+COPY --from=planner /app/recipe.json recipe.json
 RUN rustup target add wasm32-unknown-unknown
 # Build dependencies using nightly chef
 RUN cargo chef cook --release --target wasm32-unknown-unknown --recipe-path recipe.json
@@ -35,8 +35,7 @@ RUN curl -L https://github.com/WebAssembly/binaryen/releases/download/version_12
     | tar -xzf- --strip-components=2 -C /usr/local/bin binaryen-version_121/bin/wasm-opt
 
 # Build application (trunk's built-in wasm-opt is disabled in Trunk.toml)
-COPY apps/leptos ./apps/leptos
-WORKDIR /app/apps/leptos
+COPY apps/leptos .
 RUN bun install
 RUN trunk build --release --public-url "/"
 
@@ -45,7 +44,7 @@ RUN find dist -name '*.wasm' -exec wasm-opt -Os --all-features {} -o {} \;
 
 # runtime stage
 FROM nginx:alpine
-COPY --from=builder /app/apps/leptos/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Inline Nginx config to proxy API requests
 RUN printf "server {\n\
