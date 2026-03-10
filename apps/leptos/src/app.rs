@@ -46,6 +46,9 @@ pub fn App() -> impl IntoView {
     });
 
     view! {
+        <Meta name="theme-color" content="#6366f1"/>
+        <Meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+
         <Router>
             <ErrorBoundary fallback=move |err| {
                 let msg = format!("{:?}", err.get());
@@ -99,10 +102,28 @@ fn NotFound() -> impl IntoView {
     }
 
     view! {
-        <div class="min-h-screen flex items-center justify-center p-8">
-            <div class="text-center">
-                <h1 class="text-4xl font-bold text-destructive mb-4">"404 - Not Found"</h1>
-                <p class="text-muted-foreground">"The page you are looking for does not exist."</p>
+        <div class="min-h-screen flex items-center justify-center p-8 relative overflow-hidden scanlines">
+            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-destructive/10 rounded-full blur-[120px] animate-pulse" />
+            </div>
+            
+            <div class="relative z-10 text-center space-y-10">
+                <div class="space-y-4">
+                    <h1 class="text-8xl md:text-11xl font-black italic tracking-tighter text-destructive/80 font-display animate-bounce">"404"</h1>
+                    <div class="h-1 w-24 bg-destructive/40 mx-auto rounded-full" />
+                </div>
+                
+                <div class="space-y-2">
+                    <h2 class="text-2xl md:text-4xl font-black italic uppercase tracking-tighter">"Anomaly Detected"</h2>
+                    <p class="text-muted-foreground/60 max-w-sm mx-auto font-medium italic">"The requested coordinate does not exist in the current data stream."</p>
+                </div>
+
+                <A href="/" class="inline-flex items-center gap-4 px-10 py-5 rounded-full bg-foreground text-background font-black text-[10px] uppercase tracking-[0.4em] hover:scale-105 active:scale-95 transition-all shadow-2xl">
+                    "Back to Reality"
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </A>
             </div>
         </div>
     }
