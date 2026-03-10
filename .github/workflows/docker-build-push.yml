@@ -82,7 +82,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/rust/Dockerfile
+          file: infra/docker/rust.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -116,7 +116,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/elysia/Dockerfile
+          file: infra/docker/elysia.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -150,7 +150,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/solidjs/Dockerfile
+          file: infra/docker/solidjs.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -184,7 +184,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/leptos/Dockerfile
+          file: infra/docker/leptos.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -220,7 +220,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/visuals/Dockerfile
+          file: infra/docker/visuals.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
