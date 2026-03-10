@@ -3,7 +3,8 @@ services:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:latest
     restart: always
     networks: [app-shared-net]
-
+    volumes:
+      - ./nginx/visuals.conf:/etc/nginx/conf.d/default.conf:ro
 networks:
   app-shared-net:
     name: app-shared-net

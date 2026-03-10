@@ -6,7 +6,8 @@ services:
     environment:
       - VITE_RUST_API=https://rust.asepharyana.tech
       - VITE_ELYSIA_API=https://elysia.asepharyana.tech
-
+    volumes:
+      - ./nginx/solidjs.conf:/etc/nginx/http.d/default.conf:ro
 networks:
   app-shared-net:
     name: app-shared-net
