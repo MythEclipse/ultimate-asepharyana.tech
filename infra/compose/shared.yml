@@ -8,9 +8,8 @@ services:
       MYSQL_DATABASE: sosmed
       MYSQL_USER: asephs
       MYSQL_PASSWORD: hunterz
-    command: --port=3307
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3307"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3306"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,7 +20,6 @@ services:
     image: redis:alpine
     restart: always
     networks: [app-shared-net]
-    command: redis-server --port 6380
     volumes:
       - redis_data:/data
 
