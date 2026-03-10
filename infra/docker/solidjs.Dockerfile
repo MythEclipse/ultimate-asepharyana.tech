@@ -21,21 +21,7 @@ RUN apk add --no-cache nginx supervisor
 COPY --from=builder /app/.output ./.output
 COPY apps/solidjs/package.json ./
 
-# Inline Nginx config
-RUN printf "server {\n\
-    listen 80;\n\
-    server_name _;\n\
-    \n\
-    location / {\n\
-    proxy_pass http://127.0.0.1:4090;\n\
-    proxy_set_header Host \$host;\n\
-    proxy_set_header X-Real-IP \$remote_addr;\n\
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
-    proxy_set_header X-Forwarded-Proto \$scheme;\n\
-    proxy_set_header X-Forwarded-Host \$host;\n\
-    proxy_set_header X-Forwarded-Port \$server_port;\n\
-    }\n\
-    }\n" > /etc/nginx/http.d/default.conf
+
 
 # Inline Supervisor config
 RUN printf "[supervisord]\n\
