@@ -1,0 +1,10 @@
+services:
+  visuals:
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/visuals:latest
+    restart: always
+    networks: [app-shared-net]
+
+networks:
+  app-shared-net:
+    name: app-shared-net
+    external: true

@@ -1,0 +1,57 @@
+services:
+  mysql:
+    image: mysql:8
+    restart: always
+    networks: [app-shared-net]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sosmed
+      MYSQL_USER: asephs
+      MYSQL_PASSWORD: hunterz
+    command: --port=3307
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3307"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:alpine
+    restart: always
+    networks: [app-shared-net]
+    command: redis-server --port 6380
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio
+    restart: always
+    networks: [app-shared-net]
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: mytheclipse
+    command: server /data --console-address ":9001" --address ":9000"
+    volumes:
+      - minio_data:/data
+
+  browserless:
+    image: browserless/chrome:latest
+    restart: always
+    networks: [app-shared-net]
+    environment:
+      - MAX_CONCURRENT_SESSIONS=10
+      - CONNECTION_TIMEOUT=60000
+      - PREBOOT_CHROME=true
+      - QUEUE_LENGTH=0
+
+networks:
+  app-shared-net:
+    name: app-shared-net
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  minio_data:
