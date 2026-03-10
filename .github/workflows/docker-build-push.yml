@@ -8,7 +8,7 @@ on:
       - 'apps/**'
       - 'packages/**'
       - '.github/workflows/docker-build-push.yml'
-      - 'infra/compose/**'
+      - 'infra/**'
   workflow_dispatch:
 
 env:
@@ -38,19 +38,27 @@ jobs:
             rust-api:
               - 'apps/rust/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'infra/docker/rust.Dockerfile'
             elysia-api:
               - 'apps/elysia/**'
               - 'packages/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'infra/docker/elysia.Dockerfile'
             solidjs-web:
               - 'apps/solidjs/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'infra/docker/solidjs.Dockerfile'
+              - 'infra/nginx/solidjs.conf'
             leptos-web:
               - 'apps/leptos/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'infra/docker/leptos.Dockerfile'
+              - 'infra/nginx/leptos.conf'
             visuals:
               - 'apps/visuals/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'infra/docker/visuals.Dockerfile'
+              - 'infra/nginx/visuals.conf'
 
   # ──────────────────────────────────────────────
   # Phase 2: Build only changed services
