@@ -46,7 +46,7 @@ RUN find dist -name '*.wasm' -exec wasm-opt -Os --all-features {} -o {} \;
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-
+COPY infra/nginx/leptos.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

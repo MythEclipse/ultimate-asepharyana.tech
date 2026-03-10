@@ -5,8 +5,6 @@ services:
     networks: [app-shared-net]
     environment:
       - VITE_RUST_API=https://rust.asepharyana.tech
-    volumes:
-      - ./nginx/leptos.conf:/etc/nginx/conf.d/default.conf:ro
 networks:
   app-shared-net:
     name: app-shared-net
