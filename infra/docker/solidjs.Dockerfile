@@ -21,7 +21,7 @@ RUN apk add --no-cache nginx supervisor
 COPY --from=builder /app/.output ./.output
 COPY apps/solidjs/package.json ./
 
-
+COPY infra/nginx/solidjs.conf /etc/nginx/http.d/default.conf
 
 # Inline Supervisor config
 RUN printf "[supervisord]\n\
