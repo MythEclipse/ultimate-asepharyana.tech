@@ -1,0 +1,18 @@
+services:
+  elysia-api:
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.cloud/elysia-api:latest
+    restart: always
+    networks: [app-shared-net]
+    environment:
+      - DATABASE_URL=mysql://asephs:hunterz@mysql:3307/sosmed
+      - REDIS_URL=redis://redis:6380
+      - JWT_SECRET=273742
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=mytheclipse
+      - MINIO_BUCKET_NAME=api
+
+networks:
+  app-shared-net:
+    name: app-shared-net
+    external: true
