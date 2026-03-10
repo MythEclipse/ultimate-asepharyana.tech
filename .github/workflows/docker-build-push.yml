@@ -29,6 +29,8 @@ jobs:
       visuals: ${{ steps.filter.outputs.visuals }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -62,6 +64,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -94,6 +98,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -126,6 +132,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -158,6 +166,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -192,6 +202,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -238,6 +250,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
 
