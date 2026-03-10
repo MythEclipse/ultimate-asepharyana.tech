@@ -1,0 +1,15 @@
+**/.git
+**/.gitmodules
+**/node_modules
+**/dist
+**/.output
+**/target
+**/.svelte-kit
+**/.next
+**/.DS_Store
+**/build
+**/*.log
+**/*.pem
+.env
+.env.*
+!.env.example
