@@ -21,11 +21,11 @@ jobs:
 
       - name: Trigger Coolify Deployment
         env:
-          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_WEBHOOKS: ${{ secrets.COOLIFY_WEBHOOKS }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
-          if [ -z "$COOLIFY_WEBHOOK" ]; then
-            echo "❌ COOLIFY_WEBHOOK secret is not set!"
+          if [ -z "$COOLIFY_WEBHOOKS" ]; then
+            echo "❌ COOLIFY_WEBHOOKS secret is not set! (e.g. URL1 URL2 URL3)"
             exit 1
           fi
 
@@ -34,11 +34,22 @@ jobs:
             exit 1
           fi
 
-          echo "🚀 Triggering Coolify deployment..."
-          curl -X POST "$COOLIFY_WEBHOOK" \
-            -H "Authorization: Bearer $COOLIFY_TOKEN" \
-            -H "Content-Type: application/json" \
-            --fail-with-body
+          echo "🚀 Triggering Coolify deployments for all webhooks..."
+          IFS=$' \n\t' read -r -a urls <<< "$COOLIFY_WEBHOOKS"
+          for url in "${urls[@]}"; do
+            if [ -z "$url" ]; then
+              continue
+            fi
+            echo "➡️ Calling: $url"
+            curl -X POST "$url" \
+              -H "Authorization: Bearer $COOLIFY_TOKEN" \
+              -H "Content-Type: application/json" \
+              --fail-with-body || {
+                echo "❌ Failed to trigger $url"
+                exit 1
+              }
+          done
+          echo "✅ All Coolify deployments triggered."
 
       - name: Restart coolify-proxy (delay 1 min)
         env:
