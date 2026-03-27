@@ -21,31 +21,33 @@ jobs:
 
       - name: Trigger Coolify Deployment
         env:
-          COOLIFY_WEBHOOKS: ${{ secrets.COOLIFY_WEBHOOKS }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          # List your Coolify Application UUIDs here:
+          COOLIFY_RESOURCE_UUIDS: |
+            lgk8440ogo0kooo404g8wg8c
+            g0cok4g0sckck00oowwwgg0o
         run: |
-          if [ -z "$COOLIFY_WEBHOOKS" ]; then
-            echo "❌ COOLIFY_WEBHOOKS secret is not set! (e.g. URL1 URL2 URL3)"
-            exit 1
-          fi
-
           if [ -z "$COOLIFY_TOKEN" ]; then
             echo "❌ COOLIFY_TOKEN secret is not set!"
             exit 1
           fi
 
-          echo "🚀 Triggering Coolify deployments for all webhooks..."
-          IFS=$' \n\t' read -r -a urls <<< "$COOLIFY_WEBHOOKS"
-          for url in "${urls[@]}"; do
-            if [ -z "$url" ]; then
+          echo "🚀 Triggering Coolify deployments for hardcoded resource UUIDs..."
+          IFS=$'\n' read -r -d '' -a uuids <<< "$COOLIFY_RESOURCE_UUIDS" || true
+          for uuid in "${uuids[@]}"; do
+            uuid=$(echo "$uuid" | xargs) # trim whitespace
+            if [ -z "$uuid" ]; then
               continue
             fi
-            echo "➡️ Calling: $url"
+            
+            url="https://coolify.asepharyana.tech/api/v1/deploy?uuid=${uuid}&force=true"
+            echo "➡️ Calling API for UUID: $uuid"
+            
             curl -X POST "$url" \
               -H "Authorization: Bearer $COOLIFY_TOKEN" \
               -H "Content-Type: application/json" \
               --fail-with-body || {
-                echo "❌ Failed to trigger $url"
+                echo "❌ Failed to trigger deployment for $uuid"
                 exit 1
               }
           done
