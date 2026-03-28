@@ -1,6 +1,6 @@
 services:
   leptos-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/leptos-web:sha-1a49eeb
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/leptos-web:sha-75e1b1c
     restart: always
     networks: [app-shared-net]
     environment:
