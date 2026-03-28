@@ -29,6 +29,7 @@ jobs:
             bsgsocwcssc8c4g0kkok8s4k
             gg84k8ggw4cgog0gsos4gwko
             z0g0k4k8gwko4ogwc0koogkc
+            knjgtk9uunnec0cfmhuansld
         run: |
           if [ -z "$COOLIFY_TOKEN" ]; then
             echo "❌ COOLIFY_TOKEN secret is not set!"
@@ -56,7 +57,7 @@ jobs:
                 FAILED=$((FAILED + 1))
               }
           done
-          
+
           if [ "$FAILED" -ne 0 ]; then
             echo "❌ $FAILED deployment(s) failed."
             exit 1
