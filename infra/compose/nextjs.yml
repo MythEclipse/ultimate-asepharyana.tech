@@ -1,0 +1,12 @@
+services:
+  nextjs-web:
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:latest
+    restart: always
+    networks: [app-shared-net]
+    environment:
+      - NEXT_PUBLIC_RUST_API=https://rust.asepharyana.tech
+      - NEXT_PUBLIC_ELYSIA_API=https://elysia.asepharyana.tech
+networks:
+  app-shared-net:
+    name: app-shared-net
+    external: true
