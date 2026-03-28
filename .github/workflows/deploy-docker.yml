@@ -12,7 +12,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,6 +36,7 @@ jobs:
           fi
 
           echo "🚀 Triggering Coolify deployments for hardcoded resource UUIDs..."
+          FAILED=0
           IFS=$'\n' read -r -d '' -a uuids <<< "$COOLIFY_RESOURCE_UUIDS" || true
           for uuid in "${uuids[@]}"; do
             uuid=$(echo "$uuid" | xargs) # trim whitespace
@@ -46,15 +47,21 @@ jobs:
             url="https://coolify.asepharyana.tech/api/v1/deploy?uuid=${uuid}&force=true"
             echo "➡️ Calling API for UUID: $uuid"
             
-            curl -X POST "$url" \
+            # Using GET as specified by Coolify v4 API
+            curl -X GET "$url" \
               -H "Authorization: Bearer $COOLIFY_TOKEN" \
-              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
               --fail-with-body || {
                 echo "❌ Failed to trigger deployment for $uuid"
-                exit 1
+                FAILED=$((FAILED + 1))
               }
           done
-          echo "✅ All Coolify deployments triggered."
+          
+          if [ "$FAILED" -ne 0 ]; then
+            echo "❌ $FAILED deployment(s) failed."
+            exit 1
+          fi
+          echo "✅ All Coolify deployments triggered successfully."
 
       - name: Restart coolify-proxy (delay 1 min)
         env:
