@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=mysql://asephs:hunterz@mysql:3306/sosmed
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=273742
+      - EXTERNAL_BROWSERLESS_WS=${EXTERNAL_BROWSERLESS_WS}
 networks:
   app-shared-net:
     name: app-shared-net
