@@ -9,6 +9,9 @@ on:
       - 'packages/**'
       - '.github/workflows/docker-build-push.yml'
       - 'infra/**'
+  repository_dispatch:
+    types:
+      - submodule-updated
   workflow_dispatch:
 
 env:
@@ -22,18 +25,22 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      rust-api: ${{ steps.filter.outputs.rust-api }}
-      elysia-api: ${{ steps.filter.outputs.elysia-api }}
-      solidjs-web: ${{ steps.filter.outputs.solidjs-web }}
-      leptos-web: ${{ steps.filter.outputs.leptos-web }}
-      visuals: ${{ steps.filter.outputs.visuals }}
-      nextjs-web: ${{ steps.filter.outputs.nextjs-web }}
+      rust-api: ${{ steps.filter.outputs.rust-api || steps.dispatch.outputs.rust-api }}
+      elysia-api: ${{ steps.filter.outputs.elysia-api || steps.dispatch.outputs.elysia-api }}
+      solidjs-web: ${{ steps.filter.outputs.solidjs-web || steps.dispatch.outputs.solidjs-web }}
+      leptos-web: ${{ steps.filter.outputs.leptos-web || steps.dispatch.outputs.leptos-web }}
+      visuals: ${{ steps.filter.outputs.visuals || steps.dispatch.outputs.visuals }}
+      nextjs-web: ${{ steps.filter.outputs.nextjs-web || steps.dispatch.outputs.nextjs-web }}
     steps:
       - uses: actions/checkout@v4
+        if: github.event_name != 'repository_dispatch'
         with:
           submodules: recursive
+
+      # ── Path-based detection for direct pushes to this repo ──
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name == 'push'
         with:
           filters: |
             rust-api:
@@ -64,6 +71,23 @@ jobs:
               - 'apps/nextjs/**'
               - '.github/workflows/docker-build-push.yml'
               - 'infra/docker/nextjs.Dockerfile'
+
+      # ── Service-based detection for cross-repo dispatches ──
+      - name: Parse repository_dispatch payload
+        id: dispatch
+        if: github.event_name == 'repository_dispatch'
+        env:
+          SERVICE: ${{ github.event.client_payload.service }}
+        run: |
+          declare -a SERVICES=("rust-api" "elysia-api" "solidjs-web" "leptos-web" "visuals" "nextjs-web")
+          for svc in "${SERVICES[@]}"; do
+            if [ "$SERVICE" = "$svc" ]; then
+              echo "${svc}=true" >> $GITHUB_OUTPUT
+            else
+              echo "${svc}=false" >> $GITHUB_OUTPUT
+            fi
+          done
+          echo "Dispatch received for service: $SERVICE"
 
   # ──────────────────────────────────────────────
   # Phase 2: Build only changed services
