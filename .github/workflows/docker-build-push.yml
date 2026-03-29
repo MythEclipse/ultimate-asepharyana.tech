@@ -9,6 +9,7 @@ on:
       - 'packages/**'
       - '.github/workflows/docker-build-push.yml'
       - 'infra/**'
+      - '!infra/compose/**'
   repository_dispatch:
     types:
       - submodule-updated
@@ -329,7 +330,7 @@ jobs:
 
       - name: Get Short SHA
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
       - name: Update docker-compose.yml tags
         run: |

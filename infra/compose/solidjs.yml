@@ -1,6 +1,6 @@
 services:
   solidjs-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/solidjs-web:sha-75e1b1c
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/solidjs-web:sha-eeca6a2
     restart: always
     networks: [app-shared-net]
     environment:
