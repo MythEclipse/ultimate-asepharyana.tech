@@ -1,25 +1,17 @@
-# Use stable chef image only to extract the binary
-FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS stable-chef
-
-# Build stage using official library stable Rust on Bookworm
-FROM rust:bookworm AS chef
+# cargo-chef, Cargo, and rustc are all from the same image to avoid
+# synthetic-Cargo.toml warnings from version mismatches (plugin keys, per-target edition).
+FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS chef
 WORKDIR /app
-COPY --from=stable-chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
 
-# install nightly toolchain in case crates require unstable features
-RUN rustup toolchain install nightly && rustup default nightly
-
-# Install Node.js for potential build scripts/hooks
+# Install Node.js for build scripts that invoke node (e.g. build.rs hooks)
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
 
 FROM chef AS planner
-WORKDIR /app
 COPY apps/rust .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-# Build dependencies using nightly chef
 RUN cargo chef cook --release --recipe-path recipe.json
 
 # Build application
