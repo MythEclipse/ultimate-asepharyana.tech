@@ -15,6 +15,10 @@ on:
       - submodule-updated
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME_PREFIX: mytheclipse/ultimate-asepharyana.tech
@@ -368,11 +372,14 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git config pull.rebase true
 
           if git diff --quiet infra/compose/; then
             echo "No changes to compose files"
           else
             git add infra/compose/
             git commit -m "chore: update docker tags to sha-${{ steps.vars.outputs.sha_short }} [skip ci]"
+            # Use pull --rebase to handle any updates from other concurrent runs
+            git pull --rebase origin main
             git push origin main
           fi
