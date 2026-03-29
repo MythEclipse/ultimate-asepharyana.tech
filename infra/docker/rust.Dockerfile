@@ -1,6 +1,6 @@
 # cargo-chef, Cargo, and rustc are all from the same image to avoid
 # synthetic-Cargo.toml warnings from version mismatches (plugin keys, per-target edition).
-FROM lukemathwalker/cargo-chef:latest-rust-1.85 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.89.0 AS chef
 WORKDIR /app
 
 # Install Node.js for build scripts that invoke node (e.g. build.rs hooks)
