@@ -1,4 +1,4 @@
-# 🚀 Ultimate Asepharyana Cloud
+# 🚀 Ultimate Asepharyana Tech
 
 A modern, high-performance distributed services architecture powering the personal portfolio and various interactive features of **Asep Haryana Saputra**.
 
@@ -47,8 +47,8 @@ While each service can be run independently (via `cargo run` or `bun dev`), the 
 
 ```bash
 # Clone the repository
-git clone https://github.com/MythEclipse/ultimate-asepharyana.cloud.git
-cd ultimate-asepharyana.cloud
+git clone https://github.com/MythEclipse/ultimate-asepharyana.tech.git
+cd ultimate-asepharyana.tech
 
 # Start the entire ecosystem
 docker compose up -d
@@ -84,5 +84,5 @@ cargo run --bin scaffold -- my-category/new-feature
 
 ---
 
-**Author:** [Asep Haryana Saputra](https://asepharyana.cloud)  
+**Author:** [Asep Haryana Saputra](https://asepharyana.tech)  
 **License:** MIT
