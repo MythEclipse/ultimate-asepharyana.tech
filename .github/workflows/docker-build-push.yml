@@ -94,12 +94,70 @@ jobs:
           done
           echo "Dispatch received for service: $SERVICE"
 
+  sync-submodule:
+    if: github.event_name == 'repository_dispatch' && github.event.action == 'submodule-updated'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Update submodule ref
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          
+          declare -A SERVICE_PATHS
+          SERVICE_PATHS["rust-api"]="apps/rust"
+          SERVICE_PATHS["elysia-api"]="apps/elysia"
+          SERVICE_PATHS["solidjs-web"]="apps/solidjs"
+          SERVICE_PATHS["leptos-web"]="apps/leptos"
+          SERVICE_PATHS["visuals"]="apps/visuals"
+          SERVICE_PATHS["nextjs-web"]="apps/nextjs"
+          
+          PATH_MAP=${SERVICE_PATHS[$SERVICE]}
+          
+          if [ -n "$PATH_MAP" ]; then
+            echo "Syncing $PATH_MAP to ${SHA:-latest}..."
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git config pull.rebase true
+            
+            # Update submodule
+            if [ -n "$SHA" ]; then
+              # If we have a specific SHA, we fetch it
+              cd "$PATH_MAP"
+              git fetch origin
+              git checkout "$SHA"
+              cd -
+            else
+              git submodule update --remote "$PATH_MAP"
+            fi
+            
+            # Commit and push
+            if git diff --quiet "$PATH_MAP"; then
+              echo "No changes in submodule $PATH_MAP"
+            else
+              git add "$PATH_MAP"
+              git commit -m "chore: update submodule $PATH_MAP to ${SHA:-latest} [skip ci]"
+              git pull --rebase origin main
+              git push origin main
+            fi
+          fi
+
   # ──────────────────────────────────────────────
   # Phase 2: Build only changed services
   # ──────────────────────────────────────────────
   build-rust-api:
-    needs: changes
-    if: ${{ needs.changes.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, sync-submodule]
+    if: |
+      always() && 
+      (needs.changes.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -108,6 +166,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ "${SERVICE}" == "rust-api" ] && [ -n "$SHA" ]; then
+            cd apps/rust && git fetch origin && git checkout "$SHA"
+          fi
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -132,8 +198,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=rust-api
 
   build-elysia-api:
-    needs: changes
-    if: ${{ needs.changes.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, sync-submodule]
+    if: |
+      always() && 
+      (needs.changes.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -142,6 +211,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ "${SERVICE}" == "elysia-api" ] && [ -n "$SHA" ]; then
+            cd apps/elysia && git fetch origin && git checkout "$SHA"
+          fi
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -166,8 +243,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=elysia-api
 
   build-solidjs-web:
-    needs: changes
-    if: ${{ needs.changes.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, sync-submodule]
+    if: |
+      always() && 
+      (needs.changes.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -176,6 +256,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ "${SERVICE}" == "solidjs-web" ] && [ -n "$SHA" ]; then
+            cd apps/solidjs && git fetch origin && git checkout "$SHA"
+          fi
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -200,8 +288,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=solidjs-web
 
   build-leptos-web:
-    needs: changes
-    if: ${{ needs.changes.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, sync-submodule]
+    if: |
+      always() && 
+      (needs.changes.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -210,6 +301,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ "${SERVICE}" == "leptos-web" ] && [ -n "$SHA" ]; then
+            cd apps/leptos && git fetch origin && git checkout "$SHA"
+          fi
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -236,8 +335,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=leptos-web
 
   build-visuals:
-    needs: changes
-    if: ${{ needs.changes.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, sync-submodule]
+    if: |
+      always() && 
+      (needs.changes.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -246,6 +348,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ "${SERVICE}" == "visuals" ] && [ -n "$SHA" ]; then
+            cd apps/visuals && git fetch origin && git checkout "$SHA"
+          fi
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -270,8 +380,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=visuals
 
   build-nextjs-web:
-    needs: changes
-    if: ${{ needs.changes.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, sync-submodule]
+    if: |
+      always() && 
+      (needs.changes.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -280,6 +393,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ "${SERVICE}" == "nextjs-web" ] && [ -n "$SHA" ]; then
+            cd apps/nextjs && git fetch origin && git checkout "$SHA"
+          fi
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -374,11 +495,11 @@ jobs:
           git config --local user.name "GitHub Action"
           git config pull.rebase true
 
-          if git diff --quiet infra/compose/; then
-            echo "No changes to compose files"
+          if git diff --quiet infra/compose/ apps/; then
+            echo "No changes to commit"
           else
-            git add infra/compose/
-            git commit -m "chore: update docker tags to sha-${{ steps.vars.outputs.sha_short }} [skip ci]"
+            git add infra/compose/ apps/
+            git commit -m "chore: update manifests and submodules [skip ci]"
             # Use pull --rebase to handle any updates from other concurrent runs
             git pull --rebase origin main
             git push origin main
