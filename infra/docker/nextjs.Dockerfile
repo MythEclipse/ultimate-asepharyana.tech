@@ -30,7 +30,7 @@ ENV NODE_ENV=production
 
 # next build output: standalone (copies only what's needed to run)
 # We use node directly for the build engine to ensure maximum compatibility in Alpine/musl
-RUN npx next build --no-lint
+RUN npx next build
 
 # ─── Stage 3: Runtime (slim) ─────────────────────────────────────────────────
 FROM node:22-alpine AS runner
