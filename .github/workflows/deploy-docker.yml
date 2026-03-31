@@ -22,33 +22,64 @@ jobs:
       - name: Trigger Coolify Deployment
         env:
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-          # List your Coolify Application UUIDs here:
-          COOLIFY_RESOURCE_UUIDS: |
-            lgk8440ogo0kooo404g8wg8c
-            ds04gc480kww4s04o84o80ok
-            bsgsocwcssc8c4g0kkok8s4k
-            gg84k8ggw4cgog0gsos4gwko
-            z0g0k4k8gwko4ogwc0koogkc
-            knjgtk9uunnec0cfmhuansld
         run: |
           if [ -z "$COOLIFY_TOKEN" ]; then
             echo "❌ COOLIFY_TOKEN secret is not set!"
             exit 1
           fi
 
-          echo "🚀 Triggering Coolify deployments for hardcoded resource UUIDs..."
+          # Ensure we have parent commit available for diff
+          git -c http.sslVerify=false fetch --depth=2 origin main || true
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ℹ️ workflow_dispatch - deploying all configured services."
+            CHANGED_FILES="infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/visuals.yml infra/compose/nextjs.yml infra/compose/shared.yml"
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD | grep '^infra/compose/' || true)
+            echo "ℹ️ Changed compose files: $CHANGED_FILES"
+          fi
+
+          declare -A UUID_MAP=(
+            [rust]=gg84k8ggw4cgog0gsos4gwko
+            [elysia]=z0g0k4k8gwko4ogwc0koogkc
+            [solidjs]=jce1ynq9py588ita7s5of0vl
+            [leptos]=lgk8440ogo0kooo404g8wg8c
+            [visuals]=ds04gc480kww4s04o84o80ok
+            [nextjs]=knjgtk9uunnec0cfmhuansld
+            [shared]=bsgsocwcssc8c4g0kkok8s4k
+          )
+
+          uuids_to_trigger=()
+
+          for file in $CHANGED_FILES; do
+            case "$file" in
+              infra/compose/rust.yml) uuids_to_trigger+=("${UUID_MAP[rust]}") ;;
+              infra/compose/elysia.yml) uuids_to_trigger+=("${UUID_MAP[elysia]}") ;;
+              infra/compose/solidjs.yml) uuids_to_trigger+=("${UUID_MAP[solidjs]}") ;;
+              infra/compose/leptos.yml) uuids_to_trigger+=("${UUID_MAP[leptos]}") ;;
+              infra/compose/visuals.yml) uuids_to_trigger+=("${UUID_MAP[visuals]}") ;;
+              infra/compose/nextjs.yml) uuids_to_trigger+=("${UUID_MAP[nextjs]}") ;;
+              infra/compose/shared.yml) uuids_to_trigger+=("${UUID_MAP[shared]}") ;;
+            esac
+          done
+
+          if [ ${#uuids_to_trigger[@]} -eq 0 ]; then
+            echo "⚠️ No changed compose files detected; skipping deployment trigger."
+            exit 0
+          fi
+
+          echo "🚀 Triggering Coolify deployments for changed services..."
           FAILED=0
-          IFS=$'\n' read -r -d '' -a uuids <<< "$COOLIFY_RESOURCE_UUIDS" || true
-          for uuid in "${uuids[@]}"; do
-            uuid=$(echo "$uuid" | xargs) # trim whitespace
+
+          for uuid in "${uuids_to_trigger[@]}"; do
+            uuid=$(echo "$uuid" | xargs)
             if [ -z "$uuid" ]; then
               continue
             fi
-            
+
             url="https://coolify.asepharyana.tech/api/v1/deploy?uuid=${uuid}&force=true"
             echo "➡️ Calling API for UUID: $uuid"
-            
-            # Using GET as specified by Coolify v4 API
+
             curl -X GET "$url" \
               -H "Authorization: Bearer $COOLIFY_TOKEN" \
               -H "Accept: application/json" \
@@ -62,7 +93,7 @@ jobs:
             echo "❌ $FAILED deployment(s) failed."
             exit 1
           fi
-          echo "✅ All Coolify deployments triggered successfully."
+          echo "✅ Coolify deployment(s) triggered successfully for changed services."
 
 #       - name: Restart coolify-proxy (delay 1 min)
 #         env:
