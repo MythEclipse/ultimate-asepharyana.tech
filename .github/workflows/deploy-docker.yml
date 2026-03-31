@@ -29,7 +29,8 @@ jobs:
           fi
 
           # Ensure we have parent commit available for diff
-          git -c http.sslVerify=false fetch --prune --unshallow --tags origin main --depth=2 || true
+          # Avoid '--depth' + '--unshallow' conflict.
+          git -c http.sslVerify=false fetch --prune --tags origin main --depth=2 || true
           git -c http.sslVerify=false fetch --depth=2 origin HEAD || true
 
           # Determine a safe diff range. fallback to origin/main if HEAD~1 missing.
