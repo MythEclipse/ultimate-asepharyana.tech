@@ -29,14 +29,31 @@ jobs:
           fi
 
           # Ensure we have parent commit available for diff
-          git -c http.sslVerify=false fetch --depth=2 origin main || true
+          git -c http.sslVerify=false fetch --prune --unshallow --tags origin main --depth=2 || true
+          git -c http.sslVerify=false fetch --depth=2 origin HEAD || true
 
+          # Determine a safe diff range. fallback to origin/main if HEAD~1 missing.
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "ℹ️ workflow_dispatch - deploying all configured services."
             CHANGED_FILES="infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/visuals.yml infra/compose/nextjs.yml infra/compose/shared.yml"
           else
-            CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD | grep '^infra/compose/' || true)
-            echo "ℹ️ Changed compose files: $CHANGED_FILES"
+            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+              DIFF_RANGE="HEAD~1..HEAD"
+            elif git rev-parse --verify origin/main~1 >/dev/null 2>&1; then
+              DIFF_RANGE="origin/main~1..origin/main"
+              git checkout -B main origin/main || true
+            else
+              DIFF_RANGE=""
+            fi
+
+            if [ -z "$DIFF_RANGE" ]; then
+              echo "⚠️ Tidak ada riwayat diff; menghitung sebagai semua layanan."
+              CHANGED_FILES="infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/visuals.yml infra/compose/nextjs.yml infra/compose/shared.yml apps/rust/ apps/elysia/ apps/solidjs/ apps/leptos/ apps/visuals/ apps/nextjs/"
+            else
+              CHANGED_FILES=$(git diff --name-only "$DIFF_RANGE" -- infra/compose/ apps/ || true)
+            fi
+
+            echo "ℹ️ Changed files: $CHANGED_FILES"
           fi
 
           declare -A UUID_MAP=(
@@ -53,12 +70,12 @@ jobs:
 
           for file in $CHANGED_FILES; do
             case "$file" in
-              infra/compose/rust.yml) uuids_to_trigger+=("${UUID_MAP[rust]}") ;;
-              infra/compose/elysia.yml) uuids_to_trigger+=("${UUID_MAP[elysia]}") ;;
-              infra/compose/solidjs.yml) uuids_to_trigger+=("${UUID_MAP[solidjs]}") ;;
-              infra/compose/leptos.yml) uuids_to_trigger+=("${UUID_MAP[leptos]}") ;;
-              infra/compose/visuals.yml) uuids_to_trigger+=("${UUID_MAP[visuals]}") ;;
-              infra/compose/nextjs.yml) uuids_to_trigger+=("${UUID_MAP[nextjs]}") ;;
+              infra/compose/rust.yml|apps/rust/*) uuids_to_trigger+=("${UUID_MAP[rust]}") ;;
+              infra/compose/elysia.yml|apps/elysia/*) uuids_to_trigger+=("${UUID_MAP[elysia]}") ;;
+              infra/compose/solidjs.yml|apps/solidjs/*) uuids_to_trigger+=("${UUID_MAP[solidjs]}") ;;
+              infra/compose/leptos.yml|apps/leptos/*) uuids_to_trigger+=("${UUID_MAP[leptos]}") ;;
+              infra/compose/visuals.yml|apps/visuals/*) uuids_to_trigger+=("${UUID_MAP[visuals]}") ;;
+              infra/compose/nextjs.yml|apps/nextjs/*) uuids_to_trigger+=("${UUID_MAP[nextjs]}") ;;
               infra/compose/shared.yml) uuids_to_trigger+=("${UUID_MAP[shared]}") ;;
             esac
           done
