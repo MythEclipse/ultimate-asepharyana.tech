@@ -1,6 +1,6 @@
 services:
   nextjs-web:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:sha-fc2142b
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:sha-20f1e5e
     restart: always
     networks: [app-shared-net]
     environment:
