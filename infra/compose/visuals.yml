@@ -1,6 +1,6 @@
 services:
   visuals:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/visuals:sha-ddfc146
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/visuals:sha-f619fe8
     restart: always
     networks: [app-shared-net]
 networks:
