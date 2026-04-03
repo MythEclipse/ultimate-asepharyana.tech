@@ -1,38 +1,33 @@
-# ─── Stage 1: Install dependencies ──────────────────────────────────────────
-FROM oven/bun:1-alpine AS deps
-# Add libc6-compat for native binary support in Alpine/musl
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+# ─── Stage 1: Build Base ──────────────────────────────────────────────────────
+FROM node:22-alpine AS base
 
-COPY apps/nextjs/package.json apps/nextjs/bun.lock* ./
-RUN bun install --frozen-lockfile
-
-# ─── Stage 2: Build ──────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
-# Add compatibility layers for native Next.js/Turbopack binaries
-RUN apk add --no-cache libc6-compat gcompat curl bash
-WORKDIR /app
-
-# Ensure we have Bun available for running scripts if needed
-RUN curl -fsSL https://bun.sh/install | bash && \
+# Install Bun for faster dependency management
+RUN apk add --no-cache libc6-compat gcompat curl bash && \
+    curl -fsSL https://bun.sh/install | bash && \
     cp /root/.bun/bin/bun /usr/local/bin/bun
 
-# Copy deps from previous stage
-COPY --from=deps /app/node_modules ./node_modules
+WORKDIR /app
 
-# Copy full app source
+# ─── Stage 2: Install dependencies ──────────────────────────────────────────
+FROM base AS deps
+COPY apps/nextjs/package.json apps/nextjs/bun.lock* ./
+# Use cache mount for bun install
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
+
+# ─── Stage 3: Build ──────────────────────────────────────────────────────────
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY apps/nextjs .
 
-# Environment stabilization for Turbopack in containers
 ENV NEXT_CPU_COUNT=1
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# next build output: standalone (copies only what's needed to run)
-# We use node directly for the build engine to ensure maximum compatibility in Alpine/musl
+# next build output: standalone
 RUN npx next build
 
-# ─── Stage 3: Runtime (slim) ─────────────────────────────────────────────────
+# ─── Stage 4: Runtime (slim) ─────────────────────────────────────────────────
 FROM node:22-alpine AS runner
 WORKDIR /app
 
@@ -41,6 +36,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Add non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 

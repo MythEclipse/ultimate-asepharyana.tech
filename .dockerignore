@@ -13,3 +13,18 @@
 .env
 .env.*
 !.env.example
+
+# IDE and temporary files
+**/.vscode
+**/.idea
+**/tmp
+**/temp
+**/.cache
+**/coverage
+**/.npm
+**/.bun
+**/.pnpm-store
+**/.yarn
+**/.cargo-ok
+**/*.swp
+**/*~

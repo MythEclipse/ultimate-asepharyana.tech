@@ -2,9 +2,10 @@
 FROM oven/bun:1-alpine AS builder
 WORKDIR /app
 
-# install dependencies
+# install dependencies with cache mounts
 COPY apps/solidjs/package.json apps/solidjs/bun.lock ./
-RUN bun install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 # build the application
 COPY apps/solidjs ./
@@ -17,39 +18,44 @@ WORKDIR /app
 # install nginx and supervisor
 RUN apk add --no-cache nginx supervisor
 
-# copy build artifacts and necessary runtime files
-COPY --from=builder /app/.output ./.output
-COPY apps/solidjs/package.json ./
+# Add non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app /var/lib/nginx /var/log/nginx /run/nginx
 
-COPY infra/nginx/solidjs.conf /etc/nginx/http.d/default.conf
+# copy build artifacts
+COPY --from=builder --chown=appuser:appgroup /app/.output ./.output
+COPY --from=builder --chown=appuser:appgroup /app/package.json ./
+COPY --chown=appuser:appgroup infra/nginx/solidjs.conf /etc/nginx/http.d/default.conf
 
-# Inline Supervisor config
+# Inline Supervisor config (run as non-root)
 RUN printf "[supervisord]\n\
-    nodaemon=true\n\
-    logfile=/dev/null\n\
-    logfile_maxbytes=0\n\
-    \n\
-    [program:bun]\n\
-    command=bun run .output/server/index.mjs\n\
-    directory=/app\n\
-    autostart=true\n\
-    autorestart=true\n\
-    stdout_logfile=/dev/stdout\n\
-    stdout_logfile_maxbytes=0\n\
-    stderr_logfile=/dev/stderr\n\
-    stderr_logfile_maxbytes=0\n\
-    \n\
-    [program:nginx]\n\
-    command=nginx -g \"daemon off;\"\n\
-    autostart=true\n\
-    autorestart=true\n\
-    stdout_logfile=/dev/stdout\n\
-    stdout_logfile_maxbytes=0\n\
-    stderr_logfile=/dev/stderr\n\
-    stderr_logfile_maxbytes=0\n" > /etc/supervisord.conf
+nodaemon=true\n\
+user=appuser\n\
+logfile=/dev/null\n\
+logfile_maxbytes=0\n\
+\n\
+[program:bun]\n\
+command=bun run .output/server/index.mjs\n\
+directory=/app\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n\
+\n\
+[program:nginx]\n\
+command=nginx -g \"daemon off;\"\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n" > /etc/supervisord.conf
 
 ENV PORT=4090
 EXPOSE 80
 
-# run supervisor to manage both processes
+# run supervisor
+USER appuser
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
