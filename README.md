@@ -1,88 +1,76 @@
-# 🚀 Ultimate Asepharyana Tech
+# Ultimate Asepharyana Tech
 
-A modern, high-performance distributed services architecture powering the personal portfolio and various interactive features of **Asep Haryana Saputra**.
+Monorepo untuk ekosistem portfolio dan layanan pendukung milik Asep Haryana Saputra.
+Arsitektur dipisah ke beberapa service agar frontend, API, dan visual engine bisa dikembangkan serta di-deploy secara independen.
 
-This project has evolved from a monorepo into a **decoupled services architecture**, leveraging Rust, TypeScript, and Docker for maximum scalability and reliability.
+## Services
 
----
+| Service | Path | Default Local Port | Notes |
+| :-- | :-- | :-- | :-- |
+| Rust API | `apps/rust` | `4091` | API utama (Axum + SeaORM), scraping, image proxy/cache, metrics, OpenAPI docs |
+| Elysia API | `apps/elysia` | `4092` | API realtime/auth/chat/quiz (Elysia + Bun + Drizzle + Redis + MinIO) |
+| SolidJS Web | `apps/solidjs` | `4090` | Frontend SSR utama (SolidStart) |
+| Next.js Web | `apps/nextjs` | `3000` | Frontend alternatif/eksperimen UI (Next.js App Router) |
+| Leptos Web | `apps/leptos` | `3000` (Trunk) | Frontend WASM berbasis Leptos |
+| Visuals | `apps/visuals` | `3001` (Trunk) | Eksperimen visual berbasis Bevy + WebGPU |
 
-## 🏗️ System Architecture
+## Infrastructure
 
-The ecosystem consists of several specialized services communicating over a shared Docker network and managed via **Docker Compose** and **Coolify**.
+File compose berada di `infra/compose`:
 
-### 🛠 Core Services
+- `shared.yml`: MySQL, Redis, MinIO
+- `rust.yml`, `elysia.yml`, `solidjs.yml`, `nextjs.yml`, `leptos.yml`, `visuals.yml`: manifest deploy per service (image GHCR bertag SHA)
 
-| Service                         | Technology                  | Description                                                                     |
-| :------------------------------ | :-------------------------- | :------------------------------------------------------------------------------ |
-| **[Rust API](apps/rust)**       | Rust (Axum, SeaORM)         | High-performance core backend for scraping, media proxy, and heavy computation. |
-| **[Elysia API](apps/elysia)**   | TypeScript (Elysia.js, Bun) | Real-time features, interactive quizzes (WebSocket), and session handling.      |
-| **[SolidJS Web](apps/solidjs)** | SolidJS, TailwindCSS        | The main client-side application for the portfolio and media viewer.            |
-| **[Leptos Web](apps/leptos)**   | Rust (Leptos, WASM)         | experimental high-performance frontend components compiled to WebAssembly.      |
-| **[Visuals](apps/visuals)**     | Rust (Bevy/WGPU)            | Specialized WebGL/WebGPU rendering and interactive visual experiments.          |
+Dockerfile per service berada di folder `docker/`.
 
-### 🛰 Infrastructure sidecars
+## Local Development
 
-- **MySQL 8**: Primary relational data storage.
-- **Redis**: High-speed caching, session storage, and request coalescing.
-- **Minio**: S3-compatible object storage for media assets.
-- **Browserless**: Dedicated headless Chrome cluster for robust web scraping.
-
----
-
-## ⚡ Deployment & CI/CD
-
-We use a **GitOps-driven deployment strategy** with automated tagging and manifest updates.
-
-### ⚓ Tagging Strategy (SHA-based)
-
-Unlike the traditional `latest` tag approach, our pipeline generates unique tags based on **GitHub Commit SHA** (`sha-<short-sha>`).
-
-1. **Build**: GitHub Actions builds individual services only if code within their directory changes.
-2. **Manifest Update**: Upon a successful build, the CI automatically updates `docker-compose.yml` with the new specific SHA tag.
-3. **Trigger**: Coolify detects the manifest change and performs a precise rolling update to the target environment.
-
-### 🚀 Local Development
-
-While each service can be run independently (via `cargo run` or `bun dev`), the entire stack is best initialized via Docker:
+### 1) Jalankan dependency bersama
 
 ```bash
-# Clone the repository
-git clone https://github.com/MythEclipse/ultimate-asepharyana.tech.git
-cd ultimate-asepharyana.tech
-
-# Start the entire ecosystem
-docker compose up -d
+docker compose -f infra/compose/shared.yml up -d
 ```
 
----
-
-## 🧪 Advanced Features
-
-### 🖼️ Intelligent Image Cache (Rust API)
-
-The Rust service provides a sophisticated image proxy and caching mechanism:
-
-- **Resilient Uploads**: Multi-provider failover for CDN uploads (Picser, Leapcell, Vercel).
-- **Audit & Repair**: Automated auditing via `POST /api/proxy/image-cache/audit` that verifies CDN link accessibility and re-uploads broken images.
-- **Background Caching**: Non-blocking "Lazy Mode" for instantaneous user response while ensuring eventual consistency in the CDN.
-
-### ⚙️ Scaffold System
-
-Generate new Rust endpoints with professional-grade boilerplate:
+### 2) Jalankan service yang dibutuhkan
 
 ```bash
+# Rust API
 cd apps/rust
-cargo run --bin scaffold -- my-category/new-feature
+cargo run
+
+# Elysia API
+cd apps/elysia
+bun install
+bun run dev
+
+# SolidJS web
+cd apps/solidjs
+bun install
+bun run dev
+
+# Next.js web
+cd apps/nextjs
+npm install
+npm run dev
+
+# Leptos web (WASM)
+cd apps/leptos
+bun install
+trunk serve
 ```
 
----
+## API Docs and Monitoring
 
-## 📜 Documentation
+- Rust OpenAPI: `/docs`
+- Rust metrics (Prometheus): `/metrics`
+- Elysia Swagger: `/docs`
+- Elysia AsyncAPI viewer: `/docs-ws`
 
-- **Rust API Reference**: `https://rust.asepharyana.tech/docs`
-- **Elysia API Reference**: `https://elysia.asepharyana.tech/docs`
+## Deployment Notes
 
----
+- Pipeline memakai image tag berbasis commit SHA (`sha-<short-sha>`), bukan `latest`.
+- Setiap perubahan service akan menghasilkan image baru dan pembaruan manifest compose service terkait.
 
-**Author:** [Asep Haryana Saputra](https://asepharyana.tech)  
-**License:** MIT
+## License
+
+MIT
