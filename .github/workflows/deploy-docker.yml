@@ -65,6 +65,7 @@ jobs:
             [visuals]=ds04gc480kww4s04o84o80ok
             [nextjs]=knjgtk9uunnec0cfmhuansld
             [shared]=bsgsocwcssc8c4g0kkok8s4k
+            [monitoring]=gavwa5i49rzh3mkdbzb4odap
           )
 
           uuids_to_trigger=()
@@ -78,6 +79,7 @@ jobs:
               infra/compose/visuals.yml|apps/visuals/*) uuids_to_trigger+=("${UUID_MAP[visuals]}") ;;
               infra/compose/nextjs.yml|apps/nextjs/*) uuids_to_trigger+=("${UUID_MAP[nextjs]}") ;;
               infra/compose/shared.yml) uuids_to_trigger+=("${UUID_MAP[shared]}") ;;
+              infra/compose/monitoring.yml|infra/config/prometheus/*|infra/config/grafana/*|infra/config/alertmanager/*) uuids_to_trigger+=("${UUID_MAP[monitoring]}") ;;
             esac
           done
 
