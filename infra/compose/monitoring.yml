@@ -81,6 +81,47 @@ services:
       # Uses Redis container name via shared network DNS
       REDIS_ADDR: redis://redis:6379
 
+  # ── MySQL Exporter ──────────────────────────────────────────────────────────
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.0
+    restart: always
+    networks:
+      - app-shared-net
+    environment:
+      # Format: user:pass@(host:port)/
+      DATA_SOURCE_NAME: "exporter:exporterpassword@(mysql:3306)/"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  # ── Nginx Exporter (monitoring Leptos frontend) ──────────────────────────────
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    restart: always
+    networks:
+      - app-shared-net
+    command:
+      - '-nginx.scrape-uri=http://leptos-web:80/stub_status'
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  # ── cAdvisor (container-level resource metrics) ──────────────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: always
+    networks:
+      - app-shared-net
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
+
 networks:
   app-shared-net:
     name: app-shared-net

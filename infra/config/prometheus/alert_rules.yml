@@ -108,7 +108,7 @@ groups:
           summary: "Redis exporter target is DOWN"
           description: "Redis appears to be unreachable. Instance: {{ $labels.instance }}"
 
-      # ── Node memory ───────────────────────────────────────────────────────────
+      # ── Host memory ───────────────────────────────────────────────────────────
       - alert: HostHighMemoryUsage
         expr: >
           (
@@ -125,3 +125,23 @@ groups:
           description: >
             Memory usage is {{ $value | humanizePercentage }}.
             Available: {{ $labels.instance }}
+
+      # ── MySQL ─────────────────────────────────────────────────────────────────
+      - alert: MySQLDown
+        expr: up{job="mysql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL exporter target is DOWN"
+          description: "MySQL database appears to be unreachable. Instance: {{ $labels.instance }}"
+
+      # ── Next.js ───────────────────────────────────────────────────────────────
+      - alert: NextjsWebDown
+        expr: up{job="nextjs-web"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Next.js Web frontend is DOWN"
+          description: "The Next.js service is unreachable. Instance: {{ $labels.instance }}"
