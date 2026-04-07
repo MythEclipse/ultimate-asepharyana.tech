@@ -23,6 +23,26 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    depends_on:
+      alertmanager:
+        condition: service_healthy
+
+  # ── Alertmanager (notification routing) ──────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: always
+    networks:
+      - app-shared-net
+    volumes:
+      - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    healthcheck:
+      test: ['CMD', 'amtool', 'check-config', '/etc/alertmanager/alertmanager.yml']
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ── Grafana ───────────────────────────────────────────────────────────────────
   grafana:

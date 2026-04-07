@@ -9,6 +9,12 @@ global:
 rule_files:
   - /etc/prometheus/alert_rules.yml
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+
 scrape_configs:
   # ── Prometheus self-monitoring ──────────────────────────────────────────────
   - job_name: prometheus
