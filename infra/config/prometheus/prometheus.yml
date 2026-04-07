@@ -1,0 +1,51 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: ultimate-asepharyana
+    environment: production
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+scrape_configs:
+  # ── Prometheus self-monitoring ──────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: prometheus
+
+  # ── ElysiaJS API ────────────────────────────────────────────────────────────
+  # Container name resolved via app-shared-net Docker bridge network
+  - job_name: elysia-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['elysia-api:4092']
+        labels:
+          service: elysia-api
+
+  # ── Rust API (Axum + axum-prometheus) ───────────────────────────────────────
+  # axum-prometheus exposes standard http_requests_total, http_request_duration_seconds
+  # at /metrics via metrics-exporter-prometheus
+  - job_name: rust-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['rust-api:4091']
+        labels:
+          service: rust-api
+
+  # ── Node Exporter (host system metrics) ─────────────────────────────────────
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: node-exporter
+
+  # ── Redis Exporter ───────────────────────────────────────────────────────────
+  - job_name: redis
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: redis

@@ -1,0 +1,127 @@
+groups:
+  - name: elysia-api
+    interval: 30s
+    rules:
+      # ── Availability ──────────────────────────────────────────────────────────
+      - alert: ElysiaApiDown
+        expr: up{job="elysia-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ElysiaJS API is DOWN"
+          description: >
+            The elysia-api scrape target has been unreachable for more than 1 minute.
+            Instance: {{ $labels.instance }}
+
+      # ── Error Rate ────────────────────────────────────────────────────────────
+      - alert: HighErrorRate
+        expr: >
+          (
+            sum(rate(elysia_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(elysia_http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate on elysia-api"
+          description: >
+            5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            Threshold: 5%.
+
+      # ── Latency ───────────────────────────────────────────────────────────────
+      - alert: HighP99Latency
+        expr: >
+          histogram_quantile(
+            0.99,
+            sum(rate(elysia_http_request_duration_seconds_bucket[5m])) by (le, route)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P99 latency on route {{ $labels.route }}"
+          description: >
+            P99 latency is {{ $value | humanizeDuration }} on route {{ $labels.route }}.
+            Threshold: 2s.
+
+  - name: rust-api
+    interval: 30s
+    rules:
+      # ── Availability ──────────────────────────────────────────────────────────
+      - alert: RustApiDown
+        expr: up{job="rust-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RustJS API is DOWN"
+          description: >
+            The rust-api scrape target has been unreachable for more than 1 minute.
+            Instance: {{ $labels.instance }}
+
+      # ── Error Rate ────────────────────────────────────────────────────────────
+      - alert: HighErrorRateRust
+        expr: >
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate on rust-api"
+          description: >
+            5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            Threshold: 5%.
+
+      # ── Latency ───────────────────────────────────────────────────────────────
+      - alert: HighP99LatencyRust
+        expr: >
+          histogram_quantile(
+            0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, path)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P99 latency on route {{ $labels.path }}"
+          description: >
+            P99 latency is {{ $value | humanizeDuration }} on route {{ $labels.path }}.
+            Threshold: 2s.
+
+  - name: infrastructure
+    interval: 60s
+    rules:
+      # ── Redis ─────────────────────────────────────────────────────────────────
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis exporter target is DOWN"
+          description: "Redis appears to be unreachable. Instance: {{ $labels.instance }}"
+
+      # ── Node memory ───────────────────────────────────────────────────────────
+      - alert: HostHighMemoryUsage
+        expr: >
+          (
+            1 - (
+              node_memory_MemAvailable_bytes /
+              node_memory_MemTotal_bytes
+            )
+          ) > 0.90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory usage is above 90%"
+          description: >
+            Memory usage is {{ $value | humanizePercentage }}.
+            Available: {{ $labels.instance }}
