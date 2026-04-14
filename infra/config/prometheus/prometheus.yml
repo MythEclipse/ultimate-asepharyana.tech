@@ -45,14 +45,14 @@ scrape_configs:
   # ── Node Exporter (host system metrics) ─────────────────────────────────────
   - job_name: node
     static_configs:
-      - targets: ['node-exporter-gavwa5i49rzh3mkdbzb4odap-144716135605:9100']
+      - targets: ['node-exporter:9100']
         labels:
           service: node-exporter
 
   # ── Redis Exporter ───────────────────────────────────────────────────────────
   - job_name: redis
     static_configs:
-      - targets: ['redis-exporter-gavwa5i49rzh3mkdbzb4odap-144716157193:9121']
+      - targets: ['redis-exporter:9121']
         labels:
           service: redis
 
@@ -89,6 +89,6 @@ scrape_configs:
   # ── cAdvisor (Container Resource Metrics) ──────────────────────────────────
   - job_name: cadvisor
     static_configs:
-      - targets: ['cadvisor-gavwa5i49rzh3mkdbzb4odap-144716181660:8080']
+      - targets: ['cadvisor:8080']
         labels:
           service: cadvisor

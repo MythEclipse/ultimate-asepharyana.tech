@@ -20,11 +20,11 @@ services:
     ports:
       - '9091:9090'
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:9090/-/ready']
+      test: ['CMD-SHELL', 'nc -z localhost 9090 || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 60s
     depends_on:
       alertmanager:
         condition: service_healthy
@@ -45,6 +45,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
 
   # ── Grafana ───────────────────────────────────────────────────────────────────
   grafana:
@@ -76,41 +77,47 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 60s
 
   # ── Node Exporter (host system metrics) ─────────────────────────────────────
-  # node-exporter:
-  #   image: prom/node-exporter:v1.8.0
-  #   restart: always
-  #   networks:
-  #     - app-shared-net
-  #   # Exposes host /proc, /sys, /rootfs as read-only
-  #   volumes:
-  #     - /proc:/host/proc:ro
-  #     - /sys:/host/sys:ro
-  #     - /:/rootfs:ro
-  #   command:
-  #     - '--path.procfs=/host/proc'
-  #     - '--path.sysfs=/host/sys'
-  #     - '--path.rootfs=/rootfs'
-  #     - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  node-exporter:
+    image: prom/node-exporter:v1.8.0
+    restart: always
+    networks:
+      app-shared-net:
+        aliases:
+          - node-exporter
+    # Exposes host /proc, /sys, /rootfs as read-only
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
 
   # ── Redis Exporter ───────────────────────────────────────────────────────────
-  # redis-exporter:
-  #   image: oliver006/redis_exporter:v1.62.0
-  #   restart: always
-  #   networks:
-  #     - app-shared-net
-  #   environment:
-  #     # Uses Redis container name via shared network DNS
-  #     REDIS_ADDR: redis://redis:6379
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    restart: always
+    networks:
+      app-shared-net:
+        aliases:
+          - redis-exporter
+    environment:
+      # Uses Redis container name via shared network DNS
+      REDIS_ADDR: redis://redis:6379
 
   # ── MySQL Exporter ──────────────────────────────────────────────────────────
   mysqld-exporter:
     image: prom/mysqld-exporter:v0.15.0
     restart: always
     networks:
-      - app-shared-net
+      app-shared-net:
+        aliases:
+          - mysqld-exporter
     volumes:
       - ../config/prometheus/.my.cnf:/etc/prometheus/.my.cnf:ro
     command:
@@ -120,30 +127,35 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 30s
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:1.1.0
     restart: always
     networks:
-      - app-shared-net
+      app-shared-net:
+        aliases:
+          - nginx-exporter
     command:
       - '-nginx.scrape-uri=http://leptos-web:80/stub_status'
 
   # ── cAdvisor (container-level resource metrics) ──────────────────────────────
-  # cadvisor:
-  #   image: gcr.io/cadvisor/cadvisor:v0.49.1
-  #   restart: always
-  #   networks:
-  #     - app-shared-net
-  #   volumes:
-  #     - /:/rootfs:ro
-  #     - /var/run:/var/run:ro
-  #     - /sys:/sys:ro
-  #     - /var/lib/docker/:/var/lib/docker:ro
-  #     - /dev/disk/:/dev/disk:ro
-  #   devices:
-  #     - /dev/kmsg
-  #   privileged: true
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: always
+    networks:
+      app-shared-net:
+        aliases:
+          - cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
 
 networks:
   app-shared-net:

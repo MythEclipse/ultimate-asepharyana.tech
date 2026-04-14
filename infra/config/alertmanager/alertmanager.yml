@@ -10,6 +10,8 @@ route:
 
 receivers:
   - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:5001/' # Placeholder until real notification target is added
 
 inhibit_rules:
   - source_match:
