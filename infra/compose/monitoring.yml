@@ -6,8 +6,8 @@ services:
     networks:
       - app-shared-net
     volumes:
-      - ../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ../config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -36,7 +36,7 @@ services:
     networks:
       - app-shared-net
     volumes:
-      - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -64,8 +64,8 @@ services:
       # Disable telemetry
       GF_METRICS_ENABLED: 'true'
     volumes:
-      - ../config/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ../config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       prometheus:
@@ -119,7 +119,7 @@ services:
         aliases:
           - mysqld-exporter
     volumes:
-      - ../config/prometheus/.my.cnf:/etc/prometheus/.my.cnf:ro
+      - ./config/prometheus/.my.cnf:/etc/prometheus/.my.cnf:ro
     command:
       - '--config.my-cnf=/etc/prometheus/.my.cnf'
     healthcheck:
