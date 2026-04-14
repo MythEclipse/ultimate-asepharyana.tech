@@ -1,6 +1,6 @@
 services:
   elysia-api:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:sha-9d0ea76
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:sha-fb82eaa
     restart: always
     networks: [app-shared-net]
     environment:
