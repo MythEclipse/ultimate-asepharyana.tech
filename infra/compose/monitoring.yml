@@ -107,14 +107,16 @@ services:
     restart: always
     networks:
       - app-shared-net
-    environment:
-      # Format: user:pass@(host:port)/
-      DATA_SOURCE_NAME: "exporter:exporterpassword@(mysql:3306)/"
-    depends_on:
-      prometheus:
-        condition: service_healthy
+    volumes:
+      - ../config/prometheus/.my.cnf:/etc/prometheus/.my.cnf:ro
+    command:
+      - '--config.my-cnf=/etc/prometheus/.my.cnf'
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:9104/metrics']
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-  # ── Nginx Exporter (monitoring Leptos frontend) ──────────────────────────────
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:1.1.0
     restart: always
@@ -122,9 +124,6 @@ services:
       - app-shared-net
     command:
       - '-nginx.scrape-uri=http://leptos-web:80/stub_status'
-    depends_on:
-      prometheus:
-        condition: service_healthy
 
   # ── cAdvisor (container-level resource metrics) ──────────────────────────────
   cadvisor:
