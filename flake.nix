@@ -31,7 +31,7 @@
       
       systems = import systems;
 
-      perSystem = { config, self', inputs', pkgs, system, ... }: 
+      perSystem = { config, self', inputs', pkgs, system, ... }:
         let
           rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
             extensions = [ "rust-src" "rust-analyzer" "clippy" ];
@@ -49,17 +49,10 @@
             nextjs = import ./nix/apps/nextjs.nix { inherit pkgs; src = app-nextjs; };
             solidjs = import ./nix/apps/solidjs.nix { inherit pkgs; src = app-solidjs; };
           };
-        in
-        {
-          _module.args.pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ (import rust-overlay) ];
-          };
 
-          packages = let
-            solidjsSupervisorConfig = pkgs.runCommand "solidjs-supervisord-conf" {} ''
-              mkdir -p $out/etc
-              cat > $out/etc/supervisord.conf <<'EOF'
+          solidjsSupervisorConfig = pkgs.runCommand "solidjs-supervisord-conf" {} ''
+            mkdir -p $out/etc
+            cat > $out/etc/supervisord.conf <<'EOF'
 [supervisord]
 nodaemon=true
 user=appuser
@@ -85,33 +78,40 @@ stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 EOF
-            '';
+          '';
 
-            solidjsNginxConfig = pkgs.runCommand "solidjs-nginx-config" {} ''
-              mkdir -p $out/etc/nginx/conf.d
-              cp ${./infra/nginx/solidjs.conf} $out/etc/nginx/conf.d/default.conf
-            '';
+          solidjsNginxConfig = pkgs.runCommand "solidjs-nginx-config" {} ''
+            mkdir -p $out/etc/nginx/conf.d
+            cp ${./infra/nginx/solidjs.conf} $out/etc/nginx/conf.d/default.conf
+          '';
 
-            leptosStatic = pkgs.runCommand "leptos-static" {} ''
-              mkdir -p $out/usr/share/nginx/html
-              cp -r ${apps-packages."leptos-frontend"}/share/nginx/html/* $out/usr/share/nginx/html/
-            '';
+          leptosStatic = pkgs.runCommand "leptos-static" {} ''
+            mkdir -p $out/usr/share/nginx/html
+            cp -r ${apps-packages."leptos-frontend"}/share/nginx/html/* $out/usr/share/nginx/html/
+          '';
 
-            leptosNginxConfig = pkgs.runCommand "leptos-nginx-config" {} ''
-              mkdir -p $out/etc/nginx/conf.d
-              cp ${./infra/nginx/leptos.conf} $out/etc/nginx/conf.d/default.conf
-            '';
+          leptosNginxConfig = pkgs.runCommand "leptos-nginx-config" {} ''
+            mkdir -p $out/etc/nginx/conf.d
+            cp ${./infra/nginx/leptos.conf} $out/etc/nginx/conf.d/default.conf
+          '';
 
-            visualsStatic = pkgs.runCommand "visuals-static" {} ''
-              mkdir -p $out/usr/share/nginx/html
-              cp -r ${apps-packages.visuals}/share/nginx/html/* $out/usr/share/nginx/html/
-            '';
+          visualsStatic = pkgs.runCommand "visuals-static" {} ''
+            mkdir -p $out/usr/share/nginx/html
+            cp -r ${apps-packages.visuals}/share/nginx/html/* $out/usr/share/nginx/html/
+          '';
 
-            visualsNginxConfig = pkgs.runCommand "visuals-nginx-config" {} ''
-              mkdir -p $out/etc/nginx/conf.d
-              cp ${./infra/nginx/visuals.conf} $out/etc/nginx/conf.d/default.conf
-            '';
-          in apps-packages // {
+          visualsNginxConfig = pkgs.runCommand "visuals-nginx-config" {} ''
+            mkdir -p $out/etc/nginx/conf.d
+            cp ${./infra/nginx/visuals.conf} $out/etc/nginx/conf.d/default.conf
+          '';
+        in
+        {
+          _module.args.pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ (import rust-overlay) ];
+          };
+
+          packages = apps-packages // {
           default = pkgs.lib.mkForce apps-packages.rust-backend;
           services = config.process-compose.default.outputs.package;
 
