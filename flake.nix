@@ -111,7 +111,7 @@ EOF
               mkdir -p $out/etc/nginx/conf.d
               cp ${./infra/nginx/visuals.conf} $out/etc/nginx/conf.d/default.conf
             '';
-          in
+          in {
           packages = apps-packages // {
             default = pkgs.lib.mkForce apps-packages.rust-backend;
             services = config.process-compose.default.outputs.package;
