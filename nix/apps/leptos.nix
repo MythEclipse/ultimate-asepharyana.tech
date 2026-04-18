@@ -33,6 +33,7 @@ let
       bun
       nodejs
       gnutar
+      coreutils
     ];
     
     buildInputs = with pkgs; [
@@ -53,6 +54,7 @@ craneLib.buildPackage (commonArgs // {
     export NODE_PATH=$PWD/node_modules
     export PATH=$PWD/node_modules/.bin:$PATH
     patchShebangs ./node_modules/.bin
+    find ./node_modules/.bin -type f -exec sed -i '1s|^#!/usr/bin/env node|#!${pkgs.nodejs}/bin/node|' {} +
     wasm-bindgen --version
     trunk build --release --public-url "/" --skip-version-check
   '';
