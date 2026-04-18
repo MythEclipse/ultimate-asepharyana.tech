@@ -56,7 +56,7 @@
             overlays = [ (import rust-overlay) ];
           };
 
-          let
+          packages = let
             solidjsSupervisorConfig = pkgs.runCommand "solidjs-supervisord-conf" {} ''
               mkdir -p $out/etc
               cat > $out/etc/supervisord.conf <<'EOF'
@@ -111,10 +111,9 @@ EOF
               mkdir -p $out/etc/nginx/conf.d
               cp ${./infra/nginx/visuals.conf} $out/etc/nginx/conf.d/default.conf
             '';
-          in {
-          packages = apps-packages // {
-            default = pkgs.lib.mkForce apps-packages.rust-backend;
-            services = config.process-compose.default.outputs.package;
+          in apps-packages // {
+          default = pkgs.lib.mkForce apps-packages.rust-backend;
+          services = config.process-compose.default.outputs.package;
 
             docker-rust = pkgs.dockerTools.buildLayeredImage {
               name = "rust-api";

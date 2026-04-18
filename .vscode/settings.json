@@ -1,5 +1,6 @@
 {
   "nxConsole.generateAiAgentRules": true,
   "WillLuke.nextjs.addTypesOnSave": true,
-  "WillLuke.nextjs.hasPrompted": true
+  "WillLuke.nextjs.hasPrompted": true,
+  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix"
 }
