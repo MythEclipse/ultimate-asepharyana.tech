@@ -20,6 +20,8 @@ let
     buildInputs = with pkgs; [
       openssl
     ];
+
+    cargoExtraArgs = "--target wasm32-unknown-unknown";
   };
 
   # Build the artifacts

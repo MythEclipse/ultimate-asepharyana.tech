@@ -21,6 +21,8 @@ let
     ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
       pkgs.darwin.apple_sdk.frameworks.Security
     ];
+
+    cargoExtraArgs = "--target wasm32-unknown-unknown";
   };
 in
 craneLib.buildPackage (commonArgs // {
