@@ -19,11 +19,11 @@
     "app-leptos": {
       "flake": false,
       "locked": {
-        "lastModified": 1775276114,
-        "narHash": "sha256-wswrSYYuGq/6jFbq92lDlF98Tii9GnajFO/NStDZTMU=",
+        "lastModified": 1776530902,
+        "narHash": "sha256-SAwcxroP/L+MOWTvu2og7g18l+xssIRBhOorgsYgbHk=",
         "owner": "MythEclipse",
         "repo": "ultimate-asepharyana-tech-leptos",
-        "rev": "dfe36b2f58aa79d5d47457b87f7acd3f78c1c5c8",
+        "rev": "07bf4f9c9a9f3827b8b93d40532eadee8f5943b3",
         "type": "github"
       },
       "original": {
@@ -83,11 +83,11 @@
     "app-visuals": {
       "flake": false,
       "locked": {
-        "lastModified": 1774737163,
-        "narHash": "sha256-53pfwg6rR1MUGPiYhAduo0vNNa8RrWwNe5d+PpRBC+g=",
+        "lastModified": 1776529204,
+        "narHash": "sha256-pujjSwZVW4IB/3mHg46bbg44NZYZYjxUmFUopGHTCCA=",
         "owner": "MythEclipse",
         "repo": "ultimate-asepharyana-tech-visuals",
-        "rev": "6bc8d81e8076aaf883755af5c418c2dc5c59bc4b",
+        "rev": "3ac2db17fa6918a10da00034076fe5d47746b48d",
         "type": "github"
       },
       "original": {
