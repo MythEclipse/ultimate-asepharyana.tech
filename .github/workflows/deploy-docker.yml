@@ -19,6 +19,14 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup GitHub CLI
+        uses: actions/setup-gh@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify GitHub CLI auth
+        run: gh auth status
+
       - name: Deploy with Docker Compose on VPS
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -38,14 +46,24 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" <<EOF
+          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" <<'EOF'
             set -euo pipefail
             cd "$VPS_TARGET_DIR"
-            git fetch origin main --depth=1
+            git fetch origin main --depth=1 || true
             git reset --hard origin/main
             git submodule update --init --recursive
-            docker compose -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/visuals.yml -f infra/compose/nextjs.yml pull
-            docker compose -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/visuals.yml -f infra/compose/nextjs.yml up -d
+
+            if command -v "docker" >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            else
+              echo "❌ docker compose is not installed on the remote host."
+              exit 1
+            fi
+
+            $COMPOSE_CMD -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/visuals.yml -f infra/compose/nextjs.yml pull
+            $COMPOSE_CMD -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/visuals.yml -f infra/compose/nextjs.yml up -d
           EOF
 
 #       - name: Restart coolify-proxy (delay 1 min)
