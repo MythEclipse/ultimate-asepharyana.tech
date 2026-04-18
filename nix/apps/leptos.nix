@@ -1,0 +1,41 @@
+{ craneLib, pkgs, src }:
+
+let
+  
+  # Common arguments for crane
+  commonArgs = {
+    pname = "apps-leptos";
+    version = "0.1.0";
+    inherit src;
+    strictDeps = true;
+    
+    nativeBuildInputs = with pkgs; [
+      pkg-config
+      trunk
+      wasm-bindgen-cli
+      binaryen # wasm-opt
+      rust-bin.nightly.latest.default # Ensure nightly is available
+    ];
+    
+    buildInputs = with pkgs; [
+      openssl
+    ];
+  };
+
+  # Build the artifacts
+  # Note: Trunk usually downloads things, so we need to ensure everything is vendored or pre-built.
+  # For now, we'll use a standard crane build but override the build command.
+in
+craneLib.buildPackage (commonArgs // {
+  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+
+  buildPhaseCargoCommand = ''
+    export HOME=$TMPDIR
+    trunk build --release --public-url "/"
+  '';
+
+  installPhaseCommand = ''
+    mkdir -p $out/share/nginx/html
+    cp -r dist/* $out/share/nginx/html/
+  '';
+})
