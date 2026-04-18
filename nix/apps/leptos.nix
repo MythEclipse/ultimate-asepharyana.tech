@@ -1,7 +1,23 @@
 { craneLib, pkgs, src }:
 
 let
-  
+  nodeDeps = pkgs.stdenv.mkDerivation {
+    name = "leptos-deps.tar.gz";
+    inherit src;
+    nativeBuildInputs = [ pkgs.bun pkgs.cacert ];
+    buildPhase = ''
+      export HOME=$TMPDIR
+      bun install --frozen-lockfile
+    '';
+    installPhase = ''
+      find node_modules -exec touch -h -t 197001010000.00 {} +
+      tar --sort=name --mtime='1970-01-01 00:00:00Z' --owner=0 --group=0 --numeric-owner -czf $out node_modules
+    '';
+    outputHashMode = "flat";
+    outputHashAlgo = "sha256";
+    outputHash = "sha256-5VnDSWhPICJ8khprSAUqfMGQImub8BM8IcA42QVbS0s=";
+  };
+
   # Common arguments for crane
   commonArgs = {
     pname = "apps-leptos";
@@ -14,7 +30,9 @@ let
       trunk
       wasm-bindgen-cli
       binaryen # wasm-opt
-      tailwindcss
+      bun
+      nodejs
+      gnutar
     ];
     
     buildInputs = with pkgs; [
@@ -24,9 +42,6 @@ let
     cargoExtraArgs = "--target wasm32-unknown-unknown";
   };
 
-  # Build the artifacts
-  # Note: Trunk usually downloads things, so we need to ensure everything is vendored or pre-built.
-  # For now, we'll use a standard crane build but override the build command.
 in
 craneLib.buildPackage (commonArgs // {
   cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -34,8 +49,10 @@ craneLib.buildPackage (commonArgs // {
   buildPhaseCargoCommand = ''
     export HOME=$TMPDIR
     export TRUNK_SKIP_VERSION_CHECK=true
-    mkdir -p node_modules/.bin
-    ln -sf ${pkgs.tailwindcss}/bin/tailwindcss node_modules/.bin/tailwindcss
+    tar -xzf ${nodeDeps}
+    export NODE_PATH=$PWD/node_modules
+    export PATH=$PWD/node_modules/.bin:$PATH
+    patchShebangs ./node_modules/.bin
     trunk build --release --public-url "/" --skip-version-check
   '';
 
@@ -43,4 +60,6 @@ craneLib.buildPackage (commonArgs // {
     mkdir -p $out/share/nginx/html
     cp -r dist/* $out/share/nginx/html/
   '';
+
+  passthru = { inherit nodeDeps; };
 })
