@@ -1,5 +1,5 @@
 {
-  description = "Ultimate Asepharyana Tech Monorepo - Nix Flake Migration";
+  description = "Ultimate Asepharyana Tech Monorepo - Nix Flake Migration - Trigger CI";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
