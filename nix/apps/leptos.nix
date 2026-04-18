@@ -14,6 +14,7 @@ let
       trunk
       wasm-bindgen-cli
       binaryen # wasm-opt
+      tailwindcss
     ];
     
     buildInputs = with pkgs; [
@@ -32,7 +33,10 @@ craneLib.buildPackage (commonArgs // {
 
   buildPhaseCargoCommand = ''
     export HOME=$TMPDIR
-    trunk build --release --public-url "/"
+    export TRUNK_SKIP_VERSION_CHECK=true
+    mkdir -p node_modules/.bin
+    ln -sf ${pkgs.tailwindcss}/bin/tailwindcss node_modules/.bin/tailwindcss
+    trunk build --release --public-url "/" --skip-version-check
   '';
 
   installPhaseCommand = ''

@@ -29,7 +29,8 @@ craneLib.buildPackage (commonArgs // {
 
   buildPhaseCargoCommand = ''
     export HOME=$TMPDIR
-    trunk build --release
+    export TRUNK_SKIP_VERSION_CHECK=true
+    trunk build --release --skip-version-check
   '';
 
   installPhaseCommand = ''
