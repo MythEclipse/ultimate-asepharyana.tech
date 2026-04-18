@@ -99,6 +99,7 @@
               minio-client
               gh
               git
+              nginx
             ];
 
             shellHook = ''
@@ -183,6 +184,16 @@
                   fi
                   cd ${apps-packages.solidjs}/share/solidjs && HOST=0.0.0.0 PORT=${"$"}{SOLIDJS_PORT} ${pkgs.bun}/bin/bun .output/server/index.mjs
                 '';
+              };
+              nginx = {
+                command = ''
+                  mkdir -p ./.nix/nginx/logs
+                  exec ${pkgs.nginx}/bin/nginx -c $PWD/nix/nginx.conf -p $PWD/.nix/nginx
+                '';
+                depends_on = {
+                  frontend-nextjs.condition = "process_started";
+                  frontend-solidjs.condition = "process_started";
+                };
               };
             };
           };
