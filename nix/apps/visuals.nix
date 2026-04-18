@@ -13,7 +13,6 @@ let
       trunk
       wasm-bindgen-cli
       binaryen
-      rust-bin.nightly.latest.default
     ];
     
     buildInputs = with pkgs; [

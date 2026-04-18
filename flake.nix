@@ -149,9 +149,9 @@ EOF
             docker-solidjs = pkgs.dockerTools.buildLayeredImage {
               name = "solidjs-web";
               tag = "latest";
-              contents = [ pkgs.bun pkgs.nginx pkgs.supervisor apps-packages.solidjs solidjsSupervisorConfig solidjsNginxConfig pkgs.cacert ];
+              contents = [ pkgs.bun pkgs.nginx pkgs.python3Packages.supervisor apps-packages.solidjs solidjsSupervisorConfig solidjsNginxConfig pkgs.cacert ];
               config = {
-                Cmd = [ "${pkgs.supervisor}/bin/supervisord" "-c" "/etc/supervisord.conf" ];
+                Cmd = [ "${pkgs.python3Packages.supervisor}/bin/supervisord" "-c" "/etc/supervisord.conf" ];
                 ExposedPorts = { "80/tcp" = {}; };
               };
             };

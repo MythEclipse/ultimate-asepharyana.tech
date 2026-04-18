@@ -14,7 +14,6 @@ let
       trunk
       wasm-bindgen-cli
       binaryen # wasm-opt
-      rust-bin.nightly.latest.default # Ensure nightly is available
     ];
     
     buildInputs = with pkgs; [
