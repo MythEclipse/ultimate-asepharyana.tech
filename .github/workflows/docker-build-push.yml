@@ -53,30 +53,42 @@ jobs:
             rust-api:
               - 'apps/rust/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/rust.nix'
               - 'infra/docker/rust.Dockerfile'
             elysia-api:
               - 'apps/elysia/**'
               - 'packages/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/elysia.nix'
               - 'infra/docker/elysia.Dockerfile'
             solidjs-web:
               - 'apps/solidjs/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/solidjs.nix'
               - 'infra/docker/solidjs.Dockerfile'
               - 'infra/nginx/solidjs.conf'
             leptos-web:
               - 'apps/leptos/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/leptos.nix'
               - 'infra/docker/leptos.Dockerfile'
               - 'infra/nginx/leptos.conf'
             visuals:
               - 'apps/visuals/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/visuals.nix'
               - 'infra/docker/visuals.Dockerfile'
               - 'infra/nginx/visuals.conf'
             nextjs-web:
               - 'apps/nextjs/**'
               - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/nextjs.nix'
               - 'infra/docker/nextjs.Dockerfile'
 
       # ── Service-based detection for cross-repo dispatches ──
@@ -155,11 +167,10 @@ jobs:
   # Phase 2: Build only changed services
   # ──────────────────────────────────────────────
   build-rust-api:
-    needs: [changes, sync-submodule]
+    needs: [changes]
     if: |
       always() && 
-      (needs.changes.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch') &&
-      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
+      (needs.changes.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -181,30 +192,47 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
+      - uses: cachix/install-nix-action@v18
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: infra/docker/rust.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=rust-api
-          cache-to: type=gha,mode=max,scope=rust-api
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          nix --extra-experimental-features 'nix-command flakes' build .#docker-rust --no-link -o build-result
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          if [ -z "$IMAGE_FILE" ]; then
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
+          fi
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found in build-result"
+            ls -la build-result
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "Failed to detect loaded image name"
+            exit 1
+          fi
+
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/rust-api
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
   build-elysia-api:
-    needs: [changes, sync-submodule]
+    needs: [changes]
     if: |
       always() && 
-      (needs.changes.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch') &&
-      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
+      (needs.changes.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -226,30 +254,47 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
+      - uses: cachix/install-nix-action@v18
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: infra/docker/elysia.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=elysia-api
-          cache-to: type=gha,mode=max,scope=elysia-api
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          nix --extra-experimental-features 'nix-command flakes' build .#docker-elysia --no-link -o build-result
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          if [ -z "$IMAGE_FILE" ]; then
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
+          fi
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found in build-result"
+            ls -la build-result
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "Failed to detect loaded image name"
+            exit 1
+          fi
+
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/elysia-api
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
   build-solidjs-web:
-    needs: [changes, sync-submodule]
+    needs: [changes]
     if: |
       always() && 
-      (needs.changes.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch') &&
-      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
+      (needs.changes.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -271,30 +316,47 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
+      - uses: cachix/install-nix-action@v18
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: infra/docker/solidjs.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=solidjs-web
-          cache-to: type=gha,mode=max,scope=solidjs-web
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          nix --extra-experimental-features 'nix-command flakes' build .#docker-solidjs --no-link -o build-result
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          if [ -z "$IMAGE_FILE" ]; then
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
+          fi
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found in build-result"
+            ls -la build-result
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "Failed to detect loaded image name"
+            exit 1
+          fi
+
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/solidjs-web
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
   build-leptos-web:
-    needs: [changes, sync-submodule]
+    needs: [changes]
     if: |
       always() && 
-      (needs.changes.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch') &&
-      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
+      (needs.changes.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -316,34 +378,47 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
+      - uses: cachix/install-nix-action@v18
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: infra/docker/leptos.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VISUALS_URL=https://visuals.asepharyana.tech/
-          # Optimization: Cache-from/to is already type=gha. 
-          # Ensure mode=max is always used to cache all layers.
-          cache-from: type=gha,scope=leptos-web
-          cache-to: type=gha,mode=max,scope=leptos-web
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          nix --extra-experimental-features 'nix-command flakes' build .#docker-leptos --no-link -o build-result
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          if [ -z "$IMAGE_FILE" ]; then
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
+          fi
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found in build-result"
+            ls -la build-result
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "Failed to detect loaded image name"
+            exit 1
+          fi
+
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/leptos-web
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
   build-visuals:
-    needs: [changes, sync-submodule]
+    needs: [changes]
     if: |
       always() && 
-      (needs.changes.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch') &&
-      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
+      (needs.changes.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -365,30 +440,47 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
+      - uses: cachix/install-nix-action@v18
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: infra/docker/visuals.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=visuals
-          cache-to: type=gha,mode=max,scope=visuals
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          nix --extra-experimental-features 'nix-command flakes' build .#docker-visuals --no-link -o build-result
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          if [ -z "$IMAGE_FILE" ]; then
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
+          fi
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found in build-result"
+            ls -la build-result
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "Failed to detect loaded image name"
+            exit 1
+          fi
+
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/visuals
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
   build-nextjs-web:
-    needs: [changes, sync-submodule]
+    needs: [changes]
     if: |
       always() && 
-      (needs.changes.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch') &&
-      (github.event_name != 'repository_dispatch' || needs.sync-submodule.result == 'success')
+      (needs.changes.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -410,23 +502,41 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
+      - uses: cachix/install-nix-action@v18
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/nextjs-web
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: infra/docker/nextjs.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=nextjs-web
-          cache-to: type=gha,mode=max,scope=nextjs-web
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          nix --extra-experimental-features 'nix-command flakes' build .#docker-nextjs --no-link -o build-result
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          if [ -z "$IMAGE_FILE" ]; then
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
+          fi
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found in build-result"
+            ls -la build-result
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "Failed to detect loaded image name"
+            exit 1
+          fi
+
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/nextjs-web
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
   update-manifest:
     needs:

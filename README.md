@@ -23,6 +23,36 @@ File compose berada di `infra/compose`:
 
 Dockerfile per service berada di folder `docker/`.
 
+## Nix-native Docker image builds
+
+Kustom image build sekarang dapat dijalankan langsung dari flake Nix,
+menjaga `flake.nix` sebagai sumber kebenaran untuk semua layanan.
+
+Build image:
+
+```bash
+nix --extra-experimental-features 'nix-command flakes' build .#docker-rust .#docker-elysia .#docker-nextjs .#docker-solidjs .#docker-leptos .#docker-visuals
+```
+
+Load the generated artifact into Docker and push it to the registry:
+
+```bash
+IMAGE_FILE=$(find result -maxdepth 1 -type f | head -n 1)
+docker load --input "$IMAGE_FILE"
+SHORT_SHA=$(git rev-parse --short HEAD)
+
+docker tag rust-api:latest ghcr.io/mytheclipse/ultimate-asepharyana.tech/rust-api:latest
+docker tag rust-api:latest ghcr.io/mytheclipse/ultimate-asepharyana.tech/rust-api:sha-$SHORT_SHA
+
+docker tag elysia-api:latest ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:latest
+docker tag elysia-api:latest ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:sha-$SHORT_SHA
+# repeat for nextjs-web, solidjs-web, leptos-web, visuals
+```
+
+> Notes:
+> - Existing `infra/docker/*.Dockerfile` files remain for compatibility.
+> - The GitHub workflow now builds and pushes images from Nix outputs.
+
 ## Local Development
 
 ### 1) Jalankan dependency bersama

@@ -56,28 +56,124 @@
             overlays = [ (import rust-overlay) ];
           };
 
+          let
+            solidjsSupervisorConfig = pkgs.runCommand "solidjs-supervisord-conf" {} ''
+              mkdir -p $out/etc
+              cat > $out/etc/supervisord.conf <<'EOF'
+[supervisord]
+nodaemon=true
+user=appuser
+logfile=/dev/null
+logfile_maxbytes=0
+
+[program:bun]
+command=${pkgs.bun}/bin/bun run ${apps-packages.solidjs}/share/solidjs/.output/server/index.mjs
+directory=/app
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:nginx]
+command=${pkgs.nginx}/bin/nginx -g "daemon off;"
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+EOF
+            '';
+
+            solidjsNginxConfig = pkgs.runCommand "solidjs-nginx-config" {} ''
+              mkdir -p $out/etc/nginx/conf.d
+              cp ${./infra/nginx/solidjs.conf} $out/etc/nginx/conf.d/default.conf
+            '';
+
+            leptosStatic = pkgs.runCommand "leptos-static" {} ''
+              mkdir -p $out/usr/share/nginx/html
+              cp -r ${apps-packages."leptos-frontend"}/share/nginx/html/* $out/usr/share/nginx/html/
+            '';
+
+            leptosNginxConfig = pkgs.runCommand "leptos-nginx-config" {} ''
+              mkdir -p $out/etc/nginx/conf.d
+              cp ${./infra/nginx/leptos.conf} $out/etc/nginx/conf.d/default.conf
+            '';
+
+            visualsStatic = pkgs.runCommand "visuals-static" {} ''
+              mkdir -p $out/usr/share/nginx/html
+              cp -r ${apps-packages.visuals}/share/nginx/html/* $out/usr/share/nginx/html/
+            '';
+
+            visualsNginxConfig = pkgs.runCommand "visuals-nginx-config" {} ''
+              mkdir -p $out/etc/nginx/conf.d
+              cp ${./infra/nginx/visuals.conf} $out/etc/nginx/conf.d/default.conf
+            '';
+          in
           packages = apps-packages // {
             default = pkgs.lib.mkForce apps-packages.rust-backend;
             services = config.process-compose.default.outputs.package;
-            
-            # Docker Images built via Nix
+
             docker-rust = pkgs.dockerTools.buildLayeredImage {
               name = "rust-api";
               tag = "latest";
               contents = [ apps-packages.rust-backend pkgs.cacert ];
               config = {
                 Cmd = [ "${apps-packages.rust-backend}/bin/rustexpress" ];
-                ExposedPorts = { "8080/tcp" = {}; };
+                ExposedPorts = { "4091/tcp" = {}; };
               };
             };
-            
+
             docker-elysia = pkgs.dockerTools.buildLayeredImage {
               name = "elysia-api";
               tag = "latest";
-              contents = [ pkgs.bun apps-packages.elysia ];
+              contents = [ pkgs.bun apps-packages.elysia pkgs.cacert ];
               config = {
-                Cmd = [ "${pkgs.bun}/bin/bun" "run" "${apps-packages.elysia}/lib/index.ts" ];
+                Cmd = [ "${pkgs.bun}/bin/bun" "run" "${apps-packages.elysia}/lib/dist/index.js" ];
                 ExposedPorts = { "4092/tcp" = {}; };
+              };
+            };
+
+            docker-nextjs = pkgs.dockerTools.buildLayeredImage {
+              name = "nextjs-web";
+              tag = "latest";
+              contents = [ pkgs.nodejs apps-packages.nextjs pkgs.cacert ];
+              config = {
+                Cmd = [ "${pkgs.nodejs}/bin/node" "${apps-packages.nextjs}/share/nextjs/server.js" ];
+                Env = [ "HOSTNAME=0.0.0.0" "PORT=3000" "NODE_ENV=production" "NEXT_TELEMETRY_DISABLED=1" ];
+                ExposedPorts = { "3000/tcp" = {}; };
+              };
+            };
+
+            docker-solidjs = pkgs.dockerTools.buildLayeredImage {
+              name = "solidjs-web";
+              tag = "latest";
+              contents = [ pkgs.bun pkgs.nginx pkgs.supervisor apps-packages.solidjs solidjsSupervisorConfig solidjsNginxConfig pkgs.cacert ];
+              config = {
+                Cmd = [ "${pkgs.supervisor}/bin/supervisord" "-c" "/etc/supervisord.conf" ];
+                ExposedPorts = { "80/tcp" = {}; };
+              };
+            };
+
+            docker-leptos = pkgs.dockerTools.buildLayeredImage {
+              name = "leptos-web";
+              tag = "latest";
+              contents = [ pkgs.nginx leptosStatic leptosNginxConfig pkgs.cacert ];
+              config = {
+                Cmd = [ "${pkgs.nginx}/bin/nginx" "-g" "daemon off;" ];
+                ExposedPorts = { "80/tcp" = {}; };
+              };
+            };
+
+            docker-visuals = pkgs.dockerTools.buildLayeredImage {
+              name = "visuals";
+              tag = "latest";
+              contents = [ pkgs.nginx visualsStatic visualsNginxConfig pkgs.cacert ];
+              config = {
+                Cmd = [ "${pkgs.nginx}/bin/nginx" "-g" "daemon off;" ];
+                ExposedPorts = { "80/tcp" = {}; };
               };
             };
           };
@@ -99,7 +195,6 @@
               minio-client
               gh
               git
-              nginx
             ];
 
             shellHook = ''
@@ -113,87 +208,18 @@
 
           process-compose.default = {
             settings.processes = {
-              mysql = {
-                command = ''
-                  mkdir -p ./.nix ./.nix/data/mysql ./.nix/tmp
-                  if ${pkgs.mysql84}/bin/mysqladmin --protocol=tcp -h127.0.0.1 -P3306 ping >/dev/null 2>&1; then
-                    echo "Using existing MySQL on 127.0.0.1:3306"
-                    exec sleep 999999999
-                  fi
-                  ROOT=$(pwd)
-                  rm -f "$ROOT/.nix/mysql.sock" "$ROOT/.nix/mysql.sock.lock" "$ROOT/.nix/mysqld.pid" "$ROOT/.nix/mysqld.log"
-                  if [ ! -d "$ROOT/.nix/data/mysql/mysql" ]; then
-                    ${pkgs.mysql84}/bin/mysqld --initialize-insecure --datadir="$ROOT/.nix/data/mysql"
-                  fi
-                  exec ${pkgs.mysql84}/bin/mysqld --user=root --datadir="$ROOT/.nix/data/mysql" --socket="$ROOT/.nix/mysql.sock" --pid-file="$ROOT/.nix/mysqld.pid" --log-error="$ROOT/.nix/mysqld.log" --tmpdir="$ROOT/.nix/tmp" --port=3306 --bind-address=127.0.0.1 --disable-plugin=mysqlx
-                '';
-                readiness_probe.exec.command = "${pkgs.mysql84}/bin/mysqladmin --protocol=tcp -h127.0.0.1 -P3306 ping";
-              };
-              redis = {
-                command = ''
-                  if ${pkgs.redis}/bin/redis-cli -h127.0.0.1 -p6379 ping >/dev/null 2>&1; then
-                    echo "Using existing Redis on 127.0.0.1:6379"
-                    exec sleep 999999999
-                  fi
-                  exec ${pkgs.redis}/bin/redis-server --port 6379 --bind 127.0.0.1
-                '';
-                readiness_probe.exec.command = "${pkgs.redis}/bin/redis-cli -h127.0.0.1 -p6379 ping";
-              };
-              minio = {
-                command = ''
-                  mkdir -p ./.nix/data/minio
-                  export MINIO_ROOT_USER=admin
-                  export MINIO_ROOT_PASSWORD=mytheclipse
-                  if ${pkgs.minio}/bin/minio admin info --endpoint http://127.0.0.1:9000 >/dev/null 2>&1; then
-                    echo "Using existing MinIO on 127.0.0.1:9000"
-                    exec sleep 999999999
-                  fi
-                  exec ${pkgs.minio}/bin/minio server ./.nix/data/minio --address :9000 --console-address :9001
-                '';
-                readiness_probe.exec.command = "export MINIO_ROOT_USER=admin && export MINIO_ROOT_PASSWORD=mytheclipse && ${pkgs.minio}/bin/minio admin info --endpoint http://127.0.0.1:9000";
-              };
-
               backend-rust = {
                 command = "DATABASE_URL=${"$"}{DATABASE_URL:-mysql://root@127.0.0.1:3306/sosmed} JWT_SECRET=${"$"}{JWT_SECRET:-please-change-me-rust-jwt-secret-32-chars} REDIS_URL=${"$"}{REDIS_URL:-redis://127.0.0.1:6379} ${apps-packages.rust-backend}/bin/rustexpress";
-                depends_on.mysql.condition = "process_healthy";
-                depends_on.redis.condition = "process_started";
               };
               backend-elysia = {
                 command = "cd ${apps-packages.elysia}/lib && PORT=${"$"}{PORT:-4092} HOST=0.0.0.0 DATABASE_URL=${"$"}{DATABASE_URL:-mysql://root@127.0.0.1:3306/sosmed} JWT_SECRET=${"$"}{JWT_SECRET:-please-change-me-elysia-jwt-secret-32-chars} REDIS_URL=${"$"}{REDIS_URL:-redis://127.0.0.1:6379} MINIO_ENDPOINT=${"$"}{MINIO_ENDPOINT:-127.0.0.1} MINIO_PORT=${"$"}{MINIO_PORT:-9000} MINIO_USE_SSL=${"$"}{MINIO_USE_SSL:-false} MINIO_ACCESS_KEY=${"$"}{MINIO_ACCESS_KEY:-admin} MINIO_SECRET_KEY=${"$"}{MINIO_SECRET_KEY:-mytheclipse} MINIO_BUCKET_NAME=${"$"}{MINIO_BUCKET_NAME:-api} MINIO_PUBLIC_URL=${"$"}{MINIO_PUBLIC_URL:-http://127.0.0.1:9000} ${pkgs.bun}/bin/bun run dist/index.js";
-                depends_on.mysql.condition = "process_healthy";
-                depends_on.redis.condition = "process_started";
-                depends_on.minio.condition = "process_started";
               };
               
               frontend-nextjs = {
-                command = ''
-                  export NEXTJS_PORT=${"$"}{NEXTJS_PORT:-3001}
-                  if ! ${pkgs.nodejs}/bin/node -e 'const net=require("net"); const p=parseInt(process.env.NEXTJS_PORT,10); const s=net.createServer(); s.once("error",()=>process.exit(1)); s.once("listening",()=>s.close(()=>process.exit(0))); s.listen(p,"127.0.0.1");' >/dev/null 2>&1; then
-                    echo "Using existing Next.js on 127.0.0.1:${"$"}{NEXTJS_PORT}"
-                    exec sleep 999999999
-                  fi
-                  cd ${apps-packages.nextjs}/share/nextjs && HOSTNAME=0.0.0.0 PORT=${"$"}{NEXTJS_PORT} ${pkgs.nodejs}/bin/node server.js
-                '';
+                command = "cd ${apps-packages.nextjs}/share/nextjs && HOSTNAME=0.0.0.0 PORT=${"$"}{NEXTJS_PORT:-3001} ${pkgs.nodejs}/bin/node server.js";
               };
               frontend-solidjs = {
-                command = ''
-                  export SOLIDJS_PORT=${"$"}{SOLIDJS_PORT:-3010}
-                  if ! ${pkgs.nodejs}/bin/node -e 'const net=require("net"); const p=parseInt(process.env.SOLIDJS_PORT,10); const s=net.createServer(); s.once("error",()=>process.exit(1)); s.once("listening",()=>s.close(()=>process.exit(0))); s.listen(p,"127.0.0.1");' >/dev/null 2>&1; then
-                    echo "Using existing SolidJS on 127.0.0.1:${"$"}{SOLIDJS_PORT}"
-                    exec sleep 999999999
-                  fi
-                  cd ${apps-packages.solidjs}/share/solidjs && HOST=0.0.0.0 PORT=${"$"}{SOLIDJS_PORT} ${pkgs.bun}/bin/bun .output/server/index.mjs
-                '';
-              };
-              nginx = {
-                command = ''
-                  mkdir -p ./.nix/nginx/logs
-                  exec ${pkgs.nginx}/bin/nginx -c $PWD/nix/nginx.conf -p $PWD/.nix/nginx
-                '';
-                depends_on = {
-                  frontend-nextjs.condition = "process_started";
-                  frontend-solidjs.condition = "process_started";
-                };
+                command = "cd ${apps-packages.solidjs}/share/solidjs && HOST=0.0.0.0 PORT=${"$"}{SOLIDJS_PORT:-3010} ${pkgs.bun}/bin/bun .output/server/index.mjs";
               };
             };
           };

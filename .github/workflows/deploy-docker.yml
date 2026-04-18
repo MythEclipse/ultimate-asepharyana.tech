@@ -19,101 +19,34 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Trigger Coolify Deployment
+      - name: Deploy with Docker Compose on VPS
         env:
-          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
         run: |
-          if [ -z "$COOLIFY_TOKEN" ]; then
-            echo "❌ COOLIFY_TOKEN secret is not set!"
+          set -euo pipefail
+
+          if [ -z "${SSH_PRIVATE_KEY:-}" ] || [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_TARGET_DIR:-}" ]; then
+            echo "❌ Deployment secrets are not fully configured. Please set SSH_PRIVATE_KEY, VPS_HOST, VPS_USER, and VPS_TARGET_DIR."
             exit 1
           fi
 
-          # Ensure we have parent commit available for diff
-          # Avoid '--depth' + '--unshallow' conflict.
-          git -c http.sslVerify=false fetch --prune --tags origin main --depth=2 || true
-          git -c http.sslVerify=false fetch --depth=2 origin HEAD || true
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-          # Determine a safe diff range. fallback to origin/main if HEAD~1 missing.
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "ℹ️ workflow_dispatch - deploying all configured services."
-            CHANGED_FILES="infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/visuals.yml infra/compose/nextjs.yml infra/compose/shared.yml"
-          else
-            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-              DIFF_RANGE="HEAD~1..HEAD"
-            elif git rev-parse --verify origin/main~1 >/dev/null 2>&1; then
-              DIFF_RANGE="origin/main~1..origin/main"
-              git checkout -B main origin/main || true
-            else
-              DIFF_RANGE=""
-            fi
-
-            if [ -z "$DIFF_RANGE" ]; then
-              echo "⚠️ Tidak ada riwayat diff; menghitung sebagai semua layanan."
-              CHANGED_FILES="infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/visuals.yml infra/compose/nextjs.yml infra/compose/shared.yml apps/rust/ apps/elysia/ apps/solidjs/ apps/leptos/ apps/visuals/ apps/nextjs/"
-            else
-              CHANGED_FILES=$(git diff --name-only "$DIFF_RANGE" -- infra/compose/ apps/ || true)
-            fi
-
-            echo "ℹ️ Changed files: $CHANGED_FILES"
-          fi
-
-          declare -A UUID_MAP=(
-            [rust]=gg84k8ggw4cgog0gsos4gwko
-            [elysia]=z0g0k4k8gwko4ogwc0koogkc
-            [solidjs]=jce1ynq9py588ita7s5of0vl
-            [leptos]=lgk8440ogo0kooo404g8wg8c
-            [visuals]=ds04gc480kww4s04o84o80ok
-            [nextjs]=knjgtk9uunnec0cfmhuansld
-            [shared]=bsgsocwcssc8c4g0kkok8s4k
-            [monitoring]=gavwa5i49rzh3mkdbzb4odap
-          )
-
-          uuids_to_trigger=()
-
-          for file in $CHANGED_FILES; do
-            case "$file" in
-              infra/compose/rust.yml|apps/rust/*) uuids_to_trigger+=("${UUID_MAP[rust]}") ;;
-              infra/compose/elysia.yml|apps/elysia/*) uuids_to_trigger+=("${UUID_MAP[elysia]}") ;;
-              infra/compose/solidjs.yml|apps/solidjs/*) uuids_to_trigger+=("${UUID_MAP[solidjs]}") ;;
-              infra/compose/leptos.yml|apps/leptos/*) uuids_to_trigger+=("${UUID_MAP[leptos]}") ;;
-              infra/compose/visuals.yml|apps/visuals/*) uuids_to_trigger+=("${UUID_MAP[visuals]}") ;;
-              infra/compose/nextjs.yml|apps/nextjs/*) uuids_to_trigger+=("${UUID_MAP[nextjs]}") ;;
-              infra/compose/shared.yml) uuids_to_trigger+=("${UUID_MAP[shared]}") ;;
-              infra/compose/monitoring.yml|infra/config/prometheus/*|infra/config/grafana/*|infra/config/alertmanager/*) uuids_to_trigger+=("${UUID_MAP[monitoring]}") ;;
-            esac
-          done
-
-          if [ ${#uuids_to_trigger[@]} -eq 0 ]; then
-            echo "⚠️ No changed compose files detected; skipping deployment trigger."
-            exit 0
-          fi
-
-          echo "🚀 Triggering Coolify deployments for changed services..."
-          FAILED=0
-
-          for uuid in "${uuids_to_trigger[@]}"; do
-            uuid=$(echo "$uuid" | xargs)
-            if [ -z "$uuid" ]; then
-              continue
-            fi
-
-            url="https://coolify.asepharyana.tech/api/v1/deploy?uuid=${uuid}&force=true"
-            echo "➡️ Calling API for UUID: $uuid"
-
-            curl -X GET "$url" \
-              -H "Authorization: Bearer $COOLIFY_TOKEN" \
-              -H "Accept: application/json" \
-              --fail-with-body || {
-                echo "❌ Failed to trigger deployment for $uuid"
-                FAILED=$((FAILED + 1))
-              }
-          done
-
-          if [ "$FAILED" -ne 0 ]; then
-            echo "❌ $FAILED deployment(s) failed."
-            exit 1
-          fi
-          echo "✅ Coolify deployment(s) triggered successfully for changed services."
+          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" <<EOF
+            set -euo pipefail
+            cd "$VPS_TARGET_DIR"
+            git fetch origin main --depth=1
+            git reset --hard origin/main
+            git submodule update --init --recursive
+            docker compose -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/visuals.yml -f infra/compose/nextjs.yml pull
+            docker compose -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/visuals.yml -f infra/compose/nextjs.yml up -d
+          EOF
 
 #       - name: Restart coolify-proxy (delay 1 min)
 #         env:

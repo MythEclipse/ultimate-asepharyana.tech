@@ -52,3 +52,9 @@ vitest.config.*.timestamp*
 
 storybook-static
 ~/.bun/**
+docs/dependency-map.md
+docs/handoff-log.jsonl
+docs/observability.md
+docs/quality-gates.json
+docs/workflow-state.json
+docs/todo.md
