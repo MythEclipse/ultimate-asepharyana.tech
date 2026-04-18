@@ -10,6 +10,9 @@ on:
       - '.github/workflows/docker-build-push.yml'
       - 'infra/**'
       - '!infra/compose/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
   repository_dispatch:
     types:
       - submodule-updated
