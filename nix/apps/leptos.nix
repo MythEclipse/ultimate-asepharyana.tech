@@ -53,6 +53,7 @@ craneLib.buildPackage (commonArgs // {
     export NODE_PATH=$PWD/node_modules
     export PATH=$PWD/node_modules/.bin:$PATH
     patchShebangs ./node_modules/.bin
+    wasm-bindgen --version
     trunk build --release --public-url "/" --skip-version-check
   '';
 
