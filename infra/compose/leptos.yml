@@ -5,6 +5,12 @@ services:
     networks: [app-shared-net]
     environment:
       - VITE_RUST_API=https://rust.asepharyana.tech
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.leptos.rule=Host(`leptos.asepharyana.tech`)"
+      - "traefik.http.routers.leptos.entrypoints=websecure"
+      - "traefik.http.routers.leptos.tls=true"
+      - "traefik.http.services.leptos.loadbalancer.server.port=80"
 networks:
   app-shared-net:
     name: app-shared-net

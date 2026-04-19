@@ -11,6 +11,12 @@ services:
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=mytheclipse
       - MINIO_BUCKET_NAME=api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.elysia.rule=Host(`elysia.asepharyana.tech`)"
+      - "traefik.http.routers.elysia.entrypoints=websecure"
+      - "traefik.http.routers.elysia.tls=true"
+      - "traefik.http.services.elysia.loadbalancer.server.port=4092"
 
 networks:
   app-shared-net:

@@ -48,6 +48,10 @@ jobs:
 
             # Ensure shared network exists
             docker network create app-shared-net || true
+
+            # Kill existing Nginx/Proxy processes on host to free up 80/443
+            fuser -k 80/tcp || true
+            fuser -k 443/tcp || true
             git fetch origin main --depth=1 || true
             git reset --hard origin/main
             git submodule update --init --recursive
@@ -61,8 +65,8 @@ jobs:
               exit 1
             fi
 
-            $COMPOSE_CMD -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml --env-file .env pull
-            $COMPOSE_CMD -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml --env-file .env up -d
+            $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml --env-file .env pull
+            $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml --env-file .env up -d
           EOF
 
 #       - name: Restart coolify-proxy (delay 1 min)

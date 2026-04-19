@@ -3,6 +3,12 @@ services:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/solidjs-web:sha-a8ebf86
     restart: always
     networks: [app-shared-net]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.solidjs.rule=Host(`visuals.asepharyana.tech`)"
+      - "traefik.http.routers.solidjs.entrypoints=websecure"
+      - "traefik.http.routers.solidjs.tls=true"
+      - "traefik.http.services.solidjs.loadbalancer.server.port=80"
     environment:
       - VITE_RUST_API=https://rust.asepharyana.tech
       - VITE_ELYSIA_API=https://elysia.asepharyana.tech

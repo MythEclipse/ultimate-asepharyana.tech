@@ -8,6 +8,12 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=273742
       - EXTERNAL_BROWSERLESS_WS=${EXTERNAL_BROWSERLESS_WS}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rust.rule=Host(`rust.asepharyana.tech`)"
+      - "traefik.http.routers.rust.entrypoints=websecure"
+      - "traefik.http.routers.rust.tls=true"
+      - "traefik.http.services.rust.loadbalancer.server.port=4091"
 networks:
   app-shared-net:
     name: app-shared-net

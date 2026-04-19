@@ -1,0 +1,26 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - app-shared-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ../traefik/dynamic:/etc/traefik/dynamic:ro
+      - /root/asephstech.pem:/etc/traefik/certs/asephstech.pem:ro
+      - /root/asephscloud.key:/etc/traefik/certs/asephscloud.key:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.asepharyana.tech`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+
+networks:
+  app-shared-net:
+    name: app-shared-net
+    external: true

@@ -3,6 +3,12 @@ services:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:sha-a8ebf86
     restart: always
     networks: [app-shared-net]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextjs.rule=Host(`asepharyana.tech`)"
+      - "traefik.http.routers.nextjs.entrypoints=websecure"
+      - "traefik.http.routers.nextjs.tls=true"
+      - "traefik.http.services.nextjs.loadbalancer.server.port=3000"
     environment:
       - NEXT_PUBLIC_RUST_API=https://rust.asepharyana.tech
       - NEXT_PUBLIC_ELYSIA_API=https://elysia.asepharyana.tech
