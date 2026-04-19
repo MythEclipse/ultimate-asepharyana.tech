@@ -19,6 +19,7 @@ services:
       - "--entryPoints.web.address=:80"
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--accesslog=true"
       - "--entryPoints.websecure.address=:443"
     environment:
       - DOCKER_API_VERSION=1.41
