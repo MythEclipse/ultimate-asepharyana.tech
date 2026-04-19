@@ -100,6 +100,20 @@ EOF
             overlays = [ (import rust-overlay) ];
           };
 
+          baseContents = [ 
+            pkgs.cacert 
+            (pkgs.runCommand "base-system" {} ''
+              mkdir -p $out/etc $out/tmp $out/var/log/nginx $out/var/cache/nginx $out/root $out/home/appuser
+              echo "root:x:0:0:root:/root:/bin/sh" > $out/etc/passwd
+              echo "nobody:x:65534:65534:nobody:/:/usr/bin/false" >> $out/etc/passwd
+              echo "appuser:x:1000:1000:appuser:/home/appuser:/bin/sh" >> $out/etc/passwd
+              echo "root:x:0:" > $out/etc/group
+              echo "nobody:x:65534:" >> $out/etc/group
+              echo "appuser:x:1000:" >> $out/etc/group
+              chmod 1777 $out/tmp
+            '')
+          ];
+
           packages = apps-packages // {
           default = pkgs.lib.mkForce apps-packages.rust-backend;
           services = config.process-compose.default.outputs.package;
@@ -107,7 +121,7 @@ EOF
             docker-rust = pkgs.dockerTools.buildLayeredImage {
               name = "rust-api";
               tag = "latest";
-              contents = [ apps-packages.rust-backend pkgs.cacert ];
+              contents = [ apps-packages.rust-backend ] ++ baseContents;
               config = {
                 Cmd = [ "${apps-packages.rust-backend}/bin/rustexpress" ];
                 ExposedPorts = { "4091/tcp" = {}; };
@@ -117,7 +131,7 @@ EOF
             docker-elysia = pkgs.dockerTools.buildLayeredImage {
               name = "elysia-api";
               tag = "latest";
-              contents = [ pkgs.bun apps-packages.elysia pkgs.cacert ];
+              contents = [ pkgs.bun apps-packages.elysia ] ++ baseContents;
               config = {
                 Cmd = [ "${pkgs.bun}/bin/bun" "run" "${apps-packages.elysia}/lib/dist/index.js" ];
                 ExposedPorts = { "4092/tcp" = {}; };
@@ -127,7 +141,7 @@ EOF
             docker-nextjs = pkgs.dockerTools.buildLayeredImage {
               name = "nextjs-web";
               tag = "latest";
-              contents = [ pkgs.nodejs apps-packages.nextjs pkgs.cacert ];
+              contents = [ pkgs.nodejs apps-packages.nextjs ] ++ baseContents;
               config = {
                 Cmd = [ "${pkgs.nodejs}/bin/node" "${apps-packages.nextjs}/share/nextjs/server.js" ];
                 Env = [ "HOSTNAME=0.0.0.0" "PORT=3000" "NODE_ENV=production" "NEXT_TELEMETRY_DISABLED=1" ];
@@ -138,7 +152,7 @@ EOF
             docker-solidjs = pkgs.dockerTools.buildLayeredImage {
               name = "solidjs-web";
               tag = "latest";
-              contents = [ pkgs.bun pkgs.nginx pkgs.python3Packages.supervisor apps-packages.solidjs solidjsSupervisorConfig solidjsNginxConfig pkgs.cacert ];
+              contents = [ pkgs.bun pkgs.nginx pkgs.python3Packages.supervisor apps-packages.solidjs solidjsSupervisorConfig solidjsNginxConfig ] ++ baseContents;
               config = {
                 Cmd = [ "${pkgs.python3Packages.supervisor}/bin/supervisord" "-c" "/etc/supervisord.conf" ];
                 ExposedPorts = { "80/tcp" = {}; };
@@ -148,7 +162,7 @@ EOF
             docker-leptos = pkgs.dockerTools.buildLayeredImage {
               name = "leptos-web";
               tag = "latest";
-              contents = [ pkgs.nginx leptosStatic leptosNginxConfig pkgs.cacert ];
+              contents = [ pkgs.nginx leptosStatic leptosNginxConfig ] ++ baseContents;
               config = {
                 Cmd = [ "${pkgs.nginx}/bin/nginx" "-g" "daemon off;" ];
                 ExposedPorts = { "80/tcp" = {}; };
