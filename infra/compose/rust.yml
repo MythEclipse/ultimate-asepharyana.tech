@@ -1,6 +1,6 @@
 services:
   rust-api:
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/rust-api:sha-5e54d2c
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/rust-api:sha-3c079e0
     restart: always
     networks: [app-shared-net]
     environment:
