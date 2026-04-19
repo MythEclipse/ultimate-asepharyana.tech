@@ -5,7 +5,7 @@ services:
     networks: [app-shared-net]
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.solidjs.rule=Host(`visuals.asepharyana.tech`)"
+      - "traefik.http.routers.solidjs.rule=Host(`solidjs.asepharyana.tech`)"
       - "traefik.http.routers.solidjs.entrypoints=websecure"
       - "traefik.http.routers.solidjs.tls=true"
       - "traefik.http.services.solidjs.loadbalancer.server.port=80"
