@@ -15,11 +15,11 @@
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
 
     # App sources from repo submodules, suitable for CI with recursive checkout
-    app-rust = { url = "github:MythEclipse/ultimate-asepharyana-tech-rust/main"; flake = false; };
-    app-elysia = { url = "github:MythEclipse/ultimate-asepharyana-tech-elysia/main"; flake = false; };
-    app-leptos = { url = "github:MythEclipse/ultimate-asepharyana-tech-leptos/main"; flake = false; };
-    app-solidjs = { url = "github:MythEclipse/ultimate-asepharyana-tech-solidjs/main"; flake = false; };
-    app-nextjs = { url = "github:MythEclipse/ultimate-asepharyana-tech-nextjs/main"; flake = false; };
+    app-rust = { url = "git+https://github.com/MythEclipse/ultimate-asepharyana-tech-rust.git?ref=main"; flake = false; };
+    app-elysia = { url = "git+https://github.com/MythEclipse/ultimate-asepharyana-tech-elysia.git?ref=main"; flake = false; };
+    app-leptos = { url = "git+https://github.com/MythEclipse/ultimate-asepharyana-tech-leptos.git?ref=main"; flake = false; };
+    app-solidjs = { url = "git+https://github.com/MythEclipse/ultimate-asepharyana-tech-solidjs.git?ref=main"; flake = false; };
+    app-nextjs = { url = "git+https://github.com/MythEclipse/ultimate-asepharyana-tech-nextjs.git?ref=main"; flake = false; };
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, systems, rust-overlay, crane, process-compose-flake, app-rust, app-elysia, app-leptos, app-solidjs, app-nextjs, ... }:
