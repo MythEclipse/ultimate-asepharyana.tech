@@ -38,7 +38,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" <<'EOF'
+          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<'EOF'
             set -euo pipefail
             cd "$VPS_TARGET_DIR"
             git fetch origin main --depth=1 || true
