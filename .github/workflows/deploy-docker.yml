@@ -25,6 +25,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
+          ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
         run: |
           set -euo pipefail
 
@@ -37,10 +38,16 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR"
+          echo "$ENV_FILE_PRODUCTION" > .env.prod
+          scp -o StrictHostKeyChecking=yes .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
 
           ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<'EOF'
             set -euo pipefail
             cd "$VPS_TARGET_DIR"
+
+            # Ensure shared network exists
+            docker network create app-shared-net || true
             git fetch origin main --depth=1 || true
             git reset --hard origin/main
             git submodule update --init --recursive
