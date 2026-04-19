@@ -40,6 +40,16 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: mytheclipse
     command: 'server /data --console-address ":9001" --address ":9000"'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`minio.asepharyana.tech`)"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls=true"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minio-console.rule=Host(`minio-console.asepharyana.tech`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls=true"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
     volumes:
       - 'minio_data:/data'
 networks:

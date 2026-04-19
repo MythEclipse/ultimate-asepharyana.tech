@@ -5,6 +5,12 @@ services:
     restart: always
     networks:
       - app-shared-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.asepharyana.tech`)"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
@@ -53,6 +59,12 @@ services:
     restart: always
     networks:
       - app-shared-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.asepharyana.tech`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
     environment:
       # Override these via .env or secrets manager before going to production
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
