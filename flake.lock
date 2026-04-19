@@ -3,62 +3,87 @@
     "app-elysia": {
       "flake": false,
       "locked": {
-        "path": "./apps/elysia",
-        "type": "path"
+        "lastModified": 1776174895,
+        "narHash": "sha256-xvd/PFd9rIe5q4wSkmbvDrHxo44J8X3OmE/niPhQaQM=",
+        "ref": "main",
+        "rev": "1a2c5be0ba300625c380d28d0304d3b768bfd05d",
+        "revCount": 101,
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-elysia.git"
       },
       "original": {
-        "path": "./apps/elysia",
-        "type": "path"
-      },
-      "parent": []
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-elysia.git"
+      }
     },
     "app-leptos": {
       "flake": false,
       "locked": {
-        "path": "./apps/leptos",
-        "type": "path"
+        "lastModified": 1776594426,
+        "narHash": "sha256-eGVR8zkzlHnx+Xppy2refsCDDDicyd0OY5XekX3Ka3E=",
+        "ref": "main",
+        "rev": "6812aa3c378677a4b97317c913b852d6bf082f8f",
+        "revCount": 77,
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-leptos.git"
       },
       "original": {
-        "path": "./apps/leptos",
-        "type": "path"
-      },
-      "parent": []
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-leptos.git"
+      }
     },
     "app-nextjs": {
       "flake": false,
       "locked": {
-        "path": "./apps/nextjs",
-        "type": "path"
+        "lastModified": 1776564345,
+        "narHash": "sha256-8wtPKptWWPtrWcUDwhAEDaZtnJb8VTOOWPiJMwg8toM=",
+        "ref": "main",
+        "rev": "b377760b5ff801d4658cdd2f97f8e97700a1f1d2",
+        "revCount": 101,
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-nextjs.git"
       },
       "original": {
-        "path": "./apps/nextjs",
-        "type": "path"
-      },
-      "parent": []
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-nextjs.git"
+      }
     },
     "app-rust": {
       "flake": false,
       "locked": {
-        "path": "./apps/rust",
-        "type": "path"
+        "lastModified": 1776067801,
+        "narHash": "sha256-LX1TlBIYc7j2eu1X+35vh5ojPEp3HE71jFgq+JrvmjE=",
+        "ref": "main",
+        "rev": "b92092bfe661ecefb2a505082b238a66becf40fa",
+        "revCount": 550,
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-rust.git"
       },
       "original": {
-        "path": "./apps/rust",
-        "type": "path"
-      },
-      "parent": []
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-rust.git"
+      }
     },
     "app-solidjs": {
       "flake": false,
       "locked": {
-        "path": "./apps/solidjs",
-        "type": "path"
+        "lastModified": 1775276135,
+        "narHash": "sha256-22i5+ETUd4hVZCrOLBa2jd4RL3P5Py2Sy/SOu8ldMsA=",
+        "ref": "main",
+        "rev": "35627598a0fe25fb358ec6cdf1107913947e2fab",
+        "revCount": 53,
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-solidjs.git"
       },
       "original": {
-        "path": "./apps/solidjs",
-        "type": "path"
-      },
-      "parent": []
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/MythEclipse/ultimate-asepharyana-tech-solidjs.git"
+      }
     },
     "crane": {
       "locked": {
