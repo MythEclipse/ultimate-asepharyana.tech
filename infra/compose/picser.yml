@@ -10,7 +10,7 @@ services:
       - "traefik.http.routers.picser.tls=true"
       - "traefik.http.services.picser.loadbalancer.server.port=3000"
     env_file:
-      - ./infra/compose/.env.picser
+      - .env.picser
 networks:
   app-shared-net:
     name: app-shared-net
