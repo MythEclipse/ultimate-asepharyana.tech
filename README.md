@@ -18,8 +18,11 @@ Arsitektur dipisah ke beberapa service agar frontend, API, dan visual engine bis
 
 File compose berada di `infra/compose`:
 
-- `shared.yml`: MySQL, Redis, MinIO
-- `rust.yml`, `elysia.yml`, `solidjs.yml`, `nextjs.yml`, `leptos.yml`, `visuals.yml`: manifest deploy per service (image GHCR bertag SHA)
+- `traefik.yml`: reverse proxy Traefik untuk semua layanan.
+- `shared.yml`: MySQL, Redis, MinIO.
+- `monitoring.yml`: Prometheus, Grafana, dan exporter monitoring.
+- `rust.yml`, `elysia.yml`, `solidjs.yml`, `nextjs.yml`, `leptos.yml`: manifest deploy per service (image GHCR bertag SHA).
+- `picser.yml`: service Picser khusus dengan `env_file` terpisah `.env.picser`.
 
 Dockerfile per service berada di folder `docker/`.
 
@@ -99,7 +102,13 @@ trunk serve
 ## Deployment Notes
 
 - Pipeline memakai image tag berbasis commit SHA (`sha-<short-sha>`), bukan `latest`.
-- Setiap perubahan service akan menghasilkan image baru dan pembaruan manifest compose service terkait.
+- Deploy Compose sekarang mencakup `infra/compose/*.yml` dan `deploy-docker.yml` akan berjalan langsung ketika `infra/compose/**` berubah.
+- Layanan `picser` menggunakan file env khusus `infra/compose/.env.picser` dan GitHub secret `ENV_PICSER`.
+- Prometheus dan Grafana sekarang terdaftar di `infra/compose/monitoring.yml` dan dapat dirutekan lewat Traefik.
+
+## Menambahkan Aplikasi Baru
+
+Panduan langkah demi langkah untuk menambahkan aplikasi baru ada di `docs/add-new-app.md`.
 
 ## License
 
