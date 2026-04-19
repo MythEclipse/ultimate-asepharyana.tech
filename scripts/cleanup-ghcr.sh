@@ -8,7 +8,7 @@ set -e
 
 # Configuration
 ORG="MythEclipse"
-PACKAGE_NAMES=("rust-api" "solidjs-web" "leptos-web" "elysia-api" "nextjs-web" "visuals")
+PACKAGE_NAMES=("rust-api" "solidjs-web" "leptos-web" "elysia-api" "nextjs-web")
 
 echo "🚀 Starting GHCR cleanup for $ORG..."
 

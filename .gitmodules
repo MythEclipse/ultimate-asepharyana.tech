@@ -10,9 +10,6 @@
 [submodule "apps/solidjs"]
 	path = apps/solidjs
 	url = https://github.com/MythEclipse/ultimate-asepharyana-tech-solidjs.git
-[submodule "apps/visuals"]
-	path = apps/visuals
-	url = https://github.com/MythEclipse/ultimate-asepharyana-tech-visuals.git
 [submodule "apps/nextjs"]
 	path = apps/nextjs
 	url = https://github.com/MythEclipse/ultimate-asepharyana-tech-nextjs.git
