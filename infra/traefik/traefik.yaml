@@ -18,6 +18,7 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     network: app-shared-net
+    apiVersion: "1.54"
   file:
     directory: /etc/traefik/dynamic
     watch: true
