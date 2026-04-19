@@ -93,13 +93,6 @@ EOF
             cp ${./infra/nginx/leptos.conf} $out/etc/nginx/conf.d/default.conf
           '';
 
-        in
-        {
-          _module.args.pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ (import rust-overlay) ];
-          };
-
           baseContents = [ 
             pkgs.cacert 
             (pkgs.runCommand "base-system" {} ''
@@ -113,6 +106,13 @@ EOF
               chmod 1777 $out/tmp
             '')
           ];
+
+        in
+        {
+          _module.args.pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ (import rust-overlay) ];
+          };
 
           packages = apps-packages // {
           default = pkgs.lib.mkForce apps-packages.rust-backend;
