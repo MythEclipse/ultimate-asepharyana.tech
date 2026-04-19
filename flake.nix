@@ -14,13 +14,13 @@
     };
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
 
-    # App Submodules as Inputs
-    app-rust = { url = "github:MythEclipse/ultimate-asepharyana-tech-rust"; flake = false; };
-    app-elysia = { url = "github:MythEclipse/ultimate-asepharyana-tech-elysia"; flake = false; };
-    app-leptos = { url = "github:MythEclipse/ultimate-asepharyana-tech-leptos"; flake = false; };
-    app-solidjs = { url = "github:MythEclipse/ultimate-asepharyana-tech-solidjs"; flake = false; };
-    app-visuals = { url = "github:MythEclipse/ultimate-asepharyana-tech-visuals"; flake = false; };
-    app-nextjs = { url = "github:MythEclipse/ultimate-asepharyana-tech-nextjs"; flake = false; };
+    # Local app sources using repo submodules
+    app-rust = { url = "path:./apps/rust"; flake = false; };
+    app-elysia = { url = "path:./apps/elysia"; flake = false; };
+    app-leptos = { url = "path:./apps/leptos"; flake = false; };
+    app-solidjs = { url = "path:./apps/solidjs"; flake = false; };
+    app-visuals = { url = "path:./apps/visuals"; flake = false; };
+    app-nextjs = { url = "path:./apps/nextjs"; flake = false; };
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, systems, rust-overlay, crane, process-compose-flake, app-rust, app-elysia, app-leptos, app-solidjs, app-visuals, app-nextjs, ... }:

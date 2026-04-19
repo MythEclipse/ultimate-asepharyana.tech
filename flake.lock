@@ -3,98 +3,74 @@
     "app-elysia": {
       "flake": false,
       "locked": {
-        "lastModified": 1776174895,
-        "narHash": "sha256-xvd/PFd9rIe5q4wSkmbvDrHxo44J8X3OmE/niPhQaQM=",
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-elysia",
-        "rev": "1a2c5be0ba300625c380d28d0304d3b768bfd05d",
-        "type": "github"
+        "path": "./apps/elysia",
+        "type": "path"
       },
       "original": {
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-elysia",
-        "type": "github"
-      }
+        "path": "./apps/elysia",
+        "type": "path"
+      },
+      "parent": []
     },
     "app-leptos": {
       "flake": false,
       "locked": {
-        "lastModified": 1776587206,
-        "narHash": "sha256-LRg+CsdyJPtgE4GBcElscCOiY6u9/G9E2Qe1r/me4K4=",
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-leptos",
-        "rev": "b42a02ad7102f90a187b409749f7e522971216b8",
-        "type": "github"
+        "path": "./apps/leptos",
+        "type": "path"
       },
       "original": {
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-leptos",
-        "type": "github"
-      }
+        "path": "./apps/leptos",
+        "type": "path"
+      },
+      "parent": []
     },
     "app-nextjs": {
       "flake": false,
       "locked": {
-        "lastModified": 1776477143,
-        "narHash": "sha256-6dOgLFyAClEszuwPHNKm5Rz9VI7liF7y5jnMCwhHDws=",
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-nextjs",
-        "rev": "c3a98aa92cd8442834caa8899184efce10f9db9c",
-        "type": "github"
+        "path": "./apps/nextjs",
+        "type": "path"
       },
       "original": {
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-nextjs",
-        "type": "github"
-      }
+        "path": "./apps/nextjs",
+        "type": "path"
+      },
+      "parent": []
     },
     "app-rust": {
       "flake": false,
       "locked": {
-        "lastModified": 1776067801,
-        "narHash": "sha256-LX1TlBIYc7j2eu1X+35vh5ojPEp3HE71jFgq+JrvmjE=",
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-rust",
-        "rev": "b92092bfe661ecefb2a505082b238a66becf40fa",
-        "type": "github"
+        "path": "./apps/rust",
+        "type": "path"
       },
       "original": {
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-rust",
-        "type": "github"
-      }
+        "path": "./apps/rust",
+        "type": "path"
+      },
+      "parent": []
     },
     "app-solidjs": {
       "flake": false,
       "locked": {
-        "lastModified": 1775276135,
-        "narHash": "sha256-22i5+ETUd4hVZCrOLBa2jd4RL3P5Py2Sy/SOu8ldMsA=",
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-solidjs",
-        "rev": "35627598a0fe25fb358ec6cdf1107913947e2fab",
-        "type": "github"
+        "path": "./apps/solidjs",
+        "type": "path"
       },
       "original": {
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-solidjs",
-        "type": "github"
-      }
+        "path": "./apps/solidjs",
+        "type": "path"
+      },
+      "parent": []
     },
     "app-visuals": {
       "flake": false,
       "locked": {
-        "lastModified": 1776587213,
-        "narHash": "sha256-aA35LPyK/O5W1QjufKXxXyACXAhmAXLIV+h8zODUwz8=",
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-visuals",
-        "rev": "d812a97f5cacfee6f541ed839dd57af156231c96",
-        "type": "github"
+        "path": "./apps/visuals",
+        "type": "path"
       },
       "original": {
-        "owner": "MythEclipse",
-        "repo": "ultimate-asepharyana-tech-visuals",
-        "type": "github"
-      }
+        "path": "./apps/visuals",
+        "type": "path"
+      },
+      "parent": []
     },
     "crane": {
       "locked": {
