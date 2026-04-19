@@ -102,6 +102,7 @@ EOF
               echo "appuser:x:1000:1000:appuser:/home/appuser:/bin/sh" >> $out/etc/passwd
               echo "root:x:0:" > $out/etc/group
               echo "nobody:x:65534:" >> $out/etc/group
+              echo "nogroup:x:65534:" >> $out/etc/group
               echo "appuser:x:1000:" >> $out/etc/group
               chmod 1777 $out/tmp
             '')
