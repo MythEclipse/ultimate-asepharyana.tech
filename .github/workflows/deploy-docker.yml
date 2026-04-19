@@ -37,12 +37,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
-          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR"
-          echo "$ENV_FILE_PRODUCTION" > .env.prod
-          scp -o StrictHostKeyChecking=yes .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
+          ssh-keyscan -H -t ed25519,rsa "$VPS_HOST" >> ~/.ssh/known_hosts
 
-          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<'EOF'
+          # Use SSH multiplexing for faster subsequent commands
+          SSH_OPTS="-o ControlMaster=auto -o ControlPath=/tmp/ssh-%r@%h:%p -o ControlPersist=600 -o StrictHostKeyChecking=yes"
+
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR"
+          echo "$ENV_FILE_PRODUCTION" > .env.prod
+          scp $SSH_OPTS .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
+
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<'EOF'
             set -euo pipefail
             cd "$VPS_TARGET_DIR"
 
