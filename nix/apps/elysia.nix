@@ -27,7 +27,7 @@ pkgs.stdenv.mkDerivation {
   version = "0.1.0";
   inherit src;
 
-  nativeBuildInputs = [ pkgs.bun pkgs.gnutar ];
+  nativeBuildInputs = [ pkgs.bun pkgs.nodejs pkgs.gnutar ];
 
   buildPhase = ''
     export HOME=$TMPDIR
