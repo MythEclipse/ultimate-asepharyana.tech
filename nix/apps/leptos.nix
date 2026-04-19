@@ -50,6 +50,7 @@ craneLib.buildPackage (commonArgs // {
   buildPhaseCargoCommand = ''
     export HOME=$TMPDIR
     export TRUNK_SKIP_VERSION_CHECK=true
+    export TRUNK_OFFLINE=true
     tar -xzf ${nodeDeps}
     export NODE_PATH=$PWD/node_modules
     export PATH=$PWD/node_modules/.bin:$PATH

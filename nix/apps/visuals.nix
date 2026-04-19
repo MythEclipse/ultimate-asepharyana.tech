@@ -30,6 +30,7 @@ craneLib.buildPackage (commonArgs // {
   buildPhaseCargoCommand = ''
     export HOME=$TMPDIR
     export TRUNK_SKIP_VERSION_CHECK=true
+    export TRUNK_OFFLINE=true
     wasm-bindgen --version
     trunk build --release --skip-version-check
   '';
