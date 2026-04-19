@@ -7,6 +7,8 @@ services:
       - "443:443"
     networks:
       - app-shared-net
+    environment:
+      - DOCKER_API_VERSION=1.54
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
