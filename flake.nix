@@ -15,11 +15,11 @@
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
 
     # App sources from repo submodules, suitable for CI with recursive checkout
-    app-rust = { url = "path:./apps/rust"; flake = false; };
-    app-elysia = { url = "path:./apps/elysia"; flake = false; };
-    app-leptos = { url = "path:./apps/leptos"; flake = false; };
-    app-solidjs = { url = "path:./apps/solidjs"; flake = false; };
-    app-nextjs = { url = "path:./apps/nextjs"; flake = false; };
+    app-rust = { url = "github:MythEclipse/ultimate-asepharyana-tech-rust/main"; flake = false; };
+    app-elysia = { url = "github:MythEclipse/ultimate-asepharyana-tech-elysia/main"; flake = false; };
+    app-leptos = { url = "github:MythEclipse/ultimate-asepharyana-tech-leptos/main"; flake = false; };
+    app-solidjs = { url = "github:MythEclipse/ultimate-asepharyana-tech-solidjs/main"; flake = false; };
+    app-nextjs = { url = "github:MythEclipse/ultimate-asepharyana-tech-nextjs/main"; flake = false; };
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, systems, rust-overlay, crane, process-compose-flake, app-rust, app-elysia, app-leptos, app-solidjs, app-nextjs, ... }:
