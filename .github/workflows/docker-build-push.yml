@@ -8,11 +8,11 @@ on:
       - 'apps/**'
       - 'packages/**'
       - '.github/workflows/docker-build-push.yml'
-      - 'infra/**'
-      - '!infra/compose/**'
       - 'flake.nix'
       - 'flake.lock'
       - 'nix/**'
+      - 'infra/**'
+      - '!infra/compose/**'
   repository_dispatch:
     types:
       - submodule-updated
@@ -26,28 +26,25 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME_PREFIX: mytheclipse/ultimate-asepharyana.tech
 
-# ──────────────────────────────────────────────
-# Phase 1: Detect which services have changed
-# ──────────────────────────────────────────────
 jobs:
+  # ──────────────────────────────────────────────
+  # Phase 1: Detect which services have changed
+  # ──────────────────────────────────────────────
   changes:
     runs-on: ubuntu-latest
     outputs:
-      rust-api: ${{ steps.filter.outputs.rust-api || steps.dispatch.outputs.rust-api }}
-      elysia-api: ${{ steps.filter.outputs.elysia-api || steps.dispatch.outputs.elysia-api }}
-      solidjs-web: ${{ steps.filter.outputs.solidjs-web || steps.dispatch.outputs.solidjs-web }}
-      leptos-web: ${{ steps.filter.outputs.leptos-web || steps.dispatch.outputs.leptos-web }}
-      visuals: ${{ steps.filter.outputs.visuals || steps.dispatch.outputs.visuals }}
-      nextjs-web: ${{ steps.filter.outputs.nextjs-web || steps.dispatch.outputs.nextjs-web }}
+      rust-api: ${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' }}
+      elysia-api: ${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' }}
+      solidjs-web: ${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' }}
+      leptos-web: ${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' }}
+      visuals: ${{ steps.filter.outputs.visuals == 'true' || steps.dispatch.outputs.visuals == 'true' }}
+      nextjs-web: ${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' }}
     steps:
       - uses: actions/checkout@v4
-        if: github.event_name != 'repository_dispatch'
         with:
-          # Optimization: No submodules needed for path filtering
           submodules: false
           fetch-depth: 1
 
-      # ── Path-based detection for direct pushes to this repo ──
       - uses: dorny/paths-filter@v3
         id: filter
         if: github.event_name == 'push'
@@ -58,49 +55,38 @@ jobs:
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/rust.nix'
-              - 'infra/docker/rust.Dockerfile'
             elysia-api:
               - 'apps/elysia/**'
               - 'packages/**'
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/elysia.nix'
-              - 'infra/docker/elysia.Dockerfile'
             solidjs-web:
               - 'apps/solidjs/**'
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/solidjs.nix'
-              - 'infra/docker/solidjs.Dockerfile'
-              - 'infra/nginx/solidjs.conf'
             leptos-web:
               - 'apps/leptos/**'
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/leptos.nix'
-              - 'infra/docker/leptos.Dockerfile'
-              - 'infra/nginx/leptos.conf'
             visuals:
               - 'apps/visuals/**'
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/visuals.nix'
-              - 'infra/docker/visuals.Dockerfile'
-              - 'infra/nginx/visuals.conf'
             nextjs-web:
               - 'apps/nextjs/**'
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/nextjs.nix'
-              - 'infra/docker/nextjs.Dockerfile'
 
-      # ── Service-based detection for cross-repo dispatches ──
       - name: Parse repository_dispatch payload
         id: dispatch
         if: github.event_name == 'repository_dispatch'
-        env:
-          SERVICE: ${{ github.event.client_payload.service }}
         run: |
+          SERVICE="${{ github.event.client_payload.service }}"
           declare -a SERVICES=("rust-api" "elysia-api" "solidjs-web" "leptos-web" "visuals" "nextjs-web")
           for svc in "${SERVICES[@]}"; do
             if [ "$SERVICE" = "$svc" ]; then
@@ -109,72 +95,44 @@ jobs:
               echo "${svc}=false" >> $GITHUB_OUTPUT
             fi
           done
-          echo "Dispatch received for service: $SERVICE"
-
-  sync-submodule:
-    if: github.event_name == 'repository_dispatch' && github.event.action == 'submodule-updated'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
-
-      - name: Update submodule ref
-        run: |
-          SERVICE="${{ github.event.client_payload.service }}"
-          SHA="${{ github.event.client_payload.sha }}"
-          
-          declare -A SERVICE_PATHS
-          SERVICE_PATHS["rust-api"]="apps/rust"
-          SERVICE_PATHS["elysia-api"]="apps/elysia"
-          SERVICE_PATHS["solidjs-web"]="apps/solidjs"
-          SERVICE_PATHS["leptos-web"]="apps/leptos"
-          SERVICE_PATHS["visuals"]="apps/visuals"
-          SERVICE_PATHS["nextjs-web"]="apps/nextjs"
-          
-          PATH_MAP=${SERVICE_PATHS[$SERVICE]}
-          
-          if [ -n "$PATH_MAP" ]; then
-            echo "Syncing $PATH_MAP to ${SHA:-latest}..."
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git config pull.rebase true
-            
-            # Update submodule
-            if [ -n "$SHA" ]; then
-              # If we have a specific SHA, we fetch it
-              cd "$PATH_MAP"
-              git fetch origin
-              git checkout "$SHA"
-              cd -
-            else
-              git submodule update --remote "$PATH_MAP"
-            fi
-            
-            # Commit and push
-            if git diff --quiet "$PATH_MAP"; then
-              echo "No changes in submodule $PATH_MAP"
-            else
-              git add "$PATH_MAP"
-              git commit -m "chore: update submodule $PATH_MAP to ${SHA:-latest} [skip ci]"
-              git pull --rebase origin main
-              git push origin main
-            fi
-          fi
 
   # ──────────────────────────────────────────────
-  # Phase 2: Build only changed services
+  # Phase 2: Build and Push Images (Matrix)
   # ──────────────────────────────────────────────
-  build-rust-api:
+  build:
     needs: [changes]
-    if: |
-      always() && 
-      (needs.changes.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: rust-api
+            target: docker-rust
+            path: apps/rust
+            input: app-rust
+          - id: elysia-api
+            target: docker-elysia
+            path: apps/elysia
+            input: app-elysia
+          - id: solidjs-web
+            target: docker-solidjs
+            path: apps/solidjs
+            input: app-solidjs
+          - id: leptos-web
+            target: docker-leptos
+            path: apps/leptos
+            input: app-leptos
+          - id: visuals
+            target: docker-visuals
+            path: apps/visuals
+            input: app-visuals
+          - id: nextjs-web
+            target: docker-nextjs
+            path: apps/nextjs
+            input: app-nextjs
+    if: |
+      needs.changes.outputs[matrix.id] == 'true' || 
+      github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       packages: write
@@ -182,408 +140,74 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
       - name: Sync submodule locally (dispatch)
         if: github.event_name == 'repository_dispatch'
         run: |
-          SERVICE="${{ github.event.client_payload.service }}"
           SHA="${{ github.event.client_payload.sha }}"
-          if [ "${SERVICE}" == "rust-api" ] && [ -n "$SHA" ]; then
-            cd apps/rust && git fetch origin && git checkout "$SHA"
+          if [ -n "$SHA" ] && [ -d "${{ matrix.path }}" ]; then
+            cd "${{ matrix.path }}"
+            git fetch origin
+            git checkout "$SHA"
           fi
+
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v18
+
+      - uses: cachix/install-nix-action@v26
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+
       - name: Build Nix Docker image
         run: |
           set -euo pipefail
-          nix --extra-experimental-features 'nix-command flakes' build .#docker-rust --no-link -o build-result
+          EXTRA_ARGS=""
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            EXTRA_ARGS="--override-input ${{ matrix.input }} path:./${{ matrix.path }}"
+          fi
+          nix build .#${{ matrix.target }} $EXTRA_ARGS --no-link -o build-result
+
       - name: Load and push Docker image
         run: |
           set -euo pipefail
+          # Find the image file (it's either the symlink itself or a file inside)
           if [ -f "build-result" ] && [ ! -d "build-result" ]; then
             IMAGE_FILE="build-result"
           else
             IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
-            if [ -z "$IMAGE_FILE" ]; then
-              IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
-            fi
           fi
+          
           if [ -z "$IMAGE_FILE" ]; then
-            echo "No Docker image file found in build-result"
-            ls -la build-result
+            echo "No Docker image file found"
             exit 1
           fi
 
           LOADED=$(docker load --input "$IMAGE_FILE")
           echo "$LOADED"
           IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          if [ -z "$IMAGE_NAME" ]; then
-            echo "Failed to detect loaded image name"
-            exit 1
-          fi
-
+          
           SHORT_SHA=${GITHUB_SHA:0:7}
-          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/rust-api
+          # Service name for tagging (remove -web suffix if needed to match original names)
+          SVC_NAME="${{ matrix.id }}"
+          TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
+          
           docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
           docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
           docker push "$TARGET_BASE:latest"
           docker push "$TARGET_BASE:sha-$SHORT_SHA"
 
-  build-elysia-api:
-    needs: [changes]
-    if: |
-      always() && 
-      (needs.changes.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Sync submodule locally (dispatch)
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          SERVICE="${{ github.event.client_payload.service }}"
-          SHA="${{ github.event.client_payload.sha }}"
-          if [ "${SERVICE}" == "elysia-api" ] && [ -n "$SHA" ]; then
-            cd apps/elysia && git fetch origin && git checkout "$SHA"
-          fi
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v18
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Build Nix Docker image
-        run: |
-          set -euo pipefail
-          nix --extra-experimental-features 'nix-command flakes' build .#docker-elysia --no-link -o build-result
-      - name: Load and push Docker image
-        run: |
-          set -euo pipefail
-          if [ -f "build-result" ] && [ ! -d "build-result" ]; then
-            IMAGE_FILE="build-result"
-          else
-            IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
-            if [ -z "$IMAGE_FILE" ]; then
-              IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
-            fi
-          fi
-          if [ -z "$IMAGE_FILE" ]; then
-            echo "No Docker image file found in build-result"
-            ls -la build-result
-            exit 1
-          fi
-
-          LOADED=$(docker load --input "$IMAGE_FILE")
-          echo "$LOADED"
-          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          if [ -z "$IMAGE_NAME" ]; then
-            echo "Failed to detect loaded image name"
-            exit 1
-          fi
-
-          SHORT_SHA=${GITHUB_SHA:0:7}
-          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/elysia-api
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
-          docker push "$TARGET_BASE:latest"
-          docker push "$TARGET_BASE:sha-$SHORT_SHA"
-
-  build-solidjs-web:
-    needs: [changes]
-    if: |
-      always() && 
-      (needs.changes.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Sync submodule locally (dispatch)
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          SERVICE="${{ github.event.client_payload.service }}"
-          SHA="${{ github.event.client_payload.sha }}"
-          if [ "${SERVICE}" == "solidjs-web" ] && [ -n "$SHA" ]; then
-            cd apps/solidjs && git fetch origin && git checkout "$SHA"
-          fi
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v18
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Build Nix Docker image
-        run: |
-          set -euo pipefail
-          nix --extra-experimental-features 'nix-command flakes' build .#docker-solidjs --no-link -o build-result
-      - name: Load and push Docker image
-        run: |
-          set -euo pipefail
-          if [ -f "build-result" ] && [ ! -d "build-result" ]; then
-            IMAGE_FILE="build-result"
-          else
-            IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
-            if [ -z "$IMAGE_FILE" ]; then
-              IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
-            fi
-          fi
-          if [ -z "$IMAGE_FILE" ]; then
-            echo "No Docker image file found in build-result"
-            ls -la build-result
-            exit 1
-          fi
-
-          LOADED=$(docker load --input "$IMAGE_FILE")
-          echo "$LOADED"
-          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          if [ -z "$IMAGE_NAME" ]; then
-            echo "Failed to detect loaded image name"
-            exit 1
-          fi
-
-          SHORT_SHA=${GITHUB_SHA:0:7}
-          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/solidjs-web
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
-          docker push "$TARGET_BASE:latest"
-          docker push "$TARGET_BASE:sha-$SHORT_SHA"
-
-  build-leptos-web:
-    needs: [changes]
-    if: |
-      always() && 
-      (needs.changes.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Sync submodule locally (dispatch)
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          SERVICE="${{ github.event.client_payload.service }}"
-          SHA="${{ github.event.client_payload.sha }}"
-          if [ "${SERVICE}" == "leptos-web" ] && [ -n "$SHA" ]; then
-            cd apps/leptos && git fetch origin && git checkout "$SHA"
-          fi
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v18
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Build Nix Docker image
-        run: |
-          set -euo pipefail
-          nix --extra-experimental-features 'nix-command flakes' build .#docker-leptos --no-link -o build-result
-      - name: Load and push Docker image
-        run: |
-          set -euo pipefail
-          if [ -f "build-result" ] && [ ! -d "build-result" ]; then
-            IMAGE_FILE="build-result"
-          else
-            IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
-            if [ -z "$IMAGE_FILE" ]; then
-              IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
-            fi
-          fi
-          if [ -z "$IMAGE_FILE" ]; then
-            echo "No Docker image file found in build-result"
-            ls -la build-result
-            exit 1
-          fi
-
-          LOADED=$(docker load --input "$IMAGE_FILE")
-          echo "$LOADED"
-          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          if [ -z "$IMAGE_NAME" ]; then
-            echo "Failed to detect loaded image name"
-            exit 1
-          fi
-
-          SHORT_SHA=${GITHUB_SHA:0:7}
-          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/leptos-web
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
-          docker push "$TARGET_BASE:latest"
-          docker push "$TARGET_BASE:sha-$SHORT_SHA"
-
-  build-visuals:
-    needs: [changes]
-    if: |
-      always() && 
-      (needs.changes.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Sync submodule locally (dispatch)
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          SERVICE="${{ github.event.client_payload.service }}"
-          SHA="${{ github.event.client_payload.sha }}"
-          if [ "${SERVICE}" == "visuals" ] && [ -n "$SHA" ]; then
-            cd apps/visuals && git fetch origin && git checkout "$SHA"
-          fi
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v18
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Build Nix Docker image
-        run: |
-          set -euo pipefail
-          nix --extra-experimental-features 'nix-command flakes' build .#docker-visuals --no-link -o build-result
-      - name: Load and push Docker image
-        run: |
-          set -euo pipefail
-          if [ -f "build-result" ] && [ ! -d "build-result" ]; then
-            IMAGE_FILE="build-result"
-          else
-            IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
-            if [ -z "$IMAGE_FILE" ]; then
-              IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
-            fi
-          fi
-          if [ -z "$IMAGE_FILE" ]; then
-            echo "No Docker image file found in build-result"
-            ls -la build-result
-            exit 1
-          fi
-
-          LOADED=$(docker load --input "$IMAGE_FILE")
-          echo "$LOADED"
-          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          if [ -z "$IMAGE_NAME" ]; then
-            echo "Failed to detect loaded image name"
-            exit 1
-          fi
-
-          SHORT_SHA=${GITHUB_SHA:0:7}
-          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/visuals
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
-          docker push "$TARGET_BASE:latest"
-          docker push "$TARGET_BASE:sha-$SHORT_SHA"
-
-  build-nextjs-web:
-    needs: [changes]
-    if: |
-      always() && 
-      (needs.changes.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Sync submodule locally (dispatch)
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          SERVICE="${{ github.event.client_payload.service }}"
-          SHA="${{ github.event.client_payload.sha }}"
-          if [ "${SERVICE}" == "nextjs-web" ] && [ -n "$SHA" ]; then
-            cd apps/nextjs && git fetch origin && git checkout "$SHA"
-          fi
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v18
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Build Nix Docker image
-        run: |
-          set -euo pipefail
-          nix --extra-experimental-features 'nix-command flakes' build .#docker-nextjs --no-link -o build-result
-      - name: Load and push Docker image
-        run: |
-          set -euo pipefail
-          if [ -f "build-result" ] && [ ! -d "build-result" ]; then
-            IMAGE_FILE="build-result"
-          else
-            IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
-            if [ -z "$IMAGE_FILE" ]; then
-              IMAGE_FILE=$(find build-result -maxdepth 1 -type f | head -n 1)
-            fi
-          fi
-          if [ -z "$IMAGE_FILE" ]; then
-            echo "No Docker image file found in build-result"
-            ls -la build-result
-            exit 1
-          fi
-
-          LOADED=$(docker load --input "$IMAGE_FILE")
-          echo "$LOADED"
-          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          if [ -z "$IMAGE_NAME" ]; then
-            echo "Failed to detect loaded image name"
-            exit 1
-          fi
-
-          SHORT_SHA=${GITHUB_SHA:0:7}
-          TARGET_BASE=${REGISTRY}/${IMAGE_NAME_PREFIX}/nextjs-web
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
-          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
-          docker push "$TARGET_BASE:latest"
-          docker push "$TARGET_BASE:sha-$SHORT_SHA"
-
+  # ──────────────────────────────────────────────
+  # Phase 3: Update Manifests and Submodule Refs
+  # ──────────────────────────────────────────────
   update-manifest:
-    needs:
-      [
-        changes,
-        build-rust-api,
-        build-elysia-api,
-        build-solidjs-web,
-        build-leptos-web,
-        build-visuals,
-        build-nextjs-web,
-      ]
+    needs: [changes, build]
     if: |
       always() &&
-      (needs.build-rust-api.result == 'success' || 
-       needs.build-elysia-api.result == 'success' || 
-       needs.build-solidjs-web.result == 'success' || 
-       needs.build-leptos-web.result == 'success' || 
-       needs.build-visuals.result == 'success' ||
-       needs.build-nextjs-web.result == 'success')
+      (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -594,54 +218,79 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
 
-      - name: Get Short SHA
-        id: vars
-        run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-
-      - name: Update docker-compose.yml tags
+      - name: Update tags and submodules
         run: |
-          SHA="sha-${{ steps.vars.outputs.sha_short }}"
-          echo "Updating infra/compose/ with tag: $SHA"
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TAG="sha-$SHORT_SHA"
+          CHANGED=false
 
-          # Update images only if they match the specified prefix
-          # We use a loop or multiple seds to ensure we only update what's needed
+          declare -A SERVICES
+          SERVICES["rust-api"]="rust.yml"
+          SERVICES["elysia-api"]="elysia.yml"
+          SERVICES["solidjs-web"]="solidjs.yml"
+          SERVICES["leptos-web"]="leptos.yml"
+          SERVICES["visuals"]="visuals.yml"
+          SERVICES["nextjs-web"]="nextjs.yml"
 
-          if [ "${{ needs.changes.outputs.rust-api }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/rust-api:$SHA|g" infra/compose/rust.yml
-          fi
+          declare -A PATHS
+          PATHS["rust-api"]="apps/rust"
+          PATHS["elysia-api"]="apps/elysia"
+          PATHS["solidjs-web"]="apps/solidjs"
+          PATHS["leptos-web"]="apps/leptos"
+          PATHS["visuals"]="apps/visuals"
+          PATHS["nextjs-web"]="apps/nextjs"
 
-          if [ "${{ needs.changes.outputs.elysia-api }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/elysia-api:$SHA|g" infra/compose/elysia.yml
-          fi
-
-          if [ "${{ needs.changes.outputs.solidjs-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/solidjs-web:$SHA|g" infra/compose/solidjs.yml
-          fi
-
-          if [ "${{ needs.changes.outputs.leptos-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/leptos-web:$SHA|g" infra/compose/leptos.yml
-          fi
-
-          if [ "${{ needs.changes.outputs.visuals }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/visuals:$SHA|g" infra/compose/visuals.yml
-          fi
-
-          if [ "${{ needs.changes.outputs.nextjs-web }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/nextjs-web:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/nextjs-web:$SHA|g" infra/compose/nextjs.yml
-          fi
-
-      - name: Commit and push changes
-        run: |
+          # Use git config for possible commits
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git config pull.rebase true
 
-          if git diff --quiet infra/compose/ apps/; then
-            echo "No changes to commit"
-          else
-            git add infra/compose/ apps/
+          for id in "${!SERVICES[@]}"; do
+            # We only update if the build for this service was triggered AND succeeded
+            # Or if it was a workflow_dispatch and it succeeded
+            
+            # Since we are in a script, we can't easily check 'needs.build.outputs' 
+            # if we didn't define them. But we can check if it SHOULD have run.
+            
+            SHOULD_HAVE_RUN=false
+            if [ "${{ needs.changes.outputs.rust-api }}" == "true" ] && [ "$id" == "rust-api" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.elysia-api }}" == "true" ] && [ "$id" == "elysia-api" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.solidjs-web }}" == "true" ] && [ "$id" == "solidjs-web" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.leptos-web }}" == "true" ] && [ "$id" == "leptos-web" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.visuals }}" == "true" ] && [ "$id" == "visuals" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.nextjs-web }}" == "true" ] && [ "$id" == "nextjs-web" ]; then SHOULD_HAVE_RUN=true; fi
+            
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then SHOULD_HAVE_RUN=true; fi
+
+            if [ "$SHOULD_HAVE_RUN" == "true" ]; then
+              COMPOSE_FILE="infra/compose/${SERVICES[$id]}"
+              if [ -f "$COMPOSE_FILE" ]; then
+                echo "Updating $COMPOSE_FILE to $TAG"
+                sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/$id:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/$id:$TAG|g" "$COMPOSE_FILE"
+                git add "$COMPOSE_FILE"
+                CHANGED=true
+              fi
+              
+              # If it's a repository_dispatch for this specific service, update its submodule pointer
+              if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.client_payload.service }}" == "$id" ]; then
+                SHA_DISPATCH="${{ github.event.client_payload.sha }}"
+                SUB_PATH="${PATHS[$id]}"
+                if [ -n "$SHA_DISPATCH" ] && [ -d "$SUB_PATH" ]; then
+                  echo "Updating submodule $SUB_PATH to $SHA_DISPATCH"
+                  cd "$SUB_PATH"
+                  git fetch origin
+                  git checkout "$SHA_DISPATCH"
+                  cd -
+                  git add "$SUB_PATH"
+                  CHANGED=true
+                fi
+              fi
+            fi
+          done
+
+          if [ "$CHANGED" == "true" ]; then
             git commit -m "chore: update manifests and submodules [skip ci]"
-            # Use pull --rebase to handle any updates from other concurrent runs
             git pull --rebase origin main
             git push origin main
+          else
+            echo "No changes detected."
           fi
