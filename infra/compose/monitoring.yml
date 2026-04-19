@@ -15,7 +15,7 @@ services:
       # Keep 30 days of data
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
-      # Allow Prometheus to accept OTLP if needed later
+      # Allow Prometheus to accept OTLP if needed latera
       - '--enable-feature=exemplar-storage'
     ports:
       - '${MONITORING_PROMETHEUS_PORT:-9490}:9090'
