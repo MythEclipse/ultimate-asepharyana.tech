@@ -3,74 +3,104 @@
     "app-elysia": {
       "flake": false,
       "locked": {
-        "path": "./apps/elysia",
-        "type": "path"
+        "lastModified": 1776174895,
+        "narHash": "sha256-xvd/PFd9rIe5q4wSkmbvDrHxo44J8X3OmE/niPhQaQM=",
+        "owner": "MythEclipse",
+        "repo": "ultimate-asepharyana-tech-elysia",
+        "rev": "1a2c5be0ba300625c380d28d0304d3b768bfd05d",
+        "type": "github"
       },
       "original": {
-        "path": "./apps/elysia",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "MythEclipse",
+        "ref": "main",
+        "repo": "ultimate-asepharyana-tech-elysia",
+        "type": "github"
+      }
     },
     "app-leptos": {
       "flake": false,
       "locked": {
-        "path": "./apps/leptos",
-        "type": "path"
+        "lastModified": 1776587570,
+        "narHash": "sha256-TXgbfiHrBV+XHJkqP3j9bf9H0E25dhWiYRV9n+uwQ18=",
+        "owner": "MythEclipse",
+        "repo": "ultimate-asepharyana-tech-leptos",
+        "rev": "b42a02aa56f391c0006c5b6ab14bbd07294288da",
+        "type": "github"
       },
       "original": {
-        "path": "./apps/leptos",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "MythEclipse",
+        "ref": "main",
+        "repo": "ultimate-asepharyana-tech-leptos",
+        "type": "github"
+      }
     },
     "app-nextjs": {
       "flake": false,
       "locked": {
-        "path": "./apps/nextjs",
-        "type": "path"
+        "lastModified": 1776564345,
+        "narHash": "sha256-8wtPKptWWPtrWcUDwhAEDaZtnJb8VTOOWPiJMwg8toM=",
+        "owner": "MythEclipse",
+        "repo": "ultimate-asepharyana-tech-nextjs",
+        "rev": "b377760b5ff801d4658cdd2f97f8e97700a1f1d2",
+        "type": "github"
       },
       "original": {
-        "path": "./apps/nextjs",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "MythEclipse",
+        "ref": "main",
+        "repo": "ultimate-asepharyana-tech-nextjs",
+        "type": "github"
+      }
     },
     "app-rust": {
       "flake": false,
       "locked": {
-        "path": "./apps/rust",
-        "type": "path"
+        "lastModified": 1776067801,
+        "narHash": "sha256-LX1TlBIYc7j2eu1X+35vh5ojPEp3HE71jFgq+JrvmjE=",
+        "owner": "MythEclipse",
+        "repo": "ultimate-asepharyana-tech-rust",
+        "rev": "b92092bfe661ecefb2a505082b238a66becf40fa",
+        "type": "github"
       },
       "original": {
-        "path": "./apps/rust",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "MythEclipse",
+        "ref": "main",
+        "repo": "ultimate-asepharyana-tech-rust",
+        "type": "github"
+      }
     },
     "app-solidjs": {
       "flake": false,
       "locked": {
-        "path": "./apps/solidjs",
-        "type": "path"
+        "lastModified": 1775276135,
+        "narHash": "sha256-22i5+ETUd4hVZCrOLBa2jd4RL3P5Py2Sy/SOu8ldMsA=",
+        "owner": "MythEclipse",
+        "repo": "ultimate-asepharyana-tech-solidjs",
+        "rev": "35627598a0fe25fb358ec6cdf1107913947e2fab",
+        "type": "github"
       },
       "original": {
-        "path": "./apps/solidjs",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "MythEclipse",
+        "ref": "main",
+        "repo": "ultimate-asepharyana-tech-solidjs",
+        "type": "github"
+      }
     },
     "app-visuals": {
       "flake": false,
       "locked": {
-        "path": "./apps/visuals",
-        "type": "path"
+        "lastModified": 1776587570,
+        "narHash": "sha256-aA35LPyK/O5W1QjufKXxXyACXAhmAXLIV+h8zODUwz8=",
+        "owner": "MythEclipse",
+        "repo": "ultimate-asepharyana-tech-visuals",
+        "rev": "d812a97f5cacfee6f541ed839dd57af156231c96",
+        "type": "github"
       },
       "original": {
-        "path": "./apps/visuals",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "MythEclipse",
+        "ref": "main",
+        "repo": "ultimate-asepharyana-tech-visuals",
+        "type": "github"
+      }
     },
     "crane": {
       "locked": {

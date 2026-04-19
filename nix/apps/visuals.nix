@@ -21,13 +21,14 @@ let
     ];
 
     cargoExtraArgs = "--target wasm32-unknown-unknown";
+    cargoVendorDir = null;
     doNotPostBuildInstallCargoBinaries = true;
     doCheck = false;
   };
 
-  # Dependency build - only needs Cargo filesa
+  # Dependency build - only needs Cargo files
   cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-    src = craneLib.cleanCargoSource src;
+    src = src;
   });
 in
 craneLib.buildPackage (commonArgs // {

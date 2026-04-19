@@ -46,7 +46,7 @@ let
 
   # Dependency build - only needs Cargo files
   cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-    src = craneLib.cleanCargoSource src;
+    src = src;
   });
 in
 craneLib.buildPackage (commonArgs // {
