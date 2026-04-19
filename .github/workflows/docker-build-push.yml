@@ -33,12 +33,13 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      rust-api: ${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' }}
-      elysia-api: ${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' }}
-      solidjs-web: ${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' }}
-      leptos-web: ${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' }}
-      visuals: ${{ steps.filter.outputs.visuals == 'true' || steps.dispatch.outputs.visuals == 'true' }}
-      nextjs-web: ${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      rust-api: ${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch' }}
+      elysia-api: ${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch' }}
+      solidjs-web: ${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
+      leptos-web: ${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}
+      visuals: ${{ steps.filter.outputs.visuals == 'true' || steps.dispatch.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch' }}
+      nextjs-web: ${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,6 +97,24 @@ jobs:
             fi
           done
 
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          SERVICES=()
+          add_service() {
+            SERVICES+=("{\"id\":\"$1\",\"target\":\"$2\",\"path\":\"$3\",\"input\":\"$4\"}")
+          }
+          
+          if [ "${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "rust-api" "docker-rust" "apps/rust" "app-rust"; fi
+          if [ "${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "elysia-api" "docker-elysia" "apps/elysia" "app-elysia"; fi
+          if [ "${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "solidjs-web" "docker-solidjs" "apps/solidjs" "app-solidjs"; fi
+          if [ "${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "leptos-web" "docker-leptos" "apps/leptos" "app-leptos"; fi
+          if [ "${{ steps.filter.outputs.visuals == 'true' || steps.dispatch.outputs.visuals == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "visuals" "docker-visuals" "apps/visuals" "app-visuals"; fi
+          if [ "${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "nextjs-web" "docker-nextjs" "apps/nextjs" "app-nextjs"; fi
+          
+          JSON_ARRAY="[$(IFS=,; echo "${SERVICES[*]}")]"
+          echo "matrix=$JSON_ARRAY" >> $GITHUB_OUTPUT
+
   # ──────────────────────────────────────────────
   # Phase 2: Build and Push Images (Matrix)
   # ──────────────────────────────────────────────
@@ -105,34 +124,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - id: rust-api
-            target: docker-rust
-            path: apps/rust
-            input: app-rust
-          - id: elysia-api
-            target: docker-elysia
-            path: apps/elysia
-            input: app-elysia
-          - id: solidjs-web
-            target: docker-solidjs
-            path: apps/solidjs
-            input: app-solidjs
-          - id: leptos-web
-            target: docker-leptos
-            path: apps/leptos
-            input: app-leptos
-          - id: visuals
-            target: docker-visuals
-            path: apps/visuals
-            input: app-visuals
-          - id: nextjs-web
-            target: docker-nextjs
-            path: apps/nextjs
-            input: app-nextjs
-    if: |
-      needs.changes.outputs[matrix.id] == 'true' || 
-      github.event_name == 'workflow_dispatch'
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
+    if: needs.changes.outputs.matrix != '[]'
     permissions:
       contents: read
       packages: write
