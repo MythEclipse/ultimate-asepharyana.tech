@@ -19,7 +19,6 @@ jobs:
         with:
           submodules: recursive
 
-
       - name: Deploy with Docker Compose on VPS
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -69,10 +68,10 @@ jobs:
 #           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 #           chmod 600 ~/.ssh/id_rsa
 #           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
-# 
+#
 #           echo "⏳ Waiting 60s for containers to settle before restarting proxy..."
 #           sleep 60
-# 
+#
 #           echo "🔄 Restarting coolify-proxy..."
 #           ssh "${VPS_USER}@${VPS_HOST}" "docker restart coolify-proxy"
 #           echo "✅ coolify-proxy restarted."
