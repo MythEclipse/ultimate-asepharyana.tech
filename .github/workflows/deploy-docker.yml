@@ -32,11 +32,18 @@ jobs:
           VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
           ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
           ENV_PICSER: ${{ secrets.ENV_PICSER }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
 
           if [ -z "${SSH_PRIVATE_KEY:-}" ] || [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_TARGET_DIR:-}" ]; then
             echo "❌ Deployment secrets are not fully configured. Please set SSH_PRIVATE_KEY, VPS_HOST, VPS_USER, and VPS_TARGET_DIR."
+            exit 1
+          fi
+
+          if [ -z "${GRAFANA_ADMIN_USER:-}" ] || [ -z "${GRAFANA_ADMIN_PASSWORD:-}" ]; then
+            echo "❌ Grafana admin credentials are not configured. Please set GRAFANA_ADMIN_USER and GRAFANA_ADMIN_PASSWORD secrets."
             exit 1
           fi
 
