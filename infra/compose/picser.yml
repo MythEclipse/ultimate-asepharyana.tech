@@ -9,6 +9,8 @@ services:
       - "traefik.http.routers.picser.entrypoints=websecure"
       - "traefik.http.routers.picser.tls=true"
       - "traefik.http.services.picser.loadbalancer.server.port=3000"
+    env_file:
+      - .env.picser
 networks:
   app-shared-net:
     name: app-shared-net

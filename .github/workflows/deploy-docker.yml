@@ -31,6 +31,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
           ENV_FILE_PRODUCTION: ${{ secrets.ENV_FILE_PRODUCTION }}
+          ENV_PICSER: ${{ secrets.ENV_PICSER }}
         run: |
           set -euo pipefail
 
@@ -49,7 +50,9 @@ jobs:
 
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR"
           echo "$ENV_FILE_PRODUCTION" > .env.prod
-          scp $SSH_OPTS .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
+          echo "$ENV_PICSER" > .env.picser
+          scp $SSH_OPTS .env.prod .env.picser "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/"
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mv $VPS_TARGET_DIR/.env.prod $VPS_TARGET_DIR/.env"
 
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<'EOF'
             set -euo pipefail
