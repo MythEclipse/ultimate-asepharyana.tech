@@ -105,6 +105,8 @@ EOF
               echo "nogroup:x:65534:" >> $out/etc/group
               echo "appuser:x:1000:" >> $out/etc/group
               chmod 1777 $out/tmp
+              mkdir -p $out/etc/ssl/certs
+              ln -s /etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-certificates.crt
             '')
           ];
 
@@ -125,6 +127,7 @@ EOF
               contents = [ apps-packages.rust-backend ] ++ baseContents;
               config = {
                 Cmd = [ "${apps-packages.rust-backend}/bin/rustexpress" ];
+                Env = [ "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt" ];
                 ExposedPorts = { "4091/tcp" = {}; };
               };
             };
