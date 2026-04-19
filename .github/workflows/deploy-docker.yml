@@ -1,0 +1,77 @@
+name: Deploy Docker to VPS
+
+on:
+  workflow_run:
+    workflows: ['Build and Push Docker Images']
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Deploy with Docker Compose on VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_TARGET_DIR: ${{ secrets.VPS_TARGET_DIR }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SSH_PRIVATE_KEY:-}" ] || [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_TARGET_DIR:-}" ]; then
+            echo "❌ Deployment secrets are not fully configured. Please set SSH_PRIVATE_KEY, VPS_HOST, VPS_USER, and VPS_TARGET_DIR."
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" <<'EOF'
+            set -euo pipefail
+            cd "$VPS_TARGET_DIR"
+            git fetch origin main --depth=1 || true
+            git reset --hard origin/main
+            git submodule update --init --recursive
+
+            if command -v "docker" >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            else
+              echo "❌ docker compose is not installed on the remote host."
+              exit 1
+            fi
+
+            $COMPOSE_CMD -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml pull
+            $COMPOSE_CMD -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml up -d
+          EOF
+
+#       - name: Restart coolify-proxy (delay 1 min)
+#         env:
+#           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+#           VPS_HOST: ${{ secrets.VPS_HOST }}
+#           VPS_USER: ${{ secrets.VPS_USER }}
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+#           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+#
+#           echo "⏳ Waiting 60s for containers to settle before restarting proxy..."
+#           sleep 60
+#
+#           echo "🔄 Restarting coolify-proxy..."
+#           ssh "${VPS_USER}@${VPS_HOST}" "docker restart coolify-proxy"
+#           echo "✅ coolify-proxy restarted."

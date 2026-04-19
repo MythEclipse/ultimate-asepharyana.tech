@@ -1,0 +1,279 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - '.github/workflows/docker-build-push.yml'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - 'infra/**'
+      - '!infra/compose/**'
+  repository_dispatch:
+    types:
+      - submodule-updated
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_PREFIX: mytheclipse/ultimate-asepharyana.tech
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Phase 1: Detect which services have changed
+  # ──────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      rust-api: ${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch' }}
+      elysia-api: ${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch' }}
+      solidjs-web: ${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
+      leptos-web: ${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}
+      nextjs-web: ${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 1
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'push'
+        with:
+          filters: |
+            rust-api:
+              - 'apps/rust/**'
+              - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/rust.nix'
+            elysia-api:
+              - 'apps/elysia/**'
+              - 'packages/**'
+              - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/elysia.nix'
+            solidjs-web:
+              - 'apps/solidjs/**'
+              - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/solidjs.nix'
+            leptos-web:
+              - 'apps/leptos/**'
+              - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/leptos.nix'
+            nextjs-web:
+              - 'apps/nextjs/**'
+              - '.github/workflows/docker-build-push.yml'
+              - 'flake.nix'
+              - 'nix/apps/nextjs.nix'
+
+      - name: Parse repository_dispatch payload
+        id: dispatch
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SERVICE="${{ github.event.client_payload.service }}"
+          declare -a SERVICES=("rust-api" "elysia-api" "solidjs-web" "leptos-web" "nextjs-web")
+          for svc in "${SERVICES[@]}"; do
+            if [ "$SERVICE" = "$svc" ]; then
+              echo "${svc}=true" >> $GITHUB_OUTPUT
+            else
+              echo "${svc}=false" >> $GITHUB_OUTPUT
+            fi
+          done
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          SERVICES=()
+          add_service() {
+            SERVICES+=("{\"id\":\"$1\",\"target\":\"$2\",\"path\":\"$3\",\"input\":\"$4\"}")
+          }
+          
+          if [ "${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "rust-api" "docker-rust" "apps/rust" "app-rust"; fi
+          if [ "${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "elysia-api" "docker-elysia" "apps/elysia" "app-elysia"; fi
+          if [ "${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "solidjs-web" "docker-solidjs" "apps/solidjs" "app-solidjs"; fi
+          if [ "${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "leptos-web" "docker-leptos" "apps/leptos" "app-leptos"; fi
+          if [ "${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "nextjs-web" "docker-nextjs" "apps/nextjs" "app-nextjs"; fi
+          
+          JSON_ARRAY="[$(IFS=,; echo "${SERVICES[*]}")]"
+          echo "matrix=$JSON_ARRAY" >> $GITHUB_OUTPUT
+
+  # ──────────────────────────────────────────────
+  # Phase 2: Build and Push Images (Matrix)
+  # ──────────────────────────────────────────────
+  build:
+    needs: [changes]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
+    if: needs.changes.outputs.matrix != '[]'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Sync submodule locally (dispatch)
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          SHA="${{ github.event.client_payload.sha }}"
+          if [ -n "$SHA" ] && [ -d "${{ matrix.path }}" ]; then
+            cd "${{ matrix.path }}"
+            git fetch origin
+            git checkout "$SHA"
+          fi
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/install-nix-action@v26
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Build Nix Docker image
+        run: |
+          set -euo pipefail
+          EXTRA_ARGS=""
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            EXTRA_ARGS="--override-input ${{ matrix.input }} path:./${{ matrix.path }}"
+          fi
+          nix build .#${{ matrix.target }} $EXTRA_ARGS --no-link -o build-result
+
+      - name: Load and push Docker image
+        run: |
+          set -euo pipefail
+          # Find the image file (it's either the symlink itself or a file inside)
+          if [ -f "build-result" ] && [ ! -d "build-result" ]; then
+            IMAGE_FILE="build-result"
+          else
+            IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
+          fi
+          
+          if [ -z "$IMAGE_FILE" ]; then
+            echo "No Docker image file found"
+            exit 1
+          fi
+
+          LOADED=$(docker load --input "$IMAGE_FILE")
+          echo "$LOADED"
+          IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
+          
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          # Service name for tagging (remove -web suffix if needed to match original names)
+          SVC_NAME="${{ matrix.id }}"
+          TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
+          
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
+          docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
+          docker push "$TARGET_BASE:latest"
+          docker push "$TARGET_BASE:sha-$SHORT_SHA"
+
+  # ──────────────────────────────────────────────
+  # Phase 3: Update Manifests and Submodule Refs
+  # ──────────────────────────────────────────────
+  update-manifest:
+    needs: [changes, build]
+    if: |
+      always() &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Update tags and submodules
+        run: |
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          TAG="sha-$SHORT_SHA"
+          CHANGED=false
+
+          declare -A SERVICES
+          SERVICES["rust-api"]="rust.yml"
+          SERVICES["elysia-api"]="elysia.yml"
+          SERVICES["solidjs-web"]="solidjs.yml"
+          SERVICES["leptos-web"]="leptos.yml"
+          SERVICES["nextjs-web"]="nextjs.yml"
+
+          declare -A PATHS
+          PATHS["rust-api"]="apps/rust"
+          PATHS["elysia-api"]="apps/elysia"
+          PATHS["solidjs-web"]="apps/solidjs"
+          PATHS["leptos-web"]="apps/leptos"
+          PATHS["nextjs-web"]="apps/nextjs"
+
+          # Use git config for possible commits
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          for id in "${!SERVICES[@]}"; do
+            # We only update if the build for this service was triggered AND succeeded
+            # Or if it was a workflow_dispatch and it succeeded
+            
+            # Since we are in a script, we can't easily check 'needs.build.outputs' 
+            # if we didn't define them. But we can check if it SHOULD have run.
+            
+            SHOULD_HAVE_RUN=false
+            if [ "${{ needs.changes.outputs.rust-api }}" == "true" ] && [ "$id" == "rust-api" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.elysia-api }}" == "true" ] && [ "$id" == "elysia-api" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.solidjs-web }}" == "true" ] && [ "$id" == "solidjs-web" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.leptos-web }}" == "true" ] && [ "$id" == "leptos-web" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.nextjs-web }}" == "true" ] && [ "$id" == "nextjs-web" ]; then SHOULD_HAVE_RUN=true; fi
+            
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then SHOULD_HAVE_RUN=true; fi
+
+            if [ "$SHOULD_HAVE_RUN" == "true" ]; then
+              COMPOSE_FILE="infra/compose/${SERVICES[$id]}"
+              if [ -f "$COMPOSE_FILE" ]; then
+                echo "Updating $COMPOSE_FILE to $TAG"
+                sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/$id:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/$id:$TAG|g" "$COMPOSE_FILE"
+                git add "$COMPOSE_FILE"
+                CHANGED=true
+              fi
+              
+              # If it's a repository_dispatch for this specific service, update its submodule pointer
+              if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.client_payload.service }}" == "$id" ]; then
+                SHA_DISPATCH="${{ github.event.client_payload.sha }}"
+                SUB_PATH="${PATHS[$id]}"
+                if [ -n "$SHA_DISPATCH" ] && [ -d "$SUB_PATH" ]; then
+                  echo "Updating submodule $SUB_PATH to $SHA_DISPATCH"
+                  cd "$SUB_PATH"
+                  git fetch origin
+                  git checkout "$SHA_DISPATCH"
+                  cd -
+                  git add "$SUB_PATH"
+                  CHANGED=true
+                fi
+              fi
+            fi
+          done
+
+          if [ "$CHANGED" == "true" ]; then
+            git commit -m "chore: update manifests and submodules [skip ci]"
+            git pull --rebase origin main
+            git push origin main
+          else
+            echo "No changes detected."
+          fi
