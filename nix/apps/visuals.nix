@@ -5,7 +5,6 @@ let
   commonArgs = {
     pname = "visuals";
     version = "0.1.0";
-    inherit src;
     strictDeps = true;
     
     nativeBuildInputs = with pkgs; [
@@ -23,9 +22,14 @@ let
 
     cargoExtraArgs = "--target wasm32-unknown-unknown";
   };
+
+  # Dependency build - only needs Cargo files
+  cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+    src = craneLib.cleanCargoSource src;
+  });
 in
 craneLib.buildPackage (commonArgs // {
-  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+  inherit cargoArtifacts src;
 
   buildPhaseCargoCommand = ''
     export HOME=$TMPDIR
