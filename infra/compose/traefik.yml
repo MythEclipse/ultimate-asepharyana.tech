@@ -8,7 +8,7 @@ services:
     networks:
       - app-shared-net
     environment:
-      - DOCKER_API_VERSION=1.54
+      - TRAEFIK_PROVIDERS_DOCKER_APIVERSION=1.41
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
