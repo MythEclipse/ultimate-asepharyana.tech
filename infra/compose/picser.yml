@@ -1,6 +1,6 @@
 services:
   picser:
-    image: ghcr.io/mytheclipse/picser:latest
+    image: ghcr.io/mytheclipse/picser:sha-6e52587731368318da61e1fa323932830b1b272e
     restart: always
     networks: [app-shared-net]
     labels:
