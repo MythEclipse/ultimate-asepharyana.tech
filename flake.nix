@@ -147,7 +147,8 @@ EOF
               tag = "latest";
               contents = [ pkgs.nodejs apps-packages.nextjs ] ++ baseContents;
               config = {
-                Cmd = [ "${pkgs.nodejs}/bin/node" "${apps-packages.nextjs}/share/nextjs/server.js" ];
+                Cmd = [ "${pkgs.nodejs}/bin/node" "server.js" ];
+                WorkingDir = "${apps-packages.nextjs}/share/nextjs";
                 Env = [ "HOSTNAME=0.0.0.0" "PORT=3000" "NODE_ENV=production" "NEXT_TELEMETRY_DISABLED=1" ];
                 ExposedPorts = { "3000/tcp" = {}; };
               };

@@ -35,13 +35,17 @@ pkgs.stdenv.mkDerivation {
   '';
 
   installPhase = ''
-    mkdir -p $out/share/nextjs/.next
-    cp -r .next/standalone/. $out/share/nextjs/
+    mkdir -p $out/share/nextjs
+    cp -rv .next/standalone/. $out/share/nextjs/
+    
+    # Standalone mode expects .next/static and public to be manually copied
+    mkdir -p $out/share/nextjs/.next/static
     if [ -d ".next/static" ]; then
-      cp -r .next/static/* $out/share/nextjs/.next/static/ 2>/dev/null || mkdir -p $out/share/nextjs/.next/static
+      cp -rv .next/static/. $out/share/nextjs/.next/static/
     fi
+    
     if [ -d "public" ]; then
-      cp -r public $out/share/nextjs/
+      cp -rv public $out/share/nextjs/
     fi
   '';
 }
