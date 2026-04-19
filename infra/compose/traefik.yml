@@ -7,11 +7,22 @@ services:
       - "443:443"
     networks:
       - app-shared-net
-    environment:
-      - TRAEFIK_PROVIDERS_DOCKER_APIVERSION=1.41
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=app-shared-net"
+      - "--providers.docker.apiVersion=1.41"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.websecure.address=:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ../traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
       - ../traefik/dynamic:/etc/traefik/dynamic:ro
       - /root/asephstech.pem:/etc/traefik/certs/asephstech.pem:ro
       - /root/asephscloud.key:/etc/traefik/certs/asephscloud.key:ro
