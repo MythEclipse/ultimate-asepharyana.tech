@@ -18,7 +18,7 @@ let
     outputHash = "sha256-5VnDSWhPICJ8khprSAUqfMGQImub8BM8IcA42QVbS0s=";
   };
 
-  # Common arguments for crane
+  # Common arguments for cranea
   commonArgs = {
     pname = "apps-leptos";
     version = "0.1.0";

@@ -25,7 +25,7 @@ let
     doCheck = false;
   };
 
-  # Dependency build - only needs Cargo files
+  # Dependency build - only needs Cargo filesa
   cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
     src = craneLib.cleanCargoSource src;
   });
