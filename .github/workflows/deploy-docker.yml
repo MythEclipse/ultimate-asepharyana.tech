@@ -69,8 +69,8 @@ jobs:
               exit 1
             fi
 
-            $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml --env-file .env pull
-            $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml --env-file .env up -d
+            $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env pull
+            $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d
           EOF
 
 #       - name: Restart coolify-proxy (delay 1 min)

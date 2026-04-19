@@ -1,0 +1,15 @@
+services:
+  picser:
+    image: ghcr.io/mytheclipse/picser:latest
+    restart: always
+    networks: [app-shared-net]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.picser.rule=Host(`picser.asepharyana.tech`)"
+      - "traefik.http.routers.picser.entrypoints=websecure"
+      - "traefik.http.routers.picser.tls=true"
+      - "traefik.http.services.picser.loadbalancer.server.port=80"
+networks:
+  app-shared-net:
+    name: app-shared-net
+    external: true
