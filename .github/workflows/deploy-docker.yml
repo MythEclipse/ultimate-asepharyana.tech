@@ -19,13 +19,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup GitHub CLI
-        uses: actions4gh/setup-gh@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Verify GitHub CLI auth
-        run: gh auth status
 
       - name: Deploy with Docker Compose on VPS
         env:
