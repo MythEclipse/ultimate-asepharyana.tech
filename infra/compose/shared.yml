@@ -73,7 +73,7 @@ services:
 networks:
   app-shared-net:
     name: app-shared-net
-    driver: bridge
+    external: true
 volumes:
   mysql_data: null
   redis_data: null
