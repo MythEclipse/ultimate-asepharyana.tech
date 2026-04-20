@@ -29,6 +29,8 @@ services:
       - ../traefik/dynamic:/etc/traefik/dynamic:ro
       - /root/asephstech.pem:/etc/traefik/certs/asephstech.pem:ro
       - /root/asephscloud.key:/etc/traefik/certs/asephscloud.key:ro
+      - /data/coolify/proxy/certs/trace.pem:/etc/traefik/certs/trace.pem:ro
+      - /data/coolify/proxy/certs/trace.key:/etc/traefik/certs/trace.key:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.asepharyana.tech`)"

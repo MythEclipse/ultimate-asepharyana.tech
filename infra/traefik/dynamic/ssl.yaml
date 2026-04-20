@@ -2,6 +2,8 @@ tls:
   certificates:
     - certFile: /etc/traefik/certs/asephstech.pem
       keyFile: /etc/traefik/certs/asephscloud.key
+    - certFile: /etc/traefik/certs/trace.pem
+      keyFile: /etc/traefik/certs/trace.key
   stores:
     default:
       defaultCertificate:
