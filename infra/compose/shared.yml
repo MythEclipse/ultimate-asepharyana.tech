@@ -55,7 +55,7 @@ services:
     volumes:
       - 'minio_data:/data'
   sablier:
-    image: 'sablierapp/sablier:v1.11.2'
+    image: 'sablierapp/sablier:1.11.2'
     restart: always
     networks:
       - app-shared-net
