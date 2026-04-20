@@ -6,9 +6,6 @@ services:
       app-shared-net:
         aliases:
           - rust-api
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
     env_file:
       - ../../.env
     environment:

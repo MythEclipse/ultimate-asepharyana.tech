@@ -2,9 +2,6 @@ services:
   elysia-api:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:sha-b769742
     restart: always
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
     networks:
       app-shared-net:
         aliases:
