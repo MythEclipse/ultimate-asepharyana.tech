@@ -14,9 +14,10 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.elysia.rule=Host(`elysia.asepharyana.tech`)"
+      - "traefik.docker.allowNonRunningContainers=true"
       - "traefik.http.routers.elysia.entrypoints=websecure"
       - "traefik.http.routers.elysia.tls=true"
-      - "traefik.http.routers.elysia.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
+      - "traefik.http.routers.elysia.middlewares=elysia-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.elysia.loadbalancer.server.port=4092"
 
 networks:

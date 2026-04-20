@@ -6,10 +6,16 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.solidjs.rule=Host(`solidjs.asepharyana.tech`)"
+      - "traefik.docker.allowNonRunningContainers=true"
       - "traefik.http.routers.solidjs.entrypoints=websecure"
       - "traefik.http.routers.solidjs.tls=true"
-      - "traefik.http.routers.solidjs.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
+      - "traefik.http.routers.solidjs.middlewares=solidjs-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.solidjs.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.solidjs-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
+      - "traefik.http.middlewares.solidjs-sablier.plugin.sablier.sessionDuration=5m"
+      - "traefik.http.middlewares.solidjs-sablier.plugin.sablier.names=solidjs-web"
+      - "traefik.http.middlewares.solidjs-sablier.plugin.sablier.dynamic.displayName=SolidJS Frontend"
+      - "traefik.http.middlewares.solidjs-sablier.plugin.sablier.dynamic.theme=hacker-terminal"
     environment:
       - VITE_RUST_API=https://rust.asepharyana.tech
       - VITE_ELYSIA_API=https://elysia.asepharyana.tech

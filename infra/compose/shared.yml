@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: 'mysql:8'
+    image: 'mysql:8.4'
     restart: always
     networks:
       - app-shared-net
@@ -25,7 +25,7 @@ services:
       - 'mysql_data:/var/lib/mysql'
       - '../config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro'
   redis:
-    image: 'redis:alpine'
+    image: 'redis:7.2-alpine'
     restart: always
     networks:
       - app-shared-net
@@ -56,6 +56,16 @@ services:
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
     volumes:
       - 'minio_data:/data'
+  sablier:
+    image: 'sablierapp/sablier:1.11.2'
+    restart: always
+    networks:
+      - app-shared-net
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    command:
+      - start
+      - '--provider.name=docker'
 networks:
   app-shared-net:
     name: app-shared-net

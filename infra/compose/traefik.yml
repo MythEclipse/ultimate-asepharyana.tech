@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v2.11
+    image: traefik:v3.6
     restart: always
     ports:
       - "80:80"
@@ -27,6 +27,8 @@ services:
       - "--metrics.prometheus.addEntryPointsLabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
       - "--entryPoints.websecure.address=:443"
+      - "--experimental.plugins.sablier.moduleName=github.com/sablierapp/sablier-traefik-plugin"
+      - "--experimental.plugins.sablier.version=v1.1.0"
     environment:
       - DOCKER_API_VERSION=1.41
     volumes:
