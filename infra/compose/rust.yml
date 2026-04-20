@@ -11,7 +11,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rust.rule=Host(`rust.asepharyana.tech`)"
-      - "traefik.docker.allownonrunningcontainers=true"
+      - "traefik.docker.allowNonRunningContainers=true"
       - "traefik.http.routers.rust.entrypoints=websecure"
       - "traefik.http.routers.rust.tls=true"
       - "traefik.http.routers.rust.middlewares=rust-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"

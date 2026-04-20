@@ -6,7 +6,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.solidjs.rule=Host(`solidjs.asepharyana.tech`)"
-      - "traefik.docker.allownonrunningcontainers=true"
+      - "traefik.docker.allowNonRunningContainers=true"
       - "traefik.http.routers.solidjs.entrypoints=websecure"
       - "traefik.http.routers.solidjs.tls=true"
       - "traefik.http.routers.solidjs.middlewares=solidjs-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"

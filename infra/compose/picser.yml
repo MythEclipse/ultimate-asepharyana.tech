@@ -6,7 +6,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.picser.rule=Host(`picser.asepharyana.tech`)"
-      - "traefik.docker.allownonrunningcontainers=true"
+      - "traefik.docker.allowNonRunningContainers=true"
       - "traefik.http.routers.picser.entrypoints=websecure"
       - "traefik.http.routers.picser.tls=true"
       - "traefik.http.routers.picser.middlewares=picser-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
