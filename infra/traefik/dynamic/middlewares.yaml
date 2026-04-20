@@ -1,0 +1,43 @@
+http:
+  middlewares:
+    secure-headers:
+      headers:
+        sslRedirect: true
+        forceSTSHeader: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXSSFilter: true
+        referrerPolicy: "same-origin"
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "DENY"
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: "same-origin"
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+    compress:
+      compress:
+        minResponseBodyBytes: 256
+        excludedContentTypes:
+          - "image/*"
+          - "application/octet-stream"
+    retry:
+      retry: {}
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+    buffer:
+      buffering:
+        maxRequestBodyBytes: 10485760
+        maxResponseBodyBytes: 10485760
+        memRequestBodyBytes: 1048576
+        memResponseBodyBytes: 1048576
+    admin-chain:
+      chain:
+        middlewares:
+          - secure-headers
+          - compress
+          - retry

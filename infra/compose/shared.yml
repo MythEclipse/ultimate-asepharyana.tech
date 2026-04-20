@@ -45,13 +45,25 @@ services:
       - 'traefik.http.routers.minio.rule=Host(`minio.asepharyana.tech`)'
       - 'traefik.http.routers.minio.entrypoints=websecure'
       - 'traefik.http.routers.minio.tls=true'
+      - 'traefik.http.routers.minio.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file'
       - 'traefik.http.services.minio.loadbalancer.server.port=9000'
       - 'traefik.http.routers.minio-console.rule=Host(`minio-console.asepharyana.tech`)'
       - 'traefik.http.routers.minio-console.entrypoints=websecure'
       - 'traefik.http.routers.minio-console.tls=true'
+      - 'traefik.http.routers.minio-console.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file'
       - 'traefik.http.services.minio-console.loadbalancer.server.port=9001'
     volumes:
       - 'minio_data:/data'
+  sablier:
+    image: 'sablierapp/sablier:v1.11.2'
+    restart: always
+    networks:
+      - app-shared-net
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    command:
+      - start
+      - '--provider.name=docker'
 networks:
   app-shared-net:
     name: app-shared-net

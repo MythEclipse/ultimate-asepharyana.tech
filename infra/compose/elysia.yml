@@ -16,7 +16,13 @@ services:
       - "traefik.http.routers.elysia.rule=Host(`elysia.asepharyana.tech`)"
       - "traefik.http.routers.elysia.entrypoints=websecure"
       - "traefik.http.routers.elysia.tls=true"
+      - "traefik.http.routers.elysia.middlewares=elysia-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.elysia.loadbalancer.server.port=4092"
+      - "traefik.docker.allow-non-running-containers=true"
+      - "traefik.http.middlewares.elysia-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
+      - "traefik.http.middlewares.elysia-sablier.plugin.sablier.sessionDuration=5m"
+      - "traefik.http.middlewares.elysia-sablier.plugin.sablier.names=elysia-api"
+      - "traefik.http.middlewares.elysia-sablier.plugin.sablier.blocking.timeout=30s"
 
 networks:
   app-shared-net:

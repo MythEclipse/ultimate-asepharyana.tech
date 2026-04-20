@@ -153,7 +153,23 @@ jobs:
           name: mytheclipse
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
+      - name: Build Docker image for SolidJS and Leptos
+        if: matrix.id == 'solidjs-web' || matrix.id == 'leptos-web'
+        run: |
+          set -euo pipefail
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          SVC_NAME="${{ matrix.id }}"
+          TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
+          DOCKERFILE=""
+          if [ "${{ matrix.id }}" == "solidjs-web" ]; then
+            DOCKERFILE="infra/docker/solidjs.Dockerfile"
+          elif [ "${{ matrix.id }}" == "leptos-web" ]; then
+            DOCKERFILE="infra/docker/leptos.Dockerfile"
+          fi
+          docker build -f "$DOCKERFILE" -t "$TARGET_BASE:latest" -t "$TARGET_BASE:sha-$SHORT_SHA" .
+
       - name: Build Nix Docker image
+        if: matrix.id != 'solidjs-web' && matrix.id != 'leptos-web'
         run: |
           set -euo pipefail
           EXTRA_ARGS=""
@@ -162,9 +178,19 @@ jobs:
           fi
           nix build .#${{ matrix.target }} $EXTRA_ARGS --no-link -o build-result
 
-      - name: Load and push Docker image
+      - name: Push Docker image
         run: |
           set -euo pipefail
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          SVC_NAME="${{ matrix.id }}"
+          TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
+
+          if [ "${{ matrix.id }}" == "solidjs-web" ] || [ "${{ matrix.id }}" == "leptos-web" ]; then
+            docker push "$TARGET_BASE:latest"
+            docker push "$TARGET_BASE:sha-$SHORT_SHA"
+            exit 0
+          fi
+
           # Find the image file (it's either the symlink itself or a file inside)
           if [ -f "build-result" ] && [ ! -d "build-result" ]; then
             IMAGE_FILE="build-result"
@@ -180,11 +206,6 @@ jobs:
           LOADED=$(docker load --input "$IMAGE_FILE")
           echo "$LOADED"
           IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          
-          SHORT_SHA=${GITHUB_SHA:0:7}
-          # Service name for tagging (remove -web suffix if needed to match original names)
-          SVC_NAME="${{ matrix.id }}"
-          TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
           
           docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
           docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"

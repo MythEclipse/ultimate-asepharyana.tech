@@ -21,7 +21,14 @@ services:
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
       - "--accesslog=true"
+      - "--log.level=INFO"
+      - "--log.format=json"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
       - "--entryPoints.websecure.address=:443"
+      - "--experimental.plugins.sablier.moduleName=github.com/sablierapp/sablier-traefik-plugin"
+      - "--experimental.plugins.sablier.version=v1.1.0"
     environment:
       - DOCKER_API_VERSION=1.41
     volumes:
@@ -37,6 +44,7 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.middlewares=admin-chain@file"
 
 networks:
   app-shared-net:

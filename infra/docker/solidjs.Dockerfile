@@ -35,7 +35,7 @@ logfile=/dev/null\n\
 logfile_maxbytes=0\n\
 \n\
 [program:bun]\n\
-command=bun run .output/server/index.mjs\n\
+command=bun run start\n\
 directory=/app\n\
 autostart=true\n\
 autorestart=true\n\

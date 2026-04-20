@@ -10,6 +10,7 @@ services:
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.asepharyana.tech`)"
       - "traefik.http.routers.prometheus.entrypoints=websecure"
       - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -64,6 +65,7 @@ services:
       - "traefik.http.routers.grafana.rule=Host(`grafana.asepharyana.tech`)"
       - "traefik.http.routers.grafana.entrypoints=websecure"
       - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
     environment:
       # Grafana admin credentials
