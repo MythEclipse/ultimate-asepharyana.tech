@@ -10,7 +10,6 @@ services:
       - "traefik.http.routers.picser.tls=true"
       - "traefik.http.routers.picser.middlewares=picser-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.picser.loadbalancer.server.port=3000"
-      - "traefik.docker.allow-non-running-containers=true"
       - "traefik.http.middlewares.picser-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
       - "traefik.http.middlewares.picser-sablier.plugin.sablier.sessionDuration=5m"
       - "traefik.http.middlewares.picser-sablier.plugin.sablier.names=picser"

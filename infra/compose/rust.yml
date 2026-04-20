@@ -15,7 +15,6 @@ services:
       - "traefik.http.routers.rust.tls=true"
       - "traefik.http.routers.rust.middlewares=rust-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.rust.loadbalancer.server.port=4091"
-      - "traefik.docker.allow-non-running-containers=true"
       - "traefik.http.middlewares.rust-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
       - "traefik.http.middlewares.rust-sablier.plugin.sablier.sessionDuration=5m"
       - "traefik.http.middlewares.rust-sablier.plugin.sablier.names=rust-api"

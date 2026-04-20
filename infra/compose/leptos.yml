@@ -12,7 +12,6 @@ services:
       - "traefik.http.routers.leptos.tls=true"
       - "traefik.http.routers.leptos.middlewares=leptos-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.leptos.loadbalancer.server.port=80"
-      - "traefik.docker.allow-non-running-containers=true"
       - "traefik.http.middlewares.leptos-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
       - "traefik.http.middlewares.leptos-sablier.plugin.sablier.sessionDuration=5m"
       - "traefik.http.middlewares.leptos-sablier.plugin.sablier.names=leptos-web"

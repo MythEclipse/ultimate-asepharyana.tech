@@ -10,7 +10,6 @@ services:
       - "traefik.http.routers.nextjs.tls=true"
       - "traefik.http.routers.nextjs.middlewares=nextjs-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.nextjs.loadbalancer.server.port=3000"
-      - "traefik.docker.allow-non-running-containers=true"
       - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
       - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.sessionDuration=5m"
       - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.names=nextjs-web"
