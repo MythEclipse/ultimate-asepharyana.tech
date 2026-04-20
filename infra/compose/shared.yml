@@ -27,7 +27,7 @@ services:
       - 'mysql_data:/var/lib/mysql'
       - '../config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro'
   redis:
-    image: 'redis:7.2-alpine'
+    image: 'redis:alpine'
     restart: always
     networks:
       app-shared-net:
