@@ -9,6 +9,8 @@ services:
     dns:
       - 1.1.1.1
       - 8.8.8.8
+    env_file:
+      - ../../.env
     environment:
       - DATABASE_URL=mysql://asephs:hunterz@mysql:3306/sosmed
       - REDIS_URL=redis://redis:6379
