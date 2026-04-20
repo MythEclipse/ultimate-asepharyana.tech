@@ -31,7 +31,7 @@ services:
       - DOCKER_API_VERSION=1.41
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ../traefik/dynamic:/etc/traefik/dynamic:ro
+      - /root/ultimate-asepharyana.tech/infra/traefik/dynamic:/etc/traefik/dynamic:ro
       - /root/asephstech.pem:/etc/traefik/certs/asephstech.pem:ro
       - /root/asephscloud.key:/etc/traefik/certs/asephscloud.key:ro
       - /data/coolify/proxy/certs/trace.pem:/etc/traefik/certs/trace.pem:ro
