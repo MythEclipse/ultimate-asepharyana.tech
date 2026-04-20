@@ -11,9 +11,6 @@ services:
           - picser
     env_file:
       - .env.picser
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
 networks:
   app-shared-net:
     name: app-shared-net
