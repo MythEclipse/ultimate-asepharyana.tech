@@ -92,3 +92,10 @@ scrape_configs:
       - targets: ['cadvisor:8080']
         labels:
           service: cadvisor
+
+  # ── Traefik (Edge Router Metrics) ──────────────────────────────────────────
+  - job_name: traefik
+    static_configs:
+      - targets: ['traefik:8080']
+        labels:
+          service: traefik
