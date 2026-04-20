@@ -1,0 +1,181 @@
+http:
+  routers:
+    # ── NextJS ──
+    nextjs:
+      rule: "Host(`asepharyana.tech`)"
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - nextjs-sablier
+        - secure-headers@file
+        - compress@file
+        - retry@file
+        - rate-limit@file
+        - buffer@file
+      service: nextjs-service
+
+    # ── Leptos ──
+    leptos:
+      rule: "Host(`leptos.asepharyana.tech`)"
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - leptos-sablier
+        - secure-headers@file
+        - compress@file
+        - retry@file
+        - rate-limit@file
+        - buffer@file
+      service: leptos-service
+
+    # ── SolidJS ──
+    solidjs:
+      rule: "Host(`solidjs.asepharyana.tech`)"
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - solidjs-sablier
+        - secure-headers@file
+        - compress@file
+        - retry@file
+        - rate-limit@file
+        - buffer@file
+      service: solidjs-service
+
+    # ── Rust API ──
+    rust:
+      rule: "Host(`rust.asepharyana.tech`)"
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - rust-sablier
+        - secure-headers@file
+        - compress@file
+        - retry@file
+        - rate-limit@file
+        - buffer@file
+      service: rust-service
+
+    # ── Elysia API ──
+    elysia:
+      rule: "Host(`elysia.asepharyana.tech`)"
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - elysia-sablier
+        - secure-headers@file
+        - compress@file
+        - retry@file
+        - rate-limit@file
+        - buffer@file
+      service: elysia-service
+
+    # ── Picser API ──
+    picser:
+      rule: "Host(`picser.asepharyana.tech`)"
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - picser-sablier
+        - secure-headers@file
+        - compress@file
+        - retry@file
+        - rate-limit@file
+        - buffer@file
+      service: picser-service
+
+  services:
+    nextjs-service:
+      loadBalancer:
+        servers:
+          - url: "http://nextjs-web:3000"
+    leptos-service:
+      loadBalancer:
+        servers:
+          - url: "http://leptos-web:3000"
+    solidjs-service:
+      loadBalancer:
+        servers:
+          - url: "http://solidjs-web:80"
+    rust-service:
+      loadBalancer:
+        servers:
+          - url: "http://rust-api:4091"
+    elysia-service:
+      loadBalancer:
+        servers:
+          - url: "http://elysia-api:4092"
+    picser-service:
+      loadBalancer:
+        servers:
+          - url: "http://picser:3000"
+
+  middlewares:
+    # ── NextJS Sablier ──
+    nextjs-sablier:
+      plugin:
+        sablier:
+          sablierUrl: "http://sablier:10000"
+          sessionDuration: "5m"
+          names: "compose-nextjs-web-1"
+          dynamic:
+            displayName: "NextJS Frontend"
+            theme: "hacker-terminal"
+
+    # ── Leptos Sablier ──
+    leptos-sablier:
+      plugin:
+        sablier:
+          sablierUrl: "http://sablier:10000"
+          sessionDuration: "5m"
+          names: "compose-leptos-web-1"
+          dynamic:
+            displayName: "Leptos Web"
+            theme: "hacker-terminal"
+
+    # ── SolidJS Sablier ──
+    solidjs-sablier:
+      plugin:
+        sablier:
+          sablierUrl: "http://sablier:10000"
+          sessionDuration: "5m"
+          names: "compose-solidjs-web-1"
+          dynamic:
+            displayName: "SolidJS Frontend"
+            theme: "hacker-terminal"
+
+    # ── Rust Sablier ──
+    rust-sablier:
+      plugin:
+        sablier:
+          sablierUrl: "http://sablier:10000"
+          sessionDuration: "5m"
+          names: "compose-rust-api-1"
+          blocking:
+            timeout: "30s"
+
+    # ── Elysia Sablier ──
+    elysia-sablier:
+      plugin:
+        sablier:
+          sablierUrl: "http://sablier:10000"
+          sessionDuration: "5m"
+          names: "compose-elysia-api-1"
+          blocking:
+            timeout: "30s"
+
+    # ── Picser Sablier ──
+    picser-sablier:
+      plugin:
+        sablier:
+          sablierUrl: "http://sablier:10000"
+          sessionDuration: "5m"
+          names: "compose-picser-1"
+          blocking:
+            timeout: "30s"
