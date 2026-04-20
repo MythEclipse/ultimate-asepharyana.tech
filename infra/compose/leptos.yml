@@ -8,7 +8,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.leptos.rule=Host(`leptos.asepharyana.tech`)"
-      - "traefik.docker.allowNonRunningContainers=true"
       - "traefik.http.routers.leptos.entrypoints=websecure"
       - "traefik.http.routers.leptos.tls=true"
       - "traefik.http.routers.leptos.middlewares=leptos-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
