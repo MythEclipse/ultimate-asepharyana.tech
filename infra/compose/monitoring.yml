@@ -60,6 +60,8 @@ services:
     restart: always
     networks:
       - app-shared-net
+    env_file:
+      - ../../.env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.rule=Host(`grafana.asepharyana.tech`)"
