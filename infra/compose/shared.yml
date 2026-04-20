@@ -5,10 +5,10 @@ services:
     networks:
       - app-shared-net
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: sosmed
-      MYSQL_USER: asephs
-      MYSQL_PASSWORD: hunterz
+      MYSQL_ROOT_PASSWORD: ${SHARED_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${SHARED_MYSQL_DATABASE}
+      MYSQL_USER: ${SHARED_MYSQL_USER}
+      MYSQL_PASSWORD: ${SHARED_MYSQL_PASSWORD}
     healthcheck:
       test:
         - CMD
@@ -37,19 +37,19 @@ services:
     networks:
       - app-shared-net
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: mytheclipse
+      MINIO_ROOT_USER: ${SHARED_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${SHARED_MINIO_ROOT_PASSWORD}
     command: 'server /data --console-address ":9001" --address ":9000"'
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.minio.rule=Host(`minio.asepharyana.tech`)"
-      - "traefik.http.routers.minio.entrypoints=websecure"
-      - "traefik.http.routers.minio.tls=true"
-      - "traefik.http.services.minio.loadbalancer.server.port=9000"
-      - "traefik.http.routers.minio-console.rule=Host(`minio-console.asepharyana.tech`)"
-      - "traefik.http.routers.minio-console.entrypoints=websecure"
-      - "traefik.http.routers.minio-console.tls=true"
-      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.minio.rule=Host(`minio.asepharyana.tech`)'
+      - 'traefik.http.routers.minio.entrypoints=websecure'
+      - 'traefik.http.routers.minio.tls=true'
+      - 'traefik.http.services.minio.loadbalancer.server.port=9000'
+      - 'traefik.http.routers.minio-console.rule=Host(`minio-console.asepharyana.tech`)'
+      - 'traefik.http.routers.minio-console.entrypoints=websecure'
+      - 'traefik.http.routers.minio-console.tls=true'
+      - 'traefik.http.services.minio-console.loadbalancer.server.port=9001'
     volumes:
       - 'minio_data:/data'
 networks:

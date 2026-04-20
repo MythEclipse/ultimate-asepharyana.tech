@@ -34,6 +34,12 @@ jobs:
           ENV_PICSER: ${{ secrets.ENV_PICSER }}
           GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          SHARED_MYSQL_ROOT_PASSWORD: ${{ secrets.SHARED_MYSQL_ROOT_PASSWORD }}
+          SHARED_MYSQL_DATABASE: ${{ secrets.SHARED_MYSQL_DATABASE }}
+          SHARED_MYSQL_USER: ${{ secrets.SHARED_MYSQL_USER }}
+          SHARED_MYSQL_PASSWORD: ${{ secrets.SHARED_MYSQL_PASSWORD }}
+          SHARED_MINIO_ROOT_USER: ${{ secrets.SHARED_MINIO_ROOT_USER }}
+          SHARED_MINIO_ROOT_PASSWORD: ${{ secrets.SHARED_MINIO_ROOT_PASSWORD }}
         run: |
           set -euo pipefail
 
@@ -57,6 +63,14 @@ jobs:
 
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR && mkdir -p $VPS_TARGET_DIR/infra/compose"
           echo "$ENV_FILE_PRODUCTION" > .env.prod
+          {
+            echo "SHARED_MYSQL_ROOT_PASSWORD=$SHARED_MYSQL_ROOT_PASSWORD"
+            echo "SHARED_MYSQL_DATABASE=$SHARED_MYSQL_DATABASE"
+            echo "SHARED_MYSQL_USER=$SHARED_MYSQL_USER"
+            echo "SHARED_MYSQL_PASSWORD=$SHARED_MYSQL_PASSWORD"
+            echo "SHARED_MINIO_ROOT_USER=$SHARED_MINIO_ROOT_USER"
+            echo "SHARED_MINIO_ROOT_PASSWORD=$SHARED_MINIO_ROOT_PASSWORD"
+          } >> .env.prod
           echo "$ENV_PICSER" > .env.picser
           scp $SSH_OPTS .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
           scp $SSH_OPTS .env.picser "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/infra/compose/.env.picser"
