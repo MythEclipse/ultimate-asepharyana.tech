@@ -3,7 +3,9 @@ services:
     image: 'mysql:8.4'
     restart: always
     networks:
-      - app-shared-net
+      app-shared-net:
+        aliases:
+          - mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${SHARED_MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${SHARED_MYSQL_DATABASE}
@@ -28,7 +30,9 @@ services:
     image: 'redis:7.2-alpine'
     restart: always
     networks:
-      - app-shared-net
+      app-shared-net:
+        aliases:
+          - redis
     volumes:
       - 'redis_data:/data'
   minio:

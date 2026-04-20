@@ -2,7 +2,13 @@ services:
   rust-api:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/rust-api:sha-b769742
     restart: always
-    networks: [app-shared-net]
+    networks:
+      app-shared-net:
+        aliases:
+          - rust-api
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       - DATABASE_URL=mysql://asephs:hunterz@mysql:3306/sosmed
       - REDIS_URL=redis://redis:6379

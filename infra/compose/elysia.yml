@@ -2,7 +2,13 @@ services:
   elysia-api:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:sha-b769742
     restart: always
-    networks: [app-shared-net]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    networks:
+      app-shared-net:
+        aliases:
+          - elysia-api
     environment:
       - DATABASE_URL=mysql://asephs:hunterz@mysql:3306/sosmed
       - REDIS_URL=redis://redis:6379
@@ -12,6 +18,9 @@ services:
       - MINIO_SECRET_KEY=mytheclipse
       - MINIO_BUCKET_NAME=api
 
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
 networks:
   app-shared-net:
     name: app-shared-net
