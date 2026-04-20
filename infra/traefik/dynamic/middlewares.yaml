@@ -24,7 +24,8 @@ http:
           - "image/*"
           - "application/octet-stream"
     retry:
-      retry: {}
+      retry:
+        attempts: 3
     rate-limit:
       rateLimit:
         average: 100
