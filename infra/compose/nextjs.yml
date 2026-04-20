@@ -8,13 +8,8 @@ services:
       - "traefik.http.routers.nextjs.rule=Host(`asepharyana.tech`)"
       - "traefik.http.routers.nextjs.entrypoints=websecure"
       - "traefik.http.routers.nextjs.tls=true"
-      - "traefik.http.routers.nextjs.middlewares=nextjs-sablier,secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
+      - "traefik.http.routers.nextjs.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
       - "traefik.http.services.nextjs.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.sablierUrl=http://sablier:10000"
-      - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.sessionDuration=5m"
-      - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.names=nextjs-web"
-      - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.dynamic.displayName=NextJS Web"
-      - "traefik.http.middlewares.nextjs-sablier.plugin.sablier.dynamic.theme=hacker-terminal"
     environment:
       - NEXT_PUBLIC_RUST_API=https://rust.asepharyana.tech
       - NEXT_PUBLIC_ELYSIA_API=https://elysia.asepharyana.tech
