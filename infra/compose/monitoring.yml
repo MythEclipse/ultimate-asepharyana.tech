@@ -152,7 +152,7 @@ services:
     command:
       - '-nginx.scrape-uri=http://leptos-web:80/stub_status'
 
-  # ── cAdvisor (container-level resource metrics) ──────────────────────────────
+  # ── cAdvisor (container-level resource metrics) ──────────────────────────────────
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     restart: always
