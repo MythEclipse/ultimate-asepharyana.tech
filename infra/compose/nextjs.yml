@@ -3,7 +3,6 @@ services:
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:sha-bb37c3b
     restart: always
     networks: [app-shared-net]
-    labels:
     environment:
       - NEXT_PUBLIC_RUST_API=https://rust.asepharyana.tech
       - NEXT_PUBLIC_ELYSIA_API=https://elysia.asepharyana.tech

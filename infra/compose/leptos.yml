@@ -5,7 +5,6 @@ services:
     networks: [app-shared-net]
     environment:
       - VITE_RUST_API=https://rust.asepharyana.tech
-    labels:
 networks:
   app-shared-net:
     name: app-shared-net

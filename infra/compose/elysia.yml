@@ -11,7 +11,6 @@ services:
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=mytheclipse
       - MINIO_BUCKET_NAME=api
-    labels:
 
 networks:
   app-shared-net:

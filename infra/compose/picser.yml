@@ -3,7 +3,6 @@ services:
     image: ghcr.io/mytheclipse/picser:sha-e77b4e38c1b2c3289bcbbd01b4bf181aae82a322
     restart: always
     networks: [app-shared-net]
-    labels:
     env_file:
       - .env.picser
 networks:
