@@ -14,6 +14,11 @@ on:
       - 'infra/compose/**'
   workflow_dispatch:
 
+# Prevent multiple deployments from running simultaneously
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -99,24 +104,30 @@ jobs:
             fi
 
             \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env pull
-            echo "🧹 Cleaning up conflicting containers (aggressive mode)..."
-            # Define target names
+            echo "🧹 Recovering Git and Docker state..."
+            # Clear Git locks if any
+            rm -f .git/shallow.lock || true
+            
+            # Identify all target services
             TARGETS="prometheus alertmanager grafana node-exporter redis-exporter mysqld-exporter nginx-exporter cadvisor portainer mysql redis minio sablier traefik nextjs-web solidjs-web leptos-web rust-api elysia-api picser"
             
+            echo "🛑 Stopping and removing conflicting containers..."
             for name in \$TARGETS; do
-              # Find ANY container (running or stopped) with this name and remove it by ID
-              CID=\$(docker ps -aq --filter name="^\$name\$")
-              if [ ! -z "\$CID" ]; then
-                echo "Removing existing container for \$name (\$CID)..."
-                docker rm -f \$CID || true
+              # Find any container name that CONTAINS the target string (more aggressive)
+              CIDS=\$(docker ps -aq --filter name="\$name")
+              if [ ! -z "\$CIDS" ]; then
+                echo "Removing: \$name (\$CIDS)"
+                docker stop \$CIDS || true
+                docker rm -f \$CIDS || true
               fi
             done
-            
-            # Additional sweep for common compose prefixes just in case
+
+            # Final sweep for compose orphans
             docker rm -f \$(docker ps -aq --filter name="compose-") || true
             
-            # Short sleep to let Docker daemon settle name locks
-            sleep 2
+            # Cooldown to allow daemon to release locks
+            echo "⏳ Waiting for Docker daemon to settle..."
+            sleep 5
             
             \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d --remove-orphans
 
