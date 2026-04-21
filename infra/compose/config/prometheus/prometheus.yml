@@ -99,3 +99,10 @@ scrape_configs:
       - targets: ['traefik:8080']
         labels:
           service: traefik
+
+  # ── Portainer (Management) ──────────────────────────────────────────────────
+  - job_name: portainer
+    static_configs:
+      - targets: ['portainer:9000']
+        labels:
+          service: portainer

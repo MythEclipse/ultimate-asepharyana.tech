@@ -13,8 +13,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=273742
       - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=admin
-      - MINIO_SECRET_KEY=mytheclipse
+      - MINIO_ACCESS_KEY=${SHARED_MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${SHARED_MINIO_ROOT_PASSWORD}
+
       - MINIO_BUCKET_NAME=api
 
 networks:

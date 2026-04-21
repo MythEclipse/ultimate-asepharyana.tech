@@ -192,8 +192,30 @@
       ]
     },
     {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 5 },
+      "id": 9,
+      "title": "Portainer",
+      "type": "stat",
+      "targets": [
+        { "expr": "up{job=\"portainer\"}", "legendFormat": "Status" }
+      ]
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
       "id": 101,
       "title": "📈 Global Performance",
       "type": "row"
@@ -203,7 +225,7 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
       "id": 10,
       "title": "Total API Request Rate",
       "type": "timeseries",
@@ -217,7 +239,7 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "thresholds" }, "unit": "percentunit", "min": 0, "max": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.05 }, { "color": "red", "value": 0.1 }] } }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
       "id": 11,
       "title": "Global Error Rate (5xx)",
       "type": "timeseries",
@@ -225,6 +247,7 @@
         { "expr": "(sum(rate(elysia_http_requests_total{status_code=~\"5..\"}[5m])) + sum(rate(http_requests_total{status=~\"5..\"}[5m]))) / (sum(rate(elysia_http_requests_total[5m])) + sum(rate(http_requests_total[5m]))) or vector(0)", "legendFormat": "Combined 5xx" }
       ]
     }
+
   ],
   "refresh": "15s",
   "schemaVersion": 38,
