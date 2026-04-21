@@ -75,7 +75,7 @@ jobs:
           scp $SSH_OPTS .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
           scp $SSH_OPTS .env.picser "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/infra/compose/.env.picser"
 
-          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<'EOF'
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<EOF
             set -euo pipefail
             cd "$VPS_TARGET_DIR"
 
@@ -108,6 +108,7 @@ jobs:
             # Also try to update the admin email/username if possible via sqlite (optional but helpful)
             # For now, we ensure the password matches.
           EOF
+
 
 
 
