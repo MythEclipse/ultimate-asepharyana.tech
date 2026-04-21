@@ -108,7 +108,12 @@ jobs:
             echo "🔐 Resetting Grafana admin password..."
             # Wait for Grafana to be ready
             sleep 20
-            docker exec grafana grafana-cli admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}" || echo "⚠️ Could not reset Grafana password automatically."
+            docker exec grafana grafana-cli admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}" || {
+                echo "⚠️ Could not reset Grafana password automatically."
+                echo "📊 Dumping logs for debugging..."
+                docker logs prometheus || true
+                docker logs grafana || true
+            }
             # Also try to update the admin email/username if possible via sqlite (optional but helpful)
             # For now, we ensure the password matches.
           EOF
