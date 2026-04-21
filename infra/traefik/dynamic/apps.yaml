@@ -123,7 +123,7 @@ http:
         sablier:
           sablierUrl: "http://sablier:10000"
           sessionDuration: "5m"
-          names: "compose-nextjs-web-1"
+          names: "nextjs-web"
           dynamic:
             displayName: "NextJS Frontend"
             theme: "hacker-terminal"
@@ -134,7 +134,7 @@ http:
         sablier:
           sablierUrl: "http://sablier:10000"
           sessionDuration: "5m"
-          names: "compose-leptos-web-1"
+          names: "leptos-web"
           dynamic:
             displayName: "Leptos Web"
             theme: "hacker-terminal"
@@ -145,7 +145,7 @@ http:
         sablier:
           sablierUrl: "http://sablier:10000"
           sessionDuration: "5m"
-          names: "compose-solidjs-web-1"
+          names: "solidjs-web"
           dynamic:
             displayName: "SolidJS Frontend"
             theme: "hacker-terminal"
@@ -156,7 +156,7 @@ http:
         sablier:
           sablierUrl: "http://sablier:10000"
           sessionDuration: "5m"
-          names: "compose-rust-api-1"
+          names: "rust-api"
           blocking:
             timeout: "30s"
 
@@ -166,7 +166,7 @@ http:
         sablier:
           sablierUrl: "http://sablier:10000"
           sessionDuration: "5m"
-          names: "compose-elysia-api-1"
+          names: "elysia-api"
           blocking:
             timeout: "30s"
 
@@ -176,6 +176,6 @@ http:
         sablier:
           sablierUrl: "http://sablier:10000"
           sessionDuration: "5m"
-          names: "compose-picser-1"
+          names: "picser"
           blocking:
             timeout: "30s"
