@@ -26,12 +26,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{name!=\"\"}[5m])) by (name)",
-          "legendFormat": "{{name}}"
-        },
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=\"\"}[5m])) by (container_label_com_docker_compose_service)",
-          "legendFormat": "{{container_label_com_docker_compose_service}}"
+          "expr": "sum(rate(container_cpu_usage_seconds_total{id!=\"/\"}[5m])) by (name, container_label_com_docker_compose_service)",
+          "legendFormat": "{{name}}{{container_label_com_docker_compose_service}}"
         }
       ]
     },
@@ -47,12 +43,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{name!=\"\"}) by (name)",
-          "legendFormat": "{{name}}"
-        },
-        {
-          "expr": "sum(container_memory_usage_bytes{container_label_com_docker_compose_service!=\"\"}) by (container_label_com_docker_compose_service)",
-          "legendFormat": "{{container_label_com_docker_compose_service}}"
+          "expr": "sum(container_memory_usage_bytes{id!=\"/\"}) by (name, container_label_com_docker_compose_service)",
+          "legendFormat": "{{name}}{{container_label_com_docker_compose_service}}"
         }
       ]
     },
@@ -68,8 +60,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(container_network_receive_bytes_total{name!=\"\"}[5m])) by (name)",
-          "legendFormat": "{{name}}"
+          "expr": "sum(rate(container_network_receive_bytes_total{id!=\"/\"}[5m])) by (name, container_label_com_docker_compose_service)",
+          "legendFormat": "{{name}}{{container_label_com_docker_compose_service}}"
         }
       ]
     },
@@ -85,8 +77,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(container_network_transmit_bytes_total{name!=\"\"}[5m])) by (name)",
-          "legendFormat": "{{name}}"
+          "expr": "sum(rate(container_network_transmit_bytes_total{id!=\"/\"}[5m])) by (name, container_label_com_docker_compose_service)",
+          "legendFormat": "{{name}}{{container_label_com_docker_compose_service}}"
         }
       ]
     },

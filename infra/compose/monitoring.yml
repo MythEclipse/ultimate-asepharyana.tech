@@ -194,7 +194,15 @@ services:
       - /dev/disk/:/dev/disk:ro
     devices:
       - /dev/kmsg
+    command:
+      - '--docker_only'
+      - '--housekeeping_interval=10s'
+      - '--max_housekeeping_interval=15s'
+      - '--event_storage_age_limit=default=0'
+      - '--event_storage_event_limit=default=0'
+      - '--global_housekeeping_interval=10s'
     privileged: true
+
 
   # ── Portainer (Docker Management) ───────────────────────────────────────────
   portainer:

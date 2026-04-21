@@ -43,6 +43,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${SHARED_MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${SHARED_MINIO_ROOT_PASSWORD}
+      MINIO_PROMETHEUS_AUTH_TYPE: public
     command: 'server /data --console-address ":9001" --address ":9000"'
     labels:
       - 'traefik.enable=true'

@@ -1,5 +1,6 @@
 services:
   solidjs-web:
+    container_name: solidjs-web
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/solidjs-web:sha-3bd7b87
     restart: always
     networks: [app-shared-net]

@@ -1,5 +1,6 @@
 services:
   rust-api:
+    container_name: rust-api
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/rust-api:sha-3bd7b87
     restart: always
     networks:

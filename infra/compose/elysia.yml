@@ -1,5 +1,6 @@
 services:
   elysia-api:
+    container_name: elysia-api
     image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/elysia-api:sha-3bd7b87
     restart: always
     networks:
