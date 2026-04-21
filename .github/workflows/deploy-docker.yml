@@ -99,7 +99,11 @@ jobs:
             fi
 
             \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env pull
-            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d
+            echo "🧹 Cleaning up conflicting containers..."
+            # Force remove containers that might conflict with the new naming scheme
+            docker rm -f prometheus alertmanager grafana node-exporter redis-exporter mysqld-exporter nginx-exporter cadvisor portainer mysql redis minio sablier traefik nextjs-web solidjs-web leptos-web rust-api elysia-api picser || true
+            
+            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d --remove-orphans
 
             echo "🔐 Resetting Grafana admin password..."
             # Wait for Grafana to be ready
