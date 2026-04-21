@@ -209,6 +209,7 @@ services:
 
   # ── Portainer (Docker Management) ────────────────────────────────────────────────────────────────────
   portainer:
+    container_name: portainer
     image: portainer/portainer-ce:latest
     restart: always
     networks:
@@ -220,7 +221,7 @@ services:
       - 'traefik.http.routers.portainer.tls=true'
       - 'traefik.http.routers.portainer.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file'
       - 'traefik.http.services.portainer.loadbalancer.server.port=9000'
-    command: --admin-password "$$2b$$10$$IrtGz.4b7t4PjDHfdud0feW7ZmHFV3qFd3LUoqg3vj6Vjidrtkg4i"
+    command: --admin-password "$$2b$$10$$.sZOUbBaxLqZZy0ONaCVLexjrvvMw7wXDEJkEwNV2umGZl/vekCFS"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
