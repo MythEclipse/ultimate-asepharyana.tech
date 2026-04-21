@@ -28,10 +28,10 @@ services:
     ports:
       - '${MONITORING_PROMETHEUS_PORT:-9490}:9090'
     healthcheck:
-      test: ['CMD', 'promtool', 'check', 'ready']
-      interval: 15s
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/ready || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
       start_period: 60s
     depends_on:
       alertmanager:
