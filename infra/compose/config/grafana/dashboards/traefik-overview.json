@@ -1,0 +1,75 @@
+{
+  "annotations": { "list": [] },
+  "description": "Traefik Edge Router — Requests, Entrypoints, and Backend health.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Requests per Second by Entrypoint",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(traefik_entrypoint_requests_total[5m])) by (entrypoint)", "legendFormat": "{{entrypoint}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Requests per Second by Service",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(traefik_service_requests_total[5m])) by (service)", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Average Response Time by Service",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(traefik_service_request_duration_seconds_sum[5m])) by (service) / sum(rate(traefik_service_request_duration_seconds_count[5m])) by (service)", "legendFormat": "{{service}}" }
+      ]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["traefik", "edge", "proxy"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource",
+        "label": "Datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Traefik Overview",
+  "uid": "traefik-overview-v1",
+  "version": 1
+}

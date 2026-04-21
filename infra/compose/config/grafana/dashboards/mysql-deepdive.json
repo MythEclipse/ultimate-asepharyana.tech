@@ -81,9 +81,41 @@
           "legendFormat": "{{handler}}"
         }
       ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "percentunit", "min": 0, "max": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.95 }, { "color": "green", "value": 0.99 }] } }
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 9 },
+      "id": 5,
+      "title": "Buffer Pool Hit Rate",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]) / (rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]) + rate(mysql_global_status_innodb_buffer_pool_reads[5m]))",
+          "legendFormat": "hit rate"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 9 },
+      "id": 6,
+      "title": "Slow Queries",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_slow_queries[5m])",
+          "legendFormat": "Slow Queries"
+        }
+      ]
     }
   ],
-  "refresh": "30s",
+  "refresh": "15s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": ["mysql", "db", "infra"],
@@ -107,5 +139,6 @@
   "timezone": "browser",
   "title": "MySQL Deep-Dive",
   "uid": "mysql-deepdive-v1",
-  "version": 1
+  "version": 2
 }
+

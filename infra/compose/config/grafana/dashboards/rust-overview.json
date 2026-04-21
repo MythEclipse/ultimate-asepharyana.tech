@@ -95,8 +95,24 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) or vector(0)",
           "legendFormat": "error rate"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 35 },
+      "id": 50,
+      "title": "Top Routes by 4xx/5xx Errors",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "topk(5, sum(rate(http_requests_total{status=~\"[45]..\"}[5m])) by (path))",
+          "legendFormat": "{{path}}"
         }
       ]
     },

@@ -95,8 +95,24 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "sum(rate(elysia_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(elysia_http_requests_total[5m]))",
+          "expr": "sum(rate(elysia_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(elysia_http_requests_total[5m])) or vector(0)",
           "legendFormat": "error rate"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 35 },
+      "id": 50,
+      "title": "Top Routes by 4xx/5xx Errors",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "topk(5, sum(rate(elysia_http_requests_total{status_code=~\"[45]..\"}[5m])) by (route))",
+          "legendFormat": "{{route}}"
         }
       ]
     },

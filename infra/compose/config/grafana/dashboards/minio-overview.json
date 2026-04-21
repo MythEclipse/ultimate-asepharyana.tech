@@ -1,0 +1,88 @@
+{
+  "annotations": { "list": [] },
+  "description": "MinIO Object Storage — Cluster health, capacity, and usage.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Online Disks",
+      "type": "stat",
+      "targets": [
+        { "expr": "minio_cluster_disk_online", "legendFormat": "disks" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "bytes" }
+      },
+      "gridPos": { "h": 4, "w": 9, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "Total Capacity",
+      "type": "stat",
+      "targets": [
+        { "expr": "minio_cluster_capacity_raw_total_bytes", "legendFormat": "total" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "bytes" }
+      },
+      "gridPos": { "h": 4, "w": 9, "x": 15, "y": 0 },
+      "id": 3,
+      "title": "Used Capacity",
+      "type": "stat",
+      "targets": [
+        { "expr": "minio_cluster_capacity_raw_used_bytes", "legendFormat": "used" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "id": 4,
+      "title": "Object Count",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "minio_cluster_objects_total", "legendFormat": "objects" }
+      ]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["minio", "storage", "s3"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource",
+        "label": "Datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MinIO Overview",
+  "uid": "minio-overview-v1",
+  "version": 1
+}
