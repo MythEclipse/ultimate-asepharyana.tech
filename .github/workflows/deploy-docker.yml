@@ -100,7 +100,16 @@ jobs:
 
             $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env pull
             $COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d
+
+            echo "🔐 Resetting Grafana admin password..."
+            # Wait a few seconds for Grafana to be ready
+            sleep 10
+            docker exec grafana grafana-cli admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}" || echo "⚠️ Could not reset Grafana password automatically."
+            # Also try to update the admin email/username if possible via sqlite (optional but helpful)
+            # For now, we ensure the password matches.
           EOF
+
+
 
 #       - name: Restart coolify-proxy (delay 1 min)
 #         env:
