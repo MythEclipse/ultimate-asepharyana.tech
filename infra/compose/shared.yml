@@ -1,5 +1,6 @@
 services:
   mysql:
+    container_name: mysql
     image: 'mysql:8.4'
     restart: always
     networks:
@@ -27,6 +28,7 @@ services:
       - 'mysql_data:/var/lib/mysql'
       - '../config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro'
   redis:
+    container_name: redis
     image: 'redis:alpine'
     restart: always
     networks:
@@ -36,6 +38,7 @@ services:
     volumes:
       - 'redis_data:/data'
   minio:
+    container_name: minio
     image: minio/minio
     restart: always
     networks:
@@ -62,6 +65,7 @@ services:
     volumes:
       - 'minio_data:/data'
   sablier:
+    container_name: sablier
     image: 'sablierapp/sablier:1.11.2'
     restart: always
     networks:

@@ -1,5 +1,6 @@
 services:
   traefik:
+    container_name: traefik
     image: traefik:v3.6
     restart: always
     ports:

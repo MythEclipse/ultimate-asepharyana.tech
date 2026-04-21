@@ -1,6 +1,7 @@
 services:
   # ── Prometheus ───────────────────────────────────────────────────────────────
   prometheus:
+    container_name: prometheus
     image: prom/prometheus:v2.51.2
     restart: always
     networks:
@@ -38,6 +39,7 @@ services:
 
   # ── Alertmanager (notification routing) ──────────────────────────────────────
   alertmanager:
+    container_name: alertmanager
     image: prom/alertmanager:v0.27.0
     restart: always
     networks:
@@ -111,6 +113,7 @@ services:
 
   # ── Node Exporter (host system metrics) ─────────────────────────────────────
   node-exporter:
+    container_name: node-exporter
     image: prom/node-exporter:v1.8.0
     restart: always
     networks:
@@ -130,6 +133,7 @@ services:
 
   # ── Redis Exporter ───────────────────────────────────────────────────────────
   redis-exporter:
+    container_name: redis-exporter
     image: oliver006/redis_exporter:v1.62.0
     restart: always
     networks:
@@ -142,6 +146,7 @@ services:
 
   # ── MySQL Exporter ──────────────────────────────────────────────────────────
   mysqld-exporter:
+    container_name: mysqld-exporter
     image: prom/mysqld-exporter:v0.16.0
     restart: always
     networks:
@@ -168,6 +173,7 @@ services:
       start_period: 30s
 
   nginx-exporter:
+    container_name: nginx-exporter
     image: nginx/nginx-prometheus-exporter:1.2.0
     restart: always
     networks:
@@ -180,6 +186,7 @@ services:
   # ── cAdvisor (container-level resource metrics) ──────────────────────────────────
   # ── cAdvisor (container-level resource metrics) ──────────────────────────────────
   cadvisor:
+    container_name: cadvisor
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     restart: always
     networks:
