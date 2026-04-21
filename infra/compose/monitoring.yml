@@ -6,12 +6,12 @@ services:
     networks:
       - app-shared-net
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prometheus.rule=Host(`prometheus.asepharyana.tech`)"
-      - "traefik.http.routers.prometheus.entrypoints=websecure"
-      - "traefik.http.routers.prometheus.tls=true"
-      - "traefik.http.routers.prometheus.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
-      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.prometheus.rule=Host(`prometheus.asepharyana.tech`)'
+      - 'traefik.http.routers.prometheus.entrypoints=websecure'
+      - 'traefik.http.routers.prometheus.tls=true'
+      - 'traefik.http.routers.prometheus.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file'
+      - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
@@ -27,7 +27,7 @@ services:
     ports:
       - '${MONITORING_PROMETHEUS_PORT:-9490}:9090'
     healthcheck:
-      test: ["CMD", "promtool", "check", "ready"]
+      test: ['CMD', 'promtool', 'check', 'ready']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -48,13 +48,17 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9093/-/ready || exit 1"]
+      test:
+        [
+          'CMD-SHELL',
+          'wget --quiet --tries=1 --spider http://localhost:9093/-/ready || exit 1',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
 
-  # ── Grafana ───────────────────────────────────────────────────────────────────
+  # ── Grafana ────────────────────────────────────────────────────────────────────────
   grafana:
     image: grafana/grafana:11.0.0
     restart: always
@@ -63,12 +67,12 @@ services:
     env_file:
       - ../../.env
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.asepharyana.tech`)"
-      - "traefik.http.routers.grafana.entrypoints=websecure"
-      - "traefik.http.routers.grafana.tls=true"
-      - "traefik.http.routers.grafana.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.grafana.rule=Host(`grafana.asepharyana.tech`)'
+      - 'traefik.http.routers.grafana.entrypoints=websecure'
+      - 'traefik.http.routers.grafana.tls=true'
+      - 'traefik.http.routers.grafana.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file'
+      - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
     environment:
       # Grafana admin credentials
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
@@ -90,7 +94,15 @@ services:
     ports:
       - '${MONITORING_GRAFANA_PORT:-3490}:3000'
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:3000/api/health']
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3000/api/health',
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -140,7 +152,15 @@ services:
     command:
       - '--config.my-cnf=/etc/prometheus/.my.cnf'
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:9104/metrics']
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:9104/metrics',
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
