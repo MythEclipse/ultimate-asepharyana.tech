@@ -116,6 +116,9 @@ jobs:
             }
             # Also try to update the admin email/username if possible via sqlite (optional but helpful)
             # For now, we ensure the password matches.
+            
+            echo "🧹 Cleaning up unused Docker images and resources..."
+            docker system prune -af
           EOF
 
 
