@@ -204,27 +204,25 @@ services:
       - '--global_housekeeping_interval=10s'
     privileged: true
 
-
-  # ── Portainer (Docker Management) ───────────────────────────────────────────
+  # ── Portainer (Docker Management) ────────────────────────────────────────────────────────────────────
   portainer:
     image: portainer/portainer-ce:latest
     restart: always
     networks:
       - app-shared-net
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`portainer.asepharyana.tech`)"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
-      - "traefik.http.routers.portainer.tls=true"
-      - "traefik.http.routers.portainer.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.portainer.rule=Host(`portainer.asepharyana.tech`)'
+      - 'traefik.http.routers.portainer.entrypoints=websecure'
+      - 'traefik.http.routers.portainer.tls=true'
+      - 'traefik.http.routers.portainer.middlewares=secure-headers@file,compress@file,retry@file,rate-limit@file,buffer@file'
+      - 'traefik.http.services.portainer.loadbalancer.server.port=9000'
     command: --admin-password "$$2b$$10$$IrtGz.4b7t4PjDHfdud0feW7ZmHFV3qFd3LUoqg3vj6Vjidrtkg4i"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     ports:
       - '${MONITORING_PORTAINER_PORT:-9499}:9000'
-
 
 networks:
   app-shared-net:
@@ -235,4 +233,3 @@ volumes:
   prometheus_data:
   grafana_data:
   portainer_data:
-
