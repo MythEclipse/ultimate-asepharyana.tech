@@ -12,7 +12,6 @@ on:
       - main
     paths:
       - 'infra/compose/**'
-      - '.github/workflows/deploy-docker.yml'
   workflow_dispatch:
 
 # Prevent multiple deployments from running simultaneously
@@ -70,8 +69,6 @@ jobs:
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR && mkdir -p $VPS_TARGET_DIR/infra/compose"
           echo "$ENV_FILE_PRODUCTION" > .env.prod
           {
-            echo "GRAFANA_ADMIN_USER=$GRAFANA_ADMIN_USER"
-            echo "GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD"
             echo "SHARED_MYSQL_ROOT_PASSWORD=$SHARED_MYSQL_ROOT_PASSWORD"
             echo "SHARED_MYSQL_DATABASE=$SHARED_MYSQL_DATABASE"
             echo "SHARED_MYSQL_USER=$SHARED_MYSQL_USER"
@@ -85,7 +82,6 @@ jobs:
 
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<EOF
             set -euo pipefail
-
             cd "\$VPS_TARGET_DIR"
 
             # Ensure shared network exists
@@ -96,7 +92,7 @@ jobs:
             fuser -k 443/tcp || true
             git fetch origin main --depth=1 || true
             git reset --hard origin/main
-            git submodule update --init --recursive --jobs 4
+            git submodule update --init --recursive
 
             if command -v "docker" >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
@@ -107,73 +103,49 @@ jobs:
               exit 1
             fi
 
-            echo "🚀 Pulling images in parallel..."
-            \$COMPOSE_CMD -p infra-gateway -f infra/compose/traefik.yml pull &
-            \$COMPOSE_CMD -p infra-shared -f infra/compose/shared.yml pull &
-            \$COMPOSE_CMD -p infra-monitoring -f infra/compose/monitoring.yml pull &
-            \$COMPOSE_CMD -p app-rust -f infra/compose/rust.yml pull &
-            \$COMPOSE_CMD -p app-elysia -f infra/compose/elysia.yml pull &
-            \$COMPOSE_CMD -p app-solidjs -f infra/compose/solidjs.yml pull &
-            \$COMPOSE_CMD -p app-leptos -f infra/compose/leptos.yml pull &
-            \$COMPOSE_CMD -p app-nextjs -f infra/compose/nextjs.yml pull &
-            \$COMPOSE_CMD -p app-picser -f infra/compose/picser.yml pull &
-            wait
-
-            echo "🛑 Cleaning up target containers..."
-            TARGETS="prometheus alertmanager grafana node-exporter redis-exporter mysqld-exporter nginx-exporter cadvisor portainer mysql redis minio traefik nextjs-web solidjs-web leptos-web rust-api elysia-api picser"
+            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env pull
+            echo "🧹 Recovering Git and Docker state..."
+            # Clear Git locks if any
+            rm -f .git/shallow.lock || true
             
-            # Use a combined filter for all target names
-            FILTER_ARGS=""
+            # Identify all target services
+            TARGETS="prometheus alertmanager grafana node-exporter redis-exporter mysqld-exporter nginx-exporter cadvisor portainer mysql redis minio sablier traefik nextjs-web solidjs-web leptos-web rust-api elysia-api picser"
+            
+            echo "🛑 Stopping and removing conflicting containers..."
             for name in \$TARGETS; do
-              FILTER_ARGS="\$FILTER_ARGS --filter name=\$name"
-            done
-            
-            CIDS=\$(docker ps -aq \$FILTER_ARGS)
-            if [ -n "\$CIDS" ]; then
-                echo "Removing containers: \$CIDS"
+              # Find any container name that CONTAINS the target string (more aggressive)
+              CIDS=\$(docker ps -aq --filter name="\$name")
+              if [ ! -z "\$CIDS" ]; then
+                echo "Removing: \$name (\$CIDS)"
+                docker stop \$CIDS || true
                 docker rm -f \$CIDS || true
-            fi
+              fi
+            done
 
             # Final sweep for compose orphans
             docker rm -f \$(docker ps -aq --filter name="compose-") || true
             
-            echo "⏳ Cooldown to allow daemon to release locks..."
-            sleep 2
+            # Cooldown to allow daemon to release locks
+            echo "⏳ Waiting for Docker daemon to settle..."
+            sleep 5
             
-            echo "🏗️ Phase 1: Deploying Shared Infrastructure..."
-            \$COMPOSE_CMD -p infra-shared -f infra/compose/shared.yml --env-file .env up -d --remove-orphans
+            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d --remove-orphans
 
-            echo "🏗️ Phase 2: Deploying Apps and Monitoring in parallel..."
-            \$COMPOSE_CMD -p infra-monitoring -f infra/compose/monitoring.yml --env-file .env up -d --remove-orphans &
-            \$COMPOSE_CMD -p app-rust -f infra/compose/rust.yml --env-file .env up -d --remove-orphans &
-            \$COMPOSE_CMD -p app-elysia -f infra/compose/elysia.yml --env-file .env up -d --remove-orphans &
-            \$COMPOSE_CMD -p app-solidjs -f infra/compose/solidjs.yml --env-file .env up -d --remove-orphans &
-            \$COMPOSE_CMD -p app-leptos -f infra/compose/leptos.yml --env-file .env up -d --remove-orphans &
-            \$COMPOSE_CMD -p app-nextjs -f infra/compose/nextjs.yml --env-file .env up -d --remove-orphans &
-            \$COMPOSE_CMD -p app-picser -f infra/compose/picser.yml --env-file .env up -d --remove-orphans &
-            wait
-
-            echo "🏗️ Phase 3: Deploying Traefik Gateway..."
-            \$COMPOSE_CMD -p infra-gateway -f infra/compose/traefik.yml --env-file .env up -d --remove-orphans
-
-            echo "✅ Deployment complete."
+            echo "🔐 Resetting Grafana admin password..."
+            # Wait for Grafana to be ready
+            sleep 20
+            docker exec grafana grafana-cli admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}" || {
+                echo "⚠️ Could not reset Grafana password automatically."
+                echo "📊 Dumping logs for debugging..."
+                docker logs prometheus || true
+                docker logs grafana || true
+            }
+            # Also try to update the admin email/username if possible via sqlite (optional but helpful)
+            # For now, we ensure the password matches.
+            
+            echo "🧹 Cleaning up unused Docker images and resources..."
+            docker system prune -af
           EOF
-
-      - name: Cleanup Docker resources
-        if: always()
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H -t ed25519,rsa "$VPS_HOST" >> ~/.ssh/known_hosts
-          
-          echo "🧹 Cleaning up unused Docker images and resources on VPS..."
-          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "docker system prune -af --volumes || true"
-          echo "✅ Cleanup complete."
 
 
 
