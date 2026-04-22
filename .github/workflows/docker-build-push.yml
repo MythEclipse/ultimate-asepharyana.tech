@@ -61,11 +61,13 @@ jobs:
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/elysia.nix'
+              - 'infra/docker/elysia.Dockerfile'
             solidjs-web:
               - 'apps/solidjs/**'
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/solidjs.nix'
+              - 'infra/docker/solidjs.Dockerfile'
             leptos-web:
               - 'apps/leptos/**'
               - '.github/workflows/docker-build-push.yml'
@@ -76,6 +78,7 @@ jobs:
               - '.github/workflows/docker-build-push.yml'
               - 'flake.nix'
               - 'nix/apps/nextjs.nix'
+              - 'infra/docker/nextjs.Dockerfile'
 
       - name: Parse repository_dispatch payload
         id: dispatch
