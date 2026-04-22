@@ -32,7 +32,7 @@ http:
 
     # ── Rust API ──
     rust:
-      rule: "Host(`rust.asepharyana.tech`)"
+      rule: "Host(`rust.asepharyana.tech`) || Host(`api.asepharyana.tech`)"
       entryPoints:
         - websecure
       tls: {}
