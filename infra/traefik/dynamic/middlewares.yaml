@@ -42,3 +42,33 @@ http:
           - secure-headers
           - compress
           - retry
+    
+    # ── Useful Plugins ──
+    real-ip:
+      plugin:
+        real-ip:
+          excludednetworks:
+            - "127.0.0.1/32"
+          realipheader: "CF-Connecting-IP"
+    
+    block-sensitive-paths:
+      plugin:
+        blockpath:
+          regex:
+            - "^/\\.env"
+            - "^/\\.git"
+            - "^/wp-admin"
+            - "^/wp-login\\.php"
+            - "^/config\\.php"
+    
+    # ── Common Chain ──
+    common-chain:
+      chain:
+        middlewares:
+          - real-ip
+          - block-sensitive-paths
+          - secure-headers
+          - compress
+          - retry
+          - rate-limit
+          - buffer

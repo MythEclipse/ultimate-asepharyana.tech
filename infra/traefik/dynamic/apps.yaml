@@ -7,12 +7,7 @@ http:
         - websecure
       tls: {}
       middlewares:
-        - nextjs-sablier
-        - secure-headers@file
-        - compress@file
-        - retry@file
-        - rate-limit@file
-        - buffer@file
+        - common-chain@file
       service: nextjs-service
 
     # ── Leptos ──
@@ -22,12 +17,7 @@ http:
         - websecure
       tls: {}
       middlewares:
-        - leptos-sablier
-        - secure-headers@file
-        - compress@file
-        - retry@file
-        - rate-limit@file
-        - buffer@file
+        - common-chain@file
       service: leptos-service
 
     # ── SolidJS ──
@@ -37,12 +27,7 @@ http:
         - websecure
       tls: {}
       middlewares:
-        - solidjs-sablier
-        - secure-headers@file
-        - compress@file
-        - retry@file
-        - rate-limit@file
-        - buffer@file
+        - common-chain@file
       service: solidjs-service
 
     # ── Rust API ──
@@ -52,12 +37,7 @@ http:
         - websecure
       tls: {}
       middlewares:
-        - rust-sablier
-        - secure-headers@file
-        - compress@file
-        - retry@file
-        - rate-limit@file
-        - buffer@file
+        - common-chain@file
       service: rust-service
 
     # ── Elysia API ──
@@ -67,12 +47,7 @@ http:
         - websecure
       tls: {}
       middlewares:
-        - elysia-sablier
-        - secure-headers@file
-        - compress@file
-        - retry@file
-        - rate-limit@file
-        - buffer@file
+        - common-chain@file
       service: elysia-service
 
     # ── Picser API ──
@@ -82,12 +57,7 @@ http:
         - websecure
       tls: {}
       middlewares:
-        - picser-sablier
-        - secure-headers@file
-        - compress@file
-        - retry@file
-        - rate-limit@file
-        - buffer@file
+        - common-chain@file
       service: picser-service
 
   services:
@@ -115,67 +85,3 @@ http:
       loadBalancer:
         servers:
           - url: "http://picser:3000"
-
-  middlewares:
-    # ── NextJS Sablier ──
-    nextjs-sablier:
-      plugin:
-        sablier:
-          sablierUrl: "http://sablier:10000"
-          sessionDuration: "5m"
-          names: "nextjs-web"
-          dynamic:
-            displayName: "NextJS Frontend"
-            theme: "hacker-terminal"
-
-    # ── Leptos Sablier ──
-    leptos-sablier:
-      plugin:
-        sablier:
-          sablierUrl: "http://sablier:10000"
-          sessionDuration: "5m"
-          names: "leptos-web"
-          dynamic:
-            displayName: "Leptos Web"
-            theme: "hacker-terminal"
-
-    # ── SolidJS Sablier ──
-    solidjs-sablier:
-      plugin:
-        sablier:
-          sablierUrl: "http://sablier:10000"
-          sessionDuration: "5m"
-          names: "solidjs-web"
-          dynamic:
-            displayName: "SolidJS Frontend"
-            theme: "hacker-terminal"
-
-    # ── Rust Sablier ──
-    rust-sablier:
-      plugin:
-        sablier:
-          sablierUrl: "http://sablier:10000"
-          sessionDuration: "5m"
-          names: "rust-api"
-          blocking:
-            timeout: "30s"
-
-    # ── Elysia Sablier ──
-    elysia-sablier:
-      plugin:
-        sablier:
-          sablierUrl: "http://sablier:10000"
-          sessionDuration: "5m"
-          names: "elysia-api"
-          blocking:
-            timeout: "30s"
-
-    # ── Picser Sablier ──
-    picser-sablier:
-      plugin:
-        sablier:
-          sablierUrl: "http://sablier:10000"
-          sessionDuration: "5m"
-          names: "picser"
-          blocking:
-            timeout: "30s"

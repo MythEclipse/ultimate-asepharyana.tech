@@ -28,8 +28,10 @@ services:
       - "--metrics.prometheus.addEntryPointsLabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
       - "--entryPoints.websecure.address=:443"
-      - "--experimental.plugins.sablier.moduleName=github.com/sablierapp/sablier-traefik-plugin"
-      - "--experimental.plugins.sablier.version=v1.1.0"
+      - "--experimental.plugins.real-ip.moduleName=github.com/soulbalz/traefik-real-ip"
+      - "--experimental.plugins.real-ip.version=v1.0.3"
+      - "--experimental.plugins.blockpath.moduleName=github.com/tommoulard/traefik-plugin-blockpath"
+      - "--experimental.plugins.blockpath.version=v0.2.1"
     environment:
       - DOCKER_API_VERSION=1.41
     volumes:
