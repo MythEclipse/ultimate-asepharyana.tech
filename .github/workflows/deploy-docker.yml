@@ -122,30 +122,12 @@ jobs:
                 docker rm -f \$CIDS || true
               fi
             done
-
-            # Final sweep for compose orphans
-            docker rm -f \$(docker ps -aq --filter name="compose-") || true
             
             # Cooldown to allow daemon to release locks
             echo "⏳ Waiting for Docker daemon to settle..."
             sleep 5
             
             \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d --remove-orphans
-
-            echo "🔐 Resetting Grafana admin password..."
-            # Wait for Grafana to be ready
-            sleep 20
-            docker exec grafana grafana-cli admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}" || {
-                echo "⚠️ Could not reset Grafana password automatically."
-                echo "📊 Dumping logs for debugging..."
-                docker logs prometheus || true
-                docker logs grafana || true
-            }
-            # Also try to update the admin email/username if possible via sqlite (optional but helpful)
-            # For now, we ensure the password matches.
-            
-            echo "🧹 Cleaning up unused Docker images and resources..."
-            docker system prune -af
           EOF
 
 #       - name: Restart coolify-proxy (delay 1 min)
