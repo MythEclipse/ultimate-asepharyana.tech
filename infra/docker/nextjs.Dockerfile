@@ -41,9 +41,14 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 
 # standalone bundle includes its own node_modules subset
+# In monorepos, standalone output puts everything in a nested structure.
+# But since we built from apps/nextjs, we copy it to the root.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Ensure correct permissions
+RUN chown -R nextjs:nodejs /app/public /app/.next/static
 
 USER nextjs
 

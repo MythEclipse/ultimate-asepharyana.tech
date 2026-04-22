@@ -65,8 +65,8 @@ http:
     common-chain:
       chain:
         middlewares:
-          - real-ip
-          - block-sensitive-paths
+          # - real-ip
+          # - block-sensitive-paths
           - secure-headers
           - compress
           - retry
