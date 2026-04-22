@@ -6,8 +6,8 @@ http:
       entryPoints:
         - websecure
       tls: {}
-      middlewares:
-        - common-chain@file
+      # middlewares:
+      #   - common-chain@file
       service: nextjs-service
 
     # ── Leptos ──

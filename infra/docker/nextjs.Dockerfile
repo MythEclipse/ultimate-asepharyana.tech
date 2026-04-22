@@ -47,8 +47,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Safety: also copy public into .next/standalone if it exists as a directory
+# This handles variations in how Next.js standalone is structured.
+RUN if [ -d "public" ]; then \
+      mkdir -p .next/standalone/public && \
+      cp -r public/* .next/standalone/public/ || true; \
+    fi
+
 # Ensure correct permissions
 RUN chown -R nextjs:nodejs /app/public /app/.next/static
+
+# Debugging: verify assets exist in the final image
+RUN ls -R /app/public | grep .png || echo "⚠️ No PNGs found in /app/public"
 
 USER nextjs
 
