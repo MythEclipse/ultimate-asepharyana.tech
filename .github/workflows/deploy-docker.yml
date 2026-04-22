@@ -69,6 +69,8 @@ jobs:
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mkdir -p $VPS_TARGET_DIR && mkdir -p $VPS_TARGET_DIR/infra/compose"
           echo "$ENV_FILE_PRODUCTION" > .env.prod
           {
+            echo "GRAFANA_ADMIN_USER=$GRAFANA_ADMIN_USER"
+            echo "GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD"
             echo "SHARED_MYSQL_ROOT_PASSWORD=$SHARED_MYSQL_ROOT_PASSWORD"
             echo "SHARED_MYSQL_DATABASE=$SHARED_MYSQL_DATABASE"
             echo "SHARED_MYSQL_USER=$SHARED_MYSQL_USER"
