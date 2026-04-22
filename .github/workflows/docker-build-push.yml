@@ -98,19 +98,19 @@ jobs:
           add_service() {
             SERVICES+=("{\"id\":\"$1\",\"target\":\"$2\",\"path\":\"$3\",\"input\":\"$4\"}")
           }
-          
+
           if [ "${{ steps.filter.outputs.rust-api == 'true' || steps.dispatch.outputs.rust-api == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "rust-api" "docker-rust" "apps/rust" "app-rust"; fi
           if [ "${{ steps.filter.outputs.elysia-api == 'true' || steps.dispatch.outputs.elysia-api == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "elysia-api" "docker-elysia" "apps/elysia" "app-elysia"; fi
           if [ "${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "solidjs-web" "docker-solidjs" "apps/solidjs" "app-solidjs"; fi
           if [ "${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "leptos-web" "docker-leptos" "apps/leptos" "app-leptos"; fi
           if [ "${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "nextjs-web" "docker-nextjs" "apps/nextjs" "app-nextjs"; fi
-          
+
           JSON_ARRAY="[$(IFS=,; echo "${SERVICES[*]}")]"
           echo "matrix=$JSON_ARRAY" >> $GITHUB_OUTPUT
 
-  # ──────────────────────────────────────────────
+  # ─────────────────────────────────────────────────
   # Phase 2: Build and Push Images (Matrix)
-  # ──────────────────────────────────────────────
+  # ─────────────────────────────────────────────────
   build:
     needs: [changes]
     runs-on: ubuntu-latest
@@ -162,14 +162,14 @@ jobs:
           SHORT_SHA=${GITHUB_SHA:0:7}
           SVC_NAME="${{ matrix.id }}"
           TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
-          
+
           case "$SVC_NAME" in
             "solidjs-web") DOCKERFILE="infra/docker/solidjs.Dockerfile" ;;
             "elysia-api")  DOCKERFILE="infra/docker/elysia.Dockerfile" ;;
             "nextjs-web")  DOCKERFILE="infra/docker/nextjs.Dockerfile" ;;
             *) echo "Unknown service: $SVC_NAME"; exit 1 ;;
           esac
-          
+
           docker build -f "$DOCKERFILE" -t "$TARGET_BASE:latest" -t "$TARGET_BASE:sha-$SHORT_SHA" .
 
       - name: Build Docker image (Nix)
@@ -201,7 +201,7 @@ jobs:
           else
             IMAGE_FILE=$(find build-result -maxdepth 1 -type f \( -name '*.tar' -o -name '*.tar.gz' -o -name '*.oci' -o -name '*.tar.xz' \) | head -n 1)
           fi
-          
+
           if [ -z "$IMAGE_FILE" ]; then
             echo "No Docker image file found"
             exit 1
@@ -210,7 +210,7 @@ jobs:
           LOADED=$(docker load --input "$IMAGE_FILE")
           echo "$LOADED"
           IMAGE_NAME=$(printf '%s\n' "$LOADED" | awk -F': ' '/Loaded image:/ {print $2}' | tail -n 1)
-          
+
           docker tag "$IMAGE_NAME" "$TARGET_BASE:latest"
           docker tag "$IMAGE_NAME" "$TARGET_BASE:sha-$SHORT_SHA"
           docker push "$TARGET_BASE:latest"
