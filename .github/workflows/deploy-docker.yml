@@ -84,6 +84,7 @@ jobs:
 
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "export VPS_TARGET_DIR=$VPS_TARGET_DIR; bash -s" <<EOF
             set -euo pipefail
+
             cd "\$VPS_TARGET_DIR"
 
             # Ensure shared network exists
@@ -146,16 +147,24 @@ jobs:
             echo "🏗️ Phase 3: Deploying Traefik Gateway..."
             \$COMPOSE_CMD -f infra/compose/traefik.yml --env-file .env up -d --remove-orphans
 
-            echo "🔐 Resetting Grafana admin password..."
-            # Wait for Grafana to be ready
-            sleep 15
-            docker exec grafana grafana-cli admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}" || {
-                echo "⚠️ Could not reset Grafana password automatically."
-            }
-            
-            echo "🧹 Cleaning up unused Docker images and resources..."
-            docker system prune -af --volumes || true
+            echo "✅ Deployment complete."
           EOF
+
+      - name: Cleanup Docker resources
+        if: always()
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H -t ed25519,rsa "$VPS_HOST" >> ~/.ssh/known_hosts
+          
+          echo "🧹 Cleaning up unused Docker images and resources on VPS..."
+          ssh -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "docker system prune -af --volumes || true"
+          echo "✅ Cleanup complete."
 
 
 
