@@ -12,6 +12,7 @@ on:
       - main
     paths:
       - 'infra/compose/**'
+      - '.github/workflows/deploy-docker.yml'
   workflow_dispatch:
 
 # Prevent multiple deployments from running simultaneously
