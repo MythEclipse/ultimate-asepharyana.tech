@@ -1,7 +1,7 @@
 services:
   picser:
     container_name: picser
-    image: ghcr.io/mytheclipse/picser:sha-e77b4e38c1b2c3289bcbbd01b4bf181aae82a322
+    image: ghcr.io/mytheclipse/picser:sha-9f61efdd5c21545086586422095ec91a94a0ec6b
     restart: always
     networks:
       app-shared-net:
