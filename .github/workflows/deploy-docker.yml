@@ -12,6 +12,7 @@ on:
       - main
     paths:
       - 'infra/compose/**'
+      - '.github/workflows/deploy-docker.yml'
   workflow_dispatch:
 
 # Prevent multiple deployments from running simultaneously
@@ -146,10 +147,6 @@ jobs:
             echo "🧹 Cleaning up unused Docker images and resources..."
             docker system prune -af
           EOF
-
-
-
-
 
 #       - name: Restart coolify-proxy (delay 1 min)
 #         env:
