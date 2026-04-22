@@ -51,7 +51,9 @@ autorestart=true\n\
 stdout_logfile=/dev/stdout\n\
 stdout_logfile_maxbytes=0\n\
 stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n" > /etc/supervisord.conf
+stderr_logfile_maxbytes=0\n" > /etc/supervisord.conf && \
+    chown appuser:appgroup /etc/supervisord.conf && \
+    chmod 644 /etc/supervisord.conf
 
 ENV PORT=4090
 EXPOSE 80
