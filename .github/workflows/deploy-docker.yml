@@ -107,10 +107,15 @@ jobs:
             fi
 
             echo "🚀 Pulling images in parallel..."
-            COMPOSE_FILES="infra/compose/traefik.yml infra/compose/shared.yml infra/compose/monitoring.yml infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/nextjs.yml infra/compose/picser.yml"
-            for f in \$COMPOSE_FILES; do
-              \$COMPOSE_CMD -f "\$f" pull &
-            done
+            $COMPOSE_CMD -p infra-gateway -f infra/compose/traefik.yml pull &
+            $COMPOSE_CMD -p infra-shared -f infra/compose/shared.yml pull &
+            $COMPOSE_CMD -p infra-monitoring -f infra/compose/monitoring.yml pull &
+            $COMPOSE_CMD -p app-rust -f infra/compose/rust.yml pull &
+            $COMPOSE_CMD -p app-elysia -f infra/compose/elysia.yml pull &
+            $COMPOSE_CMD -p app-solidjs -f infra/compose/solidjs.yml pull &
+            $COMPOSE_CMD -p app-leptos -f infra/compose/leptos.yml pull &
+            $COMPOSE_CMD -p app-nextjs -f infra/compose/nextjs.yml pull &
+            $COMPOSE_CMD -p app-picser -f infra/compose/picser.yml pull &
             wait
 
             echo "🛑 Cleaning up target containers..."
@@ -118,34 +123,37 @@ jobs:
             
             # Use a combined filter for all target names
             FILTER_ARGS=""
-            for name in \$TARGETS; do
-              FILTER_ARGS="\$FILTER_ARGS --filter name=\$name"
+            for name in $TARGETS; do
+              FILTER_ARGS="$FILTER_ARGS --filter name=$name"
             done
             
-            CIDS=\$(docker ps -aq \$FILTER_ARGS)
-            if [ -n "\$CIDS" ]; then
-                echo "Removing containers: \$CIDS"
-                docker rm -f \$CIDS || true
+            CIDS=$(docker ps -aq $FILTER_ARGS)
+            if [ -n "$CIDS" ]; then
+                echo "Removing containers: $CIDS"
+                docker rm -f $CIDS || true
             fi
 
             # Final sweep for compose orphans
-            docker rm -f \$(docker ps -aq --filter name="compose-") || true
+            docker rm -f $(docker ps -aq --filter name="compose-") || true
             
             echo "⏳ Cooldown to allow daemon to release locks..."
             sleep 2
             
             echo "🏗️ Phase 1: Deploying Shared Infrastructure..."
-            \$COMPOSE_CMD -f infra/compose/shared.yml --env-file .env up -d --remove-orphans
+            $COMPOSE_CMD -p infra-shared -f infra/compose/shared.yml --env-file .env up -d --remove-orphans
 
             echo "🏗️ Phase 2: Deploying Apps and Monitoring in parallel..."
-            APP_FILES="infra/compose/monitoring.yml infra/compose/rust.yml infra/compose/elysia.yml infra/compose/solidjs.yml infra/compose/leptos.yml infra/compose/nextjs.yml infra/compose/picser.yml"
-            for f in \$APP_FILES; do
-              \$COMPOSE_CMD -f "\$f" --env-file .env up -d --remove-orphans &
-            done
+            $COMPOSE_CMD -p infra-monitoring -f infra/compose/monitoring.yml --env-file .env up -d --remove-orphans &
+            $COMPOSE_CMD -p app-rust -f infra/compose/rust.yml --env-file .env up -d --remove-orphans &
+            $COMPOSE_CMD -p app-elysia -f infra/compose/elysia.yml --env-file .env up -d --remove-orphans &
+            $COMPOSE_CMD -p app-solidjs -f infra/compose/solidjs.yml --env-file .env up -d --remove-orphans &
+            $COMPOSE_CMD -p app-leptos -f infra/compose/leptos.yml --env-file .env up -d --remove-orphans &
+            $COMPOSE_CMD -p app-nextjs -f infra/compose/nextjs.yml --env-file .env up -d --remove-orphans &
+            $COMPOSE_CMD -p app-picser -f infra/compose/picser.yml --env-file .env up -d --remove-orphans &
             wait
 
             echo "🏗️ Phase 3: Deploying Traefik Gateway..."
-            \$COMPOSE_CMD -f infra/compose/traefik.yml --env-file .env up -d --remove-orphans
+            $COMPOSE_CMD -p infra-gateway -f infra/compose/traefik.yml --env-file .env up -d --remove-orphans
 
             echo "✅ Deployment complete."
           EOF
