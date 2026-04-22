@@ -144,32 +144,37 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: cachix/install-nix-action@v26
+        if: matrix.id == 'rust-api'
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
       - uses: cachix/cachix-action@v15
+        if: matrix.id == 'rust-api'
         with:
           name: mytheclipse
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Build Docker image for SolidJS and Leptos
-        if: matrix.id == 'solidjs-web' || matrix.id == 'leptos-web'
+      - name: Build Docker image (Dockerfile)
+        if: matrix.id != 'rust-api'
         run: |
           set -euo pipefail
           SHORT_SHA=${GITHUB_SHA:0:7}
           SVC_NAME="${{ matrix.id }}"
           TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
-          DOCKERFILE=""
-          if [ "${{ matrix.id }}" == "solidjs-web" ]; then
-            DOCKERFILE="infra/docker/solidjs.Dockerfile"
-          elif [ "${{ matrix.id }}" == "leptos-web" ]; then
-            DOCKERFILE="infra/docker/leptos.Dockerfile"
-          fi
+          
+          case "$SVC_NAME" in
+            "solidjs-web") DOCKERFILE="infra/docker/solidjs.Dockerfile" ;;
+            "leptos-web")  DOCKERFILE="infra/docker/leptos.Dockerfile" ;;
+            "elysia-api")  DOCKERFILE="infra/docker/elysia.Dockerfile" ;;
+            "nextjs-web")  DOCKERFILE="infra/docker/nextjs.Dockerfile" ;;
+            *) echo "Unknown service: $SVC_NAME"; exit 1 ;;
+          esac
+          
           docker build -f "$DOCKERFILE" -t "$TARGET_BASE:latest" -t "$TARGET_BASE:sha-$SHORT_SHA" .
 
-      - name: Build Nix Docker image
-        if: matrix.id != 'solidjs-web' && matrix.id != 'leptos-web'
+      - name: Build Docker image (Nix)
+        if: matrix.id == 'rust-api'
         run: |
           set -euo pipefail
           EXTRA_ARGS=""
@@ -185,7 +190,7 @@ jobs:
           SVC_NAME="${{ matrix.id }}"
           TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
 
-          if [ "${{ matrix.id }}" == "solidjs-web" ] || [ "${{ matrix.id }}" == "leptos-web" ]; then
+          if [ "$SVC_NAME" != "rust-api" ]; then
             docker push "$TARGET_BASE:latest"
             docker push "$TARGET_BASE:sha-$SHORT_SHA"
             exit 0
