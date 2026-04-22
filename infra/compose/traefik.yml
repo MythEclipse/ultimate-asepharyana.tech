@@ -30,7 +30,7 @@ services:
       - "--entryPoints.websecure.address=:443"
       - "--experimental.plugins.real-ip.moduleName=github.com/soulbalz/traefik-real-ip"
       - "--experimental.plugins.real-ip.version=v1.0.3"
-      - "--experimental.plugins.blockpath.moduleName=github.com/tommoulard/traefik-plugin-blockpath"
+      - "--experimental.plugins.blockpath.moduleName=github.com/traefik/plugin-blockpath"
       - "--experimental.plugins.blockpath.version=v0.2.1"
     environment:
       - DOCKER_API_VERSION=1.41
