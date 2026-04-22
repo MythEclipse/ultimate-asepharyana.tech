@@ -27,6 +27,9 @@ COPY --from=builder --chown=appuser:appgroup /app/.output ./.output
 COPY --from=builder --chown=appuser:appgroup /app/package.json ./
 COPY --chown=appuser:appgroup infra/nginx/solidjs.conf /etc/nginx/http.d/default.conf
 
+# Fix nginx.conf to remove user directive (avoid warning as non-root)
+RUN sed -i 's/^user /#user /' /etc/nginx/nginx.conf
+
 # Inline Supervisor config (run as non-root)
 RUN printf "[supervisord]\n\
 nodaemon=true\n\
@@ -35,7 +38,7 @@ logfile=/dev/null\n\
 logfile_maxbytes=0\n\
 \n\
 [program:bun]\n\
-command=bun run start\n\
+command=bun .output/server/index.mjs\n\
 directory=/app\n\
 autostart=true\n\
 autorestart=true\n\
