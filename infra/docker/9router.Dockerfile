@@ -1,7 +1,7 @@
 FROM node:20-bookworm-slim
 
-# Use tini as init
-ENTRYPOINT ["tini", "--"]
+# Use tini as init - using absolute path for robustness
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -21,6 +21,7 @@ EXPOSE 20128
 
 VOLUME ["/root/.9router"]
 
-# Start 9router in non-interactive mode
-# Redirecting stdin from /dev/null prevents interactive prompt hangs
-CMD ["/bin/sh", "-c", "9router --no-browser --log --skip-update < /dev/null"]
+# Start 9router
+# We use --no-browser and --log
+# No shell redirection to avoid potential issues with tini/sh interaction
+CMD ["9router", "--no-browser", "--log", "--skip-update"]
