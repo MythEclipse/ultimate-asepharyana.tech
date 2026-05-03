@@ -1,12 +1,18 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
-# Set working directory
-WORKDIR /app
+# Use tini as init
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
-# Install 9router and dependencies
-RUN npm install -g 9router && \
-    apk update && \
-    apk add --no-cache nginx apache2-utils procps
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    nginx \
+    apache2-utils \
+    procps \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install 9router
+RUN npm install -g 9router
 
 # Create necessary directories
 RUN mkdir -p /run/nginx /root/.9router
@@ -78,7 +84,7 @@ EOF
 
 # Improved entrypoint with process monitoring
 RUN cat <<'EOF' > /entrypoint.sh
-#!/bin/sh
+#!/bin/bash
 set -e
 
 ADMIN_USER=${ADMIN_USER:-admin}
@@ -91,9 +97,11 @@ htpasswd -cb /etc/nginx/.htpasswd "$ADMIN_USER" "$ADMIN_PASS"
 # Inject API Key into Nginx config
 sed -i "s|API_KEY_PLACEHOLDER|$API_KEY|g" /etc/nginx/nginx.conf
 
-# Start 9router
+# Start 9router in non-interactive mode if possible
 echo "Starting 9router..."
-9router --no-browser --log &
+# We use -l to show logs and -n to skip browser
+# Adding --skip-update to avoid network issues during startup
+9router --no-browser --log --skip-update < /dev/null &
 NINEROUTER_PID=$!
 
 # Wait for 9router to start
@@ -122,4 +130,4 @@ RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 VOLUME ["/root/.9router"]
-CMD ["/entrypoint.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]

@@ -6,13 +6,21 @@ services:
       dockerfile: infra/docker/9router.Dockerfile
     restart: always
     networks:
-      - app-shared-net
+      app-shared-net:
+        aliases:
+          - 9router
     environment:
       - ADMIN_USER=${NINEROUTER_ADMIN_USER:-admin}
       - ADMIN_PASS=${NINEROUTER_ADMIN_PASS:-password}
       - API_KEY=${NINEROUTER_API_KEY:-sk-rahasia-super-aman}
     volumes:
       - 9router-data:/root/.9router
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ninerouter.rule=Host(`9router.asepharyana.tech`)"
