@@ -1,7 +1,7 @@
 services:
   nextjs-web:
     container_name: nextjs-web
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:sha-7822262
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/nextjs-web:sha-7244b8a
     restart: always
     networks: [app-shared-net]
     environment:
