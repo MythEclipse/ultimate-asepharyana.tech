@@ -164,7 +164,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Build Docker image (Dockerfile)
-        if: matrix.id == 'solidjs-web' || matrix.id == 'elysia-api' || matrix.id == 'nextjs-web'
+        if: matrix.id == 'solidjs-web' || matrix.id == 'elysia-api' || matrix.id == 'nextjs-web' || matrix.id == '9router'
         run: |
           set -euo pipefail
           SHORT_SHA=${GITHUB_SHA:0:7}
