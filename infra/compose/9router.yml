@@ -16,7 +16,7 @@ services:
     volumes:
       - 9router-data:/root/.9router
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/v1/models"]
+      test: ["CMD", "curl", "-f", "http://localhost:20128/"]
       interval: 30s
       timeout: 10s
       retries: 3
