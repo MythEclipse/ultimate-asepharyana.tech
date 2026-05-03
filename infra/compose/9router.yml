@@ -1,0 +1,30 @@
+services:
+  9router:
+    container_name: 9router
+    build:
+      context: ../../
+      dockerfile: infra/docker/9router.Dockerfile
+    restart: always
+    networks:
+      - app-shared-net
+    environment:
+      - ADMIN_USER=${NINEROUTER_ADMIN_USER:-admin}
+      - ADMIN_PASS=${NINEROUTER_ADMIN_PASS:-password}
+      - API_KEY=${NINEROUTER_API_KEY:-sk-rahasia-super-aman}
+    volumes:
+      - 9router-data:/root/.9router
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ninerouter.rule=Host(`9router.asepharyana.tech`)"
+      - "traefik.http.routers.ninerouter.entrypoints=websecure"
+      - "traefik.http.routers.ninerouter.tls=true"
+      - "traefik.http.services.ninerouter.loadbalancer.server.port=80"
+      - "traefik.http.routers.ninerouter.middlewares=admin-chain@file"
+
+volumes:
+  9router-data:
+
+networks:
+  app-shared-net:
+    name: app-shared-net
+    external: true

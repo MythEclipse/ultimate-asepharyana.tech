@@ -39,6 +39,7 @@ jobs:
       solidjs-web: ${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
       leptos-web: ${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}
       nextjs-web: ${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}
+      9router: ${{ steps.filter.outputs.9router == 'true' || steps.dispatch.outputs.9router == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -79,6 +80,9 @@ jobs:
               - 'flake.nix'
               - 'nix/apps/nextjs.nix'
               - 'infra/docker/nextjs.Dockerfile'
+            9router:
+              - 'infra/docker/9router.Dockerfile'
+              - '.github/workflows/docker-build-push.yml'
 
       - name: Parse repository_dispatch payload
         id: dispatch
@@ -107,6 +111,7 @@ jobs:
           if [ "${{ steps.filter.outputs.solidjs-web == 'true' || steps.dispatch.outputs.solidjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "solidjs-web" "docker-solidjs" "apps/solidjs" "app-solidjs"; fi
           if [ "${{ steps.filter.outputs.leptos-web == 'true' || steps.dispatch.outputs.leptos-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "leptos-web" "docker-leptos" "apps/leptos" "app-leptos"; fi
           if [ "${{ steps.filter.outputs.nextjs-web == 'true' || steps.dispatch.outputs.nextjs-web == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "nextjs-web" "docker-nextjs" "apps/nextjs" "app-nextjs"; fi
+          if [ "${{ steps.filter.outputs.9router == 'true' || steps.dispatch.outputs.9router == 'true' || github.event_name == 'workflow_dispatch' }}" == "true" ]; then add_service "9router" "docker-9router" "infra/docker" "app-9router"; fi
 
           JSON_ARRAY="[$(IFS=,; echo "${SERVICES[*]}")]"
           echo "matrix=$JSON_ARRAY" >> $GITHUB_OUTPUT
@@ -170,6 +175,7 @@ jobs:
             "solidjs-web") DOCKERFILE="infra/docker/solidjs.Dockerfile" ;;
             "elysia-api")  DOCKERFILE="infra/docker/elysia.Dockerfile" ;;
             "nextjs-web")  DOCKERFILE="infra/docker/nextjs.Dockerfile" ;;
+            "9router")     DOCKERFILE="infra/docker/9router.Dockerfile" ;;
             *) echo "Unknown service: $SVC_NAME"; exit 1 ;;
           esac
 
@@ -192,7 +198,7 @@ jobs:
           SVC_NAME="${{ matrix.id }}"
           TARGET_BASE="${REGISTRY}/${IMAGE_NAME_PREFIX}/${SVC_NAME}"
 
-          if [ "$SVC_NAME" == "solidjs-web" ] || [ "$SVC_NAME" == "elysia-api" ] || [ "$SVC_NAME" == "nextjs-web" ]; then
+          if [ "$SVC_NAME" == "solidjs-web" ] || [ "$SVC_NAME" == "elysia-api" ] || [ "$SVC_NAME" == "nextjs-web" ] || [ "$SVC_NAME" == "9router" ]; then
             docker push "$TARGET_BASE:latest"
             docker push "$TARGET_BASE:sha-$SHORT_SHA"
             exit 0
@@ -249,6 +255,7 @@ jobs:
           SERVICES["solidjs-web"]="solidjs.yml"
           SERVICES["leptos-web"]="leptos.yml"
           SERVICES["nextjs-web"]="nextjs.yml"
+          SERVICES["9router"]="9router.yml"
 
           declare -A PATHS
           PATHS["rust-api"]="apps/rust"
@@ -256,6 +263,7 @@ jobs:
           PATHS["solidjs-web"]="apps/solidjs"
           PATHS["leptos-web"]="apps/leptos"
           PATHS["nextjs-web"]="apps/nextjs"
+          PATHS["9router"]="infra/docker"
 
           # Use git config for possible commits
           git config --local user.email "action@github.com"
@@ -274,6 +282,7 @@ jobs:
             if [ "${{ needs.changes.outputs.solidjs-web }}" == "true" ] && [ "$id" == "solidjs-web" ]; then SHOULD_HAVE_RUN=true; fi
             if [ "${{ needs.changes.outputs.leptos-web }}" == "true" ] && [ "$id" == "leptos-web" ]; then SHOULD_HAVE_RUN=true; fi
             if [ "${{ needs.changes.outputs.nextjs-web }}" == "true" ] && [ "$id" == "nextjs-web" ]; then SHOULD_HAVE_RUN=true; fi
+            if [ "${{ needs.changes.outputs.9router }}" == "true" ] && [ "$id" == "9router" ]; then SHOULD_HAVE_RUN=true; fi
             
             if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then SHOULD_HAVE_RUN=true; fi
 

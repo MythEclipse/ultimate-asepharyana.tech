@@ -46,6 +46,9 @@ jobs:
           SHARED_MYSQL_PASSWORD: ${{ secrets.SHARED_MYSQL_PASSWORD }}
           SHARED_MINIO_ROOT_USER: ${{ secrets.SHARED_MINIO_ROOT_USER }}
           SHARED_MINIO_ROOT_PASSWORD: ${{ secrets.SHARED_MINIO_ROOT_PASSWORD }}
+          NINEROUTER_ADMIN_USER: ${{ secrets.NINEROUTER_ADMIN_USER }}
+          NINEROUTER_ADMIN_PASS: ${{ secrets.NINEROUTER_ADMIN_PASS }}
+          NINEROUTER_API_KEY: ${{ secrets.NINEROUTER_API_KEY }}
         run: |
           set -euo pipefail
 
@@ -76,6 +79,9 @@ jobs:
             echo "SHARED_MYSQL_PASSWORD=$SHARED_MYSQL_PASSWORD"
             echo "SHARED_MINIO_ROOT_USER=$SHARED_MINIO_ROOT_USER"
             echo "SHARED_MINIO_ROOT_PASSWORD=$SHARED_MINIO_ROOT_PASSWORD"
+            echo "NINEROUTER_ADMIN_USER=$NINEROUTER_ADMIN_USER"
+            echo "NINEROUTER_ADMIN_PASS=$NINEROUTER_ADMIN_PASS"
+            echo "NINEROUTER_API_KEY=$NINEROUTER_API_KEY"
           } >> .env.prod
           echo "$ENV_PICSER" > .env.picser
           scp $SSH_OPTS .env.prod "$VPS_USER@$VPS_HOST:$VPS_TARGET_DIR/.env"
@@ -104,13 +110,13 @@ jobs:
               exit 1
             fi
 
-            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env pull
+            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml -f infra/compose/9router.yml --env-file .env pull
             echo "🧹 Recovering Git and Docker state..."
             # Clear Git locks if any
             rm -f .git/shallow.lock || true
             
             # Identify all target services
-            TARGETS="prometheus alertmanager grafana node-exporter redis-exporter mysqld-exporter nginx-exporter cadvisor portainer mysql redis minio sablier traefik nextjs-web solidjs-web leptos-web rust-api elysia-api picser"
+            TARGETS="prometheus alertmanager grafana node-exporter redis-exporter mysqld-exporter nginx-exporter cadvisor portainer mysql redis minio sablier traefik nextjs-web solidjs-web leptos-web rust-api elysia-api picser 9router"
             
             echo "🛑 Stopping and removing conflicting containers..."
             for name in \$TARGETS; do
@@ -127,7 +133,7 @@ jobs:
             echo "⏳ Waiting for Docker daemon to settle..."
             sleep 5
             
-            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml --env-file .env up -d --remove-orphans
+            \$COMPOSE_CMD -f infra/compose/traefik.yml -f infra/compose/shared.yml -f infra/compose/monitoring.yml -f infra/compose/rust.yml -f infra/compose/elysia.yml -f infra/compose/solidjs.yml -f infra/compose/leptos.yml -f infra/compose/nextjs.yml -f infra/compose/picser.yml -f infra/compose/9router.yml --env-file .env up -d --remove-orphans
           EOF
 
 #       - name: Restart coolify-proxy (delay 1 min)
