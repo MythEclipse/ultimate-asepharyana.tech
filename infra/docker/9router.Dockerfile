@@ -1,7 +1,7 @@
 FROM node:20-bookworm-slim
 
 # Use tini as init
-ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["tini", "--"]
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     apache2-utils \
     procps \
     curl \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 # Install 9router
