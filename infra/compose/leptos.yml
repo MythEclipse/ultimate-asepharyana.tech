@@ -1,7 +1,7 @@
 services:
   leptos-web:
     container_name: leptos-web
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/leptos-web:sha-4ad9c6d
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/leptos-web:sha-c4bfb9c
     restart: always
     networks: [app-shared-net]
     environment:
