@@ -92,13 +92,18 @@ jobs:
             cd "\$VPS_TARGET_DIR"
 
             # Ensure shared network exists
-            docker network create app-shared-net || true
+            docker network inspect app-shared-net >/dev/null 2>&1 || docker network create app-shared-net
 
             # Kill existing Nginx/Proxy processes on host to free up 80/443
             fuser -k 80/tcp || true
             fuser -k 443/tcp || true
+            
+            echo "🔄 Synchronizing repository and submodules..."
             git fetch origin main --depth=1 || true
             git reset --hard origin/main
+            
+            # Force reset submodules to clear any local changes/drifts on VPS
+            git submodule foreach --recursive "git reset --hard && git clean -fd"
             git submodule update --init --recursive
 
             if command -v "docker" >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
