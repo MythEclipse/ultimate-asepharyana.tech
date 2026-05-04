@@ -1,7 +1,7 @@
 services:
   solidjs-web:
     container_name: solidjs-web
-    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/solidjs-web:sha-4ad9c6d
+    image: ghcr.io/mytheclipse/ultimate-asepharyana.tech/solidjs-web:sha-1427ef5
     restart: always
     networks: [app-shared-net]
     environment:
