@@ -24,6 +24,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - '${SHARED_MYSQL_EXPOSE:-127.0.0.1:3306:3306}'
     volumes:
       - 'mysql_data:/var/lib/mysql'
       - '../config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro'
@@ -35,6 +37,8 @@ services:
       app-shared-net:
         aliases:
           - redis
+    ports:
+      - '${SHARED_REDIS_EXPOSE:-127.0.0.1:6379:6379}'
     volumes:
       - 'redis_data:/data'
   minio:
