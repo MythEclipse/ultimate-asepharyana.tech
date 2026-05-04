@@ -13,3 +13,6 @@
 [submodule "apps/nextjs"]
 	path = apps/nextjs
 	url = https://github.com/MythEclipse/ultimate-asepharyana-tech-nextjs.git
+[submodule "apps/rust-auth"]
+	path = apps/rust-auth
+	url = https://github.com/MythEclipse/ultimate-asepharyana-tech-rust-auth.git
